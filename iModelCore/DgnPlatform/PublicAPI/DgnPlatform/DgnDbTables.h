@@ -121,7 +121,7 @@ struct DgnImportContext;
 // @bsiclass                                                     Paul.Connelly  09/15
 //=======================================================================================
 struct DgnCode
-{
+{               
 private:
     DgnAuthorityId  m_authority;
     Utf8String      m_value;
@@ -132,7 +132,7 @@ public:
     DgnCode() {}
 
     //! Constructor
-    DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) { }
+    DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) : m_authority(authorityId), m_value(value), m_nameSpace(nameSpace) {}
 
     //! Construct a code with the specified ID as its namespace
     DGNPLATFORM_EXPORT DgnCode(DgnAuthorityId authorityId, Utf8StringCR value, BeInt64Id namespaceId);
@@ -169,13 +169,15 @@ public:
     {
         friend struct ECSqlStatementIterator<Entry>;
         friend struct DgnCode;
+
     private:
-        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
+        Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) {}
+
     public:
-        DgnAuthorityId GetAuthorityId() const { return m_statement->GetValueId<DgnAuthorityId>(0); }
-        Utf8CP GetValue() const { return m_statement->GetValueText(1); }
-        Utf8CP GetNamespace() const { return m_statement->GetValueText(2); }
-        DgnCode GetCode() const { return DgnCode(GetAuthorityId(), GetValue(), GetNamespace()); }
+        DgnAuthorityId GetAuthorityId() const {return m_statement->GetValueId<DgnAuthorityId>(0);}
+        Utf8CP GetValue() const {return m_statement->GetValueText(1);}
+        Utf8CP GetNamespace() const {return m_statement->GetValueText(2);}
+        DgnCode GetCode() const {return DgnCode(GetAuthorityId(), GetValue(), GetNamespace());}
     };
 
     struct Iterator : ECSqlStatementIterator<Entry>
@@ -194,8 +196,8 @@ public:
             Include m_include;
             bool    m_includeEmpty;
         public:
-            Options(Include include, bool includeEmpty=false) : m_include(include), m_includeEmpty(includeEmpty) { }
-            Options() : Options(Include::Both) { }
+            Options(Include include, bool includeEmpty=false) : m_include(include), m_includeEmpty(includeEmpty) {}
+            Options() : Options(Include::Both) {}
 
             Utf8CP GetECSql() const;
         };
@@ -203,7 +205,7 @@ public:
         DGNPLATFORM_EXPORT explicit Iterator(DgnDbR db, Options options);
     };
 
-    static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) { return Iterator(db, options); }
+    static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) {return Iterator(db, options); }
 
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
@@ -274,7 +276,7 @@ private:
     BeSQLite::EC::CachedECSqlStatementPtr GetUpdateStmt(DgnModelR model);
 
     DgnModels(DgnDbR db) : DgnDbTable(db) {}
-    ~DgnModels() {} // don't call empty on destructor, Elements() has already been deleted.
+    ~DgnModels() {}
 
 public:
     //! An object that holds a row from the DgnModel table.
@@ -283,36 +285,28 @@ public:
         friend struct DgnModels;
 
     private:
-        DgnModelId          m_id;
-        DgnClassId          m_classId;
-        DgnCode             m_code;
-        Utf8String          m_label;
-        bool                m_inGuiList;
+        DgnModelId m_id;
+        DgnClassId m_classId;
+        DgnCode m_code;
+        Utf8String m_label;
+        bool m_inGuiList = true;
 
     public:
-        Model()
-            {
-            m_inGuiList = true;
-            };
-
-        Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code)
-            {
-            m_inGuiList = true;
-            }
+        Model() {}
+        Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
 
         void SetCode(DgnCode code) {m_code = code;}
-        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
-        void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; }
+        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+        void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnCode const& GetCode() const {return m_code;}
-        Utf8CP GetLabel() const { return m_label.c_str(); }
-        bool GetInGuiList() const { return m_inGuiList; }
-        DgnModelId GetId() const { return m_id; }
+        Utf8CP GetLabel() const {return m_label.c_str();}
+        bool GetInGuiList() const {return m_inGuiList;}
+        DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
-
     }; // Model
 
     struct Iterator : BeSQLite::DbTableIterator
@@ -450,16 +444,16 @@ struct DgnFonts : NonCopyableClass
                 DGNPLATFORM_EXPORT DgnFontId GetId() const;
                 DGNPLATFORM_EXPORT DgnFontType GetType() const;
                 DGNPLATFORM_EXPORT Utf8CP GetName() const;
-                Entry const& operator*() const { return *this; }
+                Entry const& operator*() const {return *this;}
             };
 
             typedef Entry const_iterator;
             DGNPLATFORM_EXPORT const_iterator begin() const;
-            const_iterator end() const { return Entry(NULL, false); }
+            const_iterator end() const {return Entry(NULL, false);}
             DGNPLATFORM_EXPORT size_t QueryCount() const;
         };
 
-        bool DoesFontTableExist() const { return m_dbFonts.m_db.TableExists(m_dbFonts.m_tableName.c_str()); }
+        bool DoesFontTableExist() const {return m_dbFonts.m_db.TableExists(m_dbFonts.m_tableName.c_str());}
         DGNPLATFORM_EXPORT BentleyStatus CreateFontTable();
         DGNPLATFORM_EXPORT DgnFontPtr QueryById(DgnFontId) const;
         DGNPLATFORM_EXPORT DgnFontPtr QueryByTypeAndName(DgnFontType, Utf8CP) const;
@@ -469,7 +463,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT BentleyStatus Insert(DgnFontCR, DgnFontId&);
         DGNPLATFORM_EXPORT BentleyStatus Update(DgnFontCR, DgnFontId);
         DGNPLATFORM_EXPORT BentleyStatus Delete(DgnFontId);
-        Iterator MakeIterator() const { return Iterator(m_dbFonts); }
+        Iterator MakeIterator() const {return Iterator(m_dbFonts);}
     };
 
     //=======================================================================================
@@ -490,7 +484,7 @@ struct DgnFonts : NonCopyableClass
 
             FaceKey() : m_type((DgnFontType)0) {}
             FaceKey(DgnFontType type, Utf8CP familyName, Utf8CP faceName) : m_type(type), m_familyName(familyName), m_faceName(faceName) {}
-            bool Equals(FaceKey const& rhs) const { return ((rhs.m_type == m_type) && m_familyName.EqualsI(rhs.m_familyName) && m_faceName.EqualsI(rhs.m_faceName)); }
+            bool Equals(FaceKey const& rhs) const {return ((rhs.m_type == m_type) && m_familyName.EqualsI(rhs.m_familyName) && m_faceName.EqualsI(rhs.m_faceName));}
         };
 
         typedef uint64_t DataId;
@@ -516,12 +510,12 @@ struct DgnFonts : NonCopyableClass
             public:
                 DGNPLATFORM_EXPORT uint64_t GetId() const;
                 DGNPLATFORM_EXPORT T_FaceMap GenerateFaceMap() const;
-                Entry const& operator*() const { return *this; }
+                Entry const& operator*() const {return *this;}
             };
 
             typedef Entry const_iterator;
             DGNPLATFORM_EXPORT const_iterator begin() const;
-            const_iterator end() const { return Entry(NULL, false); }
+            const_iterator end() const {return Entry(NULL, false);}
             DGNPLATFORM_EXPORT size_t QueryCount() const;
         };
 
@@ -537,7 +531,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT bool Exists(FaceKeyCR);
         DGNPLATFORM_EXPORT BentleyStatus Insert(Byte const*, size_t dataSize, T_FaceMapCR);
         DGNPLATFORM_EXPORT BentleyStatus Delete(FaceKeyCR);
-        Iterator MakeIterator() const { return Iterator(m_dbFonts); }
+        Iterator MakeIterator() const {return Iterator(m_dbFonts);}
     };
 
 private:
@@ -551,9 +545,9 @@ private:
 public:
     DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
-    DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
-    DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
-    void Invalidate() { m_isFontMapLoaded = false; m_fontMap.clear(); }
+    DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
+    DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
+    void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
     void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
     DGNPLATFORM_EXPORT DgnFontCP FindFontByTypeAndName(DgnFontType, Utf8CP) const;
@@ -599,12 +593,12 @@ public:
     //! Look up an authority of a particular type by ID. The authority will be loaded from the database if necessary.
     //! @param[in] authorityId The ID of the authority to load
     //! @returns The DgnAuthority with the specified ID, or nullptr if the authority could not be loaded or is not of the desired type.
-    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) { return dynamic_cast<T const*>(GetAuthority(authorityId).get()); }
+    template<typename T> RefCountedCPtr<T> Get(DgnAuthorityId authorityId) {return dynamic_cast<T const*>(GetAuthority(authorityId).get());}
 
     //! Look up an authority of a particular type by name. The authority will be loaded from the database if necessary.
     //! @param[in] name The name of the authority to load
     //! @returns The DgnAuthority with the specified name, or nullptr if the authority could not be loaded or is not of the desired type.
-    template<typename T> RefCountedCPtr<T> Get(Utf8CP name) { return dynamic_cast<T const*>(GetAuthority(name).get()); }
+    template<typename T> RefCountedCPtr<T> Get(Utf8CP name) {return dynamic_cast<T const*>(GetAuthority(name).get());}
     //! Add a new Authority to the table.
     //! @param[in]  authority The new entry to add.
     //! @return The result of the insert operation.
@@ -696,9 +690,10 @@ public:
     //! @return this DgnDb's GCS or nullptr if this DgnDb is not geo-located
     DGNPLATFORM_EXPORT DgnGCS* GetDgnGCS() const;
 
-    static double const OneMeter() {return 1.;}
-    static double const OneKilometer() {return 1000. * OneMeter();}
-    static double const OneMillimeter() {return OneMeter() / 1000.;}
+    static double const OneMeter() {return 1.0;}
+    static double const OneKilometer() {return 1000.0 * OneMeter();}
+    static double const OneMillimeter() {return OneMeter() / 1000.0;}
+    static double const DiameterOfEarth() {return 12742. * OneKilometer();} // approximately, obviously
 };
 
 //=======================================================================================
@@ -737,7 +732,7 @@ struct DgnSearchableText : DgnDbTable
 private:
     friend struct DgnDb;
 
-    DgnSearchableText(DgnDbR db) : DgnDbTable(db) { }
+    DgnSearchableText(DgnDbR db) : DgnDbTable(db) {}
 
     static BeSQLite::DbResult CreateTable(DgnDb& db);
 public:
@@ -751,15 +746,15 @@ public:
         //! Constructor.
         //! @param[in]      textType Specifies the type of text. May not be empty.
         //! @param[in]      id       The ID of the associated object. Must be valid.
-        Key(Utf8StringCR textType, BeInt64Id id) : m_type(textType), m_id(id) { m_type.Trim(); }
+        Key(Utf8StringCR textType, BeInt64Id id) : m_type(textType), m_id(id) {m_type.Trim();}
 
         //! Default constructor producing an invalid Key.
-        Key() { }
+        Key() {}
 
-        Utf8StringCR GetTextType() const { return m_type; } //!< The search text type
-        BeInt64Id GetId() const { return m_id; } //!< The ID of the object associated with this record
-        bool IsValid() const { return !m_type.empty() && m_id.IsValid(); } //!< Determine whether this is a valid Key
-    };
+        Utf8StringCR GetTextType() const {return m_type;} //!< The search text type
+        BeInt64Id GetId() const {return m_id;} //!< The ID of the object associated with this record
+        bool IsValid() const {return !m_type.empty() && m_id.IsValid();} //!< Determine whether this is a valid Key
+   };
 
     //! A record in the searchable text table
     struct Record
@@ -773,22 +768,22 @@ public:
         //! @param[in]      id       The ID of the object associated with this text. Must be valid.
         //! @param[in]      text     The searchable text. May not be empty.
         //! @remarks The combination of text type and ID must be unique within the searchable text table
-        Record(Utf8StringCR textType, BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) { }
+        Record(Utf8StringCR textType, BeInt64Id id, Utf8StringCR text) : Record(Key(textType, id), text) {}
 
         //! Constructor
         //! @param[in]      key  Uniquely identifies this record within the table. Must be valid.
         //! @param[in]      text The searchable text. May not be empty.
-        Record(Key const& key, Utf8StringCR text) : m_key(key), m_text(text) { m_text.Trim(); }
+        Record(Key const& key, Utf8StringCR text) : m_key(key), m_text(text) {m_text.Trim();}
 
         //! Default constructor. Produces an invalid record.
-        Record() { }
+        Record() {}
 
-        Utf8StringCR GetTextType() const { return m_key.GetTextType(); } //!< The search text type
-        BeInt64Id GetId() const { return m_key.GetId(); } //!< The ID of the object associated with the text
-        Utf8StringCR GetText() const { return m_text; } //!< The searchable text
-        Key const& GetKey() const { return m_key; } //!< The record key
-        bool IsValid() const { return m_key.IsValid() && !m_text.empty(); } //!< Determine if this is a valid record
-    };
+        Utf8StringCR GetTextType() const {return m_key.GetTextType();} //!< The search text type
+        BeInt64Id GetId() const {return m_key.GetId();} //!< The ID of the object associated with the text
+        Utf8StringCR GetText() const {return m_text;} //!< The searchable text
+        Key const& GetKey() const {return m_key;} //!< The record key
+        bool IsValid() const {return m_key.IsValid() && !m_text.empty();} //!< Determine if this is a valid record
+   };
 
     //! A list of text types by which to filter full-text search queries
     typedef bvector<Utf8String> TextTypes;
@@ -840,7 +835,7 @@ public:
     private:
         friend struct DgnSearchableText;
 
-        Iterator(DgnDb& db, Query const& query) : DbTableIterator((BeSQLite::DbCR)db), m_query(query) { }
+        Iterator(DgnDb& db, Query const& query) : DbTableIterator((BeSQLite::DbCR)db), m_query(query) {}
 
         Query m_query;
     public:
@@ -849,35 +844,35 @@ public:
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) { }
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
         public:
             DGNPLATFORM_EXPORT Utf8CP GetTextType() const; //!< The type of text
             DGNPLATFORM_EXPORT BeInt64Id GetId() const; //!< The ID of the associated object
             DGNPLATFORM_EXPORT Utf8CP GetText() const; //!< The search text
 
-            Key GetKey() const { return Key(GetTextType(), GetId()); } //!< The unique Key identifying this entry
-            Record GetRecord() const { return Record(GetTextType(), GetId(), GetText()); } //!< A record representing this entry
-            Entry const& operator*() const { return *this; } //!< Dereference this entry
+            Key GetKey() const {return Key(GetTextType(), GetId());} //!< The unique Key identifying this entry
+            Record GetRecord() const {return Record(GetTextType(), GetId(), GetText());} //!< A record representing this entry
+            Entry const& operator*() const {return *this;} //!< Dereference this entry
         };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
         DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the results
-        Entry end() const { return Entry(nullptr, false); } //!< An iterator beyond the last entry in the results
+        Entry end() const {return Entry(nullptr, false);} //!< An iterator beyond the last entry in the results
     };
 
     //! Query the number of records which match a full text search query
-    //! @param[in]      query The searchable text query
+    //! @param[in] query The searchable text query
     //! @return The number of records which match the query.
     DGNPLATFORM_EXPORT size_t QueryCount(Query const& query) const;
 
     //! Query the records which match a full text search query
-    //! @param[in]      query The searchable text query
+    //! @param[in] query The searchable text query
     //! @return An iterator over the matching records.
     DGNPLATFORM_EXPORT Iterator QueryRecords(Query const& query) const;
 
     //! Query the record with the specified text type and ID.
-    //! @param[in]      key The unique key identifying the record
+    //! @param[in] key The unique key identifying the record
     //! @return The corresponding record, or an invalid record if no such record exists.
     DGNPLATFORM_EXPORT Record QueryRecord(Key const& key) const;
 
@@ -886,21 +881,21 @@ public:
     DGNPLATFORM_EXPORT TextTypes QueryTextTypes() const;
 
     //! Insert a new record into the searchable text table
-    //! @param[in]      record The record to insert
+    //! @param[in] record The record to insert
     //! @return Success if the new record was inserted, or else an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Record const& record);
 
     //! Insert a new record into the searchable text table
-    //! @param[in]      textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
-    //! @param[in]      id       The ID of the object associated with this text. Must be valid.
-    //! @param[in]      text     The searchable text. May not be empty.
+    //! @param[in] textType Identifies both the meaning of the ID and the "type" of the text. May not be empty.
+    //! @param[in] id The ID of the object associated with this text. Must be valid.
+    //! @param[in] text The searchable text. May not be empty.
     //! @return Success if the new record was inserted, or else an error code.
     //! @remarks The combination of text type and ID must be unique within the searchable text table
     DGNPLATFORM_EXPORT BeSQLite::DbResult InsertRecord(Utf8CP textType, BeInt64Id id, Utf8CP text);
 
     //! Update an existing record in the searchable text table
-    //! @param[in]      record      The modified record
-    //! @param[in]      originalKey If non-null, identifies the existing record.
+    //! @param[in] record The modified record
+    //! @param[in] originalKey If non-null, identifies the existing record.
     //! @return Success if the record was updated, or else an error code.
     //! @remarks If originalKey is not supplied, the key is assumed to remain unchanged. Otherwise, the record will be looked up by original key, allowing the text type and/or ID to be updated.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Record const& record, Key const* originalKey=nullptr);
@@ -910,12 +905,12 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult DropAll();
 
     //! Drops all records of the specified text type
-    //! @param[in]      textType The text type to drop
+    //! @param[in] textType The text type to drop
     //! @return Success if the associated records were dropped, or an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult DropTextType(Utf8CP textType);
 
     //! Drop a single record from the searchable text table
-    //! @param[in]      key The key identifying the record to drop.
+    //! @param[in] key The key identifying the record to drop.
     //! @return Success if the record was dropped, or an error code.
     DGNPLATFORM_EXPORT BeSQLite::DbResult DropRecord(Key const& key);
 //__PUBLISH_SECTION_END__

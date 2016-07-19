@@ -683,8 +683,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
     CameraInfo m_camera;           //!< Information about the camera lens used for the view.
 
 protected:
-    //! Calculate and save the lens angle formed by the current delta and focus distance
-    void CalculateLensAngle();
 
     virtual CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR) override;
@@ -705,6 +703,9 @@ public:
 
 /** @name Camera */
 /** @{ */
+    //! Calculate the lens angle formed by the current delta and focus distance
+    DGNPLATFORM_EXPORT double CalcLensAngle();
+
     //! Determine whether the camera is on for this view
     bool IsCameraOn() const {return m_isCameraOn;}
 

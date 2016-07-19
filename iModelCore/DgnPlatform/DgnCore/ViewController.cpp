@@ -685,7 +685,7 @@ ViewportStatus  CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     SetOrigin(viewOrg);
     SetDelta(viewDelta);
     SetCameraOn(true);
-    CalculateLensAngle();
+    SetLensAngle(CalcLensAngle());
     return ViewportStatus::Success;
     }
 
@@ -938,11 +938,10 @@ CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : S
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::CalculateLensAngle()
+double CameraViewController::CalcLensAngle()
     {
     double maxDelta = std::max(m_delta.x, m_delta.y);
-    double lensAngle = 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
-    SetLensAngle(lensAngle);
+    return 2.0 * atan2(maxDelta*0.5, GetFocusDistance());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1098,7 +1097,8 @@ bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode
 //---------------------------------------------------------------------------------------
 // Gyro vector convention:
 // gyrospace X,Y,Z are (respectively) DOWN, RIGHT, and TOWARDS THE EYE.
-// (gyrospace vectors are in the absolute system of the device.  But it is not important what that is -- just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
+// (gyrospace vectors are in the absolute system of the device.  But it is not important what that is -- 
+// just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
 // @bsimethod                                                   Earlin.Lutz     12/2015
 //---------------------------------------------------------------------------------------
 void ApplyGyroChangeToViewingVectors(UiOrientation ui, RotMatrixCR gyro0, RotMatrixCR gyro1, DVec3dCR forward0, DVec3dCR up0, DVec3dR forward1, DVec3dR up1)
@@ -1106,26 +1106,32 @@ void ApplyGyroChangeToViewingVectors(UiOrientation ui, RotMatrixCR gyro0, RotMat
     RotMatrix gyroToBSIColumnShuffler;
     
     if (ui == UiOrientation::LandscapeLeft) 
+        {
         gyroToBSIColumnShuffler = RotMatrix::FromRowValues
             (
             0,-1,0,         //  negative X becomes Y
             1,0,0,          //  Y becomes X
             0,0,1           //  Z remains Z
             );
+        }
     else if (ui == UiOrientation::LandscapeRight) 
+        {
         gyroToBSIColumnShuffler = RotMatrix::FromRowValues
             (
             0,1,0,          //  X becomes Y
             -1,0,0,         //  negative Y becomes X
             0,0,1           //  Z remains Z
             );
+        }
     else if (ui == UiOrientation::Portrait) 
+        {
         gyroToBSIColumnShuffler = RotMatrix::FromRowValues
             (
             1,0,0,
             0,1,0,
             0,0,1
             );
+        }
     else
         {
         BeAssert(ui == UiOrientation::PortraitUpsideDown);
@@ -1391,7 +1397,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     SetFocusDistance(focusDist);
     SetOrigin(origin);
     SetDelta(delta);
-    CalculateLensAngle();
+    SetLensAngle(CalcLensAngle());
 
     return ViewportStatus::Success;
     }
@@ -1540,6 +1546,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
 
     VerifyFocusPlane();
 
+#if defined (NEEDS_WORK_REALTY_DATA)
     if (m_isCameraOn)
         {
         // if the view was saved with an invalid camera lens, just turn the camera off.
@@ -1548,6 +1555,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
         if (!CameraInfo::IsValidLensAngle(lensAngle))
             m_isCameraOn = false;
         }
+#endif
     }
 
 //---------------------------------------------------------------------------------------

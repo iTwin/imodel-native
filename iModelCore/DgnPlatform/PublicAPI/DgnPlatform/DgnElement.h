@@ -1116,8 +1116,8 @@ public:
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this element.
-    //! @param[in]      request  Request to populate
-    //! @param[in]      opcode   The operation to be performed
+    //! @param[in] request Request to populate
+    //! @param[in] opcode The operation to be performed
     //! @return RepositoryStatus::Success, or an error code if for example a required lock or code is known to be unavailable without querying the repository manager.
     DGNPLATFORM_EXPORT RepositoryStatus PopulateRequest(IBriefcaseManager::Request& request, BeSQLite::DbOpcode opcode) const;
 
@@ -1225,7 +1225,7 @@ public:
         if (!m_boundingBox.IsValid())
             return false;
 
-        double maxCoord = (10000 * DgnUnits::OneKilometer()); // about the diameter of the earth
+        double maxCoord = DgnUnits::DiameterOfEarth();
 
         if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord || m_boundingBox.low.z < -maxCoord ||
             m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord || m_boundingBox.high.z > maxCoord)
@@ -1288,7 +1288,7 @@ public:
         if (!m_boundingBox.IsValid())
             return false;
 
-        double maxCoord = (10000 * DgnUnits::OneKilometer()); // about the diameter of the earth
+        double maxCoord = DgnUnits::DiameterOfEarth();
 
         if (m_boundingBox.low.x < -maxCoord || m_boundingBox.low.y < -maxCoord ||
             m_boundingBox.high.x > maxCoord || m_boundingBox.high.y > maxCoord)

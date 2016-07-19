@@ -40,7 +40,7 @@ struct TileId
 };
 
 //=======================================================================================
-// A cached tile. May or may not be loaded.
+//! A cached tile. May or may not be loaded.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct Tile : RefCountedBase, NonCopyableClass
@@ -75,8 +75,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_REF_COUNTED_PTR(Tile)
 
 //=======================================================================================
-// Obtains and displays multi-resolution tiled raster that is organized
-// according to the WebMercator tiling system.
+//! Obtains and displays multi-resolution tiled raster organized according to the WebMercator tiling system.
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
@@ -182,7 +181,7 @@ public:
 };
 
 //=======================================================================================
-// A street map model
+//! A street map model
 // @bsiclass                                                    Sam.Wilson      10/2014
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
