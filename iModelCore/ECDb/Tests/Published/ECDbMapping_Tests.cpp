@@ -2782,252 +2782,6 @@ TEST_F(ECDbMappingTestFixture, AbstractClass)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  11/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, RelationshipKeyPropertiesWithMultipleConstraints)
-    {
-            {
-            SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                                "  <ECEntityClass typeName='Parent' modifier='None' >"
-                                "    <ECProperty propertyName='Name' typeName='string' />"
-                                "  </ECEntityClass>"
-                                "  <ECEntityClass typeName='Child' modifier='None'>"
-                                "    <ECCustomAttributes>"
-                                "        <ClassMap xmlns='ECDbMap.01.00'>"
-                                "                <MapStrategy>"
-                                "                   <Strategy>SharedTable</Strategy>"
-                                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                                "                </MapStrategy>"
-                                "        </ClassMap>"
-                                "    </ECCustomAttributes>"
-                                "    <ECProperty propertyName='ParentId' typeName='long'>"
-                                "    <ECCustomAttributes>"
-                                "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                                "           <IsNullable>false</IsNullable>"
-                                "        </PropertyMap>"
-                                "    </ECCustomAttributes>"
-                                "    </ECProperty>"
-                                "    <ECProperty propertyName='ChildName' typeName='string' />"
-                                "  </ECEntityClass>"
-                                "  <ECEntityClass typeName='Child2' modifier='None' >"
-                                "    <BaseClass>Child</BaseClass>"
-                                "    <ECProperty propertyName='Child2Name' typeName='string' />"
-                                "  </ECEntityClass>"
-                                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                                "    <Source cardinality='(1,1)' polymorphic='True'>"
-                                "      <Class class = 'Parent' />"
-                                "    </Source>"
-                                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                                "      <Class class = 'Child' >"
-                                "           <Key>"
-                                "              <Property name='ParentId'/>"
-                                "           </Key>"
-                                "      </Class>"
-                                "      <Class class = 'Child2' >"
-                                "           <Key>"
-                                "              <Property name='ParentId'/>"
-                                "           </Key>"
-                                "      </Class>"
-                                "    </Target>"
-                                "  </ECRelationshipClass>"
-                                "</ECSchema>");
-
-            ECDb ecdb;
-            bool asserted = true;
-            AssertSchemaImport(ecdb, asserted, testItem, "ecrelationshipkeyproperties.ecdb");
-            ASSERT_FALSE(asserted);
-
-            Utf8CP childTableName = "ts_Child";
-
-            ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
-            bvector<Utf8String> columns;
-            ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-            ASSERT_EQ(5, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-            auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-            auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-            ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-            }
-
-            std::vector<SchemaItem> testSchemas;
-            testSchemas.push_back(SchemaItem(
-                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                "  <ECEntityClass typeName='Parent' modifier='None' >"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child' modifier='None' >"
-                "    <ECCustomAttributes>"
-                "        <ClassMap xmlns='ECDbMap.01.00'>"
-                "                <MapStrategy>"
-                "                   <Strategy>SharedTable</Strategy>"
-                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                "                </MapStrategy>"
-                "        </ClassMap>"
-                "    </ECCustomAttributes>"
-                "    <ECProperty propertyName='ParentId' typeName='long' />"
-                "    <ECProperty propertyName='ChildName' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child2' modifier='None'>"
-                "    <BaseClass>Child</BaseClass>"
-                "    <ECProperty propertyName='Child2Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class = 'Parent' />"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class = 'Child' >"
-                "           <Key>"
-                "              <Property name='ParentId'/>"
-                "           </Key>"
-                "      </Class>"
-                "      <Class class = 'Child2' >"
-                "           <Key>"
-                "              <Property name='ParentId'/>"
-                "              <Property name='ChildName'/>"
-                "           </Key>"
-                "      </Class>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", false, "Relationship Key property made up of multiple properties is not supported"));
-
-            testSchemas.push_back(SchemaItem(
-                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                "  <ECEntityClass typeName='Parent' modifier='None'>"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child' modifier='None'>"
-                "    <ECCustomAttributes>"
-                "        <ClassMap xmlns='ECDbMap.01.00'>"
-                "                <MapStrategy>"
-                "                   <Strategy>SharedTable</Strategy>"
-                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                "                </MapStrategy>"
-                "        </ClassMap>"
-                "    </ECCustomAttributes>"
-                "    <ECProperty propertyName='ParentId' typeName='long'>"
-                "      <ECCustomAttributes>"
-                "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                "           <IsNullable>false</IsNullable>"
-                "        </PropertyMap>"
-                "      </ECCustomAttributes>"
-                "    </ECProperty>"
-                "    <ECProperty propertyName='ChildName' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child2' modifier='None'>"
-                "    <BaseClass>Child</BaseClass>"
-                "    <ECProperty propertyName='Child2Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                "    <Source cardinality='(1,1)' polymorphic='True'>"
-                "      <Class class = 'Parent' />"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class = 'Child' >"
-                "           <Key>"
-                "              <Property name='ParentId'/>"
-                "           </Key>"
-                "      </Class>"
-                "      <Class class = 'Child2' >"
-                "           <Key>"
-                "              <Property name='ParentId'/>"
-                "           </Key>"
-                "      </Class>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", true, "Multiple Key properties pointing to the same property is expected to work"));
-
-            testSchemas.push_back(SchemaItem(
-                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                "  <ECEntityClass typeName='Parent' modifier='None'>"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child' >"
-                "    <ECCustomAttributes>"
-                "        <ClassMap xmlns='ECDbMap.01.00'>"
-                "                <MapStrategy>"
-                "                   <Strategy>SharedTable</Strategy>"
-                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                "                </MapStrategy>"
-                "        </ClassMap>"
-                "    </ECCustomAttributes>"
-                "    <ECProperty propertyName='ParentId' typeName='long' />"
-                "    <ECProperty propertyName='ChildName' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child2' modifier='None'>"
-                "    <BaseClass>Child</BaseClass>"
-                "    <ECProperty propertyName='Child2Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class = 'Parent' />"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class = 'Child' >"
-                "           <Key>"
-                "              <Property name='ParentId'/>"
-                "           </Key>"
-                "      </Class>"
-                "      <Class class = 'Child2' >"
-                "           <Key>"
-                "              <Property name='ECInstanceId'/>"
-                "           </Key>"
-                "      </Class>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", false, "Multiple Key properties not pointing to the same property is not expected to work"));
-
-            testSchemas.push_back(SchemaItem(
-                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                "  <ECEntityClass typeName='Parent' modifier='None'>"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child' modifier='None'>"
-                "    <ECCustomAttributes>"
-                "        <ClassMap xmlns='ECDbMap.01.00'>"
-                "                <MapStrategy>"
-                "                   <Strategy>SharedTable</Strategy>"
-                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                "                </MapStrategy>"
-                "        </ClassMap>"
-                "    </ECCustomAttributes>"
-                "    <ECProperty propertyName='ParentId' typeName='long' />"
-                "    <ECProperty propertyName='ChildName' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child2' modifier='None'>"
-                "    <BaseClass>Child</BaseClass>"
-                "    <ECProperty propertyName='Child2Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class = 'Parent' />"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class = 'Child' >"
-                "           <Key>"
-                "              <Property name='ParentId'/>"
-                "           </Key>"
-                "      </Class>"
-                "      <Class class = 'Child2' />"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", false, "All or no classes of a constraint must specify Key properties."));
-
-            AssertSchemaImport(testSchemas, "relationshipkeyproperties.ecdb");
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
@@ -3050,11 +2804,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "      <Class class = 'Parent' />"
                         "    </Source>"
                         "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ParentId'/>"
-                        "           </Key>"
-                        "      </Class>"
+                        "      <Class class = 'Child' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
                         "  <ECRelationshipClass typeName='RelCreateIndexFalse' modifier='Sealed' strength='referencing'>"
@@ -3067,11 +2817,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "      <Class class = 'Parent' />"
                         "    </Source>"
                         "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ParentId'/>"
-                        "           </Key>"
-                        "      </Class>"
+                        "      <Class class = 'Child' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
                         "  <ECRelationshipClass typeName='RelCreateIndexDefaultValue' modifier='Sealed' strength='referencing'>"
@@ -3082,11 +2828,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "      <Class class = 'Parent' />"
                         "    </Source>"
                         "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ParentId'/>"
-                        "           </Key>"
-                        "      </Class>"
+                        "      <Class class = 'Child' />"
                         "    </Target>"
                         "  </ECRelationshipClass>"
                         "</ECSchema>", true, "");
@@ -5602,41 +5344,6 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
                 "        <ECProperty propertyName='Id' typeName='long' />"
                 "    </ECEntityClass>"
                 "    <ECEntityClass typeName='B' modifier='None'>"
-                "        <ECProperty propertyName='AId' typeName='long'/>"
-                "        <ECProperty propertyName='Name' typeName='string' />"
-                "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class='A'/>"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class='B'>"
-                "         <Key>"
-                "           <Property name='AId'/>"
-                "         </Key>"
-                "       </Class>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", true, "");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
-            ASSERT_FALSE(asserted);
-
-            AssertIndexExists(db, "ix_ts_B_fk_ts_Rel_target", false);
-            }
-
-            {
-            SchemaItem testItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='A' modifier='None'>"
-                "        <ECProperty propertyName='Code' typeName='string' />"
-                "        <ECProperty propertyName='Id' typeName='long' />"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='B' modifier='None'>"
                 "        <ECProperty propertyName='AId' typeName='long'>"
                 "           <ECCustomAttributes>"
                 "            <PropertyMap xmlns='ECDbMap.01.00'>"
@@ -5651,11 +5358,7 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
                 "      <Class class='A'/>"
                 "    </Source>"
                 "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class='B'>"
-                "         <Key>"
-                "           <Property name='AId'/>"
-                "         </Key>"
-                "       </Class>"
+                "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
                 "</ECSchema>", true, "");
@@ -5750,13 +5453,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "                 </MapStrategy>"
                 "            </ClassMap>"
                 "        </ECCustomAttributes>"
-                "        <ECProperty propertyName='AId' typeName='long'>"
-                "        <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.01.00'>"
-                "                <IsNullable>false</IsNullable>"
-                "            </PropertyMap>"
-                "        </ECCustomAttributes>"
-                "        </ECProperty>"
+                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'/>"
                 "        <ECProperty propertyName='BId' typeName='long' />"
                 "    </ECEntityClass>"
                 "    <ECEntityClass typeName='BB' modifier='None'>"
@@ -5792,9 +5489,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      <Class class='A' />"
                 "    </Source>"
                 "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class='B'>"
-                "        <Key><Property name='AId'/></Key>"
-                "      </Class>"
+                "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
                 "   <ECRelationshipClass typeName='RelWithKeyProp11' strength='embedding' modifier='Sealed'>"
@@ -5802,9 +5497,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      <Class class='A' />"
                 "    </Source>"
                 "    <Target cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class='B'>"
-                "        <Key><Property name='AId'/></Key>"
-                "      </Class>"
+                "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
                 "   <ECRelationshipClass typeName='RelNN' strength='referencing' modifier='Sealed'>"
@@ -5895,7 +5588,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                 </MapStrategy>"
                     "            </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='AId' typeName='long' />"
+                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                     "        <ECProperty propertyName='BId' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='BB' modifier='None'>"
@@ -5907,9 +5600,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      <Class class='A' />"
                     "    </Source>"
                     "    <Target cardinality='(0,N)' polymorphic='True'>"
-                    "      <Class class='B'>"
-                    "        <Key><Property name='AId'/></Key>"
-                    "      </Class>"
+                    "      <Class class='B'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>", true);
@@ -5940,7 +5631,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                 </MapStrategy>"
                     "            </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='AId' typeName='long' />"
+                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                     "        <ECProperty propertyName='BId' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='BB' modifier='None'>"
@@ -5952,9 +5643,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      <Class class='A' />"
                     "    </Source>"
                     "    <Target cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='B'>"
-                    "        <Key><Property name='AId'/></Key>"
-                    "      </Class>"
+                    "      <Class class='B'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>", true, "");
@@ -5972,91 +5661,6 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "<?xml version='1.0' encoding='utf-8'?>"
                     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='A' modifier='None' >"
-                    "        <ECProperty propertyName='Id' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='B' modifier='None'>"
-                    "        <ECCustomAttributes>"
-                    "            <ClassMap xmlns='ECDbMap.01.00'>"
-                    "                <MapStrategy>"
-                    "                   <Strategy>SharedTable</Strategy>"
-                    "                   <Options>SharedColumns</Options>"
-                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
-                    "                 </MapStrategy>"
-                    "            </ClassMap>"
-                    "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='AId' typeName='long' />"
-                    "        <ECProperty propertyName='BId' typeName='long' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='B1' modifier='None'>"
-                    "        <BaseClass>B</BaseClass>"
-                    "        <ECProperty propertyName='B1Id' typeName='long' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='B2' modifier='None'>"
-                    "        <BaseClass>B</BaseClass>"
-                    "        <ECProperty propertyName='B2Id' typeName='long' />"
-                    "    </ECEntityClass>"
-                    "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' strength='embedding'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='A' />"
-                    "    </Source>"
-                    "    <Target cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='B1'>"
-                    "        <Key><Property name='B1Id'/></Key>"
-                    "      </Class>"
-                    "    </Target>"
-                    "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='AnotherRel11' modifier='Sealed' strength='embedding'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='A' />"
-                    "    </Source>"
-                    "    <Target cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='B1'>"
-                    "        <Key><Property name='B1Id'/></Key>"
-                    "      </Class>"
-                    "    </Target>"
-                    "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='Rel1N' modifier='Sealed' strength='embedding'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='A' />"
-                    "    </Source>"
-                    "    <Target cardinality='(1,N)' polymorphic='True'>"
-                    "      <Class class='B1'>"
-                    "        <Key><Property name='B1Id'/></Key>"
-                    "      </Class>"
-                    "    </Target>"
-                    "  </ECRelationshipClass>"
-                    "   <ECRelationshipClass typeName='Rel1NNoKeyProp' modifier='Sealed' strength='embedding'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='A' />"
-                    "    </Source>"
-                    "    <Target cardinality='(1,N)' polymorphic='True'>"
-                    "      <Class class='B1' />"
-                    "    </Target>"
-                    "  </ECRelationshipClass>"
-                    "</ECSchema>", true, "");
-
-                ECDb ecdb;
-                bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
-                ASSERT_FALSE(asserted);
-
-                ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%llu)", b1ClassId.GetValue());
-                AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel1N_target", false);
-                AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel1NNoKeyProp"}, "([ForeignECInstanceId_ts_Rel1NNoKeyProp] IS NOT NULL)");
-                AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
-
-                //Unique indexes on FK for Rel11 and AnotherRel11 are the same, therefore one is dropped
-                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
-                }
-
-                {
-                SchemaItem testItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None'>"
                     "        <ECProperty propertyName='Id' typeName='string' />"
                     "    </ECEntityClass>"
@@ -6067,18 +5671,9 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                   <Strategy>SharedTable</Strategy>"
                     "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
                     "                 </MapStrategy>"
-                    "                 <Indexes>"
-                    "                 <DbIndex>"
-                    "                   <Name>ix_B_AId</Name>"
-                    "                   <IsUnique>False</IsUnique>"
-                    "                   <Properties>"
-                    "                      <string>AId</string>"
-                    "                   </Properties>"
-                    "                 </DbIndex>"
-                    "                 </Indexes>"
                     "             </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECProperty propertyName='AId' typeName='long' />"
+                    "        <ECNavigationProperty propertyName='AId' relationshipName='long' direction='Backward' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='B1' modifier='None'>"
                     "        <BaseClass>B</BaseClass>"
@@ -6089,9 +5684,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "      <Class class='A'/>"
                     "    </Source>"
                     "    <Target cardinality='(1,N)' polymorphic='True'>"
-                    "      <Class class='B'>"
-                    "        <Key><Property name='AId'/></Key>"
-                    "      </Class>"
+                    "      <Class class='B'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "   <ECRelationshipClass typeName='RelSub1' modifier='Sealed' strength='referencing'>"
@@ -6590,57 +6183,6 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     ASSERT_TRUE(ddl.ContainsI("[AId_RelN1] INTEGER NOT NULL,"));
     }
 
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECEntityClass typeName='A'>"
-                        "        <ECProperty propertyName='AName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='B'>"
-                        "        <ECProperty propertyName='BName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'A' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'B'>"
-                        "           <Key>"
-                        "              <Property name='ECInstanceId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", false, "Key property ECInstanceId forces parent multiplicity of(1,1)");
-
-    AssertSchemaImport(testItem, "notnullconstraintsonfkcolumns.ecdb");
-    }
-
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECEntityClass typeName='A'>"
-                        "        <ECProperty propertyName='AName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='B'>"
-                        "        <ECProperty propertyName='BName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
-                        "    <Source cardinality='(1,1)' polymorphic='True'>"
-                        "      <Class class = 'A' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'B'>"
-                        "           <Key>"
-                        "              <Property name='ECInstanceId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "Key property ECInstanceId forces parent multiplicity of(1,1)");
-
-    AssertSchemaImport(testItem, "notnullconstraintsonfkcolumns.ecdb");
-    }
 
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -6783,158 +6325,8 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
     }
 
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                        "    <ECEntityClass typeName='A'>"
-                        "        <ECProperty propertyName='AName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='Base' modifier='Abstract'>"
-                        "      <ECCustomAttributes>"
-                        "        <ClassMap xmlns='ECDbMap.01.00'>"
-                        "             <MapStrategy>"
-                        "                <Strategy>SharedTable</Strategy>"
-                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
-                        "             </MapStrategy>"
-                        "        </ClassMap>"
-                        "      </ECCustomAttributes>"
-                        "       <ECProperty propertyName='BaseName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='Sub' modifier='Abstract'>"
-                        "        <BaseClass>Base</BaseClass>"
-                        "        <ECProperty propertyName='SubName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='SubSub'>"
-                        "        <BaseClass>Sub</BaseClass>"
-                        "        <ECProperty propertyName='SubSubName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
-                        "    <Source cardinality='(1,1)' polymorphic='True'>"
-                        "      <Class class = 'A' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Sub'>"
-                        "           <Key>"
-                        "              <Property name='ECInstanceId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkwhichispk.ecdb");
-    ASSERT_FALSE(asserted);
-
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_Base");
-    ASSERT_FALSE(ddl.empty());
-    ASSERT_TRUE(ddl.ContainsI("[ECInstanceId] INTEGER PRIMARY KEY,")) << "Actual DDL: " << ddl.c_str();
-    }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, DroppedFkConstraintsForSharedKeyProperties)
-    {
-    SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                        "    <ECEntityClass typeName='A'>"
-                        "        <ECProperty propertyName='AName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='B'>"
-                        "     <ECCustomAttributes>"
-                        "        <ClassMap xmlns='ECDbMap.01.00'>"
-                        "             <MapStrategy>"
-                        "                <Strategy>SharedTable</Strategy>"
-                        "                <AppliesToSubclasses>True</AppliesToSubclasses>"
-                        "             </MapStrategy>"
-                        "        </ClassMap>"
-                        "     </ECCustomAttributes>"
-                        "        <ECProperty propertyName='BName' typeName='string' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='B1Sub'>"
-                        "     <ECCustomAttributes>"
-                        "        <ClassMap xmlns='ECDbMap.01.00'>"
-                        "             <MapStrategy>"
-                        "                <Options>SharedColumns</Options>"
-                        "             </MapStrategy>"
-                        "        </ClassMap>"
-                        "     </ECCustomAttributes>"
-                        "        <BaseClass>B</BaseClass>"
-                        "        <ECProperty propertyName='B1SubName' typeName='string' />"
-                        "        <ECProperty propertyName='AId' typeName='long' />"
-                        "    </ECEntityClass>"
-                        "    <ECEntityClass typeName='B2Sub'>"
-                        "        <BaseClass>B</BaseClass>"
-                        "        <ECProperty propertyName='B2SubName' typeName='string' />"
-                        "        <ECProperty propertyName='AId' typeName='long' />"
-                        "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='Rel1' strength='embedding' modifier='Sealed'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'A' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'B1Sub'>"
-                        "           <Key>"
-                        "              <Property name='AId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "  <ECRelationshipClass typeName='Rel2' strength='embedding' modifier='Sealed'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'A' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'B2Sub'>"
-                        "           <Key>"
-                        "              <Property name='AId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "fkconstraintsonsharedcolumns.ecdb");
-    ASSERT_FALSE(asserted);
-
-    AssertForeignKey(false, ecdb, "ts_B", "sc_02");
-    AssertForeignKey(true, ecdb, "ts_B", "AId");
-
-    ECInstanceKey sourceKey;
-    ECInstanceKey targetKey;
-    ECInstanceKey relKey;
-
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.A VALUES('A_prop')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(sourceKey));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.B1Sub(BName, B1SubName) VALUES('B_prop', 'B1Sub_prop')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step(targetKey));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Rel1(SourceECInstanceId, TargetECInstanceId, SourceECClassId, TargetECClassId) VALUES(?,?,?,?)"));
-    statement.BindId(1, sourceKey.GetECInstanceId());
-    statement.BindId(2, targetKey.GetECInstanceId());
-    statement.BindId(3, sourceKey.GetECClassId());
-    statement.BindId(4, targetKey.GetECClassId());
-    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(relKey));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT SourceECInstanceId, TargetECInstanceId FROM ts.Rel1 WHERE ECInstanceId = ?"));
-    statement.BindId(1, relKey.GetECInstanceId());
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(sourceKey.GetECInstanceId().GetValue(), statement.GetValueUInt64(0));
-    ASSERT_EQ(targetKey.GetECInstanceId().GetValue(), statement.GetValueUInt64(1));
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  03/16
@@ -7673,524 +7065,13 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
     AssertSchemaImport(testItem, "ForeignKeyMapWhereLinkTableIsRequired.ecdb");
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithKeyProperty)
-    {
-    Utf8CP ecdbName = "ForeignKeyMapWithKeyProp.ecdb";
-
-    {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECProperty propertyName='ParentId' typeName='long' />"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <ECCustomAttributes>"
-        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
-        "        </ForeignKeyRelationshipMap>"
-        "    </ECCustomAttributes>"
-        "    <Source cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ParentId'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", false, "ForeignKeyColumn should not be specified if Key property is defined."));
-
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECProperty propertyName='ParentId' typeName='long' />"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <ECCustomAttributes>"
-        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "            <ForeignKeyColumn>MyOwnParentId</ForeignKeyColumn>"
-        "        </ForeignKeyRelationshipMap>"
-        "    </ECCustomAttributes>"
-        "    <Source cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ParentId'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", false, "ForeignKeyColumn should not be specified if Key property is defined."));
-
-    testItems.push_back(SchemaItem(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECProperty propertyName='ParentId' typeName='long' />"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <Source cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ParentId'/>"
-        "              <Property name='ChildName'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", false, "Only one key property is supported by ECDb."));
-
-    AssertSchemaImport(testItems, ecdbName);
-    }
-
-    Utf8CP childTableName = "ts_Child";
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Parent' >"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child' >"
-                        "    <ECProperty propertyName='ParentId' typeName='long' />"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ParentId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-    std::vector<Utf8String> columnsP(columns.begin(), columns.end());
-    ASSERT_EQ(3, columnsP.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-    //  ---------<
-    //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
-    AssertForeignKey(true, ecdb, childTableName);
-    //  --------->
-    }
-
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Parent' >"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child' >"
-                        "    <ECProperty propertyName='ParentId' typeName='long'>"
-                        "       <ECCustomAttributes>"
-                        "          <PropertyMap xmlns='ECDbMap.01.00'>"
-                        "            <ColumnName>parent_id</ColumnName>"
-                        "          </PropertyMap>"
-                        "       </ECCustomAttributes>"
-                        "   </ECProperty>"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ParentId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "parent_id"));
-    ASSERT_FALSE(ecdb.ColumnExists(childTableName, "ParentId"));
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-    ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    //  ---------<
-    //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
-    AssertForeignKey(true, ecdb, childTableName);
-    //  --------->
-    }
-
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Parent' >"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child' >"
-                        "    <ECProperty propertyName='ParentId' typeName='long' />"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
-                        "    </ECCustomAttributes>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ParentId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-    ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    AssertForeignKey(true, ecdb, childTableName, "ParentId");
-    }
-
-    {
-    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Authority' >"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECStructClass typeName='ElementCode'>"
-                        "    <ECProperty propertyName='AuthorityId' typeName='int' />"
-                        "    <ECProperty propertyName='Namespace' typeName='string' />"
-                        "    <ECProperty propertyName='Code' typeName='string' />"
-                        "  </ECStructClass>"
-                        "  <ECEntityClass typeName='Element' >"
-                        "    <ECProperty propertyName='ModelId' typeName='long' />"
-                        "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='AuthorityIssuesCode' modifier='Sealed' strength='referencing'>"
-                        "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-                        "             <OnDeleteAction>NoAction</OnDeleteAction>"
-                        "        </ForeignKeyRelationshipMap>"
-                        "    </ECCustomAttributes>"
-                        "    <Source cardinality='(0,1)' polymorphic='False'>"
-                        "        <Class class='Authority' />"
-                        "     </Source>"
-                        "     <Target cardinality='(0,N)' polymorphic='True'>"
-                        "         <Class class='Element'>"
-                        "             <Key>"
-                        "                 <Property name='Code.AuthorityId'/>"
-                        "             </Key>"
-                        "         </Class>"
-                        "     </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists("ts_Element", "Code_AuthorityId"));
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, "ts_Element"));
-    ASSERT_EQ(5, columns.size()) << " ts_Element table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << " ts_Element table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    AssertForeignKey(true, ecdb, "ts_Element", "Code_AuthorityId");
-    }
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithECInstanceIdKeyProperty)
+TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
     {
-    Utf8CP ecdbName = "ForeignKeyMapWithECInstanceIdKeyProp.ecdb";
-
-    {
-    std::vector<SchemaItem> testItems {SchemaItem(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <ECCustomAttributes>"
-        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "            <ForeignKeyColumn>ECInstanceId</ForeignKeyColumn>"
-        "        </ForeignKeyRelationshipMap>"
-        "    </ECCustomAttributes>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ECInstanceId'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", false, ""),
-
-        SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <ECCustomAttributes>"
-        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "            <ForeignKeyColumn>blabla</ForeignKeyColumn>"
-        "        </ForeignKeyRelationshipMap>"
-        "    </ECCustomAttributes>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ECInstanceId'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", false, "Value in ForeignKeyColumn property does not exist")};
-
-    AssertSchemaImport(testItems, ecdbName);
-    }
-
-    Utf8CP childTableName = "ts_Child";
-    {
-    SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-                        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-                        "  <ECEntityClass typeName='Parent' >"
-                        "    <ECProperty propertyName='Name' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECEntityClass typeName='Child' >"
-                        "    <ECProperty propertyName='ChildName' typeName='string' />"
-                        "  </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-                        "    <Source cardinality='(1,1)' polymorphic='True'>"
-                        "      <Class class = 'Parent' />"
-                        "    </Source>"
-                        "    <Target cardinality='(0,1)' polymorphic='True'>"
-                        "      <Class class = 'Child' >"
-                        "           <Key>"
-                        "              <Property name='ECInstanceId'/>"
-                        "           </Key>"
-                        "      </Class>"
-                        "    </Target>"
-                        "  </ECRelationshipClass>"
-                        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ECInstanceId"));
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-    ASSERT_EQ(2, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies that the ECInstanceId is the foreign key";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    //  ---------<
-    //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
-    AssertForeignKey(true, ecdb, childTableName);
-    //  --------->
-    }
-
-    {
-    SchemaItem testItem(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ECInstanceId'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "Id"));
-    ASSERT_FALSE(ecdb.ColumnExists(childTableName, "ECInstanceId"));
-
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-    ASSERT_EQ(2, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies that the ECInstanceId is the foreign key";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    //  ---------<
-    //  In following we expected 'false' but with trigger replaced with FK. We create FK constraint automatically so now it set to 'true'
-    AssertForeignKey(true, ecdb, childTableName);
-    //  --------->
-    }
-
-    {
-    SchemaItem testItem(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
-        "  <ECEntityClass typeName='Parent' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='Child' >"
-        "    <ECCustomAttributes>"
-        "        <ClassMap xmlns='ECDbMap.01.00'>"
-        "            <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
-        "        </ClassMap>"
-        "    </ECCustomAttributes>"
-        "    <ECProperty propertyName='ChildName' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ParentHasChildren' modifier='Sealed' strength='referencing'>"
-        "    <ECCustomAttributes>"
-        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
-        "    </ECCustomAttributes>"
-        "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "      <Class class = 'Parent' />"
-        "    </Source>"
-        "    <Target cardinality='(0,1)' polymorphic='True'>"
-        "      <Class class = 'Child' >"
-        "           <Key>"
-        "              <Property name='ECInstanceId'/>"
-        "           </Key>"
-        "      </Class>"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, ecdbName);
-    ASSERT_FALSE(asserted);
-
-    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "Id"));
-    ASSERT_FALSE(ecdb.ColumnExists(childTableName, "ECInstanceId"));
-
-    bvector<Utf8String> columns;
-    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
-    ASSERT_EQ(2, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies that the ECInstanceId is the foreign key";
-
-    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
-    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
-
-    AssertForeignKey(true, ecdb, childTableName, "Id");
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMapWithoutKeyProperty)
-    {
-    Utf8CP ecdbName = "ForeignKeyMapWithoutKeyProp.ecdb";
+    Utf8CP ecdbName = "ForeignKeyRelationshipMap.ecdb";
     Utf8CP childTableName = "ts_Child";
 
 

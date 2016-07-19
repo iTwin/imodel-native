@@ -86,7 +86,6 @@
         </Source>
         <Target cardinality="(0,N)" polymorphic="true">
             <Class class="DoubleDerivedA"/>
-			<Class class="DoubleDerivedB"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="DoubleDerivedC" modifier="None">

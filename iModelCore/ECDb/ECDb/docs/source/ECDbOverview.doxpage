@@ -314,11 +314,8 @@
     Rules already enforced by ECObjects are not listed here.
 
     ### ECRelationshipClasses
-    - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
-    common to databases: (0..1), (1..1), (0..N), (1..N).
-    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
-    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
-     
+    - See @ref ECDbRelationshipRules
+
     ### Enumerations
     - %ECDb does not enforce @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "strict" 
     @ref BentleyApi::ECN::ECEnumeration "ECEnumerations". For %ECProperties that
@@ -336,6 +333,17 @@
     The specification of @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" allows for constructs which don't necessarily
     lead to a good database design. ECDb therefore only supports @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that 
     can be mapped to a reasonable database layout.
+
+    ## Features supported but not enforced
+    - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipCardinality "ECRelationshipConstraint multiplicities" 
+    common to databases: (0..1), (1..1), (0..N), (1..N).
+    Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
+    - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
+
+    ## EC3 Rules enforced by ECDb but not yet by ECObjects
+    These rules will eventually be enforced by ECObjects. Until then, ECDb fails to import ECSchemas which violate against these rules.
+    - Exactly one and only one @ref BentleyApi::ECN::ECClass "ECClass" must be defined per @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
+    - @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties" are not supported
 
     ## ECRelationshipClass Definition Consistency
     Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
@@ -416,11 +424,6 @@
     @ref BentleyApi::ECN::Holding "Holding" foreign key constraints exist to delete the relationship @em instances. But ECDb
     does not delete the actual orphaned instances automatically because there are different ways to interpret and implement the strength 
     @ref BentleyApi::ECN::Holding "Holding". Consequently, <b>%ECDb treats Holding relationships as Referencing relationships</b>.
-
-    For @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" that specify 
-    @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties" the <em>foreign key</em> and
-    <em>not null</em> constraints cannot be created if the <em>Key property</em> is mapped to a column shared with other properties
-    from other classes (see @ref CustomClassMapDescription for details on column sharing).
     
     Column sharing generally cannot be combined with per-column constraints.
 
@@ -646,14 +649,13 @@
     - <b>OnDeleteAction</b>: Possible values: NoAction (default), Cascade (deletes child rows when parent row is deleted), SetNull(foreign key property in child is set to NULL), Restrict (cannot delete parent if it still has children).
     - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated).
     - <b>CreateIndex</b>: If true (default), an index will be created on the foreign key column(s). If false, no index will be created.
-    - <b>ForeignKeyColumn</b>: (optional) Defines the foreign key column. This should only be set if neither a 
-    @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" nor a @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key property"
-    is defined on the respective constraint class, because in that case the mapping of the Key property is considered. If this value is not set and
-    neither a Key property nor a NavigationECProperty was specified, %ECDb generates a column with a default name.
+    - <b>ForeignKeyColumn</b>: (optional) Defines the foreign key column. This should only be set if no 
+    @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" is defined on the respective constraint class, because in that case the mapping of the 
+    NavigationECProperty is considered. If neither is specified, %ECDb generates a column with a default name.
 
     @note ECDb by default creates a Foreign Key column with a Foreign Key constraint for the relationship and implies its NOT NULL and UNIQUE constraints 
     from the ECRelationshipClass' cardinality. If, however, the ECRelationshipClass specifies to use an existing column (either via 
-    using the @em ForeignKeyColumn property or via defining @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties"), the following
+    using the @em ForeignKeyColumn property or because of using the MapStrategy 'ExistingTable'), the following
     restrictions exist:
         - the Foreign Key constraint will not be created and a warning will be logged.
         - if the existing column is nullable but the relationship's cardinality implies it to be not nullable, or vice versa, the ECSchema import will fail.

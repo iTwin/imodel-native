@@ -481,10 +481,10 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
+    //We cannot enforce one class per constraint yet
     if (constraintClassCount == 0)
         {
-        //constraint must have classes
-        m_error->AddInconsistency(relClass, Error::Kind::IncompleteConstraintDefinition);
+        m_error->AddInconsistency(relClass, constraintClassCount == 0 ? Error::Kind::HasIncompleteConstraintDefinition : Error::Kind::HasMultipleConstraintClasses);
         return false;
         }
 
@@ -502,6 +502,12 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
         if (relClassAsConstraint != nullptr)
             {
             m_error->AddInconsistency(relClass, Error::Kind::HasRelationshipClassAsConstraint, relClassAsConstraint);
+            valid = false;
+            }
+
+        if (!constraintClass->GetKeys().empty())
+            {
+            m_error->AddInconsistency(relClass, Error::Kind::HasKeyProperties);
             valid = false;
             }
         }
@@ -553,8 +559,14 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
             str.append(" The relationship class ").append(inconsistency.m_relationshipClassAsConstraintClass->GetFullName()).append(" is specified as constraint class which is not supported.");
             }
 
-        if (Enum::Contains(kind, Kind::IncompleteConstraintDefinition))
+        if (Enum::Contains(kind, Kind::HasIncompleteConstraintDefinition))
             str.append(" At least one constraint definition is not complete.");
+
+        if (Enum::Contains(kind, Kind::HasMultipleConstraintClasses))
+            str.append(" At least one constraint is made up of more than one ECClass. A constraint must only have one class at most.");
+
+        if (Enum::Contains(kind, Kind::HasKeyProperties))
+            str.append(" At least one constraint defines Key properties. Key properties are not supported in EC3 ECSchemas.");
 
         isFirstItem = false;
         }

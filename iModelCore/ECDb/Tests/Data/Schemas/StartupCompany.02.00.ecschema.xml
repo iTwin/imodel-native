@@ -2,7 +2,6 @@
 <ECSchema schemaName="StartupCompany" nameSpacePrefix="stco" version="02.00" description="My Startup Company" displayLabel="My Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
-    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="unitSpec"/>
     <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaMap xmlns="ECDbMap.01.00.01">
@@ -755,8 +754,7 @@
             <Class class="Employee"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="Furniture assigned to employee" polymorphic="true">
-            <Class class="Chair"/>
-            <Class class="Desk"/>
+            <Class class="Furniture"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeHardware" modifier="Sealed" strength="referencing" strengthDirection="forward">

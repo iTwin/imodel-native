@@ -719,23 +719,14 @@ void NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb (BeSQLite::E
         //Create and Insert Constraint Classes Instances and then for relationship class DerivedBOwnsChilds, relationship contains multiple target classes also containing structArray properties.
         ECRelationshipClassCP derivedBHasChildren = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "DerivedBHasChildren")->GetRelationshipClassCP ();
         instances = CreateECInstanceWithOutStructArrayProperty (ecdb, 1, "DerivedB");
-        for (auto sourceInstance : instances)
+        for (IECInstancePtr sourceInstance : instances)
             {
             BeSQLite::EC::ECInstanceInserter sourceInserter (ecdb, sourceInstance->GetClass ());
             ASSERT_TRUE (sourceInserter.IsValid ());
             ASSERT_EQ (BentleyStatus::SUCCESS, sourceInserter.Insert (*sourceInstance, true));
 
-            bvector<IECInstancePtr> targetInstances = CreateECInstanceWithOutStructArrayProperty (ecdb, 2, "DoubleDerivedB");
-            for (auto targetInstance : targetInstances)
-                {
-                BeSQLite::EC::ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());
-                ASSERT_TRUE (targetInserter.IsValid ());
-                ASSERT_EQ (BentleyStatus::SUCCESS, targetInserter.Insert (*targetInstance, true));
-                InsertRelationshipInstance (ecdb, sourceInstance, targetInstance, derivedBHasChildren);
-                }
-
-            targetInstances = CreateECInstances (ecdb, 2, "DoubleDerivedA");
-            for (auto targetInstance : targetInstances)
+            bvector<IECInstancePtr> targetInstances = CreateECInstances (ecdb, 2, "DoubleDerivedA");
+            for (IECInstancePtr targetInstance : targetInstances)
                 {
                 BeSQLite::EC::ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());
                 ASSERT_TRUE (targetInserter.IsValid ());

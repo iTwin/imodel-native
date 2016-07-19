@@ -871,11 +871,139 @@ TEST_F(ECDbSchemaRules, RelationshipCardinalityTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
+    {
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "  <ECEntityClass typeName='Foo' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Goo' >"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source cardinality='(0,1)' polymorphic='False'>"
+                   "        <Class class='Foo' />"
+                   "     </Source>"
+                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "         <Class class='Goo'/>"
+                   "         <Class class='Hoo'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Multiple constraint classes are not supported by EC3 and ECDb"),
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "  <ECEntityClass typeName='Foo' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Goo' >"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source cardinality='(0,1)' polymorphic='False'>"
+                   "        <Class class='Foo' />"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "         <Class class='Goo'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   false, "Multiple constraint classes are not supported by EC3 and ECDb"),
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "  <ECEntityClass typeName='Base' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Sub' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source cardinality='(0,1)' polymorphic='False'>"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "         <Class class='Base'/>"
+                   "         <Class class='Sub'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Multiple constraint classes are not supported by EC3 and ECDb"),
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                   "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                   "  <ECEntityClass typeName='Base' >"
+                   "     <ECCustomAttributes>"
+                   "         <ClassMap xmlns='ECDbMap.01.00'>"
+                   "             <MapStrategy>"
+                   "                 <Strategy>SharedTable</Strategy>"
+                   "                 <AppliesToSubclasses>True</AppliesToSubclasses>"
+                   "             </MapStrategy>"
+                   "         </ClassMap>"
+                   "     </ECCustomAttributes>"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Sub' >"
+                   "    <BaseClass>Base</BaseClass>"
+                   "    <ECProperty propertyName='Length' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Hoo' >"
+                   "    <ECProperty propertyName='Width' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source cardinality='(0,1)' polymorphic='False'>"
+                   "         <Class class='Hoo'/>"
+                   "     </Source>"
+                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "         <Class class='Base'/>"
+                   "         <Class class='Sub'/>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   true, "Multiple constraint classes are not supported by EC3 and ECDb")
+        };
+
+    AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
     {
     std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Authority' >"
+                   "    <ECProperty propertyName='Name' typeName='string' />"
+                   "  </ECEntityClass>"
+                   "  <ECEntityClass typeName='Element' >"
+                   "    <ECProperty propertyName='ModelId' typeName='long' />"
+                   "  </ECEntityClass>"
+                   "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                   "     <Source cardinality='(0,1)' polymorphic='False'>"
+                   "        <Class class='Authority' />"
+                   "     </Source>"
+                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "         <Class class='Element'>"
+                   "             <Key>"
+                   "                 <Property name='ModelId'/>"
+                   "             </Key>"
+                   "         </Class>"
+                   "     </Target>"
+                   "  </ECRelationshipClass>"
+                   "</ECSchema>",
+                   false, "Key properties are no longer supported by EC3 and ECDb"),
+
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                       "  <ECEntityClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
@@ -902,42 +1030,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "     </Target>"
                       "  </ECRelationshipClass>"
                       "</ECSchema>",
-                 true, ""),
-
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                   "  <ECEntityClass typeName='Authority' >"
-                   "    <ECProperty propertyName='Name' typeName='string' />"
-                   "  </ECEntityClass>"
-                   "  <ECStructClass typeName='ElementCode' >"
-                   "    <ECProperty propertyName='AuthorityId' typeName='int' >"
-                   "     <ECCustomAttributes>"
-                   "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                   "             <IsNullable>false</IsNullable>"
-                   "        </PropertyMap>"
-                   "     </ECCustomAttributes>"
-                   "    </ECProperty>"
-                   "    <ECProperty propertyName='Namespace' typeName='string' />"
-                   "    <ECProperty propertyName='Code' typeName='string' />"
-                   "  </ECStructClass>"
-                   "  <ECEntityClass typeName='Element' >"
-                   "    <ECProperty propertyName='ModelId' typeName='long' />"
-                   "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                   "  </ECEntityClass>"
-                   "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                   "    <Source cardinality='(1,1)' polymorphic='False'>"
-                   "        <Class class='Authority' />"
-                   "     </Source>"
-                   "     <Target cardinality='(0,N)' polymorphic='True'>"
-                   "         <Class class='Element'>"
-                   "             <Key>"
-                   "                 <Property name='Code.AuthorityId'/>"
-                   "             </Key>"
-                   "         </Class>"
-                   "     </Target>"
-                   "  </ECRelationshipClass>"
-                   "</ECSchema>",
-                   true, ""),
+                 false, "Key properties are no longer supported by EC3 and ECDb"),
 
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                       "  <ECEntityClass typeName='Authority' >"
@@ -965,7 +1058,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "     </Target>"
                       "  </ECRelationshipClass>"
                       "</ECSchema>",
-                 false, "Struct property not allowed as key property"),
+                   false, "Key properties are no longer supported by EC3 and ECDb"),
 
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                  "  <ECEntityClass typeName='Authority' >"
@@ -993,91 +1086,8 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "     </Target>"
                  "  </ECRelationshipClass>"
                  "</ECSchema>",
-                 false, "Property does not exist"),
+                   false, "Key properties are no longer supported by EC3 and ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                 "  <ECEntityClass typeName='Authority' >"
-                 "    <ECProperty propertyName='Name' typeName='string' />"
-                 "  </ECEntityClass>"
-                 "  <ECStructClass typeName='ElementCode' >"
-                 "    <ECProperty propertyName='AuthorityId' typeName='int' />"
-                 "    <ECProperty propertyName='Namespace' typeName='string' />"
-                 "    <ECProperty propertyName='Code' typeName='string' />"
-                 "  </ECStructClass>"
-                 "  <ECEntityClass typeName='Element' >"
-                 "    <ECProperty propertyName='ModelId' typeName='long' />"
-                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                 "  </ECEntityClass>"
-                 "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='False'>"
-                 "        <Class class='Authority' />"
-                 "     </Source>"
-                 "     <Target cardinality='(0,N)' polymorphic='True'>"
-                 "         <Class class='Element'>"
-                 "             <Key>"
-                 "                 <Property name='CodeBla.AuthorityId'/>"
-                 "             </Key>"
-                 "         </Class>"
-                 "     </Target>"
-                 "  </ECRelationshipClass>"
-                 "</ECSchema>",
-                 false, "Property path does not exist"),
-
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "  <ECEntityClass typeName='Authority' >"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECStructClass typeName='ElementCode' >"
-                "    <ECProperty propertyName='AuthorityId' typeName='int' />"
-                "    <ECProperty propertyName='Namespace' typeName='string' />"
-                "    <ECProperty propertyName='Code' typeName='string' />"
-                "  </ECStructClass>"
-                "  <ECEntityClass typeName='Element' >"
-                "    <ECProperty propertyName='ModelId' typeName='long' />"
-                "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='False'>"
-                "        <Class class='Authority' />"
-                "     </Source>"
-                "     <Target cardinality='(0,N)' polymorphic='True'>"
-                "         <Class class='Element'>"
-                "             <Key>"
-                "                 <Property name='Code.AuthorityIdBla'/>"
-                "             </Key>"
-                "         </Class>"
-                "     </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>",
-                false, "Property path does not exist"),
-
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "  <ECEntityClass typeName='Authority' >"
-            "    <ECProperty propertyName='Name' typeName='string' />"
-            "  </ECEntityClass>"
-            "  <ECStructClass typeName='ElementCode' >"
-            "    <ECProperty propertyName='AuthorityId' typeName='int' />"
-            "    <ECProperty propertyName='Namespace' typeName='string' />"
-            "    <ECProperty propertyName='Code' typeName='string' />"
-            "  </ECStructClass>"
-            "  <ECEntityClass typeName='Element' >"
-            "    <ECProperty propertyName='ModelId' typeName='long' />"
-            "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-            "  </ECEntityClass>"
-            "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-            "    <Source cardinality='(0,1)' polymorphic='False'>"
-            "        <Class class='Authority' />"
-            "     </Source>"
-            "     <Target cardinality='(0,N)' polymorphic='True'>"
-            "         <Class class='Element'>"
-            "             <Key>"
-            "                 <Property name='Code.AuthorityId.Bla'/>"
-            "             </Key>"
-            "         </Class>"
-            "     </Target>"
-            "  </ECRelationshipClass>"
-            "</ECSchema>",
-             false, "Property path does not exist"),
 
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "  <ECEntityClass typeName='Authority' >"
@@ -1106,196 +1116,8 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "     </Target>"
                 "  </ECRelationshipClass>"
                 "</ECSchema>",
-                false, "Multiple key properties are not supported"),
+                   false, "Key properties are no longer supported by EC3 and ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "  <ECEntityClass typeName='Authority' >"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECStructClass typeName='ElementCode' >"
-                "    <ECProperty propertyName='AuthorityId' typeName='int' />"
-                "    <ECProperty propertyName='Namespace' typeName='string' />"
-                "    <ECProperty propertyName='Code' typeName='string' />"
-                "  </ECStructClass>"
-                "  <ECEntityClass typeName='Element' >"
-                "    <ECProperty propertyName='ModelId' typeName='long' />"
-                "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                "     <Source cardinality='(0,1)' polymorphic='False'>"
-                "        <Class class='Authority' />"
-                "     </Source>"
-                "     <Target cardinality='(0,N)' polymorphic='True'>"
-                "         <Class class='Element'>"
-                "             <Key>"
-                "                 <Property name='ModelId'/>"
-                "             </Key>"
-                "         </Class>"
-                 "        <Class class='Authority' />"
-                 "     </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>",
-                false, "Multiple classes in a constraint with key properties are not supported"),
-
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "  <ECEntityClass typeName='Parent' >"
-                    "    <ECProperty propertyName='Name' typeName='string' />"
-                    "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Child' >"
-                    "    <ECProperty propertyName='ParentId' typeName='long' />"
-                    "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                    "    <Source cardinality='(0,1)' polymorphic='False'>"
-                    "        <Class class='Parent' />"
-                    "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
-                    "         <Class class='Child'>"
-                    "             <Key>"
-                    "                 <Property name='ParentId'/>"
-                    "             </Key>"
-                    "         </Class>"
-                    "     </Target>"
-                    "  </ECRelationshipClass>"
-                    "</ECSchema>",
-                    true, "Parent multiplicity matches nullability of key property"),
-
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                "  <ECEntityClass typeName='Parent' >"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child' >"
-                "    <ECProperty propertyName='ParentId' typeName='long'>"
-                "     <ECCustomAttributes>"
-                "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                "             <IsNullable>true</IsNullable>"
-                "        </PropertyMap>"
-                "     </ECCustomAttributes>"
-                "    </ECProperty>"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='False'>"
-                "        <Class class='Parent' />"
-                "     </Source>"
-                "     <Target cardinality='(0,N)' polymorphic='True'>"
-                "         <Class class='Child'>"
-                "             <Key>"
-                "                 <Property name='ParentId'/>"
-                "             </Key>"
-                "         </Class>"
-                "     </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>",
-                true, "Parent multiplicity matches nullability of key property"),
-
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                "  <ECEntityClass typeName='Parent' >"
-                "    <ECProperty propertyName='Name' typeName='string' />"
-                "  </ECEntityClass>"
-                "  <ECEntityClass typeName='Child' >"
-                "    <ECProperty propertyName='ParentId' typeName='long'>"
-                "     <ECCustomAttributes>"
-                "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                "             <IsNullable>false</IsNullable>"
-                "        </PropertyMap>"
-                "     </ECCustomAttributes>"
-                "    </ECProperty>"
-                "  </ECEntityClass>"
-                "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='False'>"
-                "        <Class class='Parent' />"
-                "     </Source>"
-                "     <Target cardinality='(0,N)' polymorphic='True'>"
-                "         <Class class='Child'>"
-                "             <Key>"
-                "                 <Property name='ParentId'/>"
-                "             </Key>"
-                "         </Class>"
-                "     </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>",
-                false, "Parent multiplicity (0,1) and key property not nullable doesn't match"),
-
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "  <ECEntityClass typeName='Parent' >"
-                    "    <ECProperty propertyName='Name' typeName='string' />"
-                    "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Child' >"
-                    "    <ECProperty propertyName='ParentId' typeName='long'>"
-                    "     <ECCustomAttributes>"
-                    "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                    "             <IsNullable>false</IsNullable>"
-                    "        </PropertyMap>"
-                    "     </ECCustomAttributes>"
-                    "    </ECProperty>"
-                    "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                    "    <Source cardinality='(1,1)' polymorphic='False'>"
-                    "        <Class class='Parent' />"
-                    "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
-                    "         <Class class='Child'>"
-                    "             <Key>"
-                    "                 <Property name='ParentId'/>"
-                    "             </Key>"
-                    "         </Class>"
-                    "     </Target>"
-                    "  </ECRelationshipClass>"
-                    "</ECSchema>",
-                    true, "Parent multiplicity (1,1) and key property not nullable does match"),
-
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                    "  <ECEntityClass typeName='Parent' >"
-                    "    <ECProperty propertyName='Name' typeName='string' />"
-                    "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Child' >"
-                    "    <ECProperty propertyName='ParentId' typeName='long'>"
-                    "     <ECCustomAttributes>"
-                    "        <PropertyMap xmlns='ECDbMap.01.00'>"
-                    "             <IsNullable>true</IsNullable>"
-                    "        </PropertyMap>"
-                    "     </ECCustomAttributes>"
-                    "    </ECProperty>"
-                    "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                    "    <Source cardinality='(1,1)' polymorphic='False'>"
-                    "        <Class class='Parent' />"
-                    "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
-                    "         <Class class='Child'>"
-                    "             <Key>"
-                    "                 <Property name='ParentId'/>"
-                    "             </Key>"
-                    "         </Class>"
-                    "     </Target>"
-                    "  </ECRelationshipClass>"
-                    "</ECSchema>",
-                    false, "Parent multiplicity (1,1) and key property nullable does not match"),
-
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "  <ECEntityClass typeName='Parent' >"
-                    "    <ECProperty propertyName='Name' typeName='string' />"
-                    "  </ECEntityClass>"
-                    "  <ECEntityClass typeName='Child' >"
-                    "    <ECProperty propertyName='ParentId' typeName='long' />"
-                    "  </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
-                    "    <Source cardinality='(1,1)' polymorphic='False'>"
-                    "        <Class class='Parent' />"
-                    "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
-                    "         <Class class='Child'>"
-                    "             <Key>"
-                    "                 <Property name='ParentId'/>"
-                    "             </Key>"
-                    "         </Class>"
-                    "     </Target>"
-                    "  </ECRelationshipClass>"
-                    "</ECSchema>",
-                    false, "Parent multiplicity (1,1) and key property nullable does not match"),
 
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "  <ECEntityClass typeName='A'>"
@@ -1314,7 +1136,8 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                    "      </Class>"
                    "    </Target>"
                     "  </ECRelationshipClass>"
-                    "</ECSchema>", false, "Relationship mapped as link table must not define Key property"),
+                    "</ECSchema>", 
+                   false, "Key properties are no longer supported by EC3 and ECDb"),
 
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "  <ECEntityClass typeName='A'>"
@@ -1342,7 +1165,8 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                     "      </Class>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
-                    "</ECSchema>", false, "Relationship subclass cannot define Key property")
+                    "</ECSchema>", 
+                   false, "Key properties are no longer supported by EC3 and ECDb"),
         };
 
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
@@ -1356,9 +1180,9 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
     {
     //insert relationship
     Utf8String ecsql;
-    ecsql.Sprintf("INSERT INTO %s.%s(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%llu,%llu,%llu,%llu)",
-                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId().GetValue(),
-                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId().GetValue());
+    ecsql.Sprintf("INSERT INTO %s.%s(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(%s,%s,%s,%s)",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().ToString().c_str(), sourceKey.GetECClassId().ToString().c_str(),
+                  targetKey.GetECInstanceId().ToString().c_str(), targetKey.GetECClassId().ToString().c_str());
 
     ECSqlStatement stmt;
     if (expectedReadonly)
