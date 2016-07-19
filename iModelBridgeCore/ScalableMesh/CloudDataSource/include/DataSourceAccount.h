@@ -50,10 +50,10 @@ CLOUD_EXPORT                            DataSourceAccount               (const S
     virtual DataSourceStatus            setAccount                      (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
             
     void                                setServiceName                  (const ServiceName &name);
-    const ServiceName &                 getServiceName                  (void) const;
+CLOUD_EXPORT    const ServiceName &     getServiceName                  (void) const;
 
     void                                setAccountName                  (const AccountName &name);
-    const AccountName &                 getAccountName                  (void) const;
+CLOUD_EXPORT    const AccountName &     getAccountName                  (void) const;
 
     void                                setAccountIdentifier            (const AccountIdentifier &identifier);
     const AccountIdentifier &           getAccountIdentifier            (void) const;

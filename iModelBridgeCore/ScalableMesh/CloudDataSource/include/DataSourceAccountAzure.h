@@ -48,6 +48,7 @@ protected:
 
 public:
                                             DataSourceAccountAzure              (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+        virtual                            ~DataSourceAccountAzure              (void) = default;
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 

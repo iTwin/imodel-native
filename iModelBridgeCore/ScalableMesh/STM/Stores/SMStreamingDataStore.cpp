@@ -14,4 +14,4 @@
 
 template class SMStreamingStore<DRange3d>;
 
-//template class SMSQLiteNodePointStore<DPoint3d, DRange3d>;
+template class SMStreamingNodeDataStore<DPoint3d, DRange3d>;

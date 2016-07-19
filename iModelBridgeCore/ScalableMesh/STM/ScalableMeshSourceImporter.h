@@ -12,9 +12,9 @@
 
 /*----------------------------------------------------------------------+
 |                                                                       |
-|    ScalableMeshNewFileCreator.h            (C) Copyright 2001.        |
-|                                                BCIVIL Corporation.    |
-|                                                All Rights Reserved.   |
+|   ScalableMeshNewFileCreator.h                (C) Copyright 2001.     |
+|                                               BCIVIL Corporation.     |
+|                                               All Rights Reserved.    |
 |                                                                       |
 +----------------------------------------------------------------------*/
 

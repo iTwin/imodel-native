@@ -91,10 +91,10 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     else
         {
         WString outputDir;
-        int maxLevel;
+        int maxLevel = 10000;
         bool exportTexture;
-
-        assert(ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode) == true);
+        bool parseResult = ParseExportToUnityOptions(outputDir, maxLevel, exportTexture, pTestNode);
+        assert(parseResult == true);
 
         if (status == SUCCESS)
             {
@@ -510,6 +510,24 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             }
         }
     }
+
+
+void PerformSqlFileUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString stmFileName;
+
+    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
+        {
+        printf("ERROR : stmFileName attribute not found\r\n");
+        return;
+        }
+
+
+    IScalableMeshPtr sm = IScalableMesh::GetFor(stmFileName.c_str(), true, true);
+    
+
+    }
+
 
 void PerformUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {

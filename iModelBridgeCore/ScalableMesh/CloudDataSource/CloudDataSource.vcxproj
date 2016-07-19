@@ -97,7 +97,7 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
@@ -141,6 +141,14 @@ BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  C
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c
+BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c</NMakeCleanCommandLine>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>

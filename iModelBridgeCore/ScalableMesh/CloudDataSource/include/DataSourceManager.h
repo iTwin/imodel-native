@@ -21,7 +21,7 @@ CLOUD_EXPORT                           ~DataSourceManager       (void);
 
     DataSource *                        getOrCreateDataSource   (const DataSourceName &name, DataSourceAccount &account, bool *created = nullptr);
 
-    DataSourceStatus                    destroyDataSource       (DataSource *dataSource);
+    CLOUD_EXPORT DataSourceStatus       destroyDataSource       (DataSource *dataSource);
     DataSourceStatus                    destroyDataSources      (DataSourceAccount *dataSourceAccount);
 
     DataSourceAccount *                 initializeAzureTest     (void);

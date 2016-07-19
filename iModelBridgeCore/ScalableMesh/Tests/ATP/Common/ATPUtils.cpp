@@ -77,9 +77,13 @@ WString GetHeaderForTestType(TestType t)
         //case IMPORT_VOLUME:
         //    return L"\n";
         //    break;
-		case EXPORT_TO_UNITY:
-			return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
-			break;
+        case EXPORT_TO_UNITY:
+            return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
+            break;
+        case TEST_SQL_FILE_UPDATE:
+            return L"File name, Duration (seconds)\n";
+            break;
+
         default: break;
         }
     return L"";
@@ -109,8 +113,9 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
 
     if (status == BEXML_Success)
         {
+        
         if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"generation"))
-            t = TEST_GENERATION;
+            t = TEST_GENERATION;        
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"partialUpdate"))
             t = TEST_PARTIAL_UPDATE;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"meshQuality"))
@@ -153,10 +158,12 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_LOADING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
             t = TEST_GROUP_NODE_HEADERS;
-		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
-			t = ADD_TEXTURES_TO_MESH;
-		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
-			t = EXPORT_TO_UNITY;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
+            t = ADD_TEXTURES_TO_MESH;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
+            t = EXPORT_TO_UNITY;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"sqlFileUpdate"))
+            t = TEST_SQL_FILE_UPDATE;        
         else return false;
         }
     else return false;
@@ -319,9 +326,13 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case ADD_TEXTURES_TO_MESH:
                 AddTexturesToMesh(pTestNode, pResultFile);
                 break;
-			case EXPORT_TO_UNITY:
-				PerformExportToUnityTest(pTestNode, pResultFile);
-				break;
+            case EXPORT_TO_UNITY:
+                PerformExportToUnityTest(pTestNode, pResultFile);
+                break;
+            case TEST_SQL_FILE_UPDATE:
+                PerformSqlFileUpdateTest(pTestNode, pResultFile);
+                break;
+               
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();
