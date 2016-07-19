@@ -50,7 +50,7 @@ void ECInstanceInserterTests::InsertInstances(Utf8CP className, Utf8CP schemaNam
         total = countStatement.GetValueInt(0);
     ASSERT_EQ(numberOfInstances, total);
 
-    ecSql.Sprintf("SELECT c0.[ECInstanceId], c0.GetECClassId() as ECClassId , * FROM [%s].[%s] c0", schemaName, className);
+    ecSql.Sprintf("SELECT c0.[ECInstanceId], c0.ECClassId , * FROM [%s].[%s] c0", schemaName, className);
     ECSqlStatement queryStatement;
     queryStatement.Prepare(ecdb, ecSql.c_str());
     int i = 0;
@@ -206,7 +206,7 @@ TEST_F(ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     auto assertInsert = [&ecdb] (IECInstanceCR testInstance, ECInstanceId expectedId)
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I, GetECClassId() FROM ecsql.P WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT I, ECClassId FROM ecsql.P WHERE ECInstanceId = ?"));
         stmt.BindId(1, expectedId);
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -496,7 +496,7 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
 
     count = 0;
     actualAvgValues = "";
-    ASSERT_EQ(stmt.Prepare(db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY GetECClassId()"), ECSqlStatus::Success);
+    ASSERT_EQ(stmt.Prepare(db, "SELECT AVG(Price), count(*) FROM rc.ClassA GROUP BY ECClassId"), ECSqlStatus::Success);
     while (stmt.Step() != BE_SQLITE_DONE)
         {
         actualAvgValues.append(stmt.GetValueText(1));

@@ -71,7 +71,7 @@ public:
     //! Example:
     //! The code
     //!     ECSqlStatement statement;
-    //!     statement.Prepare (ecdb, "SELECT * FROM myschema.Foo WHERE MyProp <> ?");
+    //!     statement.Prepare (ecdb, "SELECT ECInstanceId, ECClassId FROM myschema.Foo WHERE MyProp <> ?");
     //!     statement.BindNull (1);
     //!
     //! finds all Foo rows where MyProp is unset.
@@ -188,7 +188,7 @@ public:
     //! 
     //! @e Example
     //!  ECSqlStatement statement;
-    //!  statement.Prepare (ecdb, "SELECT * FROM myschema.Foo Where ECInstanceId = :id");
+    //!  statement.Prepare (ecdb, "SELECT Prop1, Prop2 FROM myschema.Foo Where ECInstanceId = :id");
     //!  ECSqlStatus stat = statement.BindInt64 (statement.GetParameterIndex ("id"), 123);
     //!
     //! @param[in] parameterName Name of the binding parameter

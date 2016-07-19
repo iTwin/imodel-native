@@ -438,7 +438,7 @@ IECInstancePtr ECInstanceECSqlSelectAdapter::FindRelationshipEndpoint(ECInstance
     Utf8String ecsql ("SELECT * FROM ");
     ecsql.append (endpointClass->GetECSqlName()).append (" WHERE ECInstanceId=?");
     ECSqlStatement statement;
-    ECSqlStatus status = statement.Prepare (*(m_ecSqlStatement.GetECDb ()), ecsql.c_str ());
+    ECSqlStatus status = statement.Prepare(*(m_ecSqlStatement.GetECDb ()), ecsql.c_str ());
     if (!status.IsSuccess())
         return instance;
 
