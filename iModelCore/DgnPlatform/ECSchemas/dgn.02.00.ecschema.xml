@@ -181,7 +181,7 @@
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
             <Class class="Authority"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
@@ -198,7 +198,7 @@
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
+        <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="true">
             <Class class="Authority"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N codes" polymorphic="true">
