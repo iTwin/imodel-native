@@ -652,6 +652,7 @@ static double getBRepTolerance (ISolidKernelEntityCR entity, IFacetOptionsPtr& f
     }
 #endif
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -696,7 +697,8 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
     moments.y = inertia[1][1];
     moments.z = inertia[2][2];
     }
-
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
