@@ -66,44 +66,23 @@ void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR cont
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDbP>(&m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDbP>(&m_db)));
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Grigas.Petraitis                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(Utf8StringR query, ECEntityClassCP& relatedClass, ECDbCR db, ECInstanceListCR instanceData, EvaluationResult const& arg)
     {
-    // This method takes a single string argument of the format:
-    //  "RelationshipClassName:Direction:RelatedClassName[, PropertyName:FailureValue]"
-    // where dir: 0=forward, 1=backward
-    // It doesn't specify schema names for either class, which makes our job more difficult and more time-consuming
-    // If we fail to find any related instance, and PropertyName:FailureValue is specified, then we create a fake IECInstance
-    // with a single property "PropertyName" with the value of FailureValue
-
-    if (1 != args.size())
-        return ExpressionStatus::WrongNumberOfArguments;
-
-    if (!args[0].IsECValue() || !args[0].GetECValue()->IsUtf8())
+    if (!arg.IsECValue() || !arg.GetECValue()->IsUtf8())
         return ExpressionStatus::WrongType;
 
     if (instanceData.empty())
         return ExpressionStatus::WrongType;
-
-    if (nullptr == context)
-        return ExpressionStatus::UnknownError;
     
-    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
-
     bvector<Utf8String> argTokens;
-    BeStringUtilities::Split(args[0].GetECValue()->GetUtf8CP(), ",", nullptr, argTokens);
-    if (1 > argTokens.size() || 2 < argTokens.size())
-        return ExpressionStatus::UnknownError;
-
-    Utf8String arg = argTokens[0];                                        // "RelationshipClass:Direction:RelatedClass"
-    Utf8String failureSpec = (argTokens.size() > 1) ? argTokens[1] : "";  // "PropertyName:FailureValue"
-    argTokens.clear();
-
-    BeStringUtilities::Split(arg.c_str(), ":", nullptr, argTokens);
+    BeStringUtilities::Split(arg.GetECValue()->GetUtf8CP(), ":", nullptr, argTokens);
     if (argTokens.size() != 3 || argTokens[1].length() != 1)
         return ExpressionStatus::UnknownError;
 
@@ -133,33 +112,166 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
     Utf8CP relationshipName = argTokens[0].c_str();
     Utf8CP relatedName      = argTokens[2].c_str();
 
-    static Utf8CP selectQueryFormat = ""
-        "SELECT related.* "
-        "  FROM %s.%s this, %s.%s relationship, %s.%s related "
-        " WHERE     this.ECInstanceId = ? "
-        "       AND this.ECInstanceId = relationship.%s AND this.GetECClassId() = relationship.%s "
-        "       AND related.ECInstanceId = relationship.%s AND related.GetECClassId() = relationship.%s";
-
     ECRelationshipClassCP relationshipClass = nullptr;
-    ECEntityClassCP relatedEntityClass = nullptr;
+    relatedClass = nullptr;
+    if (SUCCESS != FindRelationshipAndClassInfo(db, relationshipClass, relationshipName, relatedClass, relatedName))
+        return ExpressionStatus::UnknownError;
+
+    if (nullptr == relationshipClass || nullptr == relatedClass)
+        {
+        BeAssert(false);
+        return ExpressionStatus::UnknownError;
+        }
+    
+    static Utf8CP selectQueryFormat = ""
+        "SELECT related.%%s "
+        "  FROM %%s this, %s relationship, %s related "
+        " WHERE     [this].[ECInstanceId] = ? "
+        "       AND [this].[ECInstanceId] = [relationship].[%s] AND [this].GetECClassId() = [relationship].[%s] "
+        "       AND [related].[ECInstanceId] = [relationship].[%s] AND [related].GetECClassId() = [relationship].[%s]";
+
+    query = Utf8PrintfString(selectQueryFormat, 
+                relationshipClass->GetECSqlName().c_str(), relatedClass->GetECSqlName().c_str(),
+                thisInstanceIdColumnName, thisClassIdColumnName, relatedInstanceIdColumnName, relatedClassIdColumnName);
+    return ExpressionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(Utf8StringR query, ECDbCR db, ECInstanceListCR instanceData, EvaluationResultVector& args)
+    {
+    if (instanceData.empty())
+        return ExpressionStatus::WrongType;
+    
+    if (args.size() < 3)
+        return ExpressionStatus::WrongNumberOfArguments;
+
+    for (size_t i = 0; i < 3; ++i)
+        {
+        if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
+            return ExpressionStatus::WrongType;
+        }
+    
+    Utf8CP direction = args[1].GetECValue()->GetUtf8CP();
+    Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
+        relatedInstanceIdColumnName, relatedClassIdColumnName;
+    if (0 == stricmp("Forward", direction))
+        {
+        thisInstanceIdColumnName = "SourceECInstanceId";
+        thisClassIdColumnName = "SourceECClassId";
+        relatedInstanceIdColumnName = "TargetECInstanceId";
+        relatedClassIdColumnName = "TargetECClassId";
+        }
+    else if (0 == stricmp("Backward", direction))
+        {
+        thisInstanceIdColumnName = "TargetECInstanceId";
+        thisClassIdColumnName = "TargetECClassId"; 
+        relatedInstanceIdColumnName = "SourceECInstanceId";
+        relatedClassIdColumnName = "SourceECClassId";
+        }
+    else
+        {
+        BeAssert(false);
+        return ExpressionStatus::UnknownError;
+        }
+
+    Utf8String relationshipSchemaName, relationshipClassName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, args[0].GetECValue()->GetUtf8CP()))
+        {
+        BeAssert(false);
+        return ExpressionStatus::UnknownError;
+        }
+        
+    Utf8String relatedClassSchemaName, relatedClassName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, args[2].GetECValue()->GetUtf8CP()))
+        {
+        BeAssert(false);
+        return ExpressionStatus::UnknownError;
+        }
+    
+    static Utf8CP selectQueryFormat = ""
+        "SELECT [related].%%s "
+        "  FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
+        " WHERE     [this].[ECInstanceId] = ? "
+        "       AND [this].[ECInstanceId] = [relationship].[%s] AND [this].GetECClassId() = [relationship].[%s] "
+        "       AND [related].[ECInstanceId] = [relationship].[%s] AND [related].GetECClassId() = [relationship].[%s]";
+
+    query = Utf8PrintfString(selectQueryFormat, 
+                relationshipSchemaName.c_str(), relationshipClassName.c_str(),
+                relatedClassSchemaName.c_str(), relatedClassName.c_str(),
+                thisInstanceIdColumnName, thisClassIdColumnName, relatedInstanceIdColumnName, relatedClassIdColumnName);
+    return ExpressionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+    {
+    if (3 != args.size())
+        return ExpressionStatus::WrongNumberOfArguments;
+
+    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+
+    Utf8String queryFormat;
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
+    if (ExpressionStatus::Success != stat)
+        return stat;
+
+    for (IECInstancePtr const& instance : instanceData)
+        {
+        Utf8PrintfString query(queryFormat.c_str(), "ECInstanceId", instance->GetClass().GetECSqlName().c_str());
+        
+        ECSqlStatement stmt;
+        ECSqlStatus status = stmt.Prepare(db, query.c_str());
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        if (DbResult::BE_SQLITE_ROW == stmt.Step())
+            {
+            evalResult.InitECValue().SetBoolean(true);
+            return ExpressionStatus::Success;
+            }
+        }
+    
+    evalResult.InitECValue().SetBoolean(false);
+    return ExpressionStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                02/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+    {
+    if (1 != args.size())
+        return ExpressionStatus::WrongNumberOfArguments;
+
+    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+
+    Utf8String queryFormat;
+    ECEntityClassCP relatedClass;
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatOld(queryFormat, relatedClass, db, instanceData, args[0]);
+    if (ExpressionStatus::Success != stat)
+        return stat;    
 
     IECInstancePtr relatedInstance;
     for (IECInstancePtr const& instance : instanceData)
         {
-        if ((nullptr == relationshipClass || nullptr == relatedEntityClass) 
-            && SUCCESS != FindRelationshipAndClassInfo(db, relationshipClass, relationshipName, relatedEntityClass, relatedName))
-            continue;
-
-        BeAssert(nullptr != relationshipClass && nullptr != relatedEntityClass);
-
-        Utf8PrintfString queryStr(selectQueryFormat, 
-            instance->GetClass().GetSchema().GetName().c_str(), instance->GetClass().GetName().c_str(),
-            relationshipClass->GetSchema().GetName().c_str(), relationshipClass->GetName().c_str(),
-            relatedEntityClass->GetSchema().GetName().c_str(), relatedEntityClass->GetName().c_str(),
-            thisInstanceIdColumnName, thisClassIdColumnName, relatedInstanceIdColumnName, relatedClassIdColumnName);
+        Utf8PrintfString query(queryFormat.c_str(), "*", instance->GetClass().GetECSqlName().c_str());
 
         ECSqlStatement stmt;
-        ECSqlStatus status = stmt.Prepare(db, queryStr.c_str());
+        ECSqlStatus status = stmt.Prepare(db, query.c_str());
         if (!status.IsSuccess())
             {
             BeAssert(false);
@@ -180,15 +292,91 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
             break;
             }
         }
-
-    /*if (relatedInstance.IsNull() && !failureSpec.empty())
-        relatedInstance = CreatePseudoRelatedInstance (failureSpec.c_str());*/
     
     if (relatedInstance.IsValid())
         evalResult.SetInstance (*relatedInstance);
     else
         evalResult.InitECValue().SetToNull();
 
+    return ExpressionStatus::Success;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static ECValue GetECValueFromSqlValue(IECSqlValue const& sqlValue)
+    {
+    if (!sqlValue.GetColumnInfo().GetDataType().IsPrimitive())
+        {
+        BeAssert(false);
+        return ECValue();
+        }
+
+    switch (sqlValue.GetColumnInfo().GetDataType().GetPrimitiveType())
+        {
+        case PrimitiveType::PRIMITIVETYPE_Boolean: return ECValue(sqlValue.GetBoolean());
+        case PrimitiveType::PRIMITIVETYPE_DateTime: return ECValue(sqlValue.GetDateTime());
+        case PrimitiveType::PRIMITIVETYPE_Double: return ECValue(sqlValue.GetDouble());
+        case PrimitiveType::PRIMITIVETYPE_Integer: return ECValue(sqlValue.GetInt());
+        case PrimitiveType::PRIMITIVETYPE_Long: return ECValue(sqlValue.GetInt64());
+        case PrimitiveType::PRIMITIVETYPE_Point2D: return ECValue(sqlValue.GetPoint2D());
+        case PrimitiveType::PRIMITIVETYPE_Point3D: return ECValue(sqlValue.GetPoint3D());
+        case PrimitiveType::PRIMITIVETYPE_String: return ECValue(sqlValue.GetText());
+        case PrimitiveType::PRIMITIVETYPE_Binary: return ECValue();
+        case PrimitiveType::PRIMITIVETYPE_IGeometry: return ECValue();
+        }
+
+    BeAssert(false);
+    return ECValue();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+    {
+    if (4 != args.size())
+        return ExpressionStatus::WrongNumberOfArguments;
+
+    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+
+    Utf8String queryFormat;
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatNew(queryFormat, db, instanceData, args);
+    if (ExpressionStatus::Success != stat)
+        return stat;    
+
+    EvaluationResult const& propertyNameArg = args[3];
+    if (!propertyNameArg.IsECValue() || !propertyNameArg.GetECValue()->IsUtf8())
+        return ExpressionStatus::WrongType;
+    
+    IECInstancePtr relatedInstance;
+    for (IECInstancePtr const& instance : instanceData)
+        {
+        Utf8PrintfString query(queryFormat.c_str(), propertyNameArg.GetECValue()->GetUtf8CP(), instance->GetClass().GetECSqlName().c_str());
+
+        ECSqlStatement stmt;
+        ECSqlStatus status = stmt.Prepare(db, query.c_str());
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        status = stmt.BindText(1, instance->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        if (!status.IsSuccess())
+            {
+            BeAssert(false);
+            continue;
+            }
+
+        if (DbResult::BE_SQLITE_ROW == stmt.Step())
+            {
+            evalResult.InitECValue() = GetECValueFromSqlValue(stmt.GetValue(0));
+            return ExpressionStatus::Success;
+            }
+        }
+    
+    evalResult.InitECValue().SetToNull();
     return ExpressionStatus::Success;
     }
     

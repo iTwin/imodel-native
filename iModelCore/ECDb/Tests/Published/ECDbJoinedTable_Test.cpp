@@ -2891,7 +2891,7 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     //use Custom Scaler function in union query
     PowSqlFunction func;
     ASSERT_EQ(0, GetECDb().AddFunction(func));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
     rowCount = 0;
     while (stmt.Step() != BE_SQLITE_DONE)
         {
@@ -2910,7 +2910,7 @@ TEST_F(JoinedTableECSqlStatementsTests, UnionTests)
     stmt.Finalize();
 
     //Use GROUP BY clause in Union Query
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*), Phone FROM (SELECT GetECClassId() ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT COUNT(*), Phone FROM (SELECT ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
 
     //Get Row one
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_ROW);
@@ -2939,7 +2939,7 @@ TEST_F(JoinedTableECSqlStatementsTests, PolymorphicUpdate)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId, GetECClassId(), I,T FROM nsat.ClassA"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT ECInstanceId, ECClassId, I,T FROM nsat.ClassA"));
     while (stmt.Step() != BE_SQLITE_DONE)
         {
         EXPECT_EQ(2, stmt.GetValueInt(2)) << "Int Value don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);

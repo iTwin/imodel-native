@@ -35,25 +35,24 @@
     @section ECSqlECInstanceIdDetails ECInstanceId
     The ECInstanceId is the unique identifier for an ECInstance. In @ref ECSQLOverview you use the
     reserved token @c %ECInstanceId to refer to the ECInstanceId of an instance,
-    e.g. <c>SELECT * FROM myschema.Foo WHERE <b>ECInstanceId</b> = 123</c>.
+    e.g. <c>SELECT Name FROM myschema.Foo WHERE <b>ECInstanceId</b> = 123</c>.
 
-    @section ECSQLGetECClassIdDetails Function GetECClassId
-    The ECSQL function <c><b>GetECClassId()</b></c> returns the ECClassId of the ECClass on which
-    the function was called. The BentleyApi::ECN::ECClassId is a numeric id that uniquely identifies an ECClass in the @ref ECDbFile.
+    @section ECSQLECClassIdDetails ECClassId
+    The reserved token @b ECClassId refers to the BentleyApi::ECN::ECClassId of an ECClass in an ECSQL statement. 
+    The ECClassId is a numeric id that uniquely identifies an ECClass in the @ref ECDbFile. The ECClassId is read-only.
 
-    Example: <c>SELECT ECInstanceId, <b>GetECClassId()</b> FROM myschema.Foo</c>
+    Example: <c>SELECT ECInstanceId, <b>ECClassId</b> FROM myschema.Foo</c>
 
     @section ECSQLSourceTargetConstraintDetails ECRelationship's Source and Target Constraints
     When referring to an ECRelationshipClass in an ECSQL statement, @c %SourceECInstanceId and @c %SourceECClassId refer
     to the %ECInstanceId and %ECClassId of the source ECInstance of the relationship. Likewise @c %TargetECInstanceId
     and @c %TargetECClassId refer to the %ECInstanceId and %ECClassId of the target ECInstance of the relationship.
 
-    Example: <c>SELECT * FROM myschema.FooHasGoo<br>
-    WHERE <b>SourceECInstanceId</b> = 123 AND <b>SourceECClassId</b>=1003 AND<br>
-    <b>TargetECInstanceId</b> = 4432 AND <b>TargetECClassId</b>=3120</c>
+    Example: <c>SELECT <b>SourceECInstanceId, SourceECClassId</b> FROM myschema.FooHasGoo<br>
+    WHERE <b>TargetECInstanceId</b> = 4432 AND <b>TargetECClassId</b>=3120</c>
 
     %SourceECInstanceId and %TargetECInstanceId are of the same type as @ref ECSqlECInstanceIdDetails. %SourceECClassId and %TargetECClassId
-    are of the same type as the @ref ECSQLGetECClassIdDetails "GetECClassId function".
+    are of the same type as the @ref ECSQLECClassIdDetails "ECClassId".
 
     @section ECSQLBindingParameterTokens Binding parameters ? and :name
     In an ECSQL statement @c ? or <c>:name</c> are used as placeholder for parameters that are bound to the statement via the statements binding API (see ECSqlStatement).
@@ -125,7 +124,7 @@
 
 
     @section ECSQLSamplesECInstanceIdECClassId ECInstanceId and ECClassId
-    See section @ref ECSqlECInstanceIdDetails and @ref ECSQLGetECClassIdDetails for the
+    See section @ref ECSqlECInstanceIdDetails and @ref ECSQLECClassIdDetails for the
     background on ECInstanceId and ECClassId.
 
         SELECT ECInstanceId FROM stco.Employee
@@ -133,9 +132,9 @@
         SELECT FirstName, LastName FROM stco.Employee
         WHERE ECInstanceId IN (123, 124, 125)
 
-        SELECT ECInstanceId, GetECClassId() FROM stco.Employee
+        SELECT ECInstanceId, ECClassId FROM stco.Employee
 
-        SELECT e.ECInstanceId, e.GetECClassId(), c.ECInstanceId, c.GetECClassId()
+        SELECT e.ECInstanceId, e.ECClassId, c.ECInstanceId, c.ECClassId
         FROM stco.Employee e
         JOIN stco.Company c USING stco.CompanyHasEmployees
         WHERE c.Name = ?
@@ -144,7 +143,7 @@
     For the exceptional case of creating an empty instance, i.e. where only the ECInstanceId is generated, and all properties are set
     to NULL, the following ECSQL has to be used:
 
-        INSERT INTO stco.Employee (ECInstanceId) VALUES (NULL)
+        INSERT INTO stco.Employee(ECInstanceId) VALUES(NULL)
 
     This is in particular the only way to create instances for ECClasses that do not have any ECProperties defined.
     This cannot be used for ECRelationships as empty relationship instances would violate against the implicit NOT NULL
@@ -180,9 +179,9 @@
 
          SELECT h.AssetID FROM stco.Hardware h
          INNER JOIN stco.HardwareUsedByEmployee r ON h.ECInstanceId = r.TargetECInstanceId AND
-         h.GetECClassId() = r.TargetECClassId
+         h.ECClassId = r.TargetECClassId
          INNER JOIN stco.Employee e ON r.SourceECInstanceId = e.ECInstanceId AND
-         r.SourceECClassId = e.GetECClassId()
+         r.SourceECClassId = e.ECClassId
          WHERE e.FirstName = 'John' AND e.Lastname = 'Smith'
 
 
@@ -190,9 +189,9 @@
 
          SELECT h.AssetID FROM stco.Hardware h, stco.HardwareUsedByEmployee r, stco.Employee e
          WHERE h.ECInstanceId = r.TargetECInstanceId AND
-         h.GetECClassId() = r.TargetECClassId
+         h.ECClassId = r.TargetECClassId
          r.SourceECInstanceId = e.ECInstanceId AND
-         r.SourceECClassId = e.GetECClassId() AND
+         r.SourceECClassId = e.ECClassId AND
          e.FirstName = 'John' AND e.Lastname = 'Smith'
 
 
@@ -241,7 +240,6 @@
 
     Function|Description
     --------|-----------
-    <c>GetECClassId</c>|Returns the ECClassId of the ECClass on which the function was called (see @ref ECSQLGetECClassIdDetails)
     <c>GetX</c>|Returns the X coordinate of a Point2D or Point3D ECProperty. E.g. <c>...WHERE GetX(MyLowerLeftPoint)>=?</c>
     <c>GetY</c>|Returns the Y coordinate of a Point2D or Point3D ECProperty. E.g. <c>...WHERE GetY(MyLowerLeftPoint)>=?</c>
     <c>GetZ</c>|Returns the Z coordinate of a Point3D ECProperty. E.g. <c>...WHERE GetZ(MyLowerLeftPoint)>=?</c>
