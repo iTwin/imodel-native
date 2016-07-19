@@ -519,7 +519,8 @@ const InstanceCacheHelper::CachedInstances& instances
     ECInstanceKey pageKey = SavePage(info, page, cacheTag);
 
     if (SUCCESS != RelateResultInstancesToPage(info.GetParent(), pageKey, instances) ||
-        SUCCESS != RelateResultRelationshipInstancesToPage(pageKey, instances))
+        SUCCESS != RelateResultRelationshipInstancesToPage(pageKey, instances) ||
+        SUCCESS != m_hierarchyManager->ReleaseOldChildren(pageKey, instances.GetCachedInstances(), m_responsePageToResultClass))
         {
         return ERROR;
         }
@@ -594,8 +595,7 @@ const InstanceCacheHelper::CachedInstances& instances
             }
         }
 
-    // Remove old instances from query
-    return m_hierarchyManager->ReleaseOldChildren(pageKey, instances.GetCachedInstances(), m_responsePageToResultClass);
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
