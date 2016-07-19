@@ -96,9 +96,10 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                 while ((buffer = getNextSegmentJob(&segmentBuffer, &segmentSize, &segmentIndex)) == nullptr)
                 {
                     dataSourceBufferReady.wait(dataSourceBuffersLock);
+                    if (this->isCanceled) break;
                 }
+                if (this->isCanceled) break;
             }
-
             DataSourceLocator &locator = buffer->getLocator();
 
             DataSourceURL    url;
@@ -155,4 +156,12 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                                             // Return OK
     return DataSourceStatus();
 }
+
+void DataSourceTransferScheduler::cancel()
+    {
+    transferTasks.cancel();
+    isCanceled = true;
+    dataSourceBufferReady.notify_all();
+    transferTasks.wait();
+    }
 

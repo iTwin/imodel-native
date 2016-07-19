@@ -23,6 +23,8 @@ protected:
 
 protected:
 
+    bool                         isCanceled = false;
+
     TaskIndex                    maxTasks;
 
     std::mutex                    dataSourceBuffersMutex;
@@ -54,5 +56,6 @@ public:
                                 DataSourceTransferScheduler        (void);
 
     DataSourceStatus            addBuffer                    (DataSourceBuffer &buffer);
+    void                        cancel                       (void);
 };
 

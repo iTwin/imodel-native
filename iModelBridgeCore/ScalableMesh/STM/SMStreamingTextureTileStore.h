@@ -75,15 +75,15 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
                 void Load(DataSourceAccount *dataSourceAccount)
                 {
-					std::unique_ptr<DataSource::Buffer[]>		dest;
-					DataSource								*	dataSource;
-					DataSource::DataSize						readSize;
+                    std::unique_ptr<DataSource::Buffer[]>       dest;
+                    DataSource                              *   dataSource;
+                    DataSource::DataSize                        readSize;
 
                     assert(m_ID != -1);
                     wchar_t buffer[10000];
                     swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), m_ID);
 
-					DataSourceURL	dataSourceURL(buffer);
+                    DataSourceURL   dataSourceURL(buffer);
 
                     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -98,6 +98,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                         return;
 
                     dataSource->close();
+                    dataSourceAccount->destroyDataSource(dataSource);
 
                     if (readSize > 0)
                     {
@@ -206,7 +207,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 condition_variable m_TextureCV;
                 mutex m_TextureMutex;
 
-				DataSourceAccount *	m_dataSourceAccount;
+                DataSourceAccount * m_dataSourceAccount;
             };
 
         static void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)
@@ -235,7 +236,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                 else
                     {
                     texture.SetDataSource(m_path);
-                    texture.SetID(blockID.m_integerID);					
+                    texture.SetID(blockID.m_integerID);
                     texture.Load(this->GetDataSourceAccount());
                     }
                 }
@@ -265,6 +266,8 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
 
         virtual ~StreamingTextureTileStore()
             {
+            for (auto it = m_textureCache.begin(); it != m_textureCache.end(); ++it) it->second.clear();
+            m_textureCache.clear();
             }
 
         virtual bool DestroyBlock(HPMBlockID blockID)
@@ -340,8 +343,12 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
             ((int*)DataTypeArray)[0] = (int)texture.GetWidth();
             ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
             ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
+            assert(maxCountData >= texture.size());
             memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
+            m_textureCacheLock.lock();
             texture.Unload();
+            m_textureCache.erase(texture.GetID());
+            m_textureCacheLock.unlock();
             return std::min(textureSize + 3 * sizeof(int), maxCountData);
             }
 
@@ -354,5 +361,5 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
         mutable map<uint32_t, Texture> m_textureCache;
         mutable std::mutex m_textureCacheLock;
 
-		DataSourceAccount *	m_dataSourceAccount;
+        DataSourceAccount * m_dataSourceAccount;
     };

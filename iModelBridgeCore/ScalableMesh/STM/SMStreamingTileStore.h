@@ -65,7 +65,7 @@ public:
     }
 
     
-	
+    
     void Load(DataSourceAccount *dataSourceAccount)
     {
         if (!IsLoaded())
@@ -79,11 +79,11 @@ public:
                 wchar_t buffer[10000];
                 swprintf(buffer, L"%sp_%llu.bin", m_dataSource.c_str(), m_id);
             
-				std::unique_ptr<DataSource::Buffer[]>		dest;
-				DataSource								*	dataSource;
+                std::unique_ptr<DataSource::Buffer[]>       dest;
+                DataSource                              *   dataSource;
                 DataSource::DataSize                        readSize;
 
-				DataSourceURL	dataSourceURL(buffer);
+                DataSourceURL   dataSourceURL(buffer);
 
                 DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -99,6 +99,8 @@ public:
 
                 if (dataSource->close().isFailed())
                     return;
+
+                dataSourceAccount->destroyDataSource(dataSource);
 
                 if (readSize > 0)
                 {
@@ -439,13 +441,13 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         {
             //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
             std::unique_ptr<DataSource::Buffer[]>       dest;
-			DataSource								*	dataSource;
+            DataSource                              *   dataSource;
             DataSource::DataSize                        readSize;
             wchar_t                                     buffer[10000];
 
             swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
 
-			DataSourceURL	dataSourceURL(buffer);
+            DataSourceURL   dataSourceURL(buffer);
 
             DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -737,6 +739,8 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 m_nodeHeaderFetchDistributor->CancelAll();
                 m_nodeHeaderFetchDistributor = nullptr;
                 }
+            for (auto it = m_pointCache.begin(); it != m_pointCache.end(); ++it) it->second.clear();
+            m_pointCache.clear();
             }
 
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
@@ -802,7 +806,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         {
             assert(!"////MST_TS : tobedeleted");
             std::unique_ptr<DataSource::Buffer[]>           dest;
-			DataSource								*	dataSource;
+            DataSource                                  *   dataSource;
             DataSource::DataSize                            readSize;
             DataSourceBuffer::BufferSize                    destSize = 20 * 1024 * 1024;
 
@@ -900,7 +904,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                 else
                 {
                     Json::Reader    reader;
-					Json::Value		masterHeader;
+                    Json::Value     masterHeader;
 
                     DataSourceURL dataSourceURL(m_rootDirectory.data());
                     
@@ -1316,7 +1320,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             auto blockSize = block.size();
             assert(block.size() <= maxCountData * sizeof(POINT));
             memmove(DataTypeArray, block.data(), block.size());
+
+            m_pointCacheLock.lock();
             block.UnLoad();
+            m_pointCache.erase(block.GetID());
+            m_pointCacheLock.unlock();
 
             return blockSize;
             }

@@ -222,7 +222,8 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeOutput>$(OutRoot)Winx64\build\scalablemesh\ScalableMeshATP.exe</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64 -c
+BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATPexe -x64</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -p ScalableMeshATP -f ScalableMesh -r ScalableMesh re ScalableMeshATP -x64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI;$(OutRoot)Winx64\BuildContexts\scalablemesh\PublicAPI\scalablemesh</NMakeIncludeSearchPath>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
