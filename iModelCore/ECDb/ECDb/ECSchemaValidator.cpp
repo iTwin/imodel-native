@@ -481,7 +481,7 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
-    //We cannot enforce one class per constraint yet
+    //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
         m_error->AddInconsistency(relClass, constraintClassCount == 0 ? Error::Kind::HasIncompleteConstraintDefinition : Error::Kind::HasMultipleConstraintClasses);

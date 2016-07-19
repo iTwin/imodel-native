@@ -896,7 +896,9 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                    "     </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>",
-                   true, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                   //we cannot yet enforce one class per constraint
+                   //false, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                   true),
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                    "  <ECEntityClass typeName='Foo' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -917,7 +919,7 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                    "     </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>",
-                   false, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                   false, "Multiple constraint classes which map to more than one table on referenced side is not supported"),
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                    "  <ECEntityClass typeName='Base' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -939,7 +941,9 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                    "     </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>",
-                   true, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                   //we cannot yet enforce one class per constraint
+                   //false, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                   true),
         SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                    "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                    "  <ECEntityClass typeName='Base' >"
@@ -970,7 +974,9 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                    "     </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>",
-                   true, "Multiple constraint classes are not supported by EC3 and ECDb")
+                   //we cannot yet enforce one class per constraint
+                   //false, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                   true),
         };
 
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");

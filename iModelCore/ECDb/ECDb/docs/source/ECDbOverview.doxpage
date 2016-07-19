@@ -342,9 +342,8 @@
 
     ## EC3 Rules enforced by ECDb but not yet by ECObjects
     These rules will eventually be enforced by ECObjects. Until then, ECDb fails to import ECSchemas which violate against these rules.
-    - Exactly one and only one @ref BentleyApi::ECN::ECClass "ECClass" must be defined per @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
     - @ref BentleyApi::ECN::ECRelationshipConstraintClass::GetKeys "Key properties" are not supported
-
+    
     ## ECRelationshipClass Definition Consistency
     Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
     values for cardinality, strength and strength direction. The table shows what is actually allowed.
