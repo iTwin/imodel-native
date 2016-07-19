@@ -13,6 +13,11 @@
 #include "..\SMNodeGroup.h"
 #include "SMStoreUtils.h"
 
+#ifndef NDEBUG
+#define DEBUG_STREAMING_DATA_STORE
+extern std::mutex s_consoleMutex;
+#endif
+
 class DataSourceAccount; 
 
 template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
@@ -140,7 +145,6 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         DataSourceAccount*            m_dataSourceAccount;
         WString                       m_pathToNodeData;
         SMStreamingDataType           m_dataType;
-        WString                       m_storage_connection_string;        
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;

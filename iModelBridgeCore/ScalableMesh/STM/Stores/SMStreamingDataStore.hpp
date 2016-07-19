@@ -596,6 +596,16 @@ template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::GetGroup(H
         {
         group->Load(blockID.m_integerID);
         }
+#ifdef DEBUG_STREAMING_DATA_STORE
+    else {
+        static std::atomic<uint64_t> s_NbAlreadyLoadedNodes = 0;
+        s_NbAlreadyLoadedNodes += 1;
+
+        s_consoleMutex.lock();
+        std::cout << "[" << blockID.m_integerID << ", " << group->GetID() << "] already loaded in temporary streaming data cache!" << std::endl;
+        s_consoleMutex.unlock();
+        }
+#endif
     return group;
     }
 
@@ -810,8 +820,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 //------------------SMStreamingNodeDataStore--------------------------------------------
 template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
-     m_pathToNodeData(path),
-     m_storage_connection_string(L"DefaultEndpointsProtocol=https;AccountName=pcdsustest;AccountKey=3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==")
+     m_pathToNodeData(path)
     {       
     m_nodeHeader = nodeHeader;
     m_dataType = type;
