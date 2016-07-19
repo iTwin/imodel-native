@@ -16818,7 +16818,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-07-13 13:05:13 824b39e54fb9ba562be4d92cc9a54aee1cdf84cb", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-07-15 19:17:19 d0a1cf1c56c237617fb73cb31f4950365b1f3e9b", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
@@ -17183,7 +17183,11 @@ static int sqlite3Fts5CreateTable(
   char *zErr = 0;
 
   rc = fts5ExecPrintf(pConfig->db, &zErr, "CREATE TABLE %Q.'%q_%q'(%s)%s",
-      pConfig->zDb, pConfig->zName, zPost, zDefn, bWithout?" WITHOUT ROWID":""
+      pConfig->zDb, pConfig->zName, zPost, zDefn, 
+#ifndef SQLITE_FTS5_NO_WITHOUT_ROWID
+      bWithout?" WITHOUT ROWID":
+#endif
+      ""
   );
   if( zErr ){
     *pzErr = sqlite3_mprintf(
