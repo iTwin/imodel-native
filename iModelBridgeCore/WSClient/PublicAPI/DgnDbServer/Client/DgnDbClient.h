@@ -172,6 +172,11 @@ public:
     //! @note This method ignores the server url set in client and uses server url read from the briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBriefcaseTaskPtr OpenBriefcase(DgnDbPtr db, bool doSync = false, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Delete a repository from server
+    //! @param[in] repositoryInfo Information of repository to be deleted. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
+    //! @param[in] cancellationToken Cancellation is not going to prevent repository deletion, if the request is already sent.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken = nullptr);
+
     //! Returns DgnDbServer RepositoryManager.
     DGNDBSERVERCLIENT_EXPORT IRepositoryManager* GetRepositoryManagerP();
 };
