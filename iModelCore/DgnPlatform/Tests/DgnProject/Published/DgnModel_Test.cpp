@@ -71,7 +71,7 @@ public:
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetGraphicElements)
     {
-    SetupProject(L"XGraphicsElements.ibim", L"GetGraphicElements.ibim", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"GetGraphicElements.ibim", Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
@@ -90,7 +90,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetName)
     {
-    SetupProject(L"XGraphicsElements.ibim", L"GetName.ibim", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"GetName.ibim", Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     Utf8String name = m_model->GetCode().GetValue();
     EXPECT_TRUE(name.CompareTo("Splines")==0);
@@ -114,7 +114,7 @@ TEST_F(DgnModelTests, GetName)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, EmptyList)
     {
-    SetupProject(L"XGraphicsElements.ibim", L"EmptyList.ibim", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"EmptyList.ibim", Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     ASSERT_TRUE(0 != m_model->GetElements().size());
     m_model->EmptyModel();
@@ -128,7 +128,7 @@ TEST_F(DgnModelTests, EmptyList)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    SetupProject(L"ModelRangeTest.ibim", L"GetRange.ibim", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"ModelRangeTest.ibim", L"GetRange.ibim", Db::OpenMode::ReadWrite);
     LoadModel("RangeTest");
 
     AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
@@ -310,7 +310,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, WorkWithDgnModelTable)
     {
-    SetupProject(L"ElementsSymbologyByLevel.ibim", L"WorkWithDgnModelTable.ibim", Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", L"WorkWithDgnModelTable.ibim", Db::OpenMode::ReadWrite);
 
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();

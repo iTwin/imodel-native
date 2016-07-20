@@ -998,8 +998,12 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
 
     DgnDbPtr SetupDb(WCharCP testFile, BeBriefcaseId bcId, WCharCP baseFile=L"3dMetricGeneral.ibim")
         {
+        //** Force to copy the file in Sub-Directory of TestCase
+        BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
+        testFileName.AppendToPath(testFile);
+
         BeFileName outFileName;
-        EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFile, __FILE__));
+        EXPECT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, baseFile, testFileName.c_str(), __FILE__));
         auto db = DgnDb::OpenDgnDb(nullptr, outFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         EXPECT_TRUE(db.IsValid());
         if (!db.IsValid())

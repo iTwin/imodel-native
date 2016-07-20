@@ -29,7 +29,9 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     void SetupTestProject()
         {
-        DgnDbTestFixture::SetupProject(L"ElementsSymbologyByLevel.ibim", Db::OpenMode::ReadWrite);
+        WString testName(TEST_NAME, true);
+        testName.AppendUtf8(".ibim");
+        DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
         project = m_db;
         }
 

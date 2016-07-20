@@ -235,7 +235,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
-    SetupProject(GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ASSERT_TRUE(m_db->IsBriefcase());
     ASSERT_TRUE(m_db->Txns().IsTracking());
     }

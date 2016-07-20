@@ -867,7 +867,7 @@ TEST_F(ImportTests, simpleSchemaImport)
         "  </ECClass>"
         "</ECSchema>";
 
-    SetupProject(L"3dMetricGeneral.ibim", L"New3dMetricGeneralDb.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", L"New3dMetricGeneralDb.ibim", BeSQLite::Db::OpenMode::ReadWrite);
     ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
     m_db->SaveChanges();
 

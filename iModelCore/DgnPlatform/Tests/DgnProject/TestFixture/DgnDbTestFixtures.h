@@ -49,14 +49,20 @@ public:
     }
 
     virtual void TearDown(){ SaveDb(); }
-
-    void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
-    void SetupProject_(WCharCP baseProjFile, CharCP testFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    
+    //! Initialize already converted/published bim/ibim file
+    void SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    
+    //! Initialize a seed file with the name provided
+    void SetupSeedProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    
+    //! Initialize a seed file with the name same as Test_Name
     void SetupSeedProject();
-    void SetupProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    
     static BeFileName CopyDb(WCharCP inputFileName, WCharCP outputFileName);
     static void OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase = false);
     void CloseDb() { m_db->CloseDb(); }
+
     void SaveDb() {
         if (m_db.IsValid() && m_db->IsDbOpen() && !m_db->IsReadonly())
             m_db->SaveChanges();
@@ -69,7 +75,6 @@ public:
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     DgnElementId InsertElement2d(DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
 
-    DgnElementId InsertElementUsingGeometryPart(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
 

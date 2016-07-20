@@ -57,7 +57,7 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
     {
-    T_Super::SetupProject(projFile,testFile,mode);
+    T_Super::SetupWithPrePublishedFile(projFile,testFile,mode);
     TestDataManager::MustBeBriefcase(m_db, mode);
     ASSERT_TRUE(m_db->IsBriefcase());
     ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());

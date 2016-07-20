@@ -106,10 +106,10 @@ TEST_F(ElementGeomPartTests, CreateElements)
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
-    DgnElementId elementId1 = InsertElementUsingGeometryPart(geomPartPtr->GetCode());
+    DgnElementId elementId1 = InsertElementUsingGeometryPart(existingPartId);
     EXPECT_TRUE(elementId1.IsValid());
     
-    DgnElementId elementId2 = InsertElementUsingGeometryPart(geomPartPtr->GetCode());
+    DgnElementId elementId2 = InsertElementUsingGeometryPart(existingPartId);
     EXPECT_TRUE(elementId2.IsValid());
 
     DgnElementId elementId3 = InsertElement()->GetElementId();
@@ -270,10 +270,10 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     EXPECT_TRUE(existingPartId.IsValid());
 
     //Add two elements using this GeometryPart
-    DgnElementId elementId1 = InsertElementUsingGeometryPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId1 = InsertElementUsingGeometryPart(existingPartId, m_defaultModelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId1.IsValid());
 
-    DgnElementId elementId2 = InsertElementUsingGeometryPart(geomPartPtr->GetCode());
+    DgnElementId elementId2 = InsertElementUsingGeometryPart(existingPartId);
     EXPECT_TRUE(elementId2.IsValid());
 
     DgnElementId elementId3 = InsertElement()->GetElementId();
@@ -293,7 +293,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
     {
-    SetupProject(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
@@ -304,7 +304,7 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
-     
+
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
