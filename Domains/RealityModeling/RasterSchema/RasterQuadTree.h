@@ -215,15 +215,20 @@ public:
 
     void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
 
+    DMatrix4dCR GetSourceToWorld() const { return m_sourceToWorld; }
+
 private:
     
     RasterQuadTree(RasterSourceR source, Dgn::DgnDbR dgnDb);
 
+    StatusInt ComputeSourceToWorldTransform(DMatrix4dR sourceToWorld);
+
     Dgn::DgnDbR m_dgnDb;                 
     RasterSourcePtr m_pSource; 
-    RasterTilePtr m_pRoot;          // The lowest/coarser resolution. 
+    RasterTilePtr m_pRoot;              // The lowest/coarser resolution. 
     RasterTileCache& m_tileCache;
     double m_visibleQualityFactor;
+    DMatrix4d m_sourceToWorld;          // including units change and reprojection.
 };
 
 

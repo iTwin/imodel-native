@@ -351,42 +351,51 @@ RasterTile::~RasterTile()
 //----------------------------------------------------------------------------------------
 ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree)
     {
-    GeoCoordinates::BaseGCSP pSourceGcs = tree.GetSource().GetGcsP();
-
-    DgnGCSP pDgnGcs = tree.GetDgnDb().Units().GetDgnGCS();
-
-    if(NULL == pSourceGcs || NULL == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid())
-        {
-        // Assume raster to be coincident.
-        memcpy(outUors, srcCartesian, sizeof(DPoint3d)*4);
-        return REPROJECT_Success;
-        }
-
+    //&&MM WIP reproject
+    tree.GetSourceToWorld().MultiplyAndRenormalize(outUors, srcCartesian, 4);
+    
     ReprojectStatus status = REPROJECT_Success;
 
-    GeoPoint srcGeoCorners[4];
-    for(size_t i=0; i < 4; ++i)
-        {
-        if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeoCorners[i], srcCartesian[i]))))
-            {
-            BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
-            return status;
-            }
-        }
-    
-    // Source latlong to DgnDb latlong.
-    GeoPoint dgnGeoCorners[4];
-    for(size_t i=0; i < 4; ++i)
-        {
-        if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(dgnGeoCorners[i], srcGeoCorners[i], *pDgnGcs))))
-            return status;
-        }
+    static bool s_doExactTransform = false;  // for debugging
 
-    //Finally to UOR
-    for(uint32_t i=0; i < 4; ++i)
+    if (s_doExactTransform)
         {
-        if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(outUors[i], dgnGeoCorners[i]))))
-            return status;
+        DPoint3d outUors2[4];
+        GeoCoordinates::BaseGCSP pSourceGcs = tree.GetSource().GetGcsP();
+
+        DgnGCSP pDgnGcs = tree.GetDgnDb().Units().GetDgnGCS();
+
+        if (NULL == pSourceGcs || NULL == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid())
+            {
+            // Assume raster to be coincident.
+            memcpy(outUors, srcCartesian, sizeof(DPoint3d) * 4);
+            return REPROJECT_Success;
+            }
+
+        GeoPoint srcGeoCorners[4];
+        for (size_t i = 0; i < 4; ++i)
+            {
+            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromCartesian(srcGeoCorners[i], srcCartesian[i]))))
+                {
+                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
+                return status;
+                }
+            }
+
+        // Source latlong to DgnDb latlong.
+        GeoPoint dgnGeoCorners[4];
+        for (size_t i = 0; i < 4; ++i)
+            {
+            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pSourceGcs->LatLongFromLatLong(dgnGeoCorners[i], srcGeoCorners[i], *pDgnGcs))))
+                return status;
+            }
+
+        //Finally to UOR
+        for (uint32_t i = 0; i < 4; ++i)
+            {
+            if (REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(outUors2[i], dgnGeoCorners[i]))))
+                return status;
+            }
         }
 
     return status;    
@@ -716,10 +725,204 @@ RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
  m_dgnDb(dgnDb),
  m_tileCache(s_GetSharedTileCache())
     {    
+    // Compute reprojection matrix if any.
+    ComputeSourceToWorldTransform(m_sourceToWorld);  //&&MM detect error and do something about it.
+    
     // Create the lowest LOD but do not load its data yet.
     m_pRoot = RasterTile::CreateRoot(*this);
 
     m_visibleQualityFactor = 1.25; 
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsiclass                                                   Mathieu.Marchand  7/2016
+//----------------------------------------------------------------------------------------
+struct ReprojectionApproximater
+    {
+
+    ReprojectionApproximater(GeoCoordinates::BaseGCSR srcGcs, DgnGCSR dgnGcs) :m_sourceGCS(srcGcs), m_destGCS(dgnGcs)
+        {
+//         HFCPtr<HGF2DPolygonOfSegments> pSrcDomainLL = GetDomainShape(*pSourceGcs);
+//         HFCPtr<HGF2DPolygonOfSegments> pDgnDomainLL = GetDomainShape(*pDgnGcs);
+//         m_pDomainInLatLong  = pSrcDomainLL->IntersectShape(*pDgnDomainLL);       
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2016
+    //----------------------------------------------------------------------------------------
+    StatusInt AddPointUOR(DPoint3dCR uorPt)
+        {
+        DPoint3d srcCartesianPt;
+
+        ReprojectStatus status;
+
+        GeoPoint dgnGeoPt;
+        if (REPROJECT_Success != (status = s_FilterGeocoordWarning(m_destGCS.LatLongFromUors(dgnGeoPt, uorPt))))
+            return ERROR;
+
+        GeoPoint srcGeoPt;
+        if (REPROJECT_Success != (status = s_FilterGeocoordWarning(m_destGCS.LatLongFromLatLong(srcGeoPt, dgnGeoPt, m_sourceGCS))))
+            return ERROR;
+        
+        if (REPROJECT_Success != (status = s_FilterGeocoordWarning(m_sourceGCS.CartesianFromLatLong(srcCartesianPt, srcGeoPt))))
+            return ERROR;
+
+       
+        AddTiePoints(srcCartesianPt, uorPt);
+
+        return SUCCESS;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2016
+    //----------------------------------------------------------------------------------------
+    StatusInt ReprojectPoint(DPoint3dR uorPt, DPoint3dCR srcCartesianPt)
+        {
+        ReprojectStatus status;
+
+        // Source cartesian to lat/long.
+        GeoPoint srcGeoPt;
+        if (REPROJECT_Success != (status = s_FilterGeocoordWarning(m_sourceGCS.LatLongFromCartesian(srcGeoPt, srcCartesianPt))))
+            return ERROR;
+
+        // Source lat/long to DgnDb lat/long.
+        GeoPoint dgnGeoPt;
+        if (REPROJECT_Success != (status = s_FilterGeocoordWarning(m_sourceGCS.LatLongFromLatLong(dgnGeoPt, srcGeoPt, m_destGCS))))
+            return ERROR;
+
+        // Finally to UOR
+        if (REPROJECT_Success != (status = s_FilterGeocoordWarning(m_destGCS.UorsFromLatLong(uorPt, dgnGeoPt))))
+            return ERROR;
+
+        return SUCCESS;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2016
+    //----------------------------------------------------------------------------------------
+    StatusInt AddPoint(DPoint3dCR srcCartesianPt)
+        {
+        DPoint3d uorPt;
+        if (SUCCESS != ReprojectPoint(uorPt, srcCartesianPt))
+            return ERROR;            
+
+        AddTiePoints(srcCartesianPt, uorPt);
+        return SUCCESS;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2016
+    //----------------------------------------------------------------------------------------
+    void AddTiePoints(DPoint3dCR badPt, DPoint3dCR goodPt)
+        {
+        m_tiePoints.push_back(badPt);
+        m_tiePoints.push_back(goodPt);
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2016
+    //----------------------------------------------------------------------------------------
+    StatusInt ComputeProjective(DMatrix4dR out)
+        {
+        if (0 != HGF2DDCTransfoModel::GetProjectiveTransfoMatrixFromScaleAndTiePts(out.coff, (uint16_t)m_tiePoints.size() * 3, (double const*) m_tiePoints.data()))
+            return ERROR;
+        
+        return SUCCESS;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2016
+    //----------------------------------------------------------------------------------------
+    static HFCPtr<HGF2DPolygonOfSegments> GetDomainShape(GeoCoordinates::BaseGCSR geoCs)
+        {
+        bvector<GeoPoint> geoDomainLL;  // in lat/long
+        geoCs.GetMathematicalDomain(geoDomainLL);
+
+        HGF2DCoordCollection<double> geoPoints;
+        for (GeoPoint const& geoPt : geoDomainLL)
+            geoPoints.push_back(HGF2DCoord<double>(geoPt.longitude, geoPt.latitude));
+
+        HFCPtr<HGF2DPolygonOfSegments> pDomainShape(new HGF2DPolygonOfSegments(geoPoints));
+
+        return pDomainShape;
+        }
+
+    void ClearAll() { m_tiePoints.clear(); }
+    size_t GetTiePointCount() {return m_tiePoints.size()/2;}
+
+    //HFCPtr<HGF2DShape>    m_pDomainInLatLong;
+    std::vector<DPoint3d> m_tiePoints;
+
+    GeoCoordinates::BaseGCSR m_sourceGCS;
+    DgnGCSR                  m_destGCS;
+    };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  7/2016
+//----------------------------------------------------------------------------------------
+StatusInt RasterQuadTree::ComputeSourceToWorldTransform(DMatrix4dR sourceToWorld)
+    {
+    sourceToWorld.InitIdentity();
+
+    GeoCoordinates::BaseGCSP pSourceGcs = GetSource().GetGcsP();
+    DgnGCSP pDgnGcs = GetDgnDb().Units().GetDgnGCS();
+
+    if (nullptr == pSourceGcs || nullptr == pDgnGcs || !pSourceGcs->IsValid() || !pDgnGcs->IsValid())
+        return SUCCESS; // Assume raster to be coincident.
+        
+    //&&MM test for same GCS but also make sure units or UOR factor are applied
+    //!m_pDgnGCS->IsEquivalent(*pRasterGcs)
+
+    // Create a shapeCartesian in with src corners.
+    DPoint3dCP sourceCorners = &GetSource().GetCorners();
+    
+    ReprojectionApproximater approx(*pSourceGcs, *pDgnGcs);
+
+    double seed[] = {0.15, 0.5, 0.85};
+    size_t  seedCount = sizeof(seed) / sizeof(seed[0]);
+
+    bool hadFailure = false;
+    for (size_t y = 0; y < seedCount; ++y)
+        {
+        for (size_t x = 0; x < seedCount; ++x)
+            {
+            if (SUCCESS != approx.AddPoint(DPoint3d::FromInterpolateBilinear(sourceCorners[0], sourceCorners[1], sourceCorners[2], sourceCorners[3], seed[x], seed[y])))
+                {
+                //&&MM and do what? move toward the center of the raster or domain or project extent.
+                hadFailure = true;
+                x = y = seedCount;
+                }
+            }
+        }
+
+    //&&MM we should test that we have enough pt if not do something else?
+    // even if we have enough the distribution might not be good enough.
+#if 0
+    if (hadFailure)
+        {
+        approx.ClearAll();
+
+        // Project contains extent of geometries only. ->> not used right now.
+        AxisAlignedBox3d projectExtent = GetDgnDb().Units().GetProjectExtents();
+
+        DPoint3d box[8];
+        projectExtent.Get8Corners(box);
+        for (size_t y = 0; y < seedCount; ++y)
+            {
+            for (size_t x = 0; x < seedCount; ++x)
+                {
+                if (SUCCESS != approx.AddPointUOR(DPoint3d::FromInterpolateBilinear(box[0], box[1], box[2], box[3], seed[x], seed[y])))
+                    {
+                    //&&MM and do what? move toward the center of the raster or domain or project extent.
+//                     hadFailure = true;
+//                     x = y = seedCount;
+                    }
+                }
+            }
+        }
+#endif
+    
+    return approx.ComputeProjective(sourceToWorld);    
     }
 
 //----------------------------------------------------------------------------------------

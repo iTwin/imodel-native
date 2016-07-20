@@ -57,6 +57,9 @@
 #include <Imagepp/all/h/HRPDEMFilter.h>
 #include <Imagepp/all/h/HPMAttribute.h>
 #include <Imagepp/all/h/HRADEMRaster.h>
+#include <ImagePP/all/h/HGF2DPolygonOfSegments.h>
+#include <ImagePP/all/h/HGF2DDCTransfoModel.h>
+
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>
