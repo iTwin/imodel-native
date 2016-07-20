@@ -12,7 +12,7 @@
 
 USING_NAMESPACE_BENTLEY_SECURITY
 
-BETEST_TC_SETUP(SecureStoreTests)
+void SecureStoreTests::SetUpTestCase()
     {
 #if defined(__APPLE__)
     // TODO: sign test project to use predefined keychain access group

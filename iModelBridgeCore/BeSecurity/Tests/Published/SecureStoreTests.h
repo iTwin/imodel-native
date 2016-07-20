@@ -12,5 +12,5 @@
 
 class SecureStoreTests : public ::testing::Test
     {
-    BETEST_DECLARE_TC_SETUP
+    public: static void SetUpTestCase();
     };
