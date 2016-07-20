@@ -639,7 +639,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 {
                 if (ecclassIdPropertyMap->IsPersisted())
                     {
-                    viewSql.AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetTable().GetName().c_str()).AppendSpace().AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetName().c_str());
+                    viewSql.AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetTable().GetName().c_str()).AppendDot().AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetName().c_str());
                     }
                 else
                     {
