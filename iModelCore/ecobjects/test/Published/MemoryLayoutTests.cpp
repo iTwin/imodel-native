@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/MemoryLayoutTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -23,825 +23,1145 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct MemoryLayoutTests : ECTestFixture 
+struct MemoryLayoutTests : ECTestFixture
     {
-    static std::vector<Utf8String> s_propertyNames;
+    protected:
+        static std::vector<Utf8String> s_propertyNames;
 
-    void SetValuesForProfiling (StandaloneECInstanceR instance)
-        {
-        for (NameVector::const_iterator it = s_propertyNames.begin(); it != s_propertyNames.end(); ++it)
-            instance.SetValue (it->c_str(), ECValue (it->c_str()));
-        }
+        void SetValuesForProfiling(StandaloneECInstanceR instance)
+            {
+            for (NameVector::const_iterator it = s_propertyNames.begin(); it != s_propertyNames.end(); ++it)
+                instance.SetValue(it->c_str(), ECValue(it->c_str()));
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, Utf8CP value)
-    {
-    v.Clear();
-    if (useIndex)
-        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
-    else
-        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
-    EXPECT_STREQ (value, v.GetUtf8CP());
-    }
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyString(IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, Utf8CP value)
+            {
+            v.Clear();
+            if (useIndex)
+                EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString, index));
+            else
+                EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString));
+            EXPECT_STREQ(value, v.GetUtf8CP());
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
-    {
-    return VerifyString (instance, v, accessString, false, 0, value);
-    }    
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
-    {
-    v.SetUtf8CP(value);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
-    VerifyString (instance, v, accessString, value);
-    }
-       
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, uint32_t value)
-    {
-    v.Clear();
-    if (useIndex)
-        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
-    else
-        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
-    EXPECT_EQ (value, v.GetInteger());
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
-    {
-    return VerifyInteger (instance, v, accessString, false, 0, value);
-    }    
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
-    {
-    v.SetInteger(value);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
-    VerifyInteger (instance, v, accessString, value);
-    }  
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyDouble (IECInstanceR instance, ECValueR v, Utf8CP accessString, double value)
-    {
-    v.Clear();
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
-    EXPECT_EQ (value, v.GetDouble());
-    }
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyDouble (IECInstanceR instance, ECValueR v, Utf8CP accessString, double value)
-    {
-    v.SetDouble(value);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
-    VerifyDouble (instance, v, accessString, value);
-    }
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Adam.Klatzkin                   01/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyString(IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
+            {
+            return VerifyString(instance, v, accessString, false, 0, value);
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyLong (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_t value)
-    {
-    v.Clear();
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
-    EXPECT_EQ (value, v.GetLong());
-    }
-        
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyLong (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_t value)
-    {
-    v.SetLong(value);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
-    VerifyLong (instance, v, accessString, value);
-    } 
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyArrayInfo (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t count, bool isFixedCount)
-    {
-    v.Clear();
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
-    EXPECT_EQ (count, v.GetArrayInfo().GetCount());
-    EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyOutOfBoundsError (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t index)
-    {
-    v.Clear();    
-    EXPECT_TRUE (ECObjectsStatus::IndexOutOfRange == instance.GetValue (v, accessString, index));
-    EXPECT_TRUE (ECObjectsStatus::IndexOutOfRange == instance.SetValue (accessString, v, index));
-    }    
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyStringArray (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value, uint32_t start, uint32_t count)
-    {
-    Utf8String incrementingString = value;
-   
-    for (uint32_t i=start ; i < start + count ; i++)        
-        {
-        incrementingString.append ("X");
-        VerifyString (instance, v, accessString, true, i, incrementingString.c_str());
-        }
-    }  
-              
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyStringArray (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value, uint32_t count)
-    {
-    Utf8String incrementingString = value;
-    for (uint32_t i=0 ; i < count ; i++)        
-        {
-        incrementingString.append ("X");
-        v.SetUtf8CP(incrementingString.c_str());
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetAndVerifyString(IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
+            {
+            v.SetUtf8CP(value);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.SetValue(accessString, v));
+            VerifyString(instance, v, accessString, value);
+            }
 
-        ECObjectsStatus status = instance.SetValue (accessString, v, i);
-        EXPECT_TRUE (ECObjectsStatus::Success == status);
-        }
-    
-    VerifyStringArray (instance, v, accessString, value, 0, count);
-    }  
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void VerifyIntegerArray (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t baseValue, uint32_t start, uint32_t count)
-    {       
-    for (uint32_t i=start ; i < start + count ; i++)        
-        {
-        VerifyInteger (instance, v, accessString, true, i, baseValue++);
-        }
-    }        
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    AdamKlatzkin     01/10
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void SetAndVerifyIntegerArray (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t baseValue, uint32_t count)
-    {
-    for (uint32_t i=0 ; i < count ; i++)        
-        {
-        v.SetInteger(baseValue + i); 
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyInteger(IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, uint32_t value)
+            {
+            v.Clear();
+            if (useIndex)
+                EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString, index));
+            else
+                EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString));
+            EXPECT_EQ(value, v.GetInteger());
+            }
 
-        ECObjectsStatus status = instance.SetValue (accessString, v, i);
-        EXPECT_TRUE (ECObjectsStatus::Success == status);
-        }
-        
-    VerifyIntegerArray (instance, v, accessString, baseValue, 0, count);
-    }      
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   01/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t start, uint32_t count, bool isNull)
-    {
-    for (uint32_t i = start ; i < start + count ; i++)    
-        {
-        v.Clear();
-        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, i));
-        EXPECT_TRUE (isNull == v.IsNull());        
-        }
-    }
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyInteger(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
+            {
+            return VerifyInteger(instance, v, accessString, false, 0, value);
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String    GetTestSchemaXMLString (Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor, Utf8CP className)
-    {
-    Utf8Char fmt[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    "<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                    "    <ECClass typeName=\"EmptyClass\" isDomainClass=\"True\">"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"CadData\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"Name\"         typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Count\"        typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"StartPoint\"   typeName=\"point3d\" />"
-                    "        <ECProperty propertyName=\"EndPoint\"     typeName=\"point3d\" />"
-                    "        <ECProperty propertyName=\"Size\"         typeName=\"point2d\" />"
-                    "        <ECProperty propertyName=\"Length\"       typeName=\"double\"  />"
-                    "        <ECProperty propertyName=\"Install_Date\" typeName=\"dateTime\"  />"
-                    "        <ECProperty propertyName=\"Service_Date\" typeName=\"dateTime\"  />"
-                    "        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"ArrayTest\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
-                    "        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
-                    "        <ECArrayProperty propertyName=\"SomePoint2ds\"    typeName=\"point2d\" />"
-                    "        <ECArrayProperty propertyName=\"SomeDoubles\"     typeName=\"double\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeDateTimes\"   typeName=\"dateTime\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
-                    "        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"  
-                    "        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"  
-                    "        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"AllPrimitives\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"APoint3d\"         typeName=\"point3d\" />"
-                    "        <ECProperty propertyName=\"APoint2d\"         typeName=\"point2d\" />"
-                    "        <ECProperty propertyName=\"ADouble\"          typeName=\"double\"  />"
-                    "        <ECProperty propertyName=\"ADateTime\"        typeName=\"dateTime\"  />"
-                    "        <ECProperty propertyName=\"ABoolean\"         typeName=\"boolean\"  />"
-                    "        <ECProperty propertyName=\"ALong\"            typeName=\"long\"  />"
-                    "        <ECProperty propertyName=\"ABinary\"          typeName=\"binary\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
-                    "        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
-                    "        <ECArrayProperty propertyName=\"SomePoint2ds\"    typeName=\"point2d\" />"
-                    "        <ECArrayProperty propertyName=\"SomeDoubles\"     typeName=\"double\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeDateTimes\"   typeName=\"dateTime\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
-                    "        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECArrayProperty propertyName=\"FixedString1\"  typeName=\"string\"     minOccurs=\"1\"  maxOccurs=\"1\" />"
-                    "        <ECArrayProperty propertyName=\"FixedInt1\"     typeName=\"int\"        minOccurs=\"1\"  maxOccurs=\"1\" />"
-                    "        <ECArrayProperty propertyName=\"FixedString10\" typeName=\"string\"     minOccurs=\"10\" maxOccurs=\"10\" />"
-                    "        <ECArrayProperty propertyName=\"FixedInt10\"    typeName=\"int\"        minOccurs=\"10\" maxOccurs=\"10\" />"
-                    "        <ECArrayProperty propertyName=\"Struct1\"       typeName=\"BaseClass0\" minOccurs=\"1\"  maxOccurs=\"1\" />"
-                    "        <ECArrayProperty propertyName=\"Struct10\"      typeName=\"BaseClass0\" minOccurs=\"10\" maxOccurs=\"10\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"ClassLayoutPerformanceTest0\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"AString\"  typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"AnInt\"    typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"ADouble\"  typeName=\"double\"  />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"ClassLayoutPerformanceTest1\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"AMonkeywrench\"    typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"ADouble\"          typeName=\"double\"  />"
-                    "        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
-                    "        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"A\" typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"AA\" typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"B\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"C\" typeName=\"long\" />"
-                    "        <ECProperty propertyName=\"D\" typeName=\"double\" />"
-                    "        <ECProperty propertyName=\"S\" typeName=\"string\" />"
-                    "        <ECStructProperty propertyName=\"Manufacturer\" typeName=\"Manufacturer\" />"
-                    "        <ECProperty propertyName=\"Property0\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property3\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property4\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property5\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property6\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property7\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property8\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property9\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"                    
-                    "        <ECProperty propertyName=\"Property10\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property11\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property12\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property13\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property14\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property15\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property16\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property17\" typeName=\"string\" />"                    
-                    "        <ECArrayProperty propertyName=\"VariableArrayFixedElement\" typeName=\"int\"/>"
-                    "        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"                    
-                    "        <ECProperty propertyName=\"Property18\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property19\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property20\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property21\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property22\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\"/>"
-                    "        <ECProperty propertyName=\"Property23\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property24\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property25\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property26\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property27\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"VariableArrayVariableElement\" typeName=\"string\"/>"
-                    "        <ECProperty propertyName=\"Property28\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property29\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property30\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property31\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property32\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property33\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property34\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property35\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property36\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property37\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property38\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property39\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property40\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property41\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property42\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property43\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property44\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property45\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property46\" typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Property47\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"EndingArray\" typeName=\"string\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"NestedStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"NestPropString\" typeName=\"string\" />"
-                    "        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"ClassWithStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECArrayProperty propertyName=\"StructArray\" typeName=\"AllPrimitives\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
-                    "        <ECStructProperty propertyName=\"StructMember\" typeName=\"AllPrimitives\" />"
-                    "        <ECArrayProperty propertyName=\"ComplicatedStructArray\" typeName=\"NestedStructArray\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"ClassWithPolymorphicStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECArrayProperty propertyName=\"PolymorphicStructArray\" typeName=\"BaseClass0\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"BaseClass0\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"BaseIntProperty\" typeName=\"int\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"DerivedClass0\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <BaseClass>BaseClass0</BaseClass>"
-                    "        <ECProperty propertyName=\"DerivedStringProperty\" typeName=\"string\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"DerivedClass1\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <BaseClass>BaseClass0</BaseClass>"
-                    "        <ECProperty propertyName=\"DerivedDoubleProperty\" typeName=\"double\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"Address\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"HouseNumber\"  typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Street\"       typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Town\"         typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"State\"        typeName=\"string\" />"
-                    "        <ECProperty propertyName=\"Zip\"          typeName=\"int\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"PhoneNumber\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty propertyName=\"AreaCode\"     typeName=\"int\" />"
-                    "        <ECProperty propertyName=\"Number\"       typeName=\"int\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"ContactInfo\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECStructProperty propertyName=\"PhoneNumber\" typeName=\"PhoneNumber\" />"
-                    "        <ECStructProperty propertyName=\"Address\"     typeName=\"Address\" />"
-                    "        <ECProperty       propertyName=\"Email\"       typeName=\"string\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"Employee\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty       propertyName=\"Name\"       typeName=\"string\" />"
-                    "        <ECStructProperty propertyName=\"Home\"       typeName=\"ContactInfo\" />"
-                    "        <ECStructProperty propertyName=\"Work\"       typeName=\"ContactInfo\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
-                    "        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
-                    "    </ECClass>"
-                    "    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
-                    "        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
-                    "        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
-                    "    </ECClass>"
-                    "  <ECClass typeName=\"StructClass\" isStruct=\"True\" isDomainClass=\"False\">"
-                    "    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
-                    "    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" /> "
-                    "    <ECArrayProperty propertyName=\"ArrayProperty\" typeName=\"string\" minOccurs=\"1\" maxOccurs=\"1\" /> "
-                    "    </ECClass>"
-                    "  <ECClass typeName=\"ComplexClass\" isDomainClass=\"True\">"
-                    "    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" />" 
-                    "    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
-                    "    <ECProperty propertyName=\"DoubleProperty\" typeName=\"double\" /> "
-                    "    <ECProperty propertyName=\"DateTimeProperty\" typeName=\"dateTime\" />" 
-                    "    <ECProperty propertyName=\"BooleanProperty\" typeName=\"boolean\" />" 
-                    "    <ECArrayProperty propertyName=\"SimpleArrayProperty\" typeName=\"string\" minOccurs=\"1\" maxOccurs=\"1\" />"
-                    "    <ECArrayProperty propertyName=\"StructArrayProperty\" typeName=\"StructClass\" minOccurs=\"1\" maxOccurs=\"1\" isStruct=\"True\" />" 
-                    "    <ECStructProperty propertyName=\"StructProperty\" typeName=\"StructClass\" />" 
-                    "  </ECClass>"
-                    "</ECSchema>";
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetAndVerifyInteger(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
+            {
+            v.SetInteger(value);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.SetValue(accessString, v));
+            VerifyInteger(instance, v, accessString, value);
+            }
 
-    Utf8String buff;
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyDouble(IECInstanceR instance, ECValueR v, Utf8CP accessString, double value)
+            {
+            v.Clear();
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString));
+            EXPECT_EQ(value, v.GetDouble());
+            }
 
-    buff.Sprintf (fmt, schemaName, versionMajor, versionMinor, className);
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetAndVerifyDouble(IECInstanceR instance, ECValueR v, Utf8CP accessString, double value)
+            {
+            v.SetDouble(value);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.SetValue(accessString, v));
+            VerifyDouble(instance, v, accessString, value);
+            }
 
-    return buff;
-    }
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyLong(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_t value)
+            {
+            v.Clear();
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString));
+            EXPECT_EQ(value, v.GetLong());
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr       CreateTestSchema ()
-    {
-    Utf8String schemaXMLString = GetTestSchemaXMLString ("TestSchema", 0, 0, "TestClass");
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetAndVerifyLong(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint64_t value)
+            {
+            v.SetLong(value);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.SetValue(accessString, v));
+            VerifyLong(instance, v, accessString, value);
+            }
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (schema, schemaXMLString.c_str(), *schemaContext));
-    return schema;
-    }
-    
-typedef std::vector<Utf8String> NameVector;
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    AdamKlatzkin     01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyArrayInfo(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t count, bool isFixedCount)
+            {
+            v.Clear();
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString));
+            EXPECT_EQ(count, v.GetArrayInfo().GetCount());
+            EXPECT_EQ(isFixedCount, v.GetArrayInfo().IsFixedCount());
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen    01/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr     CreateProfilingSchema (int nStrings)
-    {
-    s_propertyNames.clear();
-    
-    Utf8String schemaXml = 
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    "<ECSchema schemaName=\"ProfilingSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                    "    <ECClass typeName=\"Pidget\" isDomainClass=\"True\">";
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    AdamKlatzkin     01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyOutOfBoundsError(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t index)
+            {
+            v.Clear();
+            EXPECT_TRUE(ECObjectsStatus::IndexOutOfRange == instance.GetValue(v, accessString, index));
+            EXPECT_TRUE(ECObjectsStatus::IndexOutOfRange == instance.SetValue(accessString, v, index));
+            }
 
-    for (int i = 0; i < nStrings; i++)
-        {
-        Utf8String propertyName;
-        propertyName.Sprintf ("StringProperty%02d", i);
-        s_propertyNames.push_back (propertyName);
-        Utf8CP propertyFormat = 
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    AdamKlatzkin     01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyStringArray(IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value, uint32_t start, uint32_t count)
+            {
+            Utf8String incrementingString = value;
+
+            for (uint32_t i = start; i < start + count; i++)
+                {
+                incrementingString.append("X");
+                VerifyString(instance, v, accessString, true, i, incrementingString.c_str());
+                }
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    AdamKlatzkin     01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetAndVerifyStringArray(IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value, uint32_t count)
+            {
+            Utf8String incrementingString = value;
+            for (uint32_t i = 0; i < count; i++)
+                {
+                incrementingString.append("X");
+                v.SetUtf8CP(incrementingString.c_str());
+
+                ECObjectsStatus status = instance.SetValue(accessString, v, i);
+                EXPECT_TRUE(ECObjectsStatus::Success == status);
+                }
+
+            VerifyStringArray(instance, v, accessString, value, 0, count);
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    AdamKlatzkin     01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyIntegerArray(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t baseValue, uint32_t start, uint32_t count)
+            {
+            for (uint32_t i = start; i < start + count; i++)
+                {
+                VerifyInteger(instance, v, accessString, true, i, baseValue++);
+                }
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    AdamKlatzkin     01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void SetAndVerifyIntegerArray(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t baseValue, uint32_t count)
+            {
+            for (uint32_t i = 0; i < count; i++)
+                {
+                v.SetInteger(baseValue + i);
+
+                ECObjectsStatus status = instance.SetValue(accessString, v, i);
+                EXPECT_TRUE(ECObjectsStatus::Success == status);
+                }
+
+            VerifyIntegerArray(instance, v, accessString, baseValue, 0, count);
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Adam.Klatzkin                   01/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyIsNullArrayElements(IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t start, uint32_t count, bool isNull)
+            {
+            for (uint32_t i = start; i < start + count; i++)
+                {
+                v.Clear();
+                EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, accessString, i));
+                EXPECT_TRUE(isNull == v.IsNull());
+                }
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    JoshSchifter    12/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        Utf8String    GetTestSchemaXMLString(Utf8CP schemaName, uint32_t versionMajor, uint32_t versionMinor, Utf8CP className)
+            {
+            Utf8Char fmt[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                "<ECSchema schemaName=\"%s\" nameSpacePrefix=\"test\" version=\"%02d.%02d\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                "    <ECClass typeName=\"EmptyClass\" isDomainClass=\"True\">"
+                "    </ECClass>"
+                "    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"CadData\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"Name\"         typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Count\"        typeName=\"int\" />"
+                "        <ECProperty propertyName=\"StartPoint\"   typeName=\"point3d\" />"
+                "        <ECProperty propertyName=\"EndPoint\"     typeName=\"point3d\" />"
+                "        <ECProperty propertyName=\"Size\"         typeName=\"point2d\" />"
+                "        <ECProperty propertyName=\"Length\"       typeName=\"double\"  />"
+                "        <ECProperty propertyName=\"Install_Date\" typeName=\"dateTime\"  />"
+                "        <ECProperty propertyName=\"Service_Date\" typeName=\"dateTime\"  />"
+                "        <ECProperty propertyName=\"Field_Tested\" typeName=\"boolean\"  />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"ArrayTest\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
+                "        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
+                "        <ECArrayProperty propertyName=\"SomePoint2ds\"    typeName=\"point2d\" />"
+                "        <ECArrayProperty propertyName=\"SomeDoubles\"     typeName=\"double\"  />"
+                "        <ECArrayProperty propertyName=\"SomeDateTimes\"   typeName=\"dateTime\"  />"
+                "        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
+                "        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
+                "        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
+                "        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"
+                "        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"
+                "        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"AllPrimitives\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
+                "        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
+                "        <ECProperty propertyName=\"APoint3d\"         typeName=\"point3d\" />"
+                "        <ECProperty propertyName=\"APoint2d\"         typeName=\"point2d\" />"
+                "        <ECProperty propertyName=\"ADouble\"          typeName=\"double\"  />"
+                "        <ECProperty propertyName=\"ADateTime\"        typeName=\"dateTime\"  />"
+                "        <ECProperty propertyName=\"ABoolean\"         typeName=\"boolean\"  />"
+                "        <ECProperty propertyName=\"ALong\"            typeName=\"long\"  />"
+                "        <ECProperty propertyName=\"ABinary\"          typeName=\"binary\"  />"
+                "        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
+                "        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
+                "        <ECArrayProperty propertyName=\"SomePoint2ds\"    typeName=\"point2d\" />"
+                "        <ECArrayProperty propertyName=\"SomeDoubles\"     typeName=\"double\"  />"
+                "        <ECArrayProperty propertyName=\"SomeDateTimes\"   typeName=\"dateTime\"  />"
+                "        <ECArrayProperty propertyName=\"SomeBooleans\"    typeName=\"boolean\"  />"
+                "        <ECArrayProperty propertyName=\"SomeLongs\"       typeName=\"long\"  />"
+                "        <ECArrayProperty propertyName=\"SomeBinaries\"    typeName=\"binary\"  />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"FixedString1\"  typeName=\"string\"     minOccurs=\"1\"  maxOccurs=\"1\" />"
+                "        <ECArrayProperty propertyName=\"FixedInt1\"     typeName=\"int\"        minOccurs=\"1\"  maxOccurs=\"1\" />"
+                "        <ECArrayProperty propertyName=\"FixedString10\" typeName=\"string\"     minOccurs=\"10\" maxOccurs=\"10\" />"
+                "        <ECArrayProperty propertyName=\"FixedInt10\"    typeName=\"int\"        minOccurs=\"10\" maxOccurs=\"10\" />"
+                "        <ECArrayProperty propertyName=\"Struct1\"       typeName=\"BaseClass0\" minOccurs=\"1\"  maxOccurs=\"1\" />"
+                "        <ECArrayProperty propertyName=\"Struct10\"      typeName=\"BaseClass0\" minOccurs=\"10\" maxOccurs=\"10\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"ClassLayoutPerformanceTest0\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"AString\"  typeName=\"string\" />"
+                "        <ECProperty propertyName=\"AnInt\"    typeName=\"int\" />"
+                "        <ECProperty propertyName=\"ADouble\"  typeName=\"double\"  />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"ClassLayoutPerformanceTest1\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"AMonkeywrench\"    typeName=\"int\" />"
+                "        <ECProperty propertyName=\"ADouble\"          typeName=\"double\"  />"
+                "        <ECProperty propertyName=\"AString\"          typeName=\"string\" />"
+                "        <ECProperty propertyName=\"AnInt\"            typeName=\"int\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"%s\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"BeginningArray\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"A\" typeName=\"int\" />"
+                "        <ECProperty propertyName=\"AA\" typeName=\"int\" />"
+                "        <ECProperty propertyName=\"B\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"C\" typeName=\"long\" />"
+                "        <ECProperty propertyName=\"D\" typeName=\"double\" />"
+                "        <ECProperty propertyName=\"S\" typeName=\"string\" />"
+                "        <ECStructProperty propertyName=\"Manufacturer\" typeName=\"Manufacturer\" />"
+                "        <ECProperty propertyName=\"Property0\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property1\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property2\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property3\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property4\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property5\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property6\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property7\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property8\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property9\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"FixedArrayFixedElement\" typeName=\"int\" minOccurs=\"10\" maxOccurs=\"10\"/>"
+                "        <ECProperty propertyName=\"Property10\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property11\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property12\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property13\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property14\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property15\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property16\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property17\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"VariableArrayFixedElement\" typeName=\"int\"/>"
+                "        <ECArrayProperty propertyName=\"FixedArrayVariableElement\" typeName=\"string\" minOccurs=\"12\" maxOccurs=\"12\"/>"
+                "        <ECProperty propertyName=\"Property18\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property19\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property20\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property21\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property22\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\"/>"
+                "        <ECProperty propertyName=\"Property23\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property24\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property25\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property26\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property27\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"VariableArrayVariableElement\" typeName=\"string\"/>"
+                "        <ECProperty propertyName=\"Property28\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property29\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property30\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property31\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property32\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property33\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property34\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property35\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property36\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property37\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property38\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property39\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property40\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property41\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property42\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property43\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property44\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property45\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property46\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Property47\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"EndingArray\" typeName=\"string\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"NestedStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"NestPropString\" typeName=\"string\" />"
+                "        <ECArrayProperty propertyName=\"ManufacturerArray\" typeName=\"Manufacturer\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"ClassWithStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"StructArray\" typeName=\"AllPrimitives\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                "        <ECStructProperty propertyName=\"StructMember\" typeName=\"AllPrimitives\" />"
+                "        <ECArrayProperty propertyName=\"ComplicatedStructArray\" typeName=\"NestedStructArray\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"ClassWithPolymorphicStructArray\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"PolymorphicStructArray\" typeName=\"BaseClass0\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"BaseClass0\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"BaseIntProperty\" typeName=\"int\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"DerivedClass0\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <BaseClass>BaseClass0</BaseClass>"
+                "        <ECProperty propertyName=\"DerivedStringProperty\" typeName=\"string\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"DerivedClass1\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <BaseClass>BaseClass0</BaseClass>"
+                "        <ECProperty propertyName=\"DerivedDoubleProperty\" typeName=\"double\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"Address\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"HouseNumber\"  typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Street\"       typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Town\"         typeName=\"string\" />"
+                "        <ECProperty propertyName=\"State\"        typeName=\"string\" />"
+                "        <ECProperty propertyName=\"Zip\"          typeName=\"int\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"PhoneNumber\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"AreaCode\"     typeName=\"int\" />"
+                "        <ECProperty propertyName=\"Number\"       typeName=\"int\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"ContactInfo\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECStructProperty propertyName=\"PhoneNumber\" typeName=\"PhoneNumber\" />"
+                "        <ECStructProperty propertyName=\"Address\"     typeName=\"Address\" />"
+                "        <ECProperty       propertyName=\"Email\"       typeName=\"string\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"Employee\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty       propertyName=\"Name\"       typeName=\"string\" />"
+                "        <ECStructProperty propertyName=\"Home\"       typeName=\"ContactInfo\" />"
+                "        <ECStructProperty propertyName=\"Work\"       typeName=\"ContactInfo\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"EmployeeDirectory\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"Employees\" typeName=\"Employee\"  minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
+                "        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
+                "    </ECClass>"
+                "  <ECClass typeName=\"StructClass\" isStruct=\"True\" isDomainClass=\"False\">"
+                "    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
+                "    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" /> "
+                "    <ECArrayProperty propertyName=\"ArrayProperty\" typeName=\"string\" minOccurs=\"1\" maxOccurs=\"1\" /> "
+                "    </ECClass>"
+                "  <ECClass typeName=\"ComplexClass\" isDomainClass=\"True\">"
+                "    <ECProperty propertyName=\"IntProperty\" typeName=\"int\" />"
+                "    <ECProperty propertyName=\"StringProperty\" typeName=\"string\" /> "
+                "    <ECProperty propertyName=\"DoubleProperty\" typeName=\"double\" /> "
+                "    <ECProperty propertyName=\"DateTimeProperty\" typeName=\"dateTime\" />"
+                "    <ECProperty propertyName=\"BooleanProperty\" typeName=\"boolean\" />"
+                "    <ECArrayProperty propertyName=\"SimpleArrayProperty\" typeName=\"string\" minOccurs=\"1\" maxOccurs=\"1\" />"
+                "    <ECArrayProperty propertyName=\"StructArrayProperty\" typeName=\"StructClass\" minOccurs=\"1\" maxOccurs=\"1\" isStruct=\"True\" />"
+                "    <ECStructProperty propertyName=\"StructProperty\" typeName=\"StructClass\" />"
+                "  </ECClass>"
+                "</ECSchema>";
+
+            Utf8String buff;
+            buff.Sprintf(fmt, schemaName, versionMajor, versionMinor, className);
+
+            return buff;
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    JoshSchifter    12/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        ECSchemaPtr       CreateTestSchema()
+            {
+            Utf8String schemaXMLString = GetTestSchemaXMLString("TestSchema", 0, 0, "TestClass");
+
+            ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+            ECSchemaPtr schema;
+            EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXMLString.c_str(), *schemaContext));
+            return schema;
+            }
+
+        typedef std::vector<Utf8String> NameVector;
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen    01/10
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        ECSchemaPtr     CreateProfilingSchema(int nStrings)
+            {
+            s_propertyNames.clear();
+
+            Utf8String schemaXml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                "<ECSchema schemaName=\"ProfilingSchema\" nameSpacePrefix=\"p\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                "    <ECClass typeName=\"Pidget\" isDomainClass=\"True\">";
+
+            for (int i = 0; i < nStrings; i++)
+                {
+                Utf8String propertyName;
+                propertyName.Sprintf("StringProperty%02d", i);
+                s_propertyNames.push_back(propertyName);
+                Utf8CP propertyFormat =
                     "        <ECProperty propertyName=\"%s\" typeName=\"string\" />";
-        Utf8String propertyXml;
-        propertyXml.Sprintf (propertyFormat, propertyName.c_str());
-        schemaXml += propertyXml;
-        }                    
+                Utf8String propertyXml;
+                propertyXml.Sprintf(propertyFormat, propertyName.c_str());
+                schemaXml += propertyXml;
+                }
 
-    schemaXml +=    "    </ECClass>"
-                    "</ECSchema>";
+            schemaXml += "    </ECClass>"
+                "</ECSchema>";
 
-    ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+            ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
-    ECSchemaPtr schema;
-    EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (schema, schemaXml.c_str(), *schemaContext));
-    return schema;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ExerciseVariableCountIntArray (IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, int baseValue)
-    {
-    // test insertion in an empty array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
-    VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
-    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 5);   
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
-    VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
-    // test insertion in the middle of an array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
-    VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
-    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 0, 3);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
-    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue + 3, 6, 2);
-    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 8);   
-    // test insertion at the beginning of an array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
-    VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
-    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 4, 8);    
-    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 12);     
-    // test insertion at the end of an array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (arrayAccessor, 2));    
-    VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
-    VerifyIntegerArray          (instance, v, arrayAccessor, baseValue, 0, 12);    
-    SetAndVerifyIntegerArray    (instance, v, arrayAccessor, baseValue, 14);               
-    }    
-       
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ExerciseVariableCountStringArray (IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, Utf8Char* stringSeed)
-    {
-    // test insertion in an empty array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 5));
-    VerifyArrayInfo             (instance, v, arrayAccessor, 5, false);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, true);    
-    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 5);   
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 5, false);
-    VerifyOutOfBoundsError      (instance, v, arrayAccessor, 5);
-    // test insertion in the middle of an array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 3, 3));    
-    VerifyArrayInfo             (instance, v, arrayAccessor, 8, false);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 3, false);
-    VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 3);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 3, 3, true);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 6, 2, false);
-    Utf8String stringSeedXXX(stringSeed);
-    stringSeedXXX.append ("XXX");
-    VerifyStringArray           (instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
-    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 8);   
-    // test insertion at the beginning of an array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 0, 4));    
-    VerifyArrayInfo             (instance, v, arrayAccessor, 12, false);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 4, true);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 4, 8, false);
-    VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 4, 8);    
-    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 12);     
-    // test insertion at the end of an array
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (arrayAccessor, 2));    
-    VerifyArrayInfo             (instance, v, arrayAccessor, 14, false);    
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 12, 2, true);
-    VerifyIsNullArrayElements   (instance, v, arrayAccessor, 0, 12, false);
-    VerifyStringArray           (instance, v, arrayAccessor, stringSeed, 0, 12);    
-    SetAndVerifyStringArray     (instance, v, arrayAccessor, stringSeed, 14);               
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void VerifyVariableCountManufacturerArray (IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor)
-    {    
-    VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor));
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 0));
-    EXPECT_TRUE (v.IsStruct());    
-    IECInstancePtr manufInst = v.GetStruct();
-    VerifyString (*manufInst, v, "Name", "Nissan");
-    VerifyInteger (*manufInst, v, "AccountNo", 3475);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 1));
-    EXPECT_TRUE (v.IsStruct());    
-    manufInst = v.GetStruct();
-    VerifyString (*manufInst, v, "Name", "Ford");
-    VerifyInteger (*manufInst, v, "AccountNo", 381);    
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 2));
-    EXPECT_TRUE (v.IsStruct());    
-    manufInst = v.GetStruct();
-    VerifyString (*manufInst, v, "Name", "Chrysler");
-    VerifyInteger (*manufInst, v, "AccountNo", 81645);    
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, arrayAccessor, 3));
-    EXPECT_TRUE (v.IsStruct());    
-    manufInst = v.GetStruct();
-    VerifyString (*manufInst, v, "Name", "Toyota");
-    VerifyInteger (*manufInst, v, "AccountNo", 6823);    
-    }  
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Adam.Klatzkin                   02/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ExerciseVariableCountManufacturerArray (IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, Utf8Char* arrayAccessor)
-    {    
-    VerifyArrayInfo (instance, v, arrayAccessor, 0, false);
-    
-    // create an array of two values
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.AddArrayElements (arrayAccessor, 2));
-    VerifyArrayInfo (instance, v, arrayAccessor, 2, false);
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, true);
-    IECInstancePtr manufInst = manufacturerEnabler.CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Nissan");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 0));
-    manufInst = manufacturerEnabler.CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Kia");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 1));
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 2, false);    
-   
-    // insert two elements in the middle of the array   
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.InsertArrayElements (arrayAccessor, 1, 2));
-    VerifyArrayInfo (instance, v, arrayAccessor, 4, false);
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 1, false);
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 1, 2, true);
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
-    manufInst = manufacturerEnabler.CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Ford");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 381);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 1));
-    manufInst = manufacturerEnabler.CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Chrysler");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 81645);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success ==instance.SetValue (arrayAccessor, v, 2));
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 4, false);
-    
-    // ensure we can set a struct array value to NULL        
-    v.SetToNull();
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 3));
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 0, 3, false);
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, true);
-    manufInst = manufacturerEnabler.CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Acura");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 6);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 3));
-    VerifyIsNullArrayElements (instance, v, arrayAccessor, 3, 1, false);
-    manufInst = manufacturerEnabler.CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Toyota");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 6823);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance.SetValue (arrayAccessor, v, 3));
-    
-    VerifyVariableCountManufacturerArray (instance, v, arrayAccessor);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    CaseyMullen     10/09
-+---------------+---------------+---------------+---------------+---------------+------*/  
-void ExerciseInstance (IECInstanceR instance, Utf8Char* valueForFinalStrings)
-    {   
-    ECValue v;    
-    instance.GetValue (v, "D");
-    
-    double doubleValue = 1.0/3.0;
-    SetAndVerifyDouble (instance, v, "D", doubleValue);
+            ECSchemaPtr schema;
+            EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext));
+            return schema;
+            }
 
-    SetAndVerifyInteger (instance, v, "A", 97);
-    SetAndVerifyInteger (instance, v, "AA", 12);   
-    
-    SetAndVerifyString (instance, v, "B", "Happy");
-    SetAndVerifyString (instance, v, "B", "Very Happy");
-    SetAndVerifyString (instance, v, "B", "sad");
-    SetAndVerifyString (instance, v, "S", "Lucky");
-    SetAndVerifyString (instance, v, "B", "Very Very Happy");
-    VerifyString (instance, v, "S", "Lucky");
-    SetAndVerifyString (instance, v, "Manufacturer.Name", "Charmed");
-    SetAndVerifyString (instance, v, "S", "Lucky Strike");
-        
-    Utf8Char largeString[3300];
-    largeString[0] = '\0';
-    for (int i = 0; i < 20; i++)
-        strcat (largeString, "S2345678901234567890123456789012");
-    
-    SetAndVerifyString (instance, v, "S", largeString);
-    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
-        {
-        Utf8String propertyName;
-        propertyName.Sprintf ("Property%i", i);
-        SetAndVerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
-        }          
-        
-    VerifyArrayInfo (instance, v, "BeginningArray", 0, false);
-    VerifyArrayInfo (instance, v, "VariableArrayFixedElement", 0, false);
-    VerifyArrayInfo (instance, v, "VariableArrayVariableElement", 0, false);
-    VerifyArrayInfo (instance, v, "EndingArray", 0, false);
-    
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Adam.Klatzkin                   02/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void ExerciseVariableCountIntArray(IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, int baseValue)
+            {
+            // test insertion in an empty array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 0, 5));
+            VerifyArrayInfo(instance, v, arrayAccessor, 5, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 5, true);
+            SetAndVerifyIntegerArray(instance, v, arrayAccessor, baseValue, 5);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 5, false);
+            VerifyOutOfBoundsError(instance, v, arrayAccessor, 5);
+            // test insertion in the middle of an array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 3, 3));
+            VerifyArrayInfo(instance, v, arrayAccessor, 8, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 3, false);
+            VerifyIntegerArray(instance, v, arrayAccessor, baseValue, 0, 3);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 3, 3, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 6, 2, false);
+            VerifyIntegerArray(instance, v, arrayAccessor, baseValue + 3, 6, 2);
+            SetAndVerifyIntegerArray(instance, v, arrayAccessor, baseValue, 8);
+            // test insertion at the beginning of an array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 0, 4));
+            VerifyArrayInfo(instance, v, arrayAccessor, 12, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 4, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 4, 8, false);
+            VerifyIntegerArray(instance, v, arrayAccessor, baseValue, 4, 8);
+            SetAndVerifyIntegerArray(instance, v, arrayAccessor, baseValue, 12);
+            // test insertion at the end of an array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.AddArrayElements(arrayAccessor, 2));
+            VerifyArrayInfo(instance, v, arrayAccessor, 14, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 12, 2, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 12, false);
+            VerifyIntegerArray(instance, v, arrayAccessor, baseValue, 0, 12);
+            SetAndVerifyIntegerArray(instance, v, arrayAccessor, baseValue, 14);
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Adam.Klatzkin                   02/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void ExerciseVariableCountStringArray(IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, Utf8Char* stringSeed)
+            {
+            // test insertion in an empty array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 0, 5));
+            VerifyArrayInfo(instance, v, arrayAccessor, 5, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 5, true);
+            SetAndVerifyStringArray(instance, v, arrayAccessor, stringSeed, 5);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 5, false);
+            VerifyOutOfBoundsError(instance, v, arrayAccessor, 5);
+            // test insertion in the middle of an array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 3, 3));
+            VerifyArrayInfo(instance, v, arrayAccessor, 8, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 3, false);
+            VerifyStringArray(instance, v, arrayAccessor, stringSeed, 0, 3);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 3, 3, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 6, 2, false);
+            Utf8String stringSeedXXX(stringSeed);
+            stringSeedXXX.append("XXX");
+            VerifyStringArray(instance, v, arrayAccessor, stringSeedXXX.c_str(), 6, 2);
+            SetAndVerifyStringArray(instance, v, arrayAccessor, stringSeed, 8);
+            // test insertion at the beginning of an array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 0, 4));
+            VerifyArrayInfo(instance, v, arrayAccessor, 12, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 4, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 4, 8, false);
+            VerifyStringArray(instance, v, arrayAccessor, stringSeed, 4, 8);
+            SetAndVerifyStringArray(instance, v, arrayAccessor, stringSeed, 12);
+            // test insertion at the end of an array
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.AddArrayElements(arrayAccessor, 2));
+            VerifyArrayInfo(instance, v, arrayAccessor, 14, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 12, 2, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 12, false);
+            VerifyStringArray(instance, v, arrayAccessor, stringSeed, 0, 12);
+            SetAndVerifyStringArray(instance, v, arrayAccessor, stringSeed, 14);
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Adam.Klatzkin                   02/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void VerifyVariableCountManufacturerArray(IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor)
+            {
+            VerifyArrayInfo(instance, v, arrayAccessor, 4, false);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, arrayAccessor));
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 4, false);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, arrayAccessor, 0));
+            EXPECT_TRUE(v.IsStruct());
+            IECInstancePtr manufInst = v.GetStruct();
+            VerifyString(*manufInst, v, "Name", "Nissan");
+            VerifyInteger(*manufInst, v, "AccountNo", 3475);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, arrayAccessor, 1));
+            EXPECT_TRUE(v.IsStruct());
+            manufInst = v.GetStruct();
+            VerifyString(*manufInst, v, "Name", "Ford");
+            VerifyInteger(*manufInst, v, "AccountNo", 381);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, arrayAccessor, 2));
+            EXPECT_TRUE(v.IsStruct());
+            manufInst = v.GetStruct();
+            VerifyString(*manufInst, v, "Name", "Chrysler");
+            VerifyInteger(*manufInst, v, "AccountNo", 81645);
+            EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, arrayAccessor, 3));
+            EXPECT_TRUE(v.IsStruct());
+            manufInst = v.GetStruct();
+            VerifyString(*manufInst, v, "Name", "Toyota");
+            VerifyInteger(*manufInst, v, "AccountNo", 6823);
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Adam.Klatzkin                   02/2010
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void ExerciseVariableCountManufacturerArray(IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, Utf8Char* arrayAccessor)
+            {
+            VerifyArrayInfo(instance, v, arrayAccessor, 0, false);
+
+            // create an array of two values
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.AddArrayElements(arrayAccessor, 2));
+            VerifyArrayInfo(instance, v, arrayAccessor, 2, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 2, true);
+            IECInstancePtr manufInst = manufacturerEnabler.CreateInstance().get();
+            SetAndVerifyString(*manufInst, v, "Name", "Nissan");
+            SetAndVerifyInteger(*manufInst, v, "AccountNo", 3475);
+            v.SetStruct(manufInst.get());
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 0));
+            manufInst = manufacturerEnabler.CreateInstance().get();
+            SetAndVerifyString(*manufInst, v, "Name", "Kia");
+            SetAndVerifyInteger(*manufInst, v, "AccountNo", 1791);
+            v.SetStruct(manufInst.get());
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 1));
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 2, false);
+
+            // insert two elements in the middle of the array   
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 1, 2));
+            VerifyArrayInfo(instance, v, arrayAccessor, 4, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 1, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 1, 2, true);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 3, 1, false);
+            manufInst = manufacturerEnabler.CreateInstance().get();
+            SetAndVerifyString(*manufInst, v, "Name", "Ford");
+            SetAndVerifyInteger(*manufInst, v, "AccountNo", 381);
+            v.SetStruct(manufInst.get());
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 1));
+            manufInst = manufacturerEnabler.CreateInstance().get();
+            SetAndVerifyString(*manufInst, v, "Name", "Chrysler");
+            SetAndVerifyInteger(*manufInst, v, "AccountNo", 81645);
+            v.SetStruct(manufInst.get());
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 2));
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 4, false);
+
+            // ensure we can set a struct array value to NULL        
+            v.SetToNull();
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 3));
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 0, 3, false);
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 3, 1, true);
+            manufInst = manufacturerEnabler.CreateInstance().get();
+            SetAndVerifyString(*manufInst, v, "Name", "Acura");
+            SetAndVerifyInteger(*manufInst, v, "AccountNo", 6);
+            v.SetStruct(manufInst.get());
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 3));
+            VerifyIsNullArrayElements(instance, v, arrayAccessor, 3, 1, false);
+            manufInst = manufacturerEnabler.CreateInstance().get();
+            SetAndVerifyString(*manufInst, v, "Name", "Toyota");
+            SetAndVerifyInteger(*manufInst, v, "AccountNo", 6823);
+            v.SetStruct(manufInst.get());
+            ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 3));
+
+            VerifyVariableCountManufacturerArray(instance, v, arrayAccessor);
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                                    CaseyMullen     10/09
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        void ExerciseInstance(IECInstanceR instance, Utf8Char* valueForFinalStrings)
+            {
+            ECValue v;
+            instance.GetValue(v, "D");
+
+            double doubleValue = 1.0 / 3.0;
+            SetAndVerifyDouble(instance, v, "D", doubleValue);
+
+            SetAndVerifyInteger(instance, v, "A", 97);
+            SetAndVerifyInteger(instance, v, "AA", 12);
+
+            SetAndVerifyString(instance, v, "B", "Happy");
+            SetAndVerifyString(instance, v, "B", "Very Happy");
+            SetAndVerifyString(instance, v, "B", "sad");
+            SetAndVerifyString(instance, v, "S", "Lucky");
+            SetAndVerifyString(instance, v, "B", "Very Very Happy");
+            VerifyString(instance, v, "S", "Lucky");
+            SetAndVerifyString(instance, v, "Manufacturer.Name", "Charmed");
+            SetAndVerifyString(instance, v, "S", "Lucky Strike");
+
+            Utf8Char largeString[3300];
+            largeString[0] = '\0';
+            for (int i = 0; i < 20; i++)
+                strcat(largeString, "S2345678901234567890123456789012");
+
+            SetAndVerifyString(instance, v, "S", largeString);
+            for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
+                {
+                Utf8String propertyName;
+                propertyName.Sprintf("Property%i", i);
+                SetAndVerifyString(instance, v, propertyName.c_str(), valueForFinalStrings);
+                }
+
+            VerifyArrayInfo(instance, v, "BeginningArray", 0, false);
+            VerifyArrayInfo(instance, v, "VariableArrayFixedElement", 0, false);
+            VerifyArrayInfo(instance, v, "VariableArrayVariableElement", 0, false);
+            VerifyArrayInfo(instance, v, "EndingArray", 0, false);
+
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    // We cannot honor min/maxOccurs attributes of ArrayECProperty, so arrays are always unbounded
-    VerifyArrayInfo (instance, v, "FixedArrayFixedElement", 10, true);
-    VerifyArrayInfo (instance, v, "FixedArrayVariableElement", 12, true);
-    VerifyIsNullArrayElements (instance, v, "FixedArrayFixedElement", 0, 10, true);
-    SetAndVerifyIntegerArray (instance, v, "FixedArrayFixedElement", 172, 10);
-    VerifyIsNullArrayElements (instance, v, "FixedArrayFixedElement", 0, 10, false);
-    SetAndVerifyIntegerArray (instance, v, "FixedArrayFixedElement", 283, 10);    
-    
-    VerifyIsNullArrayElements (instance, v, "FixedArrayVariableElement", 0, 12, true);
-    SetAndVerifyStringArray (instance, v, "FixedArrayVariableElement", "BaseString", 12);       
-    VerifyIsNullArrayElements (instance, v, "FixedArrayVariableElement", 0, 12, false);
-    SetAndVerifyStringArray (instance, v, "FixedArrayVariableElement", "LaaaaaaargeString", 10);       
-    VerifyStringArray (instance, v, "FixedArrayVariableElement", "BaseStringXXXXXXXXXX", 10, 2);
-    SetAndVerifyStringArray (instance, v, "FixedArrayVariableElement", "XString", 12);           
-#else
-    // Replace #ifdef'ed out section above
-    VerifyArrayInfo (instance, v, "FixedArrayFixedElement", 0, false);
-    VerifyArrayInfo (instance, v, "FixedArrayVariableElement", 0, false);
-    instance.AddArrayElements ("FixedArrayFixedElement", 10);                       // if we supported fixed count arrays, the elements would already have been allocated and this would be unnecessary
-    VerifyIsNullArrayElements (instance, v, "FixedArrayFixedElement", 0, 10, true);
-    SetAndVerifyIntegerArray (instance, v, "FixedArrayFixedElement", 172, 10);
-    VerifyIsNullArrayElements (instance, v, "FixedArrayFixedElement", 0, 10, false);
-    SetAndVerifyIntegerArray (instance, v, "FixedArrayFixedElement", 283, 10);
+            // We cannot honor min/maxOccurs attributes of ArrayECProperty, so arrays are always unbounded
+            VerifyArrayInfo(instance, v, "FixedArrayFixedElement", 10, true);
+            VerifyArrayInfo(instance, v, "FixedArrayVariableElement", 12, true);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayFixedElement", 0, 10, true);
+            SetAndVerifyIntegerArray(instance, v, "FixedArrayFixedElement", 172, 10);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayFixedElement", 0, 10, false);
+            SetAndVerifyIntegerArray(instance, v, "FixedArrayFixedElement", 283, 10);
 
-    instance.AddArrayElements ("FixedArrayVariableElement", 12);                    // if we supported fixed count arrays, the elements would already have been allocated and this would be unnecessary
-    VerifyIsNullArrayElements (instance, v, "FixedArrayVariableElement", 0, 12, true);
-    SetAndVerifyStringArray (instance, v, "FixedArrayVariableElement", "BaseString", 12);
-    VerifyIsNullArrayElements (instance, v, "FixedArrayVariableElement", 0, 12, false);
-    SetAndVerifyStringArray (instance, v, "FixedArrayVariableElement", "LaaaaaaargeString", 10);
-    VerifyStringArray (instance, v, "FixedArrayVariableElement", "BaseStringXXXXXXXXXX", 10, 2);
-    SetAndVerifyStringArray (instance, v, "FixedArrayVariableElement", "XString", 12);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayVariableElement", 0, 12, true);
+            SetAndVerifyStringArray(instance, v, "FixedArrayVariableElement", "BaseString", 12);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayVariableElement", 0, 12, false);
+            SetAndVerifyStringArray(instance, v, "FixedArrayVariableElement", "LaaaaaaargeString", 10);
+            VerifyStringArray(instance, v, "FixedArrayVariableElement", "BaseStringXXXXXXXXXX", 10, 2);
+            SetAndVerifyStringArray(instance, v, "FixedArrayVariableElement", "XString", 12);
+#else
+            // Replace #ifdef'ed out section above
+            VerifyArrayInfo(instance, v, "FixedArrayFixedElement", 0, false);
+            VerifyArrayInfo(instance, v, "FixedArrayVariableElement", 0, false);
+            instance.AddArrayElements("FixedArrayFixedElement", 10);                       // if we supported fixed count arrays, the elements would already have been allocated and this would be unnecessary
+            VerifyIsNullArrayElements(instance, v, "FixedArrayFixedElement", 0, 10, true);
+            SetAndVerifyIntegerArray(instance, v, "FixedArrayFixedElement", 172, 10);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayFixedElement", 0, 10, false);
+            SetAndVerifyIntegerArray(instance, v, "FixedArrayFixedElement", 283, 10);
+
+            instance.AddArrayElements("FixedArrayVariableElement", 12);                    // if we supported fixed count arrays, the elements would already have been allocated and this would be unnecessary
+            VerifyIsNullArrayElements(instance, v, "FixedArrayVariableElement", 0, 12, true);
+            SetAndVerifyStringArray(instance, v, "FixedArrayVariableElement", "BaseString", 12);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayVariableElement", 0, 12, false);
+            SetAndVerifyStringArray(instance, v, "FixedArrayVariableElement", "LaaaaaaargeString", 10);
+            VerifyStringArray(instance, v, "FixedArrayVariableElement", "BaseStringXXXXXXXXXX", 10, 2);
+            SetAndVerifyStringArray(instance, v, "FixedArrayVariableElement", "XString", 12);
 #endif
 
-    ExerciseVariableCountStringArray (instance, v, "BeginningArray", "BAValue");
-    ExerciseVariableCountIntArray    (instance, v, "VariableArrayFixedElement", 57);
-    ExerciseVariableCountStringArray (instance, v, "VariableArrayVariableElement", "Var+Var");
-    ExerciseVariableCountStringArray (instance, v, "EndingArray", "EArray");        
-    
-    ECClassCP manufacturerClass = instance.GetClass().GetSchema().GetClassCP ("Manufacturer");
-    ASSERT_TRUE (NULL != manufacturerClass);
+            ExerciseVariableCountStringArray(instance, v, "BeginningArray", "BAValue");
+            ExerciseVariableCountIntArray(instance, v, "VariableArrayFixedElement", 57);
+            ExerciseVariableCountStringArray(instance, v, "VariableArrayVariableElement", "Var+Var");
+            ExerciseVariableCountStringArray(instance, v, "EndingArray", "EArray");
+
+            ECClassCP manufacturerClass = instance.GetClass().GetSchema().GetClassCP("Manufacturer");
+            ASSERT_TRUE(NULL != manufacturerClass);
 
 #ifdef OLD_WAY    
-    ClassLayoutP manufClassLayout = ClassLayout::BuildFromClass (*manufacturerClass, 43, 24);
-    StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler (*manufacturerClass, *manufClassLayout, true);
+            ClassLayoutP manufClassLayout = ClassLayout::BuildFromClass(*manufacturerClass, 43, 24);
+            StandaloneECEnablerPtr manufEnabler = StandaloneECEnabler::CreateEnabler(*manufacturerClass, *manufClassLayout, true);
 #endif
-    StandaloneECEnablerPtr manufEnabler =  instance.GetEnablerR().GetEnablerForStructArrayMember (manufacturerClass->GetSchema().GetSchemaKey(), manufacturerClass->GetName().c_str()); 
-    ExerciseVariableCountManufacturerArray (instance, *manufEnabler, v, "ManufacturerArray");
-    
-    // Make sure that everything still has the final value that we expected
-    VerifyString (instance, v, "S", largeString);
-    VerifyInteger (instance, v, "A", 97);
-    VerifyDouble  (instance, v, "D", doubleValue);
-    VerifyInteger (instance, v, "AA", 12);
-    VerifyString  (instance, v, "B", "Very Very Happy");
-    VerifyString (instance, v, "Manufacturer.Name", "Charmed");
-    for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
-        {
-        Utf8String propertyName;
-        propertyName.Sprintf ("Property%i", i);
-        VerifyString (instance, v, propertyName.c_str(), valueForFinalStrings);
-        }    
-    VerifyArrayInfo     (instance, v, "BeginningArray", 14, false);
-    VerifyIsNullArrayElements   (instance, v, "BeginningArray", 0, 14, false);
-    VerifyStringArray   (instance, v, "BeginningArray", "BAValue", 0, 14);        
-    VerifyArrayInfo     (instance, v, "VariableArrayVariableElement", 14, false);
-    VerifyIsNullArrayElements   (instance, v, "VariableArrayVariableElement", 0, 14, false);
-    VerifyStringArray   (instance, v, "VariableArrayVariableElement", "Var+Var", 0, 14);               
-    VerifyArrayInfo     (instance, v, "EndingArray", 14, false);
-    VerifyIsNullArrayElements   (instance, v, "EndingArray", 0, 14, false);
-    VerifyStringArray   (instance, v, "EndingArray", "EArray", 0, 14);                
-    VerifyVariableCountManufacturerArray (instance, v, "ManufacturerArray");     
-    
+            StandaloneECEnablerPtr manufEnabler = instance.GetEnablerR().GetEnablerForStructArrayMember(manufacturerClass->GetSchema().GetSchemaKey(), manufacturerClass->GetName().c_str());
+            ExerciseVariableCountManufacturerArray(instance, *manufEnabler, v, "ManufacturerArray");
+
+            // Make sure that everything still has the final value that we expected
+            VerifyString(instance, v, "S", largeString);
+            VerifyInteger(instance, v, "A", 97);
+            VerifyDouble(instance, v, "D", doubleValue);
+            VerifyInteger(instance, v, "AA", 12);
+            VerifyString(instance, v, "B", "Very Very Happy");
+            VerifyString(instance, v, "Manufacturer.Name", "Charmed");
+            for (int i = 0; i < N_FINAL_STRING_PROPS_IN_FAKE_CLASS; i++)
+                {
+                Utf8String propertyName;
+                propertyName.Sprintf("Property%i", i);
+                VerifyString(instance, v, propertyName.c_str(), valueForFinalStrings);
+                }
+            VerifyArrayInfo(instance, v, "BeginningArray", 14, false);
+            VerifyIsNullArrayElements(instance, v, "BeginningArray", 0, 14, false);
+            VerifyStringArray(instance, v, "BeginningArray", "BAValue", 0, 14);
+            VerifyArrayInfo(instance, v, "VariableArrayVariableElement", 14, false);
+            VerifyIsNullArrayElements(instance, v, "VariableArrayVariableElement", 0, 14, false);
+            VerifyStringArray(instance, v, "VariableArrayVariableElement", "Var+Var", 0, 14);
+            VerifyArrayInfo(instance, v, "EndingArray", 14, false);
+            VerifyIsNullArrayElements(instance, v, "EndingArray", 0, 14, false);
+            VerifyStringArray(instance, v, "EndingArray", "EArray", 0, 14);
+            VerifyVariableCountManufacturerArray(instance, v, "ManufacturerArray");
+
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    VerifyArrayInfo     (instance, v, "FixedArrayFixedElement", 10, true);
-    VerifyIntegerArray  (instance, v, "FixedArrayFixedElement", 283, 0, 10);             
-    VerifyArrayInfo     (instance, v, "FixedArrayVariableElement", 12, true);
-    VerifyIsNullArrayElements   (instance, v, "FixedArrayVariableElement", 0, 12, false);
-    VerifyStringArray   (instance, v, "FixedArrayVariableElement", "XString", 0, 12);           
-    VerifyArrayInfo     (instance, v, "VariableArrayFixedElement", 14, false);
-    VerifyIsNullArrayElements   (instance, v, "VariableArrayFixedElement", 0, 14, false);
-    VerifyIntegerArray  (instance, v, "VariableArrayFixedElement", 57, 0, 14);                   
+            VerifyArrayInfo(instance, v, "FixedArrayFixedElement", 10, true);
+            VerifyIntegerArray(instance, v, "FixedArrayFixedElement", 283, 0, 10);
+            VerifyArrayInfo(instance, v, "FixedArrayVariableElement", 12, true);
+            VerifyIsNullArrayElements(instance, v, "FixedArrayVariableElement", 0, 12, false);
+            VerifyStringArray(instance, v, "FixedArrayVariableElement", "XString", 0, 12);
+            VerifyArrayInfo(instance, v, "VariableArrayFixedElement", 14, false);
+            VerifyIsNullArrayElements(instance, v, "VariableArrayFixedElement", 0, 14, false);
+            VerifyIntegerArray(instance, v, "VariableArrayFixedElement", 57, 0, 14);
 #endif
 
-    instance.ToString("").c_str();
-    }
-};
+            instance.ToString("").c_str();
+            }
+    };
 //static
 std::vector<Utf8String> MemoryLayoutTests::s_propertyNames;
 
-#ifdef  MUST_PUBLISH_ECInstanceInteropHelper
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_PropertyAccessor)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("TestClass");
-    ASSERT_TRUE (ecClass);
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(ecClass);
 
-    ClassLayoutP classLayout = ClassLayout::BuildFromClass (*ecClass, 0, 0);
-    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler (*ecClass, *classLayout, true);
-
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    double    doubleVal;
-    int       intVal;
+    const Byte binaryInput[] = {0x01, 0x23, 0x26, 0x78};
+    const size_t sizeInput = 4;
+    ECValue      valueInput;
+    valueInput.SetBinary(binaryInput, sizeInput, false);
+    const Byte*  binaryOutput;
+    size_t       sizeOutput;
+    ECValue      valueOutput;
 
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetDoubleValue (*instance, "D", (double)(1.0/3.0)));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetDouble      (*instance, doubleVal, "D"));
-    EXPECT_TRUE ((double)(1.0/3.0) == doubleVal);
+    // GetValue
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, "ABinary", valueInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValue(*instance, valueOutput, "ABinary"));
+    binaryOutput = valueOutput.GetBinary(sizeOutput);
+    EXPECT_EQ(sizeInput, sizeOutput);
+    for (int i = 0; i < (int) sizeInput; i++)
+        EXPECT_EQ(binaryInput[i], binaryOutput[i]);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::AddArrayElements ("FixedArrayFixedElement", 1));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "FixedArrayFixedElement[0]", (int)(97)));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "FixedArrayFixedElement[0]"));
-    EXPECT_TRUE (97 == intVal);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, "SomeBinaries[0]", valueInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValue(*instance, valueOutput, "SomeBinaries[0]"));
+    binaryOutput = valueOutput.GetBinary(sizeOutput);
+    EXPECT_EQ(sizeInput, sizeOutput);
+    for (int i = 0; i < (int) sizeInput; i++)
+        EXPECT_EQ(binaryInput[i], binaryOutput[i]);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "VariableArrayFixedElement[1]", (int)(101)));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "VariableArrayFixedElement[1]"));
-    EXPECT_TRUE (101 == intVal);
+    // GetInteger
+    int intVal = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, "AnInt", 10));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, intVal, "AnInt"));
+    EXPECT_EQ(10, intVal);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, "SomeInts[0]", 20));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, intVal, "SomeInts[0]"));
+    EXPECT_EQ(20, intVal);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetIntegerValue (*instance, "VariableArrayFixedElement[0]", (int)(100)));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetInteger      (*instance, intVal, "VariableArrayFixedElement[0]"));
-    EXPECT_TRUE (100 == intVal);
+    // GetDouble
+    double doubleVal = 0.0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDoubleValue(*instance, "ADouble", 1.0));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDouble(*instance, doubleVal, "ADouble"));
+    EXPECT_EQ(1.0, doubleVal);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDoubleValue(*instance, "SomeDoubles[0]", 2.0));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDouble(*instance, doubleVal, "SomeDoubles[0]"));
+    EXPECT_EQ(2.0, doubleVal);
+
+    // GetLong
+    int64_t longVal = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetLongValue(*instance, "ALong", 50));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetLong(*instance, longVal, "ALong"));
+    EXPECT_EQ(50, longVal);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetLongValue(*instance, "SomeLongs[0]", 100));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetLong(*instance, longVal, "SomeLongs[0]"));
+    EXPECT_EQ(100, longVal);
+
+    // GetString
+    Utf8String  stringVal;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetStringValue(*instance, "AString", "teststring1"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetString(*instance, stringVal, "AString"));
+    EXPECT_STREQ("teststring1", stringVal.c_str());
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetStringValue(*instance, "SomeStrings[0]", "teststring2"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetString(*instance, stringVal, "SomeStrings[0]"));
+    EXPECT_STREQ("teststring2", stringVal.c_str());
+
+    // GetBool
+    bool boolVal = false;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetBooleanValue(*instance, "ABoolean", true));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetBoolean(*instance, boolVal, "ABoolean"));
+    EXPECT_TRUE(boolVal);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetBooleanValue(*instance, "SomeBooleans[0]", false));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetBoolean(*instance, boolVal, "SomeBooleans[0]"));
+    EXPECT_FALSE(boolVal);
+
+    // GetPoint2d
+    DPoint2d   point2dInput = {1.0, 2.0};
+    DPoint2d   point2dOutput = {0.0, 0.0};
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2DValue(*instance, "APoint2d", point2dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2D(*instance, point2dOutput, "APoint2d"));
+    EXPECT_TRUE(point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
+    point2dInput = {3.0, 4.0};
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2DValue(*instance, "SomePoint2ds[0]", point2dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2D(*instance, point2dOutput, "SomePoint2ds[0]"));
+    EXPECT_TRUE(point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
+
+    // GetPoint3d
+    DPoint3d   point3dInput = {1.0, 2.0, 3.0};
+    DPoint3d   point3dOutput = {0.0, 0.0, 0.0};
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3DValue(*instance, "APoint3d", point3dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3D(*instance, point3dOutput, "APoint3d"));
+    EXPECT_TRUE(point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
+    point3dInput = {4.0, 5.0, 6.0};
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3DValue(*instance, "SomePoint3ds[0]", point3dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3D(*instance, point3dOutput, "SomePoint3ds[0]"));
+    EXPECT_TRUE(point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
+
+    // GetDateTime
+    DateTime timeInput = DateTime::GetCurrentTimeUtc();
+    DateTime timeOutput;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDateTimeValue(*instance, "ADateTime", timeInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDateTime(*instance, timeOutput, "ADateTime"));
+    EXPECT_TRUE(timeInput.Equals(timeOutput, true));
+    timeInput = DateTime::GetCurrentTimeUtc();
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDateTimeValue(*instance, "SomeDateTimes[0]", timeInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDateTime(*instance, timeOutput, "SomeDateTimes[0]"));
+    EXPECT_TRUE(timeInput.Equals(timeOutput, true));
+
+    //GetDateTimeTicks
+    int64_t    ticksInput = 634027121070910000;
+    int64_t    ticksOutput = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDateTimeTicks(*instance, "ADateTime", ticksInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDateTimeTicks(*instance, ticksOutput, "ADateTime"));
+    EXPECT_TRUE(ticksInput == ticksOutput);
+
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDateTimeTicks(*instance, "SomeDateTimes[1]", ticksInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDateTimeTicks(*instance, ticksOutput, "SomeDateTimes[1]"));
+    EXPECT_TRUE(ticksInput == ticksOutput);
+    };
+
+#define ACCESSOR propertyValue.GetValueAccessor ()
+#define GetAccessor_start(valToMatch)             \
+        for (ECPropertyValueCR propertyValue : *collection) \
+                            { \
+                if (valToMatch == propertyValue.GetValueAccessor ().GetPropertyName ()) \
+                                        { 
+
+#define GetAccessor_end()   \
+                break;\
+                    } \
+                }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_ECValueAccessor)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    ECValuesCollectionPtr collection = ECValuesCollection::Create(*instance);
+
+    // GetValue
+    const Byte binaryInput[] = {0x01, 0x23, 0x26, 0x78};
+    const size_t sizeInput = 4;
+    ECValue      valueInput;
+    valueInput.SetBinary(binaryInput, sizeInput, false);
+    const Byte*  binaryOutput;
+    size_t       sizeOutput;
+    ECValue      valueOutput;
+
+    GetAccessor_start("ABinary")
+        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, "ABinary", valueInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValue(*instance, valueOutput, "ABinary"));
+    binaryOutput = valueOutput.GetBinary(sizeOutput);
+    EXPECT_EQ(sizeInput, sizeOutput);
+    for (int i = 0; i < (int) sizeInput; i++)
+        EXPECT_EQ(binaryInput[i], binaryOutput[i]);
+    GetAccessor_end()
+
+        // GetInteger
+        GetAccessor_start("AnInt")
+        int intVal = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, ACCESSOR, 10));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, intVal, ACCESSOR));
+    EXPECT_EQ(10, intVal);
+    GetAccessor_end()
+
+        // GetDouble
+        GetAccessor_start("ADouble")
+        double doubleVal = 0.0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDoubleValue(*instance, ACCESSOR, 1.0));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDouble(*instance, doubleVal, ACCESSOR));
+    EXPECT_EQ(1.0, doubleVal);
+    GetAccessor_end()
+
+        // GetLong
+        GetAccessor_start("ALong")
+        int64_t longVal = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetLongValue(*instance, ACCESSOR, 50));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetLong(*instance, longVal, ACCESSOR));
+    EXPECT_EQ(50, longVal);
+    GetAccessor_end()
+
+        // GetString
+        GetAccessor_start("AString")
+        Utf8String  stringVal;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetStringValue(*instance, ACCESSOR, "teststring1"));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetString(*instance, stringVal, ACCESSOR));
+    EXPECT_STREQ("teststring1", stringVal.c_str());
+    GetAccessor_end()
+
+        // GetBool
+        GetAccessor_start("ABoolean")
+        bool boolVal = false;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetBooleanValue(*instance, ACCESSOR, true));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetBoolean(*instance, boolVal, ACCESSOR));
+    EXPECT_TRUE(boolVal);
+    GetAccessor_end()
+
+        // GetPoint2d
+        GetAccessor_start("APoint2d")
+        DPoint2d   point2dInput = {1.0, 2.0};
+    DPoint2d   point2dOutput = {0.0, 0.0};
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint2DValue(*instance, ACCESSOR, point2dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint2D(*instance, point2dOutput, ACCESSOR));
+    EXPECT_TRUE(point2dInput.x == point2dOutput.x && point2dInput.y == point2dOutput.y);
+    GetAccessor_end()
+
+        // GetPoint3d
+        GetAccessor_start("APoint3d")
+        DPoint3d   point3dInput = {1.0, 2.0, 3.0};
+    DPoint3d   point3dOutput = {0.0, 0.0, 0.0};
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetPoint3DValue(*instance, ACCESSOR, point3dInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetPoint3D(*instance, point3dOutput, ACCESSOR));
+    EXPECT_TRUE(point3dInput.x == point3dOutput.x && point3dInput.y == point3dOutput.y && point3dInput.z == point3dOutput.z);
+    GetAccessor_end()
+
+        // GetDateTime
+        GetAccessor_start("ADateTime")
+        DateTime timeInput = DateTime::GetCurrentTimeUtc();
+    DateTime timeOutput;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDateTimeValue(*instance, ACCESSOR, timeInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDateTime(*instance, timeOutput, ACCESSOR));
+    EXPECT_TRUE(timeInput.Equals(timeOutput, true));
+    GetAccessor_end()
+
+        //GetDateTimeTicks
+        GetAccessor_start("ADateTime")
+        int64_t    ticksInput = 634027121070910000;
+    int64_t    ticksOutput = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetDateTimeTicks(*instance, ACCESSOR, ticksInput));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetDateTimeTicks(*instance, ticksOutput, ACCESSOR));
+    EXPECT_TRUE(ticksInput == ticksOutput);
+    GetAccessor_end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, AddRemoveArrayUsingInteropHelper)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("TestClass");
+    ASSERT_TRUE(ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    int intVal = 0;
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::AddArrayElements(*instance, "FixedArrayFixedElement", 1));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, "FixedArrayFixedElement[0]", 97));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, intVal, "FixedArrayFixedElement[0]"));
+    EXPECT_TRUE(97 == intVal);
+
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::AddArrayElements(*instance, "VariableArrayFixedElement", 1));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetIntegerValue(*instance, "VariableArrayFixedElement[1]", 101));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetInteger(*instance, intVal, "VariableArrayFixedElement[1]"));
+    EXPECT_TRUE(101 == intVal);
 
     Utf8String testString = "Charmed";
-    Utf8String testString2 = "Charmed2";
-    Utf8CP stringValueP = NULL;
+    Utf8String stringValueP = NULL;
 
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetStringValue (*instance, "ManufacturerArray[1].Name", testString.c_str()));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, "ManufacturerArray[1].Name"));
-    EXPECT_STREQ (testString.c_str(), stringValueP);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::AddArrayElements(*instance, "ManufacturerArray", 1));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetStringValue(*instance, "ManufacturerArray[1].Name", testString.c_str()));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetString(*instance, stringValueP, "ManufacturerArray[1].Name"));
+    EXPECT_STREQ(testString.c_str(), stringValueP.c_str());
 
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::SetStringValue (*instance, "ManufacturerArray[0].Name", testString2.c_str()));
-    EXPECT_TRUE (ECObjectsStatus::Success == ECInstanceInteropHelper::GetString (*instance, stringValueP, "ManufacturerArray[0].Name"));
-    EXPECT_STREQ (testString2.c_str(), stringValueP);
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, "FixedArrayFixedElement", 0));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, "VariableArrayFixedElement", 1));
+    EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::RemoveArrayElement(*instance, "ManufacturerArray", 1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, GetStructArraysUsingInteropHelper)
+    {
+    ECSchemaPtr      schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("ClassWithStructArray");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+    //Testing array of structs
+    ECValue structArrayValueInput(42);
+    EXPECT_TRUE(ECObjectsStatus::Success == ECInstanceInteropHelper::SetValue(*instance, "StructArray[1].AnInt", structArrayValueInput));
+    EXPECT_TRUE(ECObjectsStatus::Success == ECInstanceInteropHelper::SetValue(*instance, "StructArray[0].AnInt", structArrayValueInput));
+
+    ECValue structArrayValueOutput;
+    EXPECT_TRUE(ECObjectsStatus::Success == ECInstanceInteropHelper::GetValue(*instance, structArrayValueOutput, "StructArray[0].AnInt"));
+    EXPECT_TRUE(structArrayValueInput.GetInteger() == structArrayValueOutput.GetInteger());
+
+    //Just seeing if it's possible to set a struct array element directly using the interop helper.
+    ECClassP structClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(NULL != structClass);
+
+    StandaloneECEnablerPtr structEnabler = structClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr newStructInstance = structEnabler->CreateInstance();
+
+    ECValue manualIntEntry(64);
+    EXPECT_TRUE(ECObjectsStatus::Success == ECInstanceInteropHelper::SetValue(*newStructInstance, "AnInt", manualIntEntry));
+
+    ECValue newStructValue;
+    newStructValue.SetStruct(newStructInstance.get());
+    EXPECT_TRUE(ECObjectsStatus::Success == ECInstanceInteropHelper::SetValue(*instance, "StructArray[2]", newStructValue));
+
+    ECValue manualIntEntryOutput;
+    EXPECT_TRUE(ECObjectsStatus::Success == ECInstanceInteropHelper::GetValue(*instance, manualIntEntryOutput, "StructArray[2].AnInt"));
+    EXPECT_TRUE(manualIntEntryOutput.GetInteger() == manualIntEntry.GetInteger());
     };
-#endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
+    {
+    ECSchemaPtr      schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(ecClass != NULL);
+    ClassLayoutPtr classLayout = ClassLayout::BuildFromClass(*ecClass);
+    StandaloneECEnablerPtr enabler = StandaloneECEnabler::CreateEnabler(*ecClass, *classLayout, NULL);
+
+    ECN::StandaloneECInstancePtr wipInstance = enabler->CreateInstance();
+    // Previously there was a bug which prevented changing the size of a binary value once it had been set. This has since been fixed.
+    const Byte bugTestBinary1[8] = {0x21, 0xa9, 0x84, 0x9d, 0xca, 0x1d, 0x8a, 0x78};
+    const Byte bugTestBinary2[4] = {0x12, 0x79, 0xca, 0xde};
+
+    ECValue bugTestValue0(bugTestBinary2, 4);
+    ASSERT_TRUE(ECObjectsStatus::Success == wipInstance->InsertArrayElements("SomeBinaries", 0, 1));
+    ASSERT_TRUE(ECObjectsStatus::Success == ECN::ECInstanceInteropHelper::SetValue(*wipInstance, "SomeBinaries[0]", bugTestValue0));
+
+    ECValue bugTestValue1(bugTestBinary1, 8);
+    ASSERT_TRUE(ECObjectsStatus::Success == ECN::ECInstanceInteropHelper::SetValue(*wipInstance, "SomeBinaries[0]", bugTestValue1));
+
+    ECN::ECValue bugTestValue2;
+    ASSERT_TRUE(ECObjectsStatus::Success == ECN::ECInstanceInteropHelper::GetValue(*wipInstance, bugTestValue2, "SomeBinaries[0]"));
+    size_t size1 = -1;
+    size_t size2 = -2;
+    const Byte* data1 = bugTestValue1.GetBinary(size1);
+    const Byte* data2 = bugTestValue2.GetBinary(size2);
+
+    ASSERT_TRUE(NULL != data1 && NULL != data2);
+    ASSERT_TRUE(size1 == 8);
+    ASSERT_TRUE(size2 == 8);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, GetSetValueByIndexUsingInteropHelper)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10

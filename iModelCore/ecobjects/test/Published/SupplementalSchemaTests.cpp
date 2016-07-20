@@ -983,7 +983,6 @@ TEST_F(SupplementedSchemaBuilderTests, BuildAConflictingConsolidatedSchema)
     CreatePrimarySchema(primaryTestSchema);
     EXPECT_EQ(SupplementedSchemaStatus::SchemaMergeException, builder.UpdateSchema(*primaryTestSchema, supplementalSchemas));
     VerifySchemasAreUnchanged();
-
     }
 
 /*---------------------------------------------------------------------------------**//**
