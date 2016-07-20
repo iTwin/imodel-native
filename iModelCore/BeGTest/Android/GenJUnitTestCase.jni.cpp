@@ -30,8 +30,7 @@ extern "C" void begtest_uninitialize ();
 
 #undef  BE_TEST_RUNNER_JNI_WRAPPER
 #undef  BE_TEST_RUNNER
-#define BE_TEST_RUNNER_JNI_WRAPPER(JTC,JTN)     extern "C" int BETEST_TEST_RUNNER_FUNC(TC,TN) (); \
-                                                extern "C" EXPORT_ATTRIBUTE jint Java_com_bentley_unittest___REPO___##JTC##_jniTest##JTN (JNIEnv* jni, jobject jobj) { \
+#define BE_TEST_RUNNER_JNI_WRAPPER(JTC,JTN)     extern "C" EXPORT_ATTRIBUTE jint Java_com_bentley_unittest___REPO___##JTC##_jniTest##JTN (JNIEnv* jni, jobject jobj) { \
                                                     ((BeTestHost&) BeTest::GetHost ()).SetJniEnvAndObject (jni, jobj); 
-#define BE_TEST_RUNNER(TC,TN)                       try { return BETEST_TEST_RUNNER_FUNC(TC,TN) (); } catch (...) {return 1;} }
+#define BE_TEST_RUNNER(TC,TN)                       extern int BETEST_TEST_RUNNER_FUNC(TC,TN) (); try { return BETEST_TEST_RUNNER_FUNC(TC,TN) (); } catch (...) {return 1;} }
 #include "__REPO__.list.h"
