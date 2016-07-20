@@ -860,4 +860,16 @@ TEST_F(MetaSchemaECSqlTestFixture, VerifyQueries)
     AssertSchemaDefs();
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MetaSchemaECSqlTestFixture, ECClassId)
+    {
+    SetupECDb("metaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT * from ec.ECSchemaDef WHERE ECClassId IS NOT NULL"));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

@@ -494,7 +494,9 @@ TEST(ECSqlInsertTests, MiscTests)
     //*******************************************************
     ADD_QUERY("INSERT INTO ecsql.P (I) VALUES (1 + 1)");
     ADD_QUERY("INSERT INTO ecsql.P (I) VALUES (5 * 4)");
+    ADD_QUERY("INSERT INTO ecsql.P (L) VALUES (1 + ECClassId)");
     ADD_QUERY("INSERT INTO ecsql.P (L) VALUES (1 + GetECClassId())");
+    ADD_QUERY("INSERT INTO ecsql.P (L) VALUES (ECClassId * 4)");
     ADD_QUERY("INSERT INTO ecsql.P (L) VALUES (GetECClassId() * 4)");
 
     //*******************************************************

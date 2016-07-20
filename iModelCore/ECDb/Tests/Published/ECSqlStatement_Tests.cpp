@@ -185,7 +185,7 @@ TEST_F(ECSqlStatementTestFixture, UnionTests)
     //use Custom Scaler function in union query
     PowSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), GetECClassId() ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Supplier UNION ALL Select POW(ECInstanceId, 2), ECClassId, ECInstanceId From ECST.Customer ORDER BY ECInstanceId"));
     rowCount = 0;
     while (stmt.Step() != BE_SQLITE_DONE)
         {
@@ -204,7 +204,7 @@ TEST_F(ECSqlStatementTestFixture, UnionTests)
     stmt.Finalize();
 
     //Use GROUP BY clause in Union Query
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*), Phone FROM (SELECT GetECClassId() ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT COUNT(*), Phone FROM (SELECT ECClassId, Phone FROM ECST.Supplier UNION ALL SELECT ECClassId, Phone FROM ECST.Customer) GROUP BY ECClassId ORDER BY Phone"));
 
     //Get Row one
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_ROW);
@@ -315,7 +315,7 @@ TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
     ECClassId customerClassId = ecdb.Schemas().GetECClassId("ECST", "Customer", ResolveSchema::BySchemaNamespacePrefix);
     ECClassId firstClassId = std::min<ECClassId>(supplierClassId, customerClassId);
     ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT ECClassId FROM ECST.Supplier UNION ALL SELECT ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_ROW);
     ASSERT_EQ(firstClassId, stmt.GetValueId<ECClassId>(0));
     ASSERT_EQ(4, stmt.GetValueInt(1));
@@ -454,11 +454,19 @@ TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+1+ECClassId, true, 'Chair')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    statement.Finalize();
+
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+1+GetECClassId(), true, 'Chair')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(1000/5, false, 'Table')"));
+    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+2+ECClassId, false, 'Table')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
@@ -470,16 +478,40 @@ TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductName FROM ECST.Product WHERE UnitPrice=100+2+ECClassId"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_STREQ("Table", statement.GetValueText(0));
+    statement.Finalize();
+
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductName FROM ECST.Product WHERE UnitPrice=100+2+GetECClassId()"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("Table", statement.GetValueText(0));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice>ECClassId AND ProductName='Chair'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice>GetECClassId() AND ProductName='Chair'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
 
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+ECClassId AND ProductName='LCD'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_TRUE(statement.GetValueBoolean(0));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+ECClassId AND ProductName='LCD'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_TRUE(statement.GetValueBoolean(0));
+    statement.Finalize();
+
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+GetECClassId() AND ProductName='LCD'"));
+    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_TRUE(statement.GetValueBoolean(0));
+    statement.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice=100+3+ECClassId OR ProductName='LCD'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_TRUE(statement.GetValueBoolean(0));
     statement.Finalize();
@@ -698,7 +730,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate_SharedTable)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), I,T FROM nsat.ClassA ORDER BY ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId,ECClassId,I,T FROM nsat.ClassA ORDER BY ECInstanceId"));
     while (stmt.Step() != BE_SQLITE_DONE)
         {
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "The values don't match for instance " << stmt.GetValueInt64(0) << " with class id: " << stmt.GetValueInt64(1);

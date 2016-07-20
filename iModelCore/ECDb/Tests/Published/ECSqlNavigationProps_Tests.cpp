@@ -177,7 +177,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ECInstanceKey modelKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM np.DgnModel LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     modelKey = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
@@ -318,7 +318,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ECInstanceKey modelKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM np.DgnModel LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     modelKey = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
@@ -366,7 +366,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     }
 
     ECSqlStatement selStmt;
-    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId() AS ECClassId, Code, ModelId FROM np.DgnElement"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, Code, ModelId FROM np.DgnElement"));
 
     ECInstanceECSqlSelectAdapter selAdapter(selStmt);
     bool verifiedElementWithSetNavProp = false;
@@ -430,7 +430,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     ECInstanceKey modelKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetECClassId(), ECInstanceId FROM np.DgnModel LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, ECInstanceId FROM np.DgnModel LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
 
     modelKey = ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
@@ -626,7 +626,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, SingleInstanceNavProp_ForeignKeyMappi
     stmt.Finalize();
 
     //select via base class
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, GetECClassId(), CategoryId FROM np.GeometrySource"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, CategoryId FROM np.GeometrySource"));
     rowCount = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
