@@ -23,6 +23,7 @@
 #include <regex>
 #include <exception>
 #include <signal.h>
+#include <map>
 #define BETEST_NO_INCLUDE_GTEST
 #include <Bentley/BeTest.h>
 #include <Bentley/BeAssert.h>
@@ -46,6 +47,8 @@ static Utf8String                               s_currentTestCaseName;          
 static Utf8String                               s_currentTestName;                  //  "       "
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
 bool BeTest::s_loop = true;
+
+static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                        // MT: s_bentleyCS
 
 /*---------------------------------------------------------------------------------**//**
 * Default handler for test test and assertion failures. Handles failures by throwing 
@@ -1046,6 +1049,88 @@ void testing::Test::Run()
 
     s_currentTestCaseName.clear();
     s_currentTestName.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeTest::TestCaseInfo* BeTest::RegisterTestCase(Utf8CP tcname, T_SetUpFunc s, T_TearDownFunc t)
+    {
+    BeMutexHolder lock(s_bentleyCS);
+
+    if (nullptr == s_testCases)
+        s_testCases = new std::map<Utf8String, BeTest::TestCaseInfo*>();
+
+    auto& tci = (*s_testCases)[tcname];
+    if (nullptr == tci)
+        {
+        tci = new TestCaseInfo;
+        tci->m_setUp = s;
+        tci->m_tearDown = t;
+        tci->m_isSetUp = false;
+        }
+
+    return tci;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::SetUpTestCase(Utf8CP tcname)
+    {
+    BeMutexHolder lock(s_bentleyCS);
+
+    if (nullptr == s_testCases)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto itci = s_testCases->find(tcname);
+    if (s_testCases->end() == itci)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto tci = itci->second;
+    if (!tci->m_isSetUp)
+        {
+        tci->m_isSetUp = true;
+        tci->m_setUp();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeTest::TearDownTestCase(Utf8CP tcname)
+    {
+    BeMutexHolder lock(s_bentleyCS);
+    
+    if (nullptr == s_testCases)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto itci = s_testCases->find(tcname);
+    if (s_testCases->end() == itci)
+        {
+        BeAssert(false && "loading logic should have automatically registered all test cases");
+        return;
+        }
+
+    auto tci = itci->second;
+    if (!tci->m_isSetUp)
+        {
+        BeAssert(false && "attempt to tear down test case that was not set up");
+        }
+    else
+        {
+        tci->m_isSetUp = false;
+        itci->second->m_tearDown();
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -46,11 +46,6 @@
     #endif
 
 
-    #define BETEST_DECLARE_TC_SETUP    public: static void SetUpTestCase ();
-    #define BETEST_DECLARE_TC_TEARDOWN public: static void TearDownTestCase ();
-    #define BETEST_TC_SETUP(TC)        void TC :: SetUpTestCase ()
-    #define BETEST_TC_TEARDOWN(TC)     void TC :: TearDownTestCase ()
-
 
 #else
 
@@ -66,6 +61,8 @@
             virtual void TearDown() {;}
             virtual void TestBody() {;}
           public:
+            static void SetUpTestCase() {;}
+            static void TearDownTestCase() {;}
             Test() {;}
             virtual ~Test() {;}
             BENTLEYDLL_EXPORT void Run();
@@ -73,9 +70,6 @@
             virtual BentleyApi::CharCP  GetTestNameA () const = 0;
             };
         }
-
-    #define BETEST_DECLARE_TC_SETUP
-    #define BETEST_DECLARE_TC_TEARDOWN
 
     #define BETEST_TEST_CLASS_NAME(testCaseName, testName) TEST_##testCaseName##_##testName
     #define BETEST_TEST_RUNNER_FUNC(testCaseName, testName) run_TEST_##testCaseName##_##testName
@@ -86,7 +80,9 @@
             BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }                                                                 \
             BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }                                                                     \
             virtual void TestBody () override;                                                                                          \
+            static BeTest::TestCaseInfo* s_superClassTestCaseInfo;\
         };                                                                                                                              \
+    BeTest::TestCaseInfo* BETEST_TEST_CLASS_NAME(testCaseName,testName)::s_superClassTestCaseInfo = BeTest::RegisterTestCase(#testCaseName, & superTestName :: SetUpTestCase, & superTestName :: TearDownTestCase);\
     extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) () { size_t e = BeTest::GetErrorCount(); if (BeTest::ShouldRunTest (#testCaseName "." #testName)) { BETEST_TEST_CLASS_NAME(testCaseName,testName) t; t.Run(); } return BeTest::GetErrorCount() > e; } \
     void BETEST_TEST_CLASS_NAME(testCaseName,testName) :: TestBody ()
 
@@ -98,9 +94,6 @@
         #undef  TEST
         #define TEST(testCaseName, testName) DEFINE_BETEST_INTERNAL(testing::Test,testCaseName,testName)
     
-        // note: the below macros are used by $(SrcRoot)bsicommon/build/DetectUnitTests.py
-        #define BETEST_TC_SETUP(TC)        extern "C" EXPORT_ATTRIBUTE void setUpTestCase_##TC ()
-        #define BETEST_TC_TEARDOWN(TC)     extern "C" EXPORT_ATTRIBUTE void tearDownTestCase_##TC ()
     #endif
 
     #define RUN_ALL_TESTS BeTest::RunAllTests
@@ -168,6 +161,21 @@ BENTLEYDLL_EXPORT static Host&  GetHost ();
 //! -- sets the default IGetDataRoots helper (which can be overridden -- see SetIGetDataRoots)
 //! @param[in] host     The test runner host
 BENTLEYDLL_EXPORT static void Initialize (Host& host);
+
+///@name TestCase setup/teardown
+///@{
+
+typedef void(*T_SetUpFunc)(void);
+typedef void(*T_TearDownFunc)(void);
+
+struct TestCaseInfo
+    {
+    bool m_isSetUp;
+    T_SetUpFunc m_setUp;
+    T_TearDownFunc m_tearDown;
+    };
+
+///@}
 
 struct IFailureHandler 
     {
@@ -282,6 +290,14 @@ enum LogPriority
 BENTLEYDLL_EXPORT static void Log (Utf8CP category, LogPriority priority, Utf8CP message);
 
 #if !defined (USE_GTEST)
+
+///@name Test case setup/teardown
+///@{
+BENTLEYDLL_EXPORT static TestCaseInfo* RegisterTestCase(Utf8CP, T_SetUpFunc, T_TearDownFunc);
+BENTLEYDLL_EXPORT static void SetUpTestCase(Utf8CP);
+BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
+///@}
+
 
 #if defined (EXPERIMENT_COMMENT_OFF)
     #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       BeTest::CheckResultEQ (BeTest::PrimitiveValueUnion(actual), BeTest::PrimitiveValueUnion(expected), true,  #expected, #actual, __FILE__ , __LINE__,fatal)
