@@ -15,6 +15,31 @@
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+void GetAllDataTypesInCompositeDataType(bvector<SMPoolDataTypeDesc>& dataTypes, SMPoolDataTypeDesc compositeDataType) 
+    {
+    if (compositeDataType == SMPoolDataTypeDesc::PointAndTriPtIndices)
+        {
+        dataTypes.push_back(SMPoolDataTypeDesc::Points);
+        dataTypes.push_back(SMPoolDataTypeDesc::TriPtIndices);
+        return; 
+        }
+
+    assert(!"Unknown composite data type");
+    }
+
+SMStoreDataType GetStoreDataType(SMPoolDataTypeDesc poolDataType)
+    {
+    switch (poolDataType)
+        {
+        case SMPoolDataTypeDesc::Points :
+            return SMStoreDataType::POINTS;
+        case SMPoolDataTypeDesc::TriPtIndices :
+            return SMStoreDataType::INDICES;
+        default:
+            return SMStoreDataType::UNKNOWN;
+        }
+    }
     
 SMMemoryPoolItemId SMMemoryPool::s_UndefinedPoolItemId = std::numeric_limits<SMMemoryPoolItemId>::max();
 SMMemoryPoolPtr    SMMemoryPool::s_memoryPool; 
@@ -82,7 +107,35 @@ void SMMemoryPoolItemBase::SetPoolItemId(SMMemoryPoolItemId poolItemId)
 void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta)
     {
     SMMemoryPool::GetInstance()->NotifySizeChangePoolItem(this, sizeDelta);
+
+    std::lock_guard<std::mutex> lock(m_listenerMutex);
+
+    for (auto& listener : m_listeners)
+        {
+        listener->NotifyListener(this, sizeDelta, nbItemDelta);
+        }
+    }  
+
+
+SMMemoryPoolItemBasePtr PointAndPtIndicesData::GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+    {
+    SMMemoryPoolItemBasePtr item; 
+
+    if (dataType == SMPoolDataTypeDesc::Points)
+        {
+        item = new SMMemoryPoolVectorItem<DPoint3d>(nbItems, nodeId, dataType, smId);            
+        m_pointData = (DPoint3d *)item->m_data;
+        }
+    else
+    if (dataType == SMPoolDataTypeDesc::TriPtIndices)
+        {
+        item = new SMMemoryPoolVectorItem<int32_t>(nbItems, nodeId, dataType, smId);            
+        m_indicesData = (int32_t*)item->m_data;        
+        }   
+
+    return item;
     }
+
 
 static uint64_t s_binSize = 3000;
 static uint64_t s_maxBins = 1000;

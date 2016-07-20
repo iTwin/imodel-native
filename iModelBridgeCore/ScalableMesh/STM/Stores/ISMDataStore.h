@@ -22,6 +22,16 @@ need be.
 #include <ImagePP\all\h\HPMDataStore.h>
 USING_NAMESPACE_IMAGEPP
 
+enum class SMStoreDataType
+    {
+    POINTS,
+    INDICES,
+    UVS,
+    UVINDICES, 
+    UNKNOWN
+    };
+
+
 
 template <class DataType> class ISMNodeDataStore : public RefCountedBase
     {    
@@ -41,9 +51,17 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
 
         virtual HPMBlockID StoreBlock(DataType* DataTypeArray, size_t countData, HPMBlockID blockID) = 0;
 
+        //Valid only for store handling only one type of data.
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const = 0;
 
+        //Valid only for store handling only multiple type of data.
+        virtual size_t GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const = 0;
+
+        //Valid only for store handling only one type of data.
         virtual void   ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) = 0;
+
+        //Valid only for store handling only multiple type of data.
+        virtual void   ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) = 0;
 
         virtual size_t LoadBlock(DataType* DataTypeArray, size_t maxCountData, HPMBlockID blockID) = 0;
 

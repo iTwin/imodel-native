@@ -24,6 +24,7 @@ using namespace std;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
+
 enum class SMPoolDataTypeDesc
     {
     Points = 0,
@@ -36,55 +37,18 @@ enum class SMPoolDataTypeDesc
     Display, //Use to represents data created for display purpose, like QV element. 
     LinearFeature,
     BcDTM,
+
+    //Composite datatype - allows to treat different data as an atomic pool item.
+    PointAndTriPtIndices, 
+
     Unknown, 
     };
 
-inline SMPoolDataTypeDesc GetDataType(const type_info& typeInfo)
-    {
-    /*
-    if (typeid(DPoint3d) == typeInfo)
-        return SMPoolDataTypeDesc::Point3d;
-    else if (typeid(int32_t) == typeInfo)
-        return SMPoolDataTypeDesc::Int32;
-    else if (typeid(Byte) == typeInfo)
-        return SMPoolDataTypeDesc::Byte;
-    else if (typeid(DPoint2d) == typeInfo)
-        return SMPoolDataTypeDesc::Point2d;
-    else    
-        return SMPoolDataTypeDesc::Unknown;
-
-    /*
-    switch (typeInfo)
-        {
-        case typeid(DPoint3d):
-            return SMPoolDataTypeDesc::Point3d;
-            break; 
-        case typeid(int32_t):
-            return SMPoolDataTypeDesc::Int32;
-            break; 
-        case typeid(Byte):
-            return SMPoolDataTypeDesc::Byte;
-            break; 
-        case typeid(DPoint2d):
-            return SMPoolDataTypeDesc::Point2d;
-            break; 
-        default : 
-            return SMPoolDataTypeDesc::Unknown;
-            break; 
-        }  
-        */
-
-    return SMPoolDataTypeDesc::Unknown;
-    }
-
+//NEEDS_WORK_SM : Merge SMStoreDataType and SMPoolDataTypeDesc together?
+SMStoreDataType GetStoreDataType(SMPoolDataTypeDesc poolDataType);
     
-/*
-enum class ContainerType
-    {
-    PoolVector = 0
-    }
-    */
 
+                             class SMMemoryPoolItemBase;
 template <typename DataType> class SMMemoryPoolVectorItem;
 template <typename DataType> class SMMemoryPoolGenericVectorItem;
 template <typename DataType> class SMMemoryPoolBlobItem;
@@ -95,13 +59,26 @@ typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
 
 typedef uint64_t SMMemoryPoolItemId;
 
+void GetAllDataTypesInCompositeDataType(bvector<SMPoolDataTypeDesc>& dataTypes, SMPoolDataTypeDesc compositeDataType);
+
+class SizeChangePoolItemListener
+    {  
+    public : 
+
+        virtual void NotifyListener(SMMemoryPoolItemBase* poolMemoryItem, int64_t sizeDelta, int64_t nbItemDelta) = 0;
+    };
+
+struct PointAndPtIndicesData;
 
 class SMMemoryPoolItemBase : public RefCountedBase
     {
+    friend struct PointAndPtIndicesData;
+
     private : 
 
-        SMMemoryPoolItemId        m_poolItemId;
-
+        SMMemoryPoolItemId                   m_poolItemId;
+        bvector<SizeChangePoolItemListener*> m_listeners; 
+        std::mutex                           m_listenerMutex; 
 
     protected : 
 
@@ -110,7 +87,8 @@ class SMMemoryPoolItemBase : public RefCountedBase
         uint64_t                  m_nodeId;
         uint64_t                  m_smId;
         SMPoolDataTypeDesc        m_dataType;
-        bool                      m_dirty;   
+        bool                      m_dirty;
+
                 
         //ContainerType m_containerType;
 
@@ -149,12 +127,42 @@ class SMMemoryPoolItemBase : public RefCountedBase
             }        
         
         virtual ~SMMemoryPoolItemBase();
+
+        void AddListener(SizeChangePoolItemListener* listener)
+            {
+            std::lock_guard<std::mutex> lock(m_listenerMutex);            
+            m_listeners.push_back(listener);
+            }        
+
+        void RemoveListener(SizeChangePoolItemListener* toRemoveListener)
+            {
+            std::lock_guard<std::mutex> lock(m_listenerMutex);
+            auto iter(m_listeners.begin());
+            auto iterEnd(m_listeners.end());
+
+            while (iter != iterEnd)
+                {
+                if (*iter == toRemoveListener)
+                    {
+                    m_listeners.erase(iter);
+                    return;
+                    }
+
+                iter++;
+                }
+
+            assert(!"Listener not found");
+            }
+
+        SMPoolDataTypeDesc GetDataType() const { return m_dataType; }
                     
-        uint64_t GetSize();
-        
+        uint64_t GetSize();        
+
         bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType);
 
         bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId);
+
+        virtual bool IsDirty () const { return m_dirty; } 
             
         SMMemoryPoolItemId GetPoolItemId() const;
             
@@ -163,15 +171,150 @@ class SMMemoryPoolItemBase : public RefCountedBase
         void SetDirty() { m_dirty = true; }
     };
 
+typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
 
-/*
-class SMMemoryPoolMultiItemBase : public SMMemoryPoolItemBase
-    {
-    
 
-    }
-*/
+class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
+                                   public SizeChangePoolItemListener
+    {   
+    protected : 
 
+        bvector<SMMemoryPoolItemBasePtr> m_items; 
+
+    public : 
+
+        SMMemoryPoolMultiItemsBase(uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId)
+        : SMMemoryPoolItemBase(0, 0, nodeId, dataType, smId)
+            {            
+            }
+
+        ~SMMemoryPoolMultiItemsBase()
+            {            
+            }
+
+        template<typename T>
+        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMPoolDataTypeDesc dataType)
+            {
+            for (auto& item : m_items)
+                {
+                if (item->GetDataType() == dataType)
+                    {
+                    poolMemVectorItemPtr = item->GetAsPoolVector<T>();
+                    return true;
+                    }
+                }
+
+            assert(!"Should not occur");
+            return false;
+            }
+
+        virtual bool IsDirty () const override
+            {             
+            for (auto& item : m_items)
+                {
+                if (item->IsDirty())
+                    return true;                
+                }
+
+            return false;             
+            }         
+    };
+
+//struct PointsAnd
+
+//template <typename DataType> 
+//struct MultiDataType
+
+struct PointAndPtIndicesData
+    {        
+    DPoint3d* m_pointData;
+    int32_t*  m_indicesData;
+
+
+    PointAndPtIndicesData()
+        {
+        m_pointData = 0;
+        m_indicesData = 0;
+        }    
+
+    /*
+    size_t GetDataTypeSize(SMPoolDataTypeDesc dataType)
+        {                
+        if (dataType == SMPoolDataTypeDesc::Points)
+            {
+            return sizeof(DPoint3d);
+            }
+        
+        if (dataType == SMPoolDataTypeDesc::TriPtIndices)
+            {
+            return sizeof(int32_t);
+            }
+
+        return 0;
+        }
+        */
+
+    SMMemoryPoolItemBasePtr GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId);
+        
+    };
+
+template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemoryPoolItemBase
+    { 
+    private : 
+
+        ISMNodeDataStoreTypePtr<DataType> m_dataStore;        
+        DataType                          m_multiDataType;
+        
+
+    public : 
+                
+        SMStoredMemoryPoolMultiItems(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMPoolDataTypeDesc& compositedataType, uint64_t smId)
+        : SMMemoryPoolMultiItemsBase(nodeId, dataType, smId)
+            {
+            bvector<SMPoolDataTypeDesc> dataTypes;
+
+            GetAllDataTypesInCompositeDataType(dataTypes, compositeDataType);
+
+            m_size = 0;                           
+
+            for (auto& dataType : dataTypes)
+                {
+                m_items.push_back(m_multiDataType.GetNodeDataStore(dataStore->GetBlockDataCount(dataType), nodeId, dataType, smId));                
+                m_size += m_items.back()->GetSize();                
+                m_items.back().AddListener(this);
+                }            
+            
+            if (m_size > 0)
+                {
+                HPMBlockID blockID(m_nodeId);
+                size_t nbBytesLoaded = m_store->LoadBlock(&m_multiDataType, 1, blockID);
+                assert(nbBytesLoaded == sizeof(DataType) * m_nbItems);
+                }                                    
+            } 
+
+
+        virtual ~SMStoredMemoryPoolMultiItems()
+            {            
+            if (IsDirty ())
+                {
+                HPMBlockID blockID(m_nodeId);               
+                m_dataStore->StoreBlock(&m_multiDataType, 1, blockID);                                
+                }
+
+            for (auto& item : m_items) 
+                {
+                item.RemoveListener(this);
+                }                                    
+            }
+
+        virtual void NotifyListener(SMMemoryPoolItemBase* poolMemoryItem, int64_t sizeDelta, int64_t nbItemDelta) override
+            {            
+            HPMBlockID blockID(m_nodeId);
+
+            m_dataStore->ModifyBlockDataCount(blockID, nbItemDelta, GetStoreDataType(poolMemoryItem->GetDataType()));            
+            m_size += sizeDelta;
+            }
+    };
 
 
 template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolItemBase
@@ -432,7 +575,7 @@ public:
         -----------------------------------------------------------------------------
     */
 
-    SMMemoryPoolVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)                        
+    SMMemoryPoolVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
             {
             m_nbItems = nbItems;
             m_size = nbItems * sizeof(DataType);
@@ -939,7 +1082,6 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
         };
 
 
-typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
 
 //First impl - dead lock
 static clock_t s_timeDiff = CLOCKS_PER_SEC * 120;

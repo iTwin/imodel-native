@@ -185,6 +185,13 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     return blockDataCount;
     }
 
+
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
+    {
+    assert(!"Invalid call");
+    return 0;
+    }
+
 template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
     switch (m_dataType)
@@ -201,6 +208,11 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             assert(!"Unsupported type");
             break;
         }    
+    }
+
+template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) 
+    {
+    assert(!"Invalid call");
     }
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)

@@ -920,7 +920,6 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-
     if (m_dataType == SMStoreDataType::POINTS)
         return m_nodeHeader->m_nodeCount;
     else
@@ -931,6 +930,12 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         return this->GetBlock(blockID).size() / sizeof(DATATYPE);
 
     return 0;   
+    }
+
+template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
+    {
+    assert(!"Invalid call");
+    return 0;
     }
 
 template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
@@ -949,6 +954,11 @@ template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, 
             assert(!"Unsupported type");
             break;
         }        
+    }
+
+template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) 
+    {
+    assert(!"Invalid call");
     }
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
