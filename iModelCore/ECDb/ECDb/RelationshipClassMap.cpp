@@ -493,34 +493,43 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         for (DbTable const* foreignEndTable : foreignEndTables)
             {
             DbColumn const* fkCol = foreignEndTable->FindColumn(fkColName.c_str());
+            if (!foreignEndTable->IsOwnedByECDb())
+                {
+                //for existing tables, the FK column must exist otherwise we fail schema import
+                if (fkCol != nullptr)
+                    {
+                    if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+                        return ERROR;
+
+                    ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
+                    continue;
+                    }
+
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'. Consider adding a ForeignKeyRelationshipMap CustomAttribute to the relationship class and specify the foreign key column.",
+                                relClass.GetFullName(), foreignEndTable->GetName().c_str(), fkColName.c_str());
+                return ERROR;
+                }
+
+            //table owned by ECDb
             if (fkCol != nullptr)
                 {
-                //FK col is only allowed to exist if the table has MapStrategy "ExistingTable"
-                if (foreignEndTable->IsOwnedByECDb())
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the foreign key end table %s.",
-                                    relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
-                    return ERROR;
-                    }
-
-                if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
-                    return ERROR;
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
+                                relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
+                return ERROR;
                 }
-            else
-                {
-                int fkColPosition = -1;
-                if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
-                    return ERROR;
 
-                const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
-                fkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
-                if (fkCol == nullptr)
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column %s in table %s.",
-                                    relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
-                    BeAssert(false && "Could not create FK column for end table mapping");
-                    return ERROR;
-                    }
+            int fkColPosition = -1;
+            if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
+                return ERROR;
+
+            const PersistenceType columnPersistenceType = foreignEndTable->IsOwnedByECDb() && foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
+            fkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName.c_str(), DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
+            if (fkCol == nullptr)
+                {
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
+                                relClass.GetFullName(), fkColName.c_str(), foreignEndTable->GetName().c_str());
+                BeAssert(false && "Could not create FK column for end table mapping");
+                return ERROR;
                 }
 
             ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
