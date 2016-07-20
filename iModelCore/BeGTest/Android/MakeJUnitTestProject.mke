@@ -133,8 +133,8 @@ cIncs + -I$(baseDir)
     %include $(outputDir)JUnitTestFiles.mki
 %endif
 
-always:
-    !-$(deleteCmd) $(outputDir)JUnitTestFiles.mki
+#always:
+#    !-$(deleteCmd) $(outputDir)JUnitTestFiles.mki
 
 #--------------------------------------------------------------------------------------
 # obj/local/$(BENTLEY_ANDROID_AndroidABI)/libAndroidTestJni.so
