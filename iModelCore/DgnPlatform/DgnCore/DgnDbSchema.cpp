@@ -189,9 +189,11 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 
     m_units.Save();
 
+    DbResult result = params.m_createStandalone ? Txns().InitializeTableHandlers() : BE_SQLITE_OK;
+
     SaveChanges();
 
-    return  BE_SQLITE_OK;
+    return result;
     }
 
 //=======================================================================================
