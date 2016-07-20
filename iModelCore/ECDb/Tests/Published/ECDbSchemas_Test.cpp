@@ -107,7 +107,6 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
     expectedSchemas.push_back("EditorCustomAttributes");
     expectedSchemas.push_back("MetaSchema");
     expectedSchemas.push_back("StartupCompany");
-    expectedSchemas.push_back("Unit_Attributes");
 
     // Validate the expected ECSchemas in the project
     Statement stmt;

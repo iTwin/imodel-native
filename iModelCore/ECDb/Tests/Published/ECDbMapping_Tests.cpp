@@ -2800,7 +2800,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
                         "    <Target cardinality='(0,N)' polymorphic='True'>"
@@ -2813,7 +2813,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "           <CreateIndex>False</CreateIndex>"
                         "        </ForeignKeyRelationshipMap>"
                         "    </ECCustomAttributes>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
                         "    <Target cardinality='(0,N)' polymorphic='True'>"
@@ -2824,7 +2824,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
                         "    <ECCustomAttributes>"
                         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00' />"
                         "    </ECCustomAttributes>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
                         "    </Source>"
                         "    <Target cardinality='(0,N)' polymorphic='True'>"
@@ -2838,8 +2838,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCreateIndex)
     AssertSchemaImport(ecdb, asserted, testItem, "foreignkeymapcreateindex.ecdb");
     ASSERT_FALSE(asserted);
 
-    AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexTrue_target", false);
-    AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexDefaultValue_target", false);
+    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexTrue_target", false, "ts_Child", {"ForeignECInstanceId_ts_RelCreateIndexTrue"});
+    AssertIndex(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexDefaultValue_target", false, "ts_Child", {"ForeignECInstanceId_ts_RelCreateIndexDefaultValue"});
     AssertIndexExists(ecdb, "ix_ts_Child_fk_ts_RelCreateIndexFalse_target", false);
     }
 
@@ -5218,7 +5218,7 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='B' modifier='None'>"
                 "        <ECCustomAttributes>"
@@ -5247,15 +5247,15 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
 
             ECDb db;
             bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
+            AssertSchemaImport(db, asserted, testItem, "notnullableproptest1.ecdb");
             ASSERT_FALSE(asserted);
-            AssertIndex(db, "ix_b_id", false, "ts_B", {"Id"});
+            AssertIndex(db, "ix_b_id", false, "ts1_B", {"Id"});
             }
 
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='B' modifier='None'>"
                 "        <ECCustomAttributes>"
@@ -5285,15 +5285,15 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
 
             ECDb db;
             bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
+            AssertSchemaImport(db, asserted, testItem, "notnullableproptest2.ecdb");
             ASSERT_FALSE(asserted);
-            AssertIndex(db, "ix_b_id_name", false, "ts_B", {"Id","Name"}, "([Name] IS NOT NULL)");
+            AssertIndex(db, "ix_b_id_name", false, "ts2_B", {"Id","Name"}, "([Name] IS NOT NULL)");
             }
 
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='B' modifier='None'>"
                 "        <ECCustomAttributes>"
@@ -5329,15 +5329,15 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
 
             ECDb db;
             bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
+            AssertSchemaImport(db, asserted, testItem, "notnullableproptest3.ecdb");
             ASSERT_FALSE(asserted);
-            AssertIndex(db, "ix_b_id_name", false, "ts_B", {"Id", "Name"});
+            AssertIndex(db, "ix_b_id_name", false, "ts3_B", {"Id", "Name"});
             }
 
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='A' modifier='None'>"
                 "        <ECProperty propertyName='Code' typeName='string' />"
@@ -5365,10 +5365,11 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
 
             ECDb db;
             bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
+            AssertSchemaImport(db, asserted, testItem, "notnullableproptest4.ecdb");
             ASSERT_FALSE(asserted);
 
-            AssertIndexExists(db, "ix_ts_B_fk_ts_Rel_target", false);
+            AssertIndex(db, "ix_ts4_B_fk_ts4_Rel_target", false, "ts4_B", {"ForeignECInstanceId_ts4_Rel"});
+
             }
 
             {
@@ -5439,7 +5440,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                 "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='A' modifier='None' >"
                 "        <ECProperty propertyName='AId' typeName='string' />"
@@ -5484,22 +5485,6 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 "      <Class class='B' />"
                 "    </Target>"
                 "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='RelWithKeyProp' strength='embedding' modifier='Sealed'>"
-                "    <Source cardinality='(1,1)' polymorphic='True'>"
-                "      <Class class='A' />"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class='B'/>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "   <ECRelationshipClass typeName='RelWithKeyProp11' strength='embedding' modifier='Sealed'>"
-                "    <Source cardinality='(1,1)' polymorphic='True'>"
-                "      <Class class='A' />"
-                "    </Source>"
-                "    <Target cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class='B'/>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
                 "   <ECRelationshipClass typeName='RelNN' strength='referencing' modifier='Sealed'>"
                 "    <Source cardinality='(1,N)' polymorphic='True'>"
                 "      <Class class='A' />"
@@ -5512,26 +5497,22 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
             ECDb ecdb;
             bool asserted = false;
-            AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+            AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships1.ecdb");
             ASSERT_FALSE(asserted);
 
-            AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel"});
-            AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"ForeignECInstanceId_ts_Rel11"});
-            AssertIndex(ecdb, "uix_ts_A_fk_ts_Rel11Backwards_source", true, "ts_A", {"ForeignECInstanceId_ts_Rel11Backwards"});
+            AssertIndex(ecdb, "ix_ts1_B_fk_ts1_Rel_target", false, "ts1_B", {"AId"});
+            AssertIndex(ecdb, "uix_ts1_B_fk_ts1_Rel11_target", true, "ts1_B", {"ForeignECInstanceId_ts1_Rel11"});
+            AssertIndex(ecdb, "uix_ts1_A_fk_ts1_Rel11Backwards_source", true, "ts1_A", {"ForeignECInstanceId_ts1_Rel11Backwards"});
 
-            //For relationships with key property, index is created if unique (as this is to enforce cardinality
-            AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelWithKeyProp_target", false);
-            AssertIndex(ecdb, "uix_ts_B_fk_ts_RelWithKeyProp11_target", true, "ts_B", {"AId"});
-
-            AssertIndex(ecdb, "ix_ts_RelNN_source", false, "ts_RelNN", {"SourceECInstanceId"});
-            AssertIndex(ecdb, "ix_ts_RelNN_target", false, "ts_RelNN", {"TargetECInstanceId"});
-            AssertIndex(ecdb, "uix_ts_RelNN_sourcetarget", true, "ts_RelNN", {"SourceECInstanceId", "TargetECInstanceId"});
+            AssertIndex(ecdb, "ix_ts1_RelNN_source", false, "ts1_RelNN", {"SourceECInstanceId"});
+            AssertIndex(ecdb, "ix_ts1_RelNN_target", false, "ts1_RelNN", {"TargetECInstanceId"});
+            AssertIndex(ecdb, "uix_ts1_RelNN_sourcetarget", true, "ts1_RelNN", {"SourceECInstanceId", "TargetECInstanceId"});
             }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None' >"
                     "        <ECProperty propertyName='AId' typeName='string' />"
@@ -5565,15 +5546,15 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships2.ecdb");
                 ASSERT_FALSE(asserted);
-                AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel"}, "([ForeignECInstanceId_ts_Rel] IS NOT NULL)");
+                AssertIndex(ecdb, "ix_ts2_B_fk_ts2_Rel_target", false, "ts2_B", {"ForeignECInstanceId_ts2_Rel"}, "([ForeignECInstanceId_ts2_Rel] IS NOT NULL)");
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None' >"
                     "        <ECProperty propertyName='Id' typeName='string' />"
@@ -5588,35 +5569,35 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                 </MapStrategy>"
                     "            </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                     "        <ECProperty propertyName='BId' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='BB' modifier='None'>"
                     "        <BaseClass>B</BaseClass>"
                     "        <ECProperty propertyName='BBId' typeName='long' />"
+                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                     "    </ECEntityClass>"
                     "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                     "    <Source cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='A' />"
                     "    </Source>"
                     "    <Target cardinality='(0,N)' polymorphic='True'>"
-                    "      <Class class='B'/>"
+                    "      <Class class='BB'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>", true);
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships3.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel_target", false);
+                AssertIndex(ecdb, "ix_ts3_B_fk_ts3_Rel_target", false, "ts3_B", {"AId"}, "([AId] IS NOT NULL)");
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None' >"
                     "        <ECProperty propertyName='Id' typeName='string' />"
@@ -5631,7 +5612,7 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                 </MapStrategy>"
                     "            </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
+                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel11' direction='Backward' />"
                     "        <ECProperty propertyName='BId' typeName='long' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='BB' modifier='None'>"
@@ -5650,16 +5631,16 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships4.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(ecdb, "uix_ts_B_fk_ts_Rel11_target", true, "ts_B", {"sc01"}, "([sc01] IS NOT NULL)");
+                AssertIndex(ecdb, "uix_ts4_B_fk_ts4_Rel11_target", true, "ts4_B", {"AId"}, "([AId] IS NOT NULL)");
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts50' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None'>"
                     "        <ECProperty propertyName='Id' typeName='string' />"
@@ -5673,7 +5654,6 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "                 </MapStrategy>"
                     "             </ClassMap>"
                     "        </ECCustomAttributes>"
-                    "        <ECNavigationProperty propertyName='AId' relationshipName='long' direction='Backward' />"
                     "    </ECEntityClass>"
                     "    <ECEntityClass typeName='B1' modifier='None'>"
                     "        <BaseClass>B</BaseClass>"
@@ -5700,22 +5680,74 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships50.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
-                AssertIndex(ecdb, "ix_B_AId", false, "ts_B", {"AId"});
-                AssertIndex(ecdb, "ix_ts_B_ARelECClassId", false, "ts_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
-
-                AssertIndexExists(ecdb, "ix_ts_B_fk_ts_RelBase_target", false);
-                AssertIndexExists(ecdb, "uix_ts_B_fk_ts_RelSub1_target", false);
+                AssertIndex(ecdb, "ix_ts50_B_fk_ts50_RelBase_target", false, "ts50_B", {"ForeignECInstanceId_ts50_RelBase"}, "([ForeignECInstanceId_ts50_RelBase] IS NOT NULL)");
+                AssertIndex(ecdb, "ix_ts50_B_RelECClassId_ts50_RelBase", false, "ts50_B", {"RelECClassId_ts50_RelBase"}, "([RelECClassId_ts50_RelBase] IS NOT NULL)");
+                AssertIndexExists(ecdb, "uix_ts50_B_fk_ts50_RelSub1_target", false);
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                    "    <ECEntityClass typeName='A' modifier='None'>"
+                    "        <ECProperty propertyName='Id' typeName='string' />"
+                    "    </ECEntityClass>"
+                    "    <ECEntityClass typeName='B' modifier='None'>"
+                    "        <ECCustomAttributes>"
+                    "            <ClassMap xmlns='ECDbMap.01.00'>"
+                    "                <MapStrategy>"
+                    "                   <Strategy>SharedTable</Strategy>"
+                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                    "                 </MapStrategy>"
+                    "             </ClassMap>"
+                    "        </ECCustomAttributes>"
+                    "        <ECNavigationProperty propertyName='AId' relationshipName='RelBase' direction='Backward' />"
+                    "    </ECEntityClass>"
+                    "    <ECEntityClass typeName='B1' modifier='None'>"
+                    "        <BaseClass>B</BaseClass>"
+                    "        <ECProperty propertyName='B1Id' typeName='long' />"
+                    "    </ECEntityClass>"
+                    "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                    "      <Class class='A'/>"
+                    "    </Source>"
+                    "    <Target cardinality='(1,N)' polymorphic='True'>"
+                    "      <Class class='B'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "   <ECRelationshipClass typeName='RelSub1' modifier='Sealed' strength='referencing'>"
+                    "    <BaseClass>RelBase</BaseClass>"
+                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                    "      <Class class='A' />"
+                    "    </Source>"
+                    "    <Target cardinality='(1,1)' polymorphic='True'>"
+                    "      <Class class='B1'/>"
+                    "    </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>", true, "");
+
+                ECDb ecdb;
+                bool asserted = false;
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships5.ecdb");
+                ASSERT_FALSE(asserted);
+
+                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+
+                AssertIndex(ecdb, "ix_ts5_B_fk_ts5_RelBase_target", false, "ts5_B", {"AId"}, "([AId] IS NOT NULL)");
+                AssertIndex(ecdb, "ix_ts5_B_ARelECClassId", false, "ts5_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
+                AssertIndexExists(ecdb, "uix_ts5_B_fk_ts5_RelSub1_target", false);
+                }
+
+                {
+                SchemaItem testItem(
+                    "<?xml version='1.0' encoding='utf-8'?>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None'>"
                     "        <ECProperty propertyName='Id' typeName='string' />"
@@ -5756,21 +5788,21 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships6.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
-                AssertIndex(ecdb, "ix_ts_B_AInstanceRelECClassId", false, "ts_B", {"AInstanceRelECClassId"});
-                AssertIndex(ecdb, "ix_ts_B_fk_ts_RelBase_target", false, "ts_B", {"AInstance"});
-                AssertIndexExists(ecdb, "uix_ts_B_fk_ts_RelSub1_target", false);
+                AssertIndex(ecdb, "ix_ts6_B_AInstanceRelECClassId", false, "ts6_B", {"AInstanceRelECClassId"});
+                AssertIndex(ecdb, "ix_ts6_B_fk_ts6_RelBase_target", false, "ts6_B", {"AInstance"});
+                AssertIndexExists(ecdb, "uix_ts6_B_fk_ts6_RelSub1_target", false);
                 }
 
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='B' modifier='None'>"
                     "        <ECCustomAttributes>"
@@ -5826,16 +5858,16 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships7.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_EQ(9, (int) RetrieveIndicesForTable(ecdb, "ts_RelBase").size());
+                ASSERT_EQ(9, (int) RetrieveIndicesForTable(ecdb, "ts7_RelBase").size());
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='A' modifier='None'>"
                     "        <ECProperty propertyName='AId' typeName='long' />"
@@ -5869,7 +5901,6 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "    </Source>"
                     "    <Target cardinality='(0,1)' polymorphic='False'>"
                     "      <Class class='B1' />"
-                    "      <Class class='B2' />"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "   <ECRelationshipClass typeName='RelPoly' modifier='Sealed' strength='referencing'>"
@@ -5878,35 +5909,33 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                     "    </Source>"
                     "    <Target cardinality='(0,1)' polymorphic='True'>"
                     "      <Class class='B1' />"
-                    "      <Class class='B2' />"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>", true, "");
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships8.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts_B").size());
+                ASSERT_EQ(3, (int) RetrieveIndicesForTable(ecdb, "ts8_B").size());
 
-                ECClassId bClassId = ecdb.Schemas().GetECClassId("TestSchema", "B");
                 ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
-                ECClassId b2ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B2");
+                ECClassId b11ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B11");
 
                 //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
                 Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([ForeignECInstanceId_ts_RelNonPoly] IS NOT NULL) AND (ECClassId=%llu OR ECClassId=%llu)", b1ClassId.GetValue(), b2ClassId.GetValue());
-                AssertIndex(ecdb, "uix_ts_B_fk_ts_RelNonPoly_target", true, "ts_B", {"ForeignECInstanceId_ts_RelNonPoly"}, indexWhereClause.c_str());
+                indexWhereClause.Sprintf("([ForeignECInstanceId_ts8_RelNonPoly] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
+                AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelNonPoly_target", true, "ts8_B", {"ForeignECInstanceId_ts8_RelNonPoly"}, indexWhereClause.c_str());
 
                 //RelPoly must include index on B11 as the constraint is polymorphic
-                indexWhereClause.Sprintf("([ForeignECInstanceId_ts_RelPoly] IS NOT NULL) AND (ECClassId<>%llu)", bClassId.GetValue());
-                AssertIndex(ecdb, "uix_ts_B_fk_ts_RelPoly_target", true, "ts_B", {"ForeignECInstanceId_ts_RelPoly"}, indexWhereClause.c_str());
+                indexWhereClause.Sprintf("([ForeignECInstanceId_ts8_RelPoly] IS NOT NULL) AND (ECClassId=%s OR ECClassId=%s)", b1ClassId.ToString().c_str(), b11ClassId.ToString().c_str());
+                AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelPoly_target", true, "ts8_B", {"ForeignECInstanceId_ts8_RelPoly"}, indexWhereClause.c_str());
                 }
 
                 {
                 //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is applied to subclasses
-                SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+                SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                     "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                                     "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
                                     "  <ECEntityClass typeName='A' modifier='None'>"
@@ -5950,19 +5979,19 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "indexcreationforrelationships9.ecdb");
                 ASSERT_FALSE(asserted);
 
-                ASSERT_TRUE(ecdb.TableExists("ts_ARelB"));
-                ASSERT_FALSE(ecdb.TableExists("ts_ARelC")) << "ARelC is expected to be persisted in ts_ARelB as well (SharedTable strategy)";
+                ASSERT_TRUE(ecdb.TableExists("ts9_ARelB"));
+                ASSERT_FALSE(ecdb.TableExists("ts9_ARelC")) << "ARelC is expected to be persisted in ts9_ARelB as well (SharedTable strategy)";
 
                 //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
                 //ARelC must not have the unique index either, as AllowDuplicateRelationship is applied to subclasses
-                std::vector<IndexInfo> indexes = RetrieveIndicesForTable(ecdb, "ts_ARelB");
-                ASSERT_EQ(3, (int) indexes.size()) << "Indexes on ts_ARelB";
-                ASSERT_STREQ("ix_ts_ARelB_ecclassid", indexes[0].m_name.c_str());
-                ASSERT_STREQ("ix_ts_ARelB_source", indexes[1].m_name.c_str());
-                ASSERT_STREQ("ix_ts_ARelB_target", indexes[2].m_name.c_str());
+                std::vector<IndexInfo> indexes = RetrieveIndicesForTable(ecdb, "ts9_ARelB");
+                ASSERT_EQ(3, (int) indexes.size()) << "Indexes on ts9_ARelB";
+                ASSERT_STREQ("ix_ts9_ARelB_ecclassid", indexes[0].m_name.c_str());
+                ASSERT_STREQ("ix_ts9_ARelB_source", indexes[1].m_name.c_str());
+                ASSERT_STREQ("ix_ts9_ARelB_target", indexes[2].m_name.c_str());
                 }
     }
 
