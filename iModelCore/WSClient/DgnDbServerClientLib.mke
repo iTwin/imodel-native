@@ -24,6 +24,10 @@ always:
 #--------------------------------------------------------------------------------------
 nameToDefine    = __DgnDbServerClient_DLL_BUILD__
 %include cdefapnd.mki
+%if defined (DEBUG)
+	nameToDefine    = DEBUG
+	%include cdefapnd.mki
+%endif
 
 %if $(TARGET_PLATFORM)=="Windows"
     # Ignore inheritance via dominance warning

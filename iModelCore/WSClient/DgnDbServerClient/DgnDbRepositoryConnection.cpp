@@ -134,15 +134,22 @@ AuthenticationHandlerPtr authenticationHandler
 
     DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
     if (!repository.GetFileId().empty())
+        {
+        #ifndef DEBUG
+        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
+        #endif
+            repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
+        }
 
     return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerStatusResultCR result)
         {
         if (!result.IsSuccess())
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
-        //if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
-        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
+        #ifndef DEBUG
+        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
+        #endif
             repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
