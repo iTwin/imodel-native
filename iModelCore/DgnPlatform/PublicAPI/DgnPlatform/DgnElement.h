@@ -709,7 +709,7 @@ protected:
 #endif
     
     ECN::IECInstanceP GetAutoHandledProperties() const;
-    BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const;
+    BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const;
     DgnDbStatus UpdateAutoHandledProperties();
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
