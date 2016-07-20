@@ -64,7 +64,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         {
             case PropertyMap::Type::RelConstraintECClassId:
                 return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, *exp, *static_cast<RelConstraintECClassIdPropertyMap const*>(effectivePropMap), classIdentifier.c_str());
-
+  
             default:
                 PrepareDefault(nativeSqlSnippets, currentScopeECSqlType, *exp, *effectivePropMap, classIdentifier.c_str());
                 return ECSqlStatus::Success;
@@ -86,7 +86,14 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
+            {
+            if (ECDbSystemSchemaHelper::IsSystemProperty(propertyMap.GetProperty(), ECSqlSystemProperty::ECClassId))
+                {
+                return true;
+                }
+
             return false;
+            }
 
         switch (currentScope.GetExp().GetType())
             {
