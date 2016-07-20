@@ -650,21 +650,16 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Get an 8-point box corresponding to the 8 corners of the viewport in the specified coordinate system.
-* When front or back clipping is turned off, there are two sets of corners that may be of interest.
-* The "expanded" box is the one that is computed by examining the extents of the content of the view and moving
-* the front and back planes to enclose everything in the view. The "unexpanded" box is the one that is saved in
-* the view definition.
 * @bsimethod                                                    KeithBentley    08/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
+Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool adjustedBox) const
     {
     Frustum  box;
 
     // if they are looking for the "unexpanded" (that is before f/b clipping expansion) box, we need to get the npc
     // coordinates that correspond to the unexpanded box in the npc space of the Expanded view (that's the basis for all
     // of the root-based maps.)
-    if (!expandedBox && m_zClipAdjusted)
+    if (!adjustedBox && m_zClipAdjusted)
         {
         // to get unexpanded box, we have to go recompute rootToNpc from original viewController.
         DMap4d  ueRootToNpc;

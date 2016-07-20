@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/AreaPattern.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,8 +11,8 @@
 
 #define  MAX_DWG_HATCH_LINE_DASHES      20
 
-
 BEGIN_BENTLEY_DGN_NAMESPACE
+
 
 /*=================================================================================**//**
  @addtogroup AreaPattern
@@ -204,9 +204,6 @@ DGNPLATFORM_EXPORT int32_t GetStyle () const;
 //! Get pattern dwg hole style. Used if PatternParamsModifierFlags::HoleStyle is set.
 DGNPLATFORM_EXPORT PatternParamsHoleStyleType GetHoleStyle () const;
 
-//! Get pattern dwg hatch definition. Used if PatternParamsModifierFlags::DwgHatchDef is set.
-DGNPLATFORM_EXPORT DwgHatchDefCR GetDwgHatchDef () const;
-
 //! Get pattern origin. Used if PatternParamsModifierFlags::Origin is set.
 //! @note Not supported, pattern origin stored as offset from element origin.
 DGNPLATFORM_EXPORT DPoint3dCR GetOrigin () const;
@@ -272,9 +269,6 @@ DGNPLATFORM_EXPORT void SetStyle (int32_t);
 
 //! Set pattern dwg hole style. Sets modifier bit for PatternParamsModifierFlags::HoleStyle.
 DGNPLATFORM_EXPORT void SetHoleStyle (PatternParamsHoleStyleType);
-
-//! Set pattern dwg hatch definition. Sets modifier bit for PatternParamsModifierFlags::DwgHatchDef.
-DGNPLATFORM_EXPORT void SetDwgHatchDef (DwgHatchDefCR);
 
 //! Set pattern origin. Sets modifier bit for PatternParamsModifierFlags::Origin.
 //! @note Not supported, define pattern origin relative to element origin using SetOffset instead.

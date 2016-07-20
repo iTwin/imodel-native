@@ -88,8 +88,6 @@ DG_INLINE IAuxCoordSysPtr IAuxCoordSys::Clone() const {return _Clone();}
 DG_INLINE StatusInt IAuxCoordSys::GetStandardGridParams(Point2dR gridReps, Point2dR gridOffset, double& uorPerGrid, double& gridRatio, uint32_t& gridPerRef) const {return _GetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 DG_INLINE StatusInt IAuxCoordSys::SetStandardGridParams(Point2dCR gridReps, Point2dCR gridOffset, double uorPerGrid, double gridRatio, uint32_t gridPerRef) {return _SetStandardGridParams(gridReps, gridOffset, uorPerGrid, gridRatio, gridPerRef);}
 
-DG_INLINE GradientSymb::GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
-
 DG_INLINE void PatternParams::SetModifiers(PatternParamsModifierFlags value) {modifiers = value;}
 DG_INLINE void PatternParams::SetOrientation(RotMatrixCR value) {rMatrix = value; modifiers = modifiers |PatternParamsModifierFlags::RotMatrix;}
 DG_INLINE void PatternParams::SetOffset(DPoint3dCR value) {offset = value; modifiers = modifiers |PatternParamsModifierFlags::Offset;}
@@ -106,7 +104,6 @@ DG_INLINE void PatternParams::SetColor(ColorDef value) {color = value; modifiers
 DG_INLINE void PatternParams::SetWeight(uint32_t value) {weight = value; modifiers = modifiers |PatternParamsModifierFlags::Weight;}
 DG_INLINE void PatternParams::SetStyle(int32_t value) {style = value; modifiers = modifiers |PatternParamsModifierFlags::Style;}
 DG_INLINE void PatternParams::SetHoleStyle(PatternParamsHoleStyleType value) {holeStyle = static_cast<int16_t>(value); modifiers = modifiers |PatternParamsModifierFlags::HoleStyle;}
-DG_INLINE void PatternParams::SetDwgHatchDef(DwgHatchDefCR value) {dwgHatchDef = value; modifiers = modifiers |PatternParamsModifierFlags::DwgHatchDef;}
 DG_INLINE void PatternParams::SetOrigin(DPoint3dCR value) {origin = value; modifiers = modifiers |PatternParamsModifierFlags::Origin;}
 DG_INLINE void PatternParams::SetAnnotationScale(double scale) {annotationscale = scale; modifiers = modifiers |PatternParamsModifierFlags::AnnotationScale;}
 DG_INLINE PatternParamsModifierFlags PatternParams::GetModifiers() const {return modifiers;}
@@ -126,104 +123,9 @@ DG_INLINE ColorDef PatternParams::GetColor() const {return color;}
 DG_INLINE uint32_t PatternParams::GetWeight() const {return weight;}
 DG_INLINE int32_t PatternParams::GetStyle() const {return style;}
 DG_INLINE PatternParamsHoleStyleType PatternParams::GetHoleStyle() const {return static_cast<PatternParamsHoleStyleType>(holeStyle);}
-DG_INLINE DwgHatchDefCR PatternParams::GetDwgHatchDef() const {return dwgHatchDef;}
 DG_INLINE DPoint3dCR PatternParams::GetOrigin() const {return origin;}
 DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationscale;}
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
 DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*>(g_hostForThread.GetValueAsPointer());}
 
-DG_INLINE WChar AngleFormatter::GetDecimalSeparator() const { return m_decimalSeparator; }
-DG_INLINE AngleMode AngleFormatter::GetAngleMode() const { return m_angleMode; }
-DG_INLINE AnglePrecision AngleFormatter::GetAnglePrecision() const { return m_precision; }
-DG_INLINE bool AngleFormatter::GetLeadingZero() const { return m_leadingZero; }
-DG_INLINE bool AngleFormatter::GetTrailingZeros() const { return m_trailingZeros; }
-DG_INLINE bool AngleFormatter::GetAllowNegative() const { return m_allowNegative; }
-DG_INLINE bool AngleFormatter::GetAllowUnclamped() const { return m_allowUnclamped; };
-DG_INLINE void AngleFormatter::SetAngleMode(AngleMode newVal) { m_angleMode = newVal; }
-DG_INLINE void AngleFormatter::SetAnglePrecision(AnglePrecision newVal) { m_precision = newVal; }
-DG_INLINE void AngleFormatter::SetDecimalSeparator(Utf8Char newVal) { m_decimalSeparator = newVal; }
-DG_INLINE void AngleFormatter::SetLeadingZero(bool newVal) { m_leadingZero = newVal; }
-DG_INLINE void AngleFormatter::SetTrailingZeros(bool newVal) { m_trailingZeros = newVal; }
-DG_INLINE void AngleFormatter::SetAllowNegative(bool newVal) { m_allowNegative = newVal; }
-DG_INLINE void AngleFormatter::SetAllowUnclamped(bool newVal) { m_allowUnclamped = newVal; }
-
-DG_INLINE AngleFormatterR DirectionFormatter::GetAngleFormatter() { return *m_angleFormatter; }
-DG_INLINE DirectionMode DirectionFormatter::GetDirectionMode() const { return m_mode; }
-DG_INLINE bool DirectionFormatter::GetAddTrueNorth() const { return m_addTrueNorth; }
-DG_INLINE double DirectionFormatter::GetTrueNorthValue() const { return m_trueNorth; }
-DG_INLINE double DirectionFormatter::GetBaseDirection() const { return m_baseDirection; }
-DG_INLINE bool DirectionFormatter::GetClockwise() const { return m_clockwise; }
-DG_INLINE bool DirectionFormatter::GetBearingSpaces() const { return m_bearingSpaces; }
-DG_INLINE void DirectionFormatter::SetDirectionMode(DirectionMode newVal) { m_mode = newVal; }
-DG_INLINE void DirectionFormatter::SetAddTrueNorth(bool newVal) { m_addTrueNorth = newVal; }
-DG_INLINE void DirectionFormatter::SetTrueNorthValue(double newVal) { m_trueNorth = newVal; }
-DG_INLINE void DirectionFormatter::SetBaseDirection(double newVal) { m_baseDirection = newVal; }
-DG_INLINE void DirectionFormatter::SetClockwise(bool newVal) { m_clockwise = newVal; }
-DG_INLINE void DirectionFormatter::SetBearingSpaces(bool newVal) { m_bearingSpaces = newVal; }
-
-DG_INLINE DgnUnitFormat DistanceFormatter::GetUnitFormat() const { return m_unitFormat; }
-DG_INLINE UnitDefinitionCR DistanceFormatter::GetMasterUnits() const { return m_masterUnit; }
-DG_INLINE UnitDefinitionCR DistanceFormatter::GetSubUnits() const { return m_subUnit; }
-DG_INLINE double DistanceFormatter::GetScaleFactor() const { return m_scaleFactor; }
-DG_INLINE bool DistanceFormatter::GetUnitLabelFlag() const { return m_unitFlag; }
-DG_INLINE bool DistanceFormatter::GetSuppressZeroMasterUnits() const { return m_suppressZeroMasterUnits; }
-DG_INLINE bool DistanceFormatter::GetSuppressZeroSubUnits() const { return m_suppressZeroSubUnits; }
-DG_INLINE bool DistanceFormatter::GetIsDgnCoordReadOutCapable() const { return m_isDgnCoordReadOutCapable; }
-DG_INLINE void DistanceFormatter::SetUnitFormat(DgnUnitFormat newVal) { m_unitFormat = newVal; }
-DG_INLINE void DistanceFormatter::SetUnitLabelFlag(bool newVal) { m_unitFlag = newVal; }
-DG_INLINE void DistanceFormatter::SetSuppressZeroMasterUnits(bool newVal) { m_suppressZeroMasterUnits = newVal; }
-DG_INLINE void DistanceFormatter::SetSuppressZeroSubUnits(bool newVal) { m_suppressZeroSubUnits = newVal; }
-DG_INLINE void DistanceFormatter::SetIsDgnCoordReadOutCapable(bool newVal) { m_isDgnCoordReadOutCapable = newVal; }
-DG_INLINE void DistanceFormatter::SetPrecisionByte(Byte newVal) { m_precisionByte = newVal; }
-DG_INLINE bool DistanceFormatter::GetUseDWGFormattingLogic() const { return m_useDWGFormattingLogic; }
-DG_INLINE void DistanceFormatter::SetUseDWGFormattingLogic(bool newVal) { m_useDWGFormattingLogic = newVal; }
-DG_INLINE DwgUnitFormat DistanceFormatter::GetDWGUnitFormat() const { return m_dwgUnitFormat; }
-
-DG_INLINE bool PointFormatter::GetIs3d() const { return m_is3d; }
-DG_INLINE void PointFormatter::SetIs3d(bool newVal) { m_is3d = newVal; }
-
-DG_INLINE UnitDefinitionCR AreaOrVolumeFormatterBase::GetMasterUnits() const { return m_masterUnit; }
-DG_INLINE double AreaOrVolumeFormatterBase::GetScaleFactor() const { return m_scaleFactor; }
-DG_INLINE bool AreaOrVolumeFormatterBase::GetShowUnitLabel() const { return m_showUnitLabel; }
-DG_INLINE bool AreaOrVolumeFormatterBase::GetLabelDecoratorAsSuffix() const { return m_labelDecoratorAsSuffix; }
-DG_INLINE void AreaOrVolumeFormatterBase::SetShowUnitLabel(bool newVal) { m_showUnitLabel = newVal; }
-DG_INLINE bool AreaOrVolumeFormatterBase::GetUseDWGFormattingLogic() const { return m_useDWGFormattingLogic; }
-DG_INLINE void AreaOrVolumeFormatterBase::SetUseDWGFormattingLogic(bool newVal) { m_useDWGFormattingLogic = newVal; }
-DG_INLINE void AreaOrVolumeFormatterBase::SetLabelDecoratorAsSuffix(bool newVal) { m_labelDecoratorAsSuffix = newVal; }
-DG_INLINE DwgUnitFormat AreaOrVolumeFormatterBase::GetDWGUnitFormat() const { return m_dwgUnitFormat; }
-
-DG_INLINE void AreaFormatter::SetPrecisionByte(Byte newVal) { m_precisionByte = newVal; }
-
-DG_INLINE void AngleParser::SetAngleMode(AngleMode mode) { m_angleMode = mode; }
-DG_INLINE AngleMode AngleParser::GetAngleMode() { return m_angleMode; }
-
-DG_INLINE AngleParserR DirectionParser::GetAngleParser() { return *m_angleParser; }
-DG_INLINE void DirectionParser::SetTrueNorthValue(double trueNorth) { m_trueNorth = trueNorth; }
-DG_INLINE double DirectionParser::GetTrueNorthValue() { return m_trueNorth; }
-DG_INLINE void DirectionParser::SetDirectionMode(DirectionMode newVal) { m_mode = newVal; }
-DG_INLINE DirectionMode DirectionParser::GetDirectionMode() { return m_mode; }
-DG_INLINE void DirectionParser::SetClockwise(bool isCw) { m_isClockwise = isCw; }
-DG_INLINE bool DirectionParser::GetClockwise() { return m_isClockwise; }
-DG_INLINE void DirectionParser::SetBaseDirection(double newVal) { m_baseDirection = newVal; }
-DG_INLINE double DirectionParser::GetBaseDirection() { return m_baseDirection; }
-
-DG_INLINE void DistanceParser::SetMasterUnitLabel(Utf8CP label) { m_masterUnitLabel = label; }
-DG_INLINE Utf8CP DistanceParser::GetMasterUnitsLabel() { return m_masterUnitLabel.c_str(); }
-DG_INLINE void DistanceParser::SetSubUnitLabel(Utf8CP label) { m_subUnitLabel = label; }
-DG_INLINE Utf8CP DistanceParser::GetSubUnitsLabel() { return m_subUnitLabel.c_str(); }
-DG_INLINE void DistanceParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
-DG_INLINE double DistanceParser::GetMasterUnitsScale() { return m_masterUnitScale; }
-DG_INLINE void DistanceParser::SetSubUnitScale(double scale) { m_subUnitScale = scale; }
-DG_INLINE double DistanceParser::GetSubUnitsScale() { return m_subUnitScale; }
-DG_INLINE void DistanceParser::SetScale(double scale) { m_scale = scale; }
-DG_INLINE double DistanceParser::GetScale() { return m_scale; }
-
-DG_INLINE DistanceParserR PointParser::GetDistanceParser() { return *m_distanceParser; }
-DG_INLINE void PointParser::SetIs3d(bool is3d) { m_is3d = is3d; }
-DG_INLINE bool PointParser::GetIs3d() const { return m_is3d; }
-
-DG_INLINE void AreaOrVolumeParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
-DG_INLINE double AreaOrVolumeParser::GetMasterUnitsScale() { return m_masterUnitScale; }
-DG_INLINE void AreaOrVolumeParser::SetScale(double scale) { m_scale = scale; }
-DG_INLINE double AreaOrVolumeParser::GetScale() { return m_scale; }

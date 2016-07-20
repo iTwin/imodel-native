@@ -1380,7 +1380,7 @@ DPoint3dR       origin
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsValidPatternDefLine
 (
-DwgHatchDefLineP    lineP,
+DwgHatchDefLine*    lineP,
 double              rangeDiagonal
 )
     {
@@ -1410,7 +1410,7 @@ ViewContextR        context,
 TransformR          baseTransform,
 TransformR          hatchTransform,
 double              annotationScale,
-DwgHatchDefLineP    hatchLines,
+DwgHatchDefLine*   hatchLines,
 int                 nDefLines,
 bool                is3d
 )
@@ -1428,7 +1428,7 @@ bool                is3d
     GPArraySmartP   hatchGpa, dashGpa;
 
     // NOTE: In ACAD hatch definitions both the base angle and scale have already been applied to the definitions and MUST not be applied again!
-    for (DwgHatchDefLineP lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
+    for (DwgHatchDefLine* lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
         {
         if (!IsValidPatternDefLine(lineP, rangeDiagonal))
             continue;

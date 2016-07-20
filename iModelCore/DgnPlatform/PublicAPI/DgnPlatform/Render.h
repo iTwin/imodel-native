@@ -595,7 +595,7 @@ protected:
     double          m_shift;
     ColorDef        m_colors[MAX_GRADIENT_KEYS];
     double          m_values[MAX_GRADIENT_KEYS];
-    DGNPLATFORM_EXPORT GradientSymb();
+    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
 
 public:
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);

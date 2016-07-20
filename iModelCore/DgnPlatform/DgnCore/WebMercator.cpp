@@ -508,7 +508,7 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
     viewRay.direction = vp.GetViewController().GetZVector();
 
     DPlane3d xyPlane = DPlane3d::FromOriginAndNormal(DPoint3d::FromZero(), DVec3d::From(0, 0, 1.0));
-    Frustum  worldFrust = vp.GetFrustum();
+    Frustum  worldFrust = vp.GetFrustum(DgnCoordSystem::World, true);
     DRange2d xyRange = DRange2d::NullRange();
 
     BeAssert(!m_tileRange.IsValid());
@@ -526,7 +526,7 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
         }
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
-    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View);
+    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, true);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
     // Get the number of meters / pixel that we are showing in the view
