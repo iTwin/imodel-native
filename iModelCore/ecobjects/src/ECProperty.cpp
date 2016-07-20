@@ -464,7 +464,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 
     if (IsMaximumLengthDefined())
         {
-        xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
+        xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, (uint64_t)m_maximumLength);
         }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
