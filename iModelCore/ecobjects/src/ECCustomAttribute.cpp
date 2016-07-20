@@ -648,6 +648,10 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                 }
             if (customAttributeInstance.IsValid())
                 {
+                ECSchemaP containerSchema = const_cast<ECSchemaP>(_GetContainerSchema());
+                ECClassP customAttribClass = const_cast<ECClassP>(&customAttributeInstance->GetClass());
+                if ((_GetContainerSchema() != &(customAttributeInstance->GetClass().GetSchema()) && !ECSchema::IsSchemaReferenced(*containerSchema, customAttribClass->GetSchemaR())))
+                    containerSchema->AddReferencedSchema(customAttribClass->GetSchemaR());
                 ECObjectsStatus caSetStatus = SetPrimaryCustomAttribute(*customAttributeInstance);
                 if (ECObjectsStatus::Success != caSetStatus)
                     {
