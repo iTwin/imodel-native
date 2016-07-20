@@ -4,22 +4,6 @@ DECLARATION_BEGIN
 #define DECLARATION_END     @end
 DECLARATION_END
 
-#define BE_TEST_RUNNER_JNI_WRAPPER(JTS,JTC)
-#define BE_TEST_SETUP_JNI_WRAPPER(JTC)
-#define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
-
-// Declare the test case setup and teardown functions
-#undef  BE_TEST_SETUP
-#define BE_TEST_SETUP(TC)     extern "C" void setUpTestCase_##TC ();
-#undef  BE_TEST_TEARDOWN
-#define BE_TEST_TEARDOWN(TC)  extern "C" void tearDownTestCase_##TC ();
-
-// Declare the test case runner functions
-#undef  BE_TEST_RUNNER
-#define BE_TEST_RUNNER(TC,TN) extern "C" int run_TEST_##TC##_##TN ();
-// Note: The makefile will set include path to point to the UnitTests.list.h that should be used
-#include <UnitTests.list.h>
-
 #define IMPLEMENTATION_BEGIN @implementation __FIXTURE__
 IMPLEMENTATION_BEGIN
 
@@ -29,17 +13,22 @@ SETUP_METHOD
 #define TEARDOWN_METHOD - (void)tearDown { [super tearDown];  }
 TEARDOWN_METHOD
 
+#define BE_TEST_RUNNER_JNI_WRAPPER(JTS,JTC)
+#define BE_TEST_SETUP_JNI_WRAPPER(JTC)
+#define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
+
 // Define Objective-C setup and teardown functions that are detected by the UnitTest framework 
 #undef  BE_TEST_SETUP
-#define BE_TEST_SETUP(TC)       + (void)setUp { [__FIXTURE__ begtest_initialize]; setUpTestCase_##TC (); }   
+#define BE_TEST_SETUP(TC)       + (void)setUp { BeTest::SetUpTestCase(#TC); }   
 #undef  BE_TEST_TEARDOWN
-#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { tearDownTestCase_##TC (); }
+#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { BeTest::TearDownTestCase(#TC); }
 
 // Define Objective-C functions that are detected by the UnitTest framework and that call the test runner functions
 #undef  BE_TEST_RUNNER
-#define BE_TEST_RUNNER(TC,TN)   - (void) test##TN { \
+#define BE_TEST_RUNNER(TC,TN)   extern "C" int BETEST_TEST_RUNNER_FUNC(TC,TN) (); \
+                                - (void) test##TN { \
                                     ((BeTestHost&) BeTest::GetHost ()).m_currentTestCase = self; \
-                                    XCTAssertTrue (0 == run_TEST_##TC##_##TN(), @""); \
+                                    XCTAssertTrue (0 == BETEST_TEST_RUNNER_FUNC(TC,TN) (), @""); \
                                     }
 // Note: The makefile will set include path to point to the UnitTests.list.h that should be used
 #include <UnitTests.list.h>

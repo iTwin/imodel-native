@@ -88,12 +88,17 @@ public class __FIXTURE__ extends ActivityInstrumentationTestCase2<TestActivity>
         System.loadLibrary ("AndroidTestJni");
         }
 
+    public static void setUpTestCase() { jniSetUpTestCase(); }
+    private static native void jniSetUpTestCase();
+
+    public static void tearDownTestCase() { jniTearDownTestCase(); }
+    private static native void jniTearDownTestCase();
+
 #define BE_TEST_SETUP_JNI_WRAPPER(JTC)
 #define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
 #define BE_TEST_RUNNER_JNI_WRAPPER(JTC,JTN)
-
-#define BE_TEST_SETUP(TC)       public static void setUpTestCase () { jniSetUpTestCase (); }        private static native void jniSetUpTestCase ();
-#define BE_TEST_TEARDOWN(TC)    public static void tearDownTestCase () { jniTearDownTestCase (); }  private static native void jniTearDownTestCase ();
+#define BE_TEST_SETUP(TC)       
+#define BE_TEST_TEARDOWN(TC)    
 #define BE_TEST_RUNNER(TC,TN)   public void test_##TN () { assertEquals (0, jniTest##TN ()); }      private native int jniTest##TN ();
 
 #include "UnitTests.list.h"
