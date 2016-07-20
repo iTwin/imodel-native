@@ -21,16 +21,25 @@ need be.
 #include <ImagePP\all\h\HFCPtr.h>
 #include <ImagePP\all\h\HPMDataStore.h>
 USING_NAMESPACE_IMAGEPP
-
+    
 enum class SMStoreDataType
     {
-    POINTS,
-    INDICES,
-    UVS,
-    UVINDICES, 
-    UNKNOWN
-    };
+    Points = 0,
+    TriPtIndices,    
+    TriUvIndices, 
+    UvCoords, 
+    DiffSet, 
+    Graph,
+    Texture,
+    Display, //Use to represents data created for display purpose, like QV element. 
+    LinearFeature,
+    BcDTM,
 
+    //Composite datatype - allows to treat different data as an atomic pool item.
+    PointAndTriPtIndices, 
+
+    Unknown, 
+    };
 
 
 template <class DataType> class ISMNodeDataStore : public RefCountedBase

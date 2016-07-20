@@ -246,35 +246,35 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
 
     if (GetBlockID().IsValid())
         {        
-        GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex);
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetPtsIndicesStore()->DestroyBlock(GetBlockID());                
         m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex);
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetTexturesStore()->DestroyBlock(GetBlockID());          
         m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         
-        GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex);
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVsIndicesStore()->DestroyBlock(GetBlockID());                
         m_triUvIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex);
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVStore()->DestroyBlock(GetBlockID());                        
         m_uvCoordsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
         dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetGraphStore()->DestroyBlock(GetBlockID());
 
-        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore() != nullptr)dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore()->DestroyBlock(GetBlockID());
 
-        GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex);
         if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore() != nullptr)dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetFeatureStore()->DestroyBlock(GetBlockID());
        
-        GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex);
         }
                 
     HINVARIANTS;
@@ -339,31 +339,31 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
         {
              
         
-        GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex);
         m_triIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
                                         
-        GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex);
         m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriUvIndices, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex);
         m_triUvIndicesPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::UvCoords, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex);
         m_uvCoordsPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
         m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
        
-        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_displayDataPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex);
         m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         
-        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::DiffSet, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::LinearFeature, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex);
         m_featurePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
-        GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
+        GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex);
         m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
         }
@@ -861,7 +861,7 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushTe
     {
     assert(!GetTexturePtr().IsValid());
 
-    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), texture, size, SMPoolDataTypeDesc::Texture, (uint64_t)m_SMIndex));
+    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), texture, size, SMStoreDataType::Texture, (uint64_t)m_SMIndex));
     SMMemoryPoolItemBasePtr poolItem(storedMemoryPoolVector.get());
     m_texturePoolItemId = GetMemoryPool()->AddItem(poolItem);
     assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);  
@@ -2330,13 +2330,13 @@ void SMMeshIndexNode<POINT, EXTENT>::UpdateFromGraph(MTGGraph * graph, bvector<D
     graph->DropMask(visitedMask);
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(this->GetGraphPtr());
 
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(this->GetBlockID().m_integerID, this->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)m_SMIndex));
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(this->GetBlockID().m_integerID, this->GetGraphStore().GetPtr(), SMStoreDataType::Graph, (uint64_t)m_SMIndex));
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
 
     MTGGraph* graphP = new MTGGraph(*graph);
     storedMemoryPoolItem->SetData(graphP);
     storedMemoryPoolItem->SetDirty();
-    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)this->m_SMIndex);
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)this->m_SMIndex);
 
 
     //this->SetGraphDirty();    
@@ -2588,7 +2588,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
         existingPts->push_back(&newVertices[0], (int) newVertices.size());
         }
     //m_tileBcDTM = nullptr;
-    GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::BcDTM, (uint64_t)m_SMIndex);
+    GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex);
     m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     }
 
@@ -2653,14 +2653,14 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
         {
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
                 
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex))
+        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
             {                  
             //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
             ISMFaceIndDataStorePtr faceIndDataStore;
             bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader);
             assert(result == true);      
 
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMPoolDataTypeDesc::TriPtIndices, (uint64_t)m_SMIndex));
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex));
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
             assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -4007,10 +4007,10 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
     {    
     po_pDataStore = new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);
-    po_pPointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStoreDataType::POINTS, pi_pCompress);
-    po_pIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingIndiceStoreType::SMStoreDataType::INDICES, pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingUVStoreType::SMStoreDataType::UVS, pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingIndiceStoreType::SMStoreDataType::UVINDICES);
+    po_pPointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::Points, pi_pCompress);
+    po_pIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::TriPtIndices, pi_pCompress);
+    po_pUVStore = new StreamingUVStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::UvCoords, pi_pCompress);
+    po_pUVIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::TriUvIndices);
     po_pTextureStore = new StreamingTextureTileStoreType(dataSourceAccount, pi_pOutputDirPath);
     }
 

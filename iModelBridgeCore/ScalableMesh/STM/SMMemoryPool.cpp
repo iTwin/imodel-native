@@ -16,28 +16,28 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-void GetAllDataTypesInCompositeDataType(bvector<SMPoolDataTypeDesc>& dataTypes, SMPoolDataTypeDesc compositeDataType) 
+void GetAllDataTypesInCompositeDataType(bvector<SMStoreDataType>& dataTypes, SMStoreDataType compositeDataType) 
     {
-    if (compositeDataType == SMPoolDataTypeDesc::PointAndTriPtIndices)
+    if (compositeDataType == SMStoreDataType::PointAndTriPtIndices)
         {
-        dataTypes.push_back(SMPoolDataTypeDesc::Points);
-        dataTypes.push_back(SMPoolDataTypeDesc::TriPtIndices);
+        dataTypes.push_back(SMStoreDataType::Points);
+        dataTypes.push_back(SMStoreDataType::TriPtIndices);
         return; 
         }
 
     assert(!"Unknown composite data type");
     }
 
-SMStoreDataType GetStoreDataType(SMPoolDataTypeDesc poolDataType)
+SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType)
     {
     switch (poolDataType)
         {
-        case SMPoolDataTypeDesc::Points :
-            return SMStoreDataType::POINTS;
-        case SMPoolDataTypeDesc::TriPtIndices :
-            return SMStoreDataType::INDICES;
+        case SMStoreDataType::Points :
+            return SMStoreDataType::Points;
+        case SMStoreDataType::TriPtIndices :
+            return SMStoreDataType::TriPtIndices;
         default:
-            return SMStoreDataType::UNKNOWN;
+            return SMStoreDataType::Unknown;
         }
     }
     
@@ -46,14 +46,14 @@ SMMemoryPoolPtr    SMMemoryPool::s_memoryPool;
 
 SMMemoryPoolItemBase::SMMemoryPoolItemBase()
     {
-    m_dataType = SMPoolDataTypeDesc::Unknown;
+    m_dataType = SMStoreDataType::Unknown;
     m_dirty = false;
     m_nodeId = std::numeric_limits<uint64_t>::max();
     m_smId = std::numeric_limits<uint64_t>::max();
     m_poolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     }
 
-SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId)
+SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId)
     {
     m_data = data;
     m_size = size;   
@@ -78,7 +78,7 @@ uint64_t SMMemoryPoolItemBase::GetSize()
     return m_size;
     }        
 
-bool SMMemoryPoolItemBase::IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType)
+bool SMMemoryPoolItemBase::IsCorrect(uint64_t nodeId, SMStoreDataType& dataType)
     {
     if (nodeId == m_nodeId && dataType == m_dataType)
         return true;
@@ -86,7 +86,7 @@ bool SMMemoryPoolItemBase::IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataTy
     return false;
     }
 
-bool SMMemoryPoolItemBase::IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId)
+bool SMMemoryPoolItemBase::IsCorrect(uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId)
     {
     if (nodeId == m_nodeId && dataType == m_dataType && smId == m_smId)
         return true;
@@ -117,17 +117,17 @@ void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta, int64_t n
     }  
 
 
-SMMemoryPoolItemBasePtr PointAndPtIndicesData::GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+SMMemoryPoolItemBasePtr PointAndPtIndicesData::GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
     {
     SMMemoryPoolItemBasePtr item; 
 
-    if (dataType == SMPoolDataTypeDesc::Points)
+    if (dataType == SMStoreDataType::Points)
         {
         item = new SMMemoryPoolVectorItem<DPoint3d>(nbItems, nodeId, dataType, smId);            
         m_pointData = (DPoint3d *)item->m_data;
         }
     else
-    if (dataType == SMPoolDataTypeDesc::TriPtIndices)
+    if (dataType == SMStoreDataType::TriPtIndices)
         {
         item = new SMMemoryPoolVectorItem<int32_t>(nbItems, nodeId, dataType, smId);            
         m_indicesData = (int32_t*)item->m_data;        
@@ -184,7 +184,7 @@ bool SMMemoryPool::GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItem
     return memItemPtr.IsValid();
     }
 
-bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
     {     
     if (id == SMMemoryPool::s_UndefinedPoolItemId)
         return false; 
@@ -207,7 +207,7 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolData
     return false;
     }
 
-void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
     {
     if (id == SMMemoryPool::s_UndefinedPoolItemId)
         return;

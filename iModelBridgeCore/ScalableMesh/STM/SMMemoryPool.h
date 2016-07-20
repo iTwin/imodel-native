@@ -25,27 +25,8 @@ using namespace std;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
 
-enum class SMPoolDataTypeDesc
-    {
-    Points = 0,
-    TriPtIndices,    
-    TriUvIndices, 
-    UvCoords, 
-    DiffSet, 
-    Graph,
-    Texture,
-    Display, //Use to represents data created for display purpose, like QV element. 
-    LinearFeature,
-    BcDTM,
-
-    //Composite datatype - allows to treat different data as an atomic pool item.
-    PointAndTriPtIndices, 
-
-    Unknown, 
-    };
-
-//NEEDS_WORK_SM : Merge SMStoreDataType and SMPoolDataTypeDesc together?
-SMStoreDataType GetStoreDataType(SMPoolDataTypeDesc poolDataType);
+//NEEDS_WORK_SM : Merge SMStoreDataType and SMStoreDataType together?
+SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType);
     
 
                              class SMMemoryPoolItemBase;
@@ -59,7 +40,7 @@ typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
 
 typedef uint64_t SMMemoryPoolItemId;
 
-void GetAllDataTypesInCompositeDataType(bvector<SMPoolDataTypeDesc>& dataTypes, SMPoolDataTypeDesc compositeDataType);
+void GetAllDataTypesInCompositeDataType(bvector<SMStoreDataType>& dataTypes, SMStoreDataType compositeDataType);
 
 class SizeChangePoolItemListener
     {  
@@ -86,7 +67,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
         uint64_t                  m_size;
         uint64_t                  m_nodeId;
         uint64_t                  m_smId;
-        SMPoolDataTypeDesc        m_dataType;
+        SMStoreDataType        m_dataType;
         bool                      m_dirty;
 
                 
@@ -100,7 +81,7 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
         SMMemoryPoolItemBase();
             
-        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId);
+        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId);
                     
         template<typename T>
         RefCountedPtr<SMMemoryPoolVectorItem<T>> GetAsPoolVector()
@@ -154,13 +135,13 @@ class SMMemoryPoolItemBase : public RefCountedBase
             assert(!"Listener not found");
             }
 
-        SMPoolDataTypeDesc GetDataType() const { return m_dataType; }
+        SMStoreDataType GetDataType() const { return m_dataType; }
                     
         uint64_t GetSize();        
 
-        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType);
+        bool IsCorrect(uint64_t nodeId, SMStoreDataType& dataType);
 
-        bool IsCorrect(uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId);
+        bool IsCorrect(uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId);
 
         virtual bool IsDirty () const { return m_dirty; } 
             
@@ -183,7 +164,7 @@ class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
 
     public : 
 
-        SMMemoryPoolMultiItemsBase(uint64_t nodeId, SMPoolDataTypeDesc& dataType, uint64_t smId)
+        SMMemoryPoolMultiItemsBase(uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId)
         : SMMemoryPoolItemBase(0, 0, nodeId, dataType, smId)
             {            
             }
@@ -193,7 +174,7 @@ class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
             }
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMPoolDataTypeDesc dataType)
+        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMStoreDataType dataType)
             {
             for (auto& item : m_items)
                 {
@@ -238,14 +219,14 @@ struct PointAndPtIndicesData
         }    
 
     /*
-    size_t GetDataTypeSize(SMPoolDataTypeDesc dataType)
+    size_t GetDataTypeSize(SMStoreDataType dataType)
         {                
-        if (dataType == SMPoolDataTypeDesc::Points)
+        if (dataType == SMStoreDataType::Points)
             {
             return sizeof(DPoint3d);
             }
         
-        if (dataType == SMPoolDataTypeDesc::TriPtIndices)
+        if (dataType == SMStoreDataType::TriPtIndices)
             {
             return sizeof(int32_t);
             }
@@ -254,7 +235,7 @@ struct PointAndPtIndicesData
         }
         */
 
-    SMMemoryPoolItemBasePtr GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId);
+    SMMemoryPoolItemBasePtr GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
         
     };
 
@@ -268,10 +249,10 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
 
     public : 
                 
-        SMStoredMemoryPoolMultiItems(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMPoolDataTypeDesc& compositedataType, uint64_t smId)
+        SMStoredMemoryPoolMultiItems(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMStoreDataType& compositedataType, uint64_t smId)
         : SMMemoryPoolMultiItemsBase(nodeId, dataType, smId)
             {
-            bvector<SMPoolDataTypeDesc> dataTypes;
+            bvector<SMStoreDataType> dataTypes;
 
             GetAllDataTypesInCompositeDataType(dataTypes, compositeDataType);
 
@@ -323,7 +304,7 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
 
     public : 
         
-        SMMemoryPoolBlobItem(size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        SMMemoryPoolBlobItem(size_t size, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {            
             m_size = size;
             m_nodeId = nodeId;
@@ -353,7 +334,7 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
 
     public : 
         
-        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {               
             m_size = size;
             m_nodeId = nodeId;
@@ -398,7 +379,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
 
     public:
 
-        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolGenericBlobItem(nullptr,store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {
             m_store = store;
@@ -431,7 +412,7 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
 
     public : 
         
-         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<Byte>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<Byte>* store, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
             {                                    
             m_store = store;            
@@ -445,7 +426,7 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
             }
 
 
-         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMPoolDataTypeDesc dataType, uint64_t smId)
+         SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolBlobItem(dataSize, nodeId, dataType, smId)
             {                                    
             m_store = store;                        
@@ -575,7 +556,7 @@ public:
         -----------------------------------------------------------------------------
     */
 
-    SMMemoryPoolVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+    SMMemoryPoolVectorItem(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {
             m_nbItems = nbItems;
             m_size = nbItems * sizeof(DataType);
@@ -814,7 +795,7 @@ public:
 template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemoryPoolVectorItem<DataType>
     {
     public:
-    SMMemoryPoolGenericVectorItem(size_t nbItems, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+    SMMemoryPoolGenericVectorItem(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
         : SMMemoryPoolVectorItem<DataType>(nbItems, nodeId, dataType, smId)
         {
 
@@ -994,7 +975,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
         
     public:        
                         
-        SMStoredMemoryPoolGenericVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+        SMStoredMemoryPoolGenericVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolGenericVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {                                    
             m_store = store;            
@@ -1028,7 +1009,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
 
         public:
 
-            SMStoredMemoryPoolVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMPoolDataTypeDesc dataType, uint64_t smId)
+            SMStoredMemoryPoolVectorItem(uint64_t nodeId, IHPMDataStore<DataType>* store, SMStoreDataType dataType, uint64_t smId)
                 : SMMemoryPoolVectorItem(store->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
                 {
                 m_store = store;
@@ -1042,7 +1023,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
                     }
                 }
 
-            SMStoredMemoryPoolVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMPoolDataTypeDesc dataType, uint64_t smId)
+            SMStoredMemoryPoolVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
                 : SMMemoryPoolVectorItem(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
                 {
                 m_store = 0;
@@ -1120,7 +1101,7 @@ class SMMemoryPool : public RefCountedBase
         
             
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        bool GetItem(RefCountedPtr<SMMemoryPoolVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
@@ -1137,7 +1118,7 @@ class SMMemoryPool : public RefCountedBase
             }  
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolGenericVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        bool GetItem(RefCountedPtr<SMMemoryPoolGenericVectorItem<T>>& poolMemVectorItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false;
@@ -1154,7 +1135,7 @@ class SMMemoryPool : public RefCountedBase
             }
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        bool GetItem(RefCountedPtr<SMMemoryPoolBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
@@ -1172,7 +1153,7 @@ class SMMemoryPool : public RefCountedBase
 
 
         template<typename T>
-        bool GetItem(RefCountedPtr<SMMemoryPoolGenericBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId)
+        bool GetItem(RefCountedPtr<SMMemoryPoolGenericBlobItem<T>>& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {
             if (id == SMMemoryPool::s_UndefinedPoolItemId)
                 return false; 
@@ -1191,11 +1172,11 @@ class SMMemoryPool : public RefCountedBase
                
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             
-        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId);
+        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
             
         SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
 
-        void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMPoolDataTypeDesc dataType, uint64_t smId);
+        void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
 
         void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
 

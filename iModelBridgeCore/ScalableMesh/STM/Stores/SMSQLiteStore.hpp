@@ -85,14 +85,14 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
 //template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMSQLiteStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {                
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::POINTS, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::Points, nodeHeader, m_smSQLiteFile);
 
     return true;    
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {                
-    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(SMStoreDataType::INDICES, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(SMStoreDataType::TriPtIndices, nodeHeader, m_smSQLiteFile);
     return true;    
     }
 
@@ -120,10 +120,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
 
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             m_smSQLiteFile->StorePoints(id, nodeData, countData*sizeof(DATATYPE));
             break;
-        case SMStoreDataType::INDICES : 
+        case SMStoreDataType::TriPtIndices : 
             m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));            
             break;            
         default : 
@@ -147,10 +147,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
     
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             m_smSQLiteFile->StorePoints(id, nodeData, countData*sizeof(DATATYPE));            
             break;
-        case SMStoreDataType::INDICES : 
+        case SMStoreDataType::TriPtIndices : 
             m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));                        
             break;
         default : 
@@ -171,10 +171,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             blockDataCount = m_nodeHeader->m_nodeCount;            
             break;
-        case SMStoreDataType::INDICES : 
+        case SMStoreDataType::TriPtIndices : 
             blockDataCount = m_nodeHeader->m_nbFaceIndexes;            
             break;
         default : 
@@ -196,11 +196,11 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
     {
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
             m_nodeHeader->m_nodeCount += countDelta;                
             break;
-         case SMStoreDataType::INDICES : 
+         case SMStoreDataType::TriPtIndices : 
             assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
             m_nodeHeader->m_nbFaceIndexes += countDelta;                
             break;
@@ -223,10 +223,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
             break;
-        case SMStoreDataType::INDICES : 
+        case SMStoreDataType::TriPtIndices : 
             m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
             break;
         default : 

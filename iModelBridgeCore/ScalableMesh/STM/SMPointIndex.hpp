@@ -711,7 +711,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
     HINVARIANTS;
     if (GetBlockID().IsValid())
         {
-        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex);
+        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
         GetPointsStore()->DestroyBlock(GetBlockID());                
         }
         
@@ -3690,7 +3690,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
             GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());                 
             }            
                     
-        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex);
+        SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
 
         m_isDirty = false;
         }
@@ -3977,14 +3977,14 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>>
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
                     
-    if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex) && loadPts)
+    if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex) && loadPts)
         {                  
         //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
         ISMPointDataStorePtr pointDataStore;
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader);
         assert(result == true);        
 
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, pointDataStore, SMPoolDataTypeDesc::Points, (uint64_t)m_SMIndex));
+        RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, pointDataStore, SMStoreDataType::Points, (uint64_t)m_SMIndex));
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
         m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
         assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -7769,7 +7769,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, StreamingPointStoreType::SMStoreDataType::POINTS, pi_pCompress);    
+    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::Points, pi_pCompress);    
     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress));                    
 
     this->GetRootNode()->SavePointsToCloud(dataSourceAccount, dataStore, pointStore);

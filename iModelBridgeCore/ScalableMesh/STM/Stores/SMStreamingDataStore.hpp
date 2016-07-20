@@ -775,14 +775,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::POINTS, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::Points, nodeHeader);
 
     return true;    
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
-    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::INDICES, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::TriPtIndices, nodeHeader);
 
     return true;    
     }
@@ -825,16 +825,16 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
     switch (type)
         {
-        case SMStoreDataType::POINTS: 
+        case SMStoreDataType::Points: 
             m_pathToNodeData += L"points/";
             break;
-        case SMStoreDataType::INDICES:
+        case SMStoreDataType::TriPtIndices:
             m_pathToNodeData += L"indices/";
             break;
-        case SMStoreDataType::UVS:
+        case SMStoreDataType::UvCoords:
             m_pathToNodeData += L"uvs/";
             break;
-        case SMStoreDataType::UVINDICES:
+        case SMStoreDataType::TriUvIndices:
             m_pathToNodeData += L"uvindices/";
             break;
         default:
@@ -920,10 +920,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    if (m_dataType == SMStoreDataType::POINTS)
+    if (m_dataType == SMStoreDataType::Points)
         return m_nodeHeader->m_nodeCount;
     else
-    if (m_dataType == SMStoreDataType::INDICES)
+    if (m_dataType == SMStoreDataType::TriPtIndices)
         return m_nodeHeader->m_nbFaceIndexes;
     else
     if (IsValidID(blockID))
@@ -942,11 +942,11 @@ template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, 
     {
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
             m_nodeHeader->m_nodeCount += countDelta;                
             break;
-         case SMStoreDataType::INDICES : 
+         case SMStoreDataType::TriPtIndices : 
             assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
             m_nodeHeader->m_nbFaceIndexes += countDelta;                
             break;
