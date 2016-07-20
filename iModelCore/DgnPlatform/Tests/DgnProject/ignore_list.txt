@@ -55,3 +55,21 @@ DgnDbTest.GetCoordinateSystemProperties
     # azimuthExpected 178.29138626108181
     # azimuth 178.29128105659069
     # eps 0.00010000000000000000
+
+ECInstanceSelectTests.ImportSchema # This test doesn't really do anything and it takes 40 seconds to run
+
+DgnMarkupProjectTest.CreateDgnMarkupProject
+    # WinX64, DEBUG
+    # [ RUN      ] DgnMarkupProjectTest.CreateDgnMarkupProject
+    # 2016-07-14 08:55:49,750 ERROR [0x0000b80c] BeAssert - F:\DgnDb61-16Q2-Dev\src-staging\DgnPlatform\DgnCore\DgnDb.cpp(73): ASSERTION FAILURE (0): false && "Make sure you save your outstanding Txn before deleting a DgnDb"
+    # F:\DgnDb61-16Q2-Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
+    # F:\DgnDb61-16Q2-Dev\src-staging\DgnPlatform\DgnCore\DgnDb.cpp(73): ASSERTION FAILURE (0): false && "Make sure you save your outstanding Txn before deleting a DgnDb"
+    # [  FAILED  ] DgnMarkupProjectTest.CreateDgnMarkupProject (1823 ms)
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # DgnDb61-16Q2, NDEBUG, WinX64
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(947): error: Value of: instance.MakeValueIterator(changeSummary).QueryCount()
+    # Actual: 7
+    # Expected: 8
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (59 ms)

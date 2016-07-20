@@ -1232,13 +1232,14 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
         // found face loop entry
         if (thisIndex = vertIndex[readIndex])
             {
-            // remember first index in this face loop
             if (!thisFaceSize)
+                {
+                // remember first index in this face loop
                 firstIndex = thisIndex;
-
-            // draw visible edge (prevIndex, thisIndex)
+                }
             else if (prevIndex > 0)
                 {
+                // draw visible edge (prevIndex, thisIndex)
                 int closeVertexId = (abs(prevIndex) - 1);
                 int segmentVertexId = (abs(thisIndex) - 1);
                 ICurvePrimitivePtr curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
@@ -1317,6 +1318,9 @@ void SimplifyGraphic::ClipAndProcessPolyfaceAsCurves(PolyfaceQueryCR geom)
 
             thisFaceSize = 0;
             }
+
+        if (0 == (readIndex % 100) && m_context.CheckStop())
+            return;
         }
     }
 

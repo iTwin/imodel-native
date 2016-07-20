@@ -69,6 +69,8 @@ TEST (ImageUtilities_Tests, Png)
     ImageSource png2(image3, ImageSource::Format::Png);
     ASSERT_TRUE(png2.IsValid());
     ASSERT_TRUE(png2.GetFormat()==ImageSource::Format::Png);
+    ASSERT_TRUE(png2.GetSize().x == image3.GetWidth());
+    ASSERT_TRUE(png2.GetSize().y == image3.GetHeight());
 
     Image image4(png2, Image::Format::Rgb);
     ASSERT_TRUE(image4.IsValid());
@@ -84,6 +86,24 @@ TEST (ImageUtilities_Tests, Png)
     ASSERT_TRUE(Image::Format::Rgba == image3.GetFormat());
     ASSERT_EQ(image5.GetByteStream().GetSize(), image3.GetByteStream().GetSize());
     ASSERT_TRUE(0==memcmp(image5.GetByteStream().GetData(), image3.GetByteStream().GetData(), image3.GetByteStream().GetSize())); 
+
+    Image image_png = Image::FromPng(pngImg.GetByteStream().GetData(), pngImg.GetByteStream().GetSize(), Image::Format::Rgb);
+    ASSERT_TRUE(image_png.IsValid());
+    ASSERT_EQ(width, image_png.GetWidth());
+    ASSERT_EQ(height, image_png.GetHeight());
+    ASSERT_EQ(image_png.GetByteStream().GetSize(), image.GetByteStream().GetSize());
+    ASSERT_TRUE(0 == memcmp(image_png.GetByteStream().GetData(), image.GetByteStream().GetData(), image.GetByteStream().GetSize()));
+    Byte const* src1 = image.GetByteStream().GetData();
+    Byte const* dst1 = image_png.GetByteStream().GetData();
+    for (uint8_t y = 0; y<height; ++y)
+    {
+        for (uint8_t x = 0; x<width; ++x)
+        {
+            ASSERT_TRUE(*src1++ == *dst1++);
+            ASSERT_TRUE(*src1++ == *dst1++);
+            ASSERT_TRUE(*src1++ == *dst1++);
+        }
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -108,7 +128,6 @@ TEST (ImageUtilities_Tests, JPG)
         }
 
     Image image(width, height, std::move(testImage), Image::Format::Rgb);
-
     ImageSource jpgImg(image, ImageSource::Format::Jpeg, 100);
     ASSERT_TRUE(jpgImg.IsValid());
     ASSERT_TRUE(jpgImg.GetFormat()==ImageSource::Format::Jpeg);
@@ -139,4 +158,6 @@ TEST (ImageUtilities_Tests, JPG)
             ASSERT_TRUE(0xff == *dst++);
             }
         }
+    Image image_jpeg = Image::FromJpeg(jpgImg.GetByteStream().GetData(), jpgImg.GetByteStream().GetSize(), Image::Format::Rgb, Image::BottomUp::No);
+    ASSERT_TRUE(image_jpeg.IsValid());
     }

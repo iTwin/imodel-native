@@ -15,6 +15,7 @@
 #endif
 
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_RENDER
 
 //=======================================================================================
 // @bsiclass                                                Algirdas.Mikoliunas   01/13
@@ -253,3 +254,62 @@ TEST_F(DgnLineStyleTest, IteratorLineStyleElement)
         }
     EXPECT_EQ(4, count);
     }
+/*---------------------------------------------------------------------------------**//**
+* Test InsertRasterComponentAsJson
+* @bsimethod                                    Ridha.Malik                          03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
+{
+    SetupProject(L"3dMetricGeneral.ibim", Db::OpenMode::ReadWrite);
+
+    //Get line styles
+    DgnLineStyles& styleTable = project->Styles().LineStyles();
+    LsCacheP cache = styleTable.GetLsCacheP();
+    LsCacheStyleIterator iterLineStyles = cache->begin();
+    DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
+    static Utf8CP STYLE_NAME = "RidhaTestLineStyle";
+    DgnStyleId newStyleId;
+
+    Json::Value     jsonValue(Json::objectValue);
+    uint32_t width = 100;
+    uint32_t height = 200;
+
+    ByteStream testImage(height * width * 3);
+    Byte* p = testImage.GetDataP();
+    for (uint8_t y = 0; y<height; ++y)
+    {
+        for (uint8_t x = 0; x<width; ++x)
+        {
+            *p++ = (y % 256); // R
+            *p++ = (x % 256); // G
+            *p++ = (0x33);  // B
+        }
+    }
+
+    Image image(width, height, std::move(testImage), Image::Format::Rgb);
+
+    jsonValue["x"] = image.GetWidth();
+    jsonValue["y"] = image.GetHeight();
+    jsonValue["flags"] = 12;
+    LsComponentId componentId(LsComponentType::RasterImage, 7);
+    EXPECT_TRUE(BSISUCCESS == LsComponent::AddRasterComponentAsJson(componentId, *project, jsonValue, image.GetByteStream().GetData(), image.GetByteStream().GetSize()));
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
+    // Add new line style
+    EXPECT_EQ(SUCCESS, styleTable.Insert(newStyleId, STYLE_NAME, componentId, 53, 0.0)) << "Insert line style return value should be SUCCESS";
+    ASSERT_TRUE(newStyleId.IsValid());
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
+    ASSERT_TRUE(1 == LineStyleElement::QueryCount(*project));
+    styleTable.ReloadMap();
+    cache = styleTable.GetLsCacheP();
+    LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
+    ASSERT_TRUE(nullptr != lsDef);
+    LsComponentCP lsComponent = lsDef->GetComponentCP(model.get());
+    ASSERT_TRUE(nullptr != lsComponent);
+    ASSERT_TRUE(LsComponentType::RasterImage == lsComponent->GetComponentType());
+
+    LsIdNodeP nodeid = cache->SearchIdsForName(STYLE_NAME);
+    LsDefinitionP checkComponentype = nodeid->GetValue();
+    ASSERT_TRUE(checkComponentype->IsOfType(LsComponentType::RasterImage));
+    checkComponentype = LsCache::FindInMap(*project, newStyleId);
+    ASSERT_TRUE(checkComponentype->IsOfType(LsComponentType::RasterImage));
+}

@@ -49,8 +49,7 @@ BETEST_TC_SETUP(GenericDgnModelTestFixture)
     {
     ScopedDgnHost tempHost;
     //  Request a root seed file.
-    s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
-
+    GenericDgnModelTestFixture::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Umar.Hayat             07/2016
