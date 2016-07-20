@@ -15,9 +15,10 @@
     %error Define GTEST_OUTPUT_DIR to the directory where logs, etc. should go
 %endif
 
+BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 LogDir=$(runDir)logs/
-LogFile=$(LogDir)gtest.log
+LogFile=$(LogDir)BeGTeststdout.log
 
 # NB: If you change the name of the output log file, you must also change it in RunBeGTest.logging.config.xml
 
@@ -32,8 +33,15 @@ always:
     %message !!! If you don't turn on Console logging, you won't get interleaved output at $(LogDir)PublishedTestResults.txt !!!
 %endif
 
+%message See $(LogDir)TestsTestResults.txt for logging output, interleaved with test output. 
+
 %if $(TARGET_PLATFORM)=="Windows"
     
+    %if defined(RUN_GTEST_MINIMIZED)
+        RunPrefix=start \/WAIT \/MIN
+    %else
+        RunPrefix=start \/WAIT
+    %endif
     # Must fix up directory separators
     exeName = $[@realpath $(GTEST_EXE)]
 
@@ -66,20 +74,17 @@ always:
     %return
 %endif
 
-teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
-
-%if !defined (BEGTEST_VERBOSE)
-    teeCmd + -q
-%endif
-
 always:
     !~@mkdir ${GTEST_OUTPUT_DIR}
-    !~@mkdir ${LogDir}
     !~@mkdir ${runDir}
     !~@mkdir ${runDir}/Output
     !~@mkdir ${runDir}/Temp
-    -$(exeName) | $(teeCmd) $(logFile)
-    |See $(LogFile)
-    %if !defined (BEGTEST_IGNORE_FAILURES)
-       $(baseDir)CheckResultsForFailures.py $(LogFile) $(exeName)
-    %endif
+    !~@mkdir ${LogDir}
+    $(RunPrefix) python $(_MakeFilePath)RunTests.py --exename="$(exeName)" --gtest_output="xml:$(LogDir)TestResults.xml" --truncate_output --output_dir=$(GTEST_OUTPUT_DIR) --log_file=$(LogFile)
+    %if !defined (BEGTEST_DONTVALIDATELOGFILE)
+    %if !defined (NO_BREAK)
+       $(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
+    %else
+       -$(BentleyTestDir)PrintLogAndReturnResult.py $(LogFile)
+    %endif # !defined (NO_BREAK)
+    %endif # !defined (BEGTEST_DONTVALIDATELOGFILE)
