@@ -168,16 +168,35 @@ NativeSqlBuilder::List ECClassIdPropertyMap::_ToNativeSql(Utf8CP classIdentifier
     if (wrapInParentheses)
         nativeSqlSnippet.AppendParenLeft(); //SelectClause, WhereClause, InsertCaluse, UpdateClause
 
-    if (IsPersisted())
-        {
-        nativeSqlSnippet.Append(classIdentifier, GetColumn().GetName().c_str());
-        }
-    else
-        {
-        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
-        GetDefaultConstraintClassId().ToString(classIdStr);
-        nativeSqlSnippet.Append(classIdStr).AppendSpace().Append(/*GetColumn().GetName().c_str()*/ ECDB_COL_ECClassId);
-        }
+    //if (ecsqlType == ECSqlType::Insert)
+    //    {
+    //    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+    //    GetDefaultConstraintClassId().ToString(classIdStr);
+    //    nativeSqlSnippet.Append(classIdStr);
+
+    //    }
+    //else
+    //    {
+        if (IsPersisted())
+            {
+            nativeSqlSnippet.Append(classIdentifier, GetColumn().GetName().c_str());
+            }
+        else
+            {
+            if (ecsqlType == ECSqlType::Select)
+                {
+                nativeSqlSnippet.Append(classIdentifier, ECDB_COL_ECClassId);
+                }
+            else
+                {
+                Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+                GetDefaultConstraintClassId().ToString(classIdStr);
+                nativeSqlSnippet.Append(classIdStr);
+                //if (ecsqlType != ECSqlType::Select) //hack to avoid a new parameter 
+                //    nativeSqlSnippet.AppendSpace().Append(ECDB_COL_ECClassId);
+                }
+            }
+       // }
 
     if (wrapInParentheses)
         nativeSqlSnippet.AppendParenRight();
