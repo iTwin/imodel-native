@@ -156,14 +156,14 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
     Utf8CP direction = args[1].GetECValue()->GetUtf8CP();
     Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
         relatedInstanceIdColumnName, relatedClassIdColumnName;
-    if (0 == stricmp("Forward", direction))
+    if (0 == BeStringUtilities::Stricmp("Forward", direction))
         {
         thisInstanceIdColumnName = "SourceECInstanceId";
         thisClassIdColumnName = "SourceECClassId";
         relatedInstanceIdColumnName = "TargetECInstanceId";
         relatedClassIdColumnName = "TargetECClassId";
         }
-    else if (0 == stricmp("Backward", direction))
+    else if (0 == BeStringUtilities::Stricmp("Backward", direction))
         {
         thisInstanceIdColumnName = "TargetECInstanceId";
         thisClassIdColumnName = "TargetECClassId"; 
