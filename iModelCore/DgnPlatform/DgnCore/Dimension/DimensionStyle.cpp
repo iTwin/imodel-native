@@ -14,12 +14,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(DimensionStyleHandler)
-
-void DimensionStyleHandler::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROP_TextStyleId);
-    }
 };
 
 //---------------------------------------------------------------------------------------

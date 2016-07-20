@@ -31,8 +31,8 @@ BEGIN_UNNAMED_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct ScriptTest : ::testing::Test
 {
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+    public: static void SetUpTestCase();
+    public: static void TearDownTestCase();
 
     ScopedDgnHost m_host;
     DgnDbPtr      m_db;
@@ -60,7 +60,7 @@ END_UNNAMED_NAMESPACE
 // In this case, I just request the (root) seed file that my tests will use and make a note of it.
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(ScriptTest) 
+void ScriptTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
     ScriptTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
@@ -70,7 +70,7 @@ BETEST_TC_SETUP(ScriptTest)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(ScriptTest)
+void ScriptTest::TearDownTestCase()
     {
     }
 
