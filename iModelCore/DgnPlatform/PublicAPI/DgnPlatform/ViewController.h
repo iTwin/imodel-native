@@ -67,9 +67,9 @@ private:
     double   m_lensAngle;
     double   m_focusDistance;
     DPoint3d m_eyePoint;
-    static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
 
 public:
+    static bool IsValidLensAngle(double val) {return val>(Angle::Pi()/8.0) && val<Angle::Pi();}
     void     InvalidateFocus() {m_focusDistance=-1.0;}
     bool     IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
     double   GetFocusDistance() const {return m_focusDistance;}
@@ -329,7 +329,7 @@ public:
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
-    //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
+    //! Get the axis-aliged extent of all of the possible elements visible in this view. For physical views, this is the "project extents".
     AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
 
     //! Load the settings of this view from persistent settings in the database.
@@ -619,7 +619,7 @@ This is what the parameters to the camera methods, and the values stored by Came
                v-- {origin}
           -----+-------------------------------------- -   [back plane]
           ^\   .                                    /  ^
-          | \  .            /   |        p                      P
+          | \  .                                   /   |        P
         d |  \ .                                  /    |        o
         e |   \.         {targetPoint}           /     |        s
         l |    |---------------+----------------|      |        i    [focus plane]
@@ -683,8 +683,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
     CameraInfo m_camera;           //!< Information about the camera lens used for the view.
 
 protected:
-    //! Calculate and save the lens angle formed by the current delta and focus distance
-    void CalculateLensAngle();
 
     virtual CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR) override;
@@ -705,6 +703,9 @@ public:
 
 /** @name Camera */
 /** @{ */
+    //! Calculate the lens angle formed by the current delta and focus distance
+    DGNPLATFORM_EXPORT double CalcLensAngle();
+
     //! Determine whether the camera is on for this view
     bool IsCameraOn() const {return m_isCameraOn;}
 
