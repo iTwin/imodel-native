@@ -63,8 +63,8 @@ struct ElementDependencyGraph : ::testing::Test
 {
     enum class ElementDrivesElementColumn {TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status};
 
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+    public: static void SetUpTestCase();
+    public: static void TearDownTestCase();
 
     struct ElementsAndRelationships
         {
@@ -108,7 +108,7 @@ END_UNNAMED_NAMESPACE
 // In this case, I just request the (root) seed file that my tests will use and make a note of it.
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(ElementDependencyGraph) 
+void ElementDependencyGraph::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
     ElementDependencyGraph::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
@@ -118,7 +118,7 @@ BETEST_TC_SETUP(ElementDependencyGraph)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(ElementDependencyGraph)
+void ElementDependencyGraph::TearDownTestCase()
     {
     // Note: leave your subdirectory in place. Don't remove it. That allows the 
     // base class to detect and throw an error if two groups try to use a directory of the same name.

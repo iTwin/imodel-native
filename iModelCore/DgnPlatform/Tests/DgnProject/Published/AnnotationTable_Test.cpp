@@ -180,8 +180,8 @@ static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
 AnnotationTableTest() { }
 
-BETEST_DECLARE_TC_SETUP
-BETEST_DECLARE_TC_TEARDOWN
+public: static void SetUpTestCase();
+public: static void TearDownTestCase();
 
 DgnDbR                  GetDgnDb()
     {
@@ -336,7 +336,7 @@ DgnDbTestUtils::SeedDbInfo AnnotationTableTest::s_seedFileInfo;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BETEST_TC_SETUP(AnnotationTableTest) 
+void AnnotationTableTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
 
@@ -404,7 +404,7 @@ BETEST_TC_SETUP(AnnotationTableTest)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(AnnotationTableTest)
+void AnnotationTableTest::TearDownTestCase()
     {
     // Note: leave your subdirectory in place. Don't remove it. That allows the 
     // base class to detect and throw an error if two groups try to use a directory of the same name.
