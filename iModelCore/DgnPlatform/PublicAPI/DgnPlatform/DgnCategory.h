@@ -412,9 +412,7 @@ namespace dgn_ElementHandler
     struct Category : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Category, DgnCategory, Category, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
-    };
+        };
 
     //=======================================================================================
     //! The handler for sub-category elements.
@@ -423,8 +421,6 @@ namespace dgn_ElementHandler
     struct SubCategory : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SubCategory, DgnSubCategory, SubCategory, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
 

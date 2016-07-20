@@ -14,13 +14,7 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define VIEWDEF_HANDLER_DEFINE_MEMBERS(CLASSNAME) \
-    HANDLER_DEFINE_MEMBERS(CLASSNAME) \
-    void CLASSNAME ::_GetClassParams(ECSqlClassParams& params) \
-        { \
-        T_Super::_GetClassParams(params); \
-        ViewDefinition::AddClassParams(params); \
-        }
+#define VIEWDEF_HANDLER_DEFINE_MEMBERS(CLASSNAME) HANDLER_DEFINE_MEMBERS(CLASSNAME)
 
 namespace dgn_ElementHandler
 {
@@ -34,16 +28,6 @@ namespace dgn_ElementHandler
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(ViewControllerOverride)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::AddClassParams(ECSqlClassParams& params)
-    {
-    params.Add(PROPNAME_Descr);
-    params.Add(PROPNAME_Source);
-    params.Add(PROPNAME_BaseModel);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15

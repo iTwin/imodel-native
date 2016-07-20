@@ -134,8 +134,6 @@ typedef TestElement const& TestElementCR;
 struct TestElementHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Geometric3d, )
-protected: 
-    virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
 
 //=======================================================================================

@@ -488,39 +488,33 @@ void DgnElement::_OnReversedAdd() const
         model->_OnReversedAddElement(*this);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::Element::_GetClassParams(ECSqlClassParamsR params)
-    {
-    params.Add(DGN_ELEMENT_PROPNAME_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_ModelId, ECSqlClassParams::StatementType::Insert);
-    params.Add(DGN_ELEMENT_PROPNAME_Code, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_Label, ECSqlClassParams::StatementType::InsertUpdate);
-    params.Add(DGN_ELEMENT_PROPNAME_ParentId, ECSqlClassParams::StatementType::InsertUpdate);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
     {
-    BeAssert(m_code.IsValid());
-
     if (!m_code.IsValid())
+        {
+        BeAssert(false && "Code is missing");
         return DgnDbStatus::InvalidName;
+        }
 
     IECSqlStructBinder& codeBinder = statement.BindStruct(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Code));
 
-    if (m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindNull()))
+    auto& codeValueBinder = codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value);
+    auto codeValueStatus = m_code.IsEmpty()? codeValueBinder.BindNull(): codeValueBinder.BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
+    if (ECSqlStatus::Success != codeValueStatus)
+        {
+        BeAssert(false && "insert or update statement must include Code value property");
         return DgnDbStatus::BadArg;
-
-    if (!m_code.IsEmpty() && (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Value).BindText(m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
-        return DgnDbStatus::BadArg;
+        }
 
     if ((ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_AuthorityId).BindId(m_code.GetAuthority())) ||
         (ECSqlStatus::Success != codeBinder.GetMember(DGN_ELEMENT_CODESTRUCT_Namespace).BindText(m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
+        {
+        BeAssert(false && "insert or update statement must include Code authority and namespace properties");
         return DgnDbStatus::BadArg;
+        }
 
     if (HasLabel())
         statement.BindText(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label), GetLabel(), IECSqlBinder::MakeCopy::No);
@@ -528,13 +522,19 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
         statement.BindNull(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_Label));
 
     if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ParentId), m_parentId))
+        {
+        BeAssert(false && "insert or update statement must include ParentId property");
         return DgnDbStatus::BadArg;
+        }
 
     if (!isForUpdate)
         {
         if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ECInstanceId), m_elementId) ||
             ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(DGN_ELEMENT_PROPNAME_ModelId), m_modelId))
+            {
+            BeAssert(false && "insert statement must include ECInstanceId and ModelId properties");
             return DgnDbStatus::BadArg;
+            }
         }
 
     return DgnDbStatus::Success;
@@ -568,6 +568,9 @@ DgnDbStatus DgnElement::_InsertInDb()
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
         return existingElemWithCode.IsValid() ? DgnDbStatus::DuplicateCode : DgnDbStatus::WriteError;
         }
+
+    if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
+        UpdateAutoHandledProperties();
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -606,6 +609,9 @@ DgnDbStatus DgnElement::_UpdateInDb()
 
         return DgnDbStatus::WriteError;
         }
+
+    if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
+        UpdateAutoHandledProperties();
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -874,6 +880,12 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     m_label     = other.m_label;
     m_parentId  = other.m_parentId;
     
+    if (other.m_autoHandledProperties.IsValid())
+        {
+        GetAutoHandledProperties();
+        m_autoHandledProperties->CopyValues(*other.m_autoHandledProperties);
+        }
+
     CopyUserProperties(other);
     }
 
@@ -1951,182 +1963,15 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void computePropertiesAddedByDerivedClass(bvector<ECN::ECPropertyCP>& props, ECN::ECClassCR rootClass, ECN::ECClassCR derivedClass)
-    {
-    if (&derivedClass == &rootClass)
-        return;
-
-    for (ECN::ECPropertyCP prop : derivedClass.GetProperties(false))
-        {
-        props.push_back(prop);
-        }
-
-    for (auto base : derivedClass.GetBaseClasses())
-        {
-        if (base->Is(&rootClass))
-            computePropertiesAddedByDerivedClass(props, rootClass, *base);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>& props) const
-    {
-    ECN::ECClassCP elemClass = GetElementClass();
-    
-    auto& handler = GetElementHandler();
-    ECN::ECClassCP handlerClass = GetDgnDb().Schemas().GetECClass(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
-    
-    computePropertiesAddedByDerivedClass(props, *handlerClass, *elemClass);
-    }
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson     02/16
-//=======================================================================================
-struct UnhandledProps : DgnElement::AppData
-{
-    static Key s_key;
-
-    bset<Utf8String> m_pendingEdits;
-    ECN::IECInstancePtr m_instance;
-
-    virtual DropMe _OnInserted(DgnElementCR el){UpdateModifiedProperties(el); return DropMe::Yes;}
-    virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original, bool isOriginal) {UpdateModifiedProperties(original); return DropMe::Yes;}
-    virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::Yes;}
-    virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
-
-    static UnhandledProps& Get(DgnElementCR elem)
-        {
-        UnhandledProps* props = dynamic_cast<UnhandledProps*>(elem.FindAppData(s_key));
-        if (nullptr == props)
-            elem.AddAppData(s_key, props = new UnhandledProps);
-        return *props;
-        }
-
-    ECN::IECInstancePtr GetInstance(DgnElementCR elem);
-    DgnDbStatus UpdateModifiedProperties(DgnElementCR elem);
-};
-
-UnhandledProps::Key UnhandledProps::s_key;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson     04/16
-//=======================================================================================
-struct UnhandledPropsAdapterCache : DgnDb::AppData
-    {
-    private:
-        static Key s_key;
-        bmap<ECN::ECClassCP, ECInstanceUpdater*> m_updaterCache;
-
-    public:
-        static Key& GetKey() { return s_key; }
-        static UnhandledPropsAdapterCache& Get(DgnDbR);
-        ECInstanceUpdater& GetUpdater0(DgnElementCR);
-        static ECInstanceUpdater& GetUpdater(DgnElementCR el) {return Get(el.GetDgnDb()).GetUpdater0(el);}
-        ~UnhandledPropsAdapterCache();
-    };
-
-UnhandledPropsAdapterCache::Key UnhandledPropsAdapterCache::s_key;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnhandledPropsAdapterCache::~UnhandledPropsAdapterCache()
-    {
-    for (auto v : m_updaterCache)
-        delete v.second;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnhandledPropsAdapterCache& UnhandledPropsAdapterCache::Get(DgnDbR db)
-    {
-    UnhandledPropsAdapterCache* upd = (UnhandledPropsAdapterCache*)db.FindAppData(s_key);
-    if (nullptr == upd)
-        db.AddAppData(s_key, upd = new UnhandledPropsAdapterCache);
-    return *upd;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceUpdater& UnhandledPropsAdapterCache::GetUpdater0(DgnElementCR elem)
-    {
-    ECN::ECClassCP cls = elem.GetElementClass();
-    auto i = m_updaterCache.find(cls);
-    if (i != m_updaterCache.end())
-        return *(i->second);
-
-    bvector<ECN::ECPropertyCP> unhprops;
-    elem.ComputeUnhandledProperties(unhprops);
-
-    auto updater = new EC::ECInstanceUpdater(elem.GetDgnDb(), *cls, unhprops);
-
-    m_updaterCache[cls] = updater;
-    return *updater;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECN::IECInstancePtr UnhandledProps::GetInstance(DgnElementCR elem)
-    {
-    if (m_instance.IsValid())
-        return m_instance;
-
-    auto cls = elem.GetElementClass();
-
-    bvector<ECN::ECPropertyCP> unhandledProps;   // NEEDS WORK: This is the same for all instances of a given ECClass. It could be cached on a per-class basis.
-    elem.ComputeUnhandledProperties(unhandledProps);
-
-    if (!elem.GetElementId().IsValid())         // Element is not yet persistent?
-        {
-        m_instance = cls->GetDefaultStandaloneEnabler()->CreateInstance();
-        //for (auto prop : unhandledProps)
-        //    m_instance->SetValue(prop->GetName().c_str(), ECValue());
-        return m_instance;
-        }
-
-    //  Select properties from persistent element
-    Utf8String props;
-    Utf8CP comma = "";
-    for (auto prop : unhandledProps)
-        {
-        props.append(comma).append("[").append(prop->GetName()).append("]");
-        comma = ",";
-        }
-
-    auto stmt = elem.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), cls->GetECSqlName().c_str()).c_str());
-    if (!stmt.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    stmt->BindId(1, elem.GetElementId());
-    if (BE_SQLITE_ROW == stmt->Step())
-        {
-        ECInstanceECSqlSelectAdapter adapter(*stmt);
-        m_instance = adapter.GetInstance();
-        }
-
-    return m_instance;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
-    /*
-    auto ecprop = GetElementClass()->GetPropertyP(name);
-    if (nullptr == ecprop)
-        return DgnDbStatus::NotFound;
-    */
+    // Common case: auto-handled properties
+    auto autoHandledProps = GetAutoHandledProperties();
+    if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
+        return DgnDbStatus::Success;
 
-    if (0 == strcmp("Code", name))
+    // Rare: custom-handled properties
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_Code, name))
         {
         //Json::Value json(Json::objectValue);
         //GetCode().ToJson(json);
@@ -2135,36 +1980,33 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
         // *** TBD: Create a IECInstance from the dgn.Code struct class and return it
         return DgnDbStatus::BadRequest;
         }
-    if (0 == strcmp("Id", name))
+    if (0 == strcmp("Id", name) || 0 == strcmp(DGN_ELEMENT_PROPNAME_ECInstanceId, name))
         {
         value.SetLong(GetElementId().GetValueUnchecked());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp("ModelId", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_ModelId, name))
         {
         value.SetLong(GetModelId().GetValueUnchecked());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp("ParentId", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_ParentId, name))
         {
         value.SetLong(GetParentId().GetValueUnchecked());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp("Label", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_Label, name))
         {
         value.SetUtf8CP(GetLabel());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp("LastMod", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_LastMode, name))
         {
         value.SetDateTime(QueryTimeStamp());
         return DgnDbStatus::Success;
         }
 
-    ECN::IECInstancePtr inst = UnhandledProps::Get(*this).GetInstance(*this);
-    if (!inst.IsValid())
-        return DgnDbStatus::NotFound;
-    return inst->GetValueOrAdhoc(value, name) == ECN::ECObjectsStatus::Success? DgnDbStatus::Success: DgnDbStatus::NotFound;
+    return DgnDbStatus::NotFound;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2172,7 +2014,15 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
-    if (0 == strcmp("Code", name))
+    // Common case: auto-handled properties
+    auto autoHandledProps = GetAutoHandledProperties();
+    if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
+        {
+        m_flags.m_autoHandledPropsDirty = true;
+        return DgnDbStatus::Success;
+        }
+
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_Code, name))
         {
         //Json::Value json(Json::objectValue);
         //if (!Json::Reader::Parse(value.ToString(), json))
@@ -2182,40 +2032,29 @@ DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
         //return SetCode(code);
         return DgnDbStatus::BadRequest;
         }
-    if (0 == strcmp("Id", name))
+    if (0 == strcmp("Id", name) || 0 == strcmp(DGN_ELEMENT_PROPNAME_ECInstanceId, name))
         {
         return DgnDbStatus::ReadOnly;
         }
-    if (0 == strcmp("ModelId", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_ModelId, name))
         {
         return DgnDbStatus::ReadOnly;
         }
-    if (0 == strcmp("ParentId", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_ParentId, name))
         {
         return SetParentId(DgnElementId((uint64_t)value.GetLong()));
         }
-    if (0 == strcmp("Label", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_Label, name))
         {
         SetLabel(value.ToString().c_str());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp("LastMod", name))
+    if (0 == strcmp(DGN_ELEMENT_PROPNAME_LastMode, name))
         {
         return DgnDbStatus::BadRequest;
         }
 
-
-    UnhandledProps& props = UnhandledProps::Get(*this);
-    
-    ECN::IECInstancePtr inst = props.GetInstance(*this);
-    if (!inst.IsValid())
-        return DgnDbStatus::NotFound;
-
-    if (inst->SetValueOrAdhoc(name, value) != ECN::ECObjectsStatus::Success)
-        return DgnDbStatus::NotFound;
-
-    props.m_pendingEdits.insert(name);
-    return DgnDbStatus::Success;
+    return DgnDbStatus::NotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2315,19 +2154,6 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
    SetPlacement(plc);
    return DgnDbStatus::Success;
    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus UnhandledProps::UpdateModifiedProperties(DgnElementCR elem)
-    {
-    if (!m_instance.IsValid() || m_pendingEdits.empty())
-        return DgnDbStatus::Success;
-    
-    m_instance->SetInstanceId(Utf8PrintfString("%lld", elem.GetElementId().GetValue()).c_str());
-
-    return UnhandledPropsAdapterCache::GetUpdater(elem).Update(*m_instance) == BSISUCCESS? DgnDbStatus::Success: DgnDbStatus::WriteError;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
@@ -2845,10 +2671,219 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isBuiltInProperty(Utf8StringCR propName)
+    {
+    return propName.Equals(DGN_ELEMENT_PROPNAME_ECInstanceId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::UpdateAutoHandledProperties()
+    {
+    if (!m_autoHandledProperties.IsValid() || !m_flags.m_autoHandledPropsDirty)
+        return DgnDbStatus::Success;
+    
+    m_flags.m_autoHandledPropsDirty = false;
+    ECInstanceUpdater* updater = GetAutoHandledPropertiesUpdater();
+    if (nullptr == updater)
+        {
+        BeAssert(false);
+        return DgnDbStatus::WrongClass;
+        }
+
+    if (m_autoHandledProperties->GetInstanceId().empty())
+        {
+        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        GetElementId().ToString(idStrBuffer);
+        m_autoHandledProperties->SetInstanceId(idStrBuffer);
+        }
+
+    return (BSISUCCESS == updater->Update(*m_autoHandledProperties))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::Iterator::Iterator(ECN::ECPropertyIterable::const_iterator it, AutoHandledPropertiesCollection const& coll)
+    : m_i(it), m_coll(coll) 
+    {
+    ToNextValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::Iterator& AutoHandledPropertiesCollection::Iterator::operator++()
+    {
+    BeAssert(m_i != m_coll.m_end);
+    ++m_i;
+    ToNextValid();
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps)
+    : m_props(eclass.GetProperties(true)), m_end(m_props.end()), m_stype(stype), m_wantCustomHandledProps(wantCustomHandledProps)
+    {
+    #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
+        printf("%s\n", eclass.GetName().c_str());
+        printf("---------------------------\n");
+    #endif
+    m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
+    m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void AutoHandledPropertiesCollection::Iterator::ToNextValid()
+    {
+    while (m_i != m_coll.m_end)
+        {
+        auto prop = *m_i;
+
+        #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
+            auto propName = prop->GetName();
+            printf ("%s\n", propName.c_str());
+            for (auto ca : prop->GetCustomAttributes(true))
+                {
+                printf ("\t%s\n", ca->GetClass().GetName().c_str());
+                for (auto caprop : ca->GetClass().GetProperties())
+                    {
+                    ECN::ECValue v;
+                    ca->GetValue(v, caprop->GetName().c_str());
+                    printf ("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                    }
+                }
+        #endif
+        
+            bool isCustom = prop->IsDefined(*m_coll.m_customHandledProperty) || isBuiltInProperty(prop->GetName());
+        if (isCustom != m_coll.m_wantCustomHandledProps)
+            {
+            ++m_i;
+            continue;
+            }
+
+        auto stype = prop->GetCustomAttribute(*m_coll.m_propertyStatementType);
+        if (!stype.IsValid())
+            {
+            m_stype = ECSqlClassParams::StatementType::All;
+            return; // default = all statement types
+            }
+
+        ECN::ECValue v;
+        stype->GetValue(v, "StatementTypes");
+        m_stype = (ECSqlClassParams::StatementType)(v.GetInteger());
+        if (0 != ((int32_t)m_stype & (int32_t)m_coll.m_stype))
+            {
+            return; // yes, this property is for the requested statement type
+            }
+
+        ++m_i;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECInstanceUpdater* DgnElement::GetAutoHandledPropertiesUpdater() const
+    {
+    BeAssert(m_flags.m_hasAutoHandledProps == 1);
+    BeAssert(m_autoHandledProperties.IsValid());
+
+    ECN::ECClassCP eclass = GetElementClass();
+    DgnClassId eclassid(eclass->GetId().GetValue());
+
+    auto& updaterCache = GetDgnDb().Elements().m_updaterCache;
+    auto iupdater = updaterCache.find(eclassid);
+    if (iupdater != updaterCache.end())
+        return iupdater->second;
+
+    bvector<ECN::ECPropertyCP> autoHandledProperties;
+    for (auto prop : AutoHandledPropertiesCollection(*eclass, GetDgnDb(), ECSqlClassParams::StatementType::InsertUpdate, false))
+        {
+        autoHandledProperties.push_back(prop);
+        }
+
+    if (autoHandledProperties.empty())
+        return updaterCache[eclassid] = nullptr;
+
+    return updaterCache[eclassid] = new EC::ECInstanceUpdater(GetDgnDb(), *eclass, autoHandledProperties);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstanceP DgnElement::GetAutoHandledProperties() const
+    {
+    if (m_autoHandledProperties.IsValid())      // if we not only know that we have them but also have them loaded, return quickly.
+        return m_autoHandledProperties.get();
+
+    if (m_flags.m_hasAutoHandledProps == 2)     // if we know that we don't have any, return null quickly
+        return nullptr;
+    
+    ECN::ECClassCP eclass = GetElementClass();
+
+    Utf8String props;
+    Utf8CP comma = "";
+    bvector<ECN::ECPropertyCP> autoHandledProperties;
+    for (auto prop : AutoHandledPropertiesCollection(*eclass, GetDgnDb(), ECSqlClassParams::StatementType::Select, false))
+        {
+        Utf8StringCR propName = prop->GetName();
+        props.append(comma).append("[").append(propName).append("]");
+        comma = ",";
+        }
+
+    if (props.empty())
+        {
+        m_flags.m_hasAutoHandledProps = 2;
+        return nullptr;
+        }
+
+    m_flags.m_hasAutoHandledProps = 1;
+
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE ECInstanceId=?", props.c_str(), eclass->GetECSqlName().c_str()).c_str());
+
+    stmt->BindId(1, GetElementId());
+    if (BE_SQLITE_ROW == stmt->Step())
+        {
+        ECInstanceECSqlSelectAdapter adapter(*stmt);
+        m_autoHandledProperties = adapter.GetInstance();
+        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+        GetElementId().ToString(idStrBuffer);
+        m_autoHandledProperties->SetInstanceId(idStrBuffer);
+        }
+    else
+        {
+        m_autoHandledProperties = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
+        }
+
+    return m_autoHandledProperties.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    // See GetAutoHandledProperties for where we read auto-handled properties
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
     m_categoryId = stmt.GetValueId<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
 
     // Read GeomStream
@@ -3287,39 +3322,4 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
         }
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement::AddBaseClassParams(ECSqlClassParams& params)
-    {
-    params.Add(GEOM_Category);
-    params.Add(GEOM_Origin);
-    params.Add(GEOM_Box_Low);
-    params.Add(GEOM_Box_High);
-    params.Add(GEOM_GeometryStream);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement2d::AddClassParams(ECSqlClassParams& params)
-    {
-    AddBaseClassParams(params);
-
-    params.Add(GEOM2_Rotation);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricElement3d::AddClassParams(ECSqlClassParams& params)
-    {
-    AddBaseClassParams(params);
-
-    params.Add(GEOM3_InSpatialIndex);
-    params.Add(GEOM3_Yaw);
-    params.Add(GEOM3_Pitch);
-    params.Add(GEOM3_Roll);
     }

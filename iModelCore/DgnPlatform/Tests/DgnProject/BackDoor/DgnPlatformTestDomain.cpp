@@ -157,27 +157,6 @@ DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestElementHandler::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(DPTEST_TEST_ELEMENT_TestElementProperty);
-    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty1);
-    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty2);
-    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty3);
-    params.Add(DPTEST_TEST_ELEMENT_IntegerProperty4);
-    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty1 );
-    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty2 );
-    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty3 );
-    params.Add(DPTEST_TEST_ELEMENT_DoubleProperty4 );
-    params.Add(DPTEST_TEST_ELEMENT_PointProperty1  );
-    params.Add(DPTEST_TEST_ELEMENT_PointProperty2  );
-    params.Add(DPTEST_TEST_ELEMENT_PointProperty3  );
-    params.Add(DPTEST_TEST_ELEMENT_PointProperty4  );
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestElement::_BindInsertParams(ECSqlStatement& stmt)
     {
     auto status = T_Super::_BindInsertParams(stmt);

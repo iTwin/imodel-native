@@ -40,7 +40,6 @@ struct PerformanceElement1 : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, Dgn::PhysicalElement);
 
     private:
-        static void GetParams (ECSqlClassParams& params);
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop1_1;
@@ -73,7 +72,6 @@ struct PerformanceElement2 : PerformanceElement1
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, PerformanceElement1);
 
     private:
-        static void GetParams (ECSqlClassParams& params);
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop2_1;
@@ -109,7 +107,6 @@ struct PerformanceElement3 : PerformanceElement2
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, PerformanceElement2);
 
     private:
-        static void GetParams (ECSqlClassParams& params);
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop3_1;
@@ -145,7 +142,6 @@ struct PerformanceElement4 : PerformanceElement3
     DGNELEMENT_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, PerformanceElement3);
 
     private:
-        static void GetParams (ECSqlClassParams& params);
         DgnDbStatus BindParams (BeSQLite::EC::ECSqlStatement& statement);
 
         Utf8String m_prop4_1;
@@ -217,7 +213,6 @@ typedef RefCountedPtr<TestMultiAspect> TestMultiAspectPtr;
 struct PerformanceElement1Handler : Dgn::dgn_ElementHandler::Geometric3d
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT1_CLASS, PerformanceElement1, PerformanceElement1Handler, Dgn::dgn_ElementHandler::Geometric3d, )
-    protected: virtual void _GetClassParams (Dgn::ECSqlClassParams& params) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -226,7 +221,6 @@ struct PerformanceElement1Handler : Dgn::dgn_ElementHandler::Geometric3d
 struct PerformanceElement2Handler : PerformanceElement1Handler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT2_CLASS, PerformanceElement2, PerformanceElement2Handler, PerformanceElement1Handler, )
-    protected: virtual void _GetClassParams (Dgn::ECSqlClassParams& params) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -235,7 +229,6 @@ struct PerformanceElement2Handler : PerformanceElement1Handler
 struct PerformanceElement3Handler : PerformanceElement2Handler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT3_CLASS, PerformanceElement3, PerformanceElement3Handler, PerformanceElement2Handler, )
-    protected: virtual void _GetClassParams (Dgn::ECSqlClassParams& params) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -244,7 +237,6 @@ struct PerformanceElement3Handler : PerformanceElement2Handler
 struct PerformanceElement4Handler : PerformanceElement3Handler
     {
     ELEMENTHANDLER_DECLARE_MEMBERS (ELEMENT_PERFORMANCE_ELEMENT4_CLASS, PerformanceElement4, PerformanceElement4Handler, PerformanceElement3Handler, )
-    protected: virtual void _GetClassParams (Dgn::ECSqlClassParams& params) override;
     };
 
 //---------------------------------------------------------------------------------------
