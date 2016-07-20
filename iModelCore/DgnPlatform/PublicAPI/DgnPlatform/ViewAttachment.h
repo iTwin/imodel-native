@@ -21,15 +21,9 @@ DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-//! A ViewAttachment is a reference to a View of a model which can be placed on a sheet.
+//! A ViewAttachment is a reference to a View that can be placed on a sheet.
 //! The attachment specifies the extents of the View and the scaling factor when placed
 //! onto a sheet.
-//! The geometry of a ViewAttachment is a snapshot of the view at the time they are generated.
-//! They are not dynamic - if the view and/or viewed model changes, the ViewAttachment's
-//! geometry should be explicitly refreshed.
-//! The subcategories of the viewed geometry are not preserved in the attachment's geometry
-//! - to control visibility of (sub)-categories or other graphic settings, edit the view
-//! and/or viewed model.
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
@@ -46,16 +40,15 @@ public:
         //! Constructor
         //! @param[in]      viewId The ID of the view to be attached
         //! @param[in]      scale  Scale factor from viewed model to sheet
-        explicit Data(DgnViewId viewId, double scale=1.0) { Init(viewId, scale); }
+        explicit Data(DgnViewId viewId, double scale=1.0) {Init(viewId, scale);}
 
         //! Default constructor
-        Data() : Data(DgnViewId()) { }
+        Data() : Data(DgnViewId()) {}
 
         //! Initialize from the specified values
         //! @param[in]      viewId The ID of the view to be attached
         //! @param[in]      scale  Scale factor from viewed model to sheet
-        void Init(DgnViewId viewId, double scale=1.0)
-            { m_viewId=viewId; m_scale=scale; }
+        void Init(DgnViewId viewId, double scale=1.0) {m_viewId=viewId; m_scale=scale;}
 
         DGNPLATFORM_EXPORT bool IsValid() const; //!< Queries whether the data is valid (e.g., refers to a valid ViewDefinition; has meaningful scale and extents; etc)
     };
@@ -77,20 +70,21 @@ public:
         //! @param[in]      code      Optional element code
         //! @param[in]      label     Optional element label
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Data const& data, Placement2dCR placement=Placement2d(), DgnCode const& code=DgnCode(), Utf8CP label=nullptr)
-            : T_Super(db, modelId, classId, category, placement, code, label), m_data(data) { }
+            : T_Super(db, modelId, classId, category, placement, code, label), m_data(data) {}
 
         //! Constructor from base class. Chiefly for internal use.
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId categoryId=DgnCategoryId(), Placement2dCR placement=Placement2d(), Data const& data=Data())
-            : T_Super(params, categoryId, placement), m_data(data) { }
+            : T_Super(params, categoryId, placement), m_data(data) {}
     };
     
 private:
     Data    m_data;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
+
 protected:
-    Data const& GetData() const { return m_data; }
-    Data& GetData() { return m_data; }
+    Data const& GetData() const {return m_data;}
+    Data& GetData() {return m_data;}
 
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParams const& params) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;

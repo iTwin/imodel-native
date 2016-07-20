@@ -28,8 +28,7 @@ DgnDbStatus ViewAttachment::BindParams(ECSqlStatement& stmt)
     if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(PROP_ViewId), GetViewId())
         || ECSqlStatus::Success != stmt.BindDouble(stmt.GetParameterIndex(PROP_Scale), GetViewScale()))
         return DgnDbStatus::BadArg;
-    else
-        return DgnDbStatus::Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -134,10 +134,10 @@ protected:
     Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
     uint32_t        m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
-    DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
-    DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
-    DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
-    DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
+    DPoint3d        m_viewOrg;                  // view origin, potentially expanded
+    DVec3d          m_viewDelta;                // view delta, potentially expanded
+    DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
+    DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
     Render::TargetPtr m_renderTarget;
@@ -259,7 +259,7 @@ public:
     //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
     //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
     //! @private
-    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=NULL);
+    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=nullptr);
 
     //! @return the point to use as the default rotation point at the center of the visible elements in the view.
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
@@ -462,8 +462,8 @@ public:
     //! @return true if the grid display is on.
     bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
 
-    //! Determine whether this viewport is a 3D view.
-    //! @remarks Will be true only for a physical view.
+    //! Determine whether this viewport is a 3d view.
+    //! @remarks Will be true only for a physical views.
     bool Is3dView() const {return m_is3dView;}
 
     Render::TargetP GetRenderTarget() const {return m_renderTarget.get();}
@@ -528,9 +528,9 @@ public:
     //! for the frustum in DgnCoordSystem::World coordinates.
     //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
     //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
-    //! @param[in]      newCenterRoot   The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
-    //! @param[in]      factor          Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
-    //!                                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
+    //! @param[in] newCenterRoot The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
+    //! @param[in] factor Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
+    //!                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
     DGNPLATFORM_EXPORT ViewportStatus Zoom(DPoint3dCP newCenterRoot, double factor);
 
     //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
@@ -558,7 +558,7 @@ public:
     DGNVIEW_EXPORT Render::Image ReadImage(Point2d targetSize={0,0});
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
-    static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
+    static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
     static double GetCameraPlaneRatio() {return 300.0;}
 };
 
