@@ -9,7 +9,7 @@
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #endif
