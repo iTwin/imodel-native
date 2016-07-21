@@ -448,7 +448,8 @@ Utf8String ImportCommand::_GetUsage() const
     {
     return " .import ecschema <ecschema xml file|folder>\r\n"
         COMMAND_USAGE_IDENT "Imports the specified ECSchema XML file into the file. If a folder was specified, all ECSchemas\r\n"
-        COMMAND_USAGE_IDENT "in the folder are imported.\r\n";
+        COMMAND_USAGE_IDENT "in the folder are imported.\r\n"
+        COMMAND_USAGE_IDENT "Note: Outstanding changes are committed before starting the import.\r\n";
     }
 
 //---------------------------------------------------------------------------------------
@@ -520,20 +521,23 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
             return;
             }
         }
-    Console::WriteLine("Preparing to import ecschema. Press any key to continue ...");
-
 
     Utf8CP schemaStr = isFolder ? "ECSchemas in folder" : "ECSchema";
 
-    Savepoint savepoint(session.GetFile().GetHandleR(), "import ecschema");
+    if (BE_SQLITE_OK != session.GetFile().GetHandleR().SaveChanges())
+        {
+        Console::WriteLine("Saving outstanding changes in the file failed: %s", session.GetFile().GetHandle().GetLastError().c_str());
+        return;
+        }
+
     if (SUCCESS == session.GetFile().GetHandle().Schemas().ImportECSchemas(context->GetCache()))
         {
-        savepoint.Commit(nullptr);
+        session.GetFile().GetHandleR().SaveChanges();
         Console::WriteLine("Successfully imported %s '%s'.", schemaStr, ecschemaPath.GetNameUtf8().c_str());
         return;
         }
 
-    savepoint.Cancel();
+    session.GetFile().GetHandleR().AbandonChanges();
     if (session.GetIssues().HasIssue())
         Console::WriteErrorLine("Failed to import %s '%s': %s", schemaStr, ecschemaPath.GetNameUtf8().c_str(), session.GetIssues().GetIssue());
     else
