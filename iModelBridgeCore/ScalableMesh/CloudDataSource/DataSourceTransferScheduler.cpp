@@ -28,7 +28,7 @@ DataSourceTransferScheduler::DataSourceTransferScheduler(void)
 
 DataSourceTransferScheduler::~DataSourceTransferScheduler(void)
 {
-    shutDown();
+
 }
 
 
@@ -142,11 +142,15 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                     dataSourceBufferReady.wait(dataSourceBuffersLock);
                 }
             }
-
+                                                            // If shutting down
             if (getShutDownFlag())
             {
-                buffer->signalCancelled();
-                DataSourceStatus();
+                if (buffer)
+                {
+                    buffer->signalCancelled();
+                }
+
+                return DataSourceStatus();
             }
 
             DataSourceLocator &locator = buffer->getLocator();

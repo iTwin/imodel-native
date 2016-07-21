@@ -24,15 +24,18 @@ DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
     }
 
 DataSourceAccount::~DataSourceAccount(void)
-{
+    {
+                                                            // Destroy DataSources associated with this 
     destroyDataSources();
-}
-
+    }
 
 DataSourceStatus DataSourceAccount::destroyDataSources(void)
-{
+    {
+                                                            // Shut down any potential theaded transfers before destroying DataSources
+    getTransferScheduler().shutDown();
+                                                            // Destroy DataSources associated with this Account
     return getDataSourceManager().destroyDataSources(this);
-}
+    }
 
 void DataSourceAccount::setDataSourceManager(DataSourceManager &manager)
     {

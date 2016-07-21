@@ -9,16 +9,7 @@ DataSourceAccountCached::DataSourceAccountCached(void)
 
 DataSourceAccountCached::~DataSourceAccountCached(void)
 {
-                                                            // If the cache account is set
-    if (getCacheAccount())
-    {
-                                                            // If the caching DataSource has been created
-        if (getCacheDataSource())
-        {
-                                                            // Request that the account destroy the DataSource
-            getCacheAccount()->destroyDataSource(getCacheDataSource());
-        }
-    }
+                                                            // Note: cache DataSource objects are deleted by the DataSourceManager recursively
 }
 
 void DataSourceAccountCached::setCacheDataSource(DataSource * dataSource)

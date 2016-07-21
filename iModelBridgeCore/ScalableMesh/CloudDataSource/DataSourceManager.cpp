@@ -61,6 +61,8 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
                                                             // If requested, flag that the DataSource existed and was not created
         if (created)
             *created = false;
+                                                            // Return the found DataSource
+        return dataSource;
     }
                                                             // If requested, flag that the DataSource was created
     if (created)
@@ -72,20 +74,35 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
 
 DataSourceStatus DataSourceManager::destroyDataSource(DataSource * dataSource)
 {
+    if (dataSource == nullptr)
+        return DataSourceStatus();
+
+    DataSourceStatus    status;
+                                                            // If dataSource has a cache DataSource, destroy it
+                                                            // Note: This is recursive because cache datasources may have their own cache data sources
+    status = destroyDataSource(dataSource->getCacheDataSource());
+    if (status.isFailed())
+    {
+        return status;
+    }
+                                                            // Then destroy the main data source itself
     if (Manager<DataSource>::destroy(dataSource, true))
     {
         return DataSourceStatus(DataSourceStatus::Status_OK);
     }
 
-    return DataSourceStatus(DataSourceStatus::Status_Error);
+    return DataSourceStatus(DataSourceStatus::Status_OK);
 }
+
 
 DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataSourceAccount)
 {
     if (dataSourceAccount == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
 
-    Manager<DataSource>::ApplyFunction deleteAccountDataSource = [this, dataSourceAccount](typename Manager<DataSource>::ItemMap::iterator it) -> bool
+    bool deleted;
+
+    Manager<DataSource>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted](typename Manager<DataSource>::Iterator it) -> bool
     {
         if (it->second)
         {
@@ -94,15 +111,28 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
             {
                                                             // Destroy the DataSource
                 destroyDataSource(it->second);
+                                                            // Return deleted
+                deleted = true;
                                                             // Return don't traverse any more
                 return false;
             }
         }
+                                                            // Not found, so return not deleted
+        deleted = false;
                                                             // Return continue traversing
         return true;
     };
+                                                            // Iteratively delete the first found DataSource belonging to the given DataSourceAccount
+                                                            // This is done this way for container safety, because due to the recursive nature of
+                                                            // Deleting DataSource objects, multiple deletions may occur
+    do
+    {
+        deleted = false;
                                                             // Delete account's DataSources
-    Manager<DataSource>::apply(deleteAccountDataSource);
+        Manager<DataSource>::apply(deleteFirstAccountDataSource);
+
+    } while (deleted);
+
 
     return DataSourceStatus();
 }

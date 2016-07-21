@@ -84,4 +84,6 @@ public:
 
     virtual            void                         setCachingEnabled   (bool enabled);
     virtual            bool                         getCachingEnabled   (void);
+
+    virtual            DataSource *                 getCacheDataSource  (void);
 };
