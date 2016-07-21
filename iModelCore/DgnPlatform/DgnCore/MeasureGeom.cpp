@@ -626,32 +626,6 @@ bool MeasureGeomCollector::_ProcessPolyface (PolyfaceQueryCR meshQuery, bool isF
         }
     }
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   01/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static double getBRepTolerance (ISolidKernelEntityCR entity, IFacetOptionsPtr& facetOptions)
-    {
-    double      defaultTolerance = 1.0; // 0.99 accuracy. Avoids making the property dialog too slow when bspline surfaces are involved...
-    double      requestedTolerance = 0.0;
-
-    if (facetOptions.IsValid ())
-        {
-        requestedTolerance = facetOptions->GetChordTolerance ();
-
-        if (requestedTolerance > 0.0)
-            {
-            Transform   invTrans;        
-
-            invTrans.InverseOf (entity.GetEntityTransform ());
-            invTrans.ScaleDoubleArrayByXColumnMagnitude (&requestedTolerance, 1);
-            }
-        }
-
-    return (requestedTolerance > 0.0 && requestedTolerance < defaultTolerance) ? requestedTolerance : defaultTolerance;
-    }
-#endif
-
 #if defined (BENTLEYCONFIG_OPENCASCADE)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/12
@@ -704,43 +678,7 @@ static void getBRepMoments (DPoint3dR moments, double& iXY, double& iXZ, double&
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    Transform   flattenTransform;
-
-    if (GetPreFlattenTransform (flattenTransform, graphic))
-        {
-        // Output edge geometry as CurveVector...
-        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsWireframe (graphic, entity, graphic.GetViewContext(), true, false);
-
-        return true;
-        }
-
-    ISolidKernelEntityPtr entityPtr;
-
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
-        return true;
-
-    Transform   outputTransform;
-    
-    GetOutputTransform (outputTransform, graphic);
-    entityPtr->PreMultiplyEntityTransformInPlace (outputTransform);
-
-    double      tolerance = getBRepTolerance (*entityPtr, m_facetOptions);
-    double      amount, periphery;
-    double      inertia[3][3];
-    DPoint3d    centroid, moments;
-
-    if (SUCCESS == T_HOST.GetSolidsKernelAdmin ()._MassProperties (*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
-        {
-        double   iXY, iXZ, iYZ;
-
-        getBRepMoments (moments, iXY, iXZ, iYZ, inertia);
-
-        AccumulateLengthSums (amount, centroid, moments, iXY, iXZ, iYZ);
-        }
-
-    return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE)
+#if defined (BENTLEYCONFIG_OPENCASCADE)
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
@@ -787,43 +725,7 @@ bool MeasureGeomCollector::DoAccumulateLengths (ISolidKernelEntityCR entity, Sim
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    Transform   flattenTransform;
-
-    if (GetPreFlattenTransform (flattenTransform, graphic))
-        {
-        // Output face geometry as ISolidPrimitive/MSBSplineSurface/CurveVector...
-        T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (graphic, entity, graphic.GetViewContext(), true);
-
-        return true;
-        }
-
-    ISolidKernelEntityPtr entityPtr;
-
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
-        return true;
-
-    Transform   outputTransform;
-    
-    GetOutputTransform (outputTransform, graphic);
-    entityPtr->PreMultiplyEntityTransformInPlace (outputTransform);
-
-    double      tolerance = getBRepTolerance (*entityPtr, m_facetOptions);
-    double      amount, periphery;
-    double      inertia[3][3];
-    DPoint3d    centroid, moments;
-
-    if (SUCCESS == T_HOST.GetSolidsKernelAdmin ()._MassProperties (*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
-        {
-        double   iXY, iXZ, iYZ;
-
-        getBRepMoments (moments, iXY, iXZ, iYZ, inertia);
-
-        AccumulateAreaSums (amount, periphery, centroid, moments, iXY, iXZ, iYZ);
-        }
-
-    return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE)
+#if defined (BENTLEYCONFIG_OPENCASCADE)
     Transform   flattenTransform;
 
     if (GetPreFlattenTransform (flattenTransform, graphic))
@@ -870,33 +772,7 @@ bool MeasureGeomCollector::DoAccumulateAreas (ISolidKernelEntityCR entity, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    ISolidKernelEntityPtr entityPtr;
-
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._InstanceEntity (entityPtr, entity))
-        return true;
-
-    Transform   outputTransform;
-    
-    GetOutputTransform (outputTransform, graphic);
-    entityPtr->PreMultiplyEntityTransformInPlace (outputTransform);
-
-    double      tolerance = getBRepTolerance (*entityPtr, m_facetOptions);
-    double      amount, periphery;
-    double      inertia[3][3];
-    DPoint3d    centroid, moments;
-
-    if (SUCCESS == T_HOST.GetSolidsKernelAdmin ()._MassProperties (*entityPtr, &amount, &periphery, &centroid, inertia, tolerance))
-        {
-        double   iXY, iXZ, iYZ;
-
-        getBRepMoments (moments, iXY, iXZ, iYZ, inertia);
-
-        AccumulateVolumeSums (amount, periphery, 0.0, centroid, moments, iXY, iXZ, iYZ);
-        }
-
-    return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE)
+#if defined (BENTLEYCONFIG_OPENCASCADE)
     TopoDS_Shape const* shapeLocal = SolidKernelUtil::GetShape(entity);
 
     if (nullptr == shapeLocal)
@@ -938,57 +814,7 @@ bool MeasureGeomCollector::DoAccumulateVolumes (ISolidKernelEntityCR entity, Sim
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGraphic& graphic)
     {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    switch (m_opType)
-        {
-        case AccumulateLengths:
-            {
-            if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
-                {
-                return true; // Not valid type for operation...
-                }
-            else if (ISolidKernelEntity::EntityType_Sheet == entity.GetEntityType ())
-                {
-                if (!T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasOnlyPlanarFaces))
-                    return true; // Not valid type for operation...
-
-                // Output curve vector for each face of sheet...(further limit this to a set of coplanar faces?!?)
-                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (graphic, entity, graphic.GetViewContext(), true);
-
-                return true;
-                }
-
-            return DoAccumulateLengths (entity, graphic);
-            }
-
-        case AccumulateVolumes:
-            {
-            if (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ())
-                return true; // Not valid type for operation...
-
-            return DoAccumulateVolumes (entity, graphic);
-            }
-
-        default:
-            {
-            if (ISolidKernelEntity::EntityType_Wire == entity.GetEntityType ())
-                {
-                return true; // Not valid type for operation...
-                }
-            else if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
-                {
-                // Output sheet body for each face of solid...
-                T_HOST.GetSolidsKernelAdmin ()._OutputBodyAsSurfaces (graphic, entity, graphic.GetViewContext(), false);
-
-                return true;
-                }
-
-            return DoAccumulateAreas (entity, graphic);
-            }
-        }
-
-    return true;
-#elif defined (BENTLEYCONFIG_OPENCASCADE)
+#if defined (BENTLEYCONFIG_OPENCASCADE)
     switch (m_opType)
         {
         case AccumulateLengths:
@@ -1036,14 +862,6 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
     {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    if (m_geomProvider)
-        {
-        m_geomProvider->_OutputGraphics (context);
-        return;
-        }
-#endif
-
     if (!m_geomPrimitive.IsValid())
         return;
 
@@ -1116,12 +934,9 @@ void MeasureGeomCollector::_OutputGraphics (ViewContextR context)
 MeasureGeomCollector::MeasureGeomCollector (OperationType opType)
     {
     m_opType = opType;
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    m_geomProvider = NULL;
-#endif
 
-    m_invCurrTransform.InitIdentity ();
-    m_preFlattenTransform.InitIdentity ();
+    m_invCurrTransform.InitIdentity();
+    m_preFlattenTransform.InitIdentity();
     m_inFlatten = false;
 
     m_amountSum = 0.0;
@@ -1131,10 +946,10 @@ MeasureGeomCollector::MeasureGeomCollector (OperationType opType)
     m_lengthSum = 0.0;
     m_iXY = m_iXZ = m_iYZ = 0.0;
 
-    m_moment1.Zero ();
-    m_moment2.Zero ();
-    m_spinMoments.Zero ();
-    m_centroidSum.Zero ();
+    m_moment1.Zero();
+    m_moment2.Zero();
+    m_spinMoments.Zero();
+    m_centroidSum.Zero();
 
     m_closureError = 0.0;
     m_calculationMode = 0;
@@ -1365,20 +1180,6 @@ BentleyStatus MeasureGeomCollector::GetOperationStatus ()
             return ERROR;
         }
     }
-
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MeasureGeomCollector::Process (IGeomProvider& provider, DgnDbR dgnDb)
-    {
-    AutoRestore <IGeomProvider*> saveProvider (&m_geomProvider, &provider);
-
-    GeometryProcessor::Process (*this, dgnDb); // Calls _OutputGraphics...
-
-    return GetOperationStatus ();
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/16
