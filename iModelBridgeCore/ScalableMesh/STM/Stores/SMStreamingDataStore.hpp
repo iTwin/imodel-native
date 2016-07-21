@@ -787,6 +787,15 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMFaceI
     return true;    
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::UvCoords, nodeHeader);
+
+    return true;    
+    }
+
+//Multi-items loading store
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
     //dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::TriPtIndices, nodeHeader);
@@ -932,8 +941,8 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
         return m_nodeHeader->m_nodeCount;
     else
     if (m_dataType == SMStoreDataType::TriPtIndices)
-        return m_nodeHeader->m_nbFaceIndexes;
-    else
+        return m_nodeHeader->m_nbFaceIndexes;    
+    else       
     if (IsValidID(blockID))
         return this->GetBlock(blockID).size() / sizeof(DATATYPE);
 
@@ -957,6 +966,9 @@ template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, 
          case SMStoreDataType::TriPtIndices : 
             assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
             m_nodeHeader->m_nbFaceIndexes += countDelta;                
+            break;
+        case SMStoreDataType::UvCoords :
+            //MST_TS
             break;
         default : 
             assert(!"Unsupported type");
