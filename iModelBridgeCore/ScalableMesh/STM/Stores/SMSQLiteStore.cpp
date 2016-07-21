@@ -13,4 +13,4 @@
 
 template class SMSQLiteStore<DRange3d>;
 
-template class SMSQLiteNodePointStore<DPoint3d, DRange3d>;
+template class SMSQLiteNodeDataStore<DPoint3d, DRange3d>;

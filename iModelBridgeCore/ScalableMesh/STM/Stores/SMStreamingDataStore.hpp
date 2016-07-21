@@ -808,9 +808,36 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {
     auto nodeGroup = this->GetGroup(nodeHeader->m_id);
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStreamingNodeDataStore<DPoint3d, EXTENT>::POINTS, nodeHeader, nodeGroup);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::Points, nodeHeader, nodeGroup);
 
     return true;    
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
+    {                
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
+        
+    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
+                    
+    return true;    
+    }
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::UvCoords, nodeHeader);
+
+    return true;    
+    }
+
+
+//Multi-items loading store
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    //dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::TriPtIndices, nodeHeader);
+    assert(!"Not supported yet");
+
+    return false;    
     }
 
 template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
@@ -841,7 +868,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
      m_pathToNodeData(path),
      m_nodeGroup(nodeGroup)
@@ -851,16 +878,16 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
 
     switch (type)
         {
-        case SMStreamingDataType::POINTS: 
+        case SMStoreDataType::Points: 
             m_pathToNodeData += L"points/";
             break;
-        case SMStreamingDataType::INDICES:
+        case SMStoreDataType::TriPtIndices:
             m_pathToNodeData += L"indices/";
             break;
-        case SMStreamingDataType::UVS:
+        case SMStoreDataType::UvCoords:
             m_pathToNodeData += L"uvs/";
             break;
-        case SMStreamingDataType::UVINDICES:
+        case SMStoreDataType::TriUvIndices:
             m_pathToNodeData += L"uvindices/";
             break;
         default:
@@ -948,19 +975,49 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    if (m_dataType == SMStreamingDataType::POINTS)
+    if (m_dataType == SMStoreDataType::Points)
         return m_nodeHeader->m_nodeCount;
     else
+    if (m_dataType == SMStoreDataType::TriPtIndices)
+        return m_nodeHeader->m_nbFaceIndexes;    
+    else       
     if (IsValidID(blockID))
         return this->GetBlock(blockID).size() / sizeof(DATATYPE);
 
     return 0;   
     }
 
+template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
+    {
+    assert(!"Invalid call");
+    return 0;
+    }
+
 template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
-    assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) > 0);
-    m_nodeHeader->m_nodeCount += countDelta;
+    switch (m_dataType)
+        {
+        case SMStoreDataType::Points : 
+            assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
+            m_nodeHeader->m_nodeCount += countDelta;                
+            break;
+         case SMStoreDataType::TriPtIndices : 
+            assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
+            m_nodeHeader->m_nbFaceIndexes += countDelta;                
+            break;
+        case SMStoreDataType::UvCoords :
+        case SMStoreDataType::TriUvIndices :            
+            //MST_TS
+            break;
+        default : 
+            assert(!"Unsupported type");
+            break;
+        }        
+    }
+
+template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) 
+    {
+    assert(!"Invalid call");
     }
 
 template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
@@ -987,7 +1044,7 @@ template <class DATATYPE, class EXTENT> uint64_t SMStreamingNodeDataStore<DATATY
     {
     for (auto data : m_nodeHeader->m_streamingDataSizes)
         {
-        if (data.m_type == m_dataType) return data.m_size;
+        if (data.m_type == (short)m_dataType) return data.m_size;
         }
     return uint64_t(-1);
     }

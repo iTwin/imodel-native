@@ -664,17 +664,10 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         DataSourceAccount *m_dataSourceAccount;
 
     public:
-        enum SMStreamingDataType
-            {
-            POINTS,
-            INDICES,
-            UVS,
-            UVINDICES
-            };
-
+        
         // Constructor / Destructor
 
-        SMStreamingPointTaggedTileStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+        SMStreamingPointTaggedTileStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStoreDataType type, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
             :m_rootDirectory(path),
             m_pathToPoints(path),
             m_pathToHeaders(headers_path),
@@ -684,17 +677,17 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
             bool haveHeaders = false;
             switch (type)
                 {
-                case SMStreamingDataType::POINTS:
+                case SMStoreDataType::Points:
                     m_pathToPoints += L"points/";
                     haveHeaders = true; // only points can carry node header information
                     break;
-                case SMStreamingDataType::INDICES:
+                case SMStoreDataType::TriPtIndices:
                     m_pathToPoints += L"indices/";
                     break;
-                case SMStreamingDataType::UVS:
+                case SMStoreDataType::UvCoords:
                     m_pathToPoints += L"uvs/";
                     break;
-                case SMStreamingDataType::UVINDICES:
+                case SMStoreDataType::TriUvIndices:
                     m_pathToPoints += L"uvindices/";
                     break;
                 default:

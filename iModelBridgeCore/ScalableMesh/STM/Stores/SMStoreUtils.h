@@ -329,7 +329,7 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         operator SQLiteNodeHeader();
            
         };
-
+    
 
 template<class EXTENT>
 using ISMDataStoreType = ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>;

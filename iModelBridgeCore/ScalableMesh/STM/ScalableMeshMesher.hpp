@@ -338,11 +338,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 std::vector<int> faceIndexes;
                 DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(node->m_nodeHeader.m_nodeExtent),
                                                     ExtentOp<EXTENT>::GetXMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(node->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(node->m_nodeHeader.m_nodeExtent));
-
-                node->m_nodeHeader.m_nbFaceIndexes = meshP->GetNbFaceIndexes();
+                
                 ClipMeshToNodeRange<POINT, EXTENT>(faceIndexes, nodePts, pts, node->m_nodeHeader.m_contentExtent, nodeRange, meshP);
-
-                node->m_nodeHeader.m_nbFaceIndexes = faceIndexes.size();
+                
                 pointsPtr->push_back(&nodePts[0], nodePts.size());
                 bvector<int> componentPointsId;
                 // SM_NEED_WORKS : textures
@@ -376,7 +374,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     }
 
                 if (faceIndexes.size() > 0)
-                    node->PushPtsIndices(/*meshP->GetFaceIndexes()*/&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);
+                    node->PushPtsIndices(/*meshP->GetFaceIndexes()*/&faceIndexes[0], faceIndexes.size());
                 else
                     node->ClearPtsIndices();
 
@@ -653,8 +651,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     MTGGraph* newGraphP = new MTGGraph();
     CreateGraphFromIndexBuffer(newGraphP, (const long*)&faceIndices[0], (int)faceIndices.size(), (int)geomData.size(), componentPointsId, &geomData[0]);
     //node->SetGraphDirty();
-    graphPtr->SetData(newGraphP);
-    node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
+    graphPtr->SetData(newGraphP);    
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
     size_t nOfPointsUsed = geometryData.size() + (size_t)ceil(faceIndices.size()*(double)sizeof(int) / sizeof(POINT));// +(size_t)ceil((double)ct / sizeof(POINT));
@@ -851,8 +848,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     //node->SetGraphDirty();
     //node->ReleaseGraph();
     graphPtr->SetData(graphP);
-    graphPtr->SetDirty();
-    node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
+    graphPtr->SetDirty();    
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
         size_t nOfPointsUsed = geometryData.size() + (size_t)ceil(faceIndices.size()*(double)sizeof(int) / sizeof(POINT));// +(size_t)ceil((double)ct / sizeof(POINT));
@@ -1175,7 +1171,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     // *node->GetGraphPtr() = *meshGraphStitched;
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex));
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMStoreDataType::Graph, (uint64_t)node->m_SMIndex));
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1185,7 +1181,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
-    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex);
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex);
    /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
         {
         TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);
@@ -1232,8 +1228,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
 
     //node->SetGraphDirty();
     //if (s_useThreadsInStitching) node->UnlockGraph();
-    //node->ReleaseGraph();
-    node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
+    //node->ReleaseGraph();    
     assert(faceIndices.size() % 3 == 0);
     nFaces = (int)faceIndices.size();
     if (faceIndices.size() == 0 || geometryData.size() == 0) return 0;
@@ -1864,7 +1859,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 
         pointsPtr->push_back(&newNodePointData[0], stitchedPoints.size());
         
-        node->ReplacePtsIndices((int32_t*)&newNodePointData[stitchedPoints.size()], node->m_nodeHeader.m_nbFaceIndexes);
+        node->ReplacePtsIndices((int32_t*)&newNodePointData[stitchedPoints.size()], nfaces);
 
       
         if (node->IsLeaf()) node->m_nodeHeader.m_totalCount = stitchedPoints.size();
@@ -1923,7 +1918,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 #endif
         delete[] newNodePointData;
             }
-    //node->m_nodeHeader.m_nbFaceIndexes = nfaces;
+    
     return true;
         }
 
@@ -2030,8 +2025,7 @@ return true;
             MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
                 meshGraph->ClearMask(visitedMask);
                 meshGraph->DropMask(visitedMask);*/
-
-            node->m_nodeHeader.m_nbFaceIndexes = faceIndexes.size();//meshP->GetNbFaceIndexes();
+            
             if (componentPointsId.size() > 0)
                 {
                 if (node->m_nodeHeader.m_meshComponents == nullptr) node->m_nodeHeader.m_meshComponents = new int[componentPointsId.size()];
@@ -2044,7 +2038,7 @@ return true;
                 memcpy(node->m_nodeHeader.m_meshComponents, componentPointsId.data(), componentPointsId.size()*sizeof(int));
                 }
           
-            node->PushPtsIndices(&faceIndexes[0], node->m_nodeHeader.m_nbFaceIndexes);            
+            node->PushPtsIndices(&faceIndexes[0], faceIndexes.size());            
             
             assert(node->size() == nodePts.size());
             if (node->IsLeaf() && node->size() != node->m_nodeHeader.m_totalCount)
@@ -2172,7 +2166,7 @@ return true;
    //ValidateTriangleMesh(faceIndices, stitchedPoints);
     *node->GetGraphPtr() = *meshGraphStitched;
     node->SetGraphDirty();
-    node->m_nodeHeader.m_nbFaceIndexes = faceIndices.size();
+    
     for (size_t i = 0; i < faceIndices.size(); i += 3)
         {
         const POINT nodePts[3] = { geometryData[faceIndices[i] - 1], geometryData[faceIndices[i + 1] - 1], geometryData[faceIndices[i + 2] - 1] };

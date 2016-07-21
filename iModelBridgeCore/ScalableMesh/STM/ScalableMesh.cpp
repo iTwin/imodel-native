@@ -856,10 +856,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
 
                     // NEEDS_WORK_SM - Remove old streaming stores after they are all replaced by the new refactored stores.
-                    //pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingPointStoreType::SMStreamingDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::INDICES, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingUVStoreType::SMStreamingDataType::UVS, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStreamingDataType::UVINDICES, AreDataCompressed());
+                    //pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::Points, AreDataCompressed(), s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
                     
                     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups));
