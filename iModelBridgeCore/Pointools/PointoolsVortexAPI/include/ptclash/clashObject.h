@@ -1,7 +1,7 @@
 #pragma once
 #include <ptclash/clashTree.h>
 #include <pt/ObjectRef.h>
-#include <vortexobjects/IClashObject.h>
+#include <Vortex/IClashObject.h>
 #include <fastDelegate/fastDelegate.h>
 
 

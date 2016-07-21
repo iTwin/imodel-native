@@ -13,9 +13,9 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include <VortexFeatureExtract.h>
 #include <PTAPI/PointoolsVortexAPI_import.h>
 #include <PTAPI/PointoolsVortexAPI_resultCodes.h>
-#include <VortexObjects/IClashObjectManager.h>
-#include <VortexObjects/IClashTree.h>
-#include <VortexObjects/IClashNode.h>
+#include <Vortex/IClashObjectManager.h>
+#include <Vortex/IClashTree.h>
+#include <Vortex/IClashNode.h>
 
 
 //-----------------------------------------------------------------------------

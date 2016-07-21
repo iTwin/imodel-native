@@ -3,7 +3,7 @@
 #include <pt/ObjectRef.h>
 #include <ptfs/FilePath.h>
 #include <ptfs/iohelper.h>
-#include <vortexobjects/IClashTree.h>
+#include <Vortex/IClashTree.h>
 
 
 namespace pt

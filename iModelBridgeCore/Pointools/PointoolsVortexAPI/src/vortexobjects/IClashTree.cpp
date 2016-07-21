@@ -1,8 +1,7 @@
 #include "PointoolsVortexAPIInternal.h"
 // IClashTree.cpp
 
-#include <vortexobjects/IClashTree.h>
-
+#include <Vortex/IClashTree.h>
 
 using namespace vortex;
 

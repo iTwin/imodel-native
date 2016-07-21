@@ -15,7 +15,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 #include "VortexExampleApp.h"
 #include <VortexFeatureExtract.h>
 #include "DiagnosticRenderer.h"
-#include <VortexObjects/IClashObject.h>
+#include <Vortex/IClashObject.h>
 #include <GeomTypes.h>
 #include <map>
 
