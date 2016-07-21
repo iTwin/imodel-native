@@ -872,6 +872,47 @@ TEST_F(DgnElementTests, TestAutoHandledProperties)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, CreateFromECInstance)
+    {
+    SetupProject(L"3dMetricGeneral.ibim", L"TestAutoHandledPropertiesGetSet.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+
+    ECN::ECClassCP testClass = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
+    auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    // custom-handled properties
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Label", ECN::ECValue("my label")));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_PointProperty1, ECN::ECValue(DPoint3d::From(99, 99, 99))));
+    // auto-handled properties
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("IntegerProperty1", ECN::ECValue(199)));
+
+    DgnDbStatus status;
+    auto ele = DgnElement::CreateElement(&status, *m_db, *testClassInstance);
+    ASSERT_TRUE(ele.IsValid());
+    ASSERT_EQ(DgnDbStatus::Success, status);
+
+    ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
+    ECN::ECValue v;
+    ASSERT_EQ(DgnDbStatus::Success, ele->_GetProperty(v, "ModelId"));
+    ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
+    ASSERT_EQ(DgnDbStatus::Success, ele->_GetProperty(v, "Label"));
+    ASSERT_STREQ("my label", v.ToString().c_str());
+    ASSERT_STREQ("my label", ele->GetLabel());
+    ASSERT_EQ(DgnDbStatus::Success, ele->_GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+    ASSERT_STREQ("a string", v.ToString().c_str());
+    ASSERT_EQ(DgnDbStatus::Success, ele->_GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+    ASSERT_EQ(99, v.GetInteger());
+    ASSERT_EQ(DgnDbStatus::Success, ele->_GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+    ASSERT_DOUBLE_EQ(99.00, v.GetDouble());
+    ASSERT_EQ(DgnDbStatus::Success, ele->_GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+    ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Ramanujam.Raman      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, TestUserProperties)

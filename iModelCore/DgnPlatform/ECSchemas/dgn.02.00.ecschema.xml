@@ -55,7 +55,7 @@
     </ECCustomAttributeClass>
 
     <!-- Must match the ECSqlClassParams::StatementType enum -->
-    <ECEnumeration typeName="CustomHandledProperty_StatementType" backingTypeName="int" isStrict="true">
+    <ECEnumeration typeName="CustomHandledPropertyStatementType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="None"/>
         <ECEnumerator value="1" displayLabel="Select"/>
         <ECEnumerator value="2" displayLabel="Insert"/>
@@ -70,7 +70,7 @@
 
     <ECCustomAttributeClass typeName="PropertyStatementType" description="Applied to an element's property to indicate the kinds of statements in which the property should appear." appliesTo="Any">
       <!-- The kinds of statements in which the property should appear. -->
-      <ECProperty propertyName="StatementTypes" typeName="CustomHandledProperty_StatementType"/>
+      <ECProperty propertyName="StatementTypes" typeName="CustomHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
   <!-- ////////////////////////////////////////////////////////////////////////////// -->
@@ -551,17 +551,11 @@
         <ECProperty propertyName="Url" displayLabel="URL" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -585,17 +579,11 @@
         <ECProperty propertyName="Name" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -641,9 +629,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary">
@@ -653,9 +638,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean">
@@ -665,9 +647,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point3d">
@@ -677,9 +656,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Yaw" typeName="double">
@@ -689,9 +665,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Pitch" typeName="double">
@@ -701,9 +674,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Roll" typeName="double">
@@ -713,9 +683,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">
@@ -725,9 +692,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d">
@@ -737,9 +701,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -781,49 +742,31 @@
         <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point2d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Rotation" typeName="double">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point2d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point2d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECEntityClass>
@@ -1145,9 +1088,6 @@
         <ECProperty propertyName="TextStyleId" typeName="long">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1159,17 +1099,11 @@
         <ECProperty propertyName="StyleId" typeName="long">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1200,18 +1134,12 @@
         <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="Scale" typeName="double">
             <!-- Should have IsNullable=False but shared table... -->
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1419,9 +1347,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Scope" typeName="int">
@@ -1431,9 +1356,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Rank" typeName="int">
@@ -1443,9 +1365,6 @@
                     <If3D>True</If3D>
                 </HideProperty>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
@@ -1472,17 +1391,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1537,17 +1450,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1560,17 +1467,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECEntityClass>
@@ -1583,17 +1484,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECEntityClass>
@@ -1606,17 +1501,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECEntityClass>
@@ -1629,17 +1518,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECEntityClass>
@@ -1652,17 +1535,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="string" description="Encoded style properties">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
           </ECEntityClass>
@@ -1675,9 +1552,6 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded texture data">
@@ -1686,9 +1560,6 @@
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
@@ -1697,9 +1568,6 @@
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Width" typeName="int" displayLabel="Width">
@@ -1708,9 +1576,6 @@
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Height" typeName="int" displayLabel="Height">
@@ -1719,9 +1584,6 @@
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Flags" typeName="int">
@@ -1730,9 +1592,6 @@
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1745,17 +1604,11 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Value" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1765,25 +1618,16 @@
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Source" displayLabel="Source" typeName="int">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView" direction="Backward">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -1906,9 +1750,6 @@
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">
@@ -1917,9 +1758,6 @@
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d">
@@ -1928,9 +1766,6 @@
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
                 <CustomHandledProperty/>
-                <PropertyStatementType>
-                  <StatementTypes>7</StatementTypes>
-                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>

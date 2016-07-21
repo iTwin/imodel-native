@@ -12,9 +12,6 @@
         <ECProperty propertyName="LinkedElementId" typeName="long">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>

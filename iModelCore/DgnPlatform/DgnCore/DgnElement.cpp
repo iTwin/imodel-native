@@ -2736,6 +2736,7 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
     #endif
     m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
     m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
+    BeAssert((nullptr != m_customHandledProperty) && "DgnDomain is supposed to stand-ins for CustomHandledProperty and PropertyStatementType for old DgnDbs");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2762,23 +2763,14 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
                 }
         #endif
         
-            bool isCustom = prop->IsDefined(*m_coll.m_customHandledProperty) || isBuiltInProperty(prop->GetName());
+        bool isCustom = m_coll.HasCustomHandledProperty(*prop) || isBuiltInProperty(prop->GetName());
         if (isCustom != m_coll.m_wantCustomHandledProps)
             {
             ++m_i;
             continue;
             }
 
-        auto stype = prop->GetCustomAttribute(*m_coll.m_propertyStatementType);
-        if (!stype.IsValid())
-            {
-            m_stype = ECSqlClassParams::StatementType::All;
-            return; // default = all statement types
-            }
-
-        ECN::ECValue v;
-        stype->GetValue(v, "StatementTypes");
-        m_stype = (ECSqlClassParams::StatementType)(v.GetInteger());
+        m_stype = m_coll.GetStatementType(*prop);
         if (0 != ((int32_t)m_stype & (int32_t)m_coll.m_stype))
             {
             return; // yes, this property is for the requested statement type
@@ -3323,3 +3315,71 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     return status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+
+    DgnClassId classId(properties.GetClass().GetId().GetValue());
+    auto handler = dgn_ElementHandler::Element::FindHandler(db, classId);
+    if (nullptr == handler)
+        {
+        BeAssert(false);
+        stat = DgnDbStatus::MissingHandler;
+        return nullptr;
+        }
+
+    DgnModelId mid;
+        {
+        ECN::ECValue v;
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, DGN_ELEMENT_PROPNAME_ModelId) || v.IsNull())
+            {
+            stat = DgnDbStatus::BadArg;
+            return nullptr;
+            }
+        mid = DgnModelId((uint64_t)v.GetLong());
+        if (!mid.IsValid())
+            {
+            stat = DgnDbStatus::BadArg;
+            return nullptr;
+            }
+        }
+
+    CreateParams params(db, mid, classId);
+
+    auto ecinstanceid = properties.GetInstanceId();                 // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
+    if (!ecinstanceid.empty())
+        {
+        uint64_t idvalue;
+        if (BSISUCCESS != BeStringUtilities::ParseUInt64(idvalue, ecinstanceid.c_str()))
+            {
+            stat = DgnDbStatus::BadArg;
+            return nullptr;
+            }
+        params.SetElementId(DgnElementId(idvalue));
+        }
+
+    auto ele = handler->Create(params);
+
+    ECValuesCollectionPtr propValues = ECValuesCollection::Create(properties);
+    for (ECN::ECPropertyValue const& propValue : *propValues)
+        {
+        auto pvAccessString = propValue.GetValueAccessor().GetPropertyName();
+
+        if (pvAccessString.Equals(DGN_ELEMENT_PROPNAME_ModelId))     // already processed ModelId property above
+            continue;
+
+        ECN::ECValueCR value = propValue.GetValue();
+        if (!value.IsNull())
+            {
+            if (DgnDbStatus::Success != (stat = ele->_SetProperty(pvAccessString.c_str(), value)))
+                return nullptr;
+            }
+        }
+    
+    return ele;
+    }
+

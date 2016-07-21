@@ -245,6 +245,9 @@ struct AutoHandledPropertiesCollection
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
 
+    bool HasCustomHandledProperty(ECN::ECPropertyCR) const;
+    ECSqlClassParams::StatementType GetStatementType(ECN::ECPropertyCR) const;
+
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
         private:
@@ -266,6 +269,17 @@ struct AutoHandledPropertiesCollection
     typedef Iterator const_iterator;
     const_iterator begin() const { return Iterator(m_props.begin(), *this); }
     const_iterator end() const { return Iterator(m_props.end(), *this); }
+    };
+
+/* temporary helper class to work around missing CAs in dgn schema. */
+struct CustomPropertyRegistry
+    {
+    ECN::ECClassCP m_eclass;
+    CustomPropertyRegistry() : m_eclass(nullptr) { ; }
+    void SetClass(ECN::ECClassCP cls) { m_eclass = cls; }
+    DGNPLATFORM_EXPORT void SetClass(DgnDbR, Utf8CP schemaName, Utf8CP className);
+    DGNPLATFORM_EXPORT void Register(Utf8CP propName, ECSqlClassParams::StatementType = ECSqlClassParams::StatementType::All);
+    DGNPLATFORM_EXPORT static bool HasOldDgnSchema(DgnDbR db);
     };
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
@@ -1034,6 +1048,14 @@ public:
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
     //! @note If this flag is true, this element must be readonly. To modify an element, call CopyForEdit.
     bool IsPersistent() const {return m_flags.m_persistent;}
+
+    //! Create a new, non-persistent element from the supplied ECInstance.
+    //! The supplied instance must specify the element's ModelId and Code. It does not have to specify the ElementId/ECInstaceId. Typically, it will not.
+    //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
+    //! @param db       The DgnDb that will store the new element (if it is ever inserted)
+    //! @param properties The instance that contains all of the element's business properties
+    //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
+    DGNPLATFORM_EXPORT static DgnElementPtr CreateElement(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR properties);
 
     //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
