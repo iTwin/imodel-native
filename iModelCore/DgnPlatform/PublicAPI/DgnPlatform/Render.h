@@ -376,7 +376,7 @@ struct LineStyleParams
 
     //! Compare two LineStyleParams.
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
-    DGNPLATFORM_EXPORT void SetScale(double scale);
+    void SetScale(double inScale) {modifiers |= 0x01; scale = inScale;}
 };
 
 //=======================================================================================

@@ -35,13 +35,13 @@ DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 enum class OrientationError
-    {
+{
     None,
     Unknown,
     DeviceRequiresMovement, //! Orientation events are meaningless until the user moves the device
     TrueNorthNotAvailable,  //! True north requested but available, possibly because wifi is not enabled.
     NotAvailable,
-    };
+};
 
 enum class OrientationMode
 {
@@ -436,7 +436,7 @@ public:
     DGNPLATFORM_EXPORT DPoint3d GetCenter() const;
 
     //! Get the target point of the view. If there is no camera, Center() is returned.
-    DGNPLATFORM_EXPORT DPoint3d GetTargetPoint() const;
+    DPoint3d GetTargetPoint() const {return _GetTargetPoint();}
 
     //! Change whether a DgnCatetory is display in this view.
     //! @param[in] categoryId the DgnCategoryId to change.
@@ -886,7 +886,7 @@ public:
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
-    {
+{
     DEFINE_T_SUPER(ViewController);
 
 protected:
@@ -904,13 +904,12 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
-
 public:
     ViewController2d(DgnDbR project, DgnViewId viewId) : ViewController(project, viewId) {}
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
     DVec2d GetDelta2d() const {return m_delta;}
-    };
+};
 
 //=======================================================================================
 //! A DrawingViewController is used to control views of DrawingModels

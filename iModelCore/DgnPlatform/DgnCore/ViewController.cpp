@@ -1511,11 +1511,6 @@ DPoint3d ViewController::GetCenter() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifer     04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d ViewController::GetTargetPoint() const {return _GetTargetPoint();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifer     04/07
-+---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d CameraViewController::_GetTargetPoint() const
     {
     if (!IsCameraOn())

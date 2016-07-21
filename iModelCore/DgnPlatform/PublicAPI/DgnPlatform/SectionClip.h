@@ -62,14 +62,12 @@ typedef bvector<DPoint3d> DPoint3dVector;
 //=======================================================================================
 struct IViewClipObject : RefCountedBase
 {
-//__PUBLISH_SECTION_END__
-
     struct Factory : RefCountedBase
     {
     protected:
         virtual IViewClipObjectPtr _FromJson(JsonValueCR) = 0;
 
-        public:
+    public:
         //! Register an IViewClipObject::Factory to handle FromJson requests for all serialized IViewClipObject objects with the specified factoryId
         //! @param factoryId    The persistent ID of the factory.
         //! @param factory      The factory
@@ -117,52 +115,49 @@ protected:
     virtual StatusInt _ApplyTransform(TransformCR) = 0;
     virtual void _Draw(ViewContextR) = 0;
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
-    //! \fn double GetSize (ClipVolumeSizeProp clipVolumeCropProp)
     //! @brief Gets the size of the clipped volume corresponding to the value of the enumerated variable `clipVolumeSizeProp`.
     //! @param[in]      clipVolumeCropProp      the specific size to be querried.
     //! @returns the dimension of the side to be clipped.
-    DGNPLATFORM_EXPORT double GetSize(ClipVolumeSizeProp clipVolumeCropProp) const;
+    double GetSize(ClipVolumeSizeProp clipVolumeCropProp) const {return _GetSize(clipVolumeCropProp);}
 
     //! Assigns the user defined value to the size of the clip element.
     //! @param[in]      clipVolumeSizeProp      the specific size to be querried.
     //! @param[in]      size                    contains the desired value to be clipped to.
     //! @returns the dimension of the side to be clipped.
-    DGNPLATFORM_EXPORT void SetSize(ClipVolumeSizeProp clipVolumeSizeProp, double size);
+    void SetSize(ClipVolumeSizeProp clipVolumeSizeProp, double size) {return _SetSize(clipVolumeSizeProp, size);}
 
     //! Check if a given side of the clip volume is cropped.
     //! @param[in]      clipVolumeCropProp      contains the information as to which particular side should be clipped.
     //! @returns the boolean value against the desired side of the clip element.
-    DGNPLATFORM_EXPORT bool GetCrop(ClipVolumeCropProp clipVolumeCropProp) const;
+     bool GetCrop(ClipVolumeCropProp clipVolumeCropProp) const {return _GetCrop(clipVolumeCropProp);}
 
     //! Sets the particular side to either of the two conditions : to be cropped or not to be cropped using a boolean variable.
     //! @param[in]      clipVolumeCropProp      contains the particular side and its clip details.
     //! @param[in]      crop                    true would mean clipped and false would mean unclipped.
     //! @returns  the particular side and its clip details
-    DGNPLATFORM_EXPORT void SetCrop(ClipVolumeCropProp clipVolumeCropProp, bool crop);
+    void SetCrop(ClipVolumeCropProp clipVolumeCropProp, bool crop) {return _SetCrop(clipVolumeCropProp, crop);}
 
     //! Gets the rotation matrix  that describes how the element is oriented in 3D space.
     //! @returns the orientation details in the 3D space of the element to be clipped, in the form of a matrix.
-    DGNPLATFORM_EXPORT RotMatrixCR GetRotationMatrix() const;
+    RotMatrixCR GetRotationMatrix() const {return _GetRotationMatrix();}
 
     //! Sets the rotation matrix of the element to a defined matrix and set the orientation in the 3D space.
     //! @returns the orientation details in the 3D space of the element to be clipped, in the form of the defined matrix.
     //! \sa GetRotationMatrix .
-    DGNPLATFORM_EXPORT void SetRotationMatrix(RotMatrixCR rMatrix);
+    void SetRotationMatrix(RotMatrixCR rMatrix) {return _SetRotationMatrix(rMatrix);}
 
     //! Sets the points of the clip element.
     //! @param[in]      numPoints      unsigned integer that contains the number of index points of the clip element.
     //! @param[in]      points         the 3D point coordinates of the clip element.
     //! @returns data points of the clip element.
     //! \sa GetNumPoints  \sa  GetPoints.
-    DGNPLATFORM_EXPORT void SetPoints(size_t numPoints, DPoint3dCP points);
+    void SetPoints(size_t numPoints, DPoint3dCP points) {return _SetPoints(numPoints,points);}
 
     //! Obtains the number of data points of the clipped volume.
     //! @returns the number of data points of the clipped volume.
     //! \sa SetPoints.
-    size_t GetNumPoints() const;
+    size_t GetNumPoints() const {return _GetNumPoints();}
 
     //! Obtains the data points of the clipped volume.
     //! @param[out]      points          reference to the vector containing the 3D points.
@@ -170,40 +165,39 @@ public:
     //! @param[in]      numPoints       number of index points of the clip volume.
     //! @returns the data points of the clipped volume.
     //! \sa SetPoints.
-    DGNPLATFORM_EXPORT StatusInt GetPoints(DPoint3dVector& points, size_t iFromPoint, size_t numPoints) const;
+    StatusInt GetPoints(DPoint3dVector& points, size_t iFromPoint, size_t numPoints) const {return _GetPoints(points, iFromPoint, numPoints);}
 
     //! Makes a copy of the clip details of a given clip object.
     //! @param[in]      from            a const pointer to IViewClipObject .
     //! @returns a  copy of the clip details of a given clip object.
-    DGNPLATFORM_EXPORT void CopyCrops(IViewClipObject const* from);
+    void CopyCrops(IViewClipObject const* from) {return _CopyCrops(from);}
 
     //! Sets preserve up flag to indicate that the resulting view of this clip volume should be displayed 'up right'.
-    //! param[in]      flag             pass 1 for clipped and zero for unclipped.
+    //! param[in] flag pass 1 for clipped and zero for unclipped.
     //! @returns the resulting view of this clip volume which should be displayed 'up right'.
-    DGNPLATFORM_EXPORT void SetPreserveUp(bool flag);
+    void SetPreserveUp(bool flag) {return _SetPreserveUp(flag);}
 
     //! Gets preserve up flag to indicate that the resulting view of this clip volume should be displayed 'up right'.
     //! @returns the  resulting view of this clip volume which should be displayed 'up right'.
-    DGNPLATFORM_EXPORT bool GetPreserveUp() const;
+    bool GetPreserveUp() const {return _GetPreserveUp();}
 
     //! Gets width of the clip element.
     //! @returns the width of the clip element.
-    DGNPLATFORM_EXPORT double GetWidth() const;
+    double GetWidth() const {return _GetWidth();}
 
     //! Set the width of the clip element to a user defined value newWidth.
     //! @param[in] newWidth the value to be assigned to the width of the clip element.
     //! @returns width of the clip element to a user defined value newWidth.
-    DGNPLATFORM_EXPORT void SetWidth(double newWidth);
+    void SetWidth(double newWidth) {_SetWidth(newWidth);}
 
-    DGNPLATFORM_EXPORT StatusInt GetClipBoundary(ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const; // changed in graphite
-    DGNPLATFORM_EXPORT bool IsClipVolumePassValid(ClipVolumePass) const;
-    DGNPLATFORM_EXPORT StatusInt GetCuttingPlane(DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR) const;
-    DGNPLATFORM_EXPORT bool GetAuxTransform(TransformR, ClipVolumePass) const;
-    DGNPLATFORM_EXPORT StatusInt GetTransform(TransformR trans) const;
-    DGNPLATFORM_EXPORT size_t GetPrimaryCutPlaneCount() const;
-    DGNPLATFORM_EXPORT StatusInt ApplyTransform(TransformCR);
-
-    DGNPLATFORM_EXPORT void Draw(ViewContextR);
+    StatusInt GetClipBoundary(ClipVectorPtr& clip, DRange3dR maxRange, ClipVolumePass pass, bool displayCutGeometry) const {return _GetClipBoundary(clip,maxRange,pass,displayCutGeometry);}
+    bool IsClipVolumePassValid(ClipVolumePass pass) const {return _IsClipVolumePassValid(pass);}
+    StatusInt GetCuttingPlane(DPlane3dR cutPlane, DVec3dR xDir, DVec3dR yDir, ClipMask& clipMask, DRange2dR clipRange, bool& forwardFacing, int index, ViewContextR context) const {return _GetCuttingPlane(cutPlane,xDir,yDir,clipMask,clipRange,forwardFacing,index,context);}
+    bool GetAuxTransform(TransformR t, ClipVolumePass p) const {return _GetAuxTransform(t,p);}
+    StatusInt GetTransform(TransformR trans) const {return _GetTransform(trans);}
+    size_t GetPrimaryCutPlaneCount() const {return _GetPrimaryCutPlaneCount();}
+    StatusInt ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
+    void Draw(ViewContextR c) {return _Draw(c);}
 };
 
 //__PUBLISH_SECTION_END__

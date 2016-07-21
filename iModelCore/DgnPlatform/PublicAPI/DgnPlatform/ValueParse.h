@@ -47,7 +47,7 @@ public:
     DGNPLATFORM_EXPORT DoubleParserPtr Clone() const;
 
     //! Parse a string into a numeric value.
-    //! @param[out] outresulting value if successfully parsed.
+    //! @param[out] out resulting value if successfully parsed.
     //! @param[in] in input string.
     //! @return SUCCESS if parsed successfully. ERROR otherwise.
     DGNPLATFORM_EXPORT BentleyStatus ToValue(double& out, Utf8CP in) const;
