@@ -90,9 +90,12 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointDat
     return true;    
     }
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
-    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(SMStoreDataType::TriPtIndices, nodeHeader, m_smSQLiteFile);
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
+    
+    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
+                    
     return true;    
     }
 
@@ -150,7 +153,9 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             case SMStoreDataType::UvCoords : 
                 m_smSQLiteFile->StoreUVs(id, nodeData, countData*sizeof(DATATYPE));
                 break;
-                
+            case SMStoreDataType::TriUvIndices : 
+                m_smSQLiteFile->StoreUVIndices(id, nodeData, countData*sizeof(DATATYPE));                
+                break;                                
             default : 
                 assert(!"Unsupported type");
                 break;
@@ -184,6 +189,9 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         case SMStoreDataType::UvCoords : 
             m_smSQLiteFile->StoreUVs(id, nodeData, countData*sizeof(DATATYPE));
             break;
+        case SMStoreDataType::TriUvIndices : 
+            m_smSQLiteFile->StoreUVIndices(id, nodeData, countData*sizeof(DATATYPE));                            
+            break;            
         default : 
             assert(!"Unsupported type");
             break;
@@ -213,7 +221,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             blockDataCount = m_nodeHeader->m_nbFaceIndexes;            
             break;
         case SMStoreDataType::UvCoords : 
-            blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DPoint2d);
+            blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DATATYPE);
+            break;
+        case SMStoreDataType::TriUvIndices :             
+            blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         default : 
             assert(!"Unsupported type");
@@ -245,6 +256,7 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
 
         //MST_TS
         case SMStoreDataType::UvCoords :
+        case SMStoreDataType::TriUvIndices :             
             break;
         default : 
             assert(!"Unsupported type");
@@ -311,6 +323,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
                 break;
             case SMStoreDataType::UvCoords :
                 m_smSQLiteFile->GetUVs(blockID.m_integerID, nodeData, uncompressedSize);
+                break;
+            case SMStoreDataType::TriUvIndices :             
+                m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
                 break;
             default : 
                 assert(!"Unsupported type");

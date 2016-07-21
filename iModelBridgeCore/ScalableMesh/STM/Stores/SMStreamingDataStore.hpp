@@ -780,10 +780,12 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPoint
     return true;    
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {    
-    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::TriPtIndices, nodeHeader);
-
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
+    {                
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
+        
+    dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
+                    
     return true;    
     }
 
@@ -793,6 +795,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoo
 
     return true;    
     }
+
 
 //Multi-items loading store
 
@@ -968,6 +971,7 @@ template <class DATATYPE, class EXTENT> void SMStreamingNodeDataStore<DATATYPE, 
             m_nodeHeader->m_nbFaceIndexes += countDelta;                
             break;
         case SMStoreDataType::UvCoords :
+        case SMStoreDataType::TriUvIndices :            
             //MST_TS
             break;
         default : 

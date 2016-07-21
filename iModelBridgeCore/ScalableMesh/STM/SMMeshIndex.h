@@ -621,25 +621,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             
     void PushUVsIndices(size_t texture_id, const int32_t* uvsIndices, size_t size);
      
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetUVsIndicesPtr()
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
-
-        if (!IsTextured())
-            return poolMemVectorItemPtr;
-                
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex))
-            {                  
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, GetUVsIndicesStore().GetPtr(), SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_triUvIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_triUvIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemVectorItemPtr;
-        }    
-        
+    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetUVsIndicesPtr();
+              
     HFCPtr<SMPointTileStore<int32_t, EXTENT>> GetUVsIndicesStore() const
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetUVsIndicesStore();

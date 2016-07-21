@@ -108,12 +108,13 @@ struct PointAndTriPtIndicesBase
     };
 
 typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>>                 ISMPointDataStorePtr;
-typedef RefCountedPtr<ISMNodeDataStore<int32_t>>                  ISMFaceIndDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<int32_t>>                  ISMInt32DataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>                 ISMUVCoordsDataStorePtr;
+
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
 
 
-//typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMFaceIndDataStorePtr;
+//typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
@@ -159,9 +160,9 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
                         
         virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
-        virtual bool GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;                
-
-        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;       
+        virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
+        
+        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;               
 
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
