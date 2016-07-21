@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -61,6 +61,13 @@ struct IMrDTM abstract:  Bentley::TerrainModel::IDTM
                                                           DTMQueryDataType                     queryDataType, 
                                                           Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
                                                           const DRange3d&                      extentInTargetGCS) const = 0;
+
+
+        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, TerrainModel::DTMAreaValuesCallback progressiveCallback, TerrainModel::DTMCancelProcessCallback isCancelledCallback) override { return DTM_ERROR; }
+
+        virtual IDTMVolumeP _GetDTMVolume() override { return nullptr; }
+
+        virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override { return DTM_ERROR; }
 
 
         virtual const GeoCoords::GCS&               _GetGCS() const = 0;
