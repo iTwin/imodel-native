@@ -75,19 +75,10 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson)
+TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson_SmallArray)
     {
     const int rowCount = 100000;
-    uint32_t arraySize = 10000;
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
-
-    arraySize = 10;
+    const uint32_t arraySize = 10;
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
@@ -100,10 +91,10 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson)
+TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_SmallArray)
     {
     const int rowCount = 100000;
-    uint32_t arraySize = 10000;
+    const uint32_t arraySize = 10;
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
@@ -111,8 +102,31 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson)
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
+    }
 
-    arraySize = 10;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformancePrimArrayJsonVsECDTests, InsertJson_LargeArray)
+    {
+    const int rowCount = 100000;
+    const uint32_t arraySize = 10000;
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_LargeArray)
+    {
+    const int rowCount = 100000;
+    const uint32_t arraySize = 10000;
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
@@ -120,25 +134,15 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson)
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
-
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD)
+TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD_SmallArray)
     {
     const int rowCount = 100000;
-    uint32_t arraySize = 10000;
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
-
-    arraySize = 10;
+    const uint32_t arraySize = 10;
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
@@ -152,10 +156,10 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD)
+TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD_SmallArray)
     {
     const int rowCount = 100000;
-    uint32_t arraySize = 10000;
+    const uint32_t arraySize = 10;
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
@@ -163,8 +167,32 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD)
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
+    }
 
-    arraySize = 10;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformancePrimArrayJsonVsECDTests, InsertECD_LargeArray)
+    {
+    const int rowCount = 100000;
+    const uint32_t arraySize = 10000;
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Point3D, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertECD(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformancePrimArrayJsonVsECDTests, SelectECD_LargeArray)
+    {
+    const int rowCount = 100000;
+    const uint32_t arraySize = 10000;
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Integer, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectECD(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
@@ -186,7 +214,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(PrimitiveType ar
     if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount))
         return ERROR;
 
-    LogTiming(timer, "JSON - INSERT", arrayType, arraySize, rowCount);
+    LogTiming(timer, "INSERT - JSON", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
@@ -327,13 +355,15 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                 {
                     case PRIMITIVETYPE_Binary:
                     {
-                    bvector<Byte> fb;
-                    if (SUCCESS != ECJsonUtilities::JsonToBinary(fb, arrayElement))
+                    bvector<Byte> blob;
+                    if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, arrayElement))
                         return ERROR;
 
-                    if (fb.size() != GetTestBlobSize() ||
-                        memcmp(GetTestBlob(), fb.data(), GetTestBlobSize()) != 0)
+                    if (blob.size() != GetTestBlobSize() ||
+                        memcmp(GetTestBlob(), blob.data(), GetTestBlobSize()) != 0)
                         return ERROR;
+
+                    break;
                     }
 
                     case PRIMITIVETYPE_Boolean:
@@ -379,6 +409,8 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
                     if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
                         return ERROR;
+
+                    break;
                     }
 
                     case PRIMITIVETYPE_Integer:
@@ -442,7 +474,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, "JSON - SELECT", arrayType, arraySize, rowCount);
+    LogTiming(timer, "SELECT - JSON", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
@@ -458,7 +490,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(PrimitiveType arr
     if (SUCCESS != RunInsertECD(timer, fileName.c_str(), arrayType, arraySize, rowCount))
         return ERROR;
 
-    LogTiming(timer, "ECD - INSERT", arrayType, arraySize, rowCount);
+    LogTiming(timer, "INSERT - ECD", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
@@ -672,7 +704,6 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
                         return ERROR;
 
                     break;
-
                     }
                     case PRIMITIVETYPE_Integer:
                     {
@@ -734,7 +765,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
     stmt.Finalize();
     timer.Stop();
-    LogTiming(timer, "ECD - SELECT", arrayType, arraySize, rowCount);
+    LogTiming(timer, "SELECT - ECD", arrayType, arraySize, rowCount);
     return SUCCESS;
     }
 
