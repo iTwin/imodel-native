@@ -29,11 +29,16 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType);
     
 
-                             class SMMemoryPoolItemBase;
+class SMMemoryPoolItemBase;
+typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
+
 template <typename DataType> class SMMemoryPoolVectorItem;
 template <typename DataType> class SMMemoryPoolGenericVectorItem;
 template <typename DataType> class SMMemoryPoolBlobItem;
 template <typename DataType> class SMMemoryPoolGenericBlobItem;
+template <typename DataType> class SMStoredMemoryPoolMultiItems;
+
+
 
 class SMMemoryPool;
 typedef RefCountedPtr<SMMemoryPool> SMMemoryPoolPtr;
@@ -49,11 +54,9 @@ class SizeChangePoolItemListener
         virtual void NotifyListener(SMMemoryPoolItemBase* poolMemoryItem, int64_t sizeDelta, int64_t nbItemDelta) = 0;
     };
 
-struct PointAndPtIndicesData;
-
 class SMMemoryPoolItemBase : public RefCountedBase
     {
-    friend struct PointAndPtIndicesData;
+    template <typename DataType> friend class SMStoredMemoryPoolMultiItems;    
 
     private : 
 
@@ -63,12 +66,12 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
     protected : 
 
-        Byte*                     m_data;
-        uint64_t                  m_size;
-        uint64_t                  m_nodeId;
-        uint64_t                  m_smId;
-        SMStoreDataType        m_dataType;
-        bool                      m_dirty;
+        Byte*           m_data;
+        uint64_t        m_size;
+        uint64_t        m_nodeId;
+        uint64_t        m_smId;
+        SMStoreDataType m_dataType;
+        bool            m_dirty;
 
                 
         //ContainerType m_containerType;
@@ -152,8 +155,6 @@ class SMMemoryPoolItemBase : public RefCountedBase
         void SetDirty() { m_dirty = true; }
     };
 
-typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
-
 
 class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
                                    public SizeChangePoolItemListener
@@ -169,7 +170,7 @@ class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
             {            
             }
 
-        ~SMMemoryPoolMultiItemsBase()
+        virtual ~SMMemoryPoolMultiItemsBase()
             {            
             }
 
@@ -201,75 +202,60 @@ class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
             }         
     };
 
-//struct PointsAnd
-
-//template <typename DataType> 
-//struct MultiDataType
-
-struct PointAndPtIndicesData
-    {        
-    DPoint3d* m_pointData;
-    int32_t*  m_indicesData;
+typedef RefCountedPtr<SMMemoryPoolMultiItemsBase> SMMemoryPoolMultiItemsBasePtr;
 
 
-    PointAndPtIndicesData()
-        {
-        m_pointData = 0;
-        m_indicesData = 0;
-        }    
-
-    /*
-    size_t GetDataTypeSize(SMStoreDataType dataType)
-        {                
-        if (dataType == SMStoreDataType::Points)
-            {
-            return sizeof(DPoint3d);
-            }
-        
-        if (dataType == SMStoreDataType::TriPtIndices)
-            {
-            return sizeof(int32_t);
-            }
-
-        return 0;
-        }
-        */
-
-    SMMemoryPoolItemBasePtr GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
-        
-    };
-
-template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemoryPoolItemBase
+template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemoryPoolMultiItemsBase                                                                  
     { 
     private : 
 
-        ISMNodeDataStoreTypePtr<DataType> m_dataStore;        
-        DataType                          m_multiDataType;
-        
+        ISMNodeDataStoreTypePtr<DataType> m_dataStore;   
+                        
+        SMMemoryPoolItemBasePtr GetNodeDataStore(PointAndTriPtIndicesBase& multiData, size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
+            {
+            SMMemoryPoolItemBasePtr item; 
+
+            if (dataType == SMStoreDataType::Points)
+                {
+                item = new SMMemoryPoolVectorItem<DPoint3d>(nbItems, nodeId, dataType, smId);            
+                multiData.m_pointData = (DPoint3d*)item->m_data;
+                }
+            else
+            if (dataType == SMStoreDataType::TriPtIndices)
+                {
+                item = new SMMemoryPoolVectorItem<int32_t>(nbItems, nodeId, dataType, smId);            
+                multiData.m_indicesData = (int32_t*)item->m_data;        
+                }   
+
+            return item;
+            }
 
     public : 
                 
-        SMStoredMemoryPoolMultiItems(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMStoreDataType& compositedataType, uint64_t smId)
-        : SMMemoryPoolMultiItemsBase(nodeId, dataType, smId)
+        SMStoredMemoryPoolMultiItems(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMStoreDataType compositeDataType, uint64_t smId)
+        : SMMemoryPoolMultiItemsBase(nodeId, compositeDataType, smId)
             {
+            m_dataStore = dataStore;
+
             bvector<SMStoreDataType> dataTypes;
+            DataType multiData; 
 
             GetAllDataTypesInCompositeDataType(dataTypes, compositeDataType);
 
             m_size = 0;                           
-
+                        
             for (auto& dataType : dataTypes)
-                {
-                m_items.push_back(m_multiDataType.GetNodeDataStore(dataStore->GetBlockDataCount(dataType), nodeId, dataType, smId));                
+                {                
+                m_items.push_back(GetNodeDataStore(multiData, dataStore->GetBlockDataCount(HPMBlockID(nodeId), dataType), nodeId, dataType, smId));                
                 m_size += m_items.back()->GetSize();                
-                m_items.back().AddListener(this);
+                m_items.back()->AddListener(this);
                 }            
             
             if (m_size > 0)
                 {
                 HPMBlockID blockID(m_nodeId);
-                size_t nbBytesLoaded = m_store->LoadBlock(&m_multiDataType, 1, blockID);
-                assert(nbBytesLoaded == sizeof(DataType) * m_nbItems);
+                size_t nbBytesLoaded = m_dataStore->LoadBlock(&multiData, 1, blockID);
+                assert(nbBytesLoaded == 1 * sizeof(DataType));
                 }                                    
             } 
 
@@ -278,13 +264,18 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
             {            
             if (IsDirty ())
                 {
+                assert(!"Not implemented yet");
+                /*
+                DataType multiData; 
+
                 HPMBlockID blockID(m_nodeId);               
-                m_dataStore->StoreBlock(&m_multiDataType, 1, blockID);                                
+                m_dataStore->StoreBlock(&m_multiData, 1, blockID);                                
+                */
                 }
 
             for (auto& item : m_items) 
                 {
-                item.RemoveListener(this);
+                item->RemoveListener(this);
                 }                                    
             }
 
@@ -1168,6 +1159,23 @@ class SMMemoryPool : public RefCountedBase
 
             return poolMemBlobItemPtr.IsValid();
             }          
+                               
+        bool GetItem(SMMemoryPoolMultiItemsBasePtr& poolMemBlobItemPtr, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
+            {
+            if (id == SMMemoryPool::s_UndefinedPoolItemId)
+                return false; 
+
+            assert(!poolMemBlobItemPtr.IsValid());
+            SMMemoryPoolItemBasePtr memItemPtr;
+            
+            if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
+                {
+                poolMemBlobItemPtr = dynamic_cast<SMMemoryPoolMultiItemsBase*>(memItemPtr.get());
+                assert(poolMemBlobItemPtr.IsValid());
+                }
+
+            return poolMemBlobItemPtr.IsValid();
+            }  
 
                
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);

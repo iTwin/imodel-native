@@ -787,6 +787,14 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMFaceI
     return true;    
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    //dataStore = new SMStreamingNodeDataStore<int32_t, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::TriPtIndices, nodeHeader);
+    assert(!"Not supported yet");
+
+    return false;    
+    }
+
 template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
     {
     if (this->GetDataSourceAccount() == nullptr)

@@ -116,8 +116,8 @@ void SMMemoryPoolItemBase::NotifySizeChangePoolItem(int64_t sizeDelta, int64_t n
         }
     }  
 
-
-SMMemoryPoolItemBasePtr PointAndPtIndicesData::GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
+/*
+SMMemoryPoolItemBasePtr PointAndTriPtIndices::GetNodeDataStore(size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
     {
     SMMemoryPoolItemBasePtr item; 
 
@@ -135,7 +135,7 @@ SMMemoryPoolItemBasePtr PointAndPtIndicesData::GetNodeDataStore(size_t nbItems, 
 
     return item;
     }
-
+    */
 
 static uint64_t s_binSize = 3000;
 static uint64_t s_maxBins = 1000;

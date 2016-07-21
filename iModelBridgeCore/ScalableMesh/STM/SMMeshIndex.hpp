@@ -2552,6 +2552,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
             newIndices.push_back(idx[2]);
             }
         }
+
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> existingPts(GetPointsPtr());
 
@@ -2650,25 +2651,52 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
 #endif
 
 template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> SMMeshIndexNode<POINT, EXTENT>::GetPtsIndicePtr()
-        {
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
-                
-        if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-            ISMFaceIndDataStorePtr faceIndDataStore;
-            bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader);
-            assert(result == true);      
+    {    
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;        
 
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }
+    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
+        {                  
+        //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
+        ISMFaceIndDataStorePtr faceIndDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader);
+        assert(result == true);      
 
-        return poolMemVectorItemPtr;
+        RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex));
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+        m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
+        }        
+
+    return poolMemVectorItemPtr;
+
+#if 0 
+    //Sample code of using store capabilities to load the point and triangle pt indices atomically
+    /*
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;        
+    SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr;
+                    
+    if (!SMMemoryPool::GetInstance()->GetItem(poolMemMultiItemsPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::PointAndTriPtIndices, (uint64_t)m_SMIndex))
+        {                         
+        ISMPointTriPtIndDataStorePtr pointTriIndDataStore;        
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointTriIndDataStore, &m_nodeHeader);
+        assert(result == true);        
+    
+        RefCountedPtr<SMStoredMemoryPoolMultiItems<PointAndTriPtIndicesBase>> storedMemoryMultiItemPool;
+    
+        storedMemoryMultiItemPool = new SMStoredMemoryPoolMultiItems<PointAndTriPtIndicesBase>(pointTriIndDataStore, GetBlockID().m_integerID, SMStoreDataType::PointAndTriPtIndices, (uint64_t)m_SMIndex);
+
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryMultiItemPool.get());
+        m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemMultiItemsPtr = (SMMemoryPoolMultiItemsBase*)storedMemoryMultiItemPool.get();            
         }
+            
+    bool result = poolMemMultiItemsPtr->GetItem<int32_t>(poolMemVectorItemPtr, SMStoreDataType::TriPtIndices);
+    assert(result == true);
+    */
+#endif
+    }
 
 
 //=======================================================================================

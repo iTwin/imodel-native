@@ -126,6 +126,7 @@ public:
 
     void GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize);
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
+    void GetPointsAndIndices(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSizePts, bvector<uint8_t>& indices, size_t& uncompressedSizeIndices);    
     void GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize);
     bool LoadSources(SourcesDataSQLite& sourcesData);
     void GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvIndices, size_t& uncompressedSize);

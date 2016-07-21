@@ -3973,8 +3973,8 @@ template<class POINT, class EXTENT> const HFCPtr<SMPointIndexNode<POINT, EXTENT>
 //=======================================================================================
 // @bsimethod                                                   Mathieu.St-Pierre 07/16
 //=======================================================================================
-template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>> SMPointIndexNode<POINT, EXTENT>::GetPointsPtr(bool loadPts = true)
-    {
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>> SMPointIndexNode<POINT, EXTENT>::GetPointsPtr(bool loadPts)
+    {  
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
                     
     if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex) && loadPts)
@@ -3992,6 +3992,33 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>>
         }
 
     return poolMemVectorItemPtr;
+
+#if 0 
+    //Sample code of using store capabilities to load but the point and triangle pt indices atomically
+    /*
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> poolMemVectorItemPtr;
+    SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr;
+                        
+    if (!SMMemoryPool::GetInstance()->GetItem(poolMemMultiItemsPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::PointAndTriPtIndices, (uint64_t)m_SMIndex) && loadPts)
+        {                         
+        ISMPointTriPtIndDataStorePtr pointTriIndDataStore;        
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointTriIndDataStore, &m_nodeHeader);
+        assert(result == true);        
+        
+        RefCountedPtr<SMStoredMemoryPoolMultiItems<PointAndTriPtIndicesBase>> storedMemoryMultiItemPool;
+        
+        storedMemoryMultiItemPool = new SMStoredMemoryPoolMultiItems<PointAndTriPtIndicesBase>(pointTriIndDataStore, GetBlockID().m_integerID, SMStoreDataType::PointAndTriPtIndices, (uint64_t)m_SMIndex);
+
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryMultiItemPool.get());
+        m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemMultiItemsPtr = (SMMemoryPoolMultiItemsBase*)storedMemoryMultiItemPool.get();            
+        }
+                
+    bool result = poolMemMultiItemsPtr->GetItem<POINT>(poolMemVectorItemPtr, SMStoreDataType::Points);
+    assert(result == true);
+    */
+#endif
     }        
 
 //=======================================================================================
