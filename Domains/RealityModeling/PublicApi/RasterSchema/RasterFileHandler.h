@@ -23,6 +23,7 @@ struct RasterFileProperties
     {
     Utf8String                  m_fileId;           //! File id provided by the application. Used to resolve the local file name.
     DRange2d                    m_boundingBox;      //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
+    DMatrix4d                   m_transform;        //! Raster transform
 
                                 RasterFileProperties();
     void                        ToJson(Json::Value&) const;
@@ -42,6 +43,7 @@ public:
         DEFINE_T_SUPER(RasterModel::CreateParams);
 
         Utf8String m_fileId;
+        DMatrix4d* m_transformP;
 
         public:
             //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
@@ -51,8 +53,9 @@ public:
             //! @param[in] dgndb The DgnDb for the new DgnModel
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileId File Id of the raster file.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), code), m_fileId(fileId)
+            //! @param[in] transformP Transform of the raster file. This parameter can be null.
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4d* transformP) :
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), code), m_fileId(fileId), m_transformP(transformP)
                 {}
         };
 
