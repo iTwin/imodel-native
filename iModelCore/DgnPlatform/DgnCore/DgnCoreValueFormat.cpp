@@ -29,7 +29,7 @@ void AngleFormatter::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/ AngleFormatter::AngleFormatter(AngleFormatterCR source)
+AngleFormatter::AngleFormatter(AngleFormatterCR source)
     {
     m_angleMode         = source.m_angleMode;
     m_precision         = source.m_precision;
@@ -49,25 +49,6 @@ void AngleFormatter::InitModelSettings(GeometricModelCR model)
 
     SetAngleMode(displayInfo.GetAngularMode());
     SetAnglePrecision(displayInfo.GetAngularPrecision());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-AngleFormatterPtr    AngleFormatter::Create()          { return new AngleFormatter(); }
-/* ctor */           AngleFormatter::AngleFormatter()  { Init(); }
-AngleFormatterPtr    AngleFormatter::Clone() const      { return new AngleFormatter(*this); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-AngleFormatterPtr AngleFormatter::Create(GeometricModelCR model)
-    {
-    AngleFormatterPtr   formatter = Create();
-
-    formatter->InitModelSettings(model);
-
-    return formatter;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,16 +127,6 @@ StatusInt AngleFormatter::SetAngleModeFromLegacy(AngleFormatVals legacyValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t AngleFormatter::GetLegacyPrecision() const
-    {
-    /* Used to call old format asyncs */
-
-    return static_cast <uint16_t> (m_precision);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    12/07
-+---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt AngleFormatter::SetAnglePrecisionFromLegacy(int legacyValue)
     {
     if (0 <= legacyValue && 8 >= legacyValue)
@@ -193,7 +164,7 @@ void AngleFormatter::ConcatUnitLabel(Utf8StringR inString, AngleFormatter::Angle
         case ANGLE_UNIT_Degrees:
             {
             WChar degStr[] = { 0x00b0 /*degree*/, 0 };
-            inString.append (Utf8String (degStr));
+            inString.append(Utf8String(degStr));
             break;
             }
         case ANGLE_UNIT_Minutes:
@@ -237,7 +208,7 @@ void AngleFormatter::ConcatIntegerString(Utf8StringR inString, int value, AngleF
     {
     PrependLeadingZeroIfNeeded(inString, value);
 
-    Utf8PrintfString tmpString ("%d", value);
+    Utf8PrintfString tmpString("%d", value);
     inString.append(tmpString);
 
     ConcatUnitLabel(inString, unit);
@@ -265,8 +236,8 @@ void AngleFormatter::ConcatPrecisionString(Utf8StringR inString, double value, A
 
     PrependLeadingZeroIfNeeded(inString, value);
 
-    Utf8PrintfString    fmtString ("%%.%dlf", m_precision);
-    Utf8PrintfString    tmpString (fmtString.c_str(), value);
+    Utf8PrintfString    fmtString("%%.%dlf", m_precision);
+    Utf8PrintfString    tmpString(fmtString.c_str(), value);
 
     if (!m_trailingZeros)
         DoubleFormatterBase::StripTrailingZeros(tmpString);
@@ -286,7 +257,7 @@ void AngleFormatter::ConcatPrecisionString(Utf8StringR inString, double value, A
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      AngleFormatter::ToString(double angle) const
+Utf8String AngleFormatter::ToString(double angle) const
     {
     double          rmin, seconds, delta;
     int             degrees, minutes;
@@ -390,15 +361,6 @@ Utf8String      AngleFormatter::ToString(double angle) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      AngleFormatter::ToStringFromRadians(double radians) const
-    {
-    double degrees = Angle::RadiansToDegrees(radians);
-    return ToString(degrees);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DirectionFormatter::Init()
@@ -417,7 +379,7 @@ void DirectionFormatter::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/ DirectionFormatter::DirectionFormatter(DirectionFormatterCR source)
+DirectionFormatter::DirectionFormatter(DirectionFormatterCR source)
     {
     if (source.m_angleFormatter.IsValid())
         m_angleFormatter = source.m_angleFormatter->Clone();
@@ -446,26 +408,6 @@ void DirectionFormatter::InitModelSettings(GeometricModelCR model)
     DgnGCS* dgnGCS = model.GetDgnDb().Units().GetDgnGCS();
     double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
     SetTrueNorthValue(azimuth);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DirectionFormatterPtr   DirectionFormatter::Create()               { return new DirectionFormatter(); }
-/* ctor */              DirectionFormatter::DirectionFormatter()   { Init(); }
-void                    DirectionFormatter::SetAngleFormatter(AngleFormatterCR f)    { m_angleFormatter = f.Clone(); }
-DirectionFormatterPtr   DirectionFormatter::Clone() const           { return new DirectionFormatter(*this); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DirectionFormatterPtr DirectionFormatter::Create(GeometricModelCR model)
-    {
-    DirectionFormatterPtr   formatter = Create();
-
-    formatter->InitModelSettings(model);
-
-    return formatter;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -626,15 +568,6 @@ Utf8String      DirectionFormatter::ToString(double value) const
         }
 
     return directionString;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DirectionFormatter::ToStringFromRadians(double radians) const
-    {
-    double degrees = Angle::RadiansToDegrees(radians);
-    return ToString(degrees);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -799,32 +732,6 @@ StatusInt DistanceFormatter::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefini
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoeZbuchalski   12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void  DistanceFormatter::SetScaleFactor(double scaleFactor)
-    {
-    if (scaleFactor != 0.0)
-        m_scaleFactor = scaleFactor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    01/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr    DistanceFormatter::Create()            { return new DistanceFormatter(); }
-DistanceFormatterPtr    DistanceFormatter::Clone() const        { return new DistanceFormatter(*this); }
-/* ctor */              DistanceFormatter::DistanceFormatter() { Init(); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  JoeZbuchalski    02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr DistanceFormatter::Create(GeometricModelCR model)
-    {
-    DistanceFormatterPtr formatter = Create();
-    formatter->InitModelSettings(model);
-    return formatter;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DistanceFormatterPtr    DistanceFormatter::Create(DgnViewportR viewport)
@@ -979,7 +886,7 @@ Utf8String DistanceFormatter::ToString(double meters) const
         {
         case DgnUnitFormat::MUSU:          /* Master-Sub Units */
             {
-            Utf8PrintfString masterUnitString ("%lld", iMasterUnits);
+            Utf8PrintfString masterUnitString("%lld", iMasterUnits);
             if (m_suppressZeroMasterUnits)
                 {
                 if (iMasterUnits == 0 && subUnits != 0)
@@ -1185,7 +1092,7 @@ PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void transformByACS (DPoint3d point, IAuxCoordSysCR acs)
+static void transformByACS(DPoint3d point, IAuxCoordSysCR acs)
     {
     double      scale = acs.GetScale();
     DPoint3d    origin;
@@ -1204,7 +1111,7 @@ static void transformByACS (DPoint3d point, IAuxCoordSysCR acs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String      PointFormatter::ToString(DPoint3dCR point) const
+Utf8String PointFormatter::ToString(DPoint3dCR point) const
     {
     // Ensure that these are initialized
     (const_cast <PointFormatterP> (this))->GetAuxCoordSys();
@@ -1231,7 +1138,6 @@ Utf8String      PointFormatter::ToString(DPoint3dCR point) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaOrVolumeFormatterBase::AreaOrVolumeFormatterBase() { Init(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
@@ -1272,28 +1178,6 @@ void AreaOrVolumeFormatterBase::InitModelSettings(GeometricModelCR model)
     SetPrecision(displayInfo.GetLinearPrecision());
 
     m_masterUnit = displayInfo.GetMasterUnits();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AreaOrVolumeFormatterBase::SetMasterUnit(UnitDefinitionCR newMasterUnit)
-    {
-    if (! newMasterUnit.IsValid())
-        return ERROR;
-
-    m_masterUnit    = newMasterUnit;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    03/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::SetScaleFactor(double scaleFactor)
-    {
-    if (scaleFactor != 0.0)
-        m_scaleFactor = scaleFactor;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1456,14 +1340,6 @@ Utf8String VolumeFormatter::ToString(double cubicMeters) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTimeFormatter::DateTimeFormatter()
-    {
-    Reset();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 void DateTimeFormatter::Reset()
     {
     ClearFormatParts();
@@ -1489,42 +1365,10 @@ DateTimeFormatter::DateTimeFormatter(DateTimeFormatterCR other)
     m_convertToLocalTime    = other.m_convertToLocalTime;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DateTimeFormatterPtr DateTimeFormatter::Create()
-    {
-    return new DateTimeFormatter();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTimeFormatterPtr DateTimeFormatter::Clone() const
-    {
-    return new DateTimeFormatter(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8Char    DateTimeFormatter::GetDecimalSeparator() const                  { return m_decimalSeparator; }
-Utf8Char    DateTimeFormatter::GetTimeSeparator() const                     { return m_timeSeparator; }
-Utf8Char    DateTimeFormatter::GetDateSeparator() const                     { return m_dateSeparator; }
-uint8_t     DateTimeFormatter::GetFractionalSecondPrecision() const         { return m_fractionalPrecision; }
-bool        DateTimeFormatter::GetTrailingZeros() const                     { return m_fractionalTrailingZeros; }
-bool        DateTimeFormatter::GetConvertToLocalTime() const                { return m_convertToLocalTime; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DateTimeFormatter::ClearFormatParts()                         { m_partList.clear(); }
-void DateTimeFormatter::SetDecimalSeparator(Utf8Char sep)          { m_decimalSeparator = sep; }
-void DateTimeFormatter::SetTimeSeparator(Utf8Char sep)             { m_timeSeparator = sep; }
-void DateTimeFormatter::SetDateSeparator(Utf8Char sep)             { m_dateSeparator = sep; }
-void DateTimeFormatter::SetFractionalSecondPrecision(uint8_t prec) { m_fractionalPrecision = prec; }
-void DateTimeFormatter::SetTrailingZeros(bool show)                { m_fractionalTrailingZeros = show; }
-void DateTimeFormatter::SetConvertToLocalTime(bool convert)        { m_convertToLocalTime = convert; }
 
 static DateTimeFormatPart s_dateTimeComposites[DATETIME_PART_COMPOSITE_END-DATETIME_PART_COMPOSITE_BASE][17] =
     {

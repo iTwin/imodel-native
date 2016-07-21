@@ -119,8 +119,6 @@ namespace dgn_ElementHandler
     struct Texture : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Texture, DgnTexture, Texture, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
 

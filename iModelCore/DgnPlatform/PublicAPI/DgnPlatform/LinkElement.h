@@ -311,7 +311,6 @@ private:
     Utf8String m_url;
     Utf8String m_description;
 
-    static void AddClassParams(ECSqlClassParamsR params);
     Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -418,7 +417,6 @@ private:
     Utf8String m_name;
     Utf8String m_description;
 
-    static void AddClassParams(ECSqlClassParamsR params);
     Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -485,14 +483,12 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_UrlLink, UrlLink, UrlLinkHandler, Element, DGNPLATFORM_EXPORT)
-    virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); UrlLink::AddClassParams(params); }
 };
 
 //! The handler for EmbeddedFileLink elements
 struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Element, DGNPLATFORM_EXPORT)
-    virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); EmbeddedFileLink::AddClassParams(params); }
 };
 
 }

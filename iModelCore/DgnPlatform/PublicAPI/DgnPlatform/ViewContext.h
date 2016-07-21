@@ -295,8 +295,8 @@ public:
     IPickGeomP GetIPickGeom() {return _GetIPickGeom();}
 /** @} */
 
-    DGNPLATFORM_EXPORT bool WantAreaPatterns();
-    DGNPLATFORM_EXPORT void DrawAreaPattern(ClipStencil& boundary);
+    bool WantAreaPatterns() {return _WantAreaPatterns();}
+    void DrawAreaPattern(ClipStencil& boundary) {_DrawAreaPattern(boundary);}
 
 /** @name Draw Geometry Using Current Linestyle */
 /** @{ */

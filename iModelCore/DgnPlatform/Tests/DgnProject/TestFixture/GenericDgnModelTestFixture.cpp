@@ -45,7 +45,7 @@ DgnDbPtr GenericBaseFixture::GetDgnDb(WCharCP seedName, WCharCP newName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BETEST_TC_SETUP(GenericDgnModelTestFixture)
+void GenericDgnModelTestFixture::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
     //  Request a root seed file.
@@ -54,7 +54,7 @@ BETEST_TC_SETUP(GenericDgnModelTestFixture)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Umar.Hayat             07/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(GenericDgnModel2dTestFixture)
+void GenericDgnModel2dTestFixture::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
 
@@ -84,7 +84,7 @@ BETEST_TC_SETUP(GenericDgnModel2dTestFixture)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Umar.Hayat             07/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(GenericDgnModelTestFixture)
+void GenericDgnModelTestFixture::TearDownTestCase()
     {
     //DgnDbTestUtils::EmptySubDirectory(GenericDgnModelTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
@@ -92,7 +92,7 @@ BETEST_TC_TEARDOWN(GenericDgnModelTestFixture)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Umar.Hayat             07/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(GenericDgnModel2dTestFixture)
+void GenericDgnModel2dTestFixture::TearDownTestCase()
     {
     //DgnDbTestUtils::EmptySubDirectory(GenericDgnModel2dTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }

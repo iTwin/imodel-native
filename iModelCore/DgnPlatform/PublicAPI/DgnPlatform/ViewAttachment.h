@@ -133,8 +133,6 @@ namespace dgn_ElementHandler
     struct ViewAttachmentHandler : Geometric2d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, ViewAttachment, ViewAttachmentHandler, Geometric2d, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 };
 
