@@ -28,6 +28,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         WString m_rootDirectory;        
         WString m_pathToHeaders;
         bool m_use_node_header_grouping;
+        bool m_use_virtual_grouping;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
 
@@ -44,7 +45,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
     public : 
     
-        SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
                    
@@ -90,7 +91,7 @@ public:
 
     DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
         
-    void Load(DataSourceAccount *dataSourceAccount);
+    void Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize = uint64_t(-1));
         
     void UnLoad();
             
@@ -142,6 +143,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     private:
         
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        HFCPtr<SMNodeGroup>           m_nodeGroup;
         DataSourceAccount*            m_dataSourceAccount;
         WString                       m_pathToNodeData;
         SMStreamingDataType           m_dataType;
@@ -150,13 +152,15 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;
         mutable std::mutex m_pointCacheLock;
 
+        uint64_t GetBlockSizeFromNodeHeader() const;
+
     protected: 
 
         StreamingDataBlock    & GetBlock(HPMBlockID blockID) const;
 
     public:
        
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true);
             
         virtual ~SMStreamingNodeDataStore();
               

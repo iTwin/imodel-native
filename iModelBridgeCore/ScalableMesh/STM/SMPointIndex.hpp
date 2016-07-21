@@ -6739,13 +6739,20 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
-    if (count > 0) 
-        pi_pPointStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), count, this->GetBlockID());
+    if (count > 0)
+        {
+        ISMPointDataStorePtr pointDataStore;
+        bool result = pi_pDataStreamingStore->GetNodeDataStore(pointDataStore, &m_nodeHeader);
+        assert(result == true);
+        pointDataStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), count, this->GetBlockID());
+        }
+
+    // Specific order must be kept to allow saving blob sizes for streaming performance
+    pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     }
 
 /**----------------------------------------------------------------------------
@@ -6819,7 +6826,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
             nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
             if (!nextGroup)
                 {
-                nextGroup = new SMNodeGroup(dataSourceAccount, pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
+                nextGroup = new SMNodeGroup(dataSourceAccount, 
+                                            pi_pGroup->GetFilePath(), 
+                                            nextLevel, 
+                                            ++s_GroupID, 
+                                            pi_pGroup->GetMode());
                 this->AddOpenGroup(nextLevel, nextGroup);
                 pi_pGroupsHeader->AddGroup(s_GroupID);
                 }
@@ -7701,7 +7712,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::~SMPointIndex()
     m_pRootNode = NULL;
 
     // Close store
-    m_store->Close();
+    if (m_store) m_store->Close();
 
     if (m_filter != NULL)
         delete m_filter;
@@ -7727,18 +7738,18 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
     {
-    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+    if (pi_pGroupMode == SMNodeGroup::NORMAL && 0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-        HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0);
+    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::Mode( pi_pGroupMode ));
 
     HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
-    SMPointIndexHeader<EXTENT> oldMasterHeader;
-    this->GetPointsStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+    SMIndexMasterHeader<EXTENT> oldMasterHeader;
+    this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
     // Force multi file (in case the originating dataset is single file)
     oldMasterHeader.m_singleFile = false;
     groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
@@ -7755,7 +7766,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    groupMasterHeader->SaveToFile(pi_pOutputDirPath + L"../");
+    auto position = pi_pOutputDirPath.find_last_of(L"_stream\\");
+    auto masterHeaderPath = pi_pOutputDirPath.substr(0, position - 10);
+    groupMasterHeader->SaveToFile(masterHeaderPath, pi_pGroupMode);
 
     return SUCCESS;
     }

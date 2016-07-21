@@ -285,6 +285,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         HFCPtr<SMNodeGroup> FindGroup(HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
             auto nodeIDToFind = this->ConvertBlockID(blockID);
             for (auto& group : m_nodeHeaderGroups)
                 {
@@ -299,6 +300,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         HFCPtr<SMNodeGroup> GetGroup(HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
             auto group = this->FindGroup(blockID);
             assert(group != nullptr);
             if (!group->IsLoaded())
@@ -310,6 +312,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         void ReadNodeHeaderFromBinary(SMPointNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const
             {
+            assert(!"////MST_TS : tobedeleted");
             size_t dataIndex = 0;
 
             memcpy(&header->m_filtered, headerData + dataIndex, sizeof(header->m_filtered));
@@ -439,6 +442,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize)
         {
+            assert(!"////MST_TS : tobedeleted");
             //NEEDS_WORK_SM_STREAMING : are we loading node headers multiple times?
             std::unique_ptr<DataSource::Buffer[]>       dest;
             DataSource                              *   dataSource;
@@ -484,6 +488,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         void ReadNodeHeaderFromJSON(SMPointNodeHeader<EXTENT>* header, const Json::Value& nodeHeader) const
             {
+            assert(!"////MST_TS : tobedeleted");
             auto& nodeExtent = nodeHeader["nodeExtent"];
             assert(nodeExtent.isObject());
             ExtentOp<EXTENT>::SetXMin(header->m_nodeExtent, nodeExtent["xMin"].asDouble());
@@ -627,6 +632,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
         
         Json::Value GetNodeHeaderJSON(HPMBlockID blockID)
             {
+            assert(!"////MST_TS : tobedeleted");
             uint64_t headerSize = 0;
             std::unique_ptr<Byte> headerData = nullptr;
             this->GetNodeHeaderBinary(blockID, headerData, headerSize);
@@ -883,7 +889,11 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
                             position += sizeof(size_t);
                             //assert(group_size <= s_max_number_nodes_in_group);
 
-                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
+                            auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
+                                                                             group_id, 
+                                                                             (s_is_virtual_grouping ? SMNodeGroup::VIRTUAL : SMNodeGroup::NORMAL), 
+                                                                             group_numNodes, 
+                                                                             group_totalSizeOfHeaders));
                             // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
                             group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_");
                             group->SetDistributor(*m_nodeHeaderFetchDistributor);
@@ -1011,6 +1021,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         void SerializeHeaderToBinary(const SMPointNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
             {
+            assert(!"////MST_TS : tobedeleted");
             assert(po_pBinaryData == nullptr && po_pDataSize == 0);
 
             po_pBinaryData.reset(new Byte[3000]);
@@ -1121,6 +1132,7 @@ template <typename POINT, typename EXTENT> class SMStreamingPointTaggedTileStore
 
         void SerializeHeaderToJSON(const SMPointNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
             {
+            assert(!"////MST_TS : tobedeleted");
             block["id"] = ConvertBlockID(blockID);
             block["resolution"] = (ISMStore::NodeID)header->m_level;
             block["filtered"] = header->m_filtered;

@@ -1316,7 +1316,7 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
     StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
     StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
     typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;

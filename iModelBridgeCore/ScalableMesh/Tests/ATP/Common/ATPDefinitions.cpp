@@ -1526,7 +1526,7 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, outputDir, result;
+    WString scmFileName, outputDir, mode(L"normal"), result;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
         {
@@ -1538,8 +1538,27 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : outputDir attribute not found\r\n");
         return;
         }
+    if (pTestNode->GetAttributeStringValue(mode, "mode") != BEXML_Success)
+        {
+        printf("mode attribute not found : default \"normal\" mode will be used\r\n");
+        }
 
     double t = clock();
+
+    short groupMode = -1;
+    if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
+        {
+        groupMode = 0;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
+        {
+        groupMode = 1;
+        }
+    else
+        {
+        printf("ERROR : unknown group mode (should be normal or virtual)");
+        return;
+        }
 
     // Check existence of scm file
     StatusInt status;
@@ -1547,7 +1566,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (scmFile != 0 && status == SUCCESS)
         {
-        status = scmFile->SaveGroupedNodeHeaders(outputDir);
+        status = scmFile->SaveGroupedNodeHeaders(outputDir, groupMode);
         if (SUCCESS != status) result = L"FAILURE -> could not group node headers";
         }
     else

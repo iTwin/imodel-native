@@ -408,11 +408,6 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
     RunOnNextAvailableThread(std::bind([dataSourceAccount, pi_pDataStore, pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
-        // Save header and points
-        ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());        
-
-        node->SavePointDataToCloud(dataSourceAccount, pDataStore, pi_pPointStore);
-
         // Save indices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
 
@@ -449,9 +444,15 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
                 bvector<uint8_t> textureData(countTextureData);
                 size_t newCount = textureStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
                 pi_pTextureStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
+                node->m_nodeHeader.m_streamingDataSizes.push_back(SMIndexNodeHeader<EXTENT>::StreamingDataSize{ newCount, 5});
                 //delete[] textureData;
                 }
             }
+        // Save header and points (specific order must be kept to save blob sizes for streaming performance)
+        ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());
+
+        node->SavePointDataToCloud(dataSourceAccount, pDataStore, pi_pPointStore);
+
         SetThreadAvailableAsync(threadId);
         }, this, std::placeholders::_1));
 

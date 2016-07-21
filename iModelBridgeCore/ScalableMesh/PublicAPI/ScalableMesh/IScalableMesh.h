@@ -124,7 +124,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
-        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
@@ -283,7 +283,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
-        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
 
     };
 

@@ -286,6 +286,7 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
     {
     public:
    
+        HPMBlockID          m_id;
         HPMBlockID          m_parentNodeID; //Required when loading 
         vector<HPMBlockID>  m_apSubNodeID;
         HPMBlockID          m_SubNodeNoSplitID;
@@ -310,6 +311,14 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         bool                    m_apAreNeighborNodesStitched[MAX_NEIGHBORNODES_COUNT];
 
         std::vector<HPMBlockID> m_clipSetsID;
+
+        // Store compressed sizes for optimal streaming performances (persisted only for streaming)
+        struct StreamingDataSize
+            {
+            uint64_t m_size;
+            short    m_type; // 0 = POINTS, 1 = INDICES, 2 = UVS, 3 = UVINDICES, 4 = TEXTURES
+            };
+        std::vector<StreamingDataSize>   m_streamingDataSizes;
 
         SMIndexNodeHeader();
 

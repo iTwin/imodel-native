@@ -36,10 +36,11 @@ extern bool s_is_virtual_grouping;
 
 
 
-template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress, bool areNodeHeadersGrouped, WString headers_path)
+template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)
     :m_rootDirectory(path),     
      m_pathToHeaders(headers_path),
-     m_use_node_header_grouping(areNodeHeadersGrouped)
+     m_use_node_header_grouping(areNodeHeadersGrouped),
+     m_use_virtual_grouping(isVirtualGrouping)
     {
     SetDataSourceAccount(dataSourceAccount);            
        
@@ -48,7 +49,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAcc
         // Set default path to headers relative to root directory
         m_pathToHeaders = m_rootDirectory + L"headers/";
 
-        if (m_use_node_header_grouping && s_is_virtual_grouping)
+        if (m_use_node_header_grouping && m_use_virtual_grouping)
             {
             m_NodeHeaderFetchDistributor = new SMNodeDistributor<SMNodeGroup::DistributeData>();
             SMNodeGroup::SetWorkTo(*m_NodeHeaderFetchDistributor);
@@ -140,7 +141,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             {
             wchar_t buffer[10000];
 
-            swprintf(buffer, L"%sMasterHeaderWithGroups.bin", m_rootDirectory.c_str());
+            swprintf(buffer, L"%sMasterHeaderWith%sGroups.bin", m_rootDirectory.c_str(), (m_use_virtual_grouping ? L"Virtual" : L""));
 
             DataSourceURL    dataSourceURL(buffer);
                                 
@@ -183,8 +184,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
                 indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
 
-                memcpy(&s_is_virtual_grouping, reinterpret_cast<char *>(dest.get()) + position, sizeof(s_is_virtual_grouping));
-                position += sizeof(s_is_virtual_grouping);
+                short groupMode = m_use_virtual_grouping;
+                memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
+                assert((groupMode == SMNodeGroup::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+                position += sizeof(groupMode);
 
 
                 // Parse rest of file -- group information
@@ -195,7 +198,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     position += sizeof(group_id);
 
                     uint64_t group_totalSizeOfHeaders(0);
-                    if (s_is_virtual_grouping)
+                    if (groupMode == SMNodeGroup::VIRTUAL)
                         {
                         memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
                         position += sizeof(group_totalSizeOfHeaders);
@@ -204,11 +207,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     size_t group_numNodes;
                     memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(size_t));
                     position += sizeof(size_t);
-                    //assert(group_size <= s_max_number_nodes_in_group);
 
-                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), group_id, group_numNodes, group_totalSizeOfHeaders));
+                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
+                                                                     group_id, 
+                                                                     SMNodeGroup::Mode(groupMode),
+                                                                     group_numNodes, 
+                                                                     group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSource(s_is_virtual_grouping ? m_pathToHeaders : m_pathToHeaders + L"g_");
+                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders : m_pathToHeaders + L"g\\g_");
                     group->SetDistributor(*m_NodeHeaderFetchDistributor);
                     m_nodeHeaderGroups.push_back(group);
 
@@ -219,7 +225,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     group->GetHeader()->resize(group_numNodes);
                     transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
                         {
-                        return SMNodeHeader    { nodeId, 0, 0     };
+                        return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
                         });
                     }
                 }
@@ -380,6 +386,12 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
             po_pDataSize += sizeof(nodeId);
             }
         }
+    auto nbDataSizes = pi_pHeader->m_streamingDataSizes.size();
+    memcpy(po_pBinaryData.get() + po_pDataSize, &nbDataSizes, sizeof(nbDataSizes));
+    po_pDataSize += sizeof(nbDataSizes);
+
+    memcpy(po_pBinaryData.get() + po_pDataSize, pi_pHeader->m_streamingDataSizes.data(), nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize));
+    po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize));
     }
 
 
@@ -561,6 +573,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         auto group = this->GetGroup(blockID);
         auto node_header = group->GetNodeHeader(blockID.m_integerID);
         ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+        header->m_id = blockID;
         //group->removeNodeData(blockID.m_integerID);
         }
     else {
@@ -569,6 +582,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         uint64_t headerSize = 0;
         std::unique_ptr<Byte> headerData = nullptr;
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
+        if (!headerData && headerSize == 0) return 0;
         ReadNodeHeaderFromBinary(header, headerData.get(), headerSize);
         }
     return 1;
@@ -591,7 +605,7 @@ template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
     {
     auto group = this->FindGroup(blockID);
-    assert(group != nullptr);
+    if (group == nullptr) return group;
     if (!group->IsLoaded())
         {
         group->Load(blockID.m_integerID);
@@ -600,10 +614,10 @@ template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::GetGroup(H
     else {
         static std::atomic<uint64_t> s_NbAlreadyLoadedNodes = 0;
         s_NbAlreadyLoadedNodes += 1;
-
-        s_consoleMutex.lock();
+        {
+        std::lock_guard<mutex> clk(s_consoleMutex);
         std::cout << "[" << blockID.m_integerID << ", " << group->GetID() << "] already loaded in temporary streaming data cache!" << std::endl;
-        s_consoleMutex.unlock();
+        }
         }
 #endif
     return group;
@@ -736,6 +750,14 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
             header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != ISMStore::GetNullNodeID() ? HPMBlockID(neighborId) : ISMStore::GetNullNodeID());
             }
         }
+    uint64_t nbDataSizes;
+    memcpy(&nbDataSizes, headerData + dataIndex, sizeof(nbDataSizes));
+    dataIndex += sizeof(nbDataSizes);
+
+    header->m_streamingDataSizes.resize(nbDataSizes);
+    memcpy(header->m_streamingDataSizes.data(), headerData + dataIndex, nbDataSizes* sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize));
+    dataIndex += nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize);
+
     assert(dataIndex == maxCountData);
     }
 
@@ -784,8 +806,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     }
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
-    {    
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStreamingNodeDataStore<DPoint3d, EXTENT>::POINTS, nodeHeader);
+    {
+    auto nodeGroup = this->GetGroup(nodeHeader->m_id);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStreamingNodeDataStore<DPoint3d, EXTENT>::POINTS, nodeHeader, nodeGroup);
 
     return true;    
     }
@@ -818,9 +841,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataSourceAccount(Data
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, const WString& path, SMStreamingDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
     :m_dataSourceAccount(dataSourceAccount),     
-     m_pathToNodeData(path)
+     m_pathToNodeData(path),
+     m_nodeGroup(nodeGroup)
     {       
     m_nodeHeader = nodeHeader;
     m_dataType = type;
@@ -910,6 +934,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
             }
 
+        m_nodeHeader->m_streamingDataSizes.push_back(SMIndexNodeHeader<EXTENT>::StreamingDataSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
+
         memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
         file.Write(NULL, data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
         file.Close();
@@ -957,6 +983,15 @@ template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, 
     return true;
     }
 
+template <class DATATYPE, class EXTENT> uint64_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockSizeFromNodeHeader() const
+    {
+    for (auto data : m_nodeHeader->m_streamingDataSizes)
+        {
+        if (data.m_type == m_dataType) return data.m_size;
+        }
+    return uint64_t(-1);
+    }
+
 template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlock(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
@@ -966,9 +1001,11 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     assert((block.GetID() != uint64_t(-1) ? block.GetID() == blockID.m_integerID : true));
     if (!block.IsLoaded())
         {
+        auto blockSize = this->GetBlockSizeFromNodeHeader();
+        //assert(blockSize != uint64_t(-1));
         block.SetID(blockID.m_integerID);
         block.SetDataSource(m_pathToNodeData);        
-        block.Load(m_dataSourceAccount);
+        block.Load(m_dataSourceAccount, blockSize);
         }
     assert(block.GetID() == blockID.m_integerID);
     assert(block.IsLoaded() && !block.empty());
@@ -1014,7 +1051,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     return dataSource;
     }
     
-void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
+void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize)
     {
     if (!IsLoaded())
         {
@@ -1042,7 +1079,8 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount)
                 if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
                     return;
 
-                if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                if (dataSize == uint64_t(-1)) dataSize = 0;
+                if (dataSource->read(dest.get(), destSize, readSize, dataSize).isFailed())
                     return;
 
                 if (dataSource->close().isFailed())
