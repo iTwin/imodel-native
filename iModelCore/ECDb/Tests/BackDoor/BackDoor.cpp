@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/BackDoor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicAPI/BackDoor/ECDb/BackDoor.h"
@@ -41,7 +41,15 @@ bool ECDbBackDoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory (ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IGeometryPtr ECDbBackDoor::IGeometryFlatBuffer::BytesToGeometry(bvector <Byte> &buffer)
+IGeometryPtr ECDbBackDoor::IGeometryFlatBuffer::BytesToGeometry(bvector<Byte>& buffer)
     {
     return BentleyGeometryFlatBuffer::BytesToGeometry(buffer);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  07/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbBackDoor::IGeometryFlatBuffer::GeometryToBytes(bvector<Byte>& buffer, IGeometryCR geom)
+    {
+    BentleyGeometryFlatBuffer::GeometryToBytes(geom, buffer);
     }

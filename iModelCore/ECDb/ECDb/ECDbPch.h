@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <Bentley/Bentley.h>
+#include <Bentley/CatchNonPortable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECDb/ECDbApi.h>
 #include <Bentley/DateTime.h>

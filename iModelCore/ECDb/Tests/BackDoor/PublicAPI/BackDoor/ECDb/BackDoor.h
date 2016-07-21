@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,8 @@ namespace BackDoor
 
     namespace IGeometryFlatBuffer
         {
-        IGeometryPtr BytesToGeometry(bvector <Byte> &buffer);
+        IGeometryPtr BytesToGeometry(bvector<Byte>&);
+        void GeometryToBytes(bvector<Byte>&, IGeometryCR);
         }
     };
 

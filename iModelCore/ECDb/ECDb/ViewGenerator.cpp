@@ -625,6 +625,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
         if (basePropMap->GetType() == PropertyMap::Type::ECClassId)
             {
+            ECClassIdPropertyMap const* ecclassIdPropertyMap = static_cast<ECClassIdPropertyMap  const*>(actualPropMap);
             if (second)
                 viewSql.AppendComma();
             else
@@ -636,7 +637,16 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                 }
             else
                 {
-                viewSql.Append(colSqlSnippets[0]);
+                if (ecclassIdPropertyMap->IsPersisted())
+                    {
+                    viewSql.AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetTable().GetName().c_str()).AppendDot().AppendEscaped(ecclassIdPropertyMap->GetSingleColumn()->GetName().c_str());
+                    }
+                else
+                    {
+                    Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+                    ecclassIdPropertyMap->GetDefaultConstraintClassId().ToString(classIdStr);
+                    viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
+                    }
                 }
             }
         else
@@ -1114,13 +1124,23 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps(NativeSqlBuilder& viewSql, Rel
 
     //ECClassId-----------------------------------
     ECClassIdPropertyMap const* ecClassId = relationMap.GetECClassIdPropertyMap();
+    DbColumn const*  ecClassIdColumn = relationMap.GetECClassIdPropertyMap()->GetSingleColumn(contextTable, true);
+    BeAssert(ecClassIdColumn != nullptr);
     if (ecClassId->IsPersisted())
-        viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot();
+        {
+        viewSql.AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(ecClassIdColumn->GetName().c_str());
+        }
+    else
+        {
+        Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
+        ecClassId->GetDefaultConstraintClassId().ToString(classIdStr);
+        viewSql.Append(classIdStr).AppendSpace().Append(ECDB_COL_ECClassId);
+        }
 
-    BeAssert(relationMap.GetECClassIdPropertyMap()->GetSingleColumn(contextTable, true) != nullptr);
-    viewSql.Append(relationMap.GetECClassIdPropertyMap()->ToNativeSql(nullptr, ECSqlType::Select, false, &contextTable)).AppendComma();
     if (m_viewAccessStringList && m_captureViewAccessStringList)
         ecClassId->GetPropertyPathList(*m_viewAccessStringList);
+
+    viewSql.AppendComma();
 
     //SourceECInstanceId-----------------------------------
     RelationshipConstraintPropertyMap const* idPropMap = static_cast<RelationshipConstraintPropertyMap const*> (relationMap.GetSourceECInstanceIdPropMap());

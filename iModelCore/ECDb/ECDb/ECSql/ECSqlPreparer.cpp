@@ -74,7 +74,6 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
         }
 
     nativeSql = context.GetNativeSql();
-
     return ECSqlExpPreparer::ResolveParameterMappings(context);
     }
 
