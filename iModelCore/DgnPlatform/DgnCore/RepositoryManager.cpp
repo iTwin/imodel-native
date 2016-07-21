@@ -1036,20 +1036,12 @@ RepositoryStatus BriefcaseManager::_Relinquish(Resources which)
     if (!context.GetUsedCodes().empty())
         return RepositoryStatus::CodeUsed;
 
-    DbResult result = wantLocks ? GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Locks) : BE_SQLITE_OK;
-    if (BE_SQLITE_OK == result && wantCodes)
-        result = GetLocalDb().ExecuteSql("DELETE FROM " TABLE_Codes);
-
-    if (BE_SQLITE_OK != result || BE_SQLITE_OK != Save())
-        {
-        BeAssert(false);
-        m_localDbState = DbState::Invalid;
-        return RepositoryStatus::SyncError;
-        }
-
     stat = server->Relinquish(which, GetDgnDb());
     if (RepositoryStatus::Success == stat)
-        stat = context.ClearTxns();
+        {
+        stat = Refresh();
+        context.ClearTxns();
+        }
 
     return stat;
     }
