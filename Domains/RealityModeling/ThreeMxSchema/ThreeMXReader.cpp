@@ -296,7 +296,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
             trimesh.m_texture    = texture->second;
 
-            m_childNodes[nodeId->second]->m_geometry.push_back(new Geometry(trimesh, scene));
+            m_childNodes[nodeId->second]->m_geometry.push_front(new Geometry(trimesh, scene));
             }
         }
 

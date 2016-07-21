@@ -10,6 +10,7 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/RealityDataCache.h>
+#include <forward_list>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
 #define END_BENTLEY_THREEMX_NAMESPACE        } END_BENTLEY_NAMESPACE
@@ -105,7 +106,7 @@ struct DrawArgs
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
     MissingNodes m_missing;
-    TimePoint m_now ;
+    TimePoint m_now;
     TimePoint m_purgeOlderThan;
 
     DrawArgs(Dgn::RenderContextR context, SceneR scene, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
@@ -142,7 +143,7 @@ private:
     double m_radius = 0.0;
     double m_maxScreenDiameter = 0.0;
     NodeP m_parent;
-    std::list<GeometryPtr> m_geometry;
+    std::forward_list<GeometryPtr> m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
@@ -205,12 +206,12 @@ private:
     double m_scale = 1.0;
     NodePtr m_rootNode;
     std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused nodes for 20 seconds
-    Dgn::RealityData::Cache2Ptr m_cache;
+    Dgn::RealityData::CachePtr m_cache;
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
     BentleyStatus LoadScene(); // synchronous
-    Dgn::RealityData::CacheResult RequestData(Node* node, bool synchronous, MxStreamBuffer*);
+    BentleyStatus RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:
@@ -229,7 +230,7 @@ public:
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
-    Dgn::RealityData::Cache2Ptr GetCache() const {return m_cache;}
+    Dgn::RealityData::CachePtr GetCache() const {return m_cache;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
     THREEMX_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
     THREEMX_EXPORT Scene(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP sceneFile, Dgn::Render::SystemP);
@@ -269,6 +270,8 @@ private:
 
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
+    ~ThreeMxModel() {}
+
     THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
@@ -292,4 +295,3 @@ struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
-

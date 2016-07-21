@@ -8,8 +8,8 @@
 #include "ThreeMxInternal.h"
 #include <BeHttp/HttpRequest.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS) || defined(__clang__)
-#include <folly/futures/Future.h>
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS) /* || defined(__clang__) WIP_ANDROID_CLANG */
+    #include <folly/futures/Future.h>
 #endif
 
 #define TABLE_NAME_ThreeMx "ThreeMx"
@@ -20,7 +20,7 @@ BEGIN_UNNAMED_NAMESPACE
 // Manage the creation and cleanup of the local ThreeMxTileCache used by ThreeMxFileData
 // @bsiclass                                        Grigas.Petraitis            03/2015
 //=======================================================================================
-struct ThreeMxTileCache : RealityData::Cache2
+struct ThreeMxTileCache : RealityData::Cache
 {
     uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
     virtual BentleyStatus _Prepare() const override;
@@ -28,7 +28,7 @@ struct ThreeMxTileCache : RealityData::Cache2
 };
 
 //=======================================================================================
-// This object is created to load a single 3mx file asynchronously. Its virtual methods are called on other threads.
+// This object is created to load a single 3mx file asynchronously. 
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
 struct ThreeMxFileData
@@ -274,7 +274,7 @@ BentleyStatus ThreeMxTileCache::_Cleanup() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
+BentleyStatus Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
     {
 #if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
     DgnDb::VerifyClientThread();
@@ -286,7 +286,7 @@ RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStre
         if (!node->AreChildrenNotLoaded())
             {
             BeAssert(false);
-            return RealityData::CacheResult::Error;
+            return ERROR;
             }
 
         node->m_childLoad.store(Node::ChildLoad::Queued);
@@ -303,13 +303,12 @@ RealityData::CacheResult Scene::RequestData(NodeP node, bool synchronous, MxStre
     if (synchronous)
         {
         result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
-        if (!result.isReady())
-            return RealityData::CacheResult::Error;
+        return result.isReady() ? SUCCESS : ERROR;
         }
 
-    return RealityData::CacheResult::Success;
+    return SUCCESS;
 #else
-    return RealityData::CacheResult::Error;
+    return ERROR;
 #endif
     }
 
