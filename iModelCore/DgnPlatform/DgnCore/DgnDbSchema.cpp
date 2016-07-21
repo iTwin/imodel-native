@@ -106,13 +106,14 @@ void CustomPropertyRegistry::Register(Utf8CP propName, ECSqlClassParams::Stateme
     if (nullptr == getFakeSchema())  // make sure fake schema is created
         return;
     BeAssert(nullptr != m_eclass->GetPropertyP(propName, false));
-    auto& cls = s_fakeCAs[m_eclass->GetName()];
+    auto& cls = s_fakeCAs[m_eclass->GetECSqlName()];
     auto& prop = cls[propName];
     prop.push_back(s_fakeCustomClass->GetDefaultStandaloneEnabler()->CreateInstance());
     if (ECSqlClassParams::StatementType::All != stype)
         {
         auto stypePropInstance = s_fakeStypeClass->GetDefaultStandaloneEnabler()->CreateInstance();
         stypePropInstance->SetValue("StatementTypes", ECN::ECValue((int32_t)stype));
+        prop.push_back(stypePropInstance);
         }
     }
 

@@ -2736,7 +2736,6 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
     #endif
     m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
     m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
-    BeAssert((nullptr != m_customHandledProperty) && "DgnDomain is supposed to stand-ins for CustomHandledProperty and PropertyStatementType for old DgnDbs");
     }
 
 /*---------------------------------------------------------------------------------**//**

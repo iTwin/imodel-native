@@ -186,14 +186,14 @@ void compatibility_DgnBaseDomain_AddMissingCustomAttributes(DgnDbR db)
     prop.Register("Descr");
     prop.Register("Properties");
     prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricElement2d);
-    prop.Register("Category");
+    prop.Register("CategoryId");
     prop.Register("Origin");
     prop.Register("BBoxLow");
     prop.Register("BBoxHigh");
     prop.Register("GeometryStream");
     prop.Register("Rotation");
     prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricElement3d);
-    prop.Register("Category");
+    prop.Register("CategoryId");
     prop.Register("Origin");
     prop.Register("BBoxLow");
     prop.Register("BBoxHigh");
