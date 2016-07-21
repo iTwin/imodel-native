@@ -157,15 +157,6 @@ public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new BriefcaseManager(db); }
 };
 
-// ##TODO: temporary, until tool framework enhanced to handle explicitly acquiring requisite locks/codes
-// Can be disabled for tests for now.
-static bool s_acquireAutomatically = true;
-void IBriefcaseManager::BackDoor_SetAutomaticAcquisition(bool acquireAutomatically) { s_acquireAutomatically = acquireAutomatically; }
-
-// ###TODO: temporary, until DgnDbServer enhanced to supply set of unavailable locks + codes such that we can cache and consult for fast query
-static bool s_supportFastQuery = false;
-void IBriefcaseManager::BackDoor_SetSupportFastQuery(bool support) { s_supportFastQuery = support; }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -840,12 +831,7 @@ IBriefcaseManager::Response BriefcaseManager::_ProcessRequest(Request& req, Requ
         return Response(purpose, req.Options(), RepositoryStatus::Success);
 
     if (RequestPurpose::FastQuery == purpose)
-        {
-        if (s_supportFastQuery)
-            return DoFastQuery(req);
-
-        purpose = RequestPurpose::Query;
-        }
+        return DoFastQuery(req);
 
     auto mgr = GetRepositoryManager();
     if (nullptr == mgr)
@@ -1350,8 +1336,7 @@ DgnDbStatus IBriefcaseManager::ToDgnDbStatus(RepositoryStatus repoStatus, Reques
 DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbOpcode opcode)
     {
     Request req;
-    auto action = s_acquireAutomatically ? PrepareAction::Acquire : PrepareAction::Verify;
-    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, action), req);
+    return ToDgnDbStatus(PrepareForElementOperation(req, el, opcode, PrepareAction::Verify), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1360,8 +1345,7 @@ DgnDbStatus IBriefcaseManager::OnElementOperation(DgnElementCR el, BeSQLite::DbO
 DgnDbStatus IBriefcaseManager::OnModelOperation(DgnModelCR model, BeSQLite::DbOpcode opcode)
     {
     Request req;
-    auto action = s_acquireAutomatically ? PrepareAction::Acquire : PrepareAction::Verify;
-    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, action), req);
+    return ToDgnDbStatus(PrepareForModelOperation(req, model, opcode, PrepareAction::Verify), req);
     }
 
 /*---------------------------------------------------------------------------------**//**
