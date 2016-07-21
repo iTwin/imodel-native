@@ -18,6 +18,19 @@
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ApplicationEventsManager& ApplicationEventsManager::GetInstance()
+    {
+    static ApplicationEventsManager* s_instance;
+
+    if (s_instance == nullptr)
+        s_instance = new ApplicationEventsManager();
+
+    return *s_instance;
+    }
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
