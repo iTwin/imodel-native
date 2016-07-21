@@ -23,11 +23,13 @@ static ECN::ECSchemaP getFakeSchema()
     if (s_fakeSchema.IsValid())
         return s_fakeSchema.get();
 
-    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(s_fakeSchema, "", 0, 0))
+    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(s_fakeSchema, "CustomPropertyRegistry", 1, 0))
         {
         BeAssert(false);
         return nullptr;
         }
+    s_fakeSchema->SetNamespacePrefix("CustomPropertyRegistry");
+
     auto status = s_fakeSchema->CreateCustomAttributeClass(s_fakeCustomClass, "CustomHandledProperty");
     if (ECN::ECObjectsStatus::Success != status)
         {

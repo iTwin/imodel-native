@@ -175,7 +175,6 @@ void compatibility_DgnBaseDomain_AddMissingCustomAttributes(DgnDbR db)
     prop.Register("Code", ECSqlClassParams::StatementType::InsertUpdate);
     prop.Register("Label", ECSqlClassParams::StatementType::InsertUpdate);
     prop.Register("ParentId", ECSqlClassParams::StatementType::InsertUpdate);
-    prop.Register("AdHocJson", ECSqlClassParams::StatementType::None);
     prop.Register("UserProperties", ECSqlClassParams::StatementType::None);
     prop.Register("LastMod", ECSqlClassParams::StatementType::None);
     prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category);
