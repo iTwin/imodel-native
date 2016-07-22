@@ -291,6 +291,7 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
     // Worst case, this will need to double twice (e.g. each input UChar goes to a 4-byte UCS-4 character).
     outStringBuff.resize(unicodeBufferLength);
     
+    // *** NEEDS WORK: It looks like outStringBufferLength is not really used. We could get rid of it, right?
     int32_t outStringBufferLength = 0;
 
     for (;;)
