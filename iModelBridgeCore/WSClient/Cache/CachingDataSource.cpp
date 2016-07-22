@@ -1321,43 +1321,38 @@ SyncOptions options
         std::move(onProgress),
         ct
         );
-
+        
+    // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {
-        HttpClient::BeginNetworkActivity();
+        auto txn = StartCacheTransaction();
+        txn.GetCache().GetChangeManager().SetSyncActive(true);
+        txn.Commit();
+
         m_syncLocalChangesQueue.push_back(syncTask);
-        ExecuteNextSyncLocalChangesTask();
+        if (m_syncLocalChangesQueue.size() == 1)
+            {
+            m_cacheAccessThread->Push(m_syncLocalChangesQueue.front());
+            }
         });
 
     return syncTask->Then<BatchResult>(m_cacheAccessThread, [=]
         {
-        auto txn = StartCacheTransaction();
-        txn.GetCache().GetChangeManager().SetSyncActive(false);
-        txn.Commit();
-        HttpClient::EndNetworkActivity();
-        ExecuteNextSyncLocalChangesTask();
+        m_syncLocalChangesQueue.pop_front();
+        if (!m_syncLocalChangesQueue.empty())
+            {
+            m_cacheAccessThread->Push(m_syncLocalChangesQueue.front());
+            }
+
+        if (m_syncLocalChangesQueue.empty())
+            {
+            auto txn = StartCacheTransaction();
+            txn.GetCache().GetChangeManager().SetSyncActive(false);
+            txn.Commit();
+            }
 
         return syncTask->GetResult();
         });
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CachingDataSource::ExecuteNextSyncLocalChangesTask()
-    {
-    if (m_syncLocalChangesQueue.empty())
-        {
-        return;
-        }
-
-    auto txn = StartCacheTransaction();
-    txn.GetCache().GetChangeManager().SetSyncActive(true);
-    txn.Commit();
-
-    auto syncTask = m_syncLocalChangesQueue.front();
-    m_syncLocalChangesQueue.pop_back();
-    m_cacheAccessThread->Push(syncTask);
     }
 
 /*--------------------------------------------------------------------------------------+

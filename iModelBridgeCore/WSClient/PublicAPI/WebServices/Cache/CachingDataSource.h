@@ -55,7 +55,7 @@ struct CachingDataSource :
         BeFileName                                  m_temporaryDir;
         NavigationCachingOptions                    m_cachingOptions;
 
-        bvector<std::shared_ptr<AsyncTask>>         m_syncLocalChangesQueue;
+        std::deque<std::shared_ptr<AsyncTask>>      m_syncLocalChangesQueue;
 
     private:
         CachingDataSource
@@ -67,7 +67,6 @@ struct CachingDataSource :
             BeFileNameCR temporaryDir
             );
 
-        void ExecuteNextSyncLocalChangesTask();
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
         SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
