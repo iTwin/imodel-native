@@ -48,7 +48,7 @@ static Utf8String                               s_currentTestName;              
 static RefCountedPtr<BeTest::Host>              s_host;                             // MT: set only during initialization. Used on multiple threads. Must be thread-safe internally.
 bool BeTest::s_loop = true;
 
-static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                        // MT: s_bentleyCS
+static std::map<Utf8String, BeTest::TestCaseInfo*>* s_testCases;                    // MT: s_testCases is populated at code load time (by static constructors), so there is no danger of a race
 
 /*---------------------------------------------------------------------------------**//**
 * Default handler for test test and assertion failures. Handles failures by throwing 
@@ -1062,8 +1062,6 @@ void testing::Test::Run()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeTest::TestCaseInfo* BeTest::RegisterTestCase(Utf8CP tcname, T_SetUpFunc s, T_TearDownFunc t)
     {
-    BeMutexHolder lock(s_bentleyCS);
-
     if (nullptr == s_testCases)
         s_testCases = new std::map<Utf8String, BeTest::TestCaseInfo*>();
 
@@ -1084,8 +1082,6 @@ BeTest::TestCaseInfo* BeTest::RegisterTestCase(Utf8CP tcname, T_SetUpFunc s, T_T
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::SetUpTestCase(Utf8CP tcname)
     {
-    BeMutexHolder lock(s_bentleyCS);
-
     if (nullptr == s_testCases)
         {
         BeAssert(false && "loading logic should have automatically registered all test cases");
@@ -1112,8 +1108,6 @@ void BeTest::SetUpTestCase(Utf8CP tcname)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeTest::TearDownTestCase(Utf8CP tcname)
     {
-    BeMutexHolder lock(s_bentleyCS);
-    
     if (nullptr == s_testCases)
         {
         BeAssert(false && "loading logic should have automatically registered all test cases");
