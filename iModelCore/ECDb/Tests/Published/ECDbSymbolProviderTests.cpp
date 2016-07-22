@@ -98,6 +98,42 @@ TEST_F(ECDbSymbolProviderTests, Name)
     EXPECT_STREQ(fullPath.GetFileNameWithoutExtension().c_str(), value.GetWCharCP());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsitest                                       Grigas.Petraitis              07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSymbolProviderTests, GetECClassId)
+    {
+    Utf8CP schemaXml = ""
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.13\" prefix=\"bcs\" />"
+        "    <ECEntityClass typeName=\"TestClass\" displayLabel=\"Class With Calculated Property\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"my_class_id\" typeName=\"string\">"
+        "            <ECCustomAttributes>"
+        "                <CalculatedECPropertySpecification xmlns=\"Bentley_Standard_CustomAttributes.01.00\">"
+        "                    <ECExpression>GetECClassId(\"TestClass\", \"TestSchema\")</ECExpression>"
+        "                    <FailureValue>Unknown</FailureValue>"
+        "                </CalculatedECPropertySpecification>"
+        "            </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
+    ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ECSchema::ReadFromXmlString(schema, schemaXml, *ctx);
+    GetECDb().Schemas().ImportECSchemas(ctx->GetCache());
+
+    ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "TestClass");
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECValue value;
+    instance->GetValue(value, "my_class_id");
+    EXPECT_TRUE(value.IsString());
+    EXPECT_STREQ(Utf8PrintfString("%" PRIu64, testClass->GetId()).c_str(), value.GetUtf8CP());
+    }
+
 //=======================================================================================
 // @bsiclass                                      Grigas.Petraitis              02/2016
 //+===============+===============+===============+===============+===============+======

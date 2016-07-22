@@ -21,6 +21,7 @@ private:
     ECDbCR m_db;
 
     static ECN::ExpressionStatus GetRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
+    static ECN::ExpressionStatus GetECClassId(ECN::EvaluationResult& evalResult, void* context, ECN::EvaluationResultVector& args);
     static BentleyStatus FindRelationshipAndClassInfo(ECDbCR, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
 
     virtual Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
