@@ -2657,8 +2657,8 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
     if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
         {                  
         //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
-        ISMFaceIndDataStorePtr faceIndDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader);
+        ISMInt32DataStorePtr faceIndDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader, SMStoreDataType::TriPtIndices);
         assert(result == true);      
 
         RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex));
@@ -2697,6 +2697,29 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
     */
 #endif
     }
+
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> SMMeshIndexNode<POINT, EXTENT>::GetUVsIndicesPtr()
+    {
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;
+
+    if (!IsTextured())
+        return poolMemVectorItemPtr;
+            
+    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex))
+        {  
+        ISMInt32DataStorePtr nodeDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::TriUvIndices);
+        assert(result == true);        
+               
+        RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex));
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+        m_triUvIndicesPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        assert(m_triUvIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
+        }
+
+    return poolMemVectorItemPtr;          
+    }  
 
 
 //=======================================================================================
