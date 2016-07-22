@@ -287,7 +287,7 @@ void DoFormat (va_list args)
                         
                         // For now, preserve Microsoft behavior that %s in wchar_t* means wchar_t*.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
-                        if (0 == (flags & FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT))
+                        if (0 == (flags & (FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT)))
                             flags |= FLAGS_HAVE_LONG;
                         
                         // Also for now, allow the conversions below to continue.
@@ -352,7 +352,7 @@ void DoFormat (va_list args)
 
                         // For now, preserve Microsoft behavior that %c in wchar_t* means wchar_t.
                         // This should be removed in the future, and/or always forced to consider FLAGS_HAVE_LONG.
-                        if (0 == (flags & FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT))
+                        if (0 == (flags & (FLAGS_HAVE_LONG | FLAGS_HAVE_SHORT)))
                             flags |= FLAGS_HAVE_LONG;
 
                         // Also for now, allow the conversions below to continue.
