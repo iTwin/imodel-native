@@ -230,8 +230,12 @@ extern "C" int begtest_initialize ()
     try {
         BeTest::Initialize (*BeTestHost::Create ());
 
-        NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_TRACE);
+        NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_ERROR);
         NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER); // send logging messages to logcat
+        NativeLogging::LoggingConfig::SetSeverity(L"ECDb", NativeLogging::LOG_FATAL); // ECDb error messages are so verbose as to significantly slow down the test run
+        NativeLogging::LoggingConfig::SetSeverity(L"TestRunner", NativeLogging::LOG_INFO);
+        NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_TRACE);
+        NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_FATAL);
         }
     catch (...)
         {
