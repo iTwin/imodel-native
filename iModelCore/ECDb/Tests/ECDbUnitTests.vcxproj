@@ -26,6 +26,7 @@
     <ClCompile Include="Performance\PerformanceJoinedTableTests.cpp" />
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />
     <ClCompile Include="Performance\PerformanceJsonInserterTests.cpp" />
+    <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp" />
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp" />
     <ClCompile Include="Performance\PerformanceSharedTableTests.cpp" />
     <ClCompile Include="Performance\QueryTests.cpp" />

@@ -211,6 +211,9 @@
     <ClCompile Include="Published\ClassMappingInfoHelperTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
