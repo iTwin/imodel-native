@@ -60,4 +60,10 @@ bool DataSource::getCachingEnabled(void)
     return false;
 }
 
+DataSource * DataSource::getCacheDataSource(void)
+{
+                                                            // By default, DataSource types do not have cache DataSources
+    return nullptr;
+}
+
 

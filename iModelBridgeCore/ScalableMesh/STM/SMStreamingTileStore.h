@@ -100,7 +100,7 @@ public:
                 if (dataSource->close().isFailed())
                     return;
 
-                dataSourceAccount->destroyDataSource(dataSource);
+//              dataSourceAccount->destroyDataSource(dataSource);
 
                 if (readSize > 0)
                 {

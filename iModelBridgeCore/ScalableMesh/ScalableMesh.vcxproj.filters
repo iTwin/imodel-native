@@ -969,6 +969,9 @@
     <ClInclude Include="STM\Stores\SMStoreUtils.hpp">
       <Filter>Includes\Core\Stores</Filter>
     </ClInclude>
+    <ClInclude Include="STM\SMNodeGroup.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

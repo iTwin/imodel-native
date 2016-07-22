@@ -10,20 +10,22 @@ class DataSourceServiceManager : public Manager<DataSourceService>
 {
 public:
 
-    typedef  ItemName                ServiceName;
+    typedef  ItemName                           ServiceName;
 
 protected:
 
 public:
 
-                                               DataSourceServiceManager      (DataSourceManager &manager);
+                                                DataSourceServiceManager      (DataSourceManager &manager);
+                                               ~DataSourceServiceManager      (void);
 
-            DataSourceStatus                   initialize                    (DataSourceManager &manager);
+            DataSourceStatus                    initialize                    (DataSourceManager &manager);
 
-            DataSourceStatus                   addService                    (DataSourceService *service);
-            DataSourceStatus                   destroyService                (const ServiceName &serviceName);
+            DataSourceStatus                    addService                    (DataSourceService *service);
+            DataSourceStatus                    destroyService                (const ServiceName &serviceName);
+            DataSourceStatus                    destroyServices               (void);
 
-    CLOUD_EXPORT DataSourceService * getService                    (const ServiceName &serviceName);
+            CLOUD_EXPORT DataSourceService  *   getService                    (const ServiceName &serviceName);
 
-            DataSourceAccount            *     getAccount                    (const DataSourceAccount::AccountName &accountName);
+            DataSourceAccount               *   getAccount                    (const DataSourceAccount::AccountName &accountName);
 };

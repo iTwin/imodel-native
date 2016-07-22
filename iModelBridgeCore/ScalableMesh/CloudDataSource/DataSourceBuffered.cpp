@@ -44,14 +44,14 @@ DataSource::DataSize DataSourceBuffered::getSegmentSize(void)
     return segmentSize;
 }
 
-DataSourceBuffered::TimeoutStatus DataSourceBuffered::waitForSegments(DataSourceBuffer::Timeout timeoutMilliseconds)
+DataSourceStatus DataSourceBuffered::waitForSegments(DataSourceBuffer::Timeout timeoutMilliseconds)
 {
     if (getBuffer())
     {
         return getBuffer()->waitForSegments(timeoutMilliseconds);
     }
 
-    return TimeoutStatus::Status_Error;
+    return DataSourceStatus(DataSourceStatus::Status_Error);
 }
 
 
@@ -87,9 +87,9 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     }
 
     assert(status.isOK());
-    assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
+    assert(destSize >= readSize);                               // Not enough memory was allocated to the buffer!
 
-                                  // Return status
+                                                                // Return status
     return status;
 }
 
@@ -137,7 +137,7 @@ DataSourceStatus DataSourceBuffered::open(const DataSourceURL & sourceURL, DataS
 
 DataSourceStatus DataSourceBuffered::flush(void)
 {
-    DataSourceStatus        status;
+    DataSourceStatus          status;
     DataSourceAccount    *    account;
 
     if ((account = getAccount()) == nullptr)

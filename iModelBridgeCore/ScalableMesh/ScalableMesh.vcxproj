@@ -451,6 +451,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="STM\DrapeOnGraph.h" />
     <ClInclude Include="STM\SMDataSourceParams.h" />
     <ClInclude Include="STM\SMMemoryPool.h" />
+    <ClInclude Include="STM\SMNodeGroup.h" />
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h" />

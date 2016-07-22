@@ -1143,7 +1143,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                 if (dataSource->close().isFailed())
                     return;
 
-                dataSourceAccount->destroyDataSource(dataSource);
+//                dataSourceAccount->destroyDataSource(dataSource);
 
                 if (readSize > 0)
                 {
