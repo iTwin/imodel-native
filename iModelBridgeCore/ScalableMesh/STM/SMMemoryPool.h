@@ -400,8 +400,10 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
     protected : 
 
         IHPMDataStore<Byte>* m_store;
+        ISMNodeDataStoreTypePtr<DataType> m_dataStore;
 
     public : 
+        
         
          SMStoredMemoryPoolBlobItem(uint64_t nodeId, IHPMDataStore<Byte>* store, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
@@ -412,6 +414,19 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
                 {                
                 HPMBlockID blockID(m_nodeId);
                 size_t nbBytesLoaded = m_store->LoadBlock ((DataType*)m_data, m_size, blockID);
+                assert(nbBytesLoaded == m_size);
+                }           
+            }
+
+        SMStoredMemoryPoolBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
+            : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
+            {                                    
+            m_dataStore = store;            
+            
+            if (m_size > 0)
+                {                
+                HPMBlockID blockID(m_nodeId);
+                size_t nbBytesLoaded = m_dataStore->LoadBlock ((DataType*)m_data, m_size, blockID);
                 assert(nbBytesLoaded == m_size);
                 }           
             }
@@ -429,12 +444,32 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
                 }           
             }
 
+        SMStoredMemoryPoolBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
+            : SMMemoryPoolBlobItem(dataSize, nodeId, dataType, smId)
+            {                                    
+            m_dataStore = store;                        
+
+            if (m_size > 0)
+                {                
+                memcpy((DataType*)m_data, data, dataSize);
+                m_dirty = true;
+                }           
+            }
+
         virtual ~SMStoredMemoryPoolBlobItem()
             {
             if (m_dirty)
                 {
-                HPMBlockID blockID(m_nodeId);
-                m_store->StoreBlock(m_data, m_size, blockID);                
+                if (m_dataStore.IsValid())
+                    {
+                    HPMBlockID blockID(m_nodeId);
+                    m_dataStore->StoreBlock(m_data, m_size, blockID);                
+                    }
+                else
+                    {
+                    HPMBlockID blockID(m_nodeId);
+                    m_store->StoreBlock(m_data, m_size, blockID);                
+                    }
                 }
             }    
     };

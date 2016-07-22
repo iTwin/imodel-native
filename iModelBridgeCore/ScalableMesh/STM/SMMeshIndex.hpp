@@ -861,7 +861,11 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushTe
     {
     assert(!GetTexturePtr().IsValid());
 
-    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), texture, size, SMStoreDataType::Texture, (uint64_t)m_SMIndex));
+    ISMTextureDataStorePtr nodeDataStore;
+    bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+    assert(result == true);  
+
+    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, nodeDataStore, texture, size, SMStoreDataType::Texture, (uint64_t)m_SMIndex));
     SMMemoryPoolItemBasePtr poolItem(storedMemoryPoolVector.get());
     m_texturePoolItemId = GetMemoryPool()->AddItem(poolItem);
     assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);  
@@ -2721,6 +2725,29 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
     return poolMemVectorItemPtr;          
     }  
 
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTexturePtr()
+    {
+    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
+
+    if (!IsTextured())
+        return poolMemBlobItemPtr;
+              
+    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
+    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
+        {      
+        ISMTextureDataStorePtr nodeDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+        assert(result == true);  
+
+        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex));
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+        m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+        assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemBlobItemPtr = storedMemoryPoolVector.get();            
+        }
+
+    return poolMemBlobItemPtr;
+    }
 
 //=======================================================================================
 // @description Sets texture data for this node based on a raster. If untextured this adds
