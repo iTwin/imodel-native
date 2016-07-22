@@ -857,9 +857,9 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     // NEEDS_WORK_SM - Remove old streaming stores after they are all replaced by the new refactored stores.
                     //pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::Points, AreDataCompressed(), s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
+                    //pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
+                    //pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
+                    //pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
                     
                     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups));
@@ -867,12 +867,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
                                                        0,//&*pStreamingTileStore,                                                            
-                                                            &*pStreamingIndiceTileStore,
+                                                            0,//&*pStreamingIndiceTileStore,
                                                     //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
                                                             &*pStreamingTextureTileStore,                                                            
-                                                            &*pStreamingUVTileStore,                                                            
-                                                            &*pStreamingUVsIndicesTileStore,
+                                                            0,//&*pStreamingUVTileStore,                                                            
+                                                            0,//&*pStreamingUVsIndicesTileStore,
                                                             10000,
                                                             filterP.get(),
                                                             false,
