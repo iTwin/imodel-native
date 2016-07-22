@@ -643,7 +643,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             if (dataSource->close().isFailed())
                 return 0;
 
-            this->GetDataSourceAccount()->destroyDataSource(dataSource);
+//          this->GetDataSourceAccount()->destroyDataSource(dataSource);
 
             if (readSize > 0)
                 {

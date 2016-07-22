@@ -11,6 +11,12 @@ DataSourceServiceManager::DataSourceServiceManager(DataSourceManager &manager)
     initialize(manager);
 }
 
+DataSourceServiceManager::~DataSourceServiceManager(void)
+{
+    destroyServices();
+}
+
+
 DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager)
 {
     DataSourceService *    service;
@@ -54,35 +60,49 @@ DataSourceService * DataSourceServiceManager::getService(const ServiceName & ser
 
 DataSourceAccount * DataSourceServiceManager::getAccount(const DataSourceAccount::AccountName & accountName)
 {
-    DataSourceService    *    service;
-    DataSourceAccount    *    account;
+    DataSourceAccount   * account;
 
-    for (auto s : Manager<DataSourceService>::items)
+    ApplyFunction getAccount = [this, accountName, &account](typename ItemMap::iterator it) -> bool
     {
-        service = s.second;
+        DataSourceService *service = it->second;        
         if (service)
         {
             account = service->getAccount(accountName);
-            if(account)
-                return account;
+            if (account)
+            {
+                                                            // Found, so stop traversing
+                return false;
+            }
         }
-    }
+                                                            // Not found, so continue traversing
+        return true;
+    };
 
-    return nullptr;
+                                                            // Apply to all services
+    apply(getAccount);
+                                                            // Return account if found
+    return account;
 }
 
 DataSourceStatus DataSourceServiceManager::destroyService(const ServiceName & serviceName)
 {
-    const DataSourceService *service;
-
-    if ((service = getService(serviceName)) != nullptr)
+                                                            // Find and destroy service
+    if (destroy(serviceName, true))
     {
-        delete service;
+        return DataSourceStatus();
+    }
 
-        items.erase(serviceName);
+    return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+}
 
+
+DataSourceStatus DataSourceServiceManager::destroyServices(void)
+{
+    if (destroyAll(true))
+    {
         return DataSourceStatus();
     }
 
     return DataSourceStatus(DataSourceStatus::Status_Error);
 }
+

@@ -45,9 +45,7 @@ bool ActivitySemaphore::decrement(void)
 {
     std::unique_lock<std::mutex> lock(mutex);
 
-//    assert(counter > 0);
-
-    counter--;
+    setCounter(getCounter() - 1);
 
     if(counter > 0)
     {
@@ -76,6 +74,13 @@ ActivitySemaphore::Status ActivitySemaphore::waitFor(Timeout timeout)
     return Status_Timeout;
 }
 
-
+void ActivitySemaphore::releaseAll(void)
+{
+    std::unique_lock<std::mutex> lock(mutex);
+                                                            // Set counter back to zero
+    setCounter(0);
+                                                            // Notify all blocked threads
+    condition.notify_all();
+}
 
 

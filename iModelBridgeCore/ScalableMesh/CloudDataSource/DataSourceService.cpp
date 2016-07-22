@@ -9,6 +9,12 @@ DataSourceService::DataSourceService(DataSourceManager &manager, const ServiceNa
     serviceName = name;
 }
 
+DataSourceService::~DataSourceService(void)
+{
+                                                            // Delete all accounts
+    destroyAll(true);
+}
+
 
 void DataSourceService::setDataSourceManager(DataSourceManager &manager)
 {
@@ -22,8 +28,6 @@ void DataSourceService::createAccount(DataSourceManager & manager, DataSourceAcc
 
 DataSourceManager &DataSourceService::getDataSourceManager(void)
 {
-//    assert(dataSourceManger != nullptr);
-
     return *dataSourceManager;
 }
 
@@ -32,21 +36,17 @@ const DataSourceService::ServiceName & DataSourceService::getServiceName(void)
     return serviceName;
 }
 
-DataSourceAccount * DataSourceService::getAccount(const AccountName & accountName)
+DataSourceStatus DataSourceService::destroyAccount(const AccountName & accountName)
 {
-    DataSourceAccount *    account;
-
-    for (auto i : items)
+    if (destroy(accountName, true))
     {
-        account = i.second;
-        if (account)
-        {
-            if (account->getAccountName() == accountName)
-            {
-                return account;
-            }
-        }
+        return DataSourceStatus();
     }
 
-    return nullptr;
+    return DataSourceStatus(DataSourceStatus::Status_Error);
+}
+
+DataSourceAccount * DataSourceService::getAccount(const AccountName & accountName)
+{
+    return get(accountName);
 }

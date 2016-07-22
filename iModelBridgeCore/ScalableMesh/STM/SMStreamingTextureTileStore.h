@@ -99,7 +99,7 @@ class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, 
                         return;
 
                     dataSource->close();
-                    dataSourceAccount->destroyDataSource(dataSource);
+//                    dataSourceAccount->destroyDataSource(dataSource);
 
                     if (readSize > 0)
                     {

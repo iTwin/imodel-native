@@ -2,6 +2,7 @@
 #include <mutex>
 
 #include "DataSourceBuffer.h"
+#include "include\DataSourceBuffer.h"
 
 
 void DataSourceBuffer::setSegmentSize(BufferSize size)
@@ -108,12 +109,6 @@ ActivitySemaphore &DataSourceBuffer::getActivitySemaphore(void)
     return activitySemaphore;
 }
 
-void DataSourceBuffer::initializeSegments(BufferSize segmentSize)
-{
-    setSegmentSize(segmentSize);
-
-    setCurrentSegmentIndex(0);
-}
 
 void DataSourceBuffer::setLocator(const DataSourceLocator & newLocator)
 {
@@ -195,8 +190,20 @@ DataSourceStatus DataSourceBuffer::expand(BufferSize size)
 
 void DataSourceBuffer::initializeSegments(void)
 {
+                                                            // Initialize total number of segments
     getActivitySemaphore().setCounter(getNumSegments());
+                                                            // Initialize transfer status to OK
+    setTransferStatus(DataSourceStatus());
 }
+
+
+void DataSourceBuffer::initializeSegments(BufferSize segmentSize)
+{
+    setSegmentSize(segmentSize);
+
+    setCurrentSegmentIndex(0);
+}
+
 
 DataSourceBuffer::SegmentIndex DataSourceBuffer::getAndAdvanceCurrentSegment(BufferData ** dest, BufferSize *size)
 {
@@ -247,8 +254,57 @@ bool DataSourceBuffer::signalSegmentProcessed(void)
     return getActivitySemaphore().decrement();
 }
 
-DataSourceBuffer::TimeoutStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds)
+
+void DataSourceBuffer::signalCancelled(void)
 {
+                                                            // Release all blocked threads waiting for data
+    getActivitySemaphore().releaseAll();
+}
+
+
+DataSourceStatus DataSourceBuffer::getDataSourceStatus(TimeoutStatus status)
+{
+    switch (status)
+    {
+    case ActivitySemaphore::Status_NoTimeout:
+        return DataSourceStatus(DataSourceStatus::Status_OK);
+
+
+    case ActivitySemaphore::Status_Timeout:
+        return DataSourceStatus(DataSourceStatus::Status_Error_Timeout);
+
+    default:;
+    }
+
+    return DataSourceStatus(DataSourceStatus::Status_Error);
+}
+
+void DataSourceBuffer::setTransferStatus(DataSourceStatus status)
+{
+    transferStatus = status;
+}
+
+DataSourceStatus DataSourceBuffer::getTransferStatus(void)
+{
+    return transferStatus;
+}
+
+
+
+
+
+DataSourceStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds)
+{
+    TimeoutStatus   timeoutStatus;
                                                             // Wait for all segments to be processed
-    return getActivitySemaphore().waitFor(timeoutMilliseconds);
+    timeoutStatus = getActivitySemaphore().waitFor(timeoutMilliseconds);
+
+                                                            // If the transfer failed, return an error
+    if (getTransferStatus().isFailed())
+        return getTransferStatus();
+                                                            // If the wait timed out, return a timeout
+    if (getDataSourceStatus(timeoutStatus).isFailed())
+        return getDataSourceStatus(timeoutStatus);
+                                                            // Return OK
+    return DataSourceStatus();
 }
