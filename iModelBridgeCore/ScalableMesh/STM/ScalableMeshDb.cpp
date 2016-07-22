@@ -9,6 +9,7 @@ static bool s_checkShemaVersion = false;
 
 DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     {
+    /*
     CachedStatementPtr stmtTest;
     GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
     assert(stmtTest != nullptr);
@@ -22,7 +23,7 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
    
     if (s_checkShemaVersion && databaseSchema.CompareTo(ScalableMeshDb::CURRENT_VERSION, SchemaVersion::VERSION_All) != 0)
         return BE_SQLITE_SCHEMA;
-
+        */
     return BE_SQLITE_OK;
     }
 

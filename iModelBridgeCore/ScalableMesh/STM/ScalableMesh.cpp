@@ -856,7 +856,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     //pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
                     //pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
                     //pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
+                    //pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
                     
                     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups));
 
@@ -866,7 +866,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                             0,//&*pStreamingIndiceTileStore,
                                                     //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
-                                                            &*pStreamingTextureTileStore,                                                            
+                                                            0,//&*pStreamingTextureTileStore,                                                            
                                                             0,//&*pStreamingUVTileStore,                                                            
                                                             0,//&*pStreamingUVsIndicesTileStore,
                                                             10000,

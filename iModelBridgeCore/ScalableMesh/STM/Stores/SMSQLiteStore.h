@@ -14,7 +14,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
     {
     private : 
 
-        SMSQLiteFilePtr m_smSQLiteFile;
+        SMSQLiteFilePtr m_smSQLiteFile;        
 
     public : 
     
@@ -38,6 +38,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
 
+        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
 
@@ -56,6 +58,10 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
         SMSQLiteFilePtr            m_smSQLiteFile;
         SMIndexNodeHeader<EXTENT>* m_nodeHeader;
         SMStoreDataType            m_dataType;
+
+        size_t LoadTextureBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID);
+
+        HPMBlockID StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID);
 
     public:      
               

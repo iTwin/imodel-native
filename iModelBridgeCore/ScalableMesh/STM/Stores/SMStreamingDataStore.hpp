@@ -822,6 +822,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32
     return true;    
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {    
+    dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, m_rootDirectory, nodeHeader);
+    
+    return true;    
+    }
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {    
     dataStore = new SMStreamingNodeDataStore<DPoint2d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::UvCoords, nodeHeader);
@@ -1130,6 +1137,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                 DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
                 dataSource = initializeDataSource(dataSourceAccount, dest, destSize);
+                assert(dest != nullptr);
                 if (dataSource == nullptr)
                     return;
 
@@ -1277,3 +1285,138 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
 //
 //    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
 //    }
+
+
+void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID)    
+    {
+    wchar_t buffer[10000];
+    swprintf(buffer, L"%st_%llu.bin", path.c_str(), blockID.m_integerID);
+    std::wstring filename(buffer);
+    auto fileOpenedOrCreated = BeFileStatus::Success == OPEN_FILE(file, filename.c_str(), BeFileAccess::Write)
+        || BeFileStatus::Success == file.Create(filename.c_str());
+    assert(fileOpenedOrCreated);
+    }
+
+template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
+    {
+    // std::map [] operator is not thread safe while inserting new elements
+    m_textureCacheLock.lock();
+    Texture& texture = m_textureCache[blockID.m_integerID];
+    m_textureCacheLock.unlock();
+    assert((texture.GetID() != uint64_t(-1) ? texture.GetID() == blockID.m_integerID : true));
+    if (!texture.IsLoaded())
+        {
+        if (texture.IsLoading())
+            {
+            texture.LockAndWait();
+            }
+        else
+            {
+            texture.SetDataSource(m_path);
+            texture.SetID(blockID.m_integerID);
+            texture.Load(this->GetDataSourceAccount());
+            }
+        }
+    assert(texture.IsLoaded() && !texture.empty());
+    return texture;
+    }
+
+
+template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const WString& directory, SMIndexNodeHeader<EXTENT>* nodeHeader)        
+: m_path(directory)
+    {
+    m_path += L"textures/";
+    
+    this->SetDataSourceAccount(dataSourceAccount);
+    
+    // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
+    if (s_stream_from_disk)
+        {
+        // Create base directory structure to store information if not already done
+        // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
+        if (0 == CreateDirectoryW(m_path.c_str(), NULL))
+            {
+            assert(ERROR_PATH_NOT_FOUND != GetLastError());
+            }
+        }
+    }
+
+template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::~StreamingNodeTextureStore()
+    {
+    for (auto it = m_textureCache.begin(); it != m_textureCache.end(); ++it) it->second.clear();
+    m_textureCache.clear();
+    }
+
+template <class DATATYPE, class EXTENT> bool StreamingNodeTextureStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
+    {
+    return false;
+    }
+                        
+template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
+    {
+    assert(blockID.IsValid());
+
+    // The data block starts with 12 bytes of metadata (texture header), followed by pixel data
+    Texture texture(((int*)DataTypeArray)[0], ((int*)DataTypeArray)[1], ((int*)DataTypeArray)[2]);
+    texture.SetDataSource(m_path);
+    texture.SavePixelDataToDisk(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int), blockID);
+
+    return blockID;
+    }
+
+template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DATATYPE, EXTENT>::StoreCompressedBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
+    {
+    assert(blockID.IsValid());
+    BeFile file;
+    OpenOrCreateBeFile(file, m_path, blockID);
+    file.Write(NULL, DataTypeArray, (uint32_t)countData);
+    file.Close();
+    return HPMBlockID(blockID.m_integerID);
+    }
+
+template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
+    {
+    return this->GetTexture(blockID).size() + 3 * sizeof(int);
+    }
+
+template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
+    {
+    assert(!"Not supported");
+    return 0;
+    }
+
+template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
+    {
+    }
+
+template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) 
+    {
+    assert(!"Not supported");    
+    }
+
+template <class DATATYPE, class EXTENT> size_t StreamingNodeTextureStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+    {
+    auto& texture = this->GetTexture(blockID);
+    auto textureSize = texture.size();
+    assert(textureSize + 3 * sizeof(int) == maxCountData);
+    ((int*)DataTypeArray)[0] = (int)texture.GetWidth();
+    ((int*)DataTypeArray)[1] = (int)texture.GetHeight();
+    ((int*)DataTypeArray)[2] = (int)texture.GetNbChannels();
+    assert(maxCountData >= texture.size());
+    memmove(DataTypeArray + 3 * sizeof(int), texture.data(), std::min(texture.size(), maxCountData));
+    m_textureCacheLock.lock();
+    texture.Unload();
+    m_textureCache.erase(texture.GetID());
+    m_textureCacheLock.unlock();
+    return std::min(textureSize + 3 * sizeof(int), maxCountData);
+    }
+
+template <class DATATYPE, class EXTENT> void StreamingNodeTextureStore<DATATYPE, EXTENT>::SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  
+    {
+    m_dataSourceAccount = dataSourceAccount;
+    }
+
+template <class DATATYPE, class EXTENT> DataSourceAccount* StreamingNodeTextureStore<DATATYPE, EXTENT>::GetDataSourceAccount(void) const                            
+    {
+    return m_dataSourceAccount;
+    }

@@ -14,6 +14,7 @@
 
 #include <CloudDataSource/DataSourceAccount.h>
 
+
 class StreamingTextureTileStore : public IScalableMeshDataStore<uint8_t, float, float>
     {
     public:
