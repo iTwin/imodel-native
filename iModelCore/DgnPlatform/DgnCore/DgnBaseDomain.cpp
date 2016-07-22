@@ -164,7 +164,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void compatibility_DgnBaseDomain_AddMissingCustomAttributes(DgnDbR db)
+void DgnBaseDomain::AddMissingCustomAttributes(DgnDbR db) const
     {
     if (!CustomPropertyRegistry::HasOldDgnSchema(db))
         return;
