@@ -2320,8 +2320,13 @@ TEST_F(SchemaTest, DeleteKOQ)
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
 
+    std::vector<KindOfQuantityP> todelete;
+
     KindOfQuantityContainerCR koqContainer = schema->GetKindOfQuantities();
     for (auto koq : koqContainer)
+        todelete.push_back(koq);
+
+    for (auto koq : todelete)
         {
         ASSERT_EQ(ECObjectsStatus::Success, schema->DeleteKindOfQuantity(*koq));
         }
