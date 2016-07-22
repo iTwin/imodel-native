@@ -372,6 +372,29 @@ struct cs_Dtcprm_ * EXP_LVL3 CSdtcsu (	Const struct cs_Datum_ *src_dt,
 		}
 	}
 
+#ifdef GEOCOORD_ENHANCEMENT
+
+	if (bridgeStatus != cs_DTCBRG_COMPLETE)
+	{
+        /* There was a path defined that led nowhere ... we can check at last if the target is WGS84 and the definition sufficient
+        
+		   For various reasons related primarily to the installation
+		   environment it is desirable to support the generation of a
+		   transformation in this case, provided the transformation is of
+		   the Molodenski. Bursa Wolf, or Seven Parameter variety. */
+		CS_stncp (dtcPtr->description,src_dt->dt_name,sizeof (dtcPtr->srcKeyName));
+		CS_stncp (dtcPtr->source,"Converted by automated process from CS-MAP 12.02 or earlier.",sizeof (dtcPtr->source));
+		CS_stncp (dtcPtr->group,"USER",sizeof (dtcPtr->group));
+		xfrmPtr = CS_gxlocDtm (src_dt,dst_dt);		/* special function just for this situation */
+		if (xfrmPtr != NULL)
+		{
+			dtcPtr->xforms [0] = xfrmPtr;
+			dtcPtr->xfrmCount = 1;
+			return dtcPtr;
+		}
+    }
+#endif
+
 	if (bridgeStatus != cs_DTCBRG_COMPLETE)
 	{
 		if (bridgeStatus == cs_DTCBRG_BUILDING)
