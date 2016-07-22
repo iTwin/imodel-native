@@ -214,6 +214,9 @@
     <ClCompile Include="Performance\PerformancePrimArrayJsonVsECD.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\PerformanceOverflowProps.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
