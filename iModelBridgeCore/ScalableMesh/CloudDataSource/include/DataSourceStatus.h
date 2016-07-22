@@ -30,6 +30,8 @@ public:
         Status_Error_Service_Exists,
         Status_Error_Failed_To_Initialize_Subsystem,
 
+        Status_Error_Timeout,
+
         Status_Error_Failed_To_Upload,
         Status_Error_Failed_To_Download,
 
@@ -51,9 +53,9 @@ public:
                                 DataSourceStatus            (const DataSourceStatus &otherStatus);
                                 DataSourceStatus            (DataSourceStatusCode code);
 
-        void                    set                            (DataSourceStatusCode newCode);
-        void                    set                            (const DataSourceStatus &newStatus);
-        DataSourceStatusCode    getCode                        (void) const;
+        void                    set                         (DataSourceStatusCode newCode);
+        void                    set                         (const DataSourceStatus &newStatus);
+        DataSourceStatusCode    getCode                     (void) const;
 
         bool                    isOK                        (void) const;
         bool                    isFailed                    (void) const;
@@ -105,3 +107,5 @@ inline bool DataSourceStatus::isFailed(void) const
 {
     return (isOK() == false);
 }
+
+

@@ -39,7 +39,7 @@ public:
     DataSourceStatus            setSegmentSize          (DataSource::DataSize size);
     DataSource::DataSize        getSegmentSize          (void);
 
-    TimeoutStatus               waitForSegments         (DataSourceBuffer::Timeout timeoutMilliseconds);
+    DataSourceStatus            waitForSegments         (DataSourceBuffer::Timeout timeoutMilliseconds);
 };
 
 

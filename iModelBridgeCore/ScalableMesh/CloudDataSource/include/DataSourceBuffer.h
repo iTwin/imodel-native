@@ -35,6 +35,10 @@ protected:
     BufferSize                          segmentSize;
     SegmentIndex                        currentSegmentIndex;
 
+    DataSourceStatus                    transferStatus;
+
+protected:
+
     void                                setSegmentSize                      (BufferSize size);
     BufferSize                          getSegmentSize                      (void);
     BufferSize                          getLastSegmentSize                  (void);
@@ -49,6 +53,11 @@ protected:
     void                                setExternalBufferSize               (BufferSize size);
 
     ActivitySemaphore                &  getActivitySemaphore                (void);
+
+    DataSourceStatus                    getDataSourceStatus                 (TimeoutStatus status);
+
+    void                                setTransferStatus                   (DataSourceStatus status);
+    DataSourceStatus                    getTransferStatus                   (void);
 
 public:
 
@@ -71,7 +80,7 @@ public:
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);
     void                                signalCancelled                     (void);
-    TimeoutStatus                       waitForSegments                     (Timeout timeoutMilliseconds);
+    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds);
 
     BufferData                        * getExternalBuffer                   (void);
     BufferSize                          getExternalBufferSize               (void);

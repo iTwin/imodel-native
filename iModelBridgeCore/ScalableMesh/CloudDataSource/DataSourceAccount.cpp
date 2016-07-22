@@ -166,9 +166,7 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    buffer->waitForSegments(DataSourceBuffered::Timeout(1000000));
-                                                            // Return OK
-    return DataSourceStatus();
+    return buffer->waitForSegments(DataSourceBuffered::Timeout(1000000));
     }
 
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
@@ -232,7 +230,7 @@ DataSourceStatus DataSourceAccount::getFormattedCacheURL(const DataSourceURL &so
 
 DataSourceStatus DataSourceAccount::downloadSegments(DataSource &dataSource, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size)
     {
-    DataSourceBuffered    *        dataSourceBuffered;
+    DataSourceBuffered  *        dataSourceBuffered;
     DataSourceBuffer    *        buffer;
 
     (void)size;
@@ -246,11 +244,5 @@ DataSourceStatus DataSourceAccount::downloadSegments(DataSource &dataSource, Dat
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for specified timeout
-    if (buffer->waitForSegments(dataSource.getTimeout()) != ActivitySemaphore::Status::Status_NoTimeout)
-        {
-                                                            // Return OK
-        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
-        }
-
-    return DataSourceStatus();
+    return buffer->waitForSegments(dataSource.getTimeout());
     }
