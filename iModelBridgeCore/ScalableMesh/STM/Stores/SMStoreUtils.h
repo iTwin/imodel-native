@@ -321,14 +321,6 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
            
         };
     
-enum class SMStoreDataType
-    {
-    POINTS,
-    INDICES,
-    UVS,
-    UVINDICES
-    };
-
 
 template<class EXTENT>
 using ISMDataStoreType = ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>;

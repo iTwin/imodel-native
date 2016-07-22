@@ -850,10 +850,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
 
 
-                    pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingPointStoreType::SMStoreDataType::POINTS, AreDataCompressed(), s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStoreDataType::INDICES, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingUVStoreType::SMStoreDataType::UVS, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, StreamingIndiceStoreType::SMStoreDataType::UVINDICES, AreDataCompressed());
+                    pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::Points, AreDataCompressed(), s_stream_from_grouped_store);
+                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
+                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
+                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
                     pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
                     
                     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store));                    

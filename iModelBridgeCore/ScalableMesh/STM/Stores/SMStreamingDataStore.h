@@ -42,6 +42,16 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
+
+        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
+
+        DataSourceAccount *GetDataSourceAccount(void) const;
+
+        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);        
+
+        void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
+            
+        void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);   
                    
         //Inherited from ISMDataStore
         virtual uint64_t GetNextID() const override;
@@ -59,18 +69,10 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         virtual bool GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
+        virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
         //Inherited from ISMDataStore - End
-
-        DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
-
-        DataSourceAccount *GetDataSourceAccount(void) const;
-
-        void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);        
-
-        void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const;
-            
-        void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);            
-            
+                             
     };
 
 
@@ -153,10 +155,14 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
             
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const override;
-            
+
+        virtual size_t GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const override;
+                    
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 
-        virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) override;        
+        virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) override;
+
+        virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) override;
     };

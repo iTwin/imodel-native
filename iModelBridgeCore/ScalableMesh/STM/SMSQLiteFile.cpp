@@ -462,6 +462,32 @@ void SMSQLiteFile::GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& unco
     if(pts.size() > 0) memcpy(&pts[0], stmt->GetValueBlob(0), pts.size());
     }
 
+
+void SMSQLiteFile::GetPointsAndIndices(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSizePts, bvector<uint8_t>& indices, size_t& uncompressedSizeIndices)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;    
+    m_database->GetCachedStatement(stmt, "SELECT PointData, length(PointData), SizePts, IndexData, length(IndexData), SizeIndices FROM SMPoint WHERE NodeId=?");
+    stmt->BindInt64(1, nodeID);
+    DbResult status = stmt->Step();
+   // assert(status == BE_SQLITE_ROW);
+    if (status != BE_SQLITE_ROW)
+        {
+        uncompressedSizePts = 0;
+        uncompressedSizeIndices = 0;
+        return;
+        }
+
+    pts.resize(stmt->GetValueInt64(1));
+    uncompressedSizePts = stmt->GetValueInt64(2);
+    if(pts.size() > 0) memcpy(&pts[0], stmt->GetValueBlob(0), pts.size());
+
+    indices.resize(stmt->GetValueInt64(4));
+    uncompressedSizeIndices = stmt->GetValueInt64(5);
+    if(indices.size() > 0) memcpy(&indices[0], stmt->GetValueBlob(3), indices.size());
+
+    }
+
 void SMSQLiteFile::GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize)
     {
     std::lock_guard<std::mutex> lock(dbLock);

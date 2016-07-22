@@ -1171,7 +1171,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     // *node->GetGraphPtr() = *meshGraphStitched;
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex));
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMStoreDataType::Graph, (uint64_t)node->m_SMIndex));
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1181,7 +1181,7 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
     storedMemoryPoolItem->SetData(tempGraph);
     storedMemoryPoolItem->SetDirty();
     RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> graphPtr(node->GetGraphPtr());
-    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMPoolDataTypeDesc::Graph, (uint64_t)node->m_SMIndex);
+    SMMemoryPool::GetInstance()->ReplaceItem(memPoolItemPtr, node->m_graphPoolItemId, node->GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex);
    /* for (size_t i = 0; i < node->m_featureDefinitions.size(); ++i)
         {
         TagFeatureEdges(&tempGraph, (const DTMFeatureType)node->m_featureDefinitions[i][0], node->m_featureDefinitions[i].size() - 1, &node->m_featureDefinitions[i][1]);

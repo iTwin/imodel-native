@@ -85,14 +85,20 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
 //template <class EXTENT> RefCountedPtr<ISMNodeDataStore<DPoint3d, SMIndexNodeHeader<EXTENT>>> SMSQLiteStore<EXTENT>::GetNodeDataStore(SMIndexNodeHeader<EXTENT>* nodeHeader)
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {                
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::POINTS, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(SMStoreDataType::Points, nodeHeader, m_smSQLiteFile);
 
     return true;    
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMFaceIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {                
-    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(SMStoreDataType::INDICES, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(SMStoreDataType::TriPtIndices, nodeHeader, m_smSQLiteFile);
+    return true;    
+    }
+
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {                
+    dataStore = new SMSQLiteNodeDataStore<PointAndTriPtIndicesBase, EXTENT>(SMStoreDataType::PointAndTriPtIndices, nodeHeader, m_smSQLiteFile);
     return true;    
     }
 
@@ -109,26 +115,34 @@ template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>:
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
-    {        
-    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-    pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(DATATYPE));
-    pi_uncompressedPacket.SetDataSize(countData*sizeof(DATATYPE));
-    WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
-    bvector<uint8_t> nodeData(pi_compressedPacket.GetDataSize());
-    memcpy(&nodeData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+    {     
     int64_t id = SQLiteNodeHeader::NO_NODEID;
 
-    switch (m_dataType)
+    if (m_dataType == SMStoreDataType::PointAndTriPtIndices)
         {
-        case SMStoreDataType::POINTS : 
-            m_smSQLiteFile->StorePoints(id, nodeData, countData*sizeof(DATATYPE));
-            break;
-        case SMStoreDataType::INDICES : 
-            m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));            
-            break;            
-        default : 
-            assert(!"Unsupported type");
-            break;
+        assert(!"Not done yet");
+        }
+    else
+        {
+        HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+        pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(DATATYPE));
+        pi_uncompressedPacket.SetDataSize(countData*sizeof(DATATYPE));
+        WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
+        bvector<uint8_t> nodeData(pi_compressedPacket.GetDataSize());
+        memcpy(&nodeData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
+        
+        switch (m_dataType)
+            {
+            case SMStoreDataType::Points : 
+                m_smSQLiteFile->StorePoints(id, nodeData, countData*sizeof(DATATYPE));
+                break;
+            case SMStoreDataType::TriPtIndices : 
+                m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));            
+                break;            
+            default : 
+                assert(!"Unsupported type");
+                break;
+            }
         }
         
     return HPMBlockID(id);
@@ -136,6 +150,8 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+
     if (!blockID.IsValid()) return StoreNewBlock(DataTypeArray, countData);
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(DATATYPE));
@@ -147,10 +163,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
     
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             m_smSQLiteFile->StorePoints(id, nodeData, countData*sizeof(DATATYPE));            
             break;
-        case SMStoreDataType::INDICES : 
+        case SMStoreDataType::TriPtIndices : 
             m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));                        
             break;
         default : 
@@ -163,18 +179,22 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
 
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID) const
     {
-    /*
-    if(!blockID.IsValid()) return 0;
-    return m_smSQLiteFile->GetNumberOfPoints(blockID.m_integerID) / sizeof(DATATYPE);
-    */
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+    
+    return GetBlockDataCount(blockID, m_dataType);    
+    }
+
+
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const
+    {    
     size_t blockDataCount = 0;
 
-    switch (m_dataType)
+    switch (dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             blockDataCount = m_nodeHeader->m_nodeCount;            
             break;
-        case SMStoreDataType::INDICES : 
+        case SMStoreDataType::TriPtIndices : 
             blockDataCount = m_nodeHeader->m_nbFaceIndexes;            
             break;
         default : 
@@ -182,18 +202,25 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             break;
         }
 
-    return blockDataCount;
+    return blockDataCount;    
     }
 
 template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) 
     {
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);
+
+    ModifyBlockDataCount(blockID, countDelta, m_dataType);
+    }
+
+template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) 
+    {    
     switch (m_dataType)
         {
-        case SMStoreDataType::POINTS : 
+        case SMStoreDataType::Points : 
             assert((((int64_t)m_nodeHeader->m_nodeCount) + countDelta) >= 0);
             m_nodeHeader->m_nodeCount += countDelta;                
             break;
-         case SMStoreDataType::INDICES : 
+         case SMStoreDataType::TriPtIndices : 
             assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
             m_nodeHeader->m_nbFaceIndexes += countDelta;                
             break;
@@ -206,30 +233,76 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
 template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
     {
     if (!blockID.IsValid()) return 0;
-    bvector<uint8_t> nodeData;
-    size_t uncompressedSize = 0;
-
-    switch (m_dataType)
-        {
-        case SMStoreDataType::POINTS : 
-            m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
-            break;
-        case SMStoreDataType::INDICES : 
-            m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        default : 
-            assert(!"Unsupported type");
-            break;
-        }    
     
-    HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-    pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
-    pi_compressedPacket.SetDataSize(nodeData.size());
-    pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
-    pi_uncompressedPacket.SetBufferOwnership(false);
-    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+    size_t nbBytes; 
+    
+    if (m_dataType == SMStoreDataType::PointAndTriPtIndices)
+        {        
+        PointAndTriPtIndicesBase* pData = (PointAndTriPtIndicesBase*)(DataTypeArray);
+        assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0);
 
-    return std::min(uncompressedSize, maxCountData*sizeof(DATATYPE));
+        bvector<uint8_t> ptsData;        
+        //MST_TS - Count not used?
+        size_t uncompressedSizePts = 0;
+        bvector<uint8_t> indicesData;
+        size_t uncompressedSizeIndices = 0;
+
+        m_smSQLiteFile->GetPointsAndIndices(blockID.m_integerID, ptsData, uncompressedSizePts, indicesData, uncompressedSizeIndices);
+
+        assert(ptsData.size() > 0 && indicesData.size() > 0);
+
+        if (ptsData.size() > 0)
+            {
+            HCDPacket pi_uncompressedPacket, pi_compressedPacket;        
+
+            pi_compressedPacket.SetBuffer(&ptsData[0], ptsData.size());
+            pi_compressedPacket.SetDataSize(ptsData.size());                        
+            pi_uncompressedPacket.SetBuffer(pData->m_pointData, GetBlockDataCount(blockID, SMStoreDataType::Points) * sizeof(*pData->m_pointData));
+            pi_uncompressedPacket.SetBufferOwnership(false);
+            LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);   
+            }        
+
+        if (indicesData.size() > 0)
+            {
+            HCDPacket pi_uncompressedPacket, pi_compressedPacket;        
+            pi_compressedPacket.SetBuffer(&indicesData[0], indicesData.size());
+            pi_compressedPacket.SetDataSize(indicesData.size());                        
+            pi_uncompressedPacket.SetBuffer(pData->m_indicesData, GetBlockDataCount(blockID, SMStoreDataType::TriPtIndices) * sizeof(*pData->m_indicesData));
+            pi_uncompressedPacket.SetBufferOwnership(false);
+            LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);       
+            }        
+
+        nbBytes = 1*sizeof(DATATYPE);        
+        }
+    else
+        {
+        bvector<uint8_t> nodeData;
+        size_t uncompressedSize = 0;
+
+        switch (m_dataType)
+            {
+            case SMStoreDataType::Points : 
+                m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
+                break;
+            case SMStoreDataType::TriPtIndices : 
+                m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
+                break;
+            default : 
+                assert(!"Unsupported type");
+                break;
+            }    
+    
+        HCDPacket pi_uncompressedPacket, pi_compressedPacket;
+        pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
+        pi_compressedPacket.SetDataSize(nodeData.size());
+        pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
+        pi_uncompressedPacket.SetBufferOwnership(false);
+        LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+
+        nbBytes = std::min(uncompressedSize, maxCountData*sizeof(DATATYPE));        
+        }
+
+    return nbBytes;
     }
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)
