@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/printf_test2.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/BeTest.h>
@@ -37,6 +37,7 @@ static void ok (bool b, WCharCP fmt, ...)
     __android_log_print (ANDROID_LOG_ERROR, "print_test2", msgUtf8.c_str ());
     FAIL();
 #endif
+    va_end(args);
     }
 
 /*

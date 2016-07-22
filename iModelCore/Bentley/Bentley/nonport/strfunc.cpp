@@ -2115,7 +2115,9 @@ int BeStringUtilities::Sscanf (CharCP stringSource, CharCP fmt, ...)
     va_list args;
     va_start (args, fmt);
     StringScanSource sss (stringSource);
-    return doscanf (sss, fmt, args, false);
+    int count = doscanf (sss, fmt, args, false);
+    va_end(args);
+    return count;
     }
 
 int BeStringUtilities::Swscanf (WCharCP stringSource, WCharCP fmt, ...)
@@ -2125,7 +2127,9 @@ int BeStringUtilities::Swscanf (WCharCP stringSource, WCharCP fmt, ...)
     Utf8String usource (stringSource);
     Utf8String ufmt    (fmt);
     StringScanSource sss (usource.c_str());
-    return doscanf (sss, ufmt.c_str(), args, true);
+    int count = doscanf (sss, ufmt.c_str(), args, true);
+    va_end(args);
+    return count;
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////

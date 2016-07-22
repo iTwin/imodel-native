@@ -1740,7 +1740,9 @@ int BeStringUtilities::Snprintf(CharP buffer, size_t numCharsInBuffer, CharCP fo
     {
     va_list args;
     va_start(args, format);
-    return Bevsnprintf(buffer, numCharsInBuffer, format, args);
+    int count = Bevsnprintf(buffer, numCharsInBuffer, format, args);
+    va_end(args);
+    return count;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1758,7 +1760,9 @@ int BeStringUtilities::Snwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP
     {
     va_list args;
     va_start(args, format);
-    return Bevsnwprintf(buffer, numCharsInBuffer, format, args);
+    int count = Bevsnwprintf(buffer, numCharsInBuffer, format, args);
+    va_end(args);
+    return count;
     }
 
 /*---------------------------------------------------------------------------------**//**
