@@ -400,8 +400,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
                                                                                          HFCPtr<StreamingIndiceStoreType> pi_pUVIndiceStore,
                                                                                          HFCPtr<StreamingTextureTileStoreType> pi_pTextureStore)
     {
-    assert(pi_pDataStore != nullptr && pi_pPointStore != nullptr && pi_pIndiceStore != nullptr);
-    assert(!m_nodeHeader.m_isTextured || (m_nodeHeader.m_isTextured && pi_pUVStore != nullptr && pi_pUVIndiceStore != nullptr && pi_pTextureStore != nullptr));
+    assert(pi_pDataStore != nullptr /*&& pi_pPointStore != nullptr && pi_pIndiceStore != nullptr*/);
+    assert(!m_nodeHeader.m_isTextured || (/*m_nodeHeader.m_isTextured && pi_pUVStore != nullptr && pi_pUVIndiceStore != nullptr &&*/ pi_pTextureStore != nullptr));
 
     if (!IsLoaded())
         Load();
@@ -411,8 +411,13 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
         // Save indices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
 
-        if (indicePtr->size() > 0)
-            pi_pIndiceStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
+        if (indicePtr.IsValid() && indicePtr->size() > 0)
+            {
+            ISMInt32DataStorePtr faceIndDataStore;
+            bool result = pi_pDataStore->GetNodeDataStore(faceIndDataStore, &node->m_nodeHeader, SMStoreDataType::TriPtIndices);
+            assert(result == true); // problem getting the indice data store for streaming
+            faceIndDataStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
+            }
 
         if (node->m_nodeHeader.m_isTextured)
             {
@@ -421,8 +426,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
             if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
                 {
-                //assert(uvCoordsPtr->size() > 0);
-                pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
+                ISMUVCoordsDataStorePtr uvCoordDataStore;
+                bool result = pi_pDataStore->GetNodeDataStore(uvCoordDataStore, &node->m_nodeHeader);
+                assert(result == true); // problem getting the uv data store for streaming
+                uvCoordDataStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
                 }
 
             // Save UVIndices
@@ -430,8 +437,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
             if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
                 {
-                //assert(uvIndicePtr->size() > 0);
-                pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
+                ISMInt32DataStorePtr uvIndiceDataStore;
+                bool result = pi_pDataStore->GetNodeDataStore(uvIndiceDataStore, &node->m_nodeHeader, SMStoreDataType::TriUvIndices);
+                assert(result == true);
+                uvIndiceDataStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
                 }
 
             // Save texture
@@ -4059,10 +4068,10 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           HFCPtr<StreamingTextureTileStoreType>& po_pTextureStore) const
     {    
     po_pDataStore = new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);
-    po_pPointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::Points, pi_pCompress);
-    po_pIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::TriPtIndices, pi_pCompress);
-    po_pUVStore = new StreamingUVStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::UvCoords, pi_pCompress);
-    po_pUVIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::TriUvIndices);
+    //po_pPointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::Points, pi_pCompress);
+    //po_pIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::TriPtIndices, pi_pCompress);
+    //po_pUVStore = new StreamingUVStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::UvCoords, pi_pCompress);
+    //po_pUVIndiceStore = new StreamingIndiceStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::TriUvIndices);
     po_pTextureStore = new StreamingTextureTileStoreType(dataSourceAccount, pi_pOutputDirPath);
     }
 
