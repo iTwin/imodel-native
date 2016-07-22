@@ -481,6 +481,7 @@ SqlPrintfString::SqlPrintfString(Utf8CP fmt, ...)
     va_list vl;
     va_start(vl,fmt);
     m_str = sqlite3_vmprintf(fmt, vl);
+    va_end(vl);
     }
 
 /*---------------------------------------------------------------------------------**//**
