@@ -686,6 +686,8 @@ private:
     DgnDbStatus SaveUserProperties() const;
     void CopyUserProperties(DgnElementCR other);
 
+    bool IsCustomHandledProperty(Utf8CP) const;
+
 protected:
     //! @private
     struct Flags
@@ -1212,12 +1214,14 @@ public:
     //! @param name The name of the property
     //! @return DgnDbStatus::NotFound if this element has no such property or if the subclass has chosen not to expose it via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const;
-    
+    DgnDbStatus GetProperty(ECN::ECValueR value, Utf8CP name) const {return _GetProperty(value, name);}
+
     //! Set the value of a property. @note you must call Update in order to write the modified property to the DgnDb.
     //! @param value The returned value
     //! @param name The name of the property
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
+    DgnDbStatus SetProperty(Utf8CP name, ECN::ECValueCR value) {return _SetProperty(name, value);}
 
     //! @}
 };
@@ -2039,9 +2043,9 @@ private:
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
-    mutable ClassInfoMap m_classInfos;
-    mutable T_ClassParamsMap m_classParams;
-    mutable bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
+    mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
+    mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
+    mutable bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache; // cached updaters for custom-handled properties
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -2074,8 +2078,6 @@ private:
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
-    T_ClassParamsMap const& GetClassParamsMap() const {return m_classParams;}
-
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //! @private

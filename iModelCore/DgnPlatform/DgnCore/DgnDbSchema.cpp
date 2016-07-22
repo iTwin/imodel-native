@@ -139,6 +139,106 @@ bool AutoHandledPropertiesCollection::HasCustomHandledProperty(ECN::ECPropertyCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::IsCustomHandledProperty(Utf8CP propName) const
+    {
+    auto eclass = GetElementClass();
+    auto prop = eclass->GetPropertyP(propName, true);
+    if (nullptr == prop)
+        return false;
+        
+    auto customHandledProperty = GetDgnDb().Schemas().GetECClass("dgn", "CustomHandledProperty");
+    if (nullptr != customHandledProperty)
+        return prop->IsDefined(*customHandledProperty);
+
+    return getFakeCA(*prop, *s_fakeCustomClass).IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::Iterator::Iterator(ECN::ECPropertyIterable::const_iterator it, AutoHandledPropertiesCollection const& coll)
+    : m_i(it), m_coll(coll) 
+    {
+    ToNextValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::Iterator& AutoHandledPropertiesCollection::Iterator::operator++()
+    {
+    BeAssert(m_i != m_coll.m_end);
+    ++m_i;
+    ToNextValid();
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps)
+    : m_props(eclass.GetProperties(true)), m_end(m_props.end()), m_stype(stype), m_wantCustomHandledProps(wantCustomHandledProps)
+    {
+    #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
+        printf("%s\n", eclass.GetName().c_str());
+        printf("---------------------------\n");
+    #endif
+    m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
+    m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isBuiltInProperty(Utf8StringCR propName)
+    {
+    return propName.Equals("ECInstanceId");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void AutoHandledPropertiesCollection::Iterator::ToNextValid()
+    {
+    while (m_i != m_coll.m_end)
+        {
+        auto prop = *m_i;
+
+        #ifdef DEBUG_AUTO_HANDLED_PROPERTIES
+            auto propName = prop->GetName();
+            printf ("%s\n", propName.c_str());
+            for (auto ca : prop->GetCustomAttributes(true))
+                {
+                printf ("\t%s\n", ca->GetClass().GetName().c_str());
+                for (auto caprop : ca->GetClass().GetProperties())
+                    {
+                    ECN::ECValue v;
+                    ca->GetValue(v, caprop->GetName().c_str());
+                    printf ("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                    }
+                }
+        #endif
+        
+        bool isCustom = m_coll.HasCustomHandledProperty(*prop) || isBuiltInProperty(prop->GetName());
+        if (isCustom != m_coll.m_wantCustomHandledProps)
+            {
+            ++m_i;
+            continue;
+            }
+
+        m_stype = m_coll.GetStatementType(*prop);
+        if (0 != ((int32_t)m_stype & (int32_t)m_coll.m_stype))
+            {
+            return; // yes, this property is for the requested statement type
+            }
+
+        ++m_i;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlClassParams::StatementType AutoHandledPropertiesCollection::GetStatementType(ECN::ECPropertyCR prop) const
     {
     ECN::IECInstancePtr stype;
