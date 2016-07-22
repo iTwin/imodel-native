@@ -25,19 +25,21 @@ static void ok (bool b, WCharCP fmt, ...)
     va_start (args, fmt);
 #if defined (_WIN32)
     vswprintf (buf, fmt, args);
+    va_end(args);
     FAIL() << buf;
 #elif defined (__unix__)
     vswprintf (buf, _countof(buf), fmt, args);
+    va_end(args);
     FAIL() << buf;
 #else
     WString msg;
     msg.VSprintf (fmt, args); // *** NEEDS WORK: This uses the very library that we are trying to test, but I have no choice. There's no other way to format a message including wide chars on Android.
     Utf8String msgUtf8;
     BeStringUtilities::WCharToUtf8 (msgUtf8, msg.c_str());
+    va_end(args);
     __android_log_print (ANDROID_LOG_ERROR, "print_test2", msgUtf8.c_str ());
     FAIL();
 #endif
-    va_end(args);
     }
 
 /*

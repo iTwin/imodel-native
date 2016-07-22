@@ -18,8 +18,8 @@ static void ok (bool b, CharCP fmt, ...)
     va_list args;
     va_start (args, fmt);
     vsprintf (buf, fmt, args);
-    FAIL() << buf;
     va_end(args);
+    FAIL() << buf;
     }
 
 /*
