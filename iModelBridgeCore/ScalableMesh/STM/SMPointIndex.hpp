@@ -6512,10 +6512,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTr
     nLoaded++;
 
     if (!headersOnly)
-    {
-        this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
+        {
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-    }
+        }
 
     if (level != 0 && this->GetLevel() + 1 > level) return;
 
@@ -6764,16 +6763,16 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
+    //auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
-    if (count > 0)
+    if (pointsPtr->size() != 0)
         {
         ISMPointDataStorePtr pointDataStore;
         bool result = pi_pDataStreamingStore->GetNodeDataStore(pointDataStore, &m_nodeHeader);
         assert(result == true);
-        pointDataStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), count, this->GetBlockID());
+        pointDataStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), pointsPtr->size(), this->GetBlockID());
         }
 
     // Specific order must be kept to allow saving blob sizes for streaming performance
