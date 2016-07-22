@@ -18,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! class object. The registered symbol provider provides such ECExpression symbols:
 //! - ECDb.Path - Returns the path to ECDb.
 //! - ECDb.Name - Returns the name of the ECDb.
+//! - GetECClassId("ClassName", "SchemaName") - Returns the ID of the specified ECClass.
 //! - ECInstance ECExpression context methods:
 //!   - GetRelatedInstance("RelationshipName:0|1:RelatedClassName") - Returns related ECInstance
 //!     ECExpression context.
