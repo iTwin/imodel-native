@@ -74,16 +74,26 @@
     #define BETEST_TEST_CLASS_NAME(testCaseName, testName) TEST_##testCaseName##_##testName
     #define BETEST_TEST_RUNNER_FUNC(testCaseName, testName) run_TEST_##testCaseName##_##testName
 
-    #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)\
-        struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                                                                   \
-        {                                                                                                                               \
-            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }                                                                 \
-            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }                                                                     \
-            virtual void TestBody () override;                                                                                          \
-            static BeTest::TestCaseInfo* s_superClassTestCaseInfo;\
-        };                                                                                                                              \
+    #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)                   \
+        struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                \
+        {                                                                                   \
+            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }         \
+            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }             \
+            virtual void TestBody () override;                                              \
+            static BeTest::TestCaseInfo* s_superClassTestCaseInfo;                          \
+        };                                                                                  \
     BeTest::TestCaseInfo* BETEST_TEST_CLASS_NAME(testCaseName,testName)::s_superClassTestCaseInfo = BeTest::RegisterTestCase(#testCaseName, & superTestName :: SetUpTestCase, & superTestName :: TearDownTestCase);\
-    extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) () { size_t e = BeTest::GetErrorCount(); if (BeTest::ShouldRunTest (#testCaseName "." #testName)) { BETEST_TEST_CLASS_NAME(testCaseName,testName) t; t.Run(); } return BeTest::GetErrorCount() > e; } \
+    extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) ()       \
+        {                                                                                   \
+        size_t e = BeTest::GetErrorCount();                                                 \
+        if (BeTest::ShouldRunTest (#testCaseName "." #testName))                            \
+            {                                                                               \
+            BeTest::SetNameOfCurrentTestInternal(#testCaseName,#testName);                  \
+            BETEST_TEST_CLASS_NAME(testCaseName,testName) t;                                \
+            t.Run();                                                                        \
+            }                                                                               \
+        return BeTest::GetErrorCount() > e;                                                 \
+        }                                                                                   \
     void BETEST_TEST_CLASS_NAME(testCaseName,testName) :: TestBody ()
 
 
@@ -247,6 +257,7 @@ static Utf8CP GetNameOfCurrentTestCase()
     }
 
 
+BENTLEYDLL_EXPORT static void   SetNameOfCurrentTestInternal(Utf8CP tc, Utf8CP tn);
 BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestInternal();
 BENTLEYDLL_EXPORT static Utf8CP GetNameOfCurrentTestCaseInternal();
 

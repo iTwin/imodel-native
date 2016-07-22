@@ -930,6 +930,12 @@ bset<Utf8String> const& BeTest::GetFailedTests()
     return s_failedTests;
     }
 
+void   BeTest::SetNameOfCurrentTestInternal(Utf8CP tc, Utf8CP tn)
+    {
+    s_currentTestCaseName = tc;
+    s_currentTestName = tn;
+    }
+
 Utf8CP BeTest::GetNameOfCurrentTestCaseInternal()
     {
     return s_currentTestCaseName.c_str();
@@ -998,8 +1004,8 @@ void testing::Test::Run()
     s_hadAssertOnAnotherThread = false;
     s_bentleyCS.unlock();
     
-    s_currentTestCaseName = GetTestCaseNameA();
-    s_currentTestName = GetTestNameA();
+    BeAssert(s_currentTestCaseName.Equals(GetTestCaseNameA()));
+    BeAssert(s_currentTestName.Equals(GetTestNameA()));
 
     BE_TEST_SEH_TRY
         {
