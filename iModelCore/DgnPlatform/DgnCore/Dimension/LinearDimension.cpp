@@ -17,20 +17,6 @@ namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(LinearDimensionHandler2d)
 HANDLER_DEFINE_MEMBERS(LinearDimensionHandler3d)
-
-void LinearDimensionHandler2d::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROP_StyleId);
-    params.Add(PROP_Points);
-    }
-
-void LinearDimensionHandler3d::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROP_StyleId);
-    params.Add(PROP_Points);
-    }
 };
 
 /* ctor */ LinearDimension2d::LinearDimension2d(CreateParams const& params) : T_Super(params) { }

@@ -22,16 +22,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_ElementHandler::LightDef::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROPNAME_Descr);
-    params.Add(PROPNAME_Value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus LightDefinition::_BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt)
     {
     auto status = T_Super::_BindInsertParams(stmt);

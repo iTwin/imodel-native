@@ -48,8 +48,8 @@ double          scale           // => units */
         szParsed++;
         }
 
-    denominatorString = wcsnxtchr (inputString, L'/');        /* check for fractions */
-    numeratorString   = wcsnxtchr (inputString, L' ');        /* integer part */
+    denominatorString = wcsnxtchr(inputString, L'/');        /* check for fractions */
+    numeratorString   = wcsnxtchr(inputString, L' ');        /* integer part */
 
     if (0 != denominatorString[0])
         {
@@ -94,11 +94,11 @@ WCharCP         input,    // => input string */
 double          scale           // => units */
 )
     {
-    size_t l = wcslen (input) + 1;
+    size_t l = wcslen(input) + 1;
     WCharP buffer = (WCharP) _alloca(l * sizeof (WChar));
-    wcscpy (buffer, input);
+    wcscpy(buffer, input);
 
-    return vp_AddNumberStringScaled (value, szParsed, negative, buffer, scale);
+    return vp_AddNumberStringScaled(value, szParsed, negative, buffer, scale);
     }
 
 /*------------------------------------------------------------------------------------**/
@@ -123,11 +123,11 @@ WCharCP       inValue
     angle             = 0.0;
     size_t szParsed = 0;
     WChar   value[1024];
-    wcscpy (value, inValue);
-    strutil_wstrpwspc (value);
+    wcscpy(value, inValue);
+    strutil_wstrpwspc(value);
 
     bool    negative    = false;
-    size_t  strLength   = wcslen (value);
+    size_t  strLength   = wcslen(value);
 
     // an empty string is interpreted as 0.0;
     if (strLength < 1)
@@ -152,7 +152,7 @@ WCharCP       inValue
     WCharP    minuteString        = NULL;
     WCharP    secondString        = NULL;
 
-    size_t delimiterIndex = wcscspn (degreeString, degreeDelimiters);
+    size_t delimiterIndex = wcscspn(degreeString, degreeDelimiters);
     // is there really a degree delimiter?
     if (0 != degreeString[delimiterIndex])
         {
@@ -165,7 +165,7 @@ WCharCP       inValue
         minuteString = degreeString;
         }
 
-    delimiterIndex = wcscspn (minuteString, minuteDelimiters);
+    delimiterIndex = wcscspn(minuteString, minuteDelimiters);
     // is there really a minute delimiter?
     if (0 != minuteString[delimiterIndex])
         {
@@ -182,7 +182,7 @@ WCharCP       inValue
         secondString = minuteString;
         }
 
-    delimiterIndex = wcscspn (secondString, secondDelimiters);
+    delimiterIndex = wcscspn(secondString, secondDelimiters);
     if (0 != secondString[delimiterIndex])
         {
         // Found a seconds delimiter. If that means that what we thought might be degrees was actually seconds, correct that.
@@ -210,23 +210,23 @@ WCharCP       inValue
 
     if ( (NULL != degreeString) && (0 != *degreeString) )
         {
-        if (0 != degreeString[wcsspn (degreeString, acceptableChars)])
+        if (0 != degreeString[wcsspn(degreeString, acceptableChars)])
             return ERROR;
-        vp_AddNumberStringScaled (degrees, szParsed, numberNegative, degreeString, 1.0);
+        vp_AddNumberStringScaled(degrees, szParsed, numberNegative, degreeString, 1.0);
         }
 
     if ( (NULL != minuteString) && (0 != *minuteString) )
         {
-        if (0 != minuteString[wcsspn (minuteString, acceptableChars)])
+        if (0 != minuteString[wcsspn(minuteString, acceptableChars)])
             return ERROR;
-        vp_AddNumberStringScaled (degrees, szParsed, numberNegative, minuteString, 1.0/60.0);
+        vp_AddNumberStringScaled(degrees, szParsed, numberNegative, minuteString, 1.0/60.0);
         }
 
     if ( (NULL != secondString) && (0 != *secondString) )
         {
-        if (0 != secondString[wcsspn (secondString, acceptableChars)])
+        if (0 != secondString[wcsspn(secondString, acceptableChars)])
             return ERROR;
-        vp_AddNumberStringScaled (degrees, szParsed, numberNegative, secondString, 1.0/3600.0);
+        vp_AddNumberStringScaled(degrees, szParsed, numberNegative, secondString, 1.0/3600.0);
         }
 
     if (negative ^ numberNegative)
@@ -240,13 +240,13 @@ WCharCP       inValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool    vp_parseAsDegreeString (AngleMode mode, WCharCP inputString)
+static bool    vp_parseAsDegreeString(AngleMode mode, WCharCP inputString)
     {
     if ( (AngleMode::Centesimal != mode) && (AngleMode::Radians != mode) )
         return true;
 
     WChar allDelimiters[] = {L'^', L':', L'd', L'D', 0x00b0 /*degree*/, L'\'', L'm', L'M', L'"', L's', L'S', 0};
-    size_t  delimiterIndex  = wcscspn (inputString, allDelimiters);
+    size_t  delimiterIndex  = wcscspn(inputString, allDelimiters);
 
     return (0 != inputString[delimiterIndex]);
     }
@@ -264,8 +264,8 @@ WChar brkchar             /* => break character */
     WChar *p;
 
     *outpntr = *inpntr;
-    if ((p = ::wcschr (*inpntr, brkchar)) == NULL)
-        *inpntr += wcslen (*inpntr);
+    if ((p = ::wcschr(*inpntr, brkchar)) == NULL)
+        *inpntr += wcslen(*inpntr);
     else
         {
         *inpntr = p+1;
@@ -295,12 +295,12 @@ double          uorPerSub
     WChar buffer[1024];
     WChar *mu_str, *su_str, *pu_str, *p;
 
-    WString masterUnitsLabel (masterUnitsLabelIn, BentleyCharEncoding::Utf8);
-    WString subUnitsLabel    (subUnitsLabelIn,    BentleyCharEncoding::Utf8);
+    WString masterUnitsLabel(masterUnitsLabelIn, BentleyCharEncoding::Utf8);
+    WString subUnitsLabel(subUnitsLabelIn,    BentleyCharEncoding::Utf8);
 
     bool            negflg;
-    BeAssert (wcslen (inStr) < 1024);
-    wcscpy (buffer, inStr);
+    BeAssert(wcslen(inStr) < 1024);
+    wcscpy(buffer, inStr);
     WCharP str = buffer;
 
     /* skip leading whitespace */
@@ -314,12 +314,12 @@ double          uorPerSub
     if (masterUnitsLabel.empty())
         p = NULL;
     else
-        p = ::wcsstr (str, masterUnitsLabel.c_str());
+        p = ::wcsstr(str, masterUnitsLabel.c_str());
     bool doMuSu = true; 
     if (NULL != p)
         {
         /* allow units labels, for example 1'-2.0000" format */
-        WChar *pNext = ::wcschr (p, L'-');
+        WChar *pNext = ::wcschr(p, L'-');
         if (NULL == pNext)
             {
             pNext = p + masterUnitsLabel.size();
@@ -337,7 +337,7 @@ double          uorPerSub
         /* remove sub units label */
         if ( ! subUnitsLabel.empty())
             {
-            p = ::wcsstr (str, subUnitsLabel.c_str());
+            p = ::wcsstr(str, subUnitsLabel.c_str());
             szParsed += subUnitsLabel.size();
 
             if (NULL != p)
@@ -347,13 +347,13 @@ double          uorPerSub
     else if (NULL != (p = ::wcschr(str, L'E')))
         {
         /* scientific format */
-        double  value = BeStringUtilities::Wtof (str);
+        double  value = BeStringUtilities::Wtof(str);
         doMuSu = false;
-        WCharP space = ::wcschr (str, L' ');
+        WCharP space = ::wcschr(str, L' ');
         if (NULL != space)
             szParsed += space - str;
         else
-            szParsed += wcslen (str);
+            szParsed += wcslen(str);
 
         if (*(p+1) == L'-')
             {
@@ -365,18 +365,18 @@ double          uorPerSub
                 p++;
 
             if (0 != *p)
-                precision = BeStringUtilities::Wtoi (p);
+                precision = BeStringUtilities::Wtoi(p);
             if (precision < 10)
                 precision = 10;
             else if  (precision > 120)
                 precision = 120;
 
-            BeStringUtilities::Snwprintf (format, _countof(format), L"%%.%df", precision+5);
-            BeStringUtilities::Snwprintf (str, _countof(buffer), format, value);
+            BeStringUtilities::Snwprintf(format, _countof(format), L"%%.%df", precision+5);
+            BeStringUtilities::Snwprintf(str, _countof(buffer), format, value);
             }
         else
             {
-            BeStringUtilities::Snwprintf (str, _countof(buffer), L"%f", value);
+            BeStringUtilities::Snwprintf(str, _countof(buffer), L"%f", value);
             }
         }
     else
@@ -397,9 +397,9 @@ double          uorPerSub
                     ;
                 }
         }
-    vp_wgetsubstr (&mu_str, &str, L':');
-    vp_wgetsubstr (&su_str, &str, L':');
-    vp_wgetsubstr (&pu_str, &str, L':');
+    vp_wgetsubstr(&mu_str, &str, L':');
+    vp_wgetsubstr(&su_str, &str, L':');
+    vp_wgetsubstr(&pu_str, &str, L':');
 
     if (doMuSu)
         szParsed += str - start;
@@ -408,10 +408,10 @@ double          uorPerSub
     negflg = false;
 
     size_t szNotUsed = 0;
-    if (vp_AddNumberStringScaled (*uor, szNotUsed, negflg, mu_str, uorPerMast) ||
-        vp_AddNumberStringScaled (*uor, szNotUsed, negflg, su_str, uorPerSub)  ||
-        vp_AddNumberStringScaled (*uor, szNotUsed, negflg, pu_str, 1.0))
-        return(ERROR);
+    if (vp_AddNumberStringScaled(*uor, szNotUsed, negflg, mu_str, uorPerMast) ||
+        vp_AddNumberStringScaled(*uor, szNotUsed, negflg, su_str, uorPerSub)  ||
+        vp_AddNumberStringScaled(*uor, szNotUsed, negflg, pu_str, 1.0))
+        return (ERROR);
 
     if (negflg)
         *uor = - *uor;
@@ -422,7 +422,7 @@ double          uorPerSub
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool vp_cmdStartsWith (WCharCP cmd, WCharCP in)
+static bool vp_cmdStartsWith(WCharCP cmd, WCharCP in)
     {
     WCharCP a = cmd;
     WCharCP b = in;
@@ -437,39 +437,39 @@ static bool vp_cmdStartsWith (WCharCP cmd, WCharCP in)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void vp_removeWhiteSpaceAndCount (size_t& count, WStringR str)
+static void vp_removeWhiteSpaceAndCount(size_t& count, WStringR str)
     {
     size_t firstNonSpaceIdx = 0;
     for (; (firstNonSpaceIdx < str.length()) && iswspace(str.at(firstNonSpaceIdx)); ++firstNonSpaceIdx)
         ++count;
 
-    str.erase (str.begin(), (str.begin() + firstNonSpaceIdx));
+    str.erase(str.begin(), (str.begin() + firstNonSpaceIdx));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DoubleParserPtr         DoubleParser::Create ()             { return new DoubleParser(); }
-DoubleParserPtr         DoubleParser::Clone() const         { return new DoubleParser (*this); }
-/* ctor */              DoubleParser::DoubleParser ()       { }
+DoubleParserPtr         DoubleParser::Create()             { return new DoubleParser(); }
+DoubleParserPtr         DoubleParser::Clone() const         { return new DoubleParser(*this); }
+/* ctor */              DoubleParser::DoubleParser()       { }
 /* ctor */              DoubleParser::DoubleParser(DoubleParserCR source)     { }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DoubleParser::ToValue (double& outValue, Utf8CP input) const
+BentleyStatus DoubleParser::ToValue(double& outValue, Utf8CP input) const
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
         return SUCCESS;
 
-    WString inString (input, BentleyCharEncoding::Utf8);
+    WString inString(input, BentleyCharEncoding::Utf8);
 
     size_t numCharsParsed = 0;
     size_t whiteSpaceCount = 0;
-    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
+    vp_removeWhiteSpaceAndCount(whiteSpaceCount, inString);
     bool negflg = false;
-    if (SUCCESS != vp_AddNumberStringScaledNoModify (outValue, numCharsParsed, negflg, inString.c_str(), 1.0))
+    if (SUCCESS != vp_AddNumberStringScaledNoModify(outValue, numCharsParsed, negflg, inString.c_str(), 1.0))
         return ERROR;
 
     if (negflg)
@@ -482,52 +482,17 @@ BentleyStatus DoubleParser::ToValue (double& outValue, Utf8CP input) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            AngleParser::Init ()
-    {
-    m_angleMode         = AngleMode::Degrees;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            AngleParser::InitModelSettings(GeometricModelCR model)
+void AngleParser::InitModelSettings(GeometricModelCR model)
     {
     GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
     SetAngleMode(displayInfo.GetAngularMode());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/        AngleParser::AngleParser(AngleParserCR source)
-    {
-    m_angleMode         = source.m_angleMode;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-AngleParserPtr  AngleParser::Create ()          { return new AngleParser(); }
-/* ctor */      AngleParser::AngleParser ()     { Init(); }
-AngleParserPtr  AngleParser::Clone() const      { return new AngleParser (*this); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-AngleParserPtr  AngleParser::Create(GeometricModelCR model)
-    {
-    AngleParserPtr   formatter = Create();
-
-    formatter->InitModelSettings (model);
-
-    return formatter;
-    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AngleParser::ToValue (double& outAngle, Utf8CP input) const
+BentleyStatus AngleParser::ToValue(double& outAngle, Utf8CP input) const
     {
     outAngle = 0.0;
     // null and empty strings result in 0.0 angle
@@ -537,12 +502,12 @@ BentleyStatus AngleParser::ToValue (double& outAngle, Utf8CP input) const
     WString inString(input, BentleyCharEncoding::Utf8);
 
     size_t whiteSpaceCount = 0;
-    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
+    vp_removeWhiteSpaceAndCount(whiteSpaceCount, inString);
 
     // assume degrees unless format is Gradians or Radians. Also assume degrees if any of the degree delimiters are present.
-    if (vp_parseAsDegreeString (m_angleMode, inString.c_str()))
+    if (vp_parseAsDegreeString(m_angleMode, inString.c_str()))
         {
-        return SUCCESS == vp_degreeAngleFromString (outAngle, inString.c_str()) ? SUCCESS : ERROR;
+        return SUCCESS == vp_degreeAngleFromString(outAngle, inString.c_str()) ? SUCCESS : ERROR;
         }
 
     double  scaleFactor = 1.0;
@@ -561,7 +526,7 @@ BentleyStatus AngleParser::ToValue (double& outAngle, Utf8CP input) const
         }
 
     size_t numCharsParsed = 0;
-    vp_AddNumberStringScaledNoModify (outAngle, numCharsParsed, negflg, inString.c_str(), scaleFactor);
+    vp_AddNumberStringScaledNoModify(outAngle, numCharsParsed, negflg, inString.c_str(), scaleFactor);
 
     if (negflg)
         outAngle = -outAngle;
@@ -574,7 +539,7 @@ BentleyStatus AngleParser::ToValue (double& outAngle, Utf8CP input) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AngleParser::SetAngleModeFromLegacy (AngleFormatVals legacyValue)
+BentleyStatus AngleParser::SetAngleModeFromLegacy(AngleFormatVals legacyValue)
     {
     BentleyStatus status = SUCCESS;
 
@@ -609,7 +574,7 @@ BentleyStatus AngleParser::SetAngleModeFromLegacy (AngleFormatVals legacyValue)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t        AngleParser::GetLegacyFormat () const
+uint16_t        AngleParser::GetLegacyFormat() const
     {
     /* Used to call old format asyncs */
 
@@ -647,7 +612,7 @@ uint16_t        AngleParser::GetLegacyFormat () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DirectionParser::Init ()
+void            DirectionParser::Init()
     {
     m_mode          = DirectionMode::Azimuth;
     m_isClockwise   = false;
@@ -661,7 +626,7 @@ void            DirectionParser::Init ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DirectionParser::InitModelSettings(GeometricModelCR model)
     {
-    m_angleParser->InitModelSettings (model);
+    m_angleParser->InitModelSettings(model);
 
     GeometricModel::DisplayInfo const& displayInfo = model.GetDisplayInfo();
 
@@ -689,9 +654,9 @@ void            DirectionParser::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectionParserPtr      DirectionParser::Create ()          { return new DirectionParser(); }
-/* ctor */              DirectionParser::DirectionParser () { Init(); }
-DirectionParserPtr      DirectionParser::Clone() const      { return new DirectionParser (*this); }
+DirectionParserPtr      DirectionParser::Create()          { return new DirectionParser(); }
+/* ctor */              DirectionParser::DirectionParser() { Init(); }
+DirectionParserPtr      DirectionParser::Clone() const      { return new DirectionParser(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
@@ -700,7 +665,7 @@ DirectionParserPtr      DirectionParser::Create(GeometricModelCR model)
     {
     DirectionParserPtr   parser = Create();
 
-    parser->InitModelSettings (model);
+    parser->InitModelSettings(model);
 
     return parser;
     }
@@ -708,7 +673,7 @@ DirectionParserPtr      DirectionParser::Create(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RBB             07/87
 +---------------+---------------+---------------+---------------+---------------+------*/
-int         DirectionParser::StringToDirection (double& dir, WCharCP input) const
+int         DirectionParser::StringToDirection(double& dir, WCharCP input) const
     {
     WString str = input;
 
@@ -718,24 +683,24 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP input) cons
     size_t  szInput = str.size() + 1;
     WCharP  strng = (WCharP) _alloca(szInput * sizeof (WChar));
     WCharP  nw_str = (WCharP) _alloca(szInput * sizeof (WChar));
-    wcscpy (strng, str.c_str());
-    BeStringUtilities::Wcsupr (strng);
+    wcscpy(strng, str.c_str());
+    BeStringUtilities::Wcsupr(strng);
 
     dir = 0.0;         /* default value */
     /* first go through and find the first digit */
-    for (leftover=strng, p=nw_str; *leftover && !isdigit (*leftover); *p++ = *leftover++);
+    for (leftover=strng, p=nw_str; *leftover && !isdigit(*leftover); *p++ = *leftover++);
 
     *p = L'\0';
 
     WChar default_delimiters[] = {L" =/"};
     WChar* context;
     
-    WCharP res = BeStringUtilities::Wcstok (nw_str, default_delimiters, &context);
+    WCharP res = BeStringUtilities::Wcstok(nw_str, default_delimiters, &context);
     if (res) 
         {
-        if (vp_cmdStartsWith (L"NORTH", res))
+        if (vp_cmdStartsWith(L"NORTH", res))
             ns_command = 1;
-        else if (vp_cmdStartsWith (L"SOUTH", res))
+        else if (vp_cmdStartsWith(L"SOUTH", res))
             ns_command = 3;
         }
     if (ns_command == 1 || ns_command == 3)
@@ -745,14 +710,14 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP input) cons
             dir = fc_90 * (double) ns_command;
             return SUCCESS;
             }
-        if (0 != (ew_str = wcspbrk (leftover, L"EW")))
+        if (0 != (ew_str = wcspbrk(leftover, L"EW")))
             {
-            res = BeStringUtilities::Wcstok (ew_str, L" ", &context);
+            res = BeStringUtilities::Wcstok(ew_str, L" ", &context);
             if (res)
                 {
-                if (vp_cmdStartsWith (L"EAST", ew_str))
+                if (vp_cmdStartsWith(L"EAST", ew_str))
                     ew_command = 1;
-                else if (vp_cmdStartsWith (L"WEST", ew_str))
+                else if (vp_cmdStartsWith(L"WEST", ew_str))
                     ew_command = 2;
                 }
             *ew_str = '\0';
@@ -762,7 +727,7 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP input) cons
             ew_command = -1;
             }
 
-        if (SUCCESS == m_angleParser->ToValue (tmpang, Utf8String (leftover).c_str()))
+        if (SUCCESS == m_angleParser->ToValue(tmpang, Utf8String(leftover).c_str()))
             {
             if (ew_command == 1 || ew_command == 2)
                 {
@@ -797,12 +762,12 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP input) cons
         }
     else
         {
-        res = BeStringUtilities::Wcstok (strng, L" ", &context);
+        res = BeStringUtilities::Wcstok(strng, L" ", &context);
         if (res)
             {
-            if (vp_cmdStartsWith (L"EAST", strng))
+            if (vp_cmdStartsWith(L"EAST", strng))
                 ew_command = 1;
-            else if (vp_cmdStartsWith (L"WEST", strng))
+            else if (vp_cmdStartsWith(L"WEST", strng))
                 ew_command = 2;
             }
 
@@ -812,7 +777,7 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP input) cons
             }
         else
             {
-            if (SUCCESS == m_angleParser->ToValue (dir, Utf8String (strng).c_str()))
+            if (SUCCESS == m_angleParser->ToValue(dir, Utf8String(strng).c_str()))
                 {
                 if (DirectionMode::Azimuth == m_mode)
                     {
@@ -835,7 +800,7 @@ int         DirectionParser::StringToDirection (double& dir, WCharCP input) cons
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DirectionParser::ToValue (double& outDirection, Utf8CP input)
+BentleyStatus DirectionParser::ToValue(double& outDirection, Utf8CP input)
     {
     outDirection = 0.0;
     if (NULL == input || 0 == *input)
@@ -844,9 +809,9 @@ BentleyStatus DirectionParser::ToValue (double& outDirection, Utf8CP input)
     WString str(input, BentleyCharEncoding::Utf8);
 
     size_t whiteSpaceCount = 0;
-    vp_removeWhiteSpaceAndCount (whiteSpaceCount, str);
+    vp_removeWhiteSpaceAndCount(whiteSpaceCount, str);
 
-    if (SUCCESS != StringToDirection (outDirection, str.c_str()))
+    if (SUCCESS != StringToDirection(outDirection, str.c_str()))
         return ERROR; 
 
     outDirection += m_trueNorth;
@@ -856,7 +821,7 @@ BentleyStatus DirectionParser::ToValue (double& outDirection, Utf8CP input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DistanceParser::Init ()
+void            DistanceParser::Init()
     {
     m_masterUnitScale = 1.0;
     m_subUnitScale    = 1.0;
@@ -876,16 +841,16 @@ void            DistanceParser::InitModelSettings(GeometricModelCR model)
     double  uorPerMast = masterUnit.ToMeters();
     double  uorPerSub  = subUnit.ToMeters();
     
-    SetMasterUnitLabel (masterUnit.GetLabelCP());
-    SetSubUnitLabel    (subUnit.GetLabelCP());
-    SetMasterUnitScale (uorPerMast);
-    SetSubUnitScale    (uorPerSub);
+    SetMasterUnitLabel(masterUnit.GetLabelCP());
+    SetSubUnitLabel(subUnit.GetLabelCP());
+    SetMasterUnitScale(uorPerMast);
+    SetSubUnitScale(uorPerSub);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/        DistanceParser::DistanceParser (DistanceParserCR source)
+/*ctor*/        DistanceParser::DistanceParser(DistanceParserCR source)
     {
     m_masterUnitLabel   = source.m_masterUnitLabel;
     m_subUnitLabel      = source.m_subUnitLabel;
@@ -897,9 +862,9 @@ void            DistanceParser::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create ()           { return new DistanceParser(); }
-/* ctor */              DistanceParser::DistanceParser ()   { Init(); }
-DistanceParserPtr       DistanceParser::Clone() const       { return new DistanceParser (*this); }
+DistanceParserPtr       DistanceParser::Create()           { return new DistanceParser(); }
+/* ctor */              DistanceParser::DistanceParser()   { Init(); }
+DistanceParserPtr       DistanceParser::Clone() const       { return new DistanceParser(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
@@ -908,7 +873,7 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
     {
     DistanceParserPtr   parser = Create();
 
-    parser->InitModelSettings (model);
+    parser->InitModelSettings(model);
 
     return parser;
     }
@@ -916,20 +881,20 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceParserPtr       DistanceParser::Create (DgnViewportR viewport)
+DistanceParserPtr       DistanceParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    DistanceParserPtr   parser = DistanceParser::Create (*targetModel);
+    DistanceParserPtr   parser = DistanceParser::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
     if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return parser;
 
-    parser->SetScale (1 / acs->GetScale ());
+    parser->SetScale(1 / acs->GetScale());
 #endif
 
     return parser;
@@ -940,9 +905,9 @@ DistanceParserPtr       DistanceParser::Create (DgnViewportR viewport)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DistanceParserPtr       DistanceParser::Create(GeometricModelCR model, IAuxCoordSysCR acs)
     {
-    DistanceParserPtr      parser = DistanceParser::Create (model);
+    DistanceParserPtr      parser = DistanceParser::Create(model);
 
-    parser->SetScale (acs.GetScale ());
+    parser->SetScale(acs.GetScale());
 
     return parser;
     }
@@ -950,7 +915,7 @@ DistanceParserPtr       DistanceParser::Create(GeometricModelCR model, IAuxCoord
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DistanceParser::ToValue (double& outValue, size_t& numCharsParsed, Utf8CP input) 
+BentleyStatus DistanceParser::ToValue(double& outValue, size_t& numCharsParsed, Utf8CP input) 
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
@@ -959,9 +924,9 @@ BentleyStatus DistanceParser::ToValue (double& outValue, size_t& numCharsParsed,
     WString inString(input, BentleyCharEncoding::Utf8);
 
     size_t whiteSpaceCount = 0;
-    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
+    vp_removeWhiteSpaceAndCount(whiteSpaceCount, inString);
 
-    BentleyStatus result = SUCCESS == vp_mdlString_toUors2 (&outValue, 
+    BentleyStatus result = SUCCESS == vp_mdlString_toUors2(&outValue, 
             numCharsParsed,
             inString.c_str(),
             m_masterUnitLabel.c_str(), 
@@ -980,17 +945,17 @@ BentleyStatus DistanceParser::ToValue (double& outValue, size_t& numCharsParsed,
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DistanceParser::ToValue (double& outValue, Utf8CP input) 
+BentleyStatus DistanceParser::ToValue(double& outValue, Utf8CP input) 
     {
     size_t  numChars;
 
-    return ToValue (outValue, numChars, input);
+    return ToValue(outValue, numChars, input);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PointParser::Init ()
+void            PointParser::Init()
     {
     m_is3d              = true;
     m_distanceParser    = DistanceParser::Create();
@@ -1009,7 +974,7 @@ void            PointParser::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/        PointParser::PointParser (PointParserCR source)
+/*ctor*/        PointParser::PointParser(PointParserCR source)
     {
     m_is3d              = source.m_is3d;
     m_distanceParser    = source.m_distanceParser->Clone();
@@ -1018,9 +983,9 @@ void            PointParser::InitModelSettings(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr          PointParser::Create ()           { return new PointParser(); }
-/* ctor */              PointParser::PointParser ()      { Init(); }
-PointParserPtr          PointParser::Clone() const       { return new PointParser (*this); }
+PointParserPtr          PointParser::Create()           { return new PointParser(); }
+/* ctor */              PointParser::PointParser()      { Init(); }
+PointParserPtr          PointParser::Clone() const       { return new PointParser(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
@@ -1029,7 +994,7 @@ PointParserPtr         PointParser::Create(GeometricModelCR model)
     {
     PointParserPtr   parser = Create();
 
-    parser->InitModelSettings (model);
+    parser->InitModelSettings(model);
 
     return parser;
     }
@@ -1037,22 +1002,22 @@ PointParserPtr         PointParser::Create(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointParserPtr          PointParser::Create (DgnViewportR viewport)
+PointParserPtr          PointParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    PointParserPtr parser = PointParser::Create (*targetModel);
+    PointParserPtr parser = PointParser::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
     if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return parser;
 
     // WIP_DGNPLATFORM_UNITS
     // Needswork: the parser needs to apply the actual ACS transform
-    parser->m_distanceParser->SetScale (1 / acs->GetScale ());
+    parser->m_distanceParser->SetScale(1 / acs->GetScale());
 #endif
 
     return parser;
@@ -1063,11 +1028,11 @@ PointParserPtr          PointParser::Create (DgnViewportR viewport)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointParserPtr          PointParser::Create(GeometricModelCR model, IAuxCoordSysCR acs)
     {
-    PointParserPtr      parser = PointParser::Create (model);
+    PointParserPtr      parser = PointParser::Create(model);
 
     // WIP_DGNPLATFORM_UNITS
     // Needswork: the parser needs to apply the actual ACS transform
-    parser->m_distanceParser->SetScale (acs.GetScale ());
+    parser->m_distanceParser->SetScale(acs.GetScale());
 
     return parser;
     }
@@ -1075,14 +1040,9 @@ PointParserPtr          PointParser::Create(GeometricModelCR model, IAuxCoordSys
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   PointParser::StringToPoint
-(
-DPoint3dR       point,              /* <= point returned */
-Point3dP        relativeFlags,      /* <= bool for each coordinate */
-Utf8CP          input               /* => character string */
-)
+BentleyStatus PointParser::StringToPoint (DPoint3dR point, Point3dP relativeFlags, Utf8CP input)
     {
-    WString inString (input, BentleyCharEncoding::Utf8);
+    WString inString(input, BentleyCharEncoding::Utf8);
 
     int         numCoords = 0;
     WString     coordStr[3];
@@ -1091,7 +1051,7 @@ Utf8CP          input               /* => character string */
 
     for (int iCoord = 0; iCoord < 3; iCoord++)
         {
-        currPos = wskipSpace (currPos);
+        currPos = wskipSpace(currPos);
         if (currPos == endPos)
             break;
 
@@ -1099,7 +1059,7 @@ Utf8CP          input               /* => character string */
         if (NULL == commaPos)
             commaPos = endPos;
 
-        coordStr[iCoord].assign (currPos, commaPos - currPos);
+        coordStr[iCoord].assign(currPos, commaPos - currPos);
         numCoords++;
 
         if (commaPos == endPos)
@@ -1134,13 +1094,13 @@ Utf8CP          input               /* => character string */
     double y = 0.0;
     double z = 0.0;
 
-    if (SUCCESS != m_distanceParser->ToValue (x, Utf8String (coordStr[0]).c_str()) ||
-        SUCCESS != m_distanceParser->ToValue (y, Utf8String (coordStr[1]).c_str()) )
+    if (SUCCESS != m_distanceParser->ToValue(x, Utf8String(coordStr[0]).c_str()) ||
+        SUCCESS != m_distanceParser->ToValue(y, Utf8String(coordStr[1]).c_str()) )
         return ERROR;
 
     if (m_is3d)
         {
-        if (SUCCESS != m_distanceParser->ToValue (z, Utf8String (coordStr[2]).c_str()))
+        if (SUCCESS != m_distanceParser->ToValue(z, Utf8String(coordStr[2]).c_str()))
             return ERROR;
         }
 
@@ -1154,13 +1114,13 @@ Utf8CP          input               /* => character string */
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointParser::ToValue (DPoint3dR outPoint, Utf8CP input)
+BentleyStatus PointParser::ToValue(DPoint3dR outPoint, Utf8CP input)
     {
-    outPoint.Init (0.0, 0.0, 0.0);
+    outPoint.Init(0.0, 0.0, 0.0);
     if (NULL == input || 0 == *input)
         return SUCCESS;
 
-    BentleyStatus result = StringToPoint (outPoint, NULL, input);
+    BentleyStatus result = StringToPoint(outPoint, NULL, input);
 
     return result;
     }
@@ -1168,25 +1128,15 @@ BentleyStatus PointParser::ToValue (DPoint3dR outPoint, Utf8CP input)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointParser::ToValue (DPoint3dR outPoint, Point3dR relativeFlags, Utf8CP input)
+BentleyStatus PointParser::ToValue(DPoint3dR outPoint, Point3dR relativeFlags, Utf8CP input)
     {
-    outPoint.Init (0.0, 0.0, 0.0);
+    outPoint.Init(0.0, 0.0, 0.0);
     if (NULL == input || 0 == *input)
         return SUCCESS;
 
-    BentleyStatus result = StringToPoint (outPoint, &relativeFlags, input);
+    BentleyStatus result = StringToPoint(outPoint, &relativeFlags, input);
 
     return result;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            AreaOrVolumeParser::Init ()
-    {
-    m_masterUnitScale = 1.0;
-    m_scale           = 1.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1199,13 +1149,13 @@ void            AreaOrVolumeParser::InitModelSettings(GeometricModelCR model)
     UnitDefinition  masterUnit = displayInfo.GetMasterUnits();
     double          uorPerMast = masterUnit.ToMeters();
     
-    SetMasterUnitScale (uorPerMast);
+    SetMasterUnitScale(uorPerMast);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, size_t& numCharsParsed, Utf8CP input) 
+BentleyStatus AreaOrVolumeParser::ToValue(double& outValue, size_t& numCharsParsed, Utf8CP input) 
     {
     outValue = 0.0;
     if (NULL == input || 0 == *input)
@@ -1214,63 +1164,18 @@ BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, size_t& numCharsPar
     WString inString(input, BentleyCharEncoding::Utf8);
 
     size_t whiteSpaceCount = 0;
-    vp_removeWhiteSpaceAndCount (whiteSpaceCount, inString);
+    vp_removeWhiteSpaceAndCount(whiteSpaceCount, inString);
 
     bool    negative;
-    int     result = vp_AddNumberStringScaledNoModify (outValue, numCharsParsed, negative, inString.c_str(), pow (m_masterUnitScale, m_dimension));
+    int     result = vp_AddNumberStringScaledNoModify(outValue, numCharsParsed, negative, inString.c_str(), pow(m_masterUnitScale, m_dimension));
 
     if (SUCCESS == result)
-        outValue *= pow (m_scale, m_dimension);
+        outValue *= pow(m_scale, m_dimension);
 
     numCharsParsed += whiteSpaceCount;
 
     return (SUCCESS == result) ? BSISUCCESS : BSIERROR;
     }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Kevin.Nyman     11/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AreaOrVolumeParser::ToValue (double& outValue, Utf8CP input) 
-    {
-    size_t  numChars;
-
-    return ToValue (outValue, numChars, input);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-AreaOrVolumeParser::AreaOrVolumeParser (AreaOrVolumeParserCR source)
-    {
-    m_masterUnitScale   = source.m_masterUnitScale;
-    m_scale             = source.m_scale;
-    m_dimension         = source.m_dimension;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-AreaOrVolumeParser::AreaOrVolumeParser (uint8_t dimension)
-    {
-    m_dimension = dimension;
-    Init();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/        AreaParser::AreaParser (AreaParserCR source)
-    : AreaOrVolumeParser (source)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-AreaParserPtr       AreaParser::Create ()           { return new AreaParser(); }
-/* ctor */          AreaParser::AreaParser ()       : AreaOrVolumeParser (2) { }
-AreaParserPtr       AreaParser::Clone() const       { return new AreaParser (*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    04/12
@@ -1279,7 +1184,7 @@ AreaParserPtr       AreaParser::Create(GeometricModelCR model)
     {
     AreaParserPtr   parser = Create();
 
-    parser->InitModelSettings (model);
+    parser->InitModelSettings(model);
 
     return parser;
     }
@@ -1287,70 +1192,42 @@ AreaParserPtr       AreaParser::Create(GeometricModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaParserPtr       AreaParser::Create (DgnViewportR viewport)
+AreaParserPtr       AreaParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    AreaParserPtr   parser = AreaParser::Create (*targetModel);
+    AreaParserPtr   parser = AreaParser::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
     if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return parser;
 
-    parser->SetScale (acs->GetScale ());
+    parser->SetScale(acs->GetScale());
 #endif
 
     return parser;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*ctor*/        VolumeParser::VolumeParser (VolumeParserCR source)
-    : AreaOrVolumeParser (source)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-VolumeParserPtr       VolumeParser::Create ()           { return new VolumeParser(); }
-/* ctor */          VolumeParser::VolumeParser ()       : AreaOrVolumeParser (3) { }
-VolumeParserPtr       VolumeParser::Clone() const       { return new VolumeParser (*this); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JoshSchifter    04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-VolumeParserPtr       VolumeParser::Create(GeometricModelCR model)
-    {
-    VolumeParserPtr   parser = Create();
-
-    parser->InitModelSettings (model);
-
-    return parser;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeParserPtr       VolumeParser::Create (DgnViewportR viewport)
+VolumeParserPtr       VolumeParser::Create(DgnViewportR viewport)
     {
     GeometricModelP targetModel = viewport.GetViewController().GetTargetModel();
-    VolumeParserPtr   parser = VolumeParser::Create (*targetModel);
+    VolumeParserPtr   parser = VolumeParser::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
     if (targetModel->GetRoot()->GetPropertiesCP()->GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return parser;
 
-    parser->SetScale (acs->GetScale ());
+    parser->SetScale(acs->GetScale());
 #endif
 
     return parser;

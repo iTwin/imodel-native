@@ -739,10 +739,48 @@ TEST_F(DgnElementTests, HandlerlessClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, TestUnhandledProperties)
+void DgnElementTests::TestAutoHandledPropertiesCA()
     {
-    SetupSeedProject();
-    
+    SetupProject(L"3dMetricGeneral.ibim", L"TestUnhandledProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+    TestElement el(params);
+
+    static Utf8CP s_autoHandledPropNames[] = {
+        "IntegerProperty1"
+        ,"IntegerProperty2"
+        ,"IntegerProperty3"
+        ,"IntegerProperty4"
+        ,"DoubleProperty1"
+        ,"DoubleProperty2"
+        ,"DoubleProperty3"
+        ,"DoubleProperty4"
+        ,"PointProperty1"
+        ,"PointProperty2"
+        ,"PointProperty3"
+        ,"PointProperty4"
+        ,"StringProperty"
+        ,"IntProperty"
+        };
+
+    for (int i=0; i<_countof(s_autoHandledPropNames); ++i)
+        {
+        ECN::ECValue checkValue;
+        EXPECT_EQ(DgnDbStatus::Success, el._GetProperty(checkValue, s_autoHandledPropNames[i]));
+        EXPECT_TRUE(checkValue.IsNull());
+        }
+
+    // Check a few non-auto-handled props
+    ECN::ECValue checkValue;
+    EXPECT_EQ(DgnDbStatus::Success, el._GetProperty(checkValue, "TestIntegerProperty1"));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementTests::TestAutoHandledPropertiesGetSet()
+    {
     DgnElementCPtr persistentEl;
     if (true)
         {
@@ -805,6 +843,30 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
     checkValue.Clear();
     EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+
+    // REALLY check that the stored value was changed
+    auto fileName = m_db->GetFileName();
+    auto elid = persistentEl->GetElementId();
+    persistentEl = nullptr;
+    m_db->SaveChanges();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    persistentEl = m_db->Elements().GetElement(elid);
+    ASSERT_TRUE(persistentEl.IsValid());
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
+    EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, TestAutoHandledProperties)
+    {
+    SetupProject(L"3dMetricGeneral.ibim", L"TestAutoHandledPropertiesGetSet.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    TestAutoHandledPropertiesCA();
+    TestAutoHandledPropertiesGetSet();
     }
 
 /*---------------------------------------------------------------------------------**//**

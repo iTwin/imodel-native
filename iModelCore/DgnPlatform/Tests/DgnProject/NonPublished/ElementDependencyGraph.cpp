@@ -62,7 +62,7 @@ struct TestElementDrivesElementHandlerShouldFail
 +===============+===============+===============+===============+===============+======*/
 struct ElementDependencyGraph : DgnDbTestFixture
 {
-    BETEST_DECLARE_TC_TEARDOWN
+        public: static void TearDownTestCase();
 
     enum class ElementDrivesElementColumn {TargetECInstanceId,TargetECClassId,SourceECInstanceId,SourceECClassId,Status};
 
@@ -97,7 +97,7 @@ END_UNNAMED_NAMESPACE
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(ElementDependencyGraph)
+void ElementDependencyGraph::TearDownTestCase()
     {
     // Note: leave your subdirectory in place. Don't remove it. That allows the 
     // base class to detect and throw an error if two groups try to use a directory of the same name.

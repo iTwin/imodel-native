@@ -17,14 +17,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct DgnDbTestUtils : public testing::Test
 {
-    // Insert the following macros into the definition of your test group subclass to declare that you want to set up shared resources for all of the tests in your group.
-    //BETEST_DECLARE_TC_SETUP
-    //BETEST_DECLARE_TC_TEARDOWN
-
-    // Then do this in your group's .cpp file, in order to *define* your setup and teardown functions
-    // BETEST_TC_SETUP(MyGroup) { ... one-time setup logic ... }
-    // BETEST_TC_TEARDOWN(MyGroup) { ... one-time tear-down logic ... }
-
     //! Identifies a root seed DgnDb
     enum class SeedDbId
         {

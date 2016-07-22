@@ -11,8 +11,8 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:PhysicalElement</BaseClass>
-        <ECProperty propertyName="TestElementProperty" typeName="string" />
-        <!-- Sam added the following properties and explicitly did NOT implement logic to read/write them -->
+
+        <!-- The following properties are meant to be auto-handled. -->
         <ECProperty propertyName="IntegerProperty1" typeName="int" />
         <ECProperty propertyName="IntegerProperty2" typeName="int" />
         <ECProperty propertyName="IntegerProperty3" typeName="int" />
@@ -26,20 +26,112 @@
         <ECProperty propertyName="PointProperty3"   typeName="Point3d" />
         <ECProperty propertyName="PointProperty4"   typeName="Point3d" />
 
-        <!-- The following properties have getters and setters on the TestElement class and are written/read when the element is written/read -->
-        <ECProperty propertyName="TestIntegerProperty1" typeName="int" />
-        <ECProperty propertyName="TestIntegerProperty2" typeName="int" />
-        <ECProperty propertyName="TestIntegerProperty3" typeName="int" />
-        <ECProperty propertyName="TestIntegerProperty4" typeName="int" />
-        <ECProperty propertyName="TestDoubleProperty1"  typeName="double" />
-        <ECProperty propertyName="TestDoubleProperty2"  typeName="double" />
-        <ECProperty propertyName="TestDoubleProperty3"  typeName="double" />
-        <ECProperty propertyName="TestDoubleProperty4"  typeName="double" />
-        <ECProperty propertyName="TestPointProperty1"   typeName="Point3d" />
-        <ECProperty propertyName="TestPointProperty2"   typeName="Point3d" />
-        <ECProperty propertyName="TestPointProperty3"   typeName="Point3d" />
-        <ECProperty propertyName="TestPointProperty4"   typeName="Point3d" />
-    </ECClass>
+        <!-- The rest of the properties are custom-handled -->
+        <ECProperty propertyName="TestElementProperty" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty1" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty2" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty3" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestIntegerProperty4" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty1"  typeName="double">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty2"  typeName="double">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty3"  typeName="double">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestDoubleProperty4"  typeName="double">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty1"   typeName="Point3d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty2"   typeName="Point3d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty3"   typeName="Point3d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TestPointProperty4"   typeName="Point3d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECClass>
 
     <ECClass typeName="TestElement2d" isDomainClass="True">
         <ECCustomAttributes>
@@ -189,30 +281,93 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>TestElement</BaseClass>
-        <ECProperty propertyName='Prop1_1' typeName='string' />
-        <ECProperty propertyName='Prop1_2' typeName='long' />
-        <ECProperty propertyName='Prop1_3' typeName='double' />
-    </ECClass>
+        <ECProperty propertyName='Prop1_1' typeName='string'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName='Prop1_2' typeName='long'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName='Prop1_3' typeName='double'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECClass>
     
     <ECClass typeName="TestElementSub2" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>TestElementSub1</BaseClass>
-        <ECProperty propertyName='Prop2_1' typeName='string' />
-        <ECProperty propertyName='Prop2_2' typeName='long' />
-        <ECProperty propertyName='Prop2_3' typeName='double' />
-    </ECClass>
+        <ECProperty propertyName='Prop2_1' typeName='string'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName='Prop2_2' typeName='long'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName='Prop2_3' typeName='double'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECClass>
     
     <ECClass typeName="TestElementSub3" isDomainClass="True">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>TestElementSub2</BaseClass>
-        <ECProperty propertyName='Prop3_1' typeName='string' />
-        <ECProperty propertyName='Prop3_2' typeName='long' />
-        <ECProperty propertyName='Prop3_3' typeName='double' />
-    </ECClass>
+        <ECProperty propertyName='Prop3_1' typeName='string'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName='Prop3_2' typeName='long'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName='Prop3_3' typeName='double'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECClass>
 
     <ECClass typeName="TestStruct" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="TestStructDoubleMember" typeName="double" />"
@@ -225,9 +380,23 @@
           <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>TestElement</BaseClass>
-        <ECProperty propertyName='Prop_point3d' typeName='point3d' />
-        <ECStructProperty propertyName="Prop_struct" typeName="TestStruct"/>
-    </ECClass>
+        <ECProperty propertyName='Prop_point3d' typeName='point3d'>
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="Prop_struct" typeName="TestStruct">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>7</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+          </ECStructProperty>
+        </ECClass>
 
     <ECClass typeName="TestElementWithNoHandler" isDomainClass="True">
         <BaseClass>TestElement</BaseClass>

@@ -481,10 +481,6 @@ virtual void _OutputGraphics (ViewContextR context) override
     GeometryCollection collection(*source);
     Render::GraphicBuilderPtr graphic;
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    collection.SetBRepOutput(GeometryCollection::BRepOutput::Edges | GeometryCollection::BRepOutput::FaceIso); // Want exact edges only...
-#endif
-
     for (auto iter : collection)
         {
         // Quick exclude of geometry that didn't generate the hit...

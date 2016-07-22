@@ -67,14 +67,6 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
-void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
-    {
-    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/2016
-//---------------------------------------------------------------------------------------
 DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat = BindParams(statement);

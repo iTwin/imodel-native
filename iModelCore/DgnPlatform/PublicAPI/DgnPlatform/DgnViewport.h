@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
-#include "ColorUtil.h"
 #include "ViewController.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -45,17 +44,6 @@ struct FitViewParams
     bool m_useElementAlignedBox = false;
     bool m_fitDepthOnly = false;
     bool m_limitByVolume = false;
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum class ViewportResizeMode
-{
-    KeepCurrent      = 0, //!< The viewport size is unchanged (this is the default). The viewport is unchanged, and the view contents are resized to match the viewport aspect ratio.
-    RelativeRect     = 1, //!< The viewport is resized to the same size, relative to the available area, that is specifed in viewPortInfo
-    AspectRatio      = 2, //!< The viewport is resized to match the aspect ratio of the viewInfo.
-    Size             = 3, //!< The viewport is resized to match the exact size 
 };
 
 //=======================================================================================
@@ -211,7 +199,7 @@ public:
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
-    DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
+    DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
     void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
     void SetNeedsHeal() const {m_sync.InvalidateController();}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
@@ -332,17 +320,16 @@ public:
     DVec2d GetDpiScale() const {return m_renderTarget->GetDpiScale();}
 
     //! Get an 8-point frustum corresponding to the 8 corners of the DgnViewport in the specified coordinate system.
-    //! When front or back clipping is turned \em off, there are two sets of corners that may be of interest.
-    //! The "expanded" box is the one that is computed by examining the extents of the content of the view and moving
+    //! There are two sets of corners that may be of interest.
+    //! The "adjusted" box is the one that is computed by examining the "project extents" and moving
     //! the front and back planes to enclose everything in the view [N.B. this is the way that views implement
-    //! the concept of "no front/back clipping", since there always must be a view frustum]. The "unexpanded" box is
-    //! the one that is saved in the view definition.
+    //! the concept of "no front/back clipping", since there always must be a view frustum]. The "unadjusted" box is
+    //! the one that is stored in the ViewController.
     //! @param[in] sys Coordinate system for \c points
-    //! @param[in] adjustedBox If true, and if f/b clipping is OFF, retrieve the "adjusted" box. Otherwise retrieve the box that came from the view definition.
+    //! @param[in] adjustedBox If true, retrieve the adjusted box. Otherwise retrieve the box that came from the view definition.
     //! @return the view frustum
-    //! @note The "adjusted" box may, in reality, be either larger or smaller than the "unexpanded" box since the expanded box depends on the current
-    //!       content of the view.
-    DGNPLATFORM_EXPORT Frustum GetFrustum(DgnCoordSystem sys=DgnCoordSystem::World, bool adjustedBox=false) const;
+    //! @note The "adjusted" box may be either larger or smaller than the "unadjusted" box.
+    DGNPLATFORM_EXPORT Frustum GetFrustum(DgnCoordSystem sys=DgnCoordSystem::World, bool adjustedBox=true) const;
 
     //! Get the size of a single pixel at a given point as a distance along the view-x axis.
     //! The size of a pixel will only differ at different points within the same DgnViewport if the camera is on for this DgnViewport (in which case,

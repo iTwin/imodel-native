@@ -369,9 +369,6 @@ public:
     DgnDbStatus OnModelUpdate(DgnModelCR model); //!< @private
     DgnDbStatus OnModelDelete(DgnModelCR model); //!< @private
     void OnDgnDbDestroyed() { _OnDgnDbDestroyed(); } //!< @private
-
-    DGNPLATFORM_EXPORT static void BackDoor_SetAutomaticAcquisition(bool acquireAutomatically); //!< @private TEMPORARY
-    DGNPLATFORM_EXPORT static void BackDoor_SetSupportFastQuery(bool supportFastQuery); //!< @private TEMPORARY
 };
 
 /*=====================================================================================*/

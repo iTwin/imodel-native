@@ -221,9 +221,6 @@ namespace dgn_ElementHandler
     struct AnnotationTextStyleHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Element, DGNPLATFORM_EXPORT);
-
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams&) override;
     };
 }
 

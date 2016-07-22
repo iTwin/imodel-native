@@ -376,7 +376,7 @@ struct LineStyleParams
 
     //! Compare two LineStyleParams.
     DGNPLATFORM_EXPORT bool operator==(LineStyleParamsCR rhs) const;
-    DGNPLATFORM_EXPORT void SetScale(double scale);
+    void SetScale(double inScale) {modifiers |= 0x01; scale = inScale;}
 };
 
 //=======================================================================================
@@ -595,7 +595,7 @@ protected:
     double          m_shift;
     ColorDef        m_colors[MAX_GRADIENT_KEYS];
     double          m_values[MAX_GRADIENT_KEYS];
-    DGNPLATFORM_EXPORT GradientSymb();
+    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
 
 public:
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);

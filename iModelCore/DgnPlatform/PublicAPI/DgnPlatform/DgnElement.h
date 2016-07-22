@@ -230,6 +230,44 @@ public:
     DGNPLATFORM_EXPORT DgnElementCPtr ImportElement(DgnDbStatus* stat, DgnModelR destModel, DgnElementCR sourceElement);
 };
 
+//=======================================================================================
+//! Returns all auto- or custom-handled properties on a class that are for the specified type of statements
+// @bsiclass                                                    Sam.Wilson      07/16
+//=======================================================================================
+struct AutoHandledPropertiesCollection
+    {
+    ECN::ECPropertyIterable m_props;
+    ECN::ECPropertyIterable::const_iterator m_end;
+    ECN::ECClassCP m_customHandledProperty;
+    ECN::ECClassCP m_propertyStatementType;
+    ECSqlClassParams::StatementType m_stype;
+    bool m_wantCustomHandledProps;
+
+    AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
+
+    struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
+        {
+        private:
+            friend struct AutoHandledPropertiesCollection;
+            ECN::ECPropertyIterable::const_iterator m_i;
+            ECSqlClassParams::StatementType m_stype;
+            AutoHandledPropertiesCollection const& m_coll;
+            Iterator(ECN::ECPropertyIterable::const_iterator it, AutoHandledPropertiesCollection const& coll);
+            void ToNextValid();
+
+        public:
+            ECN::ECPropertyCP operator*() const { BeAssert(m_i != m_coll.m_end); return *m_i; }
+            Iterator& operator++();
+            bool operator!=(Iterator const& rhs) const { return !(*this == rhs); }
+            bool operator==(Iterator const& rhs) const { return m_i == rhs.m_i; }
+            ECSqlClassParams::StatementType GetStatementType() const {return m_stype;}
+        };
+
+    typedef Iterator const_iterator;
+    const_iterator begin() const { return Iterator(m_props.begin(), *this); }
+    const_iterator end() const { return Iterator(m_props.end(), *this); }
+    };
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -643,6 +681,8 @@ protected:
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
+        uint32_t m_hasAutoHandledProps:2; // 0==unknown, 1==yes, 2==no
+        uint32_t m_autoHandledPropsDirty:1;
         Flags() {memset(this, 0, sizeof(*this));}
     };
 
@@ -654,6 +694,7 @@ protected:
     DgnClassId    m_classId;
     DgnCode       m_code;
     Utf8String    m_label;
+    mutable ECN::IECInstancePtr m_autoHandledProperties;
     mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
@@ -667,6 +708,10 @@ protected:
     void InvalidateCode() {m_code = DgnCode();}
 #endif
     
+    ECN::IECInstanceP GetAutoHandledProperties() const;
+    BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const;
+    DgnDbStatus UpdateAutoHandledProperties();
+
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
 
@@ -680,7 +725,7 @@ protected:
     //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
     //! You should then extract your subclass properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -1152,9 +1197,6 @@ public:
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
 
-    //! @private
-    DGNPLATFORM_EXPORT void ComputeUnhandledProperties(bvector<ECN::ECPropertyCP>&) const;
-    
     //! @}
 };
 
@@ -1445,7 +1487,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
 
-    static void AddBaseClassParams(ECSqlClassParams& params);
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
     DgnDbStatus InsertGeomStream() const;
@@ -1521,7 +1562,6 @@ protected:
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
-    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 
     DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
@@ -1589,8 +1629,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement&) override;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
-public:
-    DGNPLATFORM_EXPORT static void AddClassParams(ECSqlClassParams& params);
 };
 
 //=======================================================================================
@@ -1969,6 +2007,7 @@ private:
     };
 
     typedef bmap<DgnClassId, ClassInfo> ClassInfoMap;
+    typedef bmap<DgnClassId, ECSqlClassParams> T_ClassParamsMap;
 
     DgnElementId  m_nextAvailableId;
     struct ElemIdTree* m_tree;
@@ -1979,6 +2018,8 @@ private:
     DgnElementIdSet m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
     mutable ClassInfoMap m_classInfos;
+    mutable T_ClassParamsMap m_classParams;
+    mutable bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
@@ -2008,7 +2049,11 @@ private:
     BeSQLite::SnappyFromMemory& GetSnappyFrom() {return m_snappyFrom;} // NB: Not to be used during loading of a GeometricElement or GeometryPart!
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;} // NB: Not to be used during insert or update of a GeometricElement or GeometryPart!
 
+    ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
+
 public:
+    T_ClassParamsMap const& GetClassParamsMap() const {return m_classParams;}
+
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //! @private
     DGNPLATFORM_EXPORT void DropFromPool(DgnElementCR) const; //! @private

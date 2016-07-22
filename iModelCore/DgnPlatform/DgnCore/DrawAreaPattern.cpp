@@ -32,7 +32,6 @@ void PatternParams::Init()
     scale = 1.0;
     tolerance = 0.0;
     annotationscale = 1.0;
-    memset(cellName, 0, sizeof (cellName));
     cellId = 0;
     modifiers = PatternParamsModifierFlags::None;
     minLine = -1;
@@ -45,16 +44,6 @@ void PatternParams::Init()
     dwgHatchDef.islandStyle = 0;
     origin.Zero();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-PatternParams::PatternParams() {Init();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-PatternParamsPtr PatternParams::Create() {return new PatternParams();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2012
@@ -80,7 +69,6 @@ void PatternParams::Copy(PatternParamsCR params)
     scale = params.scale;
     tolerance = params.tolerance;
     annotationscale = params.annotationscale;
-    memcpy(cellName, params.cellName, sizeof (cellName));
     cellId = params.cellId;
     modifiers = params.modifiers;
     minLine = params.minLine;
@@ -176,9 +164,6 @@ bool PatternParams::IsEqual(PatternParamsCR params, PatternParamsCompareFlags co
 
         if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Cell))
             {
-            if (0 != wcscmp(cellName, params.cellName))
-                return false;
-
             if (cellId != params.cellId)
                 return false;
             }
@@ -1380,7 +1365,7 @@ DPoint3dR       origin
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsValidPatternDefLine
 (
-DwgHatchDefLineP    lineP,
+DwgHatchDefLine*    lineP,
 double              rangeDiagonal
 )
     {
@@ -1410,7 +1395,7 @@ ViewContextR        context,
 TransformR          baseTransform,
 TransformR          hatchTransform,
 double              annotationScale,
-DwgHatchDefLineP    hatchLines,
+DwgHatchDefLine*   hatchLines,
 int                 nDefLines,
 bool                is3d
 )
@@ -1428,7 +1413,7 @@ bool                is3d
     GPArraySmartP   hatchGpa, dashGpa;
 
     // NOTE: In ACAD hatch definitions both the base angle and scale have already been applied to the definitions and MUST not be applied again!
-    for (DwgHatchDefLineP lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
+    for (DwgHatchDefLine* lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
         {
         if (!IsValidPatternDefLine(lineP, rangeDiagonal))
             continue;
@@ -1748,8 +1733,3 @@ void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
 #endif
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::WantAreaPatterns() {return _WantAreaPatterns();}
-void ViewContext::DrawAreaPattern(ClipStencil& boundary) {_DrawAreaPattern(boundary);}

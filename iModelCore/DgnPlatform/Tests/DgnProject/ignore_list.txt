@@ -73,3 +73,7 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # Actual: 7
     # Expected: 8
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (59 ms)
+
+ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction # notified Raman
+ChangeSummaryTestFixture.ElementChangesFromSavedTransactions # notified Raman
+ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
