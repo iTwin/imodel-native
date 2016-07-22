@@ -132,7 +132,7 @@ TEST_F(ECDbSymbolProviderTests, GetECClassId)
     ECValue value;
     instance->GetValue(value, "my_class_id");
     EXPECT_TRUE(value.IsString());
-    EXPECT_STREQ(Utf8PrintfString("%" PRIu64, testClass->GetId()).c_str(), value.GetUtf8CP());
+    EXPECT_STREQ(Utf8PrintfString("%" PRIu64, testClass->GetId().GetValue()).c_str(), value.GetUtf8CP());
     }
 
 
