@@ -20,20 +20,6 @@
 
 USING_NAMESPACE_IMAGEPP
 
-#ifdef VANCOUVER_API
-#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
-#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
-#else
-#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
-#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
-#endif
-
-extern bool s_stream_from_disk;
-extern bool s_stream_from_file_server;
-extern bool s_stream_from_grouped_store;
-extern bool s_stream_enable_caching;
-extern bool s_is_virtual_grouping;
-
 
 
 template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress, bool areNodeHeadersGrouped, bool isVirtualGrouping, WString headers_path)

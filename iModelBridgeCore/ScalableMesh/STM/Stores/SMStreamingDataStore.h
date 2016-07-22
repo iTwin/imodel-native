@@ -15,6 +15,22 @@
 
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
+#ifdef VANCOUVER_API
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
+#else
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#endif
+
+extern bool s_stream_from_disk;
+extern bool s_stream_from_file_server;
+extern bool s_stream_from_grouped_store;
+extern bool s_stream_enable_caching;
+extern bool s_is_virtual_grouping;
+
+//extern std::mutex fileMutex;
+
 #ifndef NDEBUG
 #define DEBUG_STREAMING_DATA_STORE
 extern std::mutex s_consoleMutex;

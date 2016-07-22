@@ -19,6 +19,7 @@
 #include <curl/curl.h>
 #include <condition_variable>
 #include <CloudDataSource/DataSourceAccount.h>
+
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
 #define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
@@ -33,7 +34,6 @@ extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
 
-//extern std::mutex fileMutex;
 
 // Helper point block data structure
 struct PointBlock : public bvector<uint8_t> {
