@@ -29,8 +29,11 @@
 
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
+#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
 
 #include <Imagepp/all/h/HGF2DProjective.h>
 #include <Imagepp/all/h/HGF2DSimilitude.h>
@@ -177,6 +180,11 @@ HRFxChCapabilities::HRFxChCapabilities()
     // PixelTypeV32R8G8B8A8
     Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
                                    HRPPixelTypeV32R8G8B8A8::CLASS_ID,
+                                   new HRFxChCodecCapabilities()));
+
+    // PixelTypeV48R16G16B16
+    Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
+                                   HRPPixelTypeV48R16G16B16::CLASS_ID,
                                    new HRFxChCodecCapabilities()));
 
     // Scanline orientation capability
@@ -704,7 +712,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                     pi_rpBlueFileURL->GetURL());
 
-    if (m_ChannelCount == 4) // 32 bits - there is an alpha channel!
+    if (m_ChannelCount == 4) // 32 or 64 bits - there is an alpha channel!
         {
         m_pAlphaFile = HRFRasterFileFactory::GetInstance()->OpenFile(pi_rpAlphaFileURL, true);
 
@@ -842,7 +850,8 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
     HFCPtr<HRPPixelType> pGreenChPixelType = pi_rpGreenFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
     HFCPtr<HRPPixelType> pBlueChPixelType  = pi_rpBlueFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
 
-    if (!(pRedChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
+    if (!( pRedChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+           pRedChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID) ) &&
         (pi_rpRedFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
@@ -856,7 +865,8 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
             throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpRedFile->GetURL()->GetURL());
         }
 
-    if (!(pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
+    if (!(pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+          pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)  ) &&
         (pi_rpGreenFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
@@ -870,7 +880,8 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
             throw HRFXCHChannelsIsNotAValidGrayscaleException( pi_rpGreenFile->GetURL()->GetURL());
         }
 
-    if (!(pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
+    if (!(pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+          pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)  ) &&
         (pi_rpBlueFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
@@ -1134,14 +1145,21 @@ void HRFxChFile::CreateDescriptors()
     HPRECONDITION (m_IsOpen);
 
     HFCPtr<HRFPageDescriptor> pChannelPageDescriptor = m_pRedFile->GetPageDescriptor(0);
+    HFCPtr<HRPPixelType> pRedChPixelType = pChannelPageDescriptor->GetResolutionDescriptor(0)->GetPixelType();
 
     // Create pixel type
     HFCPtr<HRPPixelType> pPixelType;
 
-    if (m_ChannelCount == 3) // 24bits
-        pPixelType = new HRPPixelTypeV24R8G8B8();
-    else // 32bits
-        pPixelType = new HRPPixelTypeV32R8G8B8A8();
+    if (m_ChannelCount == 3)
+        if (pRedChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)) 
+            pPixelType = new HRPPixelTypeV48R16G16B16();
+        else
+            pPixelType = new HRPPixelTypeV24R8G8B8();
+    else 
+        if (pRedChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
+            pPixelType = new HRPPixelTypeV64R16G16B16A16();
+        else
+            pPixelType = new HRPPixelTypeV32R8G8B8A8();
 
     // Compose resolution descriptors
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;

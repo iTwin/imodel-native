@@ -72,14 +72,15 @@ HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
 
         {
         uint32_t BufferPixelLength = GetResolutionDescriptor()->GetBlockWidth() * GetResolutionDescriptor()->GetBlockHeight();
+        size_t bytesPerPixel = GetResolutionDescriptor()->GetBitsPerPixel() / 8;
 
-        HArrayAutoPtr<Byte> pBuffRed(new Byte[BufferPixelLength*(RASTER_FILE->m_ChannelCount)]);
-        Byte* pBuffGreen = &(pBuffRed[BufferPixelLength]);
-        Byte* pBuffBlue  = &(pBuffRed[BufferPixelLength*2]);
+        HArrayAutoPtr<Byte> pBuffRed(new Byte[BufferPixelLength*bytesPerPixel*(RASTER_FILE->m_ChannelCount)]);
+        Byte* pBuffGreen = &(pBuffRed[BufferPixelLength*bytesPerPixel]);
+        Byte* pBuffBlue  = &(pBuffRed[BufferPixelLength*bytesPerPixel*2]);
         Byte* pBuffAlpha = 0;
 
         if (RASTER_FILE->m_ChannelCount == 4)
-            pBuffAlpha  = &(pBuffRed[BufferPixelLength*3]);
+            pBuffAlpha  = &(pBuffRed[BufferPixelLength*bytesPerPixel*3]);
 
         //:> Read each channel
         if ((Status = RASTER_FILE->m_RedFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffRed)) != H_SUCCESS ||
@@ -120,21 +121,55 @@ HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
             {
             if (RASTER_FILE->m_ChannelCount == 3)
                 {
-                for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=3)
+                if (bytesPerPixel == 1) // 8 bits
                     {
-                    po_pData[bufPos]   = pBuffRed[pos];
-                    po_pData[bufPos+1] = pBuffGreen[pos];
-                    po_pData[bufPos+2] = pBuffBlue[pos];
+                    for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=3)
+                        {
+                        po_pData[bufPos]   = pBuffRed[pos];
+                        po_pData[bufPos+1] = pBuffGreen[pos];
+                        po_pData[bufPos+2] = pBuffBlue[pos];
+                        }
+                    }
+                else    // 16 bits
+                    {
+                    uint16_t* pData = (uint16_t *)po_pData;
+                    uint16_t* pBuffRed16 = (uint16_t *)pBuffRed.get();
+                    uint16_t* pBuffGreen16 = (uint16_t *)pBuffGreen;
+                    uint16_t* pBuffBlue16 = (uint16_t *)pBuffBlue;
+                    for (uint32_t pos = 0, bufPos = 0; pos < BufferPixelLength; pos++, bufPos += 3)
+                        {
+                        pData[bufPos]     = pBuffRed16[pos];
+                        pData[bufPos + 1] = pBuffGreen16[pos];
+                        pData[bufPos + 2] = pBuffBlue16[pos];
+                        }
                     }
                 }
             else
                 {
-                for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=4)
+                if (bytesPerPixel == 1) // 8 bits
                     {
-                    po_pData[bufPos]   = pBuffRed[pos];
-                    po_pData[bufPos+1] = pBuffGreen[pos];
-                    po_pData[bufPos+2] = pBuffBlue[pos];
-                    po_pData[bufPos+3] = pBuffAlpha[pos];
+                    for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=4)
+                        {
+                        po_pData[bufPos]   = pBuffRed[pos];
+                        po_pData[bufPos+1] = pBuffGreen[pos];
+                        po_pData[bufPos+2] = pBuffBlue[pos];
+                        po_pData[bufPos+3] = pBuffAlpha[pos];
+                        }
+                    }
+                else    // 16 bits
+                    {
+                    uint16_t* pData = (uint16_t *)po_pData;
+                    uint16_t* pBuffRed16 = (uint16_t *)pBuffRed.get();
+                    uint16_t* pBuffGreen16 = (uint16_t *)pBuffGreen;
+                    uint16_t* pBuffBlue16 = (uint16_t *)pBuffBlue;
+                    uint16_t* pBuffAlpha16 = (uint16_t *)pBuffAlpha;
+                    for (uint32_t pos = 0, bufPos = 0; pos < BufferPixelLength; pos++, bufPos += 3)
+                        {
+                        pData[bufPos]     = pBuffRed16[pos];
+                        pData[bufPos + 1] = pBuffGreen16[pos];
+                        pData[bufPos + 2] = pBuffBlue16[pos];
+                        pData[bufPos + 3] = pBuffAlpha16[pos];
+                        }
                     }
                 }
             }
