@@ -58,7 +58,7 @@ Utf8String StubHttpResponseValidLockEvent()
               "LockType":"SomeLockType",
               "EventTopic":"SomeEventTopic",
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
-              "ObjectId":"SomeObjectId",
+              "ObjectIds":["SomeObjectId1", "SomeObjectId2", "SomeObjectId3"],
               "LockLevel":"SomeLockLevel",
               "BriefcaseId":"SomeBriefcaseId",
               "ReleasedWithRevision":"SomeReleasedWithRevision"

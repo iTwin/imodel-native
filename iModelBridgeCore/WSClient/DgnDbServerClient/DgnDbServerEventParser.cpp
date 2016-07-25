@@ -214,7 +214,8 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 		if (
 			data.isMember(DgnDbServerEvent::EventTopic) &&
 			data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-			data.isMember(DgnDbServerEvent::LockEventProperties::ObjectIds) &&
+			data.isMember(DgnDbServerEvent::LockEventProperties::ObjectIds) && 
+			data[DgnDbServerEvent::LockEventProperties::ObjectIds].isArray() &&
 			data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
 			data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
 			data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
@@ -242,6 +243,7 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId) &&
 			data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
 			data.isMember(DgnDbServerEvent::CodeEventProperties::Values) &&
+			data[DgnDbServerEvent::CodeEventProperties::Values].isArray() &&
 			data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
 			data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
 			data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision)
@@ -325,6 +327,9 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
 		itr++
 		)
 		objectIds.push_back((*itr).asString());
+
+	if (objectIds.size() < 1)
+		return nullptr;
 
 	return DgnDbServerLockEvent::Create
 	(
@@ -425,6 +430,9 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 		itr++
 		)
 		values.push_back((*itr).asString());
+
+	if (values.size() < 1)
+		return nullptr;
 
 	return DgnDbServerCodeEvent::Create
 	(
