@@ -115,7 +115,7 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_FewProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertRegular_ManyProps)
     {
-    const int propCount = 150;
+    const int propCount = 100;
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
@@ -130,7 +130,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertRegular_ManyProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, SelectRegular_ManyProps)
     {
-    const int propCount = 150;
+    const int propCount = 100;
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
@@ -145,7 +145,7 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_ManyProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps)
     {
-    const int propCount = 10;
+    const int propCount = 100;
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
@@ -160,7 +160,7 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, SelectOverflow_FewProps)
     {
-    const int propCount = 10;
+    const int propCount = 100;
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
     ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
@@ -263,6 +263,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(PrimitiveT
     stmt.Finalize();
     timer.Stop();
     LogTiming(timer, "INSERT - Regular Property", propertyType, propCount, rowCount);
+    GetECDb().CloseDb();
     return SUCCESS;
     }
 
@@ -402,6 +403,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
     stmt.Finalize();
     timer.Stop();
     LogTiming(timer, "SELECT - Regular Property",propertyType, propCount, rowCount);
+    GetECDb().CloseDb();
     return SUCCESS;
     }
 
@@ -434,6 +436,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(Primitive
     stmt.Finalize();
     timer.Stop();
     LogTiming(timer, "INSERT - OverflowProperty", propertyType, propCount, rowCount);
+    GetECDb().CloseDb();
     return SUCCESS;
     }
 
@@ -569,6 +572,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
     stmt.Finalize();
     timer.Stop();
     LogTiming(timer, "SELECT - OverflowProperty", propertyType, propCount, rowCount);
+    GetECDb().CloseDb();
     return SUCCESS;
     }
 
@@ -854,12 +858,18 @@ BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& p
         if (BE_SQLITE_OK != insertStmt.Prepare(ecdb, insertSql.c_str()))
             return ERROR;
 
+        int overflowParameterIndex = propCount + 1;
+        if (propType == PRIMITIVETYPE_Point2D)
+            overflowParameterIndex = propCount * 2 + 1;
+        else if (propType == PRIMITIVETYPE_Point3D)
+            overflowParameterIndex = propCount * 3 + 1;
+
         for (int i = 0; i < INITIALROWCOUNT; i++)
             {
             if (SUCCESS != BindRegularPropsForInsert(insertStmt, 1, propType, propCount))
                 return ERROR;
 
-            if (SUCCESS != BindOverflowPropsForInsert(insertStmt, propCount + 1, propType, propCount))
+            if (SUCCESS != BindOverflowPropsForInsert(insertStmt, overflowParameterIndex, propType, propCount))
                 return ERROR;
 
             if (BE_SQLITE_DONE != insertStmt.Step())
