@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SpecificationVisitor.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -19,11 +19,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct PresentationRuleSpecificationVisitor
 {
-    friend struct DisplayRelatedItemsSpecification;
     friend struct SelectedNodeInstancesSpecification;
     friend struct ContentInstancesOfSpecificClassesSpecification;
     friend struct ContentRelatedInstancesSpecification;
-    friend struct RelatedPropertiesSpecification;
     friend struct AllInstanceNodesSpecification;
     friend struct AllRelatedInstanceNodesSpecification;
     friend struct CustomNodeSpecification;
@@ -39,8 +37,6 @@ protected:
     virtual void _Visit(SelectedNodeInstancesSpecification const& specification) {}
     virtual void _Visit(ContentInstancesOfSpecificClassesSpecification const& specification) {}
     virtual void _Visit(ContentRelatedInstancesSpecification const& specification) {}
-    virtual void _Visit(RelatedPropertiesSpecification const& specification) {}
-    virtual void _Visit(DisplayRelatedItemsSpecification const& specification) {}
 /** @} */
 
 /** @name Navigation rule specifications */

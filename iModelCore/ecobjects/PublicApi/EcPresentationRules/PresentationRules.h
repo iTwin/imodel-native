@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRules.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,6 +35,7 @@
 #include <ECPresentationRules/SearchResultInstanceNodesSpecification.h>
 #include <ECPresentationRules/ContentSpecification.h>
 #include <ECPresentationRules/RelatedPropertiesSpecification.h>
+#include <ECPresentationRules/HiddenPropertiesSpecification.h>
 #include <ECPresentationRules/ContentInstancesOfSpecificClassesSpecification.h>
 #include <ECPresentationRules/ContentRelatedInstancesSpecification.h>
 #include <ECPresentationRules/SelectedNodeInstancesSpecification.h>

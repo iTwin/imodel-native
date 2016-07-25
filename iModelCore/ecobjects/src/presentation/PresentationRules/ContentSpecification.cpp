@@ -33,6 +33,7 @@ ContentSpecification::ContentSpecification (int priority) : m_priority (priority
 ContentSpecification::~ContentSpecification ()
     {
     CommonTools::FreePresentationRules (m_relatedPropertiesSpecification);
+    CommonTools::FreePresentationRules (m_hiddenPropertiesSpecification);
     CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
     }
 
@@ -44,8 +45,9 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
-
+    
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (xmlNode, m_hiddenPropertiesSpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (xmlNode, m_displayRelatedItemsSpecification, DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
 
     return _ReadXml (xmlNode);
@@ -61,6 +63,7 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     specificationNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
+    CommonTools::WriteRulesToXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (specificationNode, m_hiddenPropertiesSpecification);
     CommonTools::WriteRulesToXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (specificationNode, m_displayRelatedItemsSpecification);
 
     //Make sure we call protected override

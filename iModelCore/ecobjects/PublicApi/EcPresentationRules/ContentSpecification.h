@@ -16,6 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 typedef bvector<RelatedPropertiesSpecificationP>   RelatedPropertiesSpecificationList;
 typedef bvector<DisplayRelatedItemsSpecificationP> DisplayRelatedItemsSpecificationList;
+typedef bvector<HiddenPropertiesSpecificationP>    HiddenPropertiesSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ContentSpecifications.
@@ -26,6 +27,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentSpecification : PresentationRuleSpecificat
 private:
     int                                  m_priority;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
+    HiddenPropertiesSpecificationList    m_hiddenPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
 
 protected:
@@ -36,13 +38,13 @@ protected:
     ECOBJECTS_EXPORT ContentSpecification (int priority);
 
     //! Returns XmlElement name that is used to read/save this rule information.
-    ECOBJECTS_EXPORT virtual CharCP                       _GetXmlElementName () const = 0;
+    virtual CharCP                       _GetXmlElementName () const = 0;
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
-    ECOBJECTS_EXPORT virtual bool                         _ReadXml (BeXmlNodeP xmlNode) = 0;
+    virtual bool                         _ReadXml (BeXmlNodeP xmlNode) = 0;
 
     //! Writes rule information to given XmlNode.
-    ECOBJECTS_EXPORT virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
+    virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
 public:
     //! Destructor.
@@ -65,6 +67,12 @@ public:
     
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
     ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
+
+    //! Hidden properties that will not be displayed.
+    HiddenPropertiesSpecificationList const& GetHiddenProperties() const {return m_hiddenPropertiesSpecification;}
+    
+    //! Hidden properties that will not be displayed.
+    HiddenPropertiesSpecificationList& GetHiddenPropertiesR() {return m_hiddenPropertiesSpecification;}
 
     //! Include related items with current instances when display commands are executed.
     ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    

@@ -39,11 +39,6 @@ Utf8String                 propertyNames
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RelatedPropertiesSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::~RelatedPropertiesSpecification ()
