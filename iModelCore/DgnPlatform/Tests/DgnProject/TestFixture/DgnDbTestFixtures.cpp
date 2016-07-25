@@ -16,7 +16,7 @@ DgnDbTestUtils::SeedDbInfo DgnDbTestFixture::s_seedFileInfo;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BETEST_TC_SETUP(DgnDbTestFixture)
+void DgnDbTestFixture::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
     //  Request a root seed file.
@@ -26,10 +26,23 @@ BETEST_TC_SETUP(DgnDbTestFixture)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Umar.Hayat             07/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(DgnDbTestFixture)
+void DgnDbTestFixture::TearDownTestCase()
     {
     //DgnDbTestUtils::EmptySubDirectory(DgnDbTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Set up method that creates a copy of 3dMetricGeneral.ibim at Output
+* Project file name is the name of the test, mode is ReadWrite and it is Briefcase
+* @bsimethod                                     Majd.Uddin                   01/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnDbTestFixture::SetupSeedProject()
+    {
+    WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
+    fileName.append(L".bim");
+    SetupSeedProject`(fileName.c_str(), Db::OpenMode::ReadWrite);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Set up method that opens an existing .bim project file after copying it to out
 * baseProjFile is the existing file and testProjFile is what we get
@@ -37,7 +50,7 @@ BETEST_TC_TEARDOWN(DgnDbTestFixture)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode, bool needBriefcase)
     {
-    // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
+    // Note: We know that our group's SetUpTestCase() function has already created the group seed file. We can just ask for it.
     if (Db::OpenMode::ReadWrite == mode)
         m_db = DgnDbTestUtils::OpenSeedDbCopy(DgnDbTestFixture::s_seedFileInfo.fileName, inFileName);
     else
@@ -140,18 +153,6 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
     ASSERT_EQ( BE_SQLITE_OK , result );
     if (needBriefcase)
         TestDataManager::MustBeBriefcase(db, mode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Set up method that creates a copy of 3dMetricGeneral.ibim at Output
-* Project file name is the name of the test, mode is ReadWrite and it is Briefcase
-* @bsimethod                                     Majd.Uddin                   01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupSeedProject()
-    {
-    WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
-    fileName.append(L".bim");
-    SetupSeedProject(fileName.c_str(), Db::OpenMode::ReadWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**

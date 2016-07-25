@@ -18,7 +18,7 @@ using namespace DgnSqlTestNamespace;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SqlFunctionsTest : public ::testing::Test
 {   
-    BETEST_DECLARE_TC_SETUP
+    static void SetUpTestCase();
 public:
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
     ScopedDgnHost m_host;
@@ -49,7 +49,7 @@ void SqlFunctionsTest::TearDown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat    07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BETEST_TC_SETUP(SqlFunctionsTest)
+void SqlFunctionsTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
 

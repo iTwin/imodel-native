@@ -132,7 +132,7 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
 
     BeFileName textureImage;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"TextureImage.png", __FILE__));
+    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"GeometryBuilderTests\\TextureImage.png", __FILE__));
 
     Render::GeometryParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);

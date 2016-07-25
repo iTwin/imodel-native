@@ -28,9 +28,9 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 //=======================================================================================
 struct DgnDbTestFixture : ::testing::Test
 {
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
-public:
+public: 
+    static void SetUpTestCase();
+    static void TearDownTestCase();
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
     ScopedDgnHost               m_host;

@@ -16,6 +16,8 @@ USING_NAMESPACE_BENTLEY_DPTEST
 struct DgnElementTests : public DgnDbTestFixture
     {
     TestElementCPtr AddChild(DgnElementCR parent);
+    void TestAutoHandledPropertiesGetSet();
+    void TestAutoHandledPropertiesCA();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -741,7 +743,7 @@ TEST_F(DgnElementTests, HandlerlessClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementTests::TestAutoHandledPropertiesCA()
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"TestUnhandledProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+#ifdef WIP_AUTO_HANDLED_PROPERTIES // *** test Custom Attributes when we get them
     DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
     TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     TestElement el(params);
@@ -864,7 +866,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, TestAutoHandledProperties)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"TestAutoHandledPropertiesGetSet.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     TestAutoHandledPropertiesCA();
     TestAutoHandledPropertiesGetSet();
     }
