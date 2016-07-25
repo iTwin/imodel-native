@@ -1169,9 +1169,9 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
 
                 // Use different caches for each part of the DTM.
                 DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(GetHull, context));
-                BcDTMP dtm = 0;
+                BcDTMP dtm = nullptr;
 
-                if (dtmPtr != 0)
+                if (dtmPtr.IsValid())
                     {
                     dtm = dtmPtr->GetBcDTM();
                     }

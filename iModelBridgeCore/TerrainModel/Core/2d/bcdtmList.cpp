@@ -1155,7 +1155,7 @@ BENTLEYDTM_Public int bcdtmList_testForDtmFeatureLineDtmObject(BC_DTM_OBJ *dtmP,
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,long P1,long P2,long voidLine)
+BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,long P1,long P2,bool& voidLine)
 /*
 **
 ** This Function Tests If Line P1-P2 is an Internal Void Line
@@ -1177,11 +1177,11 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
 /*
 ** Initialise
 */
- voidLine = 0 ;
+ voidLine = false ;
 /*
 ** Test if P1 or P2 are Internal Void Points
 */
- if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) || bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P2)->PCWD) )  voidLine = 1  ;
+ if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) || bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P2)->PCWD) )  voidLine = true  ;
 /*
 ** Test For Hull Line
 */
@@ -1228,7 +1228,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
                 ap = np  ;
                 while ( ap != pp && ! bcdtmList_testIfDirectionalLineOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Island,sp,ap) && ! voidLine )
                   {
-                   if( ap == lp ) voidLine = 1 ;
+                   if( ap == lp ) voidLine = true ;
                    if( ( ap = bcdtmList_nextAntDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
                   }
                 if( ! voidLine && ap != pp )
@@ -1239,7 +1239,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
                    ap = pp ;
                    while ( ap != np && ! bcdtmList_testIfDirectionalLineOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Island,ap,sp) && ! voidLine )
                      {
-                      if( ap == lp ) voidLine = 1 ;
+                      if( ap == lp ) voidLine = true ;
                       if( ( ap = bcdtmList_nextClkDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
                      }
                   }
@@ -1257,7 +1257,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
                    while ( ap != pp && ! voidLine && ! bcdtmList_testForNonDirectionalIslandVoidOrHoleHullLineDtmObject(dtmP,ap,sp) )
                      {
                       if( dbg ) bcdtmWrite_message(0,0,0,"ap = %6ld ** %10.4lf %10.4lf %10.4lf",ap,pointAddrP(dtmP,ap)->x,pointAddrP(dtmP,ap)->y,pointAddrP(dtmP,ap)->z) ;
-                      if( ap == lp ) voidLine = 1 ;
+                      if( ap == lp ) voidLine = true ;
                       if( ( ap = bcdtmList_nextClkDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
                      }
                   }
@@ -1274,7 +1274,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObjectOld(BC_DTM_OBJ *dtmP,lon
                       while(  ap != np && ! voidLine && ! bcdtmList_testForNonDirectionalIslandVoidOrHoleHullLineDtmObject(dtmP,ap,sp) )
                         {
                          if( dbg ) bcdtmWrite_message(0,0,0,"ap = %6ld ** %10.4lf %10.4lf %10.4lf",ap,pointAddrP(dtmP,ap)->x,pointAddrP(dtmP,ap)->y,pointAddrP(dtmP,ap)->z) ;
-                         if( ap == lp ) voidLine = 1 ;
+                         if( ap == lp ) voidLine = true ;
                          if( ( ap = bcdtmList_nextAntDtmObject(dtmP,sp,ap)) < 0 ) goto errexit ;
                         }
                      }
@@ -4441,10 +4441,12 @@ BENTLEYDTM_Public int bcdtmList_testForPointOnAnIslandOrVoidHullDtmObject(BC_DTM
  flPtr = nodeAddrP(dtmP,point)->fPtr ;
  while ( flPtr != dtmP->nullPtr )
    {
-    if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Island ||
-        ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void   ||
-        ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole      ) ++onHull ;
-    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+   auto flistP = flistAddrP(dtmP, flPtr);
+   auto dtmFeatureType = ftableAddrP(dtmP, flistP->dtmFeature)->dtmFeatureType;
+    if( dtmFeatureType == DTMFeatureType::Island ||
+        dtmFeatureType == DTMFeatureType::Void   ||
+        dtmFeatureType == DTMFeatureType::Hole      ) ++onHull ;
+    flPtr = flistP->nextPtr ;
    }
 /*
 ** Job Completed
@@ -8345,36 +8347,37 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObject
        fPtr = nodeAddrP(dtmP,P1)->fPtr ;
        while ( fPtr != dtmP->nullPtr && voidLine == FALSE && process )
          {
-          if( flistAddrP(dtmP,fPtr)->nextPnt == P2 ) process = 0 ;  // Consecutive Points On Hull
+         auto flistP = flistAddrP(dtmP, fPtr);
+          if( flistP->nextPnt == P2 ) process = 0 ;  // Consecutive Points On Hull
 /*
 **        P1 On An Island Hull
 */
-          else if( ftableAddrP(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Island )
+          else if( ftableAddrP(dtmP,flistP->dtmFeature)->dtmFeatureType == DTMFeatureType::Island )
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"P1 On Island Hull") ;
-             bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature,P1,&priorPnt) ;
+             bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,flistP->dtmFeature,P1,&priorPnt) ;
              if( priorPnt == dtmP->nullPnt )
                {
                 bcdtmWrite_message(1,0,0,"Invalid Prior Point") ;
                 goto errexit ;
                }
-             nextPnt = flistAddrP(dtmP,fPtr)->nextPnt ;
+             nextPnt = flistP->nextPnt ;
              if( bcdtmList_testForPointBetweenCircularListPointsDtmObject(dtmP,P1,nextPnt,priorPnt,P2,voidLine)) goto errexit ;
              if( dbg ) bcdtmWrite_message(0,0,0,"voidLine = %2ld",voidLine) ;
             }
 /*
 **        P1 On A Void Hull
 */
-          else if( ftableAddrP(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
-                   ftableAddrP(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    )
+          else if( ftableAddrP(dtmP,flistP->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
+                   ftableAddrP(dtmP,flistP->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    )
             {
-             bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature,P1,&priorPnt) ;
+             bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,flistP->dtmFeature,P1,&priorPnt) ;
              if( priorPnt == dtmP->nullPnt )
                {
                 bcdtmWrite_message(1,0,0,"Invalid Prior Point") ;
                 goto errexit ;
                }
-             nextPnt = flistAddrP(dtmP,fPtr)->nextPnt ;
+             nextPnt = flistP->nextPnt ;
              if( dbg )
                {
                 bcdtmWrite_message(0,0,0,"P1       = %8ld ** %12.4lf %12.4lf %10.4lf",P1,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P1)->z) ;
@@ -8387,7 +8390,7 @@ BENTLEYDTM_Public int bcdtmList_testForVoidLineDtmObject
 /*
 **        Get Next Feature At P1
 */
-          fPtr = flistAddrP(dtmP,fPtr)->nextPtr ;
+          fPtr = flistP->nextPtr ;
          }
       }
    }
