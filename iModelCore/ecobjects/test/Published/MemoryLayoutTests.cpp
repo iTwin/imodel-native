@@ -784,7 +784,6 @@ struct MemoryLayoutTests : ECTestFixture
             VerifyIsNullArrayElements(instance, v, "VariableArrayFixedElement", 0, 14, false);
             VerifyIntegerArray(instance, v, "VariableArrayFixedElement", 57, 0, 14);
 #endif
-
             instance.ToString("").c_str();
             }
     };
@@ -956,7 +955,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_ECValueAccessor)
     ECValue      valueOutput;
 
     GetAccessor_start("ABinary")
-        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, "ABinary", valueInput));
+        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, ACCESSOR, valueInput));
     EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValue(*instance, valueOutput, "ABinary"));
     binaryOutput = valueOutput.GetBinary(sizeOutput);
     EXPECT_EQ(sizeInput, sizeOutput);
@@ -1161,7 +1160,78 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MemoryLayoutTests, GetSetValueByIndexUsingInteropHelper)
-    {}
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    Utf8CP accessString;
+    uint32_t propertyIndex;
+
+    // set, get integer value by index
+    ASSERT_EQ (ECObjectsStatus::Success, enabler->GetPropertyIndex (propertyIndex, "AnInt"));
+    ASSERT_EQ (ECObjectsStatus::Success, enabler->GetAccessString (accessString, propertyIndex));// verify propertyIndex
+    ASSERT_STREQ ("AnInt", accessString);
+    ASSERT_FALSE (ECInstanceInteropHelper::IsCalculatedECProperty (*instance, (int)propertyIndex));
+
+    ECValue intVal;
+    ECValue outputInt;
+    intVal.SetInteger (10);
+    ASSERT_EQ (ECObjectsStatus::Success, ECInstanceInteropHelper::SetValueByIndex (*instance, (int)propertyIndex, -1, intVal));
+    ASSERT_EQ (ECObjectsStatus::Success, ECInstanceInteropHelper::GetValueByIndex (outputInt, *instance, (int)propertyIndex, -1));
+    ASSERT_EQ (10, (int)outputInt.GetInteger ());
+
+    // set, get IntegerArray value by index
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetPropertyIndex(propertyIndex, "SomeInts"));
+    ASSERT_EQ (ECObjectsStatus::Success, enabler->GetAccessString (accessString, propertyIndex));// verify propertyIndex
+    ASSERT_STREQ ("SomeInts", accessString);
+    ASSERT_FALSE (ECInstanceInteropHelper::IsCalculatedECProperty (*instance, (int)propertyIndex));
+
+    intVal.SetInteger(10);
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValueByIndex(*instance, (int) propertyIndex, 0, intVal));
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValueByIndex(outputInt, *instance, (int) propertyIndex, 0));
+    ASSERT_EQ(10, (int) outputInt.GetInteger());
+
+    // set, get DataTimeArray value by index
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetPropertyIndex(propertyIndex, "SomeDateTimes"));
+    ASSERT_EQ (ECObjectsStatus::Success, enabler->GetAccessString (accessString, propertyIndex));// verify propertyIndex
+    ASSERT_STREQ ("SomeDateTimes", accessString);
+    ASSERT_FALSE (ECInstanceInteropHelper::IsCalculatedECProperty (*instance, (int)propertyIndex));
+
+    ECValue dateTimeVal;
+    dateTimeVal.SetDateTime (DateTime::GetCurrentTimeUtc ());
+    ECValue dateTimeOutput;
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValueByIndex(*instance, (int)propertyIndex, 1, dateTimeVal));
+    ASSERT_EQ (ECObjectsStatus::Success, ECInstanceInteropHelper::GetValueByIndex (dateTimeOutput, *instance, (int)propertyIndex, 1));
+    ASSERT_TRUE (dateTimeVal.GetDateTime ().Equals (dateTimeOutput.GetDateTime (), true));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (MemoryLayoutTests, GetNullValueUsingInteropHelper)
+    {
+    ECSchemaPtr schema = CreateTestSchema ();
+    ASSERT_TRUE (schema.IsValid ());
+
+    ECClassP ecClass = schema->GetClassP ("AllPrimitives");
+    ASSERT_TRUE (ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler ();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance ();
+
+    ECValuesCollectionPtr collection = ECValuesCollection::Create (*instance);
+
+    GetAccessor_start ("ABinary")
+    ECInstanceInteropHelper::SetToNull (*instance, ACCESSOR);
+    ASSERT_TRUE (ECInstanceInteropHelper::IsNull (*instance, ACCESSOR));
+    GetAccessor_end ()
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
