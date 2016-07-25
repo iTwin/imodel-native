@@ -25,7 +25,8 @@ void ECProperty::SetErrorHandling (bool doAssert)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false), m_cachedTypeAdapter(nullptr)
+ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(std::numeric_limits<size_t>::max())
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -128,8 +129,11 @@ ECObjectsStatus ECProperty::SetDescription (Utf8StringCR description)
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetMinimumValue(Utf8StringCR min)
+ECObjectsStatus ECProperty::SetMinimumValue(ECValueCR min)
     {
+    if (min.IsNull() || min.IsStruct())
+        return ECObjectsStatus::DataTypeNotSupported;
+
     m_minimumValue = min;
     return ECObjectsStatus::Success;
     }
@@ -139,24 +143,37 @@ ECObjectsStatus ECProperty::SetMinimumValue(Utf8StringCR min)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::IsMinimumValueDefined() const
     {
-    if ("" == m_minimumValue)
-        return false;
-    return true;
+    return !m_minimumValue.IsNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECProperty::GetMinimumValue() const
+void ECProperty::ResetMinimumValue()
     {
-    return m_minimumValue;
+    m_minimumValue.SetToNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetMaximumValue(Utf8StringCR max)
+ECObjectsStatus ECProperty::GetMinimumValue(ECValueR value) const
     {
+    if(m_minimumValue.IsNull())
+        return ECObjectsStatus::Error;
+
+    value = m_minimumValue;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetMaximumValue(ECValueCR max)
+    {
+    if (max.IsNull() || max.IsStruct())
+        return ECObjectsStatus::DataTypeNotSupported;
+
     m_maximumValue = max;
     return ECObjectsStatus::Success;
     }
@@ -166,17 +183,61 @@ ECObjectsStatus ECProperty::SetMaximumValue(Utf8StringCR max)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECProperty::IsMaximumValueDefined() const
     {
-    if ("" == m_maximumValue)
-        return false;
-    return true;
+    return !m_maximumValue.IsNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECProperty::GetMaximumValue() const
+void ECProperty::ResetMaximumValue()
     {
-    return m_maximumValue;
+    m_maximumValue.SetToNull();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::GetMaximumValue(ECValueR value) const
+    {
+    if (m_maximumValue.IsNull())
+        return ECObjectsStatus::Error;
+
+    value = m_maximumValue;
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::SetMaximumLength(size_t max)
+    {
+    m_maximumLength = max; //possibly check if data type is string or byte
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECProperty::IsMaximumLengthDefined() const
+    {
+    return std::numeric_limits<size_t>::max() != m_maximumLength;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECProperty::ResetMaximumLength()
+    {
+    m_maximumLength = std::numeric_limits<size_t>::max();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+@bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECProperty::GetMaximumLength(size_t& length) const
+    {
+    length = m_maximumLength;
+    return ECObjectsStatus::Success; //possibly check if data type is string or byte
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -309,13 +370,30 @@ ECSchemaCP ECProperty::_GetContainerSchema () const
 SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR context, int ecXmlVersionMajor)
     {  
     Utf8String value;
-    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())
-    
+    READ_REQUIRED_XML_ATTRIBUTE(propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())
+
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
-    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DESCRIPTION_ATTRIBUTE,         this, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, MINIMUM_VALUE_ATTRIBUTE,       this, MinimumValue)
+    READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, DESCRIPTION_ATTRIBUTE, this, Description)
+
+    Utf8String minValue;
+    if (propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+        {
+        m_minimumValue.SetUtf8CP(minValue.c_str(), true); //TODO: cast type
+        }
+
+    Utf8String maxValue;
+    if (propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+        {
+        m_maximumValue.SetUtf8CP(maxValue.c_str(), true); //TODO: cast type
+        }
+
+    uint32_t maxLength;
+    if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        m_maximumLength = (size_t)maxLength;
+        }
+
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)    
-    READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, MAXIMUM_VALUE_ATTRIBUTE,       this, MaximumValue)
 
     // OPTIONAL attributes - If these attributes exist they do not need to be valid.  We will ignore any errors setting them and use default values.
     // NEEDSWORK This is due to the current implementation in managed ECObjects.  We should reconsider whether it is the correct behavior.
@@ -367,9 +445,27 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if(IsReadOnlyFlagSet())
         xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, true);
     if (IsMinimumValueDefined())
-        xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, this->GetMinimumValue().c_str());
+        {
+        Utf8String minValue;
+        if (m_minimumValue.ConvertPrimitiveToString(minValue))
+            {
+            xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
+            }
+        }
+        
     if (IsMaximumValueDefined())
-        xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, this->GetMaximumValue().c_str());
+        {
+        Utf8String maxValue;
+        if (m_maximumValue.ConvertPrimitiveToString(maxValue))
+            {
+            xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
+            }
+        }
+
+    if (IsMaximumLengthDefined())
+        {
+        xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, (uint64_t)m_maximumLength);
+        }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
         {

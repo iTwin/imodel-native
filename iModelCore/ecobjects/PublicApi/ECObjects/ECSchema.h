@@ -672,8 +672,9 @@ friend struct ECClass;
 
 private:
     Utf8String              m_description;
-    Utf8String              m_minimumValue;
-    Utf8String              m_maximumValue;
+    ECValue                 m_minimumValue;
+    ECValue                 m_maximumValue;
+    size_t                  m_maximumLength;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
@@ -796,18 +797,6 @@ public:
     ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
     //! Sets the description for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
-    //! Sets the minimum value for this ECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(Utf8StringCR min);
-    //! Gets whether the minimum value has been defined explicitly
-    ECOBJECTS_EXPORT bool               IsMinimumValueDefined() const;
-    //! Gets the minimum value for this ECProperty
-    ECOBJECTS_EXPORT Utf8StringCR       GetMinimumValue() const;
-    //! Sets the maximum value for this ECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(Utf8StringCR max);
-    //! Gets whether the maximum value has been defined explicitly
-    ECOBJECTS_EXPORT bool               IsMaximumValueDefined() const;
-    //! Gets the maximum value for this ECProperty
-    ECOBJECTS_EXPORT Utf8StringCR       GetMaximumValue() const;
     //! The Description of this ECProperty.  Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.
@@ -818,6 +807,34 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
     ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
+
+    //! Sets the minimum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(ECValueCR min);
+    //! Gets whether the minimum value has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMinimumValueDefined() const;
+    //! Resets the minimum value that can be applied to this property
+    ECOBJECTS_EXPORT void               ResetMinimumValue();
+    //! Gets the minimum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    GetMinimumValue(ECValueR value) const;
+
+    //! Sets the maximum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(ECValueCR max);
+    //! Gets whether the maximum value has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMaximumValueDefined() const;
+    //! Resets the maximum value that can be applied to this property
+    ECOBJECTS_EXPORT void               ResetMaximumValue();
+    //! Gets the maximum value for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    GetMaximumValue(ECValueR value) const;
+
+    //! Sets the maximum length (bytes, characters) for this property
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumLength(size_t max);
+    //! Gets whether the maximum length has been defined explicitly
+    ECOBJECTS_EXPORT bool               IsMaximumLengthDefined() const;
+    //! Removed any maximum length that might have been applied to this property
+    ECOBJECTS_EXPORT void               ResetMaximumLength();
+    //! Gets the maximum length(string, byte) for this ECProperty
+    ECOBJECTS_EXPORT ECObjectsStatus    GetMaximumLength(size_t& length) const;
+
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
     //! Gets whether this ECProperty's value is read only

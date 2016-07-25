@@ -218,7 +218,7 @@ private:
 public:
     //! Clears memory, if necessary, and sets the value back to an uninitialized state
     ECOBJECTS_EXPORT void            Clear();
-    //! Compares two ECValues for equality
+    //! Assigns the value from one ECValue to another (performing a shallow copy)
     ECOBJECTS_EXPORT ECValueR        operator= (ECValueCR rhs);    
     //! Destructor
     ECOBJECTS_EXPORT ~ECValue();
