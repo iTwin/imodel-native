@@ -360,12 +360,12 @@ public:
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectoryObserverWin::DirectoryObserverWin(ObserverCallback callback) : DirectoryObserver(callback) {}
+DirectoryObserverWin::DirectoryObserverWin(ObserverCallback callback) : DirectoryObserver(callback), m_completionPort(nullptr) {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectoryObserverWin::DirectoryObserverWin(bset<BeFileName>const& directories, ObserverCallback callback) : DirectoryObserver(directories, callback) { }
+DirectoryObserverWin::DirectoryObserverWin(bset<BeFileName>const& directories, ObserverCallback callback) : DirectoryObserver(directories, callback), m_completionPort(nullptr) { }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
@@ -574,8 +574,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 DirectoryObserverLinux::DirectoryObserverLinux(bset<BeFileName>const& directories, ObserverCallback callback) : DirectoryObserver(directories, callback)
     {
+    memset(m_inotifyBuffer, 0, sizeof(m_inotifyBuffer));
+    
     m_inotifyInstance = inotify_init();
-
     BeAssert(-1 != m_inotifyInstance);
     
     int pipeCreationResult = pipe(m_resetDescriptor);
@@ -587,8 +588,9 @@ DirectoryObserverLinux::DirectoryObserverLinux(bset<BeFileName>const& directorie
 +---------------+---------------+---------------+---------------+---------------+------*/
 DirectoryObserverLinux::DirectoryObserverLinux(ObserverCallback callback) : DirectoryObserver(callback)
     {
+    memset(m_inotifyBuffer, 0, sizeof(m_inotifyBuffer));
+    
     m_inotifyInstance = inotify_init();
-
     BeAssert(-1 != m_inotifyInstance);
 
     int pipeCreationResult = pipe(m_resetDescriptor);
@@ -832,7 +834,8 @@ public:
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectoryObserverIOS::DirectoryObserverIOS(bset<BeFileName>const& directories, ObserverCallback callback) : DirectoryObserver(directories, callback)
+DirectoryObserverIOS::DirectoryObserverIOS(bset<BeFileName>const& directories, ObserverCallback callback) 
+    : DirectoryObserver(directories, callback), m_kqueue(-1), m_events(nullptr), m_eventResults(nullptr)
     {
     int pipeCreationResult = pipe(m_resetDescriptor);
     BeAssert(-1 != pipeCreationResult);
@@ -841,7 +844,8 @@ DirectoryObserverIOS::DirectoryObserverIOS(bset<BeFileName>const& directories, O
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                              Mantas.Ragauskas       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectoryObserverIOS::DirectoryObserverIOS(ObserverCallback callback) : DirectoryObserver(callback)
+DirectoryObserverIOS::DirectoryObserverIOS(ObserverCallback callback) 
+    : DirectoryObserver(callback), m_kqueue(-1), m_events(nullptr), m_eventResults(nullptr)
     {
     int pipeCreationResult = pipe(m_resetDescriptor);
     BeAssert(-1 != pipeCreationResult);
