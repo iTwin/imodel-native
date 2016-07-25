@@ -320,10 +320,10 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
 	bvector<Utf8String> objectIds;
 	for
 		(
-			Json::ValueIterator itr = (*data)[DgnDbServerEvent::LockEventProperties::ObjectIds].begin();
-			itr != (*data)[DgnDbServerEvent::LockEventProperties::ObjectIds].end();
-			itr++
-			)
+		Json::ValueIterator itr = (*data)[DgnDbServerEvent::LockEventProperties::ObjectIds].begin();
+		itr != (*data)[DgnDbServerEvent::LockEventProperties::ObjectIds].end();
+		itr++
+		)
 		objectIds.push_back((*itr).asString());
 
 	return DgnDbServerLockEvent::Create
@@ -362,7 +362,7 @@ DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
 		);
 	return nullptr;*/
 
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent);
+	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionEvent);
 	if (data == nullptr)
 		return nullptr;
 	return DgnDbServerRevisionEvent::Create
@@ -413,12 +413,17 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 	}
 	return nullptr;*/
 
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent);
+	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::CodeEvent);
 	if (data == nullptr)
 		return nullptr;
 
 	bvector<Utf8String> values;
-	for (Json::ValueIterator itr = (*data)[DgnDbServerEvent::CodeEventProperties::Values].begin(); itr != (*data)[DgnDbServerEvent::CodeEventProperties::Values].end(); itr++)
+	for 
+		(
+		Json::ValueIterator itr = (*data)[DgnDbServerEvent::CodeEventProperties::Values].begin(); 
+		itr != (*data)[DgnDbServerEvent::CodeEventProperties::Values].end(); 
+		itr++
+		)
 		values.push_back((*itr).asString());
 
 	return DgnDbServerCodeEvent::Create
@@ -460,7 +465,7 @@ DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEven
 		);
 	return nullptr;*/
 
-	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent);
+	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, deletedEventType);
 	if (data == nullptr)
 		return nullptr;
 	return DgnDbServerDeletedEvent::Create
