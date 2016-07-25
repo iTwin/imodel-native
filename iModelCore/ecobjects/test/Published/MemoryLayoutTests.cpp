@@ -784,7 +784,6 @@ struct MemoryLayoutTests : ECTestFixture
             VerifyIsNullArrayElements(instance, v, "VariableArrayFixedElement", 0, 14, false);
             VerifyIntegerArray(instance, v, "VariableArrayFixedElement", 57, 0, 14);
 #endif
-
             instance.ToString("").c_str();
             }
     };
@@ -956,7 +955,7 @@ TEST_F(MemoryLayoutTests, GetValuesUsingInteropHelper_ECValueAccessor)
     ECValue      valueOutput;
 
     GetAccessor_start("ABinary")
-        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, "ABinary", valueInput));
+        EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValue(*instance, ACCESSOR, valueInput));
     EXPECT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValue(*instance, valueOutput, "ABinary"));
     binaryOutput = valueOutput.GetBinary(sizeOutput);
     EXPECT_EQ(sizeInput, sizeOutput);
@@ -1161,7 +1160,78 @@ TEST_F(MemoryLayoutTests, ChangeSizeOfBinaryArrayEntries)
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(MemoryLayoutTests, GetSetValueByIndexUsingInteropHelper)
-    {}
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    Utf8CP accessString;
+    uint32_t propertyIndex;
+
+    // set, get integer value by index
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetPropertyIndex(propertyIndex, "AnInt"));
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetAccessString(accessString, propertyIndex));// verify propertyIndex
+    ASSERT_STREQ("AnInt", accessString);
+    ASSERT_FALSE(ECInstanceInteropHelper::IsCalculatedECProperty(*instance, (int) propertyIndex));
+
+    ECValue intVal;
+    ECValue outputInt;
+    intVal.SetInteger(10);
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValueByIndex(*instance, (int) propertyIndex, -1, intVal));
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValueByIndex(outputInt, *instance, (int) propertyIndex, -1));
+    ASSERT_EQ(10, (int) outputInt.GetInteger());
+
+    // set, get IntegerArray value by index
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetPropertyIndex(propertyIndex, "SomeInts"));
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetAccessString(accessString, propertyIndex));// verify propertyIndex
+    ASSERT_STREQ("SomeInts", accessString);
+    ASSERT_FALSE(ECInstanceInteropHelper::IsCalculatedECProperty(*instance, (int) propertyIndex));
+
+    intVal.SetInteger(10);
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValueByIndex(*instance, (int) propertyIndex, 0, intVal));
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValueByIndex(outputInt, *instance, (int) propertyIndex, 0));
+    ASSERT_EQ(10, (int) outputInt.GetInteger());
+
+    // set, get DataTimeArray value by index
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetPropertyIndex(propertyIndex, "SomeDateTimes"));
+    ASSERT_EQ(ECObjectsStatus::Success, enabler->GetAccessString(accessString, propertyIndex));// verify propertyIndex
+    ASSERT_STREQ("SomeDateTimes", accessString);
+    ASSERT_FALSE(ECInstanceInteropHelper::IsCalculatedECProperty(*instance, (int) propertyIndex));
+
+    ECValue dateTimeVal;
+    dateTimeVal.SetDateTime(DateTime::GetCurrentTimeUtc());
+    ECValue dateTimeOutput;
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::SetValueByIndex(*instance, (int) propertyIndex, 1, dateTimeVal));
+    ASSERT_EQ(ECObjectsStatus::Success, ECInstanceInteropHelper::GetValueByIndex(dateTimeOutput, *instance, (int) propertyIndex, 1));
+    ASSERT_TRUE(dateTimeVal.GetDateTime().Equals(dateTimeOutput.GetDateTime(), true));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(MemoryLayoutTests, GetNullValueUsingInteropHelper)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    ECValuesCollectionPtr collection = ECValuesCollection::Create(*instance);
+
+    GetAccessor_start("ABinary")
+        ECInstanceInteropHelper::SetToNull(*instance, ACCESSOR);
+    ASSERT_TRUE(ECInstanceInteropHelper::IsNull(*instance, ACCESSOR));
+    GetAccessor_end()
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      11/10
@@ -1169,97 +1239,97 @@ TEST_F(MemoryLayoutTests, GetSetValueByIndexUsingInteropHelper)
 TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("AllPrimitives");
-    ASSERT_TRUE (NULL != ecClass);
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler =  ecClass->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
 
     ECValue v1, v2;
-    EXPECT_TRUE   (v1.Equals(v2));
-    v1.SetInteger (3425);
-    v2.SetInteger (6548);
-    EXPECT_FALSE  (v1.Equals (v2));
-    v2.SetInteger (v1.GetInteger());
-    EXPECT_TRUE   (v1.Equals (v2));
+    EXPECT_TRUE(v1.Equals(v2));
+    v1.SetInteger(3425);
+    v2.SetInteger(6548);
+    EXPECT_FALSE(v1.Equals(v2));
+    v2.SetInteger(v1.GetInteger());
+    EXPECT_TRUE(v1.Equals(v2));
 
-    v1.SetUtf8CP  ("Something");
-    v2.SetUtf8CP  ("Something else");
-    EXPECT_FALSE  (v1.Equals (v2));
-    v2.SetUtf8CP  (v1.GetUtf8CP());
-    EXPECT_TRUE   (v1.Equals (v2));
+    v1.SetUtf8CP("Something");
+    v2.SetUtf8CP("Something else");
+    EXPECT_FALSE(v1.Equals(v2));
+    v2.SetUtf8CP(v1.GetUtf8CP());
+    EXPECT_TRUE(v1.Equals(v2));
 
     //Conflicting types
-    v2.SetInteger (3425);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v2.SetInteger(3425);
+    EXPECT_FALSE(v1.Equals(v2));
 
-    v1.SetDouble  (1.0);
-    v2.SetDouble  (1.0);
-    EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetDouble  (2.0);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetDouble(1.0);
+    v2.SetDouble(1.0);
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetDouble(2.0);
+    EXPECT_FALSE(v1.Equals(v2));
 
-    v1.SetLong    ((int64_t)345);
-    v2.SetLong    ((int64_t)345);
-    EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetLong    ((int64_t)345345);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetLong((int64_t) 345);
+    v2.SetLong((int64_t) 345);
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetLong((int64_t) 345345);
+    EXPECT_FALSE(v1.Equals(v2));
 
-    v1.SetBoolean (false);
-    v2.SetBoolean (false);
-    EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetBoolean (true);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetBoolean(false);
+    v2.SetBoolean(false);
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetBoolean(true);
+    EXPECT_FALSE(v1.Equals(v2));
 
-    DateTime timeInput = DateTime::GetCurrentTimeUtc ();
+    DateTime timeInput = DateTime::GetCurrentTimeUtc();
     v1.SetDateTime(timeInput);
     v2.SetDateTime(timeInput);
-    EXPECT_TRUE   (v1.Equals (v2));
-    DateTime timeInput2 (timeInput.GetInfo ().GetKind (), timeInput.GetYear () + 1, timeInput.GetMonth (), timeInput.GetDay (), timeInput.GetHour (), timeInput.GetMinute (), timeInput.GetSecond (), timeInput.GetHectoNanosecond ());
+    EXPECT_TRUE(v1.Equals(v2));
+    DateTime timeInput2(timeInput.GetInfo().GetKind(), timeInput.GetYear() + 1, timeInput.GetMonth(), timeInput.GetDay(), timeInput.GetHour(), timeInput.GetMinute(), timeInput.GetSecond(), timeInput.GetHectoNanosecond());
     v2.SetDateTime(timeInput2);
-    EXPECT_FALSE  (v1.Equals (v2));
+    EXPECT_FALSE(v1.Equals(v2));
 
-    v1.SetDateTimeTicks((int64_t)633487865666864601);
-    v2.SetDateTimeTicks((int64_t)633487865666864601);
-    EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetDateTimeTicks((int64_t)633487865666866601);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetDateTimeTicks((int64_t) 633487865666864601);
+    v2.SetDateTimeTicks((int64_t) 633487865666864601);
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetDateTimeTicks((int64_t) 633487865666866601);
+    EXPECT_FALSE(v1.Equals(v2));
 
     const static bool HOLD_AS_DUPLICATE = true;
     const Byte binaryValue0[4] = {0x00, 0x01, 0x02, 0x03};
     const Byte binaryValue1[4] = {0x10, 0x11, 0x12, 0x13};
-    EXPECT_EQ (sizeof(binaryValue0), 4);
-    EXPECT_EQ (sizeof(binaryValue0), 4);
+    EXPECT_EQ(sizeof(binaryValue0), 4);
+    EXPECT_EQ(sizeof(binaryValue0), 4);
     v1.SetBinary(binaryValue0, sizeof(binaryValue0), HOLD_AS_DUPLICATE);
     v2.SetBinary(binaryValue0, sizeof(binaryValue0), HOLD_AS_DUPLICATE);
-    EXPECT_TRUE   (v1.Equals (v2));
+    EXPECT_TRUE(v1.Equals(v2));
     v2.SetBinary(binaryValue1, sizeof(binaryValue1), HOLD_AS_DUPLICATE);
-    EXPECT_FALSE  (v1.Equals (v2));
+    EXPECT_FALSE(v1.Equals(v2));
 
     DPoint2d   point2dInput0 = {1.0, 2.0};
     DPoint2d   point2dInput1 = {3.0, 4.0};
-    v1.SetPoint2D (point2dInput0);
-    v2.SetPoint2D (point2dInput0);
-    EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetPoint2D (point2dInput1);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetPoint2D(point2dInput0);
+    v2.SetPoint2D(point2dInput0);
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetPoint2D(point2dInput1);
+    EXPECT_FALSE(v1.Equals(v2));
 
     DPoint3d   point3dInput0 = {1.0, 2.0, -10.0};
     DPoint3d   point3dInput1 = {3.0, 4.0, -123.0};
-    v1.SetPoint3D (point3dInput0);
-    v2.SetPoint3D (point3dInput0);
-    EXPECT_TRUE   (v1.Equals (v2));
-    v2.SetPoint3D (point3dInput1);
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetPoint3D(point3dInput0);
+    v2.SetPoint3D(point3dInput0);
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetPoint3D(point3dInput1);
+    EXPECT_FALSE(v1.Equals(v2));
 
     ECN::StandaloneECInstancePtr testInstance0 = enabler->CreateInstance();
     ECN::StandaloneECInstancePtr testInstance1 = enabler->CreateInstance();
-    v1.SetStruct  (testInstance0.get());
-    v2.SetStruct  (testInstance0.get());
-    EXPECT_TRUE   (v1.Equals(v2));
-    v2.SetStruct  (testInstance1.get());
-    EXPECT_FALSE  (v1.Equals (v2));
+    v1.SetStruct(testInstance0.get());
+    v2.SetStruct(testInstance0.get());
+    EXPECT_TRUE(v1.Equals(v2));
+    v2.SetStruct(testInstance1.get());
+    EXPECT_FALSE(v1.Equals(v2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1268,21 +1338,21 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
 TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("AllPrimitives");
-    ASSERT_TRUE (NULL != ecClass);
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(NULL != ecClass);
 
     StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
 
     const int expectedPropertyCount = 19;
 
-/** -- Can't test this method via published API -- tested indirectly below
-    UInt32 propertyCount = enabler->GetClassLayout().GetPropertyCount();
-    EXPECT_EQ (expectedPropertyCount, propertyCount);
-**/
+    /** -- Can't test this method via published API -- tested indirectly below
+        UInt32 propertyCount = enabler->GetClassLayout().GetPropertyCount();
+        EXPECT_EQ (expectedPropertyCount, propertyCount);
+    **/
 
-    Utf8Char* expectedProperties [expectedPropertyCount] = 
+    Utf8Char* expectedProperties[expectedPropertyCount] =
         {
         "",
         "AString",
@@ -1305,32 +1375,32 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
         "SomeBinaries"
         };
 
-    for (uint32_t i=0; i < expectedPropertyCount; i++)
+    for (uint32_t i = 0; i < expectedPropertyCount; i++)
         {
-        Utf8CP expectedPropertyName = expectedProperties [i];
-        Utf8CP propertyName         = NULL;
-        uint32_t propertyIndex          = 0;
+        Utf8CP expectedPropertyName = expectedProperties[i];
+        Utf8CP propertyName = NULL;
+        uint32_t propertyIndex = 0;
 
-        EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (propertyIndex, expectedPropertyName));
-        EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetAccessString  (propertyName,  propertyIndex));
+        EXPECT_TRUE(ECObjectsStatus::Success == enabler->GetPropertyIndex(propertyIndex, expectedPropertyName));
+        EXPECT_TRUE(ECObjectsStatus::Success == enabler->GetAccessString(propertyName, propertyIndex));
 
-        EXPECT_STREQ (expectedPropertyName, propertyName);
+        EXPECT_STREQ(expectedPropertyName, propertyName);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     printfIndent (uint32_t indentDepth)
+static void printfIndent(uint32_t indentDepth)
     {
     for (uint32_t i = 0; i < indentDepth; i++)
-        printf ("  ");
+        printf("  ");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray, uint32_t indentDepth)
+static void dumpPropertyValues(ECValuesCollectionR collection, bool isArray, uint32_t indentDepth)
     {
     uint32_t arrayIndex = 0;
 
@@ -1338,28 +1408,28 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
         {
         ECValueCR v = propertyValue.GetValue();
 
-        printfIndent (indentDepth);
+        printfIndent(indentDepth);
         ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
         uint32_t accessorDepth = accessor.GetDepth();
-        Utf8CP accessString = accessor.GetAccessString (accessorDepth- 1);
+        Utf8CP accessString = accessor.GetAccessString(accessorDepth - 1);
 
         if (isArray)
             {
-            printf ("Array Member [%u] %s (depth=%u) = %s\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
+            printf("Array Member [%u] %s (depth=%u) = %s\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
             }
         else
             {
-            printf ("%s (depth=%u)", accessString, accessorDepth);
-            if ( ! v.IsStruct())
-                printf (" = %s", v.ToString().c_str());
+            printf("%s (depth=%u)", accessString, accessorDepth);
+            if (!v.IsStruct())
+                printf(" = %s", v.ToString().c_str());
 
-            printf ("\n");
+            printf("\n");
             }
 
-        if (propertyValue.HasChildValues ())
+        if (propertyValue.HasChildValues())
             {
             ECValuesCollectionPtr children = propertyValue.GetChildValues();
-            dumpPropertyValues (*children, v.IsArray(), indentDepth+1);
+            dumpPropertyValues(*children, v.IsArray(), indentDepth + 1);
             }
         }
     }
@@ -1367,7 +1437,7 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool isArray, uint32_t indentDepth, bool printValues, int& count)
+static void dumpLoadedPropertyValues(ECValuesCollectionR collection, bool isArray, uint32_t indentDepth, bool printValues, int& count)
     {
     uint32_t arrayIndex = 0;
 
@@ -1380,29 +1450,29 @@ static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool i
         count++;
         if (printValues)
             {
-            printfIndent (indentDepth);
+            printfIndent(indentDepth);
             ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
             uint32_t accessorDepth = accessor.GetDepth();
-            Utf8CP accessString = accessor.GetAccessString (accessorDepth- 1);
+            Utf8CP accessString = accessor.GetAccessString(accessorDepth - 1);
 
             if (isArray)
                 {
-                printf ("Array Member [%u] %s (depth=%u) = %s\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
+                printf("Array Member [%u] %s (depth=%u) = %s\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
                 }
             else
                 {
-                printf ("%s (depth=%u)", accessString, accessorDepth);
-                if ( ! v.IsStruct())
-                    printf (" = %s", v.ToString().c_str());
+                printf("%s (depth=%u)", accessString, accessorDepth);
+                if (!v.IsStruct())
+                    printf(" = %s", v.ToString().c_str());
 
-                printf ("\n");
+                printf("\n");
                 }
             }
 
-        if (propertyValue.HasChildValues ())
+        if (propertyValue.HasChildValues())
             {
             ECValuesCollectionPtr children = propertyValue.GetChildValues();
-            dumpLoadedPropertyValues (*children, v.IsArray(), indentDepth+1, printValues, count);
+            dumpLoadedPropertyValues(*children, v.IsArray(), indentDepth + 1, printValues, count);
             }
         }
     }
@@ -1412,36 +1482,36 @@ typedef bpair<Utf8String, ECValue>  AccessStringValuePair;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, uint32_t& iValue, bool isDup)
+static void verifyECValueEnumeration(ECValuesCollectionR collection, bvector <AccessStringValuePair>& expectedValues, uint32_t& iValue, bool isDup)
     {
     for (ECPropertyValueCR propertyValue : collection)
         {
-        Utf8String   foundAccessString    = propertyValue.GetValueAccessor().GetManagedAccessString(); 
+        Utf8String   foundAccessString = propertyValue.GetValueAccessor().GetManagedAccessString();
         Utf8String   expectedAccessString = expectedValues[iValue].first;
 
-        EXPECT_STREQ (expectedAccessString.c_str(), foundAccessString.c_str());
+        EXPECT_STREQ(expectedAccessString.c_str(), foundAccessString.c_str());
 
-        ECValueCR foundValue    = propertyValue.GetValue();
+        ECValueCR foundValue = propertyValue.GetValue();
         ECValueCR expectedValue = expectedValues[iValue].second;
 
-        if ( ! isDup || ! foundValue.IsStruct())
+        if (!isDup || !foundValue.IsStruct())
             {
-            EXPECT_TRUE (foundValue.Equals (expectedValue));
+            EXPECT_TRUE(foundValue.Equals(expectedValue));
             }
         else
             {
             // If we are enumerating a duplicate, it will have its own struct instances
             // and we expect the struct pointers to be different so we can't call Equals
-            EXPECT_TRUE (foundValue.IsNull()   == expectedValue.IsNull());
-            EXPECT_TRUE (foundValue.IsStruct() == expectedValue.IsStruct());
+            EXPECT_TRUE(foundValue.IsNull() == expectedValue.IsNull());
+            EXPECT_TRUE(foundValue.IsStruct() == expectedValue.IsStruct());
             }
 
         iValue++;;
 
-        if (propertyValue.HasChildValues ())
+        if (propertyValue.HasChildValues())
             {
             ECValuesCollectionPtr children = propertyValue.GetChildValues();
-            verifyECValueEnumeration (*children, expectedValues, iValue, isDup);
+            verifyECValueEnumeration(*children, expectedValues, iValue, isDup);
             }
         }
     }
@@ -1452,19 +1522,18 @@ static void     verifyECValueEnumeration (ECValuesCollectionR collection, bvecto
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
+    StandaloneECEnablerPtr enabler = schema->GetClassP("EmptyClass")->GetDefaultStandaloneEnabler();
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("EmptyClass")->GetDefaultStandaloneEnabler ();
-
-    ASSERT_TRUE (enabler.IsValid());
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Create an empty instance
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    ECN::ECValuesCollectionPtr collection = ECN::ECValuesCollection::Create (*instance);
+    ECN::ECValuesCollectionPtr collection = ECN::ECValuesCollection::Create(*instance);
 
     /*--------------------------------------------------------------------------
         Iterate through its values - shouldn't find any
@@ -1475,21 +1544,21 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
         propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
         }
-    EXPECT_TRUE (0 == foundValues);
+    EXPECT_TRUE(0 == foundValues);
 
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
     StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
 
-    collection = ECValuesCollection::Create (*standAloneInstance);
+    collection = ECValuesCollection::Create(*standAloneInstance);
     foundValues = 0;
     for (ECPropertyValueCR propertyValue : *collection)
         {
         propertyValue.HasChildValues(); // Use it to avoid warning about unused propertyValue object
         foundValues++;
         }
-    EXPECT_TRUE (0 == foundValues);
+    EXPECT_TRUE(0 == foundValues);
     }
 
 TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
@@ -1500,9 +1569,9 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     testSchema->CreateEntityClass(class1, "TestClass");
     ArrayECPropertyP primitiveArrayProp;
     class1->CreateArrayProperty(primitiveArrayProp, "PrimitiveArray");
-    primitiveArrayProp->SetPrimitiveElementType (PRIMITIVETYPE_Long);
+    primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
 
-    StandaloneECEnablerPtr enabler       = class1->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = class1->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     instance->AddArrayElements("PrimitiveArray", 3);
@@ -1524,25 +1593,24 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     v.SetLong(4);
     secondInstance->SetValue("PrimitiveArray", v, 1);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == secondInstance->GetValue (v, "PrimitiveArray"));
-    EXPECT_EQ (2, v.GetArrayInfo().GetCount());
+    EXPECT_TRUE(ECObjectsStatus::Success == secondInstance->GetValue(v, "PrimitiveArray"));
+    EXPECT_EQ(2, v.GetArrayInfo().GetCount());
 
     v.Clear();
 
-    MemoryECInstanceBase* mbInstance = instance->GetAsMemoryECInstanceP ();
-    mbInstance->MergePropertiesFromInstance (*secondInstance);
+    MemoryECInstanceBase* mbInstance = instance->GetAsMemoryECInstanceP();
+    mbInstance->MergePropertiesFromInstance(*secondInstance);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "PrimitiveArray"));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "PrimitiveArray"));
 
     // TFS#128233
-    EXPECT_EQ (2, v.GetArrayInfo().GetCount()); // CGM: This line fails because it merges the array values instead of overwriting
+    EXPECT_EQ(2, v.GetArrayInfo().GetCount()); // CGM: This line fails because it merges the array values instead of overwriting
 
     instance->GetValue(v, "PrimitiveArray", 0);
     EXPECT_EQ(3, v.GetLong());
 
     instance->GetValue(v, "PrimitiveArray", 1);
     EXPECT_EQ(4, v.GetLong());
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1551,20 +1619,20 @@ TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("CadData")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("CadData")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    instance->SetValue("Name",         ECValue ("My Name"));
-    instance->SetValue("Count",        ECValue (14));
-    instance->SetValue("Length",       ECValue (142.5));
-    instance->SetValue("Field_Tested", ECValue (true));
+    instance->SetValue("Name", ECValue("My Name"));
+    instance->SetValue("Count", ECValue(14));
+    instance->SetValue("Length", ECValue(142.5));
+    instance->SetValue("Field_Tested", ECValue(true));
 
     /*--------------------------------------------------------------------------
         Build the vector of expected values.
@@ -1572,38 +1640,38 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
     --------------------------------------------------------------------------*/
     bvector <AccessStringValuePair> expectedValues;
 
-    expectedValues.push_back (AccessStringValuePair ("Count",          ECValue(14)));
-    expectedValues.push_back (AccessStringValuePair ("StartPoint",     ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("EndPoint",       ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Size",           ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Length",         ECValue (142.5)));
-    expectedValues.push_back (AccessStringValuePair ("Install_Date",   ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Service_Date",   ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Field_Tested",   ECValue (true)));
-    expectedValues.push_back (AccessStringValuePair ("Name",           ECValue ("My Name")));
+    expectedValues.push_back(AccessStringValuePair("Count", ECValue(14)));
+    expectedValues.push_back(AccessStringValuePair("StartPoint", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("EndPoint", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Size", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Length", ECValue(142.5)));
+    expectedValues.push_back(AccessStringValuePair("Install_Date", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Service_Date", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Field_Tested", ECValue(true)));
+    expectedValues.push_back(AccessStringValuePair("Name", ECValue("My Name")));
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     uint32_t                iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
 
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
     StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
 
-    collection = ECValuesCollection::Create (*standAloneInstance);
+    collection = ECValuesCollection::Create(*standAloneInstance);
     iValue = 0;
-    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1612,20 +1680,20 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveProperties)
 TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.get() != NULL);
+    ASSERT_TRUE(schema.get() != NULL);
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("CadData")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("CadData")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    instance->SetValue("Name",         ECValue ("My Name"));
-    instance->SetValue("Count",        ECValue (14));
-    instance->SetValue("Length",       ECValue (142.5));
-    instance->SetValue("Field_Tested", ECValue (true));
+    instance->SetValue("Name", ECValue("My Name"));
+    instance->SetValue("Count", ECValue(14));
+    instance->SetValue("Length", ECValue(142.5));
+    instance->SetValue("Field_Tested", ECValue(true));
 
     /*--------------------------------------------------------------------------
         Build the vector of expected values.
@@ -1633,41 +1701,41 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
     --------------------------------------------------------------------------*/
     bvector <AccessStringValuePair> expectedValues;
 
-    expectedValues.push_back (AccessStringValuePair ("Count",          ECValue(14)));
-    expectedValues.push_back (AccessStringValuePair ("StartPoint",     ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("EndPoint",       ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Size",           ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Length",         ECValue (142.5)));
-    expectedValues.push_back (AccessStringValuePair ("Install_Date",   ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Service_Date",   ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Field_Tested",   ECValue (true)));
-    expectedValues.push_back (AccessStringValuePair ("Name",           ECValue ("My Name")));
+    expectedValues.push_back(AccessStringValuePair("Count", ECValue(14)));
+    expectedValues.push_back(AccessStringValuePair("StartPoint", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("EndPoint", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Size", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Length", ECValue(142.5)));
+    expectedValues.push_back(AccessStringValuePair("Install_Date", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Service_Date", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Field_Tested", ECValue(true)));
+    expectedValues.push_back(AccessStringValuePair("Name", ECValue("My Name")));
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     uint32_t                iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
 
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr duplicateInstance = enabler->CreateInstance();
 
-    ECObjectsStatus copyStatus = duplicateInstance->CopyValues (*instance);
-    EXPECT_TRUE (ECObjectsStatus::Success == copyStatus);
+    ECObjectsStatus copyStatus = duplicateInstance->CopyValues(*instance);
+    EXPECT_TRUE(ECObjectsStatus::Success == copyStatus);
 
-    collection = ECValuesCollection::Create (*duplicateInstance);
+    collection = ECValuesCollection::Create(*duplicateInstance);
     iValue = 0;
-    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1676,19 +1744,19 @@ TEST_F(MemoryLayoutTests, CopyInstanceProperties)
 TEST_F(MemoryLayoutTests, MergeInstanceProperties)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.get() != NULL);
+    ASSERT_TRUE(schema.get() != NULL);
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("CadData")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("CadData")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the base instance
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr mergeToInstance = enabler->CreateInstance();
 
-    mergeToInstance->SetValue("Name",         ECValue ("base"));
-    mergeToInstance->SetValue("Length",       ECValue (142.5));
-    mergeToInstance->SetValue("Field_Tested", ECValue (true));
+    mergeToInstance->SetValue("Name", ECValue("base"));
+    mergeToInstance->SetValue("Length", ECValue(142.5));
+    mergeToInstance->SetValue("Field_Tested", ECValue(true));
 
     /*--------------------------------------------------------------------------
         Build the instance with data to merge
@@ -1697,33 +1765,33 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
 
     DPoint2d   tstSize = {10.5, 22.3};
 
-    ECValue nullBool (ECN::PRIMITIVETYPE_Boolean);
+    ECValue nullBool(ECN::PRIMITIVETYPE_Boolean);
 
-    mergeFromInstance->SetValue("Name",         ECValue ("merge"));
-    mergeFromInstance->SetValue("Count",        ECValue (14));
+    mergeFromInstance->SetValue("Name", ECValue("merge"));
+    mergeFromInstance->SetValue("Count", ECValue(14));
     mergeFromInstance->SetValue("Field_Tested", nullBool);
-    mergeFromInstance->SetValue ("Size",        ECValue (tstSize));
+    mergeFromInstance->SetValue("Size", ECValue(tstSize));
 
-    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstanceP ();
-    mbInstance->MergePropertiesFromInstance (*mergeFromInstance);
+    MemoryECInstanceBase* mbInstance = mergeToInstance->GetAsMemoryECInstanceP();
+    mbInstance->MergePropertiesFromInstance(*mergeFromInstance);
 
     bvector <AccessStringValuePair> expectedValues;
 
-    expectedValues.push_back (AccessStringValuePair ("Count",          ECValue(14)));
-    expectedValues.push_back (AccessStringValuePair ("StartPoint",     ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("EndPoint",       ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Size",           ECValue (tstSize)));
-    expectedValues.push_back (AccessStringValuePair ("Length",         ECValue (142.5)));
-    expectedValues.push_back (AccessStringValuePair ("Install_Date",   ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Service_Date",   ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("Field_Tested",   nullBool));
-    expectedValues.push_back (AccessStringValuePair ("Name",           ECValue ("merge")));
+    expectedValues.push_back(AccessStringValuePair("Count", ECValue(14)));
+    expectedValues.push_back(AccessStringValuePair("StartPoint", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("EndPoint", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Size", ECValue(tstSize)));
+    expectedValues.push_back(AccessStringValuePair("Length", ECValue(142.5)));
+    expectedValues.push_back(AccessStringValuePair("Install_Date", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Service_Date", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("Field_Tested", nullBool));
+    expectedValues.push_back(AccessStringValuePair("Name", ECValue("merge")));
 
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*mergeToInstance);
-//    dumpPropertyValues (*collection, false, 0);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*mergeToInstance);
+    //dumpPropertyValues (*collection, false, 0);
 
     uint32_t                iValue = 0;
-    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1732,24 +1800,24 @@ TEST_F(MemoryLayoutTests, MergeInstanceProperties)
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("AllPrimitives")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("AllPrimitives")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
-    instance->SetValue("AString",  ECValue ("Happy String"));
-    instance->SetValue("AnInt",    ECValue (6));
+    instance->SetValue("AString", ECValue("Happy String"));
+    instance->SetValue("AnInt", ECValue(6));
 
     instance->AddArrayElements("SomeStrings", 5);
 
-    instance->SetValue("SomeStrings", ECValue ("ArrayMember 1"), 0);
-    instance->SetValue("SomeStrings", ECValue ("ArrayMember 2"), 2);
-    instance->SetValue("SomeStrings", ECValue ("ArrayMember 3"), 4);
+    instance->SetValue("SomeStrings", ECValue("ArrayMember 1"), 0);
+    instance->SetValue("SomeStrings", ECValue("ArrayMember 2"), 2);
+    instance->SetValue("SomeStrings", ECValue("ArrayMember 3"), 4);
 
     /*--------------------------------------------------------------------------
         Build the vector of expected values.
@@ -1758,220 +1826,167 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_PrimitiveArray)
     ECValue arrayValue;
     bvector <AccessStringValuePair> expectedValues;
 
-    expectedValues.push_back (AccessStringValuePair ("AnInt", ECValue (6)));
-    expectedValues.push_back (AccessStringValuePair ("APoint3d", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("APoint2d", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("ADouble", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("ADateTime", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("ABoolean", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("ALong", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("AString", ECValue ("Happy String")));
-    expectedValues.push_back (AccessStringValuePair ("ABinary", ECValue ()));
+    expectedValues.push_back(AccessStringValuePair("AnInt", ECValue(6)));
+    expectedValues.push_back(AccessStringValuePair("APoint3d", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("APoint2d", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("ADouble", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("ADateTime", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("ABoolean", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("ALong", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("AString", ECValue("Happy String")));
+    expectedValues.push_back(AccessStringValuePair("ABinary", ECValue()));
 
     arrayValue.Clear();
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_String, 5, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeStrings", arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_String, 5, false);
+    expectedValues.push_back(AccessStringValuePair("SomeStrings", arrayValue));
 
-    expectedValues.push_back (AccessStringValuePair ("SomeStrings[0]", ECValue ("ArrayMember 1")));
-    expectedValues.push_back (AccessStringValuePair ("SomeStrings[1]", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("SomeStrings[2]", ECValue ("ArrayMember 2")));
-    expectedValues.push_back (AccessStringValuePair ("SomeStrings[3]", ECValue ()));
-    expectedValues.push_back (AccessStringValuePair ("SomeStrings[4]", ECValue ("ArrayMember 3")));
+    expectedValues.push_back(AccessStringValuePair("SomeStrings[0]", ECValue("ArrayMember 1")));
+    expectedValues.push_back(AccessStringValuePair("SomeStrings[1]", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("SomeStrings[2]", ECValue("ArrayMember 2")));
+    expectedValues.push_back(AccessStringValuePair("SomeStrings[3]", ECValue()));
+    expectedValues.push_back(AccessStringValuePair("SomeStrings[4]", ECValue("ArrayMember 3")));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Integer, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeInts",     arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Integer, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomeInts", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Point3D, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomePoint3ds", arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Point3D, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomePoint3ds", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Point2D, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomePoint2ds", arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Point2D, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomePoint2ds", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Double, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeDoubles",  arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Double, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomeDoubles", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_DateTime, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeDateTimes",arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_DateTime, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomeDateTimes", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Boolean, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeBooleans", arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Boolean, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomeBooleans", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Long, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeLongs",    arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Long, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomeLongs", arrayValue));
 
-    arrayValue.SetPrimitiveArrayInfo (PRIMITIVETYPE_Binary, 0, false);
-    expectedValues.push_back (AccessStringValuePair ("SomeBinaries", arrayValue));
+    arrayValue.SetPrimitiveArrayInfo(PRIMITIVETYPE_Binary, 0, false);
+    expectedValues.push_back(AccessStringValuePair("SomeBinaries", arrayValue));
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     uint32_t                iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
 
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
     StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
 
-    collection = ECValuesCollection::Create (*standAloneInstance);
+    collection = ECValuesCollection::Create(*standAloneInstance);
     iValue = 0;
-    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String  buildAccessString
-(
-Utf8CP  accessPrefix,
-Utf8CP  propertyString
-)
+static Utf8String buildAccessString(Utf8CP  accessPrefix, Utf8CP  propertyString)
     {
     Utf8String accessString;
 
-    if (accessPrefix && 0 < strlen (accessPrefix))
+    if (accessPrefix && 0 < strlen(accessPrefix))
         {
-        accessString.append (accessPrefix);
-        accessString.append (".");
+        accessString.append(accessPrefix);
+        accessString.append(".");
         }
 
-    accessString.append (propertyString);
-    
+    accessString.append(propertyString);
+
     return accessString;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     setValue
-(
-Utf8CP  accessPrefix,
-Utf8CP  propertyString,
-ECValueCR       ecValue,
-IECInstanceR    instance
-)
+static void setValue(Utf8CP accessPrefix, Utf8CP propertyString, ECValueCR ecValue, IECInstanceR instance)
     {
-    Utf8String accessString = buildAccessString (accessPrefix, propertyString);
+    Utf8String accessString = buildAccessString(accessPrefix, propertyString);
 
-    instance.SetValue (accessString.c_str(), ecValue);
+    instance.SetValue(accessString.c_str(), ecValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     setPartialContactInfo
-(
-bool            skipPhoneNumberData,
-Utf8CP         prefix,
-int             areaCode,
-int             phoneNumber,
-Utf8CP houseNumber,
-Utf8CP street,
-Utf8CP town,
-Utf8CP state,
-int             zip,
-Utf8CP email,
-IECInstanceR    instance
-)
+static void setPartialContactInfo(bool skipPhoneNumberData, Utf8CP prefix, int areaCode, int phoneNumber, Utf8CP houseNumber, Utf8CP street, Utf8CP town, Utf8CP state, int zip, Utf8CP email, IECInstanceR instance)
     {
     if (!skipPhoneNumberData)
         {
-        setValue (prefix, "PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
-        setValue (prefix, "PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
-        setValue (prefix, "PhoneNumber.Number",    ECValue (phoneNumber),  instance);
-        setValue (prefix, "Address.HouseNumber",   ECValue (houseNumber),  instance);
+        setValue(prefix, "PhoneNumber.AreaCode", ECValue(areaCode), instance);
+        setValue(prefix, "PhoneNumber.AreaCode", ECValue(areaCode), instance);
+        setValue(prefix, "PhoneNumber.Number", ECValue(phoneNumber), instance);
+        setValue(prefix, "Address.HouseNumber", ECValue(houseNumber), instance);
         }
 
-    setValue (prefix, "Address.Street",        ECValue (street),       instance);
-    setValue (prefix, "Address.Town",          ECValue (town),         instance);
-    setValue (prefix, "Address.State",         ECValue (state),        instance);
-    setValue (prefix, "Address.Zip",           ECValue (zip),          instance);
-    setValue (prefix, "Email",                 ECValue (email),        instance);
+    setValue(prefix, "Address.Street", ECValue(street), instance);
+    setValue(prefix, "Address.Town", ECValue(town), instance);
+    setValue(prefix, "Address.State", ECValue(state), instance);
+    setValue(prefix, "Address.Zip", ECValue(zip), instance);
+    setValue(prefix, "Email", ECValue(email), instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     setContactInfo
-(
-Utf8CP prefix,
-int             areaCode,
-int             phoneNumber,
-Utf8CP houseNumber,
-Utf8CP street,
-Utf8CP town,
-Utf8CP state,
-int             zip,
-Utf8CP email,
-IECInstanceR    instance
-)
+static void setContactInfo(Utf8CP prefix, int areaCode, int phoneNumber, Utf8CP houseNumber, Utf8CP street, Utf8CP town, Utf8CP state, int zip, Utf8CP email, IECInstanceR instance)
     {
-    setValue (prefix, "PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
-    setValue (prefix, "PhoneNumber.AreaCode",  ECValue (areaCode),     instance);
-    setValue (prefix, "PhoneNumber.Number",    ECValue (phoneNumber),  instance);
-    setValue (prefix, "Address.HouseNumber",   ECValue (houseNumber),  instance);
-    setValue (prefix, "Address.Street",        ECValue (street),       instance);
-    setValue (prefix, "Address.Town",          ECValue (town),         instance);
-    setValue (prefix, "Address.State",         ECValue (state),        instance);
-    setValue (prefix, "Address.Zip",           ECValue (zip),          instance);
-    setValue (prefix, "Email",                 ECValue (email),        instance);
+    setValue(prefix, "PhoneNumber.AreaCode", ECValue(areaCode), instance);
+    setValue(prefix, "PhoneNumber.AreaCode", ECValue(areaCode), instance);
+    setValue(prefix, "PhoneNumber.Number", ECValue(phoneNumber), instance);
+    setValue(prefix, "Address.HouseNumber", ECValue(houseNumber), instance);
+    setValue(prefix, "Address.Street", ECValue(street), instance);
+    setValue(prefix, "Address.Town", ECValue(town), instance);
+    setValue(prefix, "Address.State", ECValue(state), instance);
+    setValue(prefix, "Address.Zip", ECValue(zip), instance);
+    setValue(prefix, "Email", ECValue(email), instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     addValue
-(
-Utf8CP  accessPrefix,
-Utf8CP  propertyString,
-ECValueCR       ecValue,
-bvector <AccessStringValuePair>& expectedValues
-)
+static void addValue(Utf8CP accessPrefix, Utf8CP propertyString, ECValueCR ecValue, bvector <AccessStringValuePair>& expectedValues)
     {
-    Utf8String accessString = buildAccessString (accessPrefix, propertyString);
+    Utf8String accessString = buildAccessString(accessPrefix, propertyString);
 
-    expectedValues.push_back (AccessStringValuePair (accessString.c_str(), ecValue));
+    expectedValues.push_back(AccessStringValuePair(accessString.c_str(), ecValue));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     addExpectedContactInfo
-(
-Utf8CP prefix,
-int             areaCode,
-int             phoneNumber,
-Utf8CP houseNumber,
-Utf8CP street,
-Utf8CP town,
-Utf8CP state,
-int             zip,
-Utf8CP email,
-bvector <AccessStringValuePair>& expectedValues
-)
+static void addExpectedContactInfo(Utf8CP prefix, int areaCode, int phoneNumber, Utf8CP houseNumber, Utf8CP street, Utf8CP town, Utf8CP state, int zip, Utf8CP email, bvector <AccessStringValuePair>& expectedValues)
     {
-    if (NULL != prefix  && 0 < strlen (prefix))
-        expectedValues.push_back (AccessStringValuePair (prefix, ECValue (VALUEKIND_Struct)));
+    if (NULL != prefix && 0 < strlen(prefix))
+        expectedValues.push_back(AccessStringValuePair(prefix, ECValue(VALUEKIND_Struct)));
 
-    addValue (prefix, "PhoneNumber",           ECValue (VALUEKIND_Struct), expectedValues);
-    addValue (prefix, "PhoneNumber.AreaCode",  ECValue (areaCode),         expectedValues);
-    addValue (prefix, "PhoneNumber.Number",    ECValue (phoneNumber),      expectedValues);
-    addValue (prefix, "Address",               ECValue (VALUEKIND_Struct), expectedValues);
-    addValue (prefix, "Address.Zip",           ECValue (zip),              expectedValues);
+    addValue(prefix, "PhoneNumber", ECValue(VALUEKIND_Struct), expectedValues);
+    addValue(prefix, "PhoneNumber.AreaCode", ECValue(areaCode), expectedValues);
+    addValue(prefix, "PhoneNumber.Number", ECValue(phoneNumber), expectedValues);
+    addValue(prefix, "Address", ECValue(VALUEKIND_Struct), expectedValues);
+    addValue(prefix, "Address.Zip", ECValue(zip), expectedValues);
 
-    addValue (prefix, "Address.HouseNumber",   ECValue (houseNumber),     expectedValues);
-    addValue (prefix, "Address.Street",        ECValue (street),          expectedValues);
-    addValue (prefix, "Address.Town",          ECValue (town),            expectedValues);
-    addValue (prefix, "Address.State",         ECValue (state),           expectedValues);
-    addValue (prefix, "Email",                 ECValue (email),           expectedValues);
+    addValue(prefix, "Address.HouseNumber", ECValue(houseNumber), expectedValues);
+    addValue(prefix, "Address.Street", ECValue(street), expectedValues);
+    addValue(prefix, "Address.Town", ECValue(town), expectedValues);
+    addValue(prefix, "Address.State", ECValue(state), expectedValues);
+    addValue(prefix, "Email", ECValue(email), expectedValues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1980,16 +1995,16 @@ bvector <AccessStringValuePair>& expectedValues
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("ContactInfo")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("ContactInfo")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the instance
     --------------------------------------------------------------------------*/
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    setContactInfo ("", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "nobody@nowhere.com", *instance);
+    setContactInfo("", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "nobody@nowhere.com", *instance);
 
     /*--------------------------------------------------------------------------
         Build the vector of expected values.
@@ -1997,30 +2012,30 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
     --------------------------------------------------------------------------*/
     bvector <AccessStringValuePair> expectedValues;
 
-    addExpectedContactInfo ("", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "nobody@nowhere.com", expectedValues);
+    addExpectedContactInfo("", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "nobody@nowhere.com", expectedValues);
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     uint32_t                iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
 
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
     StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
 
-    collection = ECValuesCollection::Create (*standAloneInstance);
+    collection = ECValuesCollection::Create(*standAloneInstance);
     iValue = 0;
-    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2029,10 +2044,10 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmbeddedStructs)
 TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("EmployeeDirectory")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("EmployeeDirectory")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the instance
@@ -2040,24 +2055,24 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     instance->AddArrayElements("Employees", 2);
 
-    StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP("Employee")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP("Employee")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     ECValue v;
     ECN::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
-    arrayMemberInstance1->SetValue("Name", ECValue ("John Smith"));
+    arrayMemberInstance1->SetValue("Name", ECValue("John Smith"));
 
-    setContactInfo ("Home",   610, 7654321, "175",   "Oak Lane",    "Wayne", "PA", 12348, "jsmith@home.com", *arrayMemberInstance1);
-    setContactInfo ("Work",   610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", *arrayMemberInstance1);
+    setContactInfo("Home", 610, 7654321, "175", "Oak Lane", "Wayne", "PA", 12348, "jsmith@home.com", *arrayMemberInstance1);
+    setContactInfo("Work", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", *arrayMemberInstance1);
     v.SetStruct(arrayMemberInstance1.get());
-    instance->SetValue ("Employees", v, 0);
+    instance->SetValue("Employees", v, 0);
 
     ECN::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
-    arrayMemberInstance2->SetValue("Name", ECValue ("Jane Doe"));
-    setContactInfo ("Home",   555, 1122334, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "prez@gmail.com", *arrayMemberInstance2);
-    setContactInfo ("Work",   555, 1000000, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "president@whitehouse.gov", *arrayMemberInstance2);
+    arrayMemberInstance2->SetValue("Name", ECValue("Jane Doe"));
+    setContactInfo("Home", 555, 1122334, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "prez@gmail.com", *arrayMemberInstance2);
+    setContactInfo("Work", 555, 1000000, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "president@whitehouse.gov", *arrayMemberInstance2);
     v.SetStruct(arrayMemberInstance2.get());
-    instance->SetValue ("Employees", v, 1);
+    instance->SetValue("Employees", v, 1);
 
     /*--------------------------------------------------------------------------
         Build the vector of expected values.
@@ -2066,48 +2081,48 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
     bvector <AccessStringValuePair> expectedValues;
 
     ECValue arrayValue;
-    arrayValue.SetStructArrayInfo (2, false);
-    expectedValues.push_back (AccessStringValuePair ("Employees", arrayValue));
+    arrayValue.SetStructArrayInfo(2, false);
+    expectedValues.push_back(AccessStringValuePair("Employees", arrayValue));
 
     ECValue structValue;
-    structValue.SetStruct (arrayMemberInstance1.get());
-    expectedValues.push_back (AccessStringValuePair ("Employees[0]", structValue));
+    structValue.SetStruct(arrayMemberInstance1.get());
+    expectedValues.push_back(AccessStringValuePair("Employees[0]", structValue));
 
-    addExpectedContactInfo ("Employees[0].Home", 610, 7654321, "175",   "Oak Lane",    "Wayne", "PA", 12348, "jsmith@home.com", expectedValues);
-    addExpectedContactInfo ("Employees[0].Work", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", expectedValues);
+    addExpectedContactInfo("Employees[0].Home", 610, 7654321, "175", "Oak Lane", "Wayne", "PA", 12348, "jsmith@home.com", expectedValues);
+    addExpectedContactInfo("Employees[0].Work", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", expectedValues);
 
-    expectedValues.push_back (AccessStringValuePair ("Employees[0].Name", ECValue ("John Smith")));
+    expectedValues.push_back(AccessStringValuePair("Employees[0].Name", ECValue("John Smith")));
 
-    structValue.SetStruct (arrayMemberInstance2.get());
-    expectedValues.push_back (AccessStringValuePair ("Employees[1]", structValue));
+    structValue.SetStruct(arrayMemberInstance2.get());
+    expectedValues.push_back(AccessStringValuePair("Employees[1]", structValue));
 
-    addExpectedContactInfo ("Employees[1].Home", 555, 1122334, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "prez@gmail.com", expectedValues);
-    addExpectedContactInfo ("Employees[1].Work", 555, 1000000, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "president@whitehouse.gov", expectedValues);
+    addExpectedContactInfo("Employees[1].Home", 555, 1122334, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "prez@gmail.com", expectedValues);
+    addExpectedContactInfo("Employees[1].Work", 555, 1000000, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "president@whitehouse.gov", expectedValues);
 
-    expectedValues.push_back (AccessStringValuePair ("Employees[1].Name", ECValue ("Jane Doe")));
+    expectedValues.push_back(AccessStringValuePair("Employees[1].Name", ECValue("Jane Doe")));
 
     /*--------------------------------------------------------------------------
         Verify that the values returned from the instance match the expected ones.
     --------------------------------------------------------------------------*/
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     uint32_t                iValue = 0;
 
-    verifyECValueEnumeration (*collection, expectedValues, iValue, false);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, false);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
 
     /*--------------------------------------------------------------------------
         Duplicate the instance and verify the duplicate.
     --------------------------------------------------------------------------*/
     StandaloneECInstancePtr standAloneInstance = StandaloneECInstance::Duplicate(*instance);
 
-    collection = ECValuesCollection::Create (*standAloneInstance);
+    collection = ECValuesCollection::Create(*standAloneInstance);
     iValue = 0;
-    verifyECValueEnumeration (*collection, expectedValues, iValue, true);
+    verifyECValueEnumeration(*collection, expectedValues, iValue, true);
     //dumpPropertyValues (*collection, false, 0);
 
-    EXPECT_TRUE (expectedValues.size() == iValue);
+    EXPECT_TRUE(expectedValues.size() == iValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2116,10 +2131,10 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_StructArray)
 TEST_F(MemoryLayoutTests, MergeStructArray)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("EmployeeDirectory")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("EmployeeDirectory")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     /*--------------------------------------------------------------------------
         Build the instance
@@ -2127,41 +2142,41 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     instance->AddArrayElements("Employees", 2);
 
-    StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP("Employee")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr arrayMemberEnabler = schema->GetClassP("Employee")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     ECValue v;
     ECN::StandaloneECInstancePtr arrayMemberInstance1 = arrayMemberEnabler->CreateInstance();
-    arrayMemberInstance1->SetValue("Name", ECValue ("John Smith"));
+    arrayMemberInstance1->SetValue("Name", ECValue("John Smith"));
 
-    setContactInfo ("Home",   610, 7654321, "175",   "Oak Lane",    "Wayne", "PA", 12348, "jsmith@home.com", *arrayMemberInstance1);
-    setPartialContactInfo (true, "Work",   610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", *arrayMemberInstance1);
+    setContactInfo("Home", 610, 7654321, "175", "Oak Lane", "Wayne", "PA", 12348, "jsmith@home.com", *arrayMemberInstance1);
+    setPartialContactInfo(true, "Work", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", *arrayMemberInstance1);
     v.SetStruct(arrayMemberInstance1.get());
-    instance->SetValue ("Employees", v, 0);
+    instance->SetValue("Employees", v, 0);
 
     ECN::StandaloneECInstancePtr arrayMemberInstance2 = arrayMemberEnabler->CreateInstance();
-    arrayMemberInstance2->SetValue("Name", ECValue ("Jane Doe"));
-    setPartialContactInfo (false, "Home",   555, 1122334, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "prez@gmail.com", *arrayMemberInstance2);
-    setPartialContactInfo (true, "Work",   555, 1000000, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "president@whitehouse.gov", *arrayMemberInstance2);
+    arrayMemberInstance2->SetValue("Name", ECValue("Jane Doe"));
+    setPartialContactInfo(false, "Home", 555, 1122334, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "prez@gmail.com", *arrayMemberInstance2);
+    setPartialContactInfo(true, "Work", 555, 1000000, "1600", "Pennsylvania Ave", "Washington", "DC", 10001, "president@whitehouse.gov", *arrayMemberInstance2);
     v.SetStruct(arrayMemberInstance2.get());
-    instance->SetValue ("Employees", v, 1);
+    instance->SetValue("Employees", v, 1);
 
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     int originalCount = 0;
     int count = 0;
 
-    dumpLoadedPropertyValues  (*collection, false, 0, false, originalCount);
+    dumpLoadedPropertyValues(*collection, false, 0, false, originalCount);
 
     ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
-    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP ();
-    mbInstance->MergePropertiesFromInstance (*instance);
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP();
+    mbInstance->MergePropertiesFromInstance(*instance);
 
-    collection = ECValuesCollection::Create (*toInstance);
+    collection = ECValuesCollection::Create(*toInstance);
 
-    dumpLoadedPropertyValues  (*collection, false, 0, false, count);
-    ASSERT_TRUE (count==originalCount);
-    ASSERT_TRUE (count==41);
+    dumpLoadedPropertyValues(*collection, false, 0, false, count);
+    ASSERT_TRUE(count == originalCount);
+    ASSERT_TRUE(count == 41);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2170,33 +2185,33 @@ TEST_F(MemoryLayoutTests, MergeStructArray)
 TEST_F(MemoryLayoutTests, MergeStruct)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    StandaloneECEnablerPtr enabler = schema->GetClassP("Employee")->GetDefaultStandaloneEnabler ();
-    ASSERT_TRUE (enabler.IsValid());
+    StandaloneECEnablerPtr enabler = schema->GetClassP("Employee")->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(enabler.IsValid());
 
     ECValue v;
     ECN::StandaloneECInstancePtr employeeInstance = enabler->CreateInstance();
-    employeeInstance->SetValue("Name", ECValue ("John Smith"));
+    employeeInstance->SetValue("Name", ECValue("John Smith"));
 
-    setPartialContactInfo (false, "Home",   610, 7654321, "175",   "Oak Lane",    "Wayne", "PA", 12348, "jsmith@home.com", *employeeInstance);
-    setPartialContactInfo (true, "Work",   610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", *employeeInstance);
+    setPartialContactInfo(false, "Home", 610, 7654321, "175", "Oak Lane", "Wayne", "PA", 12348, "jsmith@home.com", *employeeInstance);
+    setPartialContactInfo(true, "Work", 610, 1234567, "123-4", "Main Street", "Exton", "PA", 12345, "jsmith@work.com", *employeeInstance);
 
     int originalCount = 0;
     int count = 0;
 
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*employeeInstance);
-    dumpLoadedPropertyValues  (*collection, false, 0, false, originalCount);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*employeeInstance);
+    dumpLoadedPropertyValues(*collection, false, 0, false, originalCount);
 
     ECN::StandaloneECInstancePtr toInstance = enabler->CreateInstance();
 
-    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP ();
-    mbInstance->MergePropertiesFromInstance (*employeeInstance);
+    MemoryECInstanceBase* mbInstance = toInstance->GetAsMemoryECInstanceP();
+    mbInstance->MergePropertiesFromInstance(*employeeInstance);
 
-    collection = ECValuesCollection::Create (*toInstance);
-    dumpLoadedPropertyValues  (*collection, false, 0, false, count);
-    ASSERT_TRUE (count==originalCount);
-    ASSERT_TRUE (count==19);
+    collection = ECValuesCollection::Create(*toInstance);
+    dumpLoadedPropertyValues(*collection, false, 0, false, count);
+    ASSERT_TRUE(count == originalCount);
+    ASSERT_TRUE(count == 19);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2205,19 +2220,19 @@ TEST_F(MemoryLayoutTests, MergeStruct)
 TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     {
     ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP primitiveClass = schema->GetClassP ("AllPrimitives");
-    ASSERT_TRUE (NULL != primitiveClass);
+    ECClassP primitiveClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(NULL != primitiveClass);
 
     StandaloneECEnablerPtr enabler = primitiveClass->GetDefaultStandaloneEnabler();
-    
+
     ECN::StandaloneECInstancePtr sourceInstance0 = enabler->CreateInstance();
     ECN::StandaloneECInstancePtr sourceInstance1 = enabler->CreateInstance();
-    ECN::StandaloneECInstancePtr targetInstance  = enabler->CreateInstance();
+    ECN::StandaloneECInstancePtr targetInstance = enabler->CreateInstance();
 
     ECValue v;
-    v.SetDouble(1.0/3.0);
+    v.SetDouble(1.0 / 3.0);
     sourceInstance0->SetValue("ADouble", v);
     v.SetUtf8CP("Weaker source instance");
     sourceInstance0->SetValue("AString", v);
@@ -2233,9 +2248,9 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
     v.SetInteger(80);
     sourceInstance0->SetValue("SomeInts", v, 3);
 
-    v.SetDouble(10.0/3.0);
+    v.SetDouble(10.0 / 3.0);
     sourceInstance1->SetValue("ADouble", v);
-    v.SetLong((int64_t)2345978);
+    v.SetLong((int64_t) 2345978);
     sourceInstance1->SetValue("ALong", v);
     v.SetUtf8CP("Dominant source instance");
     sourceInstance1->SetValue("AString", v);
@@ -2245,19 +2260,19 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
 
     /*
     Merging two instances into a third instance:
-    In this example, values from sourceInstance 1 will take precedence over 
+    In this example, values from sourceInstance 1 will take precedence over
     values in sourceInstance0 in the even that neither are null.
     Note that in Options::Create (), the second flag is set to true: in this
     case, it is wise to include accessors that have null values.
     */
-    ECValuesCollectionPtr collection = ECValuesCollection::Create (*sourceInstance1);
+    ECValuesCollectionPtr collection = ECValuesCollection::Create(*sourceInstance1);
 
     for (ECPropertyValueCR propertyValue : *collection)
         {
         ECValue             localValue;
-        ECValueCP           ecValue  = &propertyValue.GetValue();
+        ECValueCP           ecValue = &propertyValue.GetValue();
 
-        if ( ! ecValue->IsPrimitive())
+        if (!ecValue->IsPrimitive())
             continue;
 
         ECValueAccessorCR   accessor = propertyValue.GetValueAccessor();
@@ -2265,21 +2280,21 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
         // If the value from instance1 is NULL, try to get it from instance0
         if (ecValue->IsNull())
             {
-            sourceInstance0->GetValueUsingAccessor (localValue, accessor);
+            sourceInstance0->GetValueUsingAccessor(localValue, accessor);
             ecValue = &localValue;
             }
-            
+
         //set the value to target instance
-        if(!ecValue->IsNull())
-            targetInstance->SetValueUsingAccessor (accessor, *ecValue);
+        if (!ecValue->IsNull())
+            targetInstance->SetValueUsingAccessor(accessor, *ecValue);
         }
 
     int valuesCounted = 0;
-    ECValuesCollectionPtr targetCollection = ECValuesCollection::Create (*targetInstance);
+    ECValuesCollectionPtr targetCollection = ECValuesCollection::Create(*targetInstance);
 
     for (ECPropertyValueCR propertyValue : *targetCollection)
         {
-        if ( ! propertyValue.GetValue().IsPrimitive())
+        if (!propertyValue.GetValue().IsPrimitive())
             continue;
 
         valuesCounted++;
@@ -2287,133 +2302,129 @@ TEST_F(MemoryLayoutTests, SimpleMergeTwoInstances)
         }
 
     //Verify that the merge succeeded
-    EXPECT_EQ (9, valuesCounted);
-    targetInstance->GetValue (v, "AnInt");    //Came from sourceInstance0
-    EXPECT_EQ (234, v.GetInteger());
-    targetInstance->GetValue (v, "ADouble");  //Came from sourceInstance1
-    EXPECT_EQ (10.0/3.0, v.GetDouble());
+    EXPECT_EQ(9, valuesCounted);
+    targetInstance->GetValue(v, "AnInt");    //Came from sourceInstance0
+    EXPECT_EQ(234, v.GetInteger());
+    targetInstance->GetValue(v, "ADouble");  //Came from sourceInstance1
+    EXPECT_EQ(10.0 / 3.0, v.GetDouble());
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateStandaloneInstance)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("TestClass");
-    ASSERT_TRUE (NULL != ecClass);
+    ECClassP ecClass = schema->GetClassP("TestClass");
+    ASSERT_TRUE(NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     Utf8String instanceId = instance->GetInstanceId();
-    instance->ToString("").c_str();
-    ExerciseInstance (*instance, "Test");
+    Utf8String instanceString = instance->ToString("").c_str();
+    EXPECT_TRUE(instanceString.length() > 0);
 
-    // instance.Compact()... then check values again
-    
+    ExerciseInstance(*instance, "Test");
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, InstantiateInstanceWithNoProperties)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("EmptyClass");
-    ASSERT_TRUE (NULL != ecClass);
+    ECClassP ecClass = schema->GetClassP("EmptyClass");
+    ASSERT_TRUE(NULL != ecClass);
 
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     Utf8String instanceId = instance->GetInstanceId();
+    uint32_t size = instance->GetBytesUsed();
+    EXPECT_EQ(size, sizeof(ECDHeader));
 
-    instance->ToString("").c_str();
-
-    // instance.Compact()... then check values again
-    
+    Utf8String instanceString = instance->ToString("").c_str();
+    EXPECT_TRUE(instanceString.length() > 0);
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, DirectSetStandaloneInstance)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("CadData");
-    ASSERT_TRUE (NULL != ecClass);
-    
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("CadData");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     DPoint2d   inSize = {10.5, 22.3};
     DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
-    DPoint3d   inPoint2 ={200.100, 210.110, 220.120};
-    DateTime   inTimeUtc = DateTime::GetCurrentTimeUtc ();
+    DPoint3d   inPoint2 = {200.100, 210.110, 220.120};
+    DateTime   inTimeUtc = DateTime::GetCurrentTimeUtc();
     int        inCount = 100;
     double     inLength = 432.178;
     bool       inTest = true;
     int64_t    inTicks = 634027121070910000;
 
-    instance->SetValue ("Count",        ECValue (inCount));
-    instance->SetValue ("Name",         ECValue ("Test"));
-    instance->SetValue ("Length",       ECValue (inLength));
-    instance->SetValue ("Field_Tested", ECValue (inTest));
-    instance->SetValue ("Size",         ECValue (inSize));
-    instance->SetValue ("StartPoint",   ECValue (inPoint1));
-    instance->SetValue ("EndPoint",     ECValue (inPoint2));
-    instance->SetValue ("Service_Date", ECValue (inTimeUtc));
+    instance->SetValue("Count", ECValue(inCount));
+    instance->SetValue("Name", ECValue("Test"));
+    instance->SetValue("Length", ECValue(inLength));
+    instance->SetValue("Field_Tested", ECValue(inTest));
+    instance->SetValue("Size", ECValue(inSize));
+    instance->SetValue("StartPoint", ECValue(inPoint1));
+    instance->SetValue("EndPoint", ECValue(inPoint2));
+    instance->SetValue("Service_Date", ECValue(inTimeUtc));
 
     ECValue ecValue;
     ecValue.SetDateTimeTicks(inTicks);
-    instance->SetValue ("Install_Date", ecValue);
+    instance->SetValue("Install_Date", ecValue);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Count"));
-    EXPECT_TRUE (ecValue.GetInteger() == inCount);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Name"));
-    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Length"));
-    EXPECT_TRUE (ecValue.GetDouble() == inLength);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Field_Tested"));
-    EXPECT_TRUE (ecValue.GetBoolean() == inTest);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Size"));
-    DPoint2d    point2d = ecValue.GetPoint2D ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inSize, &point2d, sizeof(DPoint2d)));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "StartPoint"));
-    DPoint3d    point3d = ecValue.GetPoint3D ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inPoint1, &point3d, sizeof(DPoint3d)));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "EndPoint"));
-    point3d = ecValue.GetPoint3D ();
-    EXPECT_TRUE (SUCCESS == memcmp (&inPoint2, &point3d, sizeof(DPoint3d)));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Count"));
+    EXPECT_TRUE(ecValue.GetInteger() == inCount);
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Name"));
+    EXPECT_STREQ(ecValue.GetUtf8CP(), "Test");
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Length"));
+    EXPECT_TRUE(ecValue.GetDouble() == inLength);
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Field_Tested"));
+    EXPECT_TRUE(ecValue.GetBoolean() == inTest);
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Size"));
+    DPoint2d    point2d = ecValue.GetPoint2D();
+    EXPECT_TRUE(SUCCESS == memcmp(&inSize, &point2d, sizeof(DPoint2d)));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "StartPoint"));
+    DPoint3d    point3d = ecValue.GetPoint3D();
+    EXPECT_TRUE(SUCCESS == memcmp(&inPoint1, &point3d, sizeof(DPoint3d)));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "EndPoint"));
+    point3d = ecValue.GetPoint3D();
+    EXPECT_TRUE(SUCCESS == memcmp(&inPoint2, &point3d, sizeof(DPoint3d)));
     //in absence of the DateTimeInfo custom attribute on Service_Date the retrieved
     //date time will always be of kind Unspecified, i.e. the original kind (here Utc)
     //gets lost
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Service_Date"));
-    DateTime  sysTime = ecValue.GetDateTime ();
-    EXPECT_TRUE (inTimeUtc.Equals (sysTime, true));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "Install_Date"));
-    EXPECT_TRUE (ecValue.GetDateTimeTicks() == inTicks);
-
-    // instance.Compact()... then check values again
-    
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Service_Date"));
+    DateTime  sysTime = ecValue.GetDateTime();
+    EXPECT_TRUE(inTimeUtc.Equals(sysTime, true));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, "Install_Date"));
+    EXPECT_TRUE(ecValue.GetDateTimeTicks() == inTicks);
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("TestClass");
-    ASSERT_TRUE (NULL != ecClass);
-    
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("TestClass");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     Utf8CP accessString = "Property34";
@@ -2422,286 +2433,287 @@ TEST_F(MemoryLayoutTests, GetSetValuesByIndex)
     Utf8CP stringValue = "Xyz";
 
     //instance->SetValue  (accessString, ECValue (intValue));
-    instance->SetValue  (accessString, ECValue (stringValue));
+    instance->SetValue(accessString, ECValue(stringValue));
 
     ECValue value;
     uint32_t propertyIndex = 0;
 
-    EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (propertyIndex, accessString));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (value, propertyIndex));
+    EXPECT_TRUE(ECObjectsStatus::Success == enabler->GetPropertyIndex(propertyIndex, accessString));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(value, propertyIndex));
     //EXPECT_TRUE (intValue == value.GetInteger());
-    EXPECT_STREQ (stringValue, value.GetUtf8CP());
+    EXPECT_STREQ(stringValue, value.GetUtf8CP());
 
 #if defined (TIMING_ACCESS_BYINDEX)
     uint32_t    numAccesses = 10000000;
 
     double      elapsedTime1 = 0.0;
-    StopWatch   timer1 ("Time getting values using index", true);
+    StopWatch   timer1("Time getting values using index", true);
 
     for (uint32_t i = 0; i < numAccesses; i++)
         {
         timer1.Start();
-        instance->GetValue (value, propertyIndex);
+        instance->GetValue(value, propertyIndex);
         timer1.Stop();
 
         elapsedTime1 += timer1.GetElapsedSeconds();
         }
 
     double      elapsedTime2 = 0.0;
-    StopWatch   timer2 ("Time getting values using accessString", true);
+    StopWatch   timer2("Time getting values using accessString", true);
 
     for (uint32_t i = 0; i < numAccesses; i++)
         {
         timer2.Start();
-        instance->GetValue (value, accessString);
+        instance->GetValue(value, accessString);
         timer2.Stop();
 
         elapsedTime2 += timer2.GetElapsedSeconds();
         }
 
-    printf ("Time to set %d values by: accessString = %.4f, index = %.4f\n", numAccesses, elapsedTime1, elapsedTime2);
+    printf("Time to set %d values by: accessString = %.4f, index = %.4f\n", numAccesses, elapsedTime1, elapsedTime2);
 #endif
-
-    // instance.Compact()... then check values again
-    
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryLayoutTests, ExpectErrorsWhenViolatingArrayConstraints)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("TestClass");
-    ASSERT_TRUE (NULL != ecClass);    
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("TestClass");
+    ASSERT_TRUE(NULL != ecClass);
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     {
     DISABLE_ASSERTS
 
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    // verify we can not change the size of fixed arrays        
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayFixedElement", 0, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayFixedElement", 10, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->AddArrayElements    ("FixedArrayFixedElement", 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayVariableElement", 0, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements ("FixedArrayVariableElement", 12, 1));
-    ASSERT_EQ (FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->AddArrayElements    ("FixedArrayVariableElement", 1));
+        // verify we can not change the size of fixed arrays        
+        ASSERT_EQ(FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements("FixedArrayFixedElement", 0, 1));
+    ASSERT_EQ(FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements("FixedArrayFixedElement", 10, 1));
+    ASSERT_EQ(FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->AddArrayElements("FixedArrayFixedElement", 1));
+    ASSERT_EQ(FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements("FixedArrayVariableElement", 0, 1));
+    ASSERT_EQ(FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->InsertArrayElements("FixedArrayVariableElement", 12, 1));
+    ASSERT_EQ(FIXED_COUNT_ARRAYS_ARE_SUPPORTED ? true : false, ECObjectsStatus::Success != instance->AddArrayElements("FixedArrayVariableElement", 1));
 #endif
 
     // verify constraints of array insertion are enforced
-    ASSERT_TRUE (ECObjectsStatus::Success != instance->InsertArrayElements ("NonExistArray", 0, 1));
-    ASSERT_TRUE (ECObjectsStatus::Success != instance->InsertArrayElements ("BeginningArray", 2, 1)); // insert index is invalid    
-    ASSERT_TRUE (ECObjectsStatus::Success != instance->InsertArrayElements ("BeginningArray", 0, 0)); // insert count is invalid    
+    ASSERT_TRUE(ECObjectsStatus::Success != instance->InsertArrayElements("NonExistArray", 0, 1));
+    ASSERT_TRUE(ECObjectsStatus::Success != instance->InsertArrayElements("BeginningArray", 2, 1)); // insert index is invalid    
+    ASSERT_TRUE(ECObjectsStatus::Success != instance->InsertArrayElements("BeginningArray", 0, 0)); // insert count is invalid    
     }
-    
+
     ECValue v;
-    VerifyOutOfBoundsError (*instance, v, "BeginningArray", 0);
-    VerifyOutOfBoundsError (*instance, v, "FixedArrayFixedElement", 10);
-    VerifyOutOfBoundsError (*instance, v, "VariableArrayFixedElement", 0);
-    VerifyOutOfBoundsError (*instance, v, "FixedArrayVariableElement", 12);
-    VerifyOutOfBoundsError (*instance, v, "VariableArrayVariableElement", 0);
-    VerifyOutOfBoundsError (*instance, v, "EndingArray", 0);                     
-    };    
+    VerifyOutOfBoundsError(*instance, v, "BeginningArray", 0);
+    VerifyOutOfBoundsError(*instance, v, "FixedArrayFixedElement", 10);
+    VerifyOutOfBoundsError(*instance, v, "VariableArrayFixedElement", 0);
+    VerifyOutOfBoundsError(*instance, v, "FixedArrayVariableElement", 12);
+    VerifyOutOfBoundsError(*instance, v, "VariableArrayVariableElement", 0);
+    VerifyOutOfBoundsError(*instance, v, "EndingArray", 0);
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, Values) // move it!
+TEST_F(MemoryLayoutTests, Values)
     {
     ECValue i(3);
-    EXPECT_TRUE (i.IsInteger());
-    EXPECT_TRUE (!i.IsNull());
-    EXPECT_EQ (3, i.GetInteger());    
+    EXPECT_TRUE(i.IsInteger());
+    EXPECT_TRUE(!i.IsNull());
+    EXPECT_EQ(3, i.GetInteger());
     i.SetInteger(4);
-    EXPECT_EQ (4, i.GetInteger());
-    
-    i.SetUtf8CP("Type changed to string");
-    EXPECT_TRUE (i.IsString());
-    EXPECT_TRUE (!i.IsNull());
-    EXPECT_STREQ ("Type changed to string", i.GetUtf8CP());    
-    
-    i.Clear();
-    EXPECT_TRUE (i.IsUninitialized());
-    EXPECT_TRUE (i.IsNull());
-    
-    ECValue v;
-    EXPECT_TRUE (v.IsUninitialized());
-    EXPECT_TRUE (v.IsNull());
-    
-    double doubleValue = 1./3.;
-    v.SetDouble(doubleValue);
-    EXPECT_TRUE (v.IsDouble());
-    EXPECT_EQ (doubleValue, v.GetDouble());
-    
-    ECValue nullInt (ECN::PRIMITIVETYPE_Integer);
-    EXPECT_TRUE (nullInt.IsNull());
-    EXPECT_TRUE (nullInt.IsInteger());
+    EXPECT_EQ(4, i.GetInteger());
 
-    ECValue long64 ((::int64_t)3);
-    EXPECT_TRUE (!long64.IsNull());
-    EXPECT_TRUE (long64.IsLong());
-    EXPECT_EQ (3, long64.GetLong());
+    i.SetUtf8CP("Type changed to string");
+    EXPECT_TRUE(i.IsString());
+    EXPECT_TRUE(!i.IsNull());
+    EXPECT_STREQ("Type changed to string", i.GetUtf8CP());
+
+    i.Clear();
+    EXPECT_TRUE(i.IsUninitialized());
+    EXPECT_TRUE(i.IsNull());
+
+    ECValue v;
+    EXPECT_TRUE(v.IsUninitialized());
+    EXPECT_TRUE(v.IsNull());
+
+    double doubleValue = 1. / 3.;
+    v.SetDouble(doubleValue);
+    EXPECT_TRUE(v.IsDouble());
+    EXPECT_EQ(doubleValue, v.GetDouble());
+
+    ECValue nullInt(ECN::PRIMITIVETYPE_Integer);
+    EXPECT_TRUE(nullInt.IsNull());
+    EXPECT_TRUE(nullInt.IsInteger());
+
+    ECValue long64((::int64_t)3);
+    EXPECT_TRUE(!long64.IsNull());
+    EXPECT_TRUE(long64.IsLong());
+    EXPECT_EQ(3, long64.GetLong());
 
     ECValue s("Hello");
-    EXPECT_TRUE (s.IsString());
-    EXPECT_TRUE (!s.IsNull());
-    EXPECT_STREQ ("Hello", s.GetUtf8CP());
+    EXPECT_TRUE(s.IsString());
+    EXPECT_TRUE(!s.IsNull());
+    EXPECT_STREQ("Hello", s.GetUtf8CP());
     const Utf8String ws = s.GetUtf8CP();
-    
+
     s.SetUtf8CP("Nice one");
-    EXPECT_STREQ ("Nice one", s.GetUtf8CP());
-    
+    EXPECT_STREQ("Nice one", s.GetUtf8CP());
+
     s.SetUtf8CP(NULL);
-    EXPECT_TRUE (s.IsNull());
-    EXPECT_TRUE (NULL == s.GetUtf8CP());
-    
-    ECValue snull((wchar_t*)NULL);
-    EXPECT_TRUE (snull.IsString());
-    EXPECT_TRUE (snull.IsNull());
-    //WCharCP wcnull = snull.GetString();
-    EXPECT_EQ (NULL, s.GetUtf8CP());
-    
+    EXPECT_TRUE(s.IsNull());
+    EXPECT_TRUE(NULL == s.GetUtf8CP());
+
+    ECValue snull((wchar_t*) NULL);
+    EXPECT_TRUE(snull.IsString());
+    EXPECT_TRUE(snull.IsNull());
+    EXPECT_EQ(NULL, s.GetUtf8CP());
+
     //bool
     ECValue boolVal(true);
-    EXPECT_TRUE (boolVal.IsBoolean());
-    EXPECT_TRUE (boolVal.GetBoolean());
+    EXPECT_TRUE(boolVal.IsBoolean());
+    EXPECT_TRUE(boolVal.GetBoolean());
 
     //DPoint3d
     DPoint3d inPoint3 = {10.0, 100.0, 1000.0};
     ECValue pntVal3(inPoint3);
-    DPoint3d outPoint3 = pntVal3.GetPoint3D ();
-    EXPECT_TRUE (pntVal3.IsPoint3D());
-    EXPECT_TRUE (0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
+    DPoint3d outPoint3 = pntVal3.GetPoint3D();
+    EXPECT_TRUE(pntVal3.IsPoint3D());
+    EXPECT_TRUE(0 == memcmp(&inPoint3, &outPoint3, sizeof(outPoint3)));
     Utf8String point3Str = pntVal3.ToString();
-    EXPECT_TRUE (0 == point3Str.compare ("10,100,1000"));
+    EXPECT_TRUE(0 == point3Str.compare("10,100,1000"));
 
     //DPoint2d
     DPoint2d inPoint2 = {10.0, 100.0};
-    ECValue pntVal2 (inPoint2);
-    EXPECT_TRUE (pntVal2.IsPoint2D());
-    DPoint2d outPoint2 = pntVal2.GetPoint2D ();
-    EXPECT_TRUE (0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
+    ECValue pntVal2(inPoint2);
+    EXPECT_TRUE(pntVal2.IsPoint2D());
+    DPoint2d outPoint2 = pntVal2.GetPoint2D();
+    EXPECT_TRUE(0 == memcmp(&inPoint2, &outPoint2, sizeof(outPoint2)));
     Utf8String point2Str = pntVal2.ToString();
-    EXPECT_TRUE (0 == point2Str.compare ("10,100"));
+    EXPECT_TRUE(0 == point2Str.compare("10,100"));
 
     // DateTime
-    DateTime nowUtc = DateTime::GetCurrentTimeUtc ();
-    ECValue dateValue (nowUtc);
-    EXPECT_TRUE (dateValue.IsDateTime());
-    DateTime nowToo = dateValue.GetDateTime ();
-    EXPECT_TRUE (nowToo.Equals (nowUtc, true));
+    DateTime nowUtc = DateTime::GetCurrentTimeUtc();
+    ECValue dateValue(nowUtc);
+    EXPECT_TRUE(dateValue.IsDateTime());
+    DateTime nowtoo = dateValue.GetDateTime();
+    EXPECT_TRUE(nowUtc.GetInfo() == nowtoo.GetInfo());
+    EXPECT_TRUE(nowUtc.Equals(nowtoo));
 
     ECValue fixedDate;
-    fixedDate.SetDateTimeTicks (634027121070910000);
+    fixedDate.SetDateTimeTicks(634027121070910000);
     Utf8String dateStr = fixedDate.ToString();
-    EXPECT_TRUE (0 == dateStr.compare ("2010-02-25T16:28:27.091")) << "Expected date: " << fixedDate.GetDateTime ().ToString ().c_str ();
+    EXPECT_TRUE(0 == dateStr.compare("2010-02-25T16:28:27.091")) << "Expected date: " << fixedDate.GetDateTime().ToString().c_str();
+
+    // test operator ==
+    DateTime specificTime(nowUtc.GetInfo().GetKind(), nowUtc.GetYear(), nowUtc.GetMonth(), nowUtc.GetDay(), nowUtc.GetHour(), nowUtc.GetMinute(), nowUtc.GetSecond(), nowUtc.GetHectoNanosecond());
+    EXPECT_TRUE(specificTime == nowUtc);
+
+    DateTime defaultTime1;
+    DateTime defaultTime2;
+    EXPECT_TRUE(defaultTime1 == defaultTime2);
     };
-  
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, TestSetGetNull)
+TEST_F(MemoryLayoutTests, TestSetGetNull)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("TestClass");
-    ASSERT_TRUE (NULL != ecClass);
-        
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("TestClass");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
     ECValue v;
-    
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "D"));
-    EXPECT_TRUE (v.IsNull());
-    
-    double doubleValue = 1.0/3.0;
-    SetAndVerifyDouble (*instance, v, "D", doubleValue);
-    EXPECT_TRUE (!v.IsNull());    
-    
-    v.SetToNull();
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("D", v));
-    v.SetUtf8CP("Just making sure that it is not NULL before calling GetValue in the next line.");
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "D"));
-    EXPECT_TRUE (v.IsNull());
-        
-    SetAndVerifyString (*instance, v, "S", "Yo!");
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "D"));
-    EXPECT_TRUE (v.IsNull());    
-    
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, "S"));
-    EXPECT_FALSE (v.IsNull());     
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "D"));
+    EXPECT_TRUE(v.IsNull());
+
+    double doubleValue = 1.0 / 3.0;
+    SetAndVerifyDouble(*instance, v, "D", doubleValue);
+    EXPECT_TRUE(!v.IsNull());
+
+    v.SetToNull();
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("D", v));
+    v.SetUtf8CP("Just making sure that it is not NULL before calling GetValue in the next line.");
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "D"));
+    EXPECT_TRUE(v.IsNull());
+
+    SetAndVerifyString(*instance, v, "S", "Yo!");
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "D"));
+    EXPECT_TRUE(v.IsNull());
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "S"));
+    EXPECT_FALSE(v.IsNull());
     };
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, TestPropertyReadOnly)
+TEST_F(MemoryLayoutTests, TestPropertyReadOnly)
     {
-    //"    <ECClass typeName=\"Car\" isStruct=\"True\" isDomainClass=\"True\">"
-    //"        <ECProperty       propertyName=\"Name\"       typeName=\"string\"/>"
-    //"        <ECProperty       propertyName=\"Wheels\"     typeName=\"int\"  readOnly=\"True\"/>"
-    //"    </ECClass>"
 
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("Car");
-    ASSERT_TRUE (NULL != ecClass);
-        
+    ECClassP ecClass = schema->GetClassP("Car");
+    ASSERT_TRUE(NULL != ecClass);
+
     StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    
+
     Utf8CP nameAccessString = "Name";
     Utf8CP wheelsAccessString = "Wheels";
     uint32_t namePropertyIndex = 9999;
     uint32_t wheelsPropertyIndex = 9998;
-    EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (namePropertyIndex, nameAccessString));
-    EXPECT_TRUE (ECObjectsStatus::Success == enabler->GetPropertyIndex (wheelsPropertyIndex, wheelsAccessString));
+    EXPECT_TRUE(ECObjectsStatus::Success == enabler->GetPropertyIndex(namePropertyIndex, nameAccessString));
+    EXPECT_TRUE(ECObjectsStatus::Success == enabler->GetPropertyIndex(wheelsPropertyIndex, wheelsAccessString));
 
-    EXPECT_FALSE (instance->IsPropertyReadOnly (nameAccessString));
-    EXPECT_FALSE (instance->IsPropertyReadOnly (namePropertyIndex));
+    EXPECT_FALSE(instance->IsPropertyReadOnly(nameAccessString));
+    EXPECT_FALSE(instance->IsPropertyReadOnly(namePropertyIndex));
 
-    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsAccessString));
-    EXPECT_TRUE  (instance->IsPropertyReadOnly (wheelsPropertyIndex));  
+    EXPECT_TRUE(instance->IsPropertyReadOnly(wheelsAccessString));
+    EXPECT_TRUE(instance->IsPropertyReadOnly(wheelsPropertyIndex));
 
     ECValue v;
     v.SetInteger(610);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue (wheelsAccessString, v));  // should work since original value is NULL
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue(wheelsAccessString, v));  // should work since original value is NULL
     v.SetInteger(512);
-    EXPECT_TRUE (ECObjectsStatus::UnableToSetReadOnlyProperty == instance->SetValue (wheelsAccessString, v));  // should fail since read only and value is not NULL
+    EXPECT_TRUE(ECObjectsStatus::UnableToSetReadOnlyProperty == instance->SetValue(wheelsAccessString, v));  // should fail since read only and value is not NULL
 
     // make sure we can copy an instance contains read only properties
-    StandaloneECInstancePtr  copyInstance =  StandaloneECInstance::Duplicate (*instance);
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v, wheelsAccessString));
-    EXPECT_TRUE (610 == v.GetInteger());
+    StandaloneECInstancePtr  copyInstance = StandaloneECInstance::Duplicate(*instance);
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, wheelsAccessString));
+    EXPECT_TRUE(610 == v.GetInteger());
 
     // make sure we can deserialize and instance from XML that contains read only properties
     Utf8String ecInstanceXml;
-    instance->WriteToXmlString (ecInstanceXml, true, false);
+    instance->WriteToXmlString(ecInstanceXml, true, false);
     ECN::IECInstancePtr deserializedInstance = NULL;
-    ECN::ECInstanceReadContextPtr instanceContext = ECN::ECInstanceReadContext::CreateContext (*schema);
-    EXPECT_TRUE (InstanceReadStatus::Success == IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext));
-    EXPECT_TRUE (ECObjectsStatus::Success == deserializedInstance->GetValue (v, wheelsAccessString));
-    EXPECT_TRUE (610 == v.GetInteger());
+    ECN::ECInstanceReadContextPtr instanceContext = ECN::ECInstanceReadContext::CreateContext(*schema);
+    EXPECT_TRUE(InstanceReadStatus::Success == IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext));
+    EXPECT_TRUE(ECObjectsStatus::Success == deserializedInstance->GetValue(v, wheelsAccessString));
+    EXPECT_TRUE(610 == v.GetInteger());
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, TestBinarySetGet)
+TEST_F(MemoryLayoutTests, TestBinarySetGet)
     {
     const static bool HOLD_AS_DUPLICATE = true;
     const Byte binaryValue0[4] = {0x00, 0x01, 0x02, 0x03};
     const Byte binaryValue1[2] = {0x99, 0x88};
 
-    EXPECT_EQ (sizeof(binaryValue0), 4);
-    EXPECT_EQ (sizeof(binaryValue1), 2);
+    EXPECT_EQ(sizeof(binaryValue0), 4);
+    EXPECT_EQ(sizeof(binaryValue1), 2);
 
     ECValue v0In;
     ECValue v0Out;
@@ -2711,165 +2723,165 @@ TEST_F (MemoryLayoutTests, TestBinarySetGet)
     v0In.SetBinary(binaryValue0, sizeof(binaryValue0), HOLD_AS_DUPLICATE);
     v1In.SetBinary(binaryValue1, sizeof(binaryValue1), HOLD_AS_DUPLICATE);
 
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("AllPrimitives");
-    ASSERT_TRUE (NULL != ecClass);
-        
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ABinary", v0In));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v0Out, "ABinary"));
-    EXPECT_TRUE (v0In.Equals (v0Out));
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("ABinary", v0In));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v0Out, "ABinary"));
+    EXPECT_TRUE(v0In.Equals(v0Out));
 
     // now set it to a smaller size
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ABinary", v1In));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (v1Out, "ABinary"));
-    EXPECT_TRUE (v1In.Equals (v1Out));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("ABinary", v1In));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v1Out, "ABinary"));
+    EXPECT_TRUE(v1In.Equals(v1Out));
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, Utf8CP propertyName, uint32_t expectedCount)
+static void validateArrayCount(ECN::StandaloneECInstanceCR instance, Utf8CP propertyName, uint32_t expectedCount)
     {
     ECValue varray;
-    EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (varray, propertyName));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(varray, propertyName));
     uint32_t count = varray.GetArrayInfo().GetCount();
-    EXPECT_TRUE (count == expectedCount);
+    EXPECT_TRUE(count == expectedCount);
 
     ECValue ventry;
 
-    for (uint32_t i=0; i<count; i++)
+    for (uint32_t i = 0; i < count; i++)
         {
-        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (ventry, propertyName, i));
+        EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(ventry, propertyName, i));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (MemoryLayoutTests, TestRemovingArrayEntries)
+TEST_F(MemoryLayoutTests, TestRemovingArrayEntries)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("ArrayTest");
-    ASSERT_TRUE (NULL != ecClass);
-        
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("ArrayTest");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    
+
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayFixedElement",  ECValue ((int)1), 1));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayFixedElement",  ECValue ((int)3), 3));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayFixedElement",  ECValue ((int)5), 5));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayFixedElement",  ECValue ((int)7), 7));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayFixedElement",  ECValue ((int)9), 9));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayFixedElement", ECValue((int) 1), 1));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayFixedElement", ECValue((int) 3), 3));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayFixedElement", ECValue((int) 5), 5));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayFixedElement", ECValue((int) 7), 7));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayFixedElement", ECValue((int) 9), 9));
 
     {
-    DISABLE_ASSERTS    
-    EXPECT_TRUE (ECObjectsStatus::Success != instance->RemoveArrayElement("FixedArrayFixedElement", 2));
+    DISABLE_ASSERTS
+        EXPECT_TRUE(ECObjectsStatus::Success != instance->RemoveArrayElement("FixedArrayFixedElement", 2));
     }
 
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 1"), 1));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 3"), 3));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 5"), 5));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 7"), 7));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 9"), 9));
-    EXPECT_TRUE (SUCCESS == instance->SetValue ("FixedArrayVariableElement", ECValue ("ArrayMember 11"), 11));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayVariableElement", ECValue("ArrayMember 1"), 1));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayVariableElement", ECValue("ArrayMember 3"), 3));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayVariableElement", ECValue("ArrayMember 5"), 5));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayVariableElement", ECValue("ArrayMember 7"), 7));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayVariableElement", ECValue("ArrayMember 9"), 9));
+    EXPECT_TRUE(SUCCESS == instance->SetValue("FixedArrayVariableElement", ECValue("ArrayMember 11"), 11));
 
     {
-    DISABLE_ASSERTS    
-    EXPECT_TRUE (ECObjectsStatus::Success != instance->RemoveArrayElement("FixedArrayVariableElement", 2));
+    DISABLE_ASSERTS
+        EXPECT_TRUE(ECObjectsStatus::Success != instance->RemoveArrayElement("FixedArrayVariableElement", 2));
     }
 #endif
 
     instance->AddArrayElements("SomeStrings", 5);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 0"), 0));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 1"), 1));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 2"), 2));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeStrings", ECValue("ArrayMember 0"), 0));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeStrings", ECValue("ArrayMember 1"), 1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeStrings", ECValue("ArrayMember 2"), 2));
     // leave index 3 null
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeStrings",  ECValue ("ArrayMember 4"), 4));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeStrings", ECValue("ArrayMember 4"), 4));
 
-    validateArrayCount (*instance, "SomeStrings", 5); 
+    validateArrayCount(*instance, "SomeStrings", 5);
 
     instance->AddArrayElements("SomeInts", 6);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)0), 0));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)1), 1));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)2), 2));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeInts", ECValue((int) 0), 0));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeInts", ECValue((int) 1), 1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeInts", ECValue((int) 2), 2));
     // leave index 3 null
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)4), 4));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SomeInts",  ECValue ((int)5), 5));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeInts", ECValue((int) 4), 4));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SomeInts", ECValue((int) 5), 5));
 
-    validateArrayCount (*instance, "SomeInts", 6); 
+    validateArrayCount(*instance, "SomeInts", 6);
 
     // define struct array
-    StandaloneECEnablerPtr manufacturerEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember (schema->GetSchemaKey(), "Manufacturer"); 
-    EXPECT_TRUE (manufacturerEnabler.IsValid());
+    StandaloneECEnablerPtr manufacturerEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember(schema->GetSchemaKey(), "Manufacturer");
+    EXPECT_TRUE(manufacturerEnabler.IsValid());
 
     ECValue v;
-    ASSERT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("ManufacturerArray", 4));
-    VerifyArrayInfo (*instance, v, "ManufacturerArray", 4, false);
-    VerifyIsNullArrayElements (*instance, v, "ManufacturerArray", 0, 4, true);
+    ASSERT_TRUE(ECObjectsStatus::Success == instance->AddArrayElements("ManufacturerArray", 4));
+    VerifyArrayInfo(*instance, v, "ManufacturerArray", 4, false);
+    VerifyIsNullArrayElements(*instance, v, "ManufacturerArray", 0, 4, true);
 
-    IECInstancePtr manufInst = manufacturerEnabler->CreateInstance().get();    
+    IECInstancePtr manufInst = manufacturerEnabler->CreateInstance().get();
 
-    SetAndVerifyString (*manufInst, v, "Name", "Nissan");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 0));
+    SetAndVerifyString(*manufInst, v, "Name", "Nissan");
+    SetAndVerifyInteger(*manufInst, v, "AccountNo", 3475);
+    v.SetStruct(manufInst.get());
+    ASSERT_TRUE(ECObjectsStatus::Success == instance->SetValue("ManufacturerArray", v, 0));
 
-    manufInst = manufacturerEnabler->CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Kia");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 1));
+    manufInst = manufacturerEnabler->CreateInstance().get();
+    SetAndVerifyString(*manufInst, v, "Name", "Kia");
+    SetAndVerifyInteger(*manufInst, v, "AccountNo", 1791);
+    v.SetStruct(manufInst.get());
+    ASSERT_TRUE(ECObjectsStatus::Success == instance->SetValue("ManufacturerArray", v, 1));
 
-    manufInst = manufacturerEnabler->CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Honda");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1592);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 2));
+    manufInst = manufacturerEnabler->CreateInstance().get();
+    SetAndVerifyString(*manufInst, v, "Name", "Honda");
+    SetAndVerifyInteger(*manufInst, v, "AccountNo", 1592);
+    v.SetStruct(manufInst.get());
+    ASSERT_TRUE(ECObjectsStatus::Success == instance->SetValue("ManufacturerArray", v, 2));
 
-    manufInst = manufacturerEnabler->CreateInstance().get();    
-    SetAndVerifyString (*manufInst, v, "Name", "Chevy");
-    SetAndVerifyInteger (*manufInst, v, "AccountNo", 19341);
-    v.SetStruct (manufInst.get());
-    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("ManufacturerArray", v, 3));
+    manufInst = manufacturerEnabler->CreateInstance().get();
+    SetAndVerifyString(*manufInst, v, "Name", "Chevy");
+    SetAndVerifyInteger(*manufInst, v, "AccountNo", 19341);
+    v.SetStruct(manufInst.get());
+    ASSERT_TRUE(ECObjectsStatus::Success == instance->SetValue("ManufacturerArray", v, 3));
 
-    VerifyIsNullArrayElements (*instance, v, "ManufacturerArray", 0, 4, false);    
+    VerifyIsNullArrayElements(*instance, v, "ManufacturerArray", 0, 4, false);
 
     // remove from start of array
     instance->RemoveArrayElement("SomeStrings", 0);
-    validateArrayCount (*instance, "SomeStrings", 4); 
+    validateArrayCount(*instance, "SomeStrings", 4);
 
     // remove from middle of array
     instance->RemoveArrayElement("SomeStrings", 2);
-    validateArrayCount (*instance, "SomeStrings", 3); 
+    validateArrayCount(*instance, "SomeStrings", 3);
 
     // remove from end of array
     instance->RemoveArrayElement("SomeInts", 2);
-    validateArrayCount (*instance, "SomeInts", 5);
+    validateArrayCount(*instance, "SomeInts", 5);
 
     // remove struct array element
     instance->RemoveArrayElement("ManufacturerArray", 2);
-    validateArrayCount (*instance, "ManufacturerArray", 3);
+    validateArrayCount(*instance, "ManufacturerArray", 3);
     }
 
-TEST_F (MemoryLayoutTests, IterateCompleClass)
+TEST_F(MemoryLayoutTests, IterateCompleClass)
     {
-    ECSchemaPtr        schema = CreateTestSchema();
-    ASSERT_TRUE (schema.IsValid());
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
 
-    ECClassP ecClass = schema->GetClassP ("ComplexClass");
-    ASSERT_TRUE (NULL != ecClass);
-        
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECClassP ecClass = schema->GetClassP("ComplexClass");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
 
     ECValue b(true);
@@ -2879,90 +2891,81 @@ TEST_F (MemoryLayoutTests, IterateCompleClass)
     ECValue s4("string val");
     ECValue s5("asdasdas");
     ECValue s6("392010267");
-    ECValue i1((int)1683483880);
-    ECValue i2((int)1367822242);
-    ECValue i3((int)32323);
+    ECValue i1((int) 1683483880);
+    ECValue i2((int) 1367822242);
+    ECValue i3((int) 32323);
     ECValue d1(0.71266461290077521);
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StringProperty", s4));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("IntProperty", i2));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("StringProperty", s4));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("IntProperty", i2));
 
-    StandaloneECEnablerPtr structArrayEnabler = schema->GetClassP("StructClass")->GetDefaultStandaloneEnabler ();
+    StandaloneECEnablerPtr structArrayEnabler = schema->GetClassP("StructClass")->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr structInstance = structArrayEnabler->CreateInstance();
 
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("BooleanProperty", b));
-    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("BooleanProperty", b));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("BooleanProperty", b));
+    EXPECT_TRUE(ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue("BooleanProperty", b));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("SimpleArrayProperty", 1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->AddArrayElements("SimpleArrayProperty", 1));
 #endif
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("SimpleArrayProperty", s1, 0));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructProperty.StringProperty", s2));
-    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("StructProperty.StringProperty", s2));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructProperty.IntProperty", i1));
-    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("StructProperty.IntProperty", i1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("SimpleArrayProperty", s1, 0));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("StructProperty.StringProperty", s2));
+    EXPECT_TRUE(ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue("StructProperty.StringProperty", s2));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("StructProperty.IntProperty", i1));
+    EXPECT_TRUE(ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue("StructProperty.IntProperty", i1));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("StructProperty.ArrayProperty", 1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->AddArrayElements("StructProperty.ArrayProperty", 1));
 #endif
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructProperty.ArrayProperty", s3, 0));
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("DoubleProperty", d1));
-    EXPECT_TRUE (ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue ("DoubleProperty", d1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("StructProperty.ArrayProperty", s3, 0));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("DoubleProperty", d1));
+    EXPECT_TRUE(ECObjectsStatus::PropertyValueMatchesNoChange == instance->ChangeValue("DoubleProperty", d1));
 
-    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->SetValue ("StringProperty", s5));
-    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->SetValue ("IntProperty", i3));
+    EXPECT_TRUE(ECObjectsStatus::Success == structInstance->SetValue("StringProperty", s5));
+    EXPECT_TRUE(ECObjectsStatus::Success == structInstance->SetValue("IntProperty", i3));
 #if !FIXED_COUNT_ARRAYS_ARE_SUPPORTED
-    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->AddArrayElements ("ArrayProperty", 1));
+    EXPECT_TRUE(ECObjectsStatus::Success == structInstance->AddArrayElements("ArrayProperty", 1));
 #endif
-    EXPECT_TRUE (ECObjectsStatus::Success == structInstance->SetValue ("ArrayProperty", s6, 0));
+    EXPECT_TRUE(ECObjectsStatus::Success == structInstance->SetValue("ArrayProperty", s6, 0));
 
 #if FIXED_COUNT_ARRAYS_ARE_SUPPORTED
     // This is a fixed-size struct array so we don't have to insert members
 #else
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("StructArrayProperty", 1));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->AddArrayElements("StructArrayProperty", 1));
 #endif
     ECValue structVal;
-    structVal.SetStruct (structInstance.get());
-    EXPECT_TRUE (ECObjectsStatus::Success == instance->SetValue ("StructArrayProperty", structVal, 0));
+    structVal.SetStruct(structInstance.get());
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue("StructArrayProperty", structVal, 0));
 
     // ensure we can walk the properties
-    ECValuesCollectionPtr   collection = ECValuesCollection::Create (*instance);
+    ECValuesCollectionPtr   collection = ECValuesCollection::Create(*instance);
     //dumpPropertyValues (*collection, false, 0);
     }
 
-TEST_F (MemoryLayoutTests, ProfileSettingValues)
+TEST_F(MemoryLayoutTests, ProfileSettingValues)
     {
     int nStrings = 100;
     int nInstances = 1000;
 
-    ECSchemaPtr         schema      = CreateProfilingSchema(nStrings);
-    ECClassP           ecClass     = schema->GetClassP ("Pidget");
-    ASSERT_TRUE (NULL != ecClass);
-        
-    StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
+    ECSchemaPtr         schema = CreateProfilingSchema(nStrings);
+    ECClassP           ecClass = schema->GetClassP("Pidget");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
     ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
-    
-    //UInt32 slack = 0;
+
     double elapsedSeconds = 0.0;
-    StopWatch timer ("Time setting of values in a new StandaloneECInstance", true);
+    StopWatch timer("Time setting of values in a new StandaloneECInstance", true);
     for (int i = 0; i < nInstances; i++)
         {
         timer.Start();
-        SetValuesForProfiling (*instance);
+        SetValuesForProfiling(*instance);
         timer.Stop();
-        
+
         elapsedSeconds += timer.GetElapsedSeconds();
         instance->GetAsMemoryECInstanceP()->ClearValues();
         }
-    
-    //printf ("  %d StandaloneECInstances with %d string properties initialized in %.4f seconds.\n", nInstances, nStrings, elapsedSeconds);
-    }
-    
-
-TEST_F (MemoryLayoutTests, TestValueAccessor)
-    {
-    ECValueAccessor m_accessor;
     }
 
-TEST_F (MemoryLayoutTests, GeometrySetGet)
+TEST_F(MemoryLayoutTests, GeometrySetGet)
     {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "GeometrySchema", 1, 0);
@@ -2974,32 +2977,31 @@ TEST_F (MemoryLayoutTests, GeometrySetGet)
 
     PrimitiveECPropertyP geomProperty;
     geomClass->CreatePrimitiveProperty(geomProperty, "MyGeometry");
-    geomProperty->SetTypeName ("Bentley.Geometry.Common.IGeometry");
+    geomProperty->SetTypeName("Bentley.Geometry.Common.IGeometry");
 
     IECInstancePtr instance = geomClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     DEllipse3d ellipse;
-    ellipse.Init (0.0, 0.0, 0.0, 10000, 0.0, 0.0, 0.0, 10000, 0.0, 0.0, msGeomConst_2pi);
-    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc (ellipse);
-    IGeometryPtr geometryPtr = IGeometry::Create (arc);
+    ellipse.Init(0.0, 0.0, 0.0, 10000, 0.0, 0.0, 0.0, 10000, 0.0, 0.0, msGeomConst_2pi);
+    ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+    IGeometryPtr geometryPtr = IGeometry::Create(arc);
     ECValue v;
-    BentleyStatus vStatus = v.SetIGeometry (*geometryPtr);
-    ASSERT_EQ(SUCCESS ,vStatus);
+    BentleyStatus vStatus = v.SetIGeometry(*geometryPtr);
+    ASSERT_EQ(SUCCESS, vStatus);
 
-    IGeometryPtr storedGeometryPtr1 = v.GetIGeometry ();
+    IGeometryPtr storedGeometryPtr1 = v.GetIGeometry();
     ASSERT_TRUE(storedGeometryPtr1.IsValid());
-    ECObjectsStatus status = instance->SetValue ("MyGeometry", v);
-    ASSERT_EQ(ECObjectsStatus::Success,status);
-
+    ECObjectsStatus status = instance->SetValue("MyGeometry", v);
+    ASSERT_EQ(ECObjectsStatus::Success, status);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* TFS#290587: When you modify a property (e.g. by changing its read-only flag, type, etc)
+* When you modify a property (e.g. by changing its read-only flag, type, etc)
 * its containing ECClass's cached ClassLayout should be updated to reflect the change.
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DefaultStandaloneEnablerTests : ECTestFixture
-{
+    {
     ECSchemaPtr m_schema;
     ECEntityClassP    m_class;
 
@@ -3033,7 +3035,7 @@ struct DefaultStandaloneEnablerTests : ECTestFixture
         auto instance = -1 == arrayIndex ? CreateInstance() : CreateInstanceWithArray(accessString);
         return -1 == arrayIndex ? instance->SetValue(accessString, v) : instance->SetValue(accessString, v, arrayIndex);
         }
-};
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
@@ -3044,20 +3046,20 @@ TEST_F(DefaultStandaloneEnablerTests, ReadOnly)
     m_class->CreatePrimitiveProperty(prop, "Prop");
     EXPECT_EQ(ECObjectsStatus::Success, SetValue("Prop", "abc"));
     prop->SetIsReadOnly(true);
-        {
-        // An initial SetValue() will succeed, because the property is null
-        auto instance = CreateInstance();
-        EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("def", false)));
-        // Setting a non-null read-only property will fail
-        EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->SetValue("Prop", ECValue("uvw", false)));
-        }
+    {
+    // An initial SetValue() will succeed, because the property is null
+    auto instance = CreateInstance();
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("def", false)));
+    // Setting a non-null read-only property will fail
+    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->SetValue("Prop", ECValue("uvw", false)));
+    }
 
     prop->SetIsReadOnly(false);
-        {
-        auto instance = CreateInstance();
-        EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("xyz", false)));  // set from null
-        EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("abc", false)));  // set from non-null
-        }
+    {
+    auto instance = CreateInstance();
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("xyz", false)));  // set from null
+    EXPECT_EQ(ECObjectsStatus::Success, instance->SetValue("Prop", ECValue("abc", false)));  // set from non-null
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
