@@ -484,7 +484,8 @@ TEST_F(ChangeManagerTests, DetectFileModification_NonExistingObject_Error)
     auto cache = GetTestCache();
     auto nonExistingInstance = StubNonExistingInstanceKey(*cache);
     // Act
-    ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(nonExistingInstance));
+    bool isFileModified = false;
+    ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(nonExistingInstance, isFileModified));
     }
 
 TEST_F(ChangeManagerTests, DetectFileModification_InstanceWithoutFile_Error)
@@ -493,7 +494,8 @@ TEST_F(ChangeManagerTests, DetectFileModification_InstanceWithoutFile_Error)
     auto cache = GetTestCache();
     auto instance = StubInstanceInCache(*cache);
     // Act
-    ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(instance));
+    bool isFileModified = false;
+    ASSERT_EQ(ERROR, cache->GetChangeManager().DetectFileModification(instance, isFileModified));
     }
 
 TEST_F(ChangeManagerTests, DetectFileModification_FileNotChanged_HasNoChanges)
@@ -502,9 +504,10 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileNotChanged_HasNoChanges)
     auto cache = GetTestCache();
     auto instance = cache->FindInstance(StubFileInCache(*cache));
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
+    bool isFileModified = false;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance, isFileModified));
     // Assert
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_FALSE(isFileModified);
     }
 
 TEST_F(ChangeManagerTests, DetectFileModification_FileNotChangedAndLocationChanged_HasNoChanges)
@@ -514,9 +517,10 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileNotChangedAndLocationChang
     auto instance = cache->FindInstance(StubFileInCache(*cache, FileCache::Temporary));
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(cache->FindInstance(instance), FileCache::Persistent));
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
+    bool isFileModified = false;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance, isFileModified));
     // Assert
-    EXPECT_EQ(IChangeManager::ChangeStatus::NoChange, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_FALSE(isFileModified);
     }
 
 TEST_F(ChangeManagerTests, DetectFileModification_FileChanged_HasChanges)
@@ -529,9 +533,10 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileChanged_HasChanges)
 
     SimpleWriteToFile("NewTestContent", cache->ReadFilePath(instance));  
        
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
+    bool isFileModified = false;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance, isFileModified));
     // Assert
-    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_TRUE(isFileModified);
     }
 
 TEST_F(ChangeManagerTests, DetectFileModification_FileChangedAndLocationChanged_HasChanges)
@@ -543,9 +548,10 @@ TEST_F(ChangeManagerTests, DetectFileModification_FileChangedAndLocationChanged_
     SimpleWriteToFile("NewTestContent", cache->ReadFilePath(instance));
     ASSERT_EQ(SUCCESS, cache->SetFileCacheLocation(cache->FindInstance(instance), FileCache::Persistent));
     // Act
-    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance));
+    bool isFileModified = false;
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().DetectFileModification(instance, isFileModified));
     // Assert
-    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetFileChange(instance).GetChangeStatus());
+    EXPECT_TRUE(isFileModified);
     }
 
 TEST_F(ChangeManagerTests, ModifyFile_NonExistingObject_Error)
