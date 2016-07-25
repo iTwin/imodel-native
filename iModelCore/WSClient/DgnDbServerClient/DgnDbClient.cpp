@@ -51,16 +51,12 @@ bool       DgnDbServerBriefcaseInfo::IsReadOnly()   const { return m_isReadOnly;
 //---------------------------------------------------------------------------------------
 void DgnDbClient::Initialize()
     {
-    static bool initialized = false;
-    BeAssert(!initialized);
-
     auto host = Dgn::DgnPlatformLib::QueryHost();
     BeAssert(host);
 
     BeFileName temp = host->GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
     BeFileName assets = host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     DgnDbServerHost::Initialize(temp, assets);
-    initialized = true;
     }
 
 //---------------------------------------------------------------------------------------
