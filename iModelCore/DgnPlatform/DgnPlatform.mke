@@ -271,8 +271,6 @@ $(CoreObjs)SnapContext$(oext) :                     $(DgnCoreDir)SnapContext.cpp
 
 $(CoreObjs)SimplifyGraphic$(oext) :                 $(DgnCoreDir)SimplifyGraphic.cpp $(contextDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
 
-$(CoreObjs)IFacetTopologyTable$(oext) :             $(DgnCoreDir)IFacetTopologyTable.cpp $(contextDepends) ${MultiCompileDepends}
-
 $(CoreObjs)DrawAreaPattern$(oext) :                 $(DgnCoreDir)DrawAreaPattern.cpp   $(contextDepends) $(HandlerDepends) $(DgnPlatformAPISrc)SimplifyGraphic.h ${MultiCompileDepends}
 
 $(CoreObjs)ClipUtil$(oext) :                        $(DgnCoreDir)ClipUtil.cpp $(DgnPlatformAPISrc)ClipUtil.h ${MultiCompileDepends}
