@@ -335,4 +335,8 @@ bool LoadCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_un
 
 bool WriteCompressedPacket(const HCDPacket& pi_uncompressedPacket, HCDPacket& pi_compressedPacket);
 
+bool LoadJpegCompressedPacket(const HCDPacket& pi_compressedPacket, HCDPacket& pi_uncompressedPacket, size_t width, size_t height, size_t nOfChannels = 3);
+
+bool WriteJpegCompressedPacket(const HCDPacket& pi_uncompressedPacket, HCDPacket& pi_compressedPacket, int width, int height, int nOfChannels = 3);
+
 

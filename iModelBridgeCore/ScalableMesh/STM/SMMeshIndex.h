@@ -559,26 +559,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
     void PushTexture(const Byte* texture, size_t size);              
 
-    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr()
-        {
-        RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
-
-        if (!IsTextured())
-            return poolMemBlobItemPtr;
-                  
-        //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-        if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
-            {                              
-            RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(new SMStoredMemoryPoolBlobItem<Byte>(GetBlockID().m_integerID, GetTextureStore().GetPtr(), SMStoreDataType::Texture, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_texturePoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-            assert(m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemBlobItemPtr = storedMemoryPoolVector.get();            
-            }
-
-        return poolMemBlobItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr();
+     
     HFCPtr<IScalableMeshDataStore<Byte, float, float>> GetTextureStore() const
         {
         return dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetTexturesStore();
