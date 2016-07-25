@@ -278,43 +278,6 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 //---------------------------------------------------------------------------------------
 DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
 {
-	/*Json::Reader reader;
-	Json::Value data(Json::objectValue);
-	if (
-		reader.parse(jsonString, data) &&
-		!data.isArray() &&
-		data.isMember(DgnDbServerEvent::EventTopic) &&
-		data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-		data.isMember(DgnDbServerEvent::LockEventProperties::ObjectIds) &&
-		data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
-		data.isMember(DgnDbServerEvent::LockEventProperties::LockLevel) &&
-		data.isMember(DgnDbServerEvent::LockEventProperties::BriefcaseId) &&
-		data.isMember(DgnDbServerEvent::LockEventProperties::ReleasedWithRevision)
-		)
-		{
-		bvector<Utf8String> objectIds;
-		for
-			(
-			Json::ValueIterator itr = data[DgnDbServerEvent::LockEventProperties::ObjectIds].begin();
-			itr != data[DgnDbServerEvent::LockEventProperties::ObjectIds].end();
-			itr++
-			)
-			objectIds.push_back((*itr).asString());
-
-		return DgnDbServerLockEvent::Create
-		(
-		data[DgnDbServerEvent::EventTopic].asString(),
-		data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-		objectIds,
-		data[DgnDbServerEvent::LockEventProperties::LockType].asString(),
-		data[DgnDbServerEvent::LockEventProperties::LockLevel].asString(),
-		data[DgnDbServerEvent::LockEventProperties::BriefcaseId].asString(),
-		data[DgnDbServerEvent::LockEventProperties::ReleasedWithRevision].asString()
-		);
-		}
-
-	return nullptr;*/
-
 	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent);
 	if (data == nullptr)
 		return nullptr;
@@ -348,25 +311,6 @@ DgnDbServerEventPtr ParseIntoLockEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
 {
-	/*Json::Reader reader;
-	Json::Value data(Json::objectValue);
-	if (
-		reader.parse(jsonString, data) &&
-		!data.isArray() &&
-		data.isMember(DgnDbServerEvent::EventTopic) &&
-		data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-		data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
-		data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex)
-		)
-		return DgnDbServerRevisionEvent::Create
-		(
-			data[DgnDbServerEvent::EventTopic].asString(),
-			data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-			data[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
-			data[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString()
-		);
-	return nullptr;*/
-
 	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionEvent);
 	if (data == nullptr)
 		return nullptr;
@@ -384,40 +328,6 @@ DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 {
-	/*Json::Reader reader;
-	Json::Value data(Json::objectValue);
-	if (
-		reader.parse(jsonString, data) &&
-		!data.isArray() &&
-		data.isMember(DgnDbServerEvent::EventTopic) &&
-		data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-		data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId) &&
-		data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
-		data.isMember(DgnDbServerEvent::CodeEventProperties::Values) &&
-		data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
-		data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
-		data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision)
-		)
-	{
-		bvector<Utf8String> values;
-
-		for (Json::ValueIterator itr = data[DgnDbServerEvent::CodeEventProperties::Values].begin(); itr != data[DgnDbServerEvent::CodeEventProperties::Values].end(); itr++)
-			values.push_back((*itr).asString());
-
-		return DgnDbServerCodeEvent::Create
-		(
-			data[DgnDbServerEvent::EventTopic].asString(),
-			data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-			data[DgnDbServerEvent::CodeEventProperties::CodeAuthorityId].asString(),
-			data[DgnDbServerEvent::CodeEventProperties::Namespace].asString(),
-			values,
-			data[DgnDbServerEvent::CodeEventProperties::State].asString(),
-			data[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
-			data[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString()
-		);
-	}
-	return nullptr;*/
-
 	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::CodeEvent);
 	if (data == nullptr)
 		return nullptr;
@@ -452,27 +362,6 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 //---------------------------------------------------------------------------------------
 DgnDbServerEventPtr ParseIntoDeletedEvent(Utf8String jsonString, DgnDbServerEvent::DgnDbServerEventType deletedEventType)
 {
-	/*Json::Reader reader;
-	Json::Value data(Json::objectValue);
-
-	if (
-		reader.parse(jsonString, data) &&
-		!data.isArray() &&
-		data.isMember(DgnDbServerEvent::EventTopic) &&
-		data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
-		data.isMember(DgnDbServerEvent::DeletedEventProperties::BriefcaseId) &&
-		!data.isMember(DgnDbServerEvent::LockEventProperties::LockType) &&
-		!data.isMember(DgnDbServerEvent::CodeEventProperties::CodeAuthorityId)
-		)
-		return DgnDbServerDeletedEvent::Create
-		(
-			data[DgnDbServerEvent::EventTopic].asString(),
-			data[DgnDbServerEvent::FromEventSubscriptionId].asString(),
-			data[DgnDbServerEvent::DeletedEventProperties::BriefcaseId].asString(),
-			deletedEventType
-		);
-	return nullptr;*/
-
 	std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, deletedEventType);
 	if (data == nullptr)
 		return nullptr;
