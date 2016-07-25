@@ -14,11 +14,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 #define TABLE_NAME "test"
-#define INTPROP_NAME "IntProp"
-#define STRINGPROP_NAME "StringProp"
-#define DOUBLEPROP_NAME "DoubleProp"
-#define BLOBPROP_NAME "BlobProp"
-#define POINTPROP_NAME "PointProp"
 #define OVERFLOWPROP_NAME "OverflowProps"
 
 #define BOOLVALUE true
@@ -29,6 +24,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 #define POINTXVALUE 3.3314134314134
 #define POINTYVALUE -133.3314134314134
 #define POINTZVALUE 100.3314134314
+
+#define INITIALROWCOUNT 100000
+#define ROWCOUNT 5000
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle       07/2016
@@ -57,13 +55,16 @@ struct PerformanceOverflowPropsTests : ECDbTestFixture
             }
 
         BentleyStatus RunInsertRegularProperty(ECN::PrimitiveType propertyType, int propCount, int rowCount);
-        BentleyStatus RunInsertRegularProperty(StopWatch&, Utf8CP fileName, ECN::PrimitiveType propertyType, int propCount, int rowCount);
+        BentleyStatus RunUpdateRegularProperty(ECN::PrimitiveType propertyType, int propCount, int rowCount);
         BentleyStatus RunSelectRegularProperty(ECN::PrimitiveType propertyType, int propCount, int rowCount);
         BentleyStatus RunInsertOverflowProperty(ECN::PrimitiveType propertyType, int propCount, int rowCount);
-        BentleyStatus RunInsertOverflowProperty(StopWatch&, Utf8CP fileName, ECN::PrimitiveType propertyType, int propCount, int rowCount);
+        BentleyStatus RunUpdateOverflowProperty(ECN::PrimitiveType propertyType, int propCount, int rowCount);
         BentleyStatus RunSelectOverflowProperty(ECN::PrimitiveType propertyType, int propCount, int rowCount);
+        
+        BentleyStatus BindRegularPropsForInsert(Statement&, int firstParameterIndex, PrimitiveType propType, int propCount) const;
+        BentleyStatus BindOverflowPropsForInsert(Statement&, int parameterIndex, PrimitiveType propType, int propCount) const;
 
-        BentleyStatus SetupTest(Utf8CP fileName, ECDb::OpenParams const&, PrimitiveType propType, int propCount);
+        BentleyStatus SetupTest(ECDb::OpenParams const&, PrimitiveType propType, int propCount);
 
         void LogTiming(StopWatch&, Utf8CP logMessageHeader, ECN::PrimitiveType, int propCount, int rowCount);
 
@@ -74,7 +75,8 @@ struct PerformanceOverflowPropsTests : ECDbTestFixture
         Byte const* GetTestBlob() const { return m_testBlob; }
         size_t GetTestBlobSize() const { return s_testBlobSize; }
 
-        static Utf8CP ColumnNameFor(ECN::PrimitiveType);
+        static void GetColumnName(Utf8String& colName, int propNo) { colName.Sprintf("Prop%d", propNo); }
+
         static Utf8CP PrimitiveTypeToString(ECN::PrimitiveType);
     };
 
@@ -83,15 +85,14 @@ struct PerformanceOverflowPropsTests : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertRegular_FewProps)
     {
-    const int rowCount = 10000;
     const int propCount = 10;
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -99,15 +100,14 @@ TEST_F(PerformanceOverflowPropsTests, InsertRegular_FewProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, SelectRegular_FewProps)
     {
-    const int rowCount = 10000;
     const int propCount = 10;
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -115,15 +115,14 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_FewProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertRegular_ManyProps)
     {
-    const int rowCount = 10000;
     const int propCount = 150;
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -131,15 +130,14 @@ TEST_F(PerformanceOverflowPropsTests, InsertRegular_ManyProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, SelectRegular_ManyProps)
     {
-    const int rowCount = 10000;
     const int propCount = 150;
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectRegularProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -147,15 +145,14 @@ TEST_F(PerformanceOverflowPropsTests, SelectRegular_ManyProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps)
     {
-    const int rowCount = 10000;
     const int propCount = 10;
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -163,15 +160,14 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_FewProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, SelectOverflow_FewProps)
     {
-    const int rowCount = 10000;
     const int propCount = 10;
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,15 +175,14 @@ TEST_F(PerformanceOverflowPropsTests, SelectOverflow_FewProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, InsertOverflow_ManyProps)
     {
-    const int rowCount = 10000;
     const int propCount = 150;
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunInsertOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 //---------------------------------------------------------------------------------------
@@ -195,15 +190,14 @@ TEST_F(PerformanceOverflowPropsTests, InsertOverflow_ManyProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceOverflowPropsTests, SelectOverflow_ManyProps)
     {
-    const int rowCount = 10000;
     const int propCount = 150;
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Integer, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Long, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Double, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_String, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Point3D, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_Binary, propCount, ROWCOUNT));
+    ASSERT_EQ(SUCCESS, RunSelectOverflowProperty(PrimitiveType::PRIMITIVETYPE_IGeometry, propCount, ROWCOUNT));
     }
 
 
@@ -212,25 +206,10 @@ TEST_F(PerformanceOverflowPropsTests, SelectOverflow_ManyProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(PrimitiveType propertyType, int propCount, int rowCount)
     {
-    Utf8String fileName;
-    fileName.Sprintf("regular_insert_%s_%d_props_opcount_%d.ecdb", PrimitiveTypeToString(propertyType), propCount, rowCount);
+    if (SUCCESS != SetupTest(ECDb::OpenParams(Db::OpenMode::ReadWrite), propertyType, propCount))
+        return ERROR;
 
     StopWatch timer;
-    if (SUCCESS != RunInsertRegularProperty(timer, fileName.c_str(), propertyType, propCount, rowCount))
-        return ERROR;
-
-    LogTiming(timer, "INSERT - Regular Property", propertyType, propCount, rowCount);
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(StopWatch& timer, Utf8CP fileName, ECN::PrimitiveType propertyType, int propCount, int rowCount)
-    {
-    if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite), propertyType, propCount))
-        return ERROR;
-
     Utf8String sql("INSERT INTO " TABLE_NAME "(");
     Utf8String valuesClause(" VALUES(");
     for (int i = 0; i < propCount; i++)
@@ -241,124 +220,38 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(StopWatch&
             valuesClause.append(",");
             }
 
-        Utf8String colNoStr;
-        colNoStr.Sprintf("_%d", i + 1);
+        Utf8String colName;
+        GetColumnName(colName, i + 1);
 
         switch (propertyType)
             {
                 case PRIMITIVETYPE_Point2D:
-                    sql.append(POINTPROP_NAME).append(colNoStr).append("_X, " POINTPROP_NAME).append(colNoStr).append("_Y");
+                    sql.append(colName).append("_X, ").append(colName).append("_Y");
                     valuesClause.append("?,?");
                     break;
 
                 case PRIMITIVETYPE_Point3D:
-                    sql.append(POINTPROP_NAME).append(colNoStr).append("_X, " POINTPROP_NAME).append(colNoStr).append("_Y, " POINTPROP_NAME).append(colNoStr).append("_Z");
+                    sql.append(colName).append("_X, ").append(colName).append("_Y, ").append(colName).append("_Z");
                     valuesClause.append("?,?,?");
                     break;
 
                 default:
-                    sql.append(ColumnNameFor(propertyType)).append(colNoStr);
+                    sql.append(colName);
                     valuesClause.append("?");
                     break;
             }
         }
 
     sql.append(")").append(valuesClause).append(")");
-    
-    timer.Start();
+
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
         return ERROR;
 
     for (int i = 0; i < rowCount; i++)
         {
-        for (int j = 0; j < propCount; j++)
-            {
-            int parameterIndex = j + 1;
-            switch (propertyType)
-                {
-                    case PRIMITIVETYPE_Binary:
-                        if (BE_SQLITE_OK != stmt.BindBlob(parameterIndex, GetTestBlob(), (int) GetTestBlobSize(), Statement::MakeCopy::Yes))
-                            return ERROR;
-
-                        break;
-
-                    case PRIMITIVETYPE_Boolean:
-                        if (BE_SQLITE_OK != stmt.BindInt(parameterIndex, BOOLVALUE ? 1 : 0))
-                            return ERROR;
-
-                        break;
-
-                    case PRIMITIVETYPE_DateTime:
-                    {
-                    double jd = -1.0;
-                    if (SUCCESS != GetTestDate().ToJulianDay(jd))
-                        return ERROR;
-
-                    if (BE_SQLITE_OK != stmt.BindDouble(parameterIndex, jd))
-                        return ERROR;
-
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_Double:
-                        if (BE_SQLITE_OK != stmt.BindDouble(parameterIndex, DOUBLEVALUE))
-                            return ERROR;
-
-                        break;
-
-                    case PRIMITIVETYPE_IGeometry:
-                    {
-                    bvector<Byte> fb;
-                    BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
-
-                    if (BE_SQLITE_OK != stmt.BindBlob(parameterIndex, fb.data(), (int) fb.size(), Statement::MakeCopy::Yes))
-                        return ERROR;
-
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_Integer:
-                        if (BE_SQLITE_OK != stmt.BindInt(parameterIndex, INTVALUE))
-                            return ERROR;
-
-                        break;
-
-                    case PRIMITIVETYPE_Long:
-                        if (BE_SQLITE_OK != stmt.BindInt64(parameterIndex, INT64VALUE))
-                            return ERROR;
-
-                        break;
-
-                    case PRIMITIVETYPE_Point2D:
-                    {
-                    if (BE_SQLITE_OK != stmt.BindDouble(2 * j + 1, POINTXVALUE) ||
-                        BE_SQLITE_OK != stmt.BindDouble(2 * j + 2, POINTYVALUE))
-                        return ERROR;
-
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_Point3D:
-                    {
-                    if (BE_SQLITE_OK != stmt.BindDouble(3 * j + 1, POINTXVALUE) ||
-                        BE_SQLITE_OK != stmt.BindDouble(3 * j + 2, POINTYVALUE) ||
-                        BE_SQLITE_OK != stmt.BindDouble(3 * j + 3, POINTZVALUE))
-                        return ERROR;
-
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_String:
-                        if (BE_SQLITE_OK != stmt.BindText(parameterIndex, STRINGVALUE, Statement::MakeCopy::Yes))
-                            return ERROR;
-
-                        break;
-
-                    default:
-                        return ERROR;
-                }
-            }
+        if (SUCCESS != BindRegularPropsForInsert(stmt, 1, propertyType, propCount))
+            return ERROR;
 
         if (BE_SQLITE_DONE != stmt.Step())
             return ERROR;
@@ -369,6 +262,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(StopWatch&
 
     stmt.Finalize();
     timer.Stop();
+    LogTiming(timer, "INSERT - Regular Property", propertyType, propCount, rowCount);
     return SUCCESS;
     }
 
@@ -377,46 +271,29 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertRegularProperty(StopWatch&
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveType propertyType, int propCount, int rowCount)
     {
-    Utf8String fileName;
-    fileName.Sprintf("regular_select_%s_%d_props_opcount_%d.ecdb", PrimitiveTypeToString(propertyType), propCount, rowCount);
-
-    StopWatch timer;
-    if (SUCCESS != RunInsertRegularProperty(timer, fileName.c_str(), propertyType, propCount, rowCount))
+    if (SUCCESS != SetupTest(ECDb::OpenParams(Db::OpenMode::Readonly), propertyType, propCount))
         return ERROR;
 
-    Utf8String filePath = GetECDb().GetDbFileName();
-    GetECDb().CloseDb();
-
-    if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)))
-        return ERROR;
-
-    Utf8String sql;
+    StopWatch timer(true);
+    Utf8String sql("SELECT ");
     const int propNo = propCount / 2; //pick property in the middle of all props
+    Utf8String colName;
+    GetColumnName(colName, propNo);
     switch (propertyType)
         {
             case PRIMITIVETYPE_Point2D:
-            {
-            Utf8String colNamePrefix;
-            colNamePrefix.Sprintf("%s_%d", ColumnNameFor(propertyType), propNo);
-
-            sql.append("SELECT ").append(colNamePrefix).append("_X, ").append(colNamePrefix).append("_Y FROM " TABLE_NAME);
-            break;
-            }
+                sql.append(colName).append("_X, ").append(colName).append("_Y");
+                break;
             case PRIMITIVETYPE_Point3D:
-            {
-            Utf8String colNamePrefix;
-            colNamePrefix.Sprintf("%s_%d", ColumnNameFor(propertyType), propNo);
-
-            sql.append("SELECT ").append(colNamePrefix).append("_X, ").append(colNamePrefix).append("_Y, ").append(colNamePrefix).append("_Z FROM " TABLE_NAME);
-            break;
-            }
+                sql.append(colName).append("_X, ").append(colName).append("_Y, ").append(colName).append("_Z");
+                break;
 
             default:
-                sql.Sprintf("SELECT %s_%d FROM " TABLE_NAME, ColumnNameFor(propertyType), propCount / 2);
+                sql.append(colName);
                 break;
         }
 
-    timer.Start();
+    sql.append(" FROM " TABLE_NAME);
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
         return ERROR;
@@ -533,26 +410,10 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(PrimitiveType propertyType, int propCount, int rowCount)
     {
-    Utf8String fileName;
-    fileName.Sprintf("overflow_insert_%s_%d_props_opcount_%d.ecdb", PrimitiveTypeToString(propertyType), propCount, rowCount);
-
-    StopWatch timer;
-    if (SUCCESS != RunInsertOverflowProperty(timer, fileName.c_str(), propertyType, propCount, rowCount))
+    if (SUCCESS != SetupTest(ECDb::OpenParams(Db::OpenMode::ReadWrite), propertyType, propCount))
         return ERROR;
 
-    LogTiming(timer, "INSERT - OverflowProperty", propertyType, propCount, rowCount);
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(StopWatch& timer, Utf8CP fileName, ECN::PrimitiveType propertyType, int propCount, int rowCount)
-    {
-    if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite), propertyType, propCount))
-        return ERROR;
-
-    timer.Start();
+    StopWatch timer(true);
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "INSERT INTO " TABLE_NAME "(" OVERFLOWPROP_NAME ") VALUES(?)"))
@@ -560,103 +421,19 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(StopWatch
 
     for (int i = 0; i < rowCount; i++)
         {
-        Json::Value json(Json::objectValue);
-        for (int j = 0; j < propCount; j++)
-            {
-            Utf8String propName;
-            propName.Sprintf("%s_%d", ColumnNameFor(propertyType), j + 1);
-            Json::Value& val = json[propName.c_str()];
-            switch (propertyType)
-                {
-                    case PRIMITIVETYPE_Binary:
-                    {
-                    if (SUCCESS != ECJsonUtilities::BinaryToJson(val, GetTestBlob(), GetTestBlobSize()))
-                        return ERROR;
-
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_Boolean:
-                    {
-                    val = Json::Value(BOOLVALUE);
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_DateTime:
-                    {
-                    double jd = -1.0;
-                    if (SUCCESS != GetTestDate().ToJulianDay(jd))
-                        return ERROR;
-
-                    val = Json::Value(jd);
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_Double:
-                    {
-                    val = Json::Value(DOUBLEVALUE);
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_IGeometry:
-                    {
-                    bvector<Byte> fb;
-                    BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
-
-                    if (SUCCESS != ECJsonUtilities::BinaryToJson(val, fb.data(), fb.size()))
-                        return ERROR;
-
-                    break;
-                    }
-
-                    case PRIMITIVETYPE_Integer:
-                    {
-                    val = Json::Value(INTVALUE);
-                    break;
-                    }
-                    case PRIMITIVETYPE_Long:
-                    {
-                    val = BeJsonUtilities::StringValueFromInt64(INT64VALUE);
-                    break;
-                    }
-                    case PRIMITIVETYPE_Point2D:
-                    {
-                    val["X"] = Json::Value(POINTXVALUE);
-                    val["Y"] = Json::Value(POINTYVALUE);
-                    break;
-                    }
-                    case PRIMITIVETYPE_Point3D:
-                    {
-                    val["X"] = Json::Value(POINTXVALUE);
-                    val["Y"] = Json::Value(POINTYVALUE);
-                    val["Z"] = Json::Value(POINTZVALUE);
-                    break;
-                    }
-                    case PRIMITIVETYPE_String:
-                    {
-                    val = Json::Value(STRINGVALUE);
-                    break;
-                    }
-
-                    default:
-                        return ERROR;
-                }
-            }
-
-        Json::FastWriter writer;
-        Utf8String jsonStr = writer.write(json);
-        if (BE_SQLITE_OK != stmt.BindText(1, jsonStr.c_str(), Statement::MakeCopy::No))
+        if (SUCCESS != BindOverflowPropsForInsert(stmt, 1, propertyType, propCount))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt.Step())
             return ERROR;
 
-        stmt.Reset();
         stmt.ClearBindings();
+        stmt.Reset();
         }
 
     stmt.Finalize();
     timer.Stop();
+    LogTiming(timer, "INSERT - OverflowProperty", propertyType, propCount, rowCount);
     return SUCCESS;
     }
 
@@ -665,27 +442,17 @@ BentleyStatus PerformanceOverflowPropsTests::RunInsertOverflowProperty(StopWatch
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(PrimitiveType propertyType, int propCount, int rowCount)
     {
-    Utf8String fileName;
-    fileName.Sprintf("overflow_select_%s_%d_props_opcount_%d.ecdb", PrimitiveTypeToString(propertyType), propCount, rowCount);
-
-    StopWatch timer;
-    if (SUCCESS != RunInsertOverflowProperty(timer, fileName.c_str(), propertyType, propCount, rowCount))
+    if (SUCCESS != SetupTest(ECDb::OpenParams(Db::OpenMode::Readonly), propertyType, propCount))
         return ERROR;
 
-    Utf8String filePath = GetECDb().GetDbFileName();
-    GetECDb().CloseDb();
+    StopWatch timer(true);
 
-    if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)))
-        return ERROR;
-
-    const int propNo = propCount / 2; //pick property in the middle of all props
     Utf8String colName;
-    colName.Sprintf("%s_%d", ColumnNameFor(propertyType), propNo);
+    GetColumnName(colName, propCount / 2); //pick property in the middle of all props
 
     Utf8String sql;
     sql.Sprintf("SELECT json_extract(" OVERFLOWPROP_NAME ",'$%s') FROM " TABLE_NAME, colName.c_str());
 
-    timer.Start();
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
         return ERROR;
@@ -808,63 +575,308 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle       07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus PerformanceOverflowPropsTests::SetupTest(Utf8CP fileName, ECDb::OpenParams const& params, PrimitiveType propType, int propCount)
+BentleyStatus PerformanceOverflowPropsTests::BindRegularPropsForInsert(Statement& stmt, int firstParameterIndex, PrimitiveType propType, int propCount) const
     {
-    ECDbR ecdb = SetupECDb(fileName);
-
-    Utf8String tableDdl("CREATE TABLE test(ECInstanceId INTEGER PRIMARY KEY, ");
-    for (int i = 0; i < propCount; i++)
+    for (int j = 0; j < propCount; j++)
         {
-        Utf8String colNoStr;
-        colNoStr.Sprintf("_%d", i + 1);
+        int parameterIndex = j + firstParameterIndex;
         switch (propType)
             {
                 case PRIMITIVETYPE_Binary:
-                case PRIMITIVETYPE_IGeometry:
-                    tableDdl.append(BLOBPROP_NAME).append(colNoStr).append(" BLOB");
+                    if (BE_SQLITE_OK != stmt.BindBlob(parameterIndex, GetTestBlob(), (int) GetTestBlobSize(), Statement::MakeCopy::Yes))
+                        return ERROR;
+
                     break;
 
                 case PRIMITIVETYPE_Boolean:
-                case PRIMITIVETYPE_Integer:
-                case PRIMITIVETYPE_Long:
-                    tableDdl.append(INTPROP_NAME).append(colNoStr).append(" INTEGER");
+                    if (BE_SQLITE_OK != stmt.BindInt(parameterIndex, BOOLVALUE ? 1 : 0))
+                        return ERROR;
+
                     break;
+
+                case PRIMITIVETYPE_DateTime:
+                {
+                double jd = -1.0;
+                if (SUCCESS != GetTestDate().ToJulianDay(jd))
+                    return ERROR;
+
+                if (BE_SQLITE_OK != stmt.BindDouble(parameterIndex, jd))
+                    return ERROR;
+
+                break;
+                }
 
                 case PRIMITIVETYPE_Double:
-                case PRIMITIVETYPE_DateTime:
-                    tableDdl.append(DOUBLEPROP_NAME).append(colNoStr).append(" REAL");
+                    if (BE_SQLITE_OK != stmt.BindDouble(parameterIndex, DOUBLEVALUE))
+                        return ERROR;
+
                     break;
 
-                case PRIMITIVETYPE_String:
-                    tableDdl.append(STRINGPROP_NAME).append(colNoStr).append(" TEXT");
+                case PRIMITIVETYPE_IGeometry:
+                {
+                bvector<Byte> fb;
+                BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+
+                if (BE_SQLITE_OK != stmt.BindBlob(parameterIndex, fb.data(), (int) fb.size(), Statement::MakeCopy::Yes))
+                    return ERROR;
+
+                break;
+                }
+
+                case PRIMITIVETYPE_Integer:
+                    if (BE_SQLITE_OK != stmt.BindInt(parameterIndex, INTVALUE))
+                        return ERROR;
+
+                    break;
+
+                case PRIMITIVETYPE_Long:
+                    if (BE_SQLITE_OK != stmt.BindInt64(parameterIndex, INT64VALUE))
+                        return ERROR;
+
                     break;
 
                 case PRIMITIVETYPE_Point2D:
-                    tableDdl.append(POINTPROP_NAME).append(colNoStr).append("_X REAL, " POINTPROP_NAME).append(colNoStr).append("_Y REAL");
-                    break;
+                {
+                if (BE_SQLITE_OK != stmt.BindDouble(2 * j + 1, POINTXVALUE) ||
+                    BE_SQLITE_OK != stmt.BindDouble(2 * j + 2, POINTYVALUE))
+                    return ERROR;
+
+                break;
+                }
 
                 case PRIMITIVETYPE_Point3D:
-                    tableDdl.append(POINTPROP_NAME).append(colNoStr).append("_X REAL, " POINTPROP_NAME).append(colNoStr).append("_Y REAL, " POINTPROP_NAME).append(colNoStr).append("_Z REAL");
+                {
+                if (BE_SQLITE_OK != stmt.BindDouble(3 * j + 1, POINTXVALUE) ||
+                    BE_SQLITE_OK != stmt.BindDouble(3 * j + 2, POINTYVALUE) ||
+                    BE_SQLITE_OK != stmt.BindDouble(3 * j + 3, POINTZVALUE))
+                    return ERROR;
+
+                break;
+                }
+
+                case PRIMITIVETYPE_String:
+                    if (BE_SQLITE_OK != stmt.BindText(parameterIndex, STRINGVALUE, Statement::MakeCopy::Yes))
+                        return ERROR;
+
                     break;
 
                 default:
                     return ERROR;
             }
-
-        tableDdl.append(", ");
         }
 
-    tableDdl.append(OVERFLOWPROP_NAME " TEXT)");
+    return SUCCESS;
+    }
 
-    if (BE_SQLITE_OK != ecdb.ExecuteSql(tableDdl.c_str()))
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PerformanceOverflowPropsTests::BindOverflowPropsForInsert(Statement& stmt, int parameterIndex, PrimitiveType propType, int propCount) const
+    {
+    Json::Value json(Json::objectValue);
+    for (int j = 0; j < propCount; j++)
+        {
+        Utf8String colName;
+        GetColumnName(colName, j + 1);
+        Json::Value& val = json[colName.c_str()];
+        switch (propType)
+            {
+                case PRIMITIVETYPE_Binary:
+                {
+                if (SUCCESS != ECJsonUtilities::BinaryToJson(val, GetTestBlob(), GetTestBlobSize()))
+                    return ERROR;
+
+                break;
+                }
+
+                case PRIMITIVETYPE_Boolean:
+                {
+                val = Json::Value(BOOLVALUE);
+                break;
+                }
+
+                case PRIMITIVETYPE_DateTime:
+                {
+                double jd = -1.0;
+                if (SUCCESS != GetTestDate().ToJulianDay(jd))
+                    return ERROR;
+
+                val = Json::Value(jd);
+                break;
+                }
+
+                case PRIMITIVETYPE_Double:
+                {
+                val = Json::Value(DOUBLEVALUE);
+                break;
+                }
+
+                case PRIMITIVETYPE_IGeometry:
+                {
+                bvector<Byte> fb;
+                BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+
+                if (SUCCESS != ECJsonUtilities::BinaryToJson(val, fb.data(), fb.size()))
+                    return ERROR;
+
+                break;
+                }
+
+                case PRIMITIVETYPE_Integer:
+                {
+                val = Json::Value(INTVALUE);
+                break;
+                }
+                case PRIMITIVETYPE_Long:
+                {
+                val = BeJsonUtilities::StringValueFromInt64(INT64VALUE);
+                break;
+                }
+                case PRIMITIVETYPE_Point2D:
+                {
+                val["X"] = Json::Value(POINTXVALUE);
+                val["Y"] = Json::Value(POINTYVALUE);
+                break;
+                }
+                case PRIMITIVETYPE_Point3D:
+                {
+                val["X"] = Json::Value(POINTXVALUE);
+                val["Y"] = Json::Value(POINTYVALUE);
+                val["Z"] = Json::Value(POINTZVALUE);
+                break;
+                }
+                case PRIMITIVETYPE_String:
+                {
+                val = Json::Value(STRINGVALUE);
+                break;
+                }
+
+                default:
+                    return ERROR;
+            }
+        }
+
+    Json::FastWriter writer;
+    Utf8String jsonStr = writer.write(json);
+    if (BE_SQLITE_OK != stmt.BindText(parameterIndex, jsonStr.c_str(), Statement::MakeCopy::No))
         return ERROR;
 
-    ecdb.SaveChanges();
-    BeFileName testFilePath;
-    testFilePath.AssignUtf8(ecdb.GetDbFileName());
-    ecdb.CloseDb();
+    return SUCCESS;
+    }
 
-    return m_ecdb.OpenBeSQLiteDb(testFilePath, params) == BE_SQLITE_OK ? SUCCESS : ERROR;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PerformanceOverflowPropsTests::SetupTest(ECDb::OpenParams const& params, PrimitiveType propType, int propCount)
+    {
+    Utf8String fileNameNoExt;
+    fileNameNoExt.Sprintf("performanceoverflow_%s_propcount_%d_initrowcount_%d", PrimitiveTypeToString(propType), propCount, INITIALROWCOUNT);
+
+    Utf8String seedFileName;
+    seedFileName.Sprintf("%s_seed_%d.ecdb", fileNameNoExt.c_str(), DateTime::GetCurrentTimeUtc().GetDayOfYear());
+
+    BeFileName seedPath = ECDbTestUtility::BuildECDbPath(seedFileName.c_str());
+    if (!seedPath.DoesPathExist())
+        {
+        ECDbR ecdb = SetupECDb(seedFileName.c_str());
+
+        Utf8String tableDdl("CREATE TABLE " TABLE_NAME "(ECInstanceId INTEGER PRIMARY KEY, ");
+        Utf8String insertSql("INSERT INTO " TABLE_NAME "(");
+        Utf8String insertValuesClause(" VALUES(");
+
+        for (int i = 0; i < propCount; i++)
+            {
+            Utf8String colName;
+            GetColumnName(colName, i + 1);
+            switch (propType)
+                {
+                    case PRIMITIVETYPE_Binary:
+                    case PRIMITIVETYPE_IGeometry:
+                        tableDdl.append(colName).append(" BLOB");
+
+                        insertSql.append(colName);
+                        insertValuesClause.append("?");
+                        break;
+
+                    case PRIMITIVETYPE_Boolean:
+                    case PRIMITIVETYPE_Integer:
+                    case PRIMITIVETYPE_Long:
+                        tableDdl.append(colName).append(" INTEGER");
+                        insertSql.append(colName);
+                        insertValuesClause.append("?");
+                        break;
+
+                    case PRIMITIVETYPE_Double:
+                    case PRIMITIVETYPE_DateTime:
+                        tableDdl.append(colName).append(" REAL");
+                        insertSql.append(colName);
+                        insertValuesClause.append("?");
+                        break;
+
+                    case PRIMITIVETYPE_String:
+                        tableDdl.append(colName).append(" TEXT");
+                        insertSql.append(colName);
+                        insertValuesClause.append("?");
+                        break;
+
+                    case PRIMITIVETYPE_Point2D:
+                        tableDdl.append(colName).append("_X REAL, ").append(colName).append("_Y REAL");
+
+                        insertSql.append(colName).append("_X, ").append(colName).append("_Y");
+                        insertValuesClause.append("?,?");
+
+                        break;
+
+                    case PRIMITIVETYPE_Point3D:
+                        tableDdl.append(colName).append("_X REAL, ").append(colName).append("_Y REAL, ").append(colName).append("_Z REAL");
+                        insertSql.append(colName).append("_X, ").append(colName).append("_Y, ").append(colName).append("_Z");
+                        insertValuesClause.append("?,?,?");
+                        break;
+
+                    default:
+                        return ERROR;
+                }
+
+            tableDdl.append(", ");
+            insertSql.append(",");
+            insertValuesClause.append(",");
+            }
+
+        tableDdl.append(OVERFLOWPROP_NAME " TEXT)");
+        insertSql.append(OVERFLOWPROP_NAME ") ");
+        insertValuesClause.append("?)");
+        insertSql.append(insertValuesClause);
+
+        if (BE_SQLITE_OK != ecdb.ExecuteSql(tableDdl.c_str()))
+            return ERROR;
+
+        Statement insertStmt;
+        if (BE_SQLITE_OK != insertStmt.Prepare(ecdb, insertSql.c_str()))
+            return ERROR;
+
+        for (int i = 0; i < INITIALROWCOUNT; i++)
+            {
+            if (SUCCESS != BindRegularPropsForInsert(insertStmt, 1, propType, propCount))
+                return ERROR;
+
+            if (SUCCESS != BindOverflowPropsForInsert(insertStmt, propCount + 1, propType, propCount))
+                return ERROR;
+
+            if (BE_SQLITE_DONE != insertStmt.Step())
+                return ERROR;
+
+            insertStmt.ClearBindings();
+            insertStmt.Reset();
+            }
+
+        insertStmt.Finalize();
+        ecdb.SaveChanges();
+        ecdb.CloseDb();
+        }
+
+    Utf8String fileName(fileNameNoExt);
+    fileName.append(".ecdb");
+    return CloneECDb(m_ecdb, fileName.c_str(), seedPath, params) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -875,41 +887,6 @@ void PerformanceOverflowPropsTests::LogTiming(StopWatch& timer, Utf8CP scenario,
     Utf8String logMessage;
     logMessage.Sprintf("%s Property [count %d] - %s.", PrimitiveTypeToString(primType), propCount, scenario);
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), logMessage.c_str(), rowCount);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP PerformanceOverflowPropsTests::ColumnNameFor(ECN::PrimitiveType primType)
-    {
-    switch (primType)
-        {
-            case PRIMITIVETYPE_Binary: 
-            case PRIMITIVETYPE_IGeometry:
-                return BLOBPROP_NAME;
-            
-            case PRIMITIVETYPE_Boolean: 
-            case PRIMITIVETYPE_Integer:
-            case PRIMITIVETYPE_Long:
-                return INTPROP_NAME;
-
-            case PRIMITIVETYPE_DateTime:
-            case PRIMITIVETYPE_Double:
-                return DOUBLEPROP_NAME;
-
-            case PRIMITIVETYPE_Point2D:
-            case PRIMITIVETYPE_Point3D:
-                return POINTPROP_NAME;
-
-            case PRIMITIVETYPE_String: 
-                return STRINGPROP_NAME;
-            
-            default:
-                BeAssert(false);
-                return nullptr;
-        }
     }
 
 
