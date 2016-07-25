@@ -303,11 +303,9 @@ BentleyStatus ChangeManager::MarkFileAsModified(FileInfo& info, SyncStatus syncS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey, SyncStatus syncStatus)
+BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey, bool& outIsModified)
     {
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
-    if (info.GetChangeStatus() == ChangeStatus::Modified)
-        return SUCCESS;
 
     time_t modifiedSeconds;
     if (BeFileNameStatus::Success != info.GetFilePath().GetFileTime(nullptr, nullptr, &modifiedSeconds))
@@ -319,13 +317,9 @@ BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey,
     if (SUCCESS != info.GetFileUpdateDate().ToUnixMilliseconds(updatedMs))
         return ERROR;
 
-    if (modifiedMs <= updatedMs)
-        return SUCCESS;
+    outIsModified = modifiedMs > updatedMs;
 
-    if (SUCCESS != MarkFileAsModified(info, syncStatus))
-        return ERROR;
-
-    return m_fileInfoManager->SaveInfo(info);
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
