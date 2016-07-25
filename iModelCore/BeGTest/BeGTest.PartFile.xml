@@ -204,7 +204,7 @@
 
     <!-- Every unit-test related part that calls DetectAndCompileUnitTests.mki should depend on this -->
     <!-- When using gtest, the DetectAndCompileUnitTests.mki will assume that the gtest and gmock include directories have been bound into the buildcontext -->
-    <Part Name="BeGtest-Includes">
+    <Part Name="BeGtest-Includes" OnlyPlatforms="x86,x64,Linux*,MacOS*,Android*">
         <SubPart PartName="google_gtest"    PartFile="gtest"        Repository="util-gtest" />
         <SubPart PartName="google_gmock"    PartFile="gmock"        Repository="util-gmock" />
     </Part>
