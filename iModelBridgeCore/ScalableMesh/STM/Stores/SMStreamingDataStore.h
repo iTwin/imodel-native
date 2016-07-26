@@ -263,7 +263,7 @@ struct Texture : public bvector<uint8_t>
                 return;
 
             dataSource->close();
-            dataSourceAccount->destroyDataSource(dataSource);
+//          dataSourceAccount->destroyDataSource(dataSource);
 
             if (readSize > 0)
                 {

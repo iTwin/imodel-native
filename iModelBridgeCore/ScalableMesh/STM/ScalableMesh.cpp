@@ -515,6 +515,8 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
     memset(&m_contentExtent, 0, sizeof(m_contentExtent));
 
     HPRECONDITION(smSQliteFile != 0);
+
+    SetDataSourceAccount(nullptr);
 }
 
 
@@ -523,7 +525,10 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 +----------------------------------------------------------------------------*/
 ScalableMeshBase::~ScalableMeshBase ()
     {
-    this->GetDataSourceManager().getService(m_dataSourceAccount->getServiceName())->destroyAccount(m_dataSourceAccount->getAccountName());
+        if (GetDataSourceAccount())
+            {
+            GetDataSourceManager().getService(GetDataSourceAccount()->getServiceName())->destroyAccount(GetDataSourceAccount()->getAccountName());
+            }
     }
 
 /*----------------------------------------------------------------------------+
