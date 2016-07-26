@@ -30,7 +30,7 @@ EventServiceClient::EventServiceClient()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
+Http::Response EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     {
     char numBuffer[10];
     if (longPolling)
@@ -38,7 +38,7 @@ HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     else
         itoa(0, numBuffer, 10);
     Utf8String url = m_fullAddress + Utf8String(numBuffer);
-    HttpRequest request(url.c_str(), "DELETE", nullptr);
+    Http::Request request(url.c_str(), "DELETE", nullptr);
     request.GetHeaders().Clear();
     request.GetHeaders().SetValue("Content-Length", "0");
     //request.GetHeaders().SetContentType("application/json");
@@ -56,7 +56,7 @@ HttpResponse EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
 //todo: need to return with more error status
 bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
     {
-    HttpResponse response = MakeReceiveDeleteRequest(longPolling);
+    Http::Response response = MakeReceiveDeleteRequest(longPolling);
     switch (response.GetHttpStatus())
         {
             case HttpStatus::OK: //received a message
