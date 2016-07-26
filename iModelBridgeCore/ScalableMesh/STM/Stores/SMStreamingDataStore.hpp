@@ -372,12 +372,12 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
             po_pDataSize += sizeof(nodeId);
             }
         }
-    auto nbDataSizes = pi_pHeader->m_streamingDataSizes.size();
+    auto nbDataSizes = pi_pHeader->m_blockSizes.size();
     memcpy(po_pBinaryData.get() + po_pDataSize, &nbDataSizes, sizeof(nbDataSizes));
     po_pDataSize += sizeof(nbDataSizes);
 
-    memcpy(po_pBinaryData.get() + po_pDataSize, pi_pHeader->m_streamingDataSizes.data(), nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize));
-    po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize));
+    memcpy(po_pBinaryData.get() + po_pDataSize, pi_pHeader->m_blockSizes.data(), nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
+    po_pDataSize += (uint32_t)(nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
     }
 
 
@@ -740,9 +740,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
     memcpy(&nbDataSizes, headerData + dataIndex, sizeof(nbDataSizes));
     dataIndex += sizeof(nbDataSizes);
 
-    header->m_streamingDataSizes.resize(nbDataSizes);
-    memcpy(header->m_streamingDataSizes.data(), headerData + dataIndex, nbDataSizes* sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize));
-    dataIndex += nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::StreamingDataSize);
+    header->m_blockSizes.resize(nbDataSizes);
+    memcpy(header->m_blockSizes.data(), headerData + dataIndex, nbDataSizes* sizeof(SMIndexNodeHeader<EXTENT>::BlockSize));
+    dataIndex += nbDataSizes * sizeof(SMIndexNodeHeader<EXTENT>::BlockSize);
 
     assert(dataIndex == maxCountData);
     }
@@ -954,7 +954,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
             memcpy(points.data(), uncompressedPacket.GetBufferAddress(), uncompressedPacket.GetDataSize());
             }
 
-        m_nodeHeader->m_streamingDataSizes.push_back(SMIndexNodeHeader<EXTENT>::StreamingDataSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
+        m_nodeHeader->m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ compressedPacket.GetDataSize() + sizeof(uint32_t), (short)m_dataType });
 
         memcpy(data + sizeof(uint32_t), compressedPacket.GetBufferAddress(), compressedPacket.GetDataSize());
         file.Write(NULL, data, (uint32_t)compressedPacket.GetDataSize() + sizeof(uint32_t));
@@ -1033,15 +1033,6 @@ template <class DATATYPE, class EXTENT> bool SMStreamingNodeDataStore<DATATYPE, 
     return true;
     }
 
-template <class DATATYPE, class EXTENT> uint64_t SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlockSizeFromNodeHeader() const
-    {
-    for (auto data : m_nodeHeader->m_streamingDataSizes)
-        {
-        if (data.m_type == (short)m_dataType) return data.m_size;
-        }
-    return uint64_t(-1);
-    }
-
 template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataStore<DATATYPE, EXTENT>::GetBlock(HPMBlockID blockID) const
     {
     // std::map [] operator is not thread safe while inserting new elements
@@ -1051,7 +1042,7 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
     assert((block.GetID() != uint64_t(-1) ? block.GetID() == blockID.m_integerID : true));
     if (!block.IsLoaded())
         {
-        auto blockSize = this->GetBlockSizeFromNodeHeader();
+        auto blockSize = m_nodeHeader->GetBlockSize((short)m_dataType);
         //assert(blockSize != uint64_t(-1));
         block.SetID(blockID.m_integerID);
         block.SetDataSource(m_pathToNodeData);        
@@ -1298,9 +1289,10 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
             }
         else
             {
+            auto blockSize = m_nodeHeader->GetBlockSize(5);
             texture.SetDataSource(m_path);
             texture.SetID(blockID.m_integerID);
-            texture.Load(this->GetDataSourceAccount());
+            texture.Load(this->GetDataSourceAccount(), blockSize);
             }
         }
     assert(texture.IsLoaded() && !texture.empty());
@@ -1309,7 +1301,8 @@ template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATAT
 
 
 template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTENT>::StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const WString& directory, SMIndexNodeHeader<EXTENT>* nodeHeader)        
-: m_path(directory)
+: m_path(directory),
+  m_nodeHeader(nodeHeader)
     {
     m_path += L"textures/";
     

@@ -257,7 +257,7 @@ struct Texture : public bvector<uint8_t>
             return dataSource;
             }
 
-        void Load(DataSourceAccount *dataSourceAccount)
+        void Load(DataSourceAccount *dataSourceAccount, uint64_t blockSize = uint64_t(-1))
             {
             std::unique_ptr<DataSource::Buffer[]>       dest;
             DataSource                              *   dataSource;
@@ -278,7 +278,8 @@ struct Texture : public bvector<uint8_t>
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
                 return;
 
-            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+            if (blockSize == uint64_t(-1)) blockSize = 0;
+            if (dataSource->read(dest.get(), destSize, readSize, blockSize).isFailed())
                 return;
 
             dataSource->close();

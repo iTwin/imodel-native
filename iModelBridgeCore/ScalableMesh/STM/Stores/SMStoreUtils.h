@@ -313,12 +313,12 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         std::vector<HPMBlockID> m_clipSetsID;
 
         // Store compressed sizes for optimal streaming performances (persisted only for streaming)
-        struct StreamingDataSize
+        struct BlockSize
             {
             uint64_t m_size;
             short    m_type; // 0 = POINTS, 1 = INDICES, 2 = UVS, 3 = UVINDICES, 4 = TEXTURES
             };
-        std::vector<StreamingDataSize>   m_streamingDataSizes;
+        std::vector<BlockSize>   m_blockSizes;
 
         SMIndexNodeHeader();
 
@@ -327,6 +327,8 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         SMIndexNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader);
             
         operator SQLiteNodeHeader();
+
+        uint64_t GetBlockSize(const short& type);
            
         };
     

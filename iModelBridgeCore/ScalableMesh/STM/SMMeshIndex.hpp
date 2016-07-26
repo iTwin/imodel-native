@@ -449,7 +449,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
                 bool result = pi_pDataStore->GetNodeDataStore(cloudTextureDataStore, &node->m_nodeHeader);
                 assert(result == true && cloudTextureDataStore.IsValid() && !cloudTextureDataStore.IsNull());
                 cloudTextureDataStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
-                node->m_nodeHeader.m_streamingDataSizes.push_back(SMIndexNodeHeader<EXTENT>::StreamingDataSize{ newCount, 5 });
+                node->m_nodeHeader.m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ newCount, 5 });
                 }
             }
         // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)

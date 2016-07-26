@@ -7806,7 +7806,6 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::Points, pi_pCompress);    
     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress));                    
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
