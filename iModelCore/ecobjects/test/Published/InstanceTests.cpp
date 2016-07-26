@@ -8,6 +8,8 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
+#include "BeXml/BeXml.h"
+
 using namespace ECN;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
@@ -445,6 +447,80 @@ TEST_F (InstanceTests, InstanceWriteReadFile)
 
     EXPECT_EQ (InstanceReadStatus::Success, readbackStatus);
     VerifyTestInstance (readbackInstance.get ());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceTests, GetInstanceAttributesUsingInstanceInterface)
+    {
+    CreateSchema();
+    CreateProperty("StringProperty", PRIMITIVETYPE_String);
+    CreateInstance();
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->SetValue("StringProperty", ECValue("Some value")));
+
+    ECN::ECInstanceInterface instanceInterface(*m_instance);
+
+    //get value
+    ECValue stringVal;
+    ASSERT_EQ(ECObjectsStatus::Success, instanceInterface.GetInstanceValue(stringVal, "StringProperty"));
+    ASSERT_STREQ("Some value", stringVal.GetUtf8CP());
+
+    //get instance class name
+    ECClassCP instanceClass = instanceInterface.GetInstanceClass();
+    ASSERT_STREQ("TestSchema:TestClass", instanceClass->GetFullName());
+
+    //get instanceId
+    Utf8String instanceId = instanceInterface.GetInstanceId();
+    ASSERT_STREQ(instanceId.c_str(), m_instance->GetInstanceId().c_str());
+
+    //Get IECInstance
+    IECInstanceCP instance = instanceInterface.ObtainECInstance();
+    ASSERT_TRUE(instance != nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceTests, WriteECInstance)
+    {
+    CreateSchema();
+    CreateProperty("StringProperty", PRIMITIVETYPE_String);
+    CreateInstance();
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->SetValue("StringProperty", ECValue("Some value")));
+
+    // WriteToBeXmlNode
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    ASSERT_EQ(InstanceWriteStatus::Success, m_instance->WriteToBeXmlNode(*xmlWriter));
+
+    Utf8String nodeInstanceString;
+    xmlWriter->ToString(nodeInstanceString);
+
+    // WriteToBeXmlDom
+    BeXmlWriterPtr xmlDOMWriter = BeXmlWriter::Create();
+    Utf8String domInstanceString = "";
+    ASSERT_EQ(InstanceWriteStatus::Success, m_instance->WriteToBeXmlDom(*xmlDOMWriter, true));
+    xmlDOMWriter->ToString(domInstanceString);
+
+    // compare strings
+    ASSERT_STREQ(nodeInstanceString.c_str(), domInstanceString.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceTests, GetInstanceOffSet)
+    {
+    CreateSchema();
+    CreateProperty("StringProperty", PRIMITIVETYPE_String);
+    CreateInstance();
+
+    ASSERT_EQ(ECObjectsStatus::Success, m_instance->SetValue("StringProperty", ECValue("Some value")));
+
+    size_t offSet = m_instance->GetOffsetToIECInstance();
+    ASSERT_TRUE(offSet == 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
