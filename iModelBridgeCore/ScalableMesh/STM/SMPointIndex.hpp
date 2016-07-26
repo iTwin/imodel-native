@@ -6760,11 +6760,9 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
         }
     }
 
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    //auto count = this->GetPointsStore()->GetBlockDataCount(this->GetBlockID());
-
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
     if (pointsPtr->size() != 0)
@@ -6775,7 +6773,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePo
         pointDataStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), pointsPtr->size(), this->GetBlockID());
         }
 
-    // Specific order must be kept to allow saving blob sizes for streaming performance
+    // Specific order must be kept to allow fetching blob sizes for streaming performance
     pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
     }
 
@@ -6784,27 +6782,27 @@ This method saves the node for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, HFCPtr<StreamingPointStoreType> pi_pPointStore)
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore)
     {
-    assert(pi_pPointStore != nullptr);
+    assert(pi_pDataStore != nullptr);
 
     if (!IsLoaded())
         Load();
 
-    this->SavePointDataToCloud(dataSourceAccount, pi_pDataStore, pi_pPointStore);
+    this->SavePointDataToCloud(pi_pDataStore);
 
     // Save children nodes
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(dataSourceAccount, pi_pDataStore, pi_pPointStore);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SavePointsToCloud(pi_pDataStore);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(dataSourceAccount, pi_pDataStore, pi_pPointStore);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SavePointsToCloud(pi_pDataStore);
                 }
             }
         }
@@ -6815,7 +6813,7 @@ This method saves the node for streaming using the grouping strategy.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pGroup,
+template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup,
                                                                                                  SMNodeGroupMasterHeader* pi_pGroupsHeader)
     {
     if (!IsLoaded())
@@ -6850,7 +6848,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
             nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
             if (!nextGroup)
                 {
-                nextGroup = new SMNodeGroup(dataSourceAccount, 
+                nextGroup = new SMNodeGroup(pi_pGroup->GetDataSourceAccount(),
                                             pi_pGroup->GetFilePath(), 
                                             nextLevel, 
                                             ++s_GroupID, 
@@ -6863,13 +6861,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
 
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(dataSourceAccount, nextGroup, pi_pGroupsHeader);
+            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
             }
         else
             {
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(dataSourceAccount, nextGroup, pi_pGroupsHeader);
+                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, pi_pGroupsHeader);
                 }
             }
 
@@ -7784,7 +7782,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     auto rootNode = GetRootNode();
     rootNode->AddOpenGroup(0, group);
 
-    rootNode->SaveGroupedNodeHeaders(dataSourceAccount, group, groupMasterHeader);
+    rootNode->SaveGroupedNodeHeaders(group, groupMasterHeader);
 
     // Handle all open groups 
     rootNode->SaveAllOpenGroups();
@@ -7811,7 +7809,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
     HFCPtr<StreamingPointStoreType> pointStore = new StreamingPointStoreType(dataSourceAccount, pi_pOutputDirPath, SMStoreDataType::Points, pi_pCompress);    
     ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress));                    
 
-    this->GetRootNode()->SavePointsToCloud(dataSourceAccount, dataStore, pointStore);
+    this->GetRootNode()->SavePointsToCloud(dataStore);
 
     this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 

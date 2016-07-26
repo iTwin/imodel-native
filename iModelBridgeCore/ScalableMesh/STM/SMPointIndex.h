@@ -587,9 +587,8 @@ public:
 
     virtual void         SaveAllOpenGroups() const;
 
-    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, HFCPtr<StreamingPointStoreType> pi_pPointStore);
-    virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+    void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1072,7 +1071,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
