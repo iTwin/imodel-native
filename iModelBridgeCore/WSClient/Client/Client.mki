@@ -2,7 +2,7 @@
 #
 #     $Source: Client/Client.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160
 PchExplicitDepends  = $(ClientMkiHeaders)
 
-%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Avoid internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
