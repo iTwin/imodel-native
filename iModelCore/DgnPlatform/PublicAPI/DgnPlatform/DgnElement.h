@@ -284,6 +284,8 @@ struct CustomPropertyRegistry
     DGNPLATFORM_EXPORT static bool HasOldDgnSchema(DgnDbR db);
     };
 
+//__PUBLISH_SECTION_START__
+
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyHandlerECClassName() {return __ECClassName__;}\
@@ -298,7 +300,6 @@ struct CustomPropertyRegistry
                 virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
                 virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
-//__PUBLISH_SECTION_START__
 
 /**
 * @addtogroup GROUP_DgnElement DgnElement Module
