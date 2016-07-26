@@ -101,6 +101,7 @@ ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRu
                                 $(ecpresentationRulesPublicAPISrc)ContentSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)ContentInstancesOfSpecificClassesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)ContentRelatedInstancesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)HiddenPropertiesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
                                 $(ECPresentationHeaders)
 
@@ -255,6 +256,8 @@ $(o)ContentInstancesOfSpecificClassesSpecification$(oext)  : $(baseDir)presentat
 $(o)ContentRelatedInstancesSpecification$(oext)            : $(baseDir)presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)SelectedNodeInstancesSpecification$(oext)              : $(baseDir)presentation/PresentationRules/SelectedNodeInstancesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)HiddenPropertiesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/HiddenPropertiesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)CommonTools$(oext)                                     : $(baseDir)presentation/PresentationRules/CommonTools.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 

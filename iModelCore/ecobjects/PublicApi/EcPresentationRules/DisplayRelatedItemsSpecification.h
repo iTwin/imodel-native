@@ -24,9 +24,6 @@ struct DisplayRelatedItemsSpecification : PresentationRuleSpecification
         Utf8String                 m_relationshipClasses;
 
     public:
-        //! Allows the visitor to visit this specification.
-        ECOBJECTS_EXPORT virtual void _Accept(PresentationRuleSpecificationVisitor& visitor) const override;
-
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
         ECOBJECTS_EXPORT bool        ReadXml (BeXmlNodeP xmlNode);
 

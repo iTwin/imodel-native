@@ -30,11 +30,6 @@ DisplayRelatedItemsSpecification::DisplayRelatedItemsSpecification (bool logical
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DisplayRelatedItemsSpecification::_Accept(PresentationRuleSpecificationVisitor& visitor) const {visitor._Visit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    dmitrijus.tiazlovas              11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DisplayRelatedItemsSpecification::ReadXml (BeXmlNodeP xmlNode)

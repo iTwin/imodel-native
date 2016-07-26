@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRulesTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -44,6 +44,7 @@ EC_TYPEDEFS (RelatedInstanceNodesSpecification);
 EC_TYPEDEFS (SearchResultInstanceNodesSpecification);
 EC_TYPEDEFS (ContentSpecification);
 EC_TYPEDEFS (RelatedPropertiesSpecification);
+EC_TYPEDEFS (HiddenPropertiesSpecification);
 EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
 EC_TYPEDEFS (ContentRelatedInstancesSpecification);
 EC_TYPEDEFS (SelectedNodeInstancesSpecification);
