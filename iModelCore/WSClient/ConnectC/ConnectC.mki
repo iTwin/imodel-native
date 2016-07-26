@@ -31,7 +31,7 @@ PchOutputDir        = $(o)
 PchExtraOptions     = -Zm160 -D__CWSCC_DLL_BUILD__
 PchExplicitDepends  = $(ConnectCMkiHeaders)
 
-%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Avoid internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
