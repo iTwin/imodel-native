@@ -10,7 +10,7 @@
 #include <WebServices/Connect/EulaClient.h>
 
 #include <WebServices/Configuration/UrlProvider.h>
-#include <DgnClientFx/Utils/Http/HttpRequest.h>
+#include <BeHttp/HttpRequest.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -26,15 +26,9 @@ m_customHandler(customHandler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytautas.Barkauskas    01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-EulaClient::~EulaClient()
-    {}
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                             Vytautas.Barkauskas    01/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest EulaClient::CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR method)
+Http::Request EulaClient::CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR method)
     {
-    HttpRequest request(requestUrl, method, m_authProvider.GetAuthenticationHandler(serverUrl, m_customHandler));
+    Http::Request request(requestUrl, method, m_authProvider.GetAuthenticationHandler(serverUrl, m_customHandler));
     request.SetCancellationToken(m_cancelToken);    
     return request;
     }
@@ -54,10 +48,10 @@ AsyncTaskPtr<EulaResult> EulaClient::ResetEula(Utf8StringCR username)
 
         Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + usernameLowerCase;
 
-        HttpRequest request = CreateRequest(eulaUrl, url, "POST");
+        Http::Request request = CreateRequest(eulaUrl, url, "POST");
         request.GetHeaders().SetContentType("application/json");
 
-        request.PerformAsync()->Then([=] (HttpResponse httpResponse)
+        request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {
             if (!httpResponse.IsSuccess())
                 {
@@ -84,10 +78,10 @@ AsyncTaskPtr<EulaStatusResult> EulaClient::CheckEula()
         {
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA/state";
 
-        HttpRequest request = CreateRequest(eulaUrl, url, "GET");
+        Http::Request request = CreateRequest(eulaUrl, url, "GET");
         request.GetHeaders().SetAccept("application/json");
 
-        request.PerformAsync()->Then([=] (HttpResponse httpResponse)
+        request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {
             if (!httpResponse.IsSuccess())
                 {
@@ -95,7 +89,7 @@ AsyncTaskPtr<EulaStatusResult> EulaClient::CheckEula()
                 return;
                 }
 
-            Json::Value body = httpResponse.GetBody().AsJson();
+            Json::Value body = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             const Json::Value &accepted = body["accepted"];
 
             if (!accepted.isBool())
@@ -123,10 +117,10 @@ AsyncTaskPtr<EulaDownloadResult> EulaClient::DownloadEula()
         {
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA";
 
-        HttpRequest request = CreateRequest(eulaUrl, url, "GET");
+        Http::Request request = CreateRequest(eulaUrl, url, "GET");
         request.GetHeaders().SetAccept("application/json");
 
-        request.PerformAsync()->Then([=] (HttpResponse httpResponse)
+        request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {
             if (!httpResponse.IsSuccess())
                 {
@@ -134,7 +128,7 @@ AsyncTaskPtr<EulaDownloadResult> EulaClient::DownloadEula()
                 return;
                 }
 
-            Json::Value body = httpResponse.GetBody().AsJson();
+            Json::Value body = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             const Json::Value &eulaText = body["text"];
 
             if (!eulaText.isString())
@@ -162,14 +156,14 @@ AsyncTaskPtr<EulaResult> EulaClient::AcceptEula()
         {
         Utf8String url = eulaUrl + "/Agreements/1/Types/EULA/state";
 
-        HttpRequest request = CreateRequest(eulaUrl, url, "POST");
+        Http::Request request = CreateRequest(eulaUrl, url, "POST");
 
         Json::Value params;
         params["accepted"] = true;
 
         request.SetRequestBody(HttpStringBody::Create(params.toStyledString()));
 
-        request.PerformAsync()->Then([=] (HttpResponse httpResponse)
+        request.PerformAsync()->Then([=] (Http::Response httpResponse)
             {
             if (!httpResponse.IsSuccess())
                 {

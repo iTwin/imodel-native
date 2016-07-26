@@ -14,12 +14,10 @@
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Client/ClientInfo.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/Credentials.h>
+#include <BeHttp/HttpClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<SamlTokenPtr, HttpError> SamlTokenResult;
 
@@ -49,14 +47,14 @@ struct ImsClient : IImsClient
 
     public:
         // TODO: static API for compatibility with old static code (ConnectSpaces, ConnectSetup, etc.)
-        // Will be DEPRECATED in future.
+        //! Will be DEPRECATED in future.
         WSCLIENT_EXPORT static void InitializeShared(ClientInfoPtr info, IHttpHandlerPtr httpHandler = nullptr);
         WSCLIENT_EXPORT static void UnitializeShared();
-        // Will be DEPRECATED in future.
+        //! Will be DEPRECATED in future.
         WSCLIENT_EXPORT static ImsClientPtr GetShared();
 
         //! Create new client
-        //! @param info - client applicaiton info
+        //! @param info - client applicaiton info, see ClientInfo documentation for more info
         //! @param httpHandler - custom httpHandler to route requests trough
         WSCLIENT_EXPORT static ImsClientPtr Create(ClientInfoPtr info, IHttpHandlerPtr httpHandler = nullptr);
 
@@ -74,7 +72,7 @@ struct ImsClient : IImsClient
 
         //! Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         //! This is workaround because IMS does not give any other indication.
-        WSCLIENT_EXPORT static bool IsLoginRedirect(HttpResponseCR response);
+        WSCLIENT_EXPORT static bool IsLoginRedirect(Http::ResponseCR response);
 
         //! Get Relying Party for given client info
         WSCLIENT_EXPORT static Utf8String GetRelyingPartyUri(ClientInfoCR info);

@@ -26,21 +26,26 @@
 #include "BaseMockHttpHandlerTest.h"
 
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
-#define EXPECT_CONTAINS(container, value)                                       \
-    EXPECT_FALSE(std::find(container.begin(), container.end(), value) == container.end())
+#ifndef EXPECT_CONTAINS
+    #define EXPECT_CONTAINS(container, value)                                       \
+        EXPECT_FALSE(std::find(container.begin(), container.end(), value) == container.end())
+#endif
 
-#define EXPECT_NCONTAIN(container, value)                                       \
-    EXPECT_TRUE(std::find(container.begin(), container.end(), value) == container.end())
+#ifndef EXPECT_NCONTAIN
+    #define EXPECT_NCONTAIN(container, value)                                       \
+        EXPECT_TRUE(std::find(container.begin(), container.end(), value) == container.end())
+#endif
 
-#define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
-    EXPECT_LE(smallerValue, value);                                             \
-    EXPECT_GE(biggerValue, value);
+#ifndef EXPECT_BETWEEN
+    #define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
+        EXPECT_LE(smallerValue, value);                                             \
+        EXPECT_GE(biggerValue, value);
+#endif
 
 // Operator for comparisons
 bool operator <= (const DateTime& lhs, const DateTime& rhs);
@@ -95,31 +100,31 @@ bpair<A, B> StubBPair(A a, B b)
     return bpair<A, B>(a, b);
     }
 
-HttpResponse StubHttpResponse(ConnectionStatus status = ConnectionStatus::CouldNotConnect);
-HttpResponse StubHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
-HttpResponse StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
-HttpResponse StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
-HttpResponse StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url);
+Response StubHttpResponse(ConnectionStatus status = ConnectionStatus::CouldNotConnect);
+Response StubHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
+Response StubHttpResponse(HttpStatus httpStatus, HttpBodyPtr body, const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
+Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String>());
+Response StubHttpResponseWithUrl(HttpStatus httpStatus, Utf8StringCR url);
 
 WSInfo StubWSInfoWebApi(BeVersion webApiVersion = BeVersion(1, 3), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 //! Stub WebApi 1.1 and BentleyConnect server
-HttpResponse StubWSInfoHttpResponseBentleyConnectV1();
+Response StubWSInfoHttpResponseBentleyConnectV1();
 //! Stub WebApi 1.1 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi11();
+Response StubWSInfoHttpResponseWebApi11();
 //! Stub WebApi 1.2 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi12();
+Response StubWSInfoHttpResponseWebApi12();
 //! Stub WebApi 1.3 and BWSG server. Default for testing WSG 1.x client code
-HttpResponse StubWSInfoHttpResponseWebApi13();
+Response StubWSInfoHttpResponseWebApi13();
 //! Stub WebApi 2.0 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi20();
+Response StubWSInfoHttpResponseWebApi20();
 //! Stub WebApi 2.1 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi21();
+Response StubWSInfoHttpResponseWebApi21();
 //! Stub WebApi 2.2 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi22();
+Response StubWSInfoHttpResponseWebApi22();
 //! Stub WebApi 2.4 and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi24();
+Response StubWSInfoHttpResponseWebApi24();
 //! Stub WebApi version and BWSG server
-HttpResponse StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
+Response StubWSInfoHttpResponseWebApi(BeVersion webApiVersion);
 
 void WriteStringToHttpBody(Utf8StringCR string, HttpBodyPtr body);
 Utf8String ReadHttpBody(HttpBodyPtr body);
@@ -127,11 +132,11 @@ Utf8String ReadHttpBody(HttpBodyPtr body);
 WSInfo StubWSInfo(BeVersion version = BeVersion(1, 2), WSInfo::Type type = WSInfo::Type::BentleyWSG);
 WSQuery StubWSQuery();
 
-HttpResponse StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId = "", Utf8StringCR message = "", Utf8StringCR description = "");
-HttpResponse StubWSInfoHttpResponseV1();
-HttpResponse StubWSInfoHttpResponseV1BentleyConnect();
-HttpResponse StubWSInfoHttpResponseV2();
-HttpResponse StubWSInfoHttpResponse(BeVersion serverVersion);
+Response StubWSErrorHttpResponse(HttpStatus status, Utf8StringCR errorId = "", Utf8StringCR message = "", Utf8StringCR description = "");
+Response StubWSInfoHttpResponseV1();
+Response StubWSInfoHttpResponseV1BentleyConnect();
+Response StubWSInfoHttpResponseV2();
+Response StubWSInfoHttpResponse(BeVersion serverVersion);
 
 WSError StubWSConnectionError();
 WSError StubWSCanceledError();

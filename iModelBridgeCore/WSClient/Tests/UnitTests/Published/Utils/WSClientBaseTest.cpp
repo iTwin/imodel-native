@@ -12,7 +12,6 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
 std::shared_ptr<TestAppPathProvider>  WSClientBaseTest::s_pathProvider;
@@ -78,8 +77,8 @@ void WSClientBaseTest::InitLogging()
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetMaxMessageSize(100000);
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_HTTP, BentleyApi::NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_THREADING, BentleyApi::NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, BentleyApi::NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_TASKS, BentleyApi::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, BentleyApi::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, BentleyApi::NativeLogging::LOG_WARNING);
     }

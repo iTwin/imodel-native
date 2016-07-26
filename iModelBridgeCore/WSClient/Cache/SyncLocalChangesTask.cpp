@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Cache/Util/FileUtil.h>
 #include <WebServices/Client/WSChangeset.h>
-#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
+#include <BeHttp/HttpStatusHelper.h>
 
 #include "SessionInfo.h"
 #include <WebServices/Cache/Util/JsonUtil.h>
@@ -194,7 +194,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                 }
 
             rapidjson::Document changesetResponse;
-            result.GetValue()->AsRapidJson(changesetResponse);
+            changesetResponse.Parse<0>(result.GetValue()->AsString().c_str());
 
             auto handler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
                 {
@@ -899,7 +899,7 @@ ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR objectLa
     {
     ReportProgress(0, objectLabel);
 
-    HttpRequest::ProgressCallback onProgress;
+    Http::Request::ProgressCallback onProgress;
 
     if (isFileBeingUploaded)
         {

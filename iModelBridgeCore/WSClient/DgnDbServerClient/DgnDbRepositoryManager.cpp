@@ -10,12 +10,11 @@
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SetLockStates (IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks)
+void SetCodesLocksStates (IBriefcaseManager::Response& response, IBriefcaseManager::ResponseOptions options, JsonValueCR deniedLocks, JsonValueCR deniedCodes)
     {
     if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::LockState & options))
         {
@@ -28,6 +27,20 @@ void SetLockStates (IBriefcaseManager::Response& response, IBriefcaseManager::Re
                 continue;//NEEDSWORK: log an error
 
             AddLockInfoToList (response.LockStates (), lock, briefcaseId, repositoryId);
+            }
+        }
+    if (IBriefcaseManager::ResponseOptions::None != (IBriefcaseManager::ResponseOptions::CodeState & options))
+        {
+        for (auto const& codeJson : deniedCodes)
+            {
+            DgnCode                  code;
+            DgnCodeState             codeState;
+            BeSQLite::BeBriefcaseId  briefcaseId;
+            Utf8String               revisionId;
+            if (!GetCodeFromServerJson(codeJson, code, codeState, briefcaseId, revisionId))
+                continue;//NEEDSWORK: log an error
+
+            AddCodeInfoToList(response.CodeStates(), code, codeState, briefcaseId, revisionId);
             }
         }
     }
@@ -64,25 +77,71 @@ DgnDbServerStatusResult DgnDbRepositoryManager::Connect (DgnDbCR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Algirdas.Mikoliunas               06/16
+* @bsimethod                                    Algirdas.Mikoliunas             07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-IBriefcaseManager::Response DgnDbRepositoryManager::QueryCodesLocksAvailable(Request const& req, DgnDbR db)
+RepositoryStatus DgnDbRepositoryManager::GetResponseStatus(DgnDbServerResult<void> result)
     {
-    LockableIdSet lockIds;
-    for (auto const& lock : req.Locks().GetLockSet())
-        lockIds.insert(lock.GetLockableId());
-
-    DgnLockInfoSet lockStates;
-    DgnCodeInfoSet codeStates;
-    this->_QueryStates(lockStates, codeStates, lockIds, req.Codes());
-
-    if (lockStates.empty() && codeStates.empty())
+    static bmap<DgnDbServerError::Id, RepositoryStatus> map;
+    if (map.empty())
         {
-        return IBriefcaseManager::Response(IBriefcaseManager::RequestPurpose::Query, req.Options(), RepositoryStatus::Success);
+        map[DgnDbServerError::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
+        map[DgnDbServerError::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
+        map[DgnDbServerError::Id::RevisionDoesNotExist]           = RepositoryStatus::InvalidRequest;
+        map[DgnDbServerError::Id::CodeStateInvalid]               = RepositoryStatus::CodeUnavailable;
+        map[DgnDbServerError::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
+        map[DgnDbServerError::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
         }
 
-    // NEEDSWORK - handle errors
-    Response response(IBriefcaseManager::RequestPurpose::Query, req.Options(), RepositoryStatus::ServerUnavailable);
+    auto it = map.find(result.GetError().GetId());
+    if (it != map.end())
+        {
+        return it->second;
+        }
+
+    return RepositoryStatus::ServerUnavailable;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Algirdas.Mikoliunas             07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IBriefcaseManager::Response DgnDbRepositoryManager::HandleError(Request const& request, DgnDbServerResult<void> result, IBriefcaseManager::RequestPurpose purpose)
+    {
+    Response           response(purpose, request.Options(), RepositoryStatus::ServerUnavailable);
+    DgnDbServerError&  error = result.GetError();
+
+    RepositoryStatus responseStatus = GetResponseStatus(result);
+    if (RepositoryStatus::LockAlreadyHeld == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        JsonValueCR errorData = error.GetExtendedData();
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::ConflictingLocks], nullptr);
+        }
+    else if (RepositoryStatus::RevisionRequired == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        JsonValueCR errorData = error.GetExtendedData();
+        SetCodesLocksStates(response, request.Options(), errorData[ServerSchema::Property::LocksRequiresPull], errorData[ServerSchema::Property::CodesRequiresPull]);
+        }
+    else if (RepositoryStatus::InvalidRequest == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        }
+    else if (RepositoryStatus::CodeUnavailable == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        JsonValueCR errorData = error.GetExtendedData();
+        auto errorPropertyName = DgnDbServerError::Id::CodeStateInvalid == error.GetId()
+            ? ServerSchema::Property::CodeStateInvalid
+            : ServerSchema::Property::ConflictingCodes;
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[errorPropertyName]);
+        }
+    else if (RepositoryStatus::CodeNotReserved == responseStatus)
+        {
+        response.SetResult(responseStatus);
+        JsonValueCR errorData = error.GetExtendedData();
+        SetCodesLocksStates(response, request.Options(), nullptr, errorData[ServerSchema::Property::CodesNotFound]);
+        }
+
     return response;
     }
 
@@ -100,41 +159,18 @@ IBriefcaseManager::Response DgnDbRepositoryManager::_ProcessRequest (Request con
 
     Utf8String lastRevisionId = db.Revisions ().GetParentRevisionId ();
 
+    DgnDbServerStatusResult result;
     if (queryOnly)
-        {
-        return QueryCodesLocksAvailable(req, db);
-        }
-
-    // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
-    auto result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
+        result = m_connection->QueryCodesLocksAvailability(req.Locks(), req.Codes(), db.GetBriefcaseId(), lastRevisionId, m_cancellationToken)->GetResult();
+    else
+        // NEEDSWORK: pass ResponseOptions to make sure we do not return locks if they are not needed. This is currently not supported by WSG.
+        result = m_connection->AcquireCodesLocks (req.Locks (), req.Codes(), db.GetBriefcaseId (), lastRevisionId, m_cancellationToken)->GetResult ();
     if (result.IsSuccess ())
         {
         return IBriefcaseManager::Response (purpose, req.Options(), RepositoryStatus::Success);
         }
-    else
-        {
-        Response           response (purpose, req.Options(), RepositoryStatus::ServerUnavailable);
-        DgnDbServerError&  error = result.GetError ();
-
-        if (DgnDbServerError::Id::LockOwnedByAnotherBriefcase == error.GetId ())
-            {
-            response.SetResult (RepositoryStatus::LockAlreadyHeld);
-            JsonValueCR errorData = error.GetExtendedData ();
-            SetLockStates (response, req.Options (), errorData[ServerSchema::Property::ConflictingLocks]);
-            }
-        else if (DgnDbServerError::Id::PullIsRequired == error.GetId ())
-            {
-            response.SetResult (RepositoryStatus::RevisionRequired);
-            JsonValueCR errorData = error.GetExtendedData ();
-            SetLockStates (response, req.Options (), errorData[ServerSchema::Property::LocksRequiresPull]);
-            }
-        else if (DgnDbServerError::Id::RevisionDoesNotExist == error.GetId ())
-            {
-            response.SetResult (RepositoryStatus::InvalidRequest);
-            }
-            
-        return response;
-        }
+    
+    return HandleError(req, result, purpose);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -156,7 +192,7 @@ RepositoryStatus DgnDbRepositoryManager::_Demote (DgnLockSet const& locks, DgnCo
         }
     else
         {
-        return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
+        return GetResponseStatus(result);
         }
     }
 
@@ -178,7 +214,7 @@ RepositoryStatus DgnDbRepositoryManager::_Relinquish (Resources which, DgnDbR db
         }
     else
         {
-        return RepositoryStatus::ServerUnavailable;//NEEDSWORK: Use appropriate status
+        return GetResponseStatus(result);//NEEDSWORK: Use appropriate status
         }
     }
 
@@ -190,12 +226,18 @@ RepositoryStatus DgnDbRepositoryManager::_QueryHeldResources (DgnLockSet& locks,
     if (!m_connection)
         return RepositoryStatus::ServerUnavailable;
 
-    // NEEDSWORK_LOCKS: Handle unavailable locks + codes
-    auto result = m_connection->QueryCodesLocks (db.GetBriefcaseId (), m_cancellationToken)->GetResult ();
-    if (result.IsSuccess ())
+    auto availableTask = m_connection->QueryCodesLocks(db.GetBriefcaseId(), m_cancellationToken);
+    auto unavailableTask = m_connection->QueryUnavailableCodesLocks(db.GetBriefcaseId(), db.Revisions().GetParentRevisionId(), m_cancellationToken);
+    bset<std::shared_ptr<AsyncTask>> tasks;
+    tasks.insert(availableTask);
+    tasks.insert(unavailableTask);
+    AsyncTask::WhenAll(tasks)->Wait();
+    if (availableTask->GetResult().IsSuccess() && unavailableTask->GetResult().IsSuccess())
         {
-        locks = result.GetValue ().GetLocks ();
-        codes = result.GetValue ().GetCodes ();
+        locks = availableTask->GetResult().GetValue ().GetLocks ();
+        codes = availableTask->GetResult().GetValue ().GetCodes ();
+        unavailableLocks = unavailableTask->GetResult().GetValue().GetLocks();
+        unavailableCodes = unavailableTask->GetResult().GetValue().GetCodes();
         return RepositoryStatus::Success;
         }
     else

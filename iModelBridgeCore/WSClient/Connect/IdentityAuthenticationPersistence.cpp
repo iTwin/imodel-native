@@ -10,7 +10,6 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define LocalState_NameSpace        "Connect"
 #define LocalState_Token            "IdentityToken"
@@ -21,11 +20,11 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 +---------------+---------------+---------------+---------------+---------------+------*/
 IdentityAuthenticationPersistence::IdentityAuthenticationPersistence
 (
-ILocalState* localState,
+IJsonLocalState* localState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
 m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
-m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>())
+m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(m_localState))
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -50,10 +49,10 @@ void IdentityAuthenticationPersistence::SetToken(SamlTokenPtr token)
     BeMutexHolder lock(m_cs);
 
     Utf8String tokenStr = token ? m_secureStore->Encrypt(token->AsString().c_str()) : "";
-    m_localState.SaveValue(LocalState_NameSpace, LocalState_Token, tokenStr);
+    m_localState.SaveJsonValue(LocalState_NameSpace, LocalState_Token, tokenStr);
 
     Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToUtf8String();
-    m_localState.SaveValue(LocalState_NameSpace, LocalState_TokenSetTime, token ? dateStr.c_str() : "");
+    m_localState.SaveJsonValue(LocalState_NameSpace, LocalState_TokenSetTime, token ? dateStr.c_str() : "");
 
     m_token.reset();
     }
@@ -67,7 +66,7 @@ SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
 
     if (nullptr == m_token)
         {
-        Utf8String tokenStr = m_localState.GetValue(LocalState_NameSpace, LocalState_Token).asString();
+        Utf8String tokenStr = m_localState.GetJsonValue(LocalState_NameSpace, LocalState_Token).asString();
         if (tokenStr.empty())
             return nullptr;
 
@@ -82,7 +81,7 @@ SamlTokenPtr IdentityAuthenticationPersistence::GetToken() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTime IdentityAuthenticationPersistence::GetTokenSetTime() const
     {
-    Utf8String timeStr = m_localState.GetValue(LocalState_NameSpace, LocalState_TokenSetTime).asString();
+    Utf8String timeStr = m_localState.GetJsonValue(LocalState_NameSpace, LocalState_TokenSetTime).asString();
 
     DateTime time;
     if (SUCCESS != DateTime::FromString(time, timeStr.c_str()))

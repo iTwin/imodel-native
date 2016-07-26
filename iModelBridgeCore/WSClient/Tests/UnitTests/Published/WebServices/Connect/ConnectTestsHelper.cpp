@@ -76,16 +76,23 @@ SamlTokenPtr StubSamlToken(const std::map<Utf8String, Utf8String>& attributes)
     return token;
     }
 
-HttpResponse StubImsTokenHttpResponse(uint32_t validMinutes)
+Response StubImsTokenHttpResponse(uint32_t validMinutes)
     {
     Json::Value authBody;
     authBody["RequestedSecurityToken"] = StubSamlToken(validMinutes)->AsString();
     return StubHttpResponse(HttpStatus::OK, authBody.toStyledString());
     }
 
-HttpResponse StubImsTokenHttpResponse(SamlTokenCR token)
+Response StubImsTokenHttpResponse(SamlTokenCR token)
     {
     Json::Value authBody;
     authBody["RequestedSecurityToken"] = token.AsString();
     return StubHttpResponse(HttpStatus::OK, authBody.toStyledString());
+    }
+
+SamlTokenPtr StubSamlTokenWithUser(Utf8StringCR username)
+    {
+    auto token = std::make_shared<SamlToken>(StubSamlTokenXML(100000, "TestCert", {{"name", username}}));
+    EXPECT_FALSE(token->AsString().empty());
+    return token;
     }

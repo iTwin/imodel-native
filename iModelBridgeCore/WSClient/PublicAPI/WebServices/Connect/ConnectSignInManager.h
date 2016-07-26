@@ -15,13 +15,13 @@
 #include <WebServices/Connect/IConnectTokenProvider.h>
 #include <WebServices/Connect/IImsClient.h>
 #include <WebServices/Connect/SamlToken.h>
-#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeHttp/AuthenticationHandler.h>
+#include <BeSecurity/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_SECURITY
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<void, AsyncError> SignInResult;
 
@@ -64,7 +64,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         mutable BeMutex m_cs;
 
         IImsClientPtr m_client;
-        ILocalState& m_localState;
+        IJsonLocalState& m_localState;
         ISecureStorePtr m_secureStore;
 
         Configuration m_config;
@@ -77,7 +77,7 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         std::function<void()> m_userChangeHandler;
 
     private:
-        ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore);
+        ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore);
 
         void CheckUserChange();
         void StoreSignedInUser();
@@ -94,20 +94,27 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
     public:
         //! Can be created after MobileDgn is initialized.
         //! Will renew sign-in information asynchronously if needed.
+        //! @param clientInfo - client applicaiton info, see ClientInfo documentation for more details
+        //! @param httpHandler - custom HttpHandler to route requests trough
+        //! @param localState - custom LocalState to store encrypted authentication information between sessions
+        //! @param secureStore - custom encryption provider
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             ClientInfoPtr clientInfo,
             IHttpHandlerPtr httpHandler = nullptr,
-            ILocalState* localState = nullptr,
+            IJsonLocalState* localState = nullptr,
             ISecureStorePtr secureStore = nullptr
             );
 
         //! Can be created after MobileDgn is initialized.
         //! Will renew sign-in information asynchronously if needed.
+        //! @param client - custom ImsClient for authenticating user
+        //! @param localState - custom LocalState to store encrypted authentication information between sessions
+        //! @param secureStore - custom encryption provider
         WSCLIENT_EXPORT static ConnectSignInManagerPtr Create
             (
             IImsClientPtr client,
-            ILocalState* localState = nullptr,
+            IJsonLocalState* localState = nullptr,
             ISecureStorePtr secureStore = nullptr
             );
 
@@ -129,6 +136,10 @@ struct ConnectSignInManager : IConnectAuthenticationProvider
         WSCLIENT_EXPORT bool IsSignedIn();
         //! Get user information stored in identity token
         WSCLIENT_EXPORT UserInfo GetUserInfo();
+        //! Get user information stored in token
+        WSCLIENT_EXPORT static UserInfo GetUserInfo(SamlTokenCR token);
+        //! Get last or current user that was signed in. Returns empty if no user was signed in
+        WSCLIENT_EXPORT Utf8String GetLastUsername();
 
         //! Will be called when token expiration is detected
         WSCLIENT_EXPORT void SetTokenExpiredHandler(std::function<void()> handler);

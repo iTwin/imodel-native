@@ -2,17 +2,15 @@
  |
  |     $Source: Connect/Passport.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Connect/Passport.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 static IHttpHandlerPtr s_httpHandler;
 static bool s_passportInitialized = false;
@@ -59,22 +57,22 @@ StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
     Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
 
     HttpClient client(nullptr, s_httpHandler);
-    HttpRequest request = client.CreateGetRequest(url);
+    Http::Request request = client.CreateGetRequest(url);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetAuthorization(authorization);
 
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
     if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
         return PASSPORT_ERROR;
         }
 
-    Json::Value retVal = httpResponse.GetBody().AsJson();
+    Json::Value retVal;
+    if (!Json::Reader::Parse(httpResponse.GetBody().AsString(), retVal))
+        return NO_PASSPORT;
 
     if (!retVal.asBool())
-        {
         return NO_PASSPORT;
-        }
 
     return HAS_PASSPORT;
     }

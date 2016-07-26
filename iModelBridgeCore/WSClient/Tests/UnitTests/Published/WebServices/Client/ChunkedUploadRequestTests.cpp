@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/ChunkedUploadRequestTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,13 +11,12 @@
 #include "../../../../../Client/ChunkedUploadRequest.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 TEST_F(ChunkedUploadRequestTests, PerformAsync_MethodSpecified_HandShakeWithSameMethod)
     {
     ChunkedUploadRequest request("BOO", "http://foo.com", GetClient());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (Http::RequestCR request)
         {
         EXPECT_STREQ("BOO", request.GetMethod().c_str());
         return StubHttpResponse(ConnectionStatus::Canceled);
@@ -32,7 +31,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecified_SendsRequire
     request.SetRequestBody(HttpStringBody::Create("abcd"), "Test.txt");
     request.SetETag("foo");
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (Http::RequestCR request)
         {
         EXPECT_STREQ("foo", request.GetHeaders().GetIfMatch());
         EXPECT_STREQ("bytes */4", request.GetHeaders().GetContentRange());
@@ -48,7 +47,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_RequestBodySpecifiedWithFileName_
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
     request.SetRequestBody(HttpStringBody::Create("Foo"), "'A B'.txt");
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (Http::RequestCR request)
         {
         EXPECT_STREQ("attachment; filename=%27A%20B%27.txt", request.GetHeaders().GetContentDisposition());
         return StubHttpResponse();
@@ -62,7 +61,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_HandshakeBodySpecified_SendsRequi
     ChunkedUploadRequest request("PUT", "http://foo.com", GetClient());
     request.SetHandshakeRequestBody(HttpStringBody::Create("abcd"), "application/xml");
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([] (Http::RequestCR request)
         {
         EXPECT_STREQ("application/xml", request.GetHeaders().GetContentType());
         return StubHttpResponse(ConnectionStatus::Canceled);
@@ -90,7 +89,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_FirstResponseResumeIncomplete_Sen
     GetHandler()
         .ExpectRequests(2)
         .ForFirstRequest(StubHttpResponse(HttpStatus::ResumeIncomplete, "", {{"ETag", "uploadTag"}}))
-        .ForAnyRequest([] (HttpRequestCR request)
+        .ForAnyRequest([] (Http::RequestCR request)
         {
         EXPECT_STREQ("uploadTag", request.GetHeaders().GetIfMatch());
         EXPECT_STREQ("bytes 0-3/4", request.GetHeaders().GetContentRange());
@@ -110,7 +109,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_FirstResponseResumeIncompleteWith
     GetHandler()
         .ExpectRequests(2)
         .ForFirstRequest(StubHttpResponse(HttpStatus::ResumeIncomplete, "", {{"ETag", "uploadTag"}, {"Range", "bytes=0-2"}}))
-        .ForAnyRequest([] (HttpRequestCR request)
+        .ForAnyRequest([] (Http::RequestCR request)
         {
         EXPECT_STREQ("uploadTag", request.GetHeaders().GetIfMatch());
         EXPECT_STREQ("bytes 3-3/4", request.GetHeaders().GetContentRange());
@@ -131,7 +130,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_ResponseToChunkedUploadIsResumeIn
         .ExpectRequests(3)
         .ForRequest(1, StubHttpResponse(HttpStatus::ResumeIncomplete, "", {{"ETag", "uploadTag"}, {"Range", "bytes=0-2"}}))
         .ForRequest(2, StubHttpResponse(HttpStatus::ResumeIncomplete, "", {{"ETag", "uploadTag"}, {"Range", "bytes=0-1"}}))
-        .ForRequest(3, [] (HttpRequestCR request)
+        .ForRequest(3, [] (Http::RequestCR request)
         {
         EXPECT_STREQ("uploadTag", request.GetHeaders().GetIfMatch());
         EXPECT_STREQ("bytes 2-3/4", request.GetHeaders().GetContentRange());
@@ -152,7 +151,7 @@ TEST_F(ChunkedUploadRequestTests, PerformAsync_SecondResponseWithPreconditionFai
         .ExpectRequests(3)
         .ForRequest(1, StubHttpResponse(HttpStatus::ResumeIncomplete, "", {{"ETag", "uploadTag"}}))
         .ForRequest(2, StubHttpResponse(HttpStatus::PreconditionFailed))
-        .ForRequest(3, [] (HttpRequestCR request)
+        .ForRequest(3, [] (Http::RequestCR request)
         {
         EXPECT_STREQ("bytes */4", request.GetHeaders().GetContentRange());
         return StubHttpResponse(ConnectionStatus::Canceled);

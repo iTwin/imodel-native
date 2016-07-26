@@ -3,7 +3,6 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 
@@ -23,13 +22,13 @@ CallbackQueue::Callback::Callback(CallbackQueue & queue) : m_bytesTransfered(0.0
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-CallbackQueue::CallbackQueue(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback) : m_callback(callback)
+CallbackQueue::CallbackQueue(Http::Request::ProgressCallbackCR callback) : m_callback(callback)
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-HttpRequest::ProgressCallbackCR CallbackQueue::NewCallback()
+Http::Request::ProgressCallbackCR CallbackQueue::NewCallback()
     {
     std::shared_ptr<CallbackQueue::Callback> callback = std::make_shared<CallbackQueue::Callback>(*this);
     m_callbacks.push_back(callback);
@@ -208,11 +207,10 @@ bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeB
     LockLevel           level;
     LockableType        type;
 
-    if (!BeInt64IdFromJson (id, serverJson[ServerSchema::Property::ObjectId])                             ||
-        !RepositoryJson::LockLevelFromJson (level, serverJson[ServerSchema::Property::LockLevel])           ||
-        !RepositoryJson::LockableTypeFromJson (type, serverJson[ServerSchema::Property::LockType])          ||
-        !RepositoryJson::BriefcaseIdFromJson (briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
-        !StringFromJson (repositoryId, serverJson[ServerSchema::Property::ReleasedWithRevision]))
+    if (!BeInt64IdFromJson (id, serverJson[ServerSchema::Property::ObjectId]) ||
+        !RepositoryJson::LockLevelFromJson (level, serverJson[ServerSchema::Property::LockLevel]) ||
+        !RepositoryJson::LockableTypeFromJson (type, serverJson[ServerSchema::Property::LockType]) ||
+        !RepositoryJson::BriefcaseIdFromJson (briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]))
         return false;
 
     lock = DgnLock (LockableId (type, id), level);

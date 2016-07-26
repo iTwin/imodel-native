@@ -2,7 +2,7 @@
 |
 |     $Source: Client/Response/WSObjectsResponse.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -78,7 +78,11 @@ JsonValueR WSObjectsResponse::GetJsonValuePrivate() const
     {
     if (!m_jsonValue)
         {
-        m_jsonValue = std::make_shared<Json::Value>(m_httpBody->AsJson());
+        Json::Value infoJson;
+        if (!Json::Reader::Parse(m_httpBody->AsString(), infoJson))
+            infoJson = Json::Value::null;
+
+        m_jsonValue = std::make_shared<Json::Value>(infoJson);
         }
     return *m_jsonValue;
     }
@@ -91,7 +95,7 @@ std::shared_ptr<rapidjson::Document> WSObjectsResponse::GetRapidJsonDocumentPriv
     if (!m_rapidJsonDocument)
         {
         m_rapidJsonDocument = std::make_shared<rapidjson::Document>();
-        m_httpBody->AsRapidJson(*m_rapidJsonDocument);
+        m_rapidJsonDocument->Parse<0>(m_httpBody->AsString().c_str());
         }
     return m_rapidJsonDocument;
     }

@@ -9,11 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 *  @bsiclass                                                    Vincas.Razma    08/2013
@@ -26,7 +26,7 @@ struct ChunkedUploadRequest
         typedef const ETagRetrievedCallback& ETagRetrievedCallbackCR;
 
     private:
-        HttpRequest m_handshakeRequest;
+        Http::Request m_handshakeRequest;
 
         uint64_t m_chunkSizeBytes;
 
@@ -43,13 +43,13 @@ struct ChunkedUploadRequest
 
         ETagRetrievedCallback           m_etagRetrievedCallback;
         ICancellationTokenPtr           m_cancellationToken;
-        HttpRequest::ProgressCallback   m_progressCallback;
+        Http::Request::ProgressCallback   m_progressCallback;
 
         struct TransferData;
         std::shared_ptr<TransferData>   m_data;
 
     private:
-        static AsyncTaskPtr<HttpResponse> PerformAsync(std::shared_ptr<ChunkedUploadRequest> cuRequest);
+        static AsyncTaskPtr<Http::Response> PerformAsync(std::shared_ptr<ChunkedUploadRequest> cuRequest);
         static AsyncTaskPtr<void> SendHandshakeAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest);
         static void SendChunkAndContinue(std::shared_ptr<ChunkedUploadRequest> cuRequest);
 
@@ -79,13 +79,13 @@ struct ChunkedUploadRequest
         WSCLIENT_EXPORT void SetCancellationToken(ICancellationTokenPtr token);
 
         //! Progress callback for whole upload
-        WSCLIENT_EXPORT void SetUploadProgressCallback(HttpRequest::ProgressCallbackCR onProgress);
+        WSCLIENT_EXPORT void SetUploadProgressCallback(Http::Request::ProgressCallbackCR onProgress);
 
         //! Get handshare request template and do customization on it
-        WSCLIENT_EXPORT HttpRequest& GetHandshakeRequest();
+        WSCLIENT_EXPORT Http::Request& GetHandshakeRequest();
 
         //! Send required requests and return final response
-        WSCLIENT_EXPORT AsyncTaskPtr<HttpResponse> PerformAsync();
+        WSCLIENT_EXPORT AsyncTaskPtr<Http::Response> PerformAsync();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

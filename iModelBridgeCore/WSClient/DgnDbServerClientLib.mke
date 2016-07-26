@@ -24,6 +24,10 @@ always:
 #--------------------------------------------------------------------------------------
 nameToDefine    = __DgnDbServerClient_DLL_BUILD__
 %include cdefapnd.mki
+%if defined (DEBUG)
+	nameToDefine    = DEBUG
+	%include cdefapnd.mki
+%endif
 
 %if $(TARGET_PLATFORM)=="Windows"
     # Ignore inheritance via dominance warning
@@ -88,6 +92,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
     %include $(sharedMki)LinkLibrary.mki    
 %endif

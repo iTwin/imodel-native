@@ -33,6 +33,8 @@
 
     <Part Name="WebServicesClient-Library" BentleyBuildMakeFile="ClientLib.mke" ExcludePlatforms="Android*" ApiNumber="G06">
         <SubPart PartName="WebServicesClient-PublicAPI" />
+        <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
+        <SubPart PartName="BeSecurityLibrary"             PartFile="BeSecurity"  Repository="BeSecurity" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>

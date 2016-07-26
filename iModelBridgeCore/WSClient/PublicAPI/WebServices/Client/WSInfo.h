@@ -2,19 +2,19 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSInfo.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <DgnClientFx/Utils/Http/HttpResponse.h>
+#include <BeHttp/HttpResponse.h>
 #include <Bentley/BeVersion.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2014
@@ -41,8 +41,8 @@ struct WSInfo
 
     private:
         static void ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseInfoPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseAboutPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseAboutPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
         static BeVersion DeduceWebApiVersion(BeVersionCR serverVersion);
 
     public:
@@ -53,7 +53,7 @@ struct WSInfo
         //! Construct info with values
         WSCLIENT_EXPORT WSInfo(BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
         //! Create info from server response
-        WSCLIENT_EXPORT WSInfo(HttpResponseCR response);
+        WSCLIENT_EXPORT WSInfo(Http::ResponseCR response);
         //! Deserialize string info
         WSCLIENT_EXPORT WSInfo(Utf8StringCR serialized);
 

@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 
 #define WSQUERY_OPTION_Select   "$select"
 #define WSQUERY_OPTION_Filter   "$filter"

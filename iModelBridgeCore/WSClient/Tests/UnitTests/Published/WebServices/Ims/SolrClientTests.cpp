@@ -16,8 +16,6 @@ using namespace ::std;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
-
 TEST_F(SolrClientTests, Ctor_ValidBaseUrl_SetsValidBaseUrl)
     {
     Utf8String collection("IMS/User");
@@ -96,7 +94,7 @@ TEST_F(SolrClientTests, SendGetRequest_ValidCollection_SendsCorrectUrl)
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -111,7 +109,7 @@ TEST_F(SolrClientTests, SendGetRequest_BaseUrlWithTrailingForwardSlashAndCollect
 
     auto client = SolrClient::Create("https://srv.com/token/", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -126,7 +124,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingForwardSlashes_ShouldRem
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -141,7 +139,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithTrailingForwardSlashes_ShouldRe
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -156,7 +154,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingBackwardSlashes_ShouldRe
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -171,7 +169,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithTrailingBackwardSlashes_ShouldR
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -186,7 +184,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingBackwardSlash
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -201,7 +199,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingForwardSlashe
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -216,7 +214,7 @@ TEST_F(SolrClientTests, SendGetRequest_StringWithLeadingAndTrailingSlashes_Shoul
 
     auto client = SolrClient::Create("https://srv.com/token", collection, StubClientInfo(), GetHandlerPtr());
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -230,7 +228,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmail_ConstructsCorre
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=Email:%22test.email@testemail.com%22", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -246,7 +244,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponse_
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=Email:%22test.email@testemail.com%22&wt=json", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -263,7 +261,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponseA
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=Email:%22test.email@testemail.com%22&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -281,7 +279,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForEmailAndJsonResponseA
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=](HttpRequestCR request)
+    GetHandler().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=Email:%22test.email@testemail.com%22&fl=UserId&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -300,7 +298,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForRoleIdAndJsonResponse
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=](HttpRequestCR request)
+    GetHandler().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=RoleId:%22123456-123456-123456%22&fq=OrganizationId:%22654321-654321-654321%22&fl=UserId&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -320,7 +318,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsAllQueryParametersExceptSort_Constr
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=](HttpRequestCR request)
+    GetHandler().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=*:*&fq=UserId:(%22654321-654321-654321%22 OR %22567890-567890-567890%22)&start=0&rows=100&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -341,7 +339,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsQueryStringForUserIdAndJsonResponse
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=](HttpRequestCR request)
+    GetHandler().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?q=UserId:%221234567890-1234567890%22&fl=Email&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -360,7 +358,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsJsonResponseAndIndentationAndSort_C
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=](HttpRequestCR request)
+    GetHandler().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?sort=FirstName desc&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -378,7 +376,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsSortMultipleTimes_ConstructsCorrect
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+    GetHandler().ForRequest(1, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select?sort=FirstName desc,LastName asc,UserId desc&wt=json&indent=true", request.GetUrl().c_str());
         return StubHttpResponse();
@@ -398,7 +396,7 @@ TEST_F(SolrClientTests, SendQueryRequest_NoQueryProvided_ConstructsCorrectQueryU
     auto client = SolrClient::Create("https://srv.com/token", Utf8String("IMS/User"), StubClientInfo(), GetHandlerPtr());
 
     GetHandler().ExpectRequests(1);
-    GetHandler().ForRequest(1, [=](HttpRequestCR request)
+    GetHandler().ForRequest(1, [=](Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/token/IMS/User/select", request.GetUrl().c_str());
         return StubHttpResponse();

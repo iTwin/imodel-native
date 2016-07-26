@@ -2,19 +2,17 @@
 |
 |     $Source: Client/ClientConnection.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <Bentley/Tasks/AsyncResult.h>
 #include "ClientConfiguration.h"
 #include "WebApi/WebApi.h"
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<WebApiPtr, WSError> WebApiResult;
 

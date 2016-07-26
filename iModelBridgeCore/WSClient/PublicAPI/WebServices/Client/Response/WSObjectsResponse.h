@@ -9,12 +9,12 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Client/Response/WSObjectsReader.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014

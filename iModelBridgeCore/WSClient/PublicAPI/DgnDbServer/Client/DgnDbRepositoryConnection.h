@@ -22,11 +22,11 @@
 #include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
 #include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
 #include <DgnDbServer/Client/DgnDbServerDeletedEvent.h>
-#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
+#include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace std;
 
@@ -34,40 +34,14 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbRepositoryConnection);
 typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRepositoryConnectionPtr;
 typedef struct DgnDbRepositoryConnection const&                         DgnDbRepositoryConnectionCR;
 
-struct DgnDbLockSetResultInfo;
 struct DgnDbCodeLockSetResultInfo;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
-DEFINE_TASK_TYPEDEFS(DgnDbLockSetResultInfo, DgnDbServerLockSet);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
 DEFINE_TASK_TYPEDEFS(void, DgnDbServerCancelEvent);
 
-
-//=======================================================================================
-//! DgnDbLockSet results.
-//@bsiclass                                      Eligijus.Mauragas              01/2016
-//=======================================================================================
-struct DgnDbLockSetResultInfo
-{
-//__PUBLISH_SECTION_END__
-private:
-    DgnLockSet      m_locks;
-    DgnLockInfoSet  m_lockStates;
-
-public:
-    DgnDbLockSetResultInfo () {};
-    void AddLock (const DgnLock dgnLock, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
-
-//__PUBLISH_SECTION_START__
-public:
-    //! Returns the set of locks.
-    DGNDBSERVERCLIENT_EXPORT const DgnLockSet& GetLocks () const;
-
-    //! Returns lock state information.
-    DGNDBSERVERCLIENT_EXPORT const DgnLockInfoSet& GetLockStates () const;
-};
 
 //=======================================================================================
 //! DgnDbCodeSet and DgnDbLockSet results.
@@ -134,7 +108,7 @@ private:
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Aquire a new briefcase id for this repository.
+    //! Acquire a new briefcase id for this repository.
     AsyncTaskPtr<WSCreateObjectResult> AcquireBriefcaseId (ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Write the briefcaseId into the file.
@@ -142,18 +116,18 @@ private:
 
     //! Download a copy of the master file from the repository
     DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
-                                                     HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the file for this revision from server.
-    DgnDbServerStatusTaskPtr DownloadRevisionFile (DgnDbServerRevisionPtr revision, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr DownloadRevisionFile (DgnDbServerRevisionPtr revision, Http::Request::ProgressCallbackCR callback = nullptr,
                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this revision file to server.
-    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download all revision files after revisionId
-    DgnDbServerRevisionsTaskPtr Pull (Utf8StringCR revisionId, HttpRequest::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRevisionsTaskPtr Pull (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -176,9 +150,6 @@ private:
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Returns all available locks for given lock ids and briefcase id.
-    DgnDbServerLockSetTaskPtr QueryLocksInternal (LockableIdSet const* ids, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Returns all available codes and locks for given briefcase id.
     DgnDbServerCodeLockSetTaskPtr QueryCodesLocksInternal(DgnCodeSet const* codes, LockableIdSet const* locks, const BeSQLite::BeBriefcaseId* briefcaseId, ICancellationTokenPtr cancellationToken) const;
 
@@ -187,7 +158,7 @@ private:
 
     //! Initializes the revision.
     DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, JsonValueR pushJson, ObjectId revisionObjectId,
-                                              HttpRequest::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
+                                              Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
 public:
     //! Create an instance of the connection to a repository on the server.
@@ -201,22 +172,23 @@ public:
     static DgnDbRepositoryConnectionTaskPtr Create (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
                                                     ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
-    //! Aquire the requested set of locks.
-    //! @param[in] locks Set of locks to acquire
-    //! @param[in] briefcaseId
-    //! @param[in] lastRevisionId Last pulled revision id
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireLocks (LockRequestCR locks, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId,
-                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Aquire the requested set of locks.
+    //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
     //! @param[in] briefcaseId
     //! @param[in] lastRevisionId Last pulled revision id
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AcquireCodesLocks(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
+         Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Attempt to acquire the requested set of locks.
+    //! @param[in] locks Set of locks to check
+    //! @param[in] codes Set of codes to check
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId Last pulled revision id
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr QueryCodesLocksAvailability(LockRequestCR locks, DgnCodeSet codes, BeSQLite::BeBriefcaseId briefcaseId,
+        Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Release certain locks.
     //! @param[in] locks Set of locks to release
@@ -256,7 +228,7 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionPtr>& revisions, HttpRequest::ProgressCallbackCR callback = nullptr,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the revision on the server.
@@ -267,33 +239,29 @@ public:
     //!< Returns repository information for this connection.
     DGNDBSERVERCLIENT_EXPORT RepositoryInfoCR GetRepositoryInfo () const;
 
-    //! Returns all available locks for given briefcase id.
-    //! @param[in] briefcaseId
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocks (BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Returns all available locks for given lock ids and briefcase id.
-    //! @param[in] ids Lock ids to query
-    //! @param[in] briefcaseId
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, BeSQLite::BeBriefcaseId briefcaseId,
-                                                                       ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Returns all available locks for given lock ids and for any briefcase.
-    //! @param[in] ids Lock ids to query
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerLockSetTaskPtr QueryLocksById (LockableIdSet const& ids, ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Returns all codes and locks by ids.
-    //! @param[out] codes
-    //! @param[out] locks
+    //! @param[in] codes
+    //! @param[in] locks
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocksById(DgnCodeSet const& codes, LockableIdSet const& locks, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes and locks by ids and briefcase id.
+    //! @param[in] codes
+    //! @param[in] locks
+    //! @param[in] briefcaseId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocksById(DgnCodeSet const& codes, LockableIdSet const& locks, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks by briefcase id.
     //! @param[in] briefcaseId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns all codes and locks held by other briefcases.
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
     DGNDBSERVERCLIENT_EXPORT bool UpdateEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 

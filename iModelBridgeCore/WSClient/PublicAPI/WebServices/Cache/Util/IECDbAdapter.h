@@ -14,16 +14,16 @@
 #include <Bentley/bset.h>
 #include <ECDb/ECSqlStatement.h>
 #include <ECObjects/ECObjectsAPI.h>
-#include <DgnClientFx/Utils/Threading/CancellationToken.h>
+#include <Bentley/Tasks/CancellationToken.h>
 #include <WebServices/Cache/Util/ObservableECDb.h>
 #include <WebServices/Client/ObjectId.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_TASKS
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma   11/2014

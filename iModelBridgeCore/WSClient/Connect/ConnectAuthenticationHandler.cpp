@@ -13,7 +13,6 @@
 #include <WebServices/Connect/ConnectTokenProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
@@ -41,7 +40,7 @@ ConnectAuthenticationHandler::~ConnectAuthenticationHandler()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(HttpResponseCR response)
+bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(Http::ResponseCR response)
     {
     if (response.GetHttpStatus() == HttpStatus::Unauthorized ||
         response.GetHttpStatus() == HttpStatus::Forbidden)
@@ -53,7 +52,7 @@ bool ConnectAuthenticationHandler::_ShouldRetryAuthentication(HttpResponseCR res
         return true;
         }
     if (response.GetHttpStatus() == HttpStatus::NotFound &&
-        response.GetBody().AsJson()["errorId"].asString().Equals("DatasourceNotFound"))
+        Json::Reader::DoParse(response.GetBody().AsString())["errorId"].asString().Equals("DatasourceNotFound"))
         {
         // Token MAY be expired, retry. Workaround for TFS#7930
         return true;

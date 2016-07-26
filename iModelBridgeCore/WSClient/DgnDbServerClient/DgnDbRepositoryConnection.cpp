@@ -10,33 +10,11 @@
 #include <WebServices/Client/WSChangeset.h>
 #include "DgnDbServerUtils.h"
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
-#include <WebServices/Connect/ConnectSignInManager.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Eligijus.Mauragas              01/2016
-//---------------------------------------------------------------------------------------
-void DgnDbLockSetResultInfo::AddLock(const DgnLock dgnLock, BeBriefcaseId briefcaseId, Utf8StringCR repositoryId)
-    {
-    m_locks.insert(dgnLock);
-    AddLockInfoToList(m_lockStates, dgnLock, briefcaseId, repositoryId);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Eligijus.Mauragas              01/2016
-//---------------------------------------------------------------------------------------
-const DgnLockSet& DgnDbLockSetResultInfo::GetLocks() const { return m_locks; }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Eligijus.Mauragas              01/2016
-//---------------------------------------------------------------------------------------
-const DgnLockInfoSet& DgnDbLockSetResultInfo::GetLockStates() const { return m_lockStates; }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
@@ -156,18 +134,23 @@ AuthenticationHandlerPtr authenticationHandler
 
     DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
     if (!repository.GetFileId().empty())
+        {
+        #ifndef DEBUG
+        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
+        #endif
+            repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
+        }
 
     return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerStatusResultCR result)
         {
         if (!result.IsSuccess())
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
 
-        //if (!repositoryConnection->GetRepositoryInfo().GetFileURL().empty())
-        // WARNING: Temporarily commenting this out, should be uncommented
-        //if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind ("cloudapp.net"))
-        repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
-
+        #ifndef DEBUG
+        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
+        #endif
+            repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
 
         return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
         });
@@ -185,14 +168,14 @@ BeBriefcaseId                  briefcaseId
     BeSQLite::DbResult status;
 
     std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-    DgnDbServerHost::Adopt(host);
+    DgnDbServerHost::Adopt (host);
 
-    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     DgnDbServerStatusResult result;
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
-        result = RepositoryInfo::WriteRepositoryInfo(*db, m_repositoryInfo, briefcaseId);
-        db->CloseDb();
+        result = RepositoryInfo::WriteRepositoryInfo (*db, m_repositoryInfo, briefcaseId);
+        db->CloseDb ();
         }
     else
         {
@@ -213,7 +196,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadBriefcaseFile
 BeFileName                      localFile,
 BeBriefcaseId                   briefcaseId,
 Utf8StringCR                    url,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -251,12 +234,12 @@ ICancellationTokenPtr           cancellationToken
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisionFile
 (
 DgnDbServerRevisionPtr          revision,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
     ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetRevision()->GetId());
-
+    
     if (revision->GetURL().empty())
         {
         return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
@@ -291,13 +274,15 @@ bvector<uint64_t> const& ids,
 BeBriefcaseId            briefcaseId,
 Utf8StringCR             releasedWithRevisionId,
 LockableType             type,
-LockLevel                level
+LockLevel                level,
+bool                     queryOnly
 )
     {
     Json::Value properties;
 
     properties[ServerSchema::Property::BriefcaseId]          = briefcaseId.GetValue();
     properties[ServerSchema::Property::ReleasedWithRevision] = releasedWithRevisionId;
+    properties[ServerSchema::Property::QueryOnly]            = queryOnly;
     RepositoryJson::LockableTypeToJson(properties[ServerSchema::Property::LockType], type);
     RepositoryJson::LockLevelToJson(properties[ServerSchema::Property::LockLevel], level);
 
@@ -324,13 +309,14 @@ bvector<uint64_t> const&         ids,
 BeBriefcaseId                    briefcaseId,
 Utf8StringCR                     releasedWithRevisionId,
 LockableType                     type,
-LockLevel                        level
+LockLevel                        level,
+bool                             queryOnly
 )
     {
     if (ids.empty ())
         return;
     ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::MultiLock, "MultiLock");
-    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, releasedWithRevisionId, type, level)));
+    changeset.AddInstance (lockObject, changeState, std::make_shared<Json::Value>(CreateLockInstanceJson (ids, briefcaseId, releasedWithRevisionId, type, level, queryOnly)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -343,22 +329,23 @@ BeBriefcaseId                   briefcaseId,
 Utf8StringCR                    releasedWithRevisionId,
 WSChangeset&                    changeset,
 const WSChangeset::ChangeState& changeState,
-bool                            includeOnlyExclusive = false
+bool                            includeOnlyExclusive = false,
+bool                            queryOnly = false
 )
     {
     bvector<uint64_t> objects[9];
     for (auto& lock : locks)
         {
-        if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel())
+        if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel ())
             continue;
 
-        int index = static_cast<int32_t>(lock.GetType()) * 3 + static_cast<int32_t>(lock.GetLevel());
+        int index = static_cast<int32_t>(lock.GetType ()) * 3 + static_cast<int32_t>(lock.GetLevel ());
         if (index >= 0 && index <= 8)
-            objects[index].push_back(lock.GetId().GetValue());
+            objects[index].push_back (lock.GetId ().GetValue ());
         }
 
     for (int i = 0; i < 9; ++i)
-        AddToInstance(changeset, changeState, objects[i], briefcaseId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3));
+        AddToInstance(changeset, changeState, objects[i], briefcaseId, releasedWithRevisionId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3), queryOnly);
     }
 
 //---------------------------------------------------------------------------------------
@@ -366,6 +353,7 @@ bool                            includeOnlyExclusive = false
 //---------------------------------------------------------------------------------------
 int CodeStateToInt(DgnCodeStateCR state)
     {
+    //NEEDSWORK: Make DgnCodeState::Type public
     if (state.IsReserved())
         {
         return 1;
@@ -387,22 +375,29 @@ int CodeStateToInt(DgnCodeStateCR state)
 //---------------------------------------------------------------------------------------
 Json::Value CreateCodeInstanceJson
 (
-    uint64_t                 authorityId,
-    Utf8StringCR             nameSpace,
-    Utf8StringCR             value,
-    DgnCodeStateCR           state,
-    BeBriefcaseId            briefcaseId,
-    Utf8StringCR             stateRevisionId
+bvector<DgnCode> const&      codes,
+DgnCodeStateCR               state,
+BeBriefcaseId                briefcaseId,
+Utf8StringCR                 stateRevisionId,
+bool                         queryOnly
 )
     {
     Json::Value properties;
+    DgnCode const* firstCode = codes.begin();
 
-    properties[ServerSchema::Property::AuthorityId] = authorityId;
-    properties[ServerSchema::Property::Namespace] = nameSpace;
-    properties[ServerSchema::Property::Value] = value;
-    properties[ServerSchema::Property::BriefcaseId] = briefcaseId.GetValue();
-    properties[ServerSchema::Property::State] = CodeStateToInt (state);
+    properties[ServerSchema::Property::AuthorityId]   = firstCode->GetAuthority().GetValue();
+    properties[ServerSchema::Property::Namespace]     = firstCode->GetNamespace();
+    properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
+    properties[ServerSchema::Property::State]         = CodeStateToInt (state);
     properties[ServerSchema::Property::StateRevision] = stateRevisionId;
+    properties[ServerSchema::Property::QueryOnly]     = queryOnly;
+
+    properties[ServerSchema::Property::Values] = Json::arrayValue;
+    int i = 0;
+    for (auto const& code : codes)
+        {
+        properties[ServerSchema::Property::Values][i++] = code.GetValue();
+        }
 
     return properties;
     }
@@ -410,23 +405,101 @@ Json::Value CreateCodeInstanceJson
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-void AddCodeToInstance
+void EncodeIdString
 (
-    WSChangeset&                     changeset,
-    WSChangeset::ChangeState const&  changeState,
-    uint64_t                         authorityId,
-    Utf8StringCR                     nameSpace,
-    Utf8StringCR                     value,
-    DgnCodeStateCR                   state,
-    BeBriefcaseId                    briefcaseId,
-    Utf8StringCR                     stateRevisionId
+Utf8StringR value
 )
     {
     if (value.empty())
         return;
-    //NEEDSWORK : Optimize, make use of multicode
-    ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::Code, "Code");
-    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(CreateCodeInstanceJson(authorityId, nameSpace, value, state, briefcaseId, stateRevisionId)));
+
+    Utf8String reservedChar("-");
+    Utf8String replacement;
+    replacement.Sprintf("_%2X_", (int)reservedChar[0]);
+
+    value.ReplaceAll(reservedChar.c_str(), replacement.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+Utf8String FormatCodeId
+(
+uint64_t                         authorityId,
+Utf8StringCR                     nameSpace,
+Utf8StringCR                     value
+)
+    {
+    Utf8String idString;
+
+    Utf8String encodedNamespace(nameSpace.c_str());
+    EncodeIdString(encodedNamespace);
+    Utf8String encodedValue(value.c_str());
+    EncodeIdString(encodedValue);
+
+    idString.Sprintf("%d-%s-%s", authorityId, encodedNamespace.c_str(), encodedValue.c_str());
+
+    return idString;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+Utf8String FormatCodeId
+(
+uint64_t                         authorityId,
+Utf8StringCR                     nameSpace,
+Utf8StringCR                     value,
+BeBriefcaseId                    briefcaseId
+)
+    {
+    Utf8String idString;
+    idString.Sprintf("%s-%d", FormatCodeId(authorityId, nameSpace, value).c_str(), briefcaseId.GetValue());
+
+    return idString;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+void AddCodeToInstance
+(
+WSChangeset&                     changeset,
+WSChangeset::ChangeState const&  changeState,
+bvector<DgnCode> const&          codes,
+DgnCodeStateCR                   state,
+BeBriefcaseId                    briefcaseId,
+Utf8StringCR                     stateRevisionId,
+bool                             queryOnly
+)
+    {
+    if (codes.empty())
+        return;
+
+    ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::MultiCode, "MultiCode");
+    JsonValueCR codeJson = CreateCodeInstanceJson(codes, state, briefcaseId, stateRevisionId, queryOnly);
+    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+void GroupCode
+(
+bmap<Utf8String, bvector<DgnCode>>* groupedCodes,
+DgnCode searchCode
+)
+    {
+    Utf8String searchKey = FormatCodeId(searchCode.GetAuthority().GetValue(), searchCode.GetNamespace(), "");
+    auto it = groupedCodes->find(searchKey);
+    if (it == groupedCodes->end())
+        {
+        bvector<DgnCode> codes;
+        codes.push_back(searchCode);
+        groupedCodes->insert({ searchKey, codes });
+        return;
+        }
+    it->second.push_back(searchCode);
     }
 
 //---------------------------------------------------------------------------------------
@@ -434,32 +507,40 @@ void AddCodeToInstance
 //---------------------------------------------------------------------------------------
 void SetCodesJsonRequestToChangeSet
 (
-    const DgnCodeSet                codes,
-    DgnCodeState                    state,
-    BeBriefcaseId                   briefcaseId,
-    Utf8StringCR                    stateRevisionId,
-    WSChangeset&                    changeset,
-    const WSChangeset::ChangeState& changeState
+const DgnCodeSet                codes,
+DgnCodeState                    state,
+BeBriefcaseId                   briefcaseId,
+Utf8StringCR                    stateRevisionId,
+WSChangeset&                    changeset,
+const WSChangeset::ChangeState& changeState,
+bool                            queryOnly = false
 )
     {
+    bmap<Utf8String, bvector<DgnCode>> groupedCodes;
     for (auto& code : codes)
-        //NEEDSWORK : make creation more optimized - group by authorityId and namespace
-        AddCodeToInstance(changeset, changeState, code.GetAuthority().GetValue(), code.GetNamespace(), code.GetValue(), state, briefcaseId, stateRevisionId);
+        {
+        GroupCode(&groupedCodes, code);
+        }
+
+    for (auto& group : groupedCodes)
+        {
+        AddCodeToInstance(changeset, changeState, group.second, state, briefcaseId, stateRevisionId, queryOnly);
+        }
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest(const BeBriefcaseId& briefcaseId)
+std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& briefcaseId)
     {
     Utf8String id;
-    id.Sprintf("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue());
+    id.Sprintf ("%s-%d", ServerSchema::DeleteAllLocks, briefcaseId.GetValue ());
 
-    ObjectId lockObject(ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
+    ObjectId lockObject (ServerSchema::Schema::Repository, ServerSchema::Class::Lock, id);
 
     Json::Value properties;
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    changeset->AddInstance (lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value> (properties));
+    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
+    changeset->AddInstance(lockObject, WSChangeset::ChangeState::Deleted, std::make_shared<Json::Value> (properties));
 
     return changeset;
     }
@@ -467,10 +548,10 @@ std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest(const BeBriefcaseId& brief
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-void CodeDeleteAllJsonRequest(std::shared_ptr<WSChangeset> changeSet, const BeBriefcaseId& briefcaseId)
+void CodeDiscardReservedJsonRequest(std::shared_ptr<WSChangeset> changeSet, const BeBriefcaseId& briefcaseId)
     {
     Utf8String id;
-    id.Sprintf("%s-%d", ServerSchema::DeleteAllCodes, briefcaseId.GetValue());
+    id.Sprintf("%s-%d", ServerSchema::DiscardReservedCodes, briefcaseId.GetValue());
 
     ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::Code, id);
 
@@ -547,9 +628,9 @@ const BeBriefcaseId*  briefcaseId
             Utf8String idString;
             //NEEDSWORK - encode namespace and value
             if (nullptr != briefcaseId)
-                idString.Sprintf("'%d-%s-%s-%u'", id.GetAuthority().GetValue(), id.GetNamespace().c_str(), id.GetValue().c_str(), briefcaseId->GetValue());
+                idString.Sprintf("'%s'", FormatCodeId(id.GetAuthority().GetValue(), id.GetNamespace(), id.GetValue(), *briefcaseId).c_str());
             else
-                idString.Sprintf("'%d-%s-%s'", id.GetAuthority().GetValue(), id.GetNamespace().c_str(), id.GetValue().c_str());
+                idString.Sprintf("'%s'", FormatCodeId(id.GetAuthority().GetValue(), id.GetNamespace(), id.GetValue()).c_str());
 
             if (!first)
                 idsString.append(",");
@@ -586,23 +667,6 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequest(std::sh
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireLocks
-(
-LockRequestCR         locks,
-BeBriefcaseId         briefcaseId,
-Utf8StringCR          lastRevisionId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    //How to set description here?
-    std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
-    SetLocksJsonRequestToChangeSet (locks.GetLockSet (), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
-    return SendChangesetRequest(changeset, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
@@ -624,6 +688,31 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
+(
+    LockRequestCR         locks,
+    DgnCodeSet            codes,
+    BeBriefcaseId         briefcaseId,
+    Utf8StringCR          lastRevisionId,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+
+    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, false, true);
+
+    DgnCodeState state;
+    state.SetReserved(briefcaseId);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, true);
+
+    return SendChangesetRequest(changeset, cancellationToken);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
@@ -641,7 +730,7 @@ ICancellationTokenPtr cancellationToken
 
     DgnCodeState state;
     state.SetAvailable();
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, "", *changeset, WSChangeset::ChangeState::Deleted);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, "", *changeset, WSChangeset::ChangeState::Modified);
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
@@ -656,86 +745,9 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     auto changeset = LockDeleteAllJsonRequest (briefcaseId);
-    CodeDeleteAllJsonRequest(changeset, briefcaseId);
+    CodeDiscardReservedJsonRequest(changeset, briefcaseId);
 
     return SendChangesetRequest(changeset, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocks
-(
-BeBriefcaseId         briefcaseId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    return QueryLocksInternal (nullptr, &briefcaseId, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksById
-(
-LockableIdSet const&  ids,
-BeBriefcaseId         briefcaseId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    return QueryLocksInternal (&ids, &briefcaseId, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksById
-(
-LockableIdSet const&  ids,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    return QueryLocksInternal (&ids, nullptr, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             12/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerLockSetTaskPtr DgnDbRepositoryConnection::QueryLocksInternal
-(
-LockableIdSet const*  ids,
-const BeBriefcaseId*  briefcaseId,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Lock);
-    
-    auto filter = FormatLocksFilter(ids, briefcaseId);
-    query.SetFilter (filter);
-    
-    //Execute query
-    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerLockSetResult>
-        ([=] (const WSObjectsResult& result)
-        {
-        if (result.IsSuccess())
-            {
-            DgnDbLockSetResultInfo locks;
-            for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
-                {
-                DgnLock        lock;
-                BeBriefcaseId  briefcaseId;
-                Utf8String     repositoryId;
-                if (!GetLockFromServerJson (value[ServerSchema::Properties], lock, briefcaseId, repositoryId))
-                    continue;//NEEDSWORK: log an error
-
-                if (lock.GetLevel() != LockLevel::None)
-                    locks.AddLock (lock, briefcaseId, repositoryId);
-                }
-            return DgnDbServerLockSetResult::Success(locks);
-            }
-        else
-            return DgnDbServerLockSetResult::Error(result.GetError());
-        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -749,6 +761,20 @@ ICancellationTokenPtr cancellationToken
 ) const
     {
     return QueryCodesLocksInternal(&codes, &locks, nullptr, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryCodesLocksById
+(
+DgnCodeSet const& codes,
+LockableIdSet const& locks,
+BeBriefcaseId briefcaseId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    return QueryCodesLocksInternal(&codes, &locks, &briefcaseId, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -786,7 +812,8 @@ ICancellationTokenPtr cancellationToken
 
     if (!locksFilter.empty() && !codesFilter.empty())
         {
-        filter.Sprintf("(%s)+or+(%s)", locksFilter.c_str(), codesFilter.c_str());
+        //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
+        filter.Sprintf("(%s)+and+(%s)", locksFilter.c_str(), codesFilter.c_str());
         }
     else
         {
@@ -827,6 +854,102 @@ ICancellationTokenPtr cancellationToken
         else
             return DgnDbServerCodeLockSetResult::Error(result.GetError());
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             06/2016
+//---------------------------------------------------------------------------------------
+WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex)
+    {
+    std::set<Utf8String> classes;
+    classes.insert(ServerSchema::Class::Lock);
+    classes.insert(ServerSchema::Class::Code);
+
+    WSQuery query(ServerSchema::Schema::Repository, classes);
+    Utf8String filter;
+    Utf8String locksFilter, codesFilter;
+    locksFilter.Sprintf("%s+ne+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
+                        ServerSchema::Property::ReleasedWithRevisionIndex, lastRevisionIndex);
+
+    //NEEDSWORK: Make DgnCodeState::Type public
+    codesFilter.Sprintf("%s+ne+%u+and+(%s+ne+%u+or+%s+gt+%u)", ServerSchema::Property::State, 0,
+                        ServerSchema::Property::State, 3, ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
+
+    //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
+    filter.Sprintf("%s+ne+%u+and+((%s)+and+(%s))", ServerSchema::Property::BriefcaseId,
+                   briefcaseId.GetValue(), locksFilter.c_str(), codesFilter.c_str());
+
+    query.SetFilter(filter);
+    return query;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             06/2016
+//---------------------------------------------------------------------------------------
+void AddCodeLock(DgnDbCodeLockSetResultInfo& codesLocksSet, JsonValueCR codeLockJson)
+    {
+    DgnCode        code;
+    DgnCodeState   codeState;
+    DgnLock        lock;
+    BeBriefcaseId  briefcase;
+    Utf8String     repository;
+    if (GetLockFromServerJson(codeLockJson[ServerSchema::Properties], lock, briefcase, repository))
+        {
+        codesLocksSet.AddLock(lock, briefcase, repository);
+        }
+    else if (GetCodeFromServerJson(codeLockJson[ServerSchema::Properties], code, codeState, briefcase, repository))
+        {
+        codesLocksSet.AddCode(code, codeState, briefcase, repository);
+        }
+    //NEEDSWORK: log an error
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLocks
+(
+    const BeBriefcaseId   briefcaseId,
+    Utf8StringCR lastRevisionId,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    if (briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId())
+        return CreateCompletedAsyncTask<DgnDbServerCodeLockSetResult>(DgnDbServerCodeLockSetResult::Error(DgnDbServerError::Id::InvalidBriefcase));
+    std::shared_ptr<DgnDbServerCodeLockSetResult> finalResult = std::make_shared<DgnDbServerCodeLockSetResult>();
+    return GetRevisionById(lastRevisionId, cancellationToken)->Then([=] (DgnDbServerRevisionResultCR revisionResult)
+        {
+        uint64_t revisionIndex = 0;
+        if (!revisionResult.IsSuccess() && revisionResult.GetError().GetId() != DgnDbServerError::Id::InvalidRevision)
+            {
+            finalResult->SetError(revisionResult.GetError());
+            return;
+            }
+        else if (revisionResult.IsSuccess())
+            {
+            revisionIndex = revisionResult.GetValue()->GetIndex();
+            }
+
+        auto query = CreateUnavailableLocksQuery(briefcaseId, revisionIndex);
+        
+        m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (const WSObjectsResult& result)
+            {
+            if (!result.IsSuccess())
+                {
+                finalResult->SetError(result.GetError());
+                return;
+                }
+            DgnDbCodeLockSetResultInfo codesLocks;
+            for (auto const& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+                {
+                AddCodeLock(codesLocks, value);
+                }
+            finalResult->SetSuccess(codesLocks);
+            });
+        })->Then<DgnDbServerCodeLockSetResult>([=] ()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1446,7 +1569,7 @@ ICancellationTokenPtr cancellationToken
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisions
 (
 const bvector<DgnDbServerRevisionPtr>& revisions,
-HttpRequest::ProgressCallbackCR        callback,
+Http::Request::ProgressCallbackCR        callback,
 ICancellationTokenPtr                  cancellationToken
 ) const
     {
@@ -1471,7 +1594,7 @@ ICancellationTokenPtr                  cancellationToken
 DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::Pull
 (
 Utf8StringCR                    revisionId,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -1480,7 +1603,7 @@ ICancellationTokenPtr           cancellationToken
         {
         if (revisionsResult.IsSuccess())
             {
-            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
+            DownloadRevisions(revisionsResult.GetValue(), callback, cancellationToken)->Then([=](DgnDbServerStatusResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     finalResult->SetSuccess(revisionsResult.GetValue());
@@ -1534,7 +1657,7 @@ Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
 JsonValueR                      pushJson,
 ObjectId                        revisionObjectId,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -1543,13 +1666,13 @@ ICancellationTokenPtr           cancellationToken
     //Set Revision initialization request to ECChangeSet
     JsonValueR revisionProperties = pushJson[ServerSchema::Instance][ServerSchema::Properties];
     revisionProperties[ServerSchema::Property::IsUploaded] = true;
-    changeset->AddInstance(revisionObjectId, WSChangeset::ChangeState::Modified, std::make_shared<Json::Value>(revisionProperties));
+    changeset->AddInstance (revisionObjectId, WSChangeset::ChangeState::Modified, std::make_shared<Json::Value> (revisionProperties));
 
     //Set used locks to the ECChangeSet
     LockRequest usedLocks;
-    usedLocks.FromRevision(*revision);
-    if (!usedLocks.IsEmpty())
-        SetLocksJsonRequestToChangeSet(usedLocks.GetLockSet(), briefcaseId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified, true);
+    usedLocks.FromRevision (*revision);
+    if (!usedLocks.IsEmpty ())
+        SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, revision->GetId (), *changeset, WSChangeset::ChangeState::Modified, true);
 
     DgnCodeSet usedCodes;
     usedCodes = revision->GetAssignedCodes();
@@ -1580,7 +1703,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 (
 Dgn::DgnRevisionPtr             revision,
 BeBriefcaseId                   briefcaseId,
-HttpRequest::ProgressCallbackCR callback,
+Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
@@ -1597,9 +1720,9 @@ ICancellationTokenPtr           cancellationToken
             }
 
         // Stage 2. Upload revision file. 
-        JsonValueCR revisionInstance = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+        JsonValueCR revisionInstance   = initializePushResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
         Utf8String  revisionInstanceId = revisionInstance[ServerSchema::InstanceId].asString();
-        ObjectId    revisionObjectId = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
+        ObjectId    revisionObjectId   = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionInstanceId);
         Utf8StringCR url = revisionInstance[ServerSchema::Properties][ServerSchema::Property::URL].asString();
 
         if (url.empty())

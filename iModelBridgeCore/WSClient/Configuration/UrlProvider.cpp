@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <WebServices/Configuration/UrlProvider.h>
-#include <DgnClientFx/Utils/Http/HttpConfigurationHandler.h>
+#include <BeHttp/HttpConfigurationHandler.h>
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
 #define LOCAL_STATE_ENVIRONMENT "Environment"
@@ -22,7 +22,7 @@ bool                        UrlProvider::s_isInitialized = false;
 UrlProvider::Environment    UrlProvider::s_env = UrlProvider::Environment::Release;
 int64_t                     UrlProvider::s_cacheTimeoutMs = 0;
 IBuddiClientPtr             UrlProvider::s_buddi;
-ILocalState*                UrlProvider::s_localState = nullptr;
+IJsonLocalState*            UrlProvider::s_localState = nullptr;
 IHttpHandlerPtr UrlProvider::s_customHandler;
 
 // Region IDs from the buddi.bentley.com
@@ -158,7 +158,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, ILocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
+void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
     {
     s_localState = customLocalState ? customLocalState : &DgnClientFxCommon::LocalState();
     s_customHandler = customHandler;
@@ -167,14 +167,14 @@ void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, ILocalStat
     s_cacheTimeoutMs = cacheTimeoutMs;
     s_isInitialized = true;
 
-    Json::Value jsonPreviousEnv = s_localState->GetValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
+    Json::Value jsonPreviousEnv = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
     if (!jsonPreviousEnv.isNull() && env != jsonPreviousEnv.asUInt())
         {
         CleanUpUrlCache();
         }
     if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
         {
-        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
         }
     }
 
@@ -198,7 +198,7 @@ AsyncTaskPtr<Utf8String> UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8Str
         return CreateCompletedAsyncTask(Utf8String());
         }
 
-    Json::Value record = s_localState->GetValue(LOCAL_STATE_NAMESPACE, urlName.c_str());
+    Json::Value record = s_localState->GetJsonValue(LOCAL_STATE_NAMESPACE, urlName.c_str());
 
     Utf8String cachedUrl;
 
@@ -225,7 +225,7 @@ AsyncTaskPtr<Utf8String> UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8Str
             Json::Value record;
             record[RECORD_TimeCached] = BeJsonUtilities::StringValueFromInt64(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
             record[RECORD_Url] = buddiUrl;
-            s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
+            s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, urlName.c_str(), record);
             return buddiUrl;
             }
 
@@ -260,7 +260,7 @@ void UrlProvider::CleanUpUrlCache()
     {
     for (auto& descriptor : s_urlRegistry)
         {
-        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, descriptor->GetName().c_str(), Json::Value::null);
+        s_localState->SaveJsonValue(LOCAL_STATE_NAMESPACE, descriptor->GetName().c_str(), Json::Value::null);
         }
     }
 
@@ -270,7 +270,7 @@ void UrlProvider::CleanUpUrlCache()
 IHttpHandlerPtr UrlProvider::GetSecurityConfigurator(IHttpHandlerPtr customHandler)
     {
     // TODO: maybe this could be tied to GetUrl calls - instead return HttpClient that would generate correctly configured requests
-    return std::make_shared<HttpConfigurationHandler>([=] (HttpRequest& request)
+    return std::make_shared<HttpConfigurationHandler>([=] (Http::Request& request)
         {
         if (Environment::Release == s_env)
             {

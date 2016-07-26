@@ -13,7 +13,6 @@
 #include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 void UsageTrackingTests::SetUp()
     {
@@ -29,9 +28,9 @@ void UsageTrackingTests::TearDown()
 
 TEST_F(UsageTrackingTests, PostSingleUsage)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        auto bodyJson = request.GetRequestBody()->AsJson();
+        auto bodyJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
         EXPECT_EQ(1, (int) bodyJson.size());
         EXPECT_EQ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062", bodyJson[0]["DeviceID"].asString());
 
@@ -52,9 +51,9 @@ TEST_F(UsageTrackingTests, PostSingleUsage)
 
 TEST_F(UsageTrackingTests, PostMultipleUsage)
     {
-    GetHandler().ForFirstRequest([&] (HttpRequestCR request)
+    GetHandler().ForFirstRequest([&] (Http::RequestCR request)
         {
-        auto bodyJson = request.GetRequestBody()->AsJson();
+        auto bodyJson = Json::Reader::DoParse(request.GetRequestBody()->AsString());
         EXPECT_LT(1, (int) bodyJson.size());
         EXPECT_EQ("2321DDDD-B37B-49AC-B4A8-591C4EBC9062", bodyJson[1]["DeviceID"].asString());
 

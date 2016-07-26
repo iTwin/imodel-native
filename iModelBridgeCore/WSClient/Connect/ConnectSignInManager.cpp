@@ -22,7 +22,6 @@
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #define LOCALSTATE_Namespace            "Connect"
 #define LOCALSTATE_AuthenticationType   "AuthenticationType"
@@ -31,10 +30,10 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                           Vytautas.Barkauskas    12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore) :
+ConnectSignInManager::ConnectSignInManager(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore) :
 m_client(client),
 m_localState(localState ? *localState : DgnClientFxCommon::LocalState()),
-m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(&m_localState))
+m_secureStore(secureStore ? secureStore : std::make_shared<SecureStore>(m_localState))
     {
     m_persistence = GetPersistenceMatchingAuthenticationType();
     CheckAndUpdateToken();
@@ -53,7 +52,7 @@ ConnectSignInManagerPtr ConnectSignInManager::Create
 (
 ClientInfoPtr clientInfo,
 IHttpHandlerPtr httpHandler,
-ILocalState* localState,
+IJsonLocalState* localState,
 ISecureStorePtr secureStore
 )
     {
@@ -63,7 +62,7 @@ ISecureStorePtr secureStore
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSignInManagerPtr ConnectSignInManager::Create(IImsClientPtr client, ILocalState* localState, ISecureStorePtr secureStore)
+ConnectSignInManagerPtr ConnectSignInManager::Create(IImsClientPtr client, IJsonLocalState* localState, ISecureStorePtr secureStore)
     {
     return std::shared_ptr<ConnectSignInManager>(new ConnectSignInManager(client, localState, secureStore));
     }
@@ -222,8 +221,22 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
         return info;
 
     SamlTokenPtr token = m_persistence->GetToken();
+    if (nullptr == token)
+        return info;
+        
+    info = GetUserInfo(*token);
+    return info;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                           Andrius.Paulauskas     06/2016
+//--------------------------------------------------------------------------------------
+ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo(SamlTokenCR token)
+    {
+    UserInfo info;
+
     bmap<Utf8String, Utf8String> attributes;
-    if (nullptr == token || SUCCESS != token->GetAttributes(attributes))
+    if (SUCCESS != token.GetAttributes(attributes))
         return info;
 
     info.username = attributes["name"];
@@ -232,6 +245,14 @@ ConnectSignInManager::UserInfo ConnectSignInManager::GetUserInfo()
     info.userId = attributes["userid"];
 
     return info;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                           Andrius.Paulauskas     06/2016
+//--------------------------------------------------------------------------------------
+Utf8String ConnectSignInManager::GetLastUsername()
+    {
+    return m_secureStore->Decrypt(m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -302,7 +323,7 @@ ConnectSignInManager::AuthenticationType ConnectSignInManager::GetAuthentication
     if (AuthenticationType::None != m_authType)
         return m_authType;
 
-    m_authType = static_cast<AuthenticationType>(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType).asInt());
+    m_authType = static_cast<AuthenticationType>(m_localState.GetJsonValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType).asInt());
     return m_authType;
     }
 
@@ -312,7 +333,7 @@ ConnectSignInManager::AuthenticationType ConnectSignInManager::GetAuthentication
 void ConnectSignInManager::StoreAuthenticationType(AuthenticationType type)
     {
     m_authType = type;
-    m_localState.SaveValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, static_cast<int>(type));
+    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_AuthenticationType, static_cast<int>(type));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -364,7 +385,7 @@ void ConnectSignInManager::CheckUserChange()
     if (!IsSignedIn())
         return;
 
-    Utf8String storedUsername = m_secureStore->Decrypt(m_localState.GetValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser).asString().c_str());
+    Utf8String storedUsername = GetLastUsername();
     if (storedUsername.empty())
         return;
 
@@ -387,5 +408,5 @@ void ConnectSignInManager::StoreSignedInUser()
     {
     UserInfo info = GetUserInfo();
     BeAssert(!info.username.empty());
-    m_localState.SaveValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
+    m_localState.SaveJsonValue(LOCALSTATE_Namespace, LOCALSTATE_SignedInUser, m_secureStore->Encrypt(info.username.c_str()));
     }

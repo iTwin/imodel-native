@@ -190,6 +190,8 @@ struct DataSourceCache : public IDataSourceCache
         WSCACHE_EXPORT BentleyStatus SetResponseAccessDate(CachedResponseKeyCR responseKey, DateTimeCR utcDateTime = DateTime::GetCurrentTimeUtc()) override;
         WSCACHE_EXPORT DateTime ReadResponseAccessDate(CachedResponseKeyCR responseKey) override;
 
+        WSCACHE_EXPORT bset<CachedResponseKey> GetResponsesContainingInstance(ECInstanceKeyCR instance, Utf8StringCR responseName = "") override;
+
         WSCACHE_EXPORT CachedObjectInfo GetCachedObjectInfo(ECInstanceKeyCR instance) override;
         WSCACHE_EXPORT CachedObjectInfo GetCachedObjectInfo(ObjectIdCR objectId) override;
 

@@ -8,7 +8,7 @@
 #pragma once
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbServerResult.h>
-#include <DgnClientFx/Utils/Http/HttpRequest.h>
+#include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/LocksManager.h>
 
@@ -54,7 +54,6 @@ namespace ServerSchema
         {
         static Utf8CP Id = "Id";
         static Utf8CP RepositoryName = "RepositoryName";
-        static Utf8CP ProjectId = "ProjectId";
         static Utf8CP FileName = "FileName";
         static Utf8CP FileId = "FileId";
         static Utf8CP Index = "Index";
@@ -70,13 +69,16 @@ namespace ServerSchema
         static Utf8CP Published = "Published";
         static Utf8CP ObjectId = "ObjectId";
         static Utf8CP ObjectIds = "ObjectIds";
+        static Utf8CP QueryOnly = "QueryOnly";
         static Utf8CP LockType = "LockType";
         static Utf8CP LockLevel = "LockLevel";
         static Utf8CP URL = "URL";
         static Utf8CP IsUploaded = "IsUploaded";
         static Utf8CP ReleasedWithRevision = "ReleasedWithRevision";
+        static Utf8CP ReleasedWithRevisionIndex = "ReleasedWithRevisionIndex";
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
+        static Utf8CP CodesRequiresPull = "CodesRequiresPull";
 		static Utf8CP EventServiceSASToken = "EventServiceSASToken";
 		static Utf8CP BaseAddress = "BaseAddress";
         static Utf8CP EventTypes = "EventTypes";
@@ -84,11 +86,16 @@ namespace ServerSchema
         static Utf8CP AuthorityId = "AuthorityId";
         static Utf8CP Namespace = "Namespace";
         static Utf8CP Value = "Value";
+        static Utf8CP Values = "Values";
         static Utf8CP StateRevision = "StateRevision";
+        static Utf8CP StateRevisionIndex = "StateRevisionIndex";
         static Utf8CP State = "State";
+        static Utf8CP CodeStateInvalid = "CodeStateInvalid";
+        static Utf8CP ConflictingCodes = "ConflictingCodes";
+        static Utf8CP CodesNotFound = "CodesNotFound";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
-    static Utf8CP DeleteAllCodes = "DeleteAll";
+    static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
     }
 
 namespace Locks
@@ -132,7 +139,7 @@ struct CallbackQueue
         void Notify();
         struct Callback
             {
-            DgnClientFx::Utils::HttpRequest::ProgressCallback callback;
+            Http::Request::ProgressCallback callback;
             CallbackQueue& m_queue;
             double m_bytesTransfered;
             double m_bytesTotal;
@@ -140,11 +147,11 @@ struct CallbackQueue
             };
         friend struct CallbackQueue::Callback;
         bvector<std::shared_ptr<CallbackQueue::Callback>> m_callbacks;
-        DgnClientFx::Utils::HttpRequest::ProgressCallbackCR m_callback;
+        Http::Request::ProgressCallbackCR m_callback;
     public:
-        CallbackQueue(DgnClientFx::Utils::HttpRequest::ProgressCallbackCR callback);
+        CallbackQueue(Http::Request::ProgressCallbackCR callback);
 
-        DgnClientFx::Utils::HttpRequest::ProgressCallbackCR NewCallback();
+        Http::Request::ProgressCallbackCR NewCallback();
     };
 
 //=======================================================================================

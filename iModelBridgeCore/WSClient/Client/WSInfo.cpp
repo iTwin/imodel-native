@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSInfo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -36,7 +36,7 @@ m_type(serverType)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSInfo::WSInfo(HttpResponseCR response) : WSInfo()
+WSInfo::WSInfo(Http::ResponseCR response) : WSInfo()
     {
     if (!response.IsSuccess())
         {
@@ -137,7 +137,7 @@ void WSInfo::ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersio
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSInfo::ParseInfoPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
+void WSInfo::ParseInfoPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
     Utf8String contentType = response.GetHeaders().GetContentType();
     if (Utf8String::npos == contentType.find("application/json"))
@@ -145,7 +145,10 @@ void WSInfo::ParseInfoPage(HttpResponseCR response, Type& typeOut, BeVersion& se
         return;
         }
 
-    Json::Value infoJson = response.GetBody().AsJson();
+    Json::Value infoJson;
+    if (!Json::Reader::Parse(response.GetBody().AsString(), infoJson))
+        infoJson = Json::Value::null;
+
     JsonValueCR serverVersionJson = infoJson[INFO_ServerVersion];
     if (!serverVersionJson.isString())
         {
@@ -160,7 +163,7 @@ void WSInfo::ParseInfoPage(HttpResponseCR response, Type& typeOut, BeVersion& se
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSInfo::ParseAboutPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
+void WSInfo::ParseAboutPage(Http::ResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut)
     {
     Utf8String contentType = response.GetHeaders().GetContentType();
     if (Utf8String::npos == contentType.find("text/html"))

@@ -9,12 +9,10 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/WebServices.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
+#include <BeHttp/Credentials.h>
 #include <WebServices/Connect/ITokenStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014

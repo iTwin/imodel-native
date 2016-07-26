@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
