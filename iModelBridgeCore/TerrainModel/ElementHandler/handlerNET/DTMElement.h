@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElement.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -786,6 +786,7 @@ internal:
 
         DTMElement (Bentley::DgnPlatformNET::DgnModel^ model, Element^ templateElement, TerrainModelNET::DTM^ dtm);
 
+        static void RegisterManagedElementHandler();
         TerrainModelNET::DTM^ GetDTM ();
 
         property bool CanHaveSymbologyOverride
