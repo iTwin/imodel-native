@@ -121,7 +121,7 @@ CCompOpts + -D__CPP__
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if $(BUILD_TOOLSET) == "CLANG"
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
     OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
     LLVMCommonCompOpts + -Wno-error=implicit-function-declaration
 %endif
@@ -461,7 +461,7 @@ CCompOpts + -D__CPP__
 
 %endif
 
-%if $(BUILD_TOOLSET) == "CLANG"
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
     LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
 %endif
 
