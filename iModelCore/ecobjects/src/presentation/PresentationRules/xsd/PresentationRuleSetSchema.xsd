@@ -368,6 +368,7 @@
             <xs:attribute name="AcceptableClassNames" type="xs:string"/>
             <xs:attribute name="AcceptablePolymorphically" type="xs:boolean" default="false"/>
             <xs:attribute name="OnlyIfNotHandled" type="xs:boolean" default="false"/>
+            <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
             <xs:attributeGroup ref="PriorityAttribute"/>
         </xs:complexType>
     </xs:element>
@@ -382,6 +383,7 @@
             <xs:attribute name="InstanceFilter" type="xs:string"/>
             <xs:attribute name="ClassNames" type="xs:string" use="required"/>
             <xs:attributeGroup ref="PriorityAttribute"/>
+            <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ContentRelatedInstances">
@@ -405,6 +407,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:attribute>
+            <xs:attribute name="ShowImages" type="xs:boolean" default="false"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RelatedProperties">

@@ -26,16 +26,17 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentSpecification : PresentationRuleSpecificat
     {
 private:
     int                                  m_priority;
+    bool                                 m_showImages;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
     HiddenPropertiesSpecificationList    m_hiddenPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
-    ECOBJECTS_EXPORT ContentSpecification ();
+    ECOBJECTS_EXPORT ContentSpecification();
 
     //! Constructor.
-    ECOBJECTS_EXPORT ContentSpecification (int priority);
+    ECOBJECTS_EXPORT ContentSpecification(int priority, bool showImages = false);
 
     //! Returns XmlElement name that is used to read/save this rule information.
     virtual CharCP                       _GetXmlElementName () const = 0;
@@ -61,6 +62,12 @@ public:
 
     //! Sets the priority of the specification.
     ECOBJECTS_EXPORT void                                 SetPriority (int value);
+
+    //! Should ImageIds be determined for the content.
+    bool GetShowImages() const {return m_showImages;}
+
+    //! Sets whether ImageIds should be determined for the content.
+    void SetShowImages(bool value) {m_showImages = value;}
 
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
     ECOBJECTS_EXPORT RelatedPropertiesSpecificationList const&   GetRelatedProperties(void) const;
