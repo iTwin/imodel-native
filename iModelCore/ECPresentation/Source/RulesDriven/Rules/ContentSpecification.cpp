@@ -16,14 +16,13 @@ USING_NAMESPACE_BENTLEY_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentSpecification::ContentSpecification () : m_priority (1000)
-    {
-    }
+ContentSpecification::ContentSpecification() : m_priority(1000) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentSpecification::ContentSpecification (int priority) : m_priority (priority)
+ContentSpecification::ContentSpecification(int priority, bool showImages)
+    : m_priority(priority), m_showImages(showImages)
     {
     }
 
@@ -43,8 +42,11 @@ ContentSpecification::~ContentSpecification ()
 bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
     {
     //Optional:
-    if (BEXML_Success != xmlNode->GetAttributeInt32Value (m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
+    if (BEXML_Success != xmlNode->GetAttributeInt32Value(m_priority, COMMON_XML_ATTRIBUTE_PRIORITY))
         m_priority = 1000;
+
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_showImages, CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES))
+        m_showImages = false;
     
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (xmlNode, m_hiddenPropertiesSpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
@@ -60,7 +62,8 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     {
     BeXmlNodeP specificationNode = parentXmlNode->AddEmptyElement (_GetXmlElementName ());
 
-    specificationNode->AddAttributeInt32Value   (COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
+    specificationNode->AddAttributeInt32Value(COMMON_XML_ATTRIBUTE_PRIORITY, m_priority);
+    specificationNode->AddAttributeBooleanValue(CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES, m_showImages);
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
     CommonTools::WriteRulesToXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (specificationNode, m_hiddenPropertiesSpecification);
