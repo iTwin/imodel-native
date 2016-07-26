@@ -30,7 +30,7 @@ CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki
 #----------------------------------------------------------------------
 PchCompiland        = $(unitsSrc)src\UnitsPch.cpp
 PchOutputDir        = $(o)
-%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
