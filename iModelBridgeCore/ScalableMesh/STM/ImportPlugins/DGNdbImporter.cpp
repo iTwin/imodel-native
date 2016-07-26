@@ -208,7 +208,9 @@ private:
                                 {
                                 RenderMaterialMapPtr      patternMap = renderMat->_GetMap(RENDER_MATERIAL_MAP_Pattern);
                                 if (patternMap.IsValid())
+                                    {
                                     ImageBufferPtr data = patternMap->_GetImage(*m_database);
+                                    }
                                 }
                             mesh->Triangulate();
                             pts.insert(pts.end(), mesh->GetPointCP(), mesh->GetPointCP() + mesh->GetPointCount());

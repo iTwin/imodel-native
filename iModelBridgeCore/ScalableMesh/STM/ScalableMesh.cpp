@@ -1567,21 +1567,26 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
-            VuPolygonClassifier vu(1e-8, 0);
-            vu.ClassifyAUnionB(bound, current);
-            bvector<DPoint3d> xyz;
-            for (; vu.GetFace(xyz);)
+            if (current.empty()) current = bound;
+            else
                 {
-                DRange3d rangeXYZ = DRange3d::From(xyz);
-                if (rangeXYZ.XLength() * rangeXYZ.YLength() >= rangeCurrent.XLength() * rangeCurrent.YLength())
+                VuPolygonClassifier vu(1e-8, 0);
+                vu.ClassifyAUnionB(bound, current);
+                bvector<DPoint3d> xyz;
+                for (; vu.GetFace(xyz);)
                     {
-                    current = xyz;
-                    rangeCurrent = rangeXYZ;
+                    DRange3d rangeXYZ = DRange3d::From(xyz);
+                    if (rangeXYZ.XLength() * rangeXYZ.YLength() >= rangeCurrent.XLength() * rangeCurrent.YLength())
+                        {
+                        current = xyz;
+                        rangeCurrent = rangeXYZ;
+                        }
                     }
                 }
             }
         }
     if (current.size() == 0) return ERROR;
+
     boundary = current;
     return SUCCESS;
     }

@@ -148,7 +148,7 @@ void BuildSubResolutionRoad(PolyfaceHeaderPtr& result, JsonValueR resInfo, DgnEl
 void OpenProject()
     {
     DbResult openStatus;
-    BeFileName fileName = BeFileName(L"E:\\HRGreen_Demo.dgndb");
+    BeFileName fileName = BeFileName(L"E:\\Glendale.dgndb");
     mainProject = DgnDb::OpenDgnDb(&openStatus, fileName, DgnDb::OpenParams(Db::OpenMode::Readonly));
     DPoint3d scale = DPoint3d::From(1, 1, 1);
     mainProject->Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
@@ -233,6 +233,56 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
     return true;
     }
 
+
+void ExportRoadsToFile(const char* fileName)
+    {
+    FILE* f = fopen(fileName, "wb");
+    auto model = mainProject->Models().GetModel(mainProject->Models().QueryFirstModelId());
+    model->FillModel();
+    for (auto element = model->begin(); element != model->end(); element++)
+        {
+        DgnElementCPtr elem = element->second;
+        if (nullptr != elem->ToGeometrySource3d() && (RoadSegment::QueryClassId(*mainProject) == DgnClassId(elem->GetElementClass()->GetId()) || IntersectionSegment::QueryClassId(*mainProject) == DgnClassId(elem->GetElementClass()->GetId())))
+            {
+            Transform transformToWorld;
+            Placement3dCR placement = elem->ToGeometrySource3d()->GetPlacement();
+            transformToWorld = placement.GetTransform();
+            bvector<int32_t> indices;
+            bvector<DPoint3d> pts;
+            ElementGeometryCollection collection(*mainProject, dynamic_cast<const GeometricElement3d*>(elem.get())->GetGeomStream());
+            size_t offset = 0;
+            for (ElementGeometryPtr geometry : collection)
+                {
+                geometry->TransformInPlace(transformToWorld);
+                PolyfaceHeaderPtr mesh = geometry->GetAsPolyfaceHeader();
+                if (!mesh.IsValid()) continue;
+
+                mesh->Triangulate();
+                pts.insert(pts.end(), mesh->GetPointCP(), mesh->GetPointCP() + mesh->GetPointCount());
+                PolyfaceVisitorPtr vis = PolyfaceVisitor::Attach(*mesh);
+                bvector<int> &pointIndex = vis->ClientPointIndex();
+                for (vis->Reset(); vis->AdvanceToNextFace();)
+                    {
+                    indices.push_back(pointIndex[0] + 1 + (int)offset);
+                    indices.push_back(pointIndex[1] + 1 + (int)offset);
+                    indices.push_back(pointIndex[2] + 1 + (int)offset);
+                    }
+                offset = pts.size();
+                }
+            fwrite(&offset, sizeof(size_t), 1, f);
+            if (pts.size() > 0)
+                fwrite(&pts[0], sizeof(DPoint3d), offset, f);
+            size_t nIndices = indices.size();
+            fwrite(&nIndices, sizeof(size_t), 1, f);
+            if (indices.size() > 0)
+                fwrite(&indices[0], sizeof(int32_t), nIndices, f);
+            }
+        }
+
+    fclose(f);
+    }
+
+
 AppHost libHost;
 int wmain(int argc, wchar_t* argv[])
 {
@@ -253,11 +303,11 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     DgnDomains::RegisterDomain(ConceptualDomain::GetDomain());
 
-    //create a scalable mesh
+    /*//create a scalable mesh
     StatusInt createStatus;
     BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\test_dgndb_lod_hr2.stm", createStatus));
-    if (!mainProject.IsValid()) OpenProject();
-    if (creatorPtr == 0)
+   */ if (!mainProject.IsValid()) OpenProject();
+   /* if (creatorPtr == 0)
         {
         printf("ERROR : cannot create STM file\r\n");
         }
@@ -266,7 +316,9 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     creatorPtr->SetUserFilterCallback(&FilterElement);
     creatorPtr->Create(true);
     creatorPtr->SaveToFile();
-    creatorPtr = nullptr;
+    creatorPtr = nullptr;*/
+
+    ExportRoadsToFile("e:\\output\\roads.mesh");
 
     std::cout << "THE END" << std::endl;
     return 0;
