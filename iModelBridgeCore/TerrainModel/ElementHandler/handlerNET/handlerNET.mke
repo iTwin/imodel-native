@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: ElementHandler/handlerNET/handlerNET.mke $
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
@@ -104,7 +104,6 @@ DLM_NO_DLS        = 1
 LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyGeom.lib
 #LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)TerrainModelCore.lib
 #LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)TerrainModelFormats.lib
-LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)mdlbltin.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelElementHandler.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.DgnPlatformNET.lib
