@@ -26,7 +26,7 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(std::numeric_limits<size_t>::max())
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -126,6 +126,29 @@ ECObjectsStatus ECProperty::SetDescription (Utf8StringCR description)
     return ECObjectsStatus::Success;
     }
 
+//Helper method to resolve primitive type of any ECProperty, if available
+bool ResolvePrimitiveType(ECPropertyCP prop, PrimitiveType& type)
+    {
+    if (prop == nullptr)
+        return false;
+
+    if (prop->GetIsPrimitive())
+        {
+        PrimitiveECPropertyCP prim = prop->GetAsPrimitiveProperty();
+        type = prim->GetType();
+        return true;
+        }
+
+    if (prop->GetIsPrimitiveArray())
+        {
+        ArrayECPropertyCP arr = prop->GetAsArrayProperty();
+        type = arr->GetPrimitiveElementType();
+        return true;
+        }
+
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -133,6 +156,24 @@ ECObjectsStatus ECProperty::SetMinimumValue(ECValueCR min)
     {
     if (min.IsNull() || min.IsStruct())
         return ECObjectsStatus::DataTypeNotSupported;
+
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (pt != PrimitiveType::PRIMITIVETYPE_Double &&
+        pt != PrimitiveType::PRIMITIVETYPE_Integer &&
+        pt != PrimitiveType::PRIMITIVETYPE_Long)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (min.GetPrimitiveType() != pt)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
 
     m_minimumValue = min;
     return ECObjectsStatus::Success;
@@ -174,6 +215,24 @@ ECObjectsStatus ECProperty::SetMaximumValue(ECValueCR max)
     if (max.IsNull() || max.IsStruct())
         return ECObjectsStatus::DataTypeNotSupported;
 
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (pt != PrimitiveType::PRIMITIVETYPE_Double &&
+        pt != PrimitiveType::PRIMITIVETYPE_Integer &&
+        pt != PrimitiveType::PRIMITIVETYPE_Long)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (max.GetPrimitiveType() != pt)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
     m_maximumValue = max;
     return ECObjectsStatus::Success;
     }
@@ -209,35 +268,56 @@ ECObjectsStatus ECProperty::GetMaximumValue(ECValueR value) const
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::SetMaximumLength(size_t max)
+ECObjectsStatus ECProperty::SetMaximumLength(uint32_t max)
     {
-    m_maximumLength = max; //possibly check if data type is string or byte
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    if (pt != PrimitiveType::PRIMITIVETYPE_String &&
+        pt != PrimitiveType::PRIMITIVETYPE_Binary)
+        {
+        return ECObjectsStatus::DataTypeNotSupported;
+        }
+
+    m_maximumLength = max;
     return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECProperty::IsMaximumLengthDefined() const
+void ECProperty::_AdjustMinMaxAfterTypeChange()
     {
-    return std::numeric_limits<size_t>::max() != m_maximumLength;
-    }
+    PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
+    if (!ResolvePrimitiveType(this, pt))
+        {
+        m_maximumValue.SetToNull();
+        m_minimumValue.SetToNull();
+        m_maximumLength = 0;
+        return;
+        }
 
-/*---------------------------------------------------------------------------------**//**
-@bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECProperty::ResetMaximumLength()
-    {
-    m_maximumLength = std::numeric_limits<size_t>::max();
-    }
+    if (pt == PrimitiveType::PRIMITIVETYPE_Integer || pt == PrimitiveType::PRIMITIVETYPE_Long || pt == PrimitiveType::PRIMITIVETYPE_Double)
+        {
+        if (!m_maximumValue.ConvertToPrimitiveType(pt))
+            m_maximumValue.SetToNull();
 
-/*---------------------------------------------------------------------------------**//**
-@bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECProperty::GetMaximumLength(size_t& length) const
-    {
-    length = m_maximumLength;
-    return ECObjectsStatus::Success; //possibly check if data type is string or byte
+        if (!m_minimumValue.ConvertToPrimitiveType(pt))
+            m_minimumValue.SetToNull();
+
+        m_maximumLength = 0;
+        return;
+        }
+
+    if (pt == PrimitiveType::PRIMITIVETYPE_String || pt == PrimitiveType::PRIMITIVETYPE_Binary)
+        {
+        m_maximumValue.SetToNull();
+        m_minimumValue.SetToNull();
+        return;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -390,7 +470,7 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     uint32_t maxLength;
     if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
         {
-        m_maximumLength = (size_t)maxLength;
+        SetMaximumLength(maxLength);
         }
 
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)    
@@ -464,7 +544,7 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
 
     if (IsMaximumLengthDefined())
         {
-        xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, (uint64_t)m_maximumLength);
+        xmlWriter.WriteAttribute(MAXIMUM_LENGTH_ATTRIBUTE, m_maximumLength);
         }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
@@ -497,6 +577,7 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
         LOG.errorv("Invalid ECSchemaXML: %s element %s must contain a %s attribute", propertyNode.GetName(), this->GetName().c_str(), TYPE_NAME_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
+
     else if (ECObjectsStatus::ParseError == this->SetTypeName (value.c_str()))
         LOG.warningv ("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", GetName().c_str(), GetTypeName().c_str());
 
@@ -647,6 +728,7 @@ ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
         {
         m_primitiveType = primitiveType;        
         SetCachedTypeAdapter (NULL);
+        _AdjustMinMaxAfterTypeChange();
         InvalidateClassLayout();
         }
 
@@ -766,6 +848,7 @@ SchemaReadStatus ExtendedTypeECProperty::ReadExtendedTypeAndKindOfQuantityXml(Be
         SetKindOfQuantity(kindOfQuantity);
         }
 
+    _AdjustMinMaxAfterTypeChange();
     return SchemaReadStatus::Success;
     }
 
@@ -1182,6 +1265,7 @@ ECObjectsStatus ArrayECProperty::SetPrimitiveElementType (PrimitiveType primitiv
 
     SetCachedTypeAdapter (NULL);
     SetCachedMemberTypeAdapter (NULL);
+    _AdjustMinMaxAfterTypeChange();
     InvalidateClassLayout();
  
     return ECObjectsStatus::Success;

@@ -674,7 +674,7 @@ private:
     Utf8String              m_description;
     ECValue                 m_minimumValue;
     ECValue                 m_maximumValue;
-    size_t                  m_maximumLength;
+    uint32_t                  m_maximumLength;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
@@ -695,6 +695,7 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor);
     SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
     virtual Utf8String                  _GetTypeNameForXml(int ecXmlVersionMajor) const { return GetTypeName(); }
+    void                                _AdjustMinMaxAfterTypeChange();
 
     virtual bool                        _IsPrimitive () const { return false; }
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
@@ -827,13 +828,13 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    GetMaximumValue(ECValueR value) const;
 
     //! Sets the maximum length (bytes, characters) for this property
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumLength(size_t max);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumLength(uint32_t max);
     //! Gets whether the maximum length has been defined explicitly
-    ECOBJECTS_EXPORT bool               IsMaximumLengthDefined() const;
+    bool               IsMaximumLengthDefined() const { return m_maximumLength > 0; }
     //! Removed any maximum length that might have been applied to this property
-    ECOBJECTS_EXPORT void               ResetMaximumLength();
+    void               ResetMaximumLength() { m_maximumLength = 0; }
     //! Gets the maximum length(string, byte) for this ECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus    GetMaximumLength(size_t& length) const;
+    uint32_t           GetMaximumLength() const { return m_maximumLength; }
 
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
