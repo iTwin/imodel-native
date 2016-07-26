@@ -16,6 +16,38 @@ struct ECRelationshipTests : ECTestFixture
     {
     ECSchemaPtr m_schema;
 
+    //struct ECRelationshipInstanceInterface : IECWipRelationshipInstance
+    //    {
+    //    private:
+    //        StandaloneECInstancePtr m_standaloneInstance;
+    //    public:
+    //        ECRelationshipInstanceInterface (StandaloneECEnablerR enabler) : IECWipRelationshipInstance (enabler) 
+    //            {
+    //            m_standaloneInstance = enabler.CreateInstance ();
+    //            }
+
+    //        virtual BentleyStatus  _SetName (Utf8CP name) override
+    //            {
+    //            if (ECObjectsStatus::Success == m_standaloneInstance->SetValue ("Name", ECValue (name)))
+    //                return SUCCESS;
+    //            return ERROR;
+    //            }
+
+    //        virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) override
+    //            {
+    //            if (ECObjectsStatus::Success == m_standaloneInstance->SetValue ("SourceOrderId", ECValue ((int32_t)sourceOrderId)))
+    //                return SUCCESS;
+    //            return ERROR;
+    //            }
+
+    //        virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) override
+    //            {
+    //            if (ECObjectsStatus::Success == m_standaloneInstance->SetValue ("TargetOrderId", ECValue ((int32_t)targetOrderId)))
+    //                return SUCCESS;
+    //            return ERROR;
+    //            }
+    //    };
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                                    JoshSchifter    12/09
     +---------------+---------------+---------------+---------------+---------------+------*/
