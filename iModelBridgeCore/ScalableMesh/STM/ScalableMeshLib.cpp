@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"
 #include "ScalableMeshFileMoniker.h"
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include "SMMemoryPool.h"
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -36,6 +38,7 @@ void RegisterPODImportPlugin();
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
+    SMMemoryPool::GetInstance();
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     InitializeProgressiveQueries();
     RegisterPODImportPlugin();

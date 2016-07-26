@@ -99,6 +99,13 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
     return true;    
     }
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {                        
+    dataStore = new SMSQLiteNodeDataStore<MTGGraph, EXTENT>(SMStoreDataType::Graph, nodeHeader, m_smSQLiteFile);
+                    
+    return true;    
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {                        
     dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile);
@@ -135,43 +142,8 @@ template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>:
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
     {     
     assert(!"Should not be called");
-
-    int64_t id = SQLiteNodeHeader::NO_NODEID;
-
-    if (m_dataType == SMStoreDataType::PointAndTriPtIndices)
-        {
-        assert(!"Not done yet");
-        }
-    else
-        {
-        HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-        pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(DATATYPE));
-        pi_uncompressedPacket.SetDataSize(countData*sizeof(DATATYPE));
-        WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
-        bvector<uint8_t> nodeData(pi_compressedPacket.GetDataSize());
-        memcpy(&nodeData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
-        
-        switch (m_dataType)
-            {
-            case SMStoreDataType::Points : 
-                m_smSQLiteFile->StorePoints(id, nodeData, countData*sizeof(DATATYPE));
-                break;
-            case SMStoreDataType::TriPtIndices : 
-                m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));            
-                break;            
-            case SMStoreDataType::UvCoords : 
-                m_smSQLiteFile->StoreUVs(id, nodeData, countData*sizeof(DATATYPE));
-                break;
-            case SMStoreDataType::TriUvIndices : 
-                m_smSQLiteFile->StoreUVIndices(id, nodeData, countData*sizeof(DATATYPE));                
-                break;                                
-            default : 
-                assert(!"Unsupported type");
-                break;
-            }
-        }
-        
-    return HPMBlockID(id);
+   
+    return HPMBlockID(-1);
     }
 
 
@@ -199,7 +171,7 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
     m_smSQLiteFile->StoreTexture(id, texData, pi_uncompressedPacket.GetDataSize()); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
     return HPMBlockID(id);
     }
-
+    
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);    
@@ -212,9 +184,23 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         return StoreTexture(DataTypeArray, countData, blockID);
         }
 
+    size_t dataSize;
+    void* dataBuffer; 
+
+    if (m_dataType == SMStoreDataType::Graph)
+        {
+        assert(typeid(DATATYPE) == typeid(MTGGraph));
+        dataSize = ((MTGGraph*)DataTypeArray)->WriteToBinaryStream(dataBuffer);        
+        }
+    else
+        {
+        dataSize = countData*sizeof(DATATYPE);
+        dataBuffer = DataTypeArray;
+        }
+
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
-    pi_uncompressedPacket.SetBuffer(DataTypeArray, countData*sizeof(DATATYPE));
-    pi_uncompressedPacket.SetDataSize(countData*sizeof(DATATYPE));
+    pi_uncompressedPacket.SetBuffer(dataBuffer, dataSize);
+    pi_uncompressedPacket.SetDataSize(dataSize);
     WriteCompressedPacket(pi_uncompressedPacket, pi_compressedPacket);
     bvector<uint8_t> nodeData(pi_compressedPacket.GetDataSize());
     memcpy(&nodeData[0], pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
@@ -228,12 +214,16 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
         case SMStoreDataType::TriPtIndices : 
             m_smSQLiteFile->StoreIndices(id, nodeData, countData*sizeof(DATATYPE));                        
             break;
-        case SMStoreDataType::UvCoords : 
-            m_smSQLiteFile->StoreUVs(id, nodeData, countData*sizeof(DATATYPE));
-            break;
         case SMStoreDataType::TriUvIndices : 
             m_smSQLiteFile->StoreUVIndices(id, nodeData, countData*sizeof(DATATYPE));                            
             break;                    
+        case SMStoreDataType::Graph : 
+            m_smSQLiteFile->StoreGraph(id, nodeData, dataSize);
+            free(dataBuffer);
+            break;                                
+        case SMStoreDataType::UvCoords : 
+            m_smSQLiteFile->StoreUVs(id, nodeData, countData*sizeof(DATATYPE));
+            break;        
         default : 
             assert(!"Unsupported type");
             break;
@@ -256,20 +246,23 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     switch (dataType)
         {
+        case SMStoreDataType::Graph : 
+            return 1; 
+            break;
         case SMStoreDataType::Points : 
             blockDataCount = m_nodeHeader->m_nodeCount;            
             break;
         case SMStoreDataType::TriPtIndices : 
             blockDataCount = m_nodeHeader->m_nbFaceIndexes;            
-            break;
-        case SMStoreDataType::UvCoords : 
-            blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DATATYPE);
-            break;
+            break;                  
         case SMStoreDataType::TriUvIndices :             
             blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::Texture :
             blockDataCount = m_smSQLiteFile->GetTextureByteCount(blockID.m_integerID) + 3 * sizeof(int);
+            break;
+        case SMStoreDataType::UvCoords : 
+            blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DATATYPE);
             break;
 
         default : 
@@ -289,6 +282,8 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
 
 template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) 
     {    
+    assert(SMStoreDataType::Graph != m_dataType);
+
     switch (m_dataType)
         {
         case SMStoreDataType::Points : 
@@ -392,10 +387,13 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         }
 
     bvector<uint8_t> nodeData;
-    size_t uncompressedSize = 0;
+    size_t uncompressedSize = 0;        
 
     switch (m_dataType)
-        {
+        {        
+        case SMStoreDataType::Graph : 
+            m_smSQLiteFile->GetGraph(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
         case SMStoreDataType::Points : 
             m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
             break;
@@ -416,10 +414,33 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
     pi_compressedPacket.SetDataSize(nodeData.size());
-    pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
+
+    if (m_dataType == SMStoreDataType::Graph)
+        {
+        pi_uncompressedPacket.SetBuffer(DataTypeArray, uncompressedSize);
+        }
+    else
+        {
+        assert(uncompressedSize == maxCountData*sizeof(DATATYPE));
+        pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
+        }
+
     pi_uncompressedPacket.SetBufferOwnership(false);
     LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
-                
+
+    if (m_dataType == SMStoreDataType::Graph)
+        {
+        assert(typeid(DATATYPE) == typeid(MTGGraph));
+        
+        if(uncompressedSize > 0) 
+            {
+            MTGGraph * graph = new(DataTypeArray)MTGGraph(); //some of the memory managers call malloc but not the constructor            
+            graph->LoadFromBinaryStream(pi_uncompressedPacket.GetBufferAddress(), uncompressedSize);
+            }
+
+        return 1;       
+        }                
+
     return std::min(uncompressedSize, maxCountData*sizeof(DATATYPE));        
     }
 
