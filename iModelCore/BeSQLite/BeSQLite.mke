@@ -57,7 +57,7 @@ objs +% $(MultiCompileObjectList)
 CCompFpOpts=precise
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if $(BUILD_TOOLSET) == "CLANG"
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
     OriginalLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
 
     # Disables all warnings (and implicitly warnings as errors)
@@ -67,7 +67,7 @@ CCompFpOpts=precise
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
             $(SQLiteDir)sqlite3-5.c $(SQLiteDir)closure.c 
 
-%if $(BUILD_TOOLSET) == "CLANG"
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
     LLVMCommonCompOpts =% $(OriginalLLVMCommonCompOpts)
 %endif
 
