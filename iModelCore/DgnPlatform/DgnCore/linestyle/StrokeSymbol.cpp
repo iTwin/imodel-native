@@ -34,9 +34,7 @@ static double getGeometryPartMaxOffset (LsSymbolComponentCR symbol, double angle
     transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
     DRange3d        range;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    symbol._GetRange(range);
-#endif
+    symbol.GetRange(range);
     transform.Multiply(range.low);
     transform.Multiply(range.high);
 
@@ -206,21 +204,17 @@ void LsSymbolComponent::Draw (LineStyleContextR context, TransformCR transform)
         }
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt LsSymbolComponent::_GetRange (DRange3dR range) const
+void LsSymbolComponent::GetRange (DRange3dR range) const
     {
     range.low = m_symBase;  
 
     range.high.x = m_symBase.x + m_symSize.x;
     range.high.y = m_symBase.y + m_symSize.y;
     range.high.z = m_symBase.z + m_symSize.z;
-
-    return BSISUCCESS;
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    12/2015
@@ -336,12 +330,12 @@ double              LsSymbolComponent::GetUnitScale () const { return m_muDef; }
 bool                LsSymbolComponent::IsNoScale () const { return IsNotScaled (); }
 void                LsSymbolComponent::SetIsNoScale (bool value) { m_symFlags = (m_symFlags & ~LSSYM_NOSCALE) | (value ? LSSYM_NOSCALE : 0); }
 bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LSSYM_3D) != 0; }
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 void                LsSymbolComponent::GetRange (DRange3dR range) const 
     { 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     _GetRange (range);
-#endif
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    07/2015
