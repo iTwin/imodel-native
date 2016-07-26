@@ -27,7 +27,7 @@ enum RuleTargetTree
 Base class for all custom PresentationKeys. It represents any presentation configuration.
 * @bsiclass                                     Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationKey
+struct EXPORT_VTABLE_ATTRIBUTE PresentationKey
     {
 private:
     int m_priority;

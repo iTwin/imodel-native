@@ -19,7 +19,7 @@ Label and Description override rule implementation. This rule is used to overrid
 label and description generation algorithm.
 * @bsiclass                                     Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LabelOverride : public PresentationRule
+struct EXPORT_VTABLE_ATTRIBUTE LabelOverride : public PresentationRule
     {
     private:
         Utf8String m_label;
