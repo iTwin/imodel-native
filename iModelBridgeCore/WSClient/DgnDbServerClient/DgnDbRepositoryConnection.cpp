@@ -1252,7 +1252,7 @@ ICancellationTokenPtr cancellationToken
         {
         if (result.IsSuccess())
             {
-            DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue()->AsJson());
+            DgnDbServerEventSubscriptionPtr ptr = DgnDbServerEventParser::GetInstance().ParseEventSubscription(result.GetValue()->AsString());
             if (ptr == nullptr)
                 finalResult->SetError(DgnDbServerError::Id::NoSubscriptionFound);
             finalResult->SetSuccess(ptr);
@@ -1362,11 +1362,11 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 bool DgnDbRepositoryConnection::GetEventServiceResponse
 (
-HttpResponseR returnResponse,
+Http::ResponseR returnResponse,
 bool longpolling
 )
     {
-    HttpResponse response = m_eventServiceClient->MakeReceiveDeleteRequest(longpolling);
+    Http::Response response = m_eventServiceClient->MakeReceiveDeleteRequest(longpolling);
     HttpStatus status = response.GetHttpStatus();
     if (status == HttpStatus::OK || status == HttpStatus::NoContent)
         {
@@ -1410,7 +1410,7 @@ bvector<Utf8CP>& contentTypes,
 bool longpolling
 )
     {
-    HttpResponse response = m_eventServiceClient->MakeReceiveDeleteRequest(longpolling);
+    Http::Response response = m_eventServiceClient->MakeReceiveDeleteRequest(longpolling);
     HttpStatus status = response.GetHttpStatus();
     if (status == HttpStatus::NoContent)
         {
@@ -1440,7 +1440,7 @@ ICancellationTokenPtr cancellationToken
     if (m_eventSubscription == nullptr)
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
     
-    HttpResponse response;
+    Http::Response response;
     if (!GetEventServiceResponse(response, longPolling))
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
 

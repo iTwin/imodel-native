@@ -145,7 +145,7 @@ private:
     bool GetEventServiceResponses(bvector<Utf8String>& responseStrings, bvector<Utf8CP>& contentTypes, bool longpolling = true);
 
     //! Get Responses from the EventServiceClient
-    bool GetEventServiceResponse(HttpResponseR returnResponse, bool longpolling = true);
+    bool GetEventServiceResponse(Http::ResponseR returnResponse, bool longpolling = true);
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
