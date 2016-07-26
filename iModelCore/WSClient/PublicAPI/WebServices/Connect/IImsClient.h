@@ -10,14 +10,12 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/SamlToken.h>
-#include <DgnClientFx/Utils/Http/Credentials.h>
-#include <DgnClientFx/Utils/Http/HttpError.h>
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
-#include <DgnClientFx/Utils/Threading/AsyncResult.h>
+#include <BeHttp/Credentials.h>
+#include <BeHttp/HttpError.h>
+#include <Bentley/Tasks/AsyncTask.h>
+#include <Bentley/Tasks/AsyncResult.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef AsyncResult<SamlTokenPtr, HttpError> SamlTokenResult;
 

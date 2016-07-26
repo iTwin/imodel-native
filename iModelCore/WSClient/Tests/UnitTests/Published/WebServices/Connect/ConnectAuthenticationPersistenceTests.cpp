@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationPersistenceTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -49,7 +49,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredIn
     ConnectAuthenticationPersistence::CustomInitialize(&localState, secureStore);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
 
-    localState.SaveValue("Connect", "Username", "TestUsername");
+    localState.SaveJsonValue("Connect", "Username", "TestUsername");
     secureStore->legacyValues["ConnectLogin"]["TestUsername"] = "TestPassword";
     secureStore->legacyValues["ConnectToken"]["Token"] = "TestToken";
 
@@ -57,7 +57,7 @@ TEST_F(ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredIn
     EXPECT_STREQ("TestUsername", credentials.GetUsername().c_str());
     EXPECT_STREQ("TestPassword", credentials.GetPassword().c_str());
 
-    EXPECT_TRUE(localState.GetValue("Connect", "Username").isNull());
+    EXPECT_TRUE(localState.GetJsonValue("Connect", "Username").isNull());
     EXPECT_STREQ("", secureStore->legacyValues["ConnectLogin"]["TestUsername"].asCString());
     EXPECT_STREQ("", secureStore->legacyValues["ConnectToken"]["Token"].asCString());
 

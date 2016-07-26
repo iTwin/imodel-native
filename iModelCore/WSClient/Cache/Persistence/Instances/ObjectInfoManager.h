@@ -69,6 +69,9 @@ struct ObjectInfoManager : public IECDbAdapter::DeleteListener
 
         BentleyStatus DeleteInstanceLeavingInfo(ObjectInfoR info);
         BentleyStatus RemoveAllCachedInstances();
+
+        //! Return cached instance key when CachedObjectInfoKey is passed. Return same if else 
+        ECInstanceKey ConvertToInstanceKey(ECInstanceKeyCR instanceKey);
     };
 
 typedef const ObjectInfoManager& ObjectInfoManagerCR;

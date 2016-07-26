@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Licensing/FeatureTrackingData.h>
 

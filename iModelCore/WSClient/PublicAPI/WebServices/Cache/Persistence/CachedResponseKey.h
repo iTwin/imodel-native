@@ -44,7 +44,9 @@ struct CachedResponseKey
 
         WSCACHE_EXPORT bool IsValid() const;
 
-        WSCACHE_EXPORT bool operator== (const CachedResponseKey& other) const;
+        WSCACHE_EXPORT bool operator==(const CachedResponseKey& other) const;
+
+        WSCACHE_EXPORT bool operator<(const CachedResponseKey& other) const;
     };
 
 typedef CachedResponseKey& CachedResponseKeyR;

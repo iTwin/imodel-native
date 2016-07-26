@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <DgnClientFx/Utils/SecureStore.h>
+#include <BeSecurity/SecureStore.h>
 #include <Bentley/Base64Utilities.h>
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_SECURITY
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2015

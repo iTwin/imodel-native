@@ -5207,6 +5207,164 @@ TEST_F(DataSourceCacheTests, SetResponseAccessDate_ResponseNotCached_ReturnsErro
     EXPECT_THAT(cache->ReadResponseAccessDate(responseKey).IsValid(), false);
     }
 
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_InstanceNotCached_ReturnsEmpty)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance({"TestSchema.TestClass", "A"}));
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    ASSERT_EQ(0, responces.size());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ResponceWithOneInstance_ReturnsResponceKey)
+    {
+    auto cache = GetTestCache();
+
+    auto key = StubCachedResponseKey(*cache);
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key, instances.ToWSObjectsResponse()));
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    ASSERT_EQ(1, responces.size());
+    EXPECT_EQ(key, *responces.begin());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_TwoResponcesWithSameInstance_ReturnsBothResponceKeys)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+
+    auto key1 = StubCachedResponseKey(*cache, "ResponceName");
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances.ToWSObjectsResponse()));
+
+    auto key2 = StubCachedResponseKey(*cache, "ResponceName2");
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    ASSERT_EQ(2, responces.size());
+    EXPECT_EQ(StubBSet({key1, key2}), responces);
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ExistingNamePassed_ReturnsResponceKeyFilteredByName)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+
+    auto key1 = StubCachedResponseKey(*cache, "ResponceName");
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances.ToWSObjectsResponse()));
+
+    auto key2 = StubCachedResponseKey(*cache, "ResponceName2");
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key2, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance, "ResponceName");
+    ASSERT_EQ(1, responces.size());
+    EXPECT_EQ(key1, *responces.begin());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_NonExistingNamePassed_ReturnsEmpty)
+    {
+    auto cache = GetTestCache();
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+
+    auto key1 = StubCachedResponseKey(*cache, "ResponceName");
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance, "NonExistingName");
+    EXPECT_EQ(0, responces.size());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_InstanceAddedToResponce_ReturnsResponceKey)
+    {
+    auto cache = GetTestCache();
+
+    auto instance = StubCreatedObjectInCache(*cache);
+    auto key1 = StubCachedResponseKey(*cache);
+    ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(key1, instance));
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    ASSERT_EQ(1, responces.size());
+    EXPECT_EQ(key1, *responces.begin());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_HolderPassed_ReturnsResponceKey)
+    {
+    auto cache = GetTestCache();
+
+    ECInstanceKey parentKey = cache->FindOrCreateRoot("Foo");
+    ECInstanceKey holderKey = StubInstanceInCache(*cache);
+    CachedResponseKey key1(parentKey, "A", holderKey);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    EXPECT_EQ(1, responces.size());
+    EXPECT_EQ(key1, *responces.begin());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_HolderInResults_ReturnsResponceKey)
+    {
+    auto cache = GetTestCache();
+
+    ECInstanceKey parentKey = cache->FindOrCreateRoot("Foo");
+    ECInstanceKey holderKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey key1(parentKey, "A", holderKey);
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    EXPECT_EQ(1, responces.size());
+    EXPECT_EQ(key1, *responces.begin());
+    }
+
+TEST_F(DataSourceCacheTests, GetResponsesContainingInstance_ParentInResults_ReturnsResponceKey)
+    {
+    auto cache = GetTestCache();
+
+    ECInstanceKey parentKey = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey key1(parentKey, "A");
+
+    StubInstances instances;
+    instances.Add({"TestSchema.TestClass", "A"});
+
+    ASSERT_EQ(SUCCESS, cache->CacheResponse(key1, instances.ToWSObjectsResponse()));
+
+    auto instance = cache->FindInstance({"TestSchema.TestClass", "A"});
+
+    auto responces = cache->GetResponsesContainingInstance(instance);
+    EXPECT_EQ(1, responces.size());
+    EXPECT_EQ(key1, *responces.begin());
+    }
+
 TEST_F(DataSourceCacheTests, RemoveTemporaryResponses_NoResponsesWithName_ReturnsSuccess)
     {
     auto cache = GetTestCache();

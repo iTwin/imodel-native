@@ -13,8 +13,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
-
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -59,17 +57,17 @@ struct WebApiV1 : public WebApi
         Utf8String CreateWebApiVersionPart(Utf8StringCR webApiVersion) const;
         Utf8String GetMaxWebApi() const;
 
-        HttpRequest CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
+        Http::Request CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
 
         static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut);
-        static WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response);
-        static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId);
-        static WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response);
-        static WSObjectsResult ResolveObjectsResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
-        static WSFileResult ResolveFileResponse(HttpResponse& response, BeFileName filePath);
+        static WSRepositoriesResult ResolveGetRepositoriesResponse(Http::Response& response);
+        static WSCreateObjectResult ResolveCreateObjectResponse(Http::Response& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId);
+        static WSUpdateObjectResult ResolveUpdateObjectResponse(Http::Response& response);
+        static WSObjectsResult ResolveObjectsResponse(Http::Response& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
+        static WSFileResult ResolveFileResponse(Http::Response& response, BeFileName filePath);
 
-        static bool IsValidObjectsResponse(HttpResponseCR response);
-        static bool IsJsonResponse(HttpResponseCR response);
+        static bool IsValidObjectsResponse(Http::ResponseCR response);
+        static bool IsJsonResponse(Http::ResponseCR response);
 
         static bool IsObjectCreationJsonSupported(JsonValueCR objectCreationJson);
         static void GetParametersFromObjectCreationJson
@@ -94,7 +92,7 @@ struct WebApiV1 : public WebApi
             (
             HttpBodyPtr body,
             Utf8StringCR eTag,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback,
+            Http::Request::ProgressCallbackCR downloadProgressCallback,
             ICancellationTokenPtr ct
             ) const;
 
@@ -102,7 +100,7 @@ struct WebApiV1 : public WebApi
             (
             BeFileNameCR filePath,
             Utf8StringCR eTag,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback,
+            Http::Request::ProgressCallbackCR downloadProgressCallback,
             ICancellationTokenPtr ct
             ) const;
 
@@ -149,7 +147,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag = nullptr,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR downloadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -170,7 +168,7 @@ struct WebApiV1 : public WebApi
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -178,7 +176,7 @@ struct WebApiV1 : public WebApi
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -187,7 +185,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -196,7 +194,7 @@ struct WebApiV1 : public WebApi
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag = nullptr,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
 
@@ -210,7 +208,7 @@ struct WebApiV1 : public WebApi
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) const override;
     };

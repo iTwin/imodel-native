@@ -9,12 +9,11 @@
 #include <WebServices/Connect/ImsClient.h>
 
 #include <Bentley/Base64Utilities.h>
-#include <DgnClientFx/Utils/Http/HttpClient.h>
+#include <BeHttp/HttpClient.h>
 #include <WebServices/Connect/SamlToken.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 ImsClientPtr s_client;
 
@@ -126,12 +125,12 @@ uint64_t lifetime
         params["Lifetime"] = Utf8PrintfString("%llu", lifetime);
 
     HttpClient client(m_clientInfo, UrlProvider::GetSecurityConfigurator(m_httpHandler));
-    HttpRequest request = client.CreatePostRequest(stsUrl);
+    Http::Request request = client.CreatePostRequest(stsUrl);
     request.GetHeaders().SetAuthorization(authorization);
     request.GetHeaders().SetContentType("application/json");
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
 
-    return request.PerformAsync()->Then<SamlTokenResult>([] (HttpResponseCR response)
+    return request.PerformAsync()->Then<SamlTokenResult>([] (Http::ResponseCR response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)
             return SamlTokenResult::Error({response});
@@ -139,7 +138,7 @@ uint64_t lifetime
         if (response.GetHttpStatus() != HttpStatus::OK)
             return SamlTokenResult::Error({response});
 
-        Json::Value body = response.GetBody().AsJson();
+        Json::Value body = Json::Reader::DoParse(response.GetBody().AsString());
         if (!body["RequestedSecurityToken"].isString())
             {
             BeAssert(false && "Token not found in IMS response");
@@ -162,7 +161,7 @@ uint64_t lifetime
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImsClient::IsLoginRedirect(HttpResponseCR response)
+bool ImsClient::IsLoginRedirect(Http::ResponseCR response)
     {
     if (HttpStatus::OK != response.GetHttpStatus())
         return false;

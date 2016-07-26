@@ -9,15 +9,14 @@
 #include <WebServices/Connect/ConnectSpaces.h>
 
 #include <DgnClientFx/DgnClientApp.h>
-#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
-#include <DgnClientFx/Utils/Threading/WorkerThreadPool.h>
+#include <BeHttp/HttpStatusHelper.h>
+#include <Bentley/Tasks/WorkerThreadPool.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ImsClient.h>
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define MESSAGE_STRING_FIELD(x) messageObj[(x)].asCString()
@@ -121,9 +120,9 @@ void ConnectSpaces::SetEulaToken(Utf8StringCR token)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson, bool includeToken)
+Http::Request ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson, bool includeToken)
     {
-    HttpRequest request = m_client.CreateGetRequest(url);
+    Http::Request request = m_client.CreateGetRequest(url);
 
     if (includeToken)
         {// TODO: clean this - it's always overridden
@@ -144,7 +143,7 @@ HttpRequest ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson, b
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsRedirectToStsLogin(HttpResponseCR response)
+bool IsRedirectToStsLogin(Http::ResponseCR response)
     {
     return ImsClient::IsLoginRedirect(response);
     }
@@ -242,7 +241,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
     Utf8String usernameLowerCase(ConnectAuthenticationPersistence::GetShared()->GetCredentials().GetUsername());
     usernameLowerCase.ToLower();
     Utf8String url = eulaUrl + "/Agreements/RevokeAgreementService/" + usernameLowerCase;
-    HttpRequest request = m_client.CreatePostRequest(url);
+    Http::Request request = m_client.CreatePostRequest(url);
     request.GetHeaders().SetValue("Content-Type", "application/json");
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
@@ -258,7 +257,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
         }
     request.SetTimeoutSeconds(HTTP_DEFAULT_TIMEOUT);
     request.SetCancellationToken(m_cancelToken);
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
     if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)
@@ -281,8 +280,8 @@ void ConnectSpaces::ResetEula(bool getNewToken)
         if (httpResponse.GetHttpStatus() == HttpStatus::OK)
             {
             SendStatusToUIThread(ResetEulaAction, OK);
-            Json::Value dsData = httpResponse.GetBody().AsJson();
-            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, httpResponse.GetBody().AsJson().asString());
+            Json::Value dsData = Json::Reader::DoParse(httpResponse.GetBody().AsString());
+            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, dsData.asString());
             }
         else
             {
@@ -306,11 +305,11 @@ void ConnectSpaces::CheckEula(bool getNewToken)
         }
 
     Utf8String url = sm_eulaUrlBase + "/state";
-    HttpRequest request = CreateGetRequest(url);
+    Http::Request request = CreateGetRequest(url);
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     m_credentialsCriticalSection.Leave();
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
     if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)
@@ -333,7 +332,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 
         if (httpResponse.GetHttpStatus() == HttpStatus::OK)
             {
-            Json::Value dsData = httpResponse.GetBody().AsJson();
+            Json::Value dsData = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             try
                 {
                 const Json::Value &accepted = dsData["accepted"];
@@ -411,11 +410,11 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     tempPathName.AppendToPath(L"eula.html");
     Utf8String tempPath(tempPathName);
     Utf8String url = sm_eulaUrlBase;
-    HttpRequest request = CreateGetRequest(url);
+    Http::Request request = CreateGetRequest(url);
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     m_credentialsCriticalSection.Leave();
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
     bool retValue = false;
     if (IsRedirectToStsLogin(httpResponse))
         {
@@ -439,7 +438,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 
         if (httpResponse.GetHttpStatus() == HttpStatus::OK)
             {
-            Json::Value dsData = httpResponse.GetBody().AsJson();
+            Json::Value dsData = Json::Reader::DoParse(httpResponse.GetBody().AsString());
             try
                 {
                 const Json::Value &text = dsData["text"];
@@ -482,7 +481,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
         }
 
     Utf8String url = sm_eulaUrlBase + "/state";
-    HttpRequest request = m_client.CreatePostRequest(url);
+    Http::Request request = m_client.CreatePostRequest(url);
     request.GetHeaders().SetValue("Content-Type", "application/json");
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
@@ -502,7 +501,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
     params["accepted"] = true;
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(params));
     request.SetRequestBody(requestBody);
-    HttpResponse httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform();
     if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)

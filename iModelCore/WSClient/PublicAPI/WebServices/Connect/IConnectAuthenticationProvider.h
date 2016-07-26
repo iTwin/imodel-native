@@ -9,11 +9,10 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/WebServices.h>
-#include <DgnClientFx/Utils/Http/AuthenticationHandler.h>
+#include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Vytautas.Barkauskas    01/2016

@@ -165,7 +165,7 @@ AsyncTaskPtr<WSFileResult> WSRepositoryClient::SendGetFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
-HttpRequest::ProgressCallbackCR downloadProgressCallback,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -216,7 +216,7 @@ ICancellationTokenPtr ct
 AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequest
 (
 HttpBodyPtr changeset,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -233,7 +233,7 @@ AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest
 (
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -251,7 +251,7 @@ AsyncTaskPtr<WSCreateObjectResult> WSRepositoryClient::SendCreateObjectRequest
 ObjectIdCR objectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -269,7 +269,7 @@ AsyncTaskPtr<WSUpdateObjectResult> WSRepositoryClient::SendUpdateObjectRequest
 ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -301,7 +301,7 @@ AsyncTaskPtr<WSUpdateFileResult> WSRepositoryClient::SendUpdateFileRequest
 (
 ObjectIdCR objectId,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {

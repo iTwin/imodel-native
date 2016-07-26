@@ -10,7 +10,7 @@
 
 #include <WebServices/WebServices.h>
 #include <WebServices/Connect/IConnectAuthenticationProvider.h>
-#include <DgnClientFx/Utils/Http/IHttpHandler.h>
+#include <BeHttp/IHttpHandler.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE 
 
@@ -30,11 +30,11 @@ struct EulaClient
         IHttpHandlerPtr m_customHandler;
 
     private:
-        HttpRequest CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR action);
+        Http::Request CreateRequest(Utf8StringCR serverUrl, Utf8StringCR requestUrl, Utf8StringCR action);
 
     public:
         WSCLIENT_EXPORT EulaClient(ClientInfoPtr clientInfo, IConnectAuthenticationProvider& authenticationProvider, IHttpHandlerPtr customHandler = nullptr);
-        WSCLIENT_EXPORT ~EulaClient();
+        ~EulaClient() {}
 
         WSCLIENT_EXPORT AsyncTaskPtr<EulaStatusResult> CheckEula();
         WSCLIENT_EXPORT AsyncTaskPtr<EulaDownloadResult> DownloadEula();

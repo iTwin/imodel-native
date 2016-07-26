@@ -39,7 +39,7 @@ bool WebApiV1::IsSupported(WSInfoCR info)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest WebApiV1::CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const
+Http::Request WebApiV1::CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const
     {
     Utf8String params;
 
@@ -207,13 +207,14 @@ BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& response)
+WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(Http::Response& response)
     {
     if (!response.IsSuccess() || !IsJsonResponse(response))
         {
         return WSRepositoriesResult::Error(response);
         }
-    Json::Value responseJson = response.GetBody().AsJson();
+
+    Json::Value responseJson = Json::Reader::DoParse(response.GetBody().AsString());
     if (responseJson.isNull() || !responseJson.isArray())
         {
         return WSRepositoriesResult::Error(response);
@@ -234,9 +235,9 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& resp
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId)
+WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(Http::Response& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId)
     {
-    Utf8String remoteId = response.GetBody().AsJson()["id"].asString();
+    Utf8String remoteId = Json::Reader::DoParse(response.GetBody().AsString())["id"].asString();
     if (HttpStatus::Created == response.GetHttpStatus() && !remoteId.empty())
         {
         Json::Value createdObject;
@@ -267,7 +268,7 @@ WSCreateObjectResult WebApiV1::ResolveCreateObjectResponse(HttpResponse& respons
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jahan.Zeb    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSUpdateObjectResult WebApiV1::ResolveUpdateObjectResponse(HttpResponse& response)
+WSUpdateObjectResult WebApiV1::ResolveUpdateObjectResponse(Http::Response& response)
     {
     if (HttpStatus::OK != response.GetHttpStatus())
         {
@@ -279,7 +280,7 @@ WSUpdateObjectResult WebApiV1::ResolveUpdateObjectResponse(HttpResponse& respons
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsResult WebApiV1::ResolveObjectsResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName)
+WSObjectsResult WebApiV1::ResolveObjectsResponse(Http::Response& response, Utf8StringCR schemaName, Utf8StringCR objectClassName)
     {
     if (!IsValidObjectsResponse(response))
         {
@@ -305,7 +306,7 @@ WSObjectsResult WebApiV1::ResolveObjectsResponse(HttpResponse& response, Utf8Str
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool WebApiV1::IsValidObjectsResponse(HttpResponseCR response)
+bool WebApiV1::IsValidObjectsResponse(Http::ResponseCR response)
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::NotModified == status)
@@ -322,7 +323,7 @@ bool WebApiV1::IsValidObjectsResponse(HttpResponseCR response)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool WebApiV1::IsJsonResponse(HttpResponseCR response)
+bool WebApiV1::IsJsonResponse(Http::ResponseCR response)
     {
     if (Utf8String(response.GetHeaders().GetContentType()).find("application/json") != Utf8String::npos)
         {
@@ -393,7 +394,7 @@ ObjectIdR parentObjectIdOut
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSFileResult WebApiV1::ResolveFileResponse(HttpResponse& response, BeFileName filePath)
+WSFileResult WebApiV1::ResolveFileResponse(Http::Response& response, BeFileName filePath)
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
@@ -414,9 +415,9 @@ const bvector<Utf8String>& providerIds,
 ICancellationTokenPtr ct
 ) const
     {
-    HttpRequest request = CreateGetRepositoriesRequest(types, providerIds);
+    Http::Request request = CreateGetRepositoriesRequest(types, providerIds);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoriesResult>([] (Http::Response& httpResponse)
         {
         return ResolveGetRepositoriesResponse(httpResponse);
         });
@@ -435,14 +436,14 @@ ICancellationTokenPtr ct
     BeAssert(!objectId.IsEmpty() && "<Error> DataSource is not object");
 
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
 
-    request.SetRetryOptions(HttpRequest::ResetTransfer, 1);
+    request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 1);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObject);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([objectId] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([objectId] (Http::Response& httpResponse)
         {
         return ResolveObjectsResponse(httpResponse, objectId.schemaName, objectId.className);
         });
@@ -479,9 +480,9 @@ ICancellationTokenPtr ct
         }
 
     Utf8String url = GetUrl(SERVICE_Navigation, CreateObjectIdParam(parentObjectId), propertiesQuery, propertiesQuery.empty() ? "v1.1" : "v1.3");
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url, eTag);
 
-    request.SetRetryOptions(HttpRequest::ResetTransfer, 1);
+    request.SetRetryOptions(Http::Request::RetryOption::ResetTransfer, 1);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
@@ -491,7 +492,7 @@ ICancellationTokenPtr ct
 
     return
         request.PerformAsync()
-        ->Then([=] (HttpResponse& childrenResponse)
+        ->Then([=] (Http::Response& childrenResponse)
         {
         if (childrenResponse.GetConnectionStatus() != ConnectionStatus::OK)
             {
@@ -647,7 +648,7 @@ AsyncTaskPtr<WSFileResult> WebApiV1::GetSchema
 (
 BeFileNameCR filePath,
 Utf8StringCR eTag,
-HttpRequest::ProgressCallbackCR downloadProgressCallback,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -672,7 +673,7 @@ AsyncTaskPtr<WSFileResult> WebApiV1::SendGetFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR eTag,
-HttpRequest::ProgressCallbackCR downloadProgressCallback,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -682,16 +683,16 @@ ICancellationTokenPtr ct
         }
 
     Utf8String url = GetUrl(SERVICE_Files, CreateObjectIdParam(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
 
     request.SetResponseBody(HttpFileBody::Create(filePath));
-    request.SetRetryOptions(HttpRequest::ResumeTransfer, 0);
+    request.SetRetryOptions(Http::Request::RetryOption::ResumeTransfer, 0);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::FileDownload);
     request.SetDownloadProgressCallback(downloadProgressCallback);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSFileResult>([filePath] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSFileResult>([filePath] (Http::Response& httpResponse)
         {
         return ResolveFileResponse(httpResponse, filePath);
         });
@@ -704,7 +705,7 @@ AsyncTaskPtr<WebApiV1::SchemaResult> WebApiV1::GetSchema
 (
 HttpBodyPtr body,
 Utf8StringCR eTag,
-HttpRequest::ProgressCallbackCR downloadProgressCallback,
+Http::Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -742,14 +743,14 @@ ICancellationTokenPtr ct
         return CreateCompletedAsyncTask(SchemaResult::Error(WSError::CreateFunctionalityNotSupportedError()));
         }
 
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetRequest(url, eTag);
 
     request.SetResponseBody(body);
     request.GetHeaders().SetAccept("application/xml");
     request.SetDownloadProgressCallback(downloadProgressCallback);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<SchemaResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<SchemaResult>([] (Http::Response& httpResponse)
         {
         HttpStatus status = httpResponse.GetHttpStatus();
         if (HttpStatus::OK == status)
@@ -844,7 +845,7 @@ ICancellationTokenPtr ct
             return WSObjectsResult::Error(result.GetError());
             }
 
-        HttpResponse schemaDefResponse;
+        Http::Response schemaDefResponse;
         if (result.GetValue().isModified)
             {
             SchemaInfo info;
@@ -863,11 +864,11 @@ ICancellationTokenPtr ct
             schemaDefContent->GetHeaders().SetETag(result.GetValue().eTag);
             schemaDefContent->GetHeaders().SetContentType("application/json");
 
-            schemaDefResponse = HttpResponse(schemaDefContent, "", ConnectionStatus::OK, HttpStatus::OK);
+            schemaDefResponse = Http::Response(schemaDefContent, "", ConnectionStatus::OK, HttpStatus::OK);
             }
         else
             {
-            schemaDefResponse = HttpResponse(HttpResponseContent::Create(HttpStringBody::Create()), "", ConnectionStatus::OK, HttpStatus::NotModified);
+            schemaDefResponse = Http::Response(HttpResponseContent::Create(HttpStringBody::Create()), "", ConnectionStatus::OK, HttpStatus::NotModified);
             }
 
         return ResolveObjectsResponse(schemaDefResponse, "MetaSchema", "ECSchemaDef");
@@ -911,14 +912,14 @@ ICancellationTokenPtr ct
     Utf8String classes = StringUtils::Join(query.GetClasses().begin(), query.GetClasses().end(), ',');
 
     Utf8String url = GetUrl(SERVICE_Objects, classes, query.ToQueryString(), GetMaxWebApi());
-    HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
+    Http::Request request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.GetHeaders().SetIfNoneMatch(eTag);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([schemaName] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([schemaName] (Http::Response& httpResponse)
         {
         return ResolveObjectsResponse(httpResponse, schemaName);
         });
@@ -930,7 +931,7 @@ ICancellationTokenPtr ct
 AsyncTaskPtr<WSChangesetResult> WebApiV1::SendChangesetRequest
 (
 HttpBodyPtr changeset,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -944,7 +945,7 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
 (
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -964,7 +965,7 @@ AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
 ObjectIdCR objectId,
 JsonValueCR objectCreationJson,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1001,7 +1002,7 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSCreateObjectResult>([=] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSCreateObjectResult>([=] (Http::Response& httpResponse)
         {
         return ResolveCreateObjectResponse(httpResponse, objectId, relObjectId, parentObjectId);
         });
@@ -1015,12 +1016,12 @@ AsyncTaskPtr<WSUpdateObjectResult> WebApiV1::SendUpdateObjectRequest
 ObjectIdCR objectId,
 JsonValueCR propertiesJson,
 Utf8String eTag,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreatePostRequest(url);
+    Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
 
     request.GetHeaders().SetContentType("application/json");
     if (!eTag.empty())
@@ -1031,7 +1032,7 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSUpdateObjectResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSUpdateObjectResult>([] (Http::Response& httpResponse)
         {
         return ResolveUpdateObjectResponse(httpResponse);
         });
@@ -1047,11 +1048,11 @@ ICancellationTokenPtr ct
 ) const
     {
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
-    HttpRequest request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
+    Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
 
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSDeleteObjectResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSDeleteObjectResult>([] (Http::Response& httpResponse)
         {
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {
@@ -1068,7 +1069,7 @@ AsyncTaskPtr<WSUpdateFileResult> WebApiV1::SendUpdateFileRequest
 (
 ObjectIdCR objectId,
 BeFileNameCR filePath,
-HttpRequest::ProgressCallbackCR uploadProgressCallback,
+Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
@@ -1079,7 +1080,7 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSUpdateFileResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSUpdateFileResult>([] (Http::Response& httpResponse)
         {
         if (HttpStatus::OK == httpResponse.GetHttpStatus())
             {

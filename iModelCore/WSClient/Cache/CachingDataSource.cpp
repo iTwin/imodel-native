@@ -14,7 +14,7 @@
 #include <WebServices/Cache/ServerQueryHelper.h>
 #include <WebServices/Cache/Transactions/CacheTransactionManager.h>
 #include <WebServices/Cache/Util/FileUtil.h>
-#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
+#include <BeHttp/HttpStatusHelper.h>
 #include <Bentley/BeTimeUtilities.h>
 
 #include "Compatibility/SchemaChangeWSObjectsResponse.h"
@@ -30,7 +30,6 @@
 #include "SyncLocalChangesTask.h"
 #include "Util/StringHelper.h"
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define CachedResultsName_Navigation    "CachingDataSource.Navigation"

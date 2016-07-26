@@ -11,7 +11,7 @@
 #include <DgnDbServer/DgnDbServerCommon.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
-struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
+struct DgnDbServerError : public Tasks::AsyncError
     {
     public:
         enum class Id
@@ -39,6 +39,9 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
             LockOwnedByAnotherBriefcase,
             UserAlreadyExists,
             UserDoesNotExist,
+            CodeStateInvalid,
+            CodeReservedByAnotherBriefcase,
+            CodeDoesNotExist,
 
             //WebServices Errors
             LoginFailed,
@@ -94,7 +97,7 @@ struct DgnDbServerError : public DgnClientFx::Utils::AsyncError
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(WebServices::WSErrorCR error);
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Dgn::RevisionStatus const& status);
 
-        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(DgnClientFx::Utils::HttpErrorCR error);
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerError(Http::HttpErrorCR error);
 
         JsonValueCR GetExtendedData() const;
         DGNDBSERVERCLIENT_EXPORT DgnDbServerError::Id GetId() const;

@@ -13,7 +13,6 @@
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 using namespace ::testing;
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 #ifdef USE_GTEST
 /*--------------------------------------------------------------------------------------+
@@ -91,7 +90,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             BeFileNameCR filePath,
             Utf8StringCR eTag,
-            HttpRequest::ProgressCallbackCR downloadProgressCallback,
+            Http::Request::ProgressCallbackCR downloadProgressCallback,
             ICancellationTokenPtr ct
             ));
 
@@ -112,7 +111,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
         MOCK_CONST_METHOD3(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
             (
             HttpBodyPtr changeset,
-            HttpRequest::ProgressCallbackCR,
+            Http::Request::ProgressCallbackCR,
             ICancellationTokenPtr
             ));
 
@@ -120,7 +119,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             (
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));
 
@@ -129,7 +128,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));
 
@@ -138,7 +137,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
             Utf8String eTag,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));
 
@@ -152,7 +151,7 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             (
             ObjectIdCR objectId,
             BeFileNameCR filePath,
-            HttpRequest::ProgressCallbackCR uploadProgressCallback,
+            Http::Request::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));
     };

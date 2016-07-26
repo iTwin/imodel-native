@@ -8,7 +8,7 @@
 #include "ClientInternal.h"
 #include <map>
 #include <WebServices/Connect/ImsClient.h>
-#include <DgnClientFx/Utils/Http/HttpStatusHelper.h>
+#include <BeHttp/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
 
 #include "WSError.xliff.h"
@@ -77,7 +77,7 @@ m_id(errorId)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::WSError(HttpResponseCR httpResponse) : WSError()
+WSError::WSError(Http::ResponseCR httpResponse) : WSError()
     {
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_INFO))
@@ -162,7 +162,7 @@ WSError::WSError(HttpErrorCR httpError)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseBody(HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseBody(Http::ResponseCR httpResponse)
     {
     Utf8String contentType = httpResponse.GetHeaders().GetContentType();
     if (contentType.find("application/json") != Utf8String::npos)
@@ -181,9 +181,9 @@ BentleyStatus WSError::ParseBody(HttpResponseCR httpResponse)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseJsonError(Http::ResponseCR httpResponse)
     {
-    Json::Value jsonError = httpResponse.GetBody().AsJson();
+    Json::Value jsonError = Json::Reader::DoParse(httpResponse.GetBody().AsString());
     if (!IsValidErrorJson(jsonError))
         {
         return ERROR;
@@ -213,7 +213,7 @@ BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8St
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseXmlError(Http::ResponseCR httpResponse)
     {
     Utf8String bodyStr = httpResponse.GetBody().AsString();
 
@@ -290,6 +290,9 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         m_id = WSError::Id::Unknown;
         }
 
+    // Set description
+    m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
+
     // Set message 
     if (WSError::Id::ClassNotFound == m_id)
         {
@@ -303,13 +306,15 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         {
         m_message = WSErrorLocalizedString(MESSAGE_InstanceNotFound);
         }
+    else if (WSError::Id::BadRequest == m_id)
+        {
+        m_message = errorMessage;
+        m_description = errorDescription;
+        }
     else
         {
         m_message = httpError.GetMessage();
         }
-
-    // Set description
-    m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
 
     // Set custom properties
     m_data = errorData;

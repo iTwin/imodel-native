@@ -13,7 +13,6 @@
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 
 typedef std::shared_ptr<struct DgnDbRepositoryManager> DgnDbRepositoryManagerPtr;
 
@@ -31,6 +30,10 @@ private:
     WebServices::ClientInfoPtr   m_clientInfo;
     AuthenticationHandlerPtr     m_authenticationHandler;
 
+    Response                     QueryCodesLocksAvailable(Request const& req, DgnDbR db);
+    Response                     HandleError(Request const& request, DgnDbServerResult<void> result, IBriefcaseManager::RequestPurpose purpose);
+    static RepositoryStatus      GetResponseStatus(DgnDbServerResult<void> result);
+
 protected:
     DgnDbRepositoryManager (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
@@ -40,7 +43,6 @@ protected:
     virtual RepositoryStatus                        _QueryHeldResources   (DgnLockSet& locks, DgnCodeSet& codes, DgnLockSet& unavailableLocks, DgnCodeSet& unavailableCodes, DgnDbR db) override;
     virtual RepositoryStatus                        _QueryStates          (DgnLockInfoSet& lockStates, DgnCodeInfoSet& codeStates, LockableIdSet const& locks,
                                                                            DgnCodeSet const& codes) override;
-    Response                                        QueryCodesLocksAvailable(Request const& req, DgnDbR db);
 
 public:
     static DgnDbRepositoryManagerPtr                Create                (WebServices::ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler = nullptr);

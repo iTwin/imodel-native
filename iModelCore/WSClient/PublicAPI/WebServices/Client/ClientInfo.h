@@ -9,12 +9,12 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
-#include <DgnClientFx/Utils/Http/IHttpHeaderProvider.h>
+#include <BeHttp/IHttpHeaderProvider.h>
 #include <Bentley/BeVersion.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2015
@@ -50,7 +50,10 @@ struct ClientInfo : public IHttpHeaderProvider
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
         //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
-        //! @param[in] applicationProductId - application product ID (e.g. "1234") used for federated sign-in [optional otherwise]
+        //! @param[in] applicationProductId - registered 4-digit application product ID (e.g. "1234") used for IMS sign-in [optional otherwise]
+        //! Given product ID is used for sign-in relying-party URI that is "sso://wsfed_desktop/1234" for Windows builds and 
+        //! "sso://wsfed_mobile/1234" for iOS/Android builds. Both RPs need to be registered to IMS DEV/QA/PROD environments so 
+        //! that your application would be allowed to sign-in by IMS.
         //! @param[in] primaryHeaderProvider - [optional] provide additional headers
         WSCLIENT_EXPORT static ClientInfoPtr Create
             (
@@ -68,7 +71,10 @@ struct ClientInfo : public IHttpHeaderProvider
         //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
         //! @param[in] deviceId - unique device ID used for licensing. Should be different for different devices
         //! @param[in] systemDescription - system desription for User-Agent header
-        //! @param[in] applicationProductId - application product ID (e.g. "1234") used for federated sign-in [optional otherwise]
+        //! @param[in] applicationProductId - registered 4-digit application product ID (e.g. "1234") used for IMS sign-in [optional otherwise]
+        //! Given product ID is used for sign-in relying-party URI that is "sso://wsfed_desktop/1234" for Windows builds and 
+        //! "sso://wsfed_mobile/1234" for iOS/Android builds. Both RPs need to be registered to IMS DEV/QA/PROD environments so 
+        //! that your application would be allowed to sign-in by IMS.
         //! @param[in] primaryHeaderProvider - [optional] provide additional headers
         WSCLIENT_EXPORT ClientInfo
             (

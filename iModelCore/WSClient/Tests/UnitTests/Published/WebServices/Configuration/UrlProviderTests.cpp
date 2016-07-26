@@ -14,7 +14,6 @@
 #include <Bentley/BeDebugLog.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 
 #ifdef USE_GTEST
@@ -120,13 +119,13 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
     {
     auto client = std::make_shared<MockBuddiClient>();
     MockLocalState localState;
-    ON_CALL(localState, _GetValue(_, _)).WillByDefault(Return(Json::Value::null));
+    ON_CALL(localState, _GetValue(_, _)).WillByDefault(Return("null"));
     ON_CALL(localState, _SaveValue(_, _, _)).WillByDefault(Return());
     ON_CALL(*client, GetUrl(_, _)).WillByDefault(Return(CreateCompletedAsyncTask(BuddiUrlResult())));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
-    Json::Value newValue;
+    Utf8String newValue;
 
     EXPECT_CALL(localState, _GetValue(_, _)).WillOnce(Return("OldUrl"));
     EXPECT_CALL(localState, _SaveValue(_, _, _)).WillOnce(SaveArg<2>(&newValue));
@@ -142,12 +141,12 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsStringAnd
     {
     auto client = std::make_shared<MockBuddiClient>();
     MockLocalState localState;
-    ON_CALL(localState, _GetValue(_, _)).WillByDefault(Return(Json::Value::null));
+    ON_CALL(localState, _GetValue(_, _)).WillByDefault(Return("null"));
     ON_CALL(localState, _SaveValue(_, _, _)).WillByDefault(Return());
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
 
-    EXPECT_CALL(localState, _GetValue(_, _)).WillOnce(Return("OldUrl"));
+    EXPECT_CALL(localState, _GetValue(_, _)).WillOnce(Return("\"OldUrl\""));
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Error(BuddiError::Status::ConnectionError))));
     EXPECT_EQ("OldUrl", UrlProvider::Urls::ConnectWsgPunchList.Get());
@@ -290,14 +289,14 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_FALSE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest request("foo");
-    configurator->PerformRequest(request)->Wait();
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
     }
 
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate)
@@ -307,14 +306,14 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
     UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_FALSE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest request("foo");
-    configurator->PerformRequest(request)->Wait();
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
     }
 
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsValidateCertificate)
@@ -324,13 +323,13 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
     UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
-    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (Http::RequestCR request)
         {
         EXPECT_TRUE(request.GetValidateCertificate());
         return StubHttpResponse();
         });
 
-    HttpRequest request("foo");
-    configurator->PerformRequest(request)->Wait();
+    Http::Request request("foo");
+    configurator->_PerformRequest(request)->Wait();
     }
 #endif

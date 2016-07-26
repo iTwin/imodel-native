@@ -9,17 +9,17 @@
 //__PUBLISH_SECTION_START__
 
 #include <iostream>
-#include "Bentley/bmap.h"
-#include "BeJsonCpp/BeJsonUtilities.h"
-
+#include <Bentley/bmap.h>
+#include <Bentley/Tasks/AsyncError.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <BeHttp/HttpError.h>
+#include <BeHttp/HttpResponse.h>
 #include <WebServices/Client/WebServicesClient.h>
-#include <DgnClientFx/Utils/Threading/AsyncError.h>
-#include <DgnClientFx/Utils/Http/HttpError.h>
-#include <DgnClientFx/Utils/Http/HttpResponse.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
+USING_NAMESPACE_BENTLEY_TASKS
+USING_NAMESPACE_BENTLEY_HTTP
 
 struct WSError;
 typedef WSError& WSErrorR;
@@ -84,9 +84,9 @@ struct WSError : public AsyncError
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
-        BentleyStatus ParseBody(HttpResponseCR httpResponse);
-        BentleyStatus ParseJsonError(HttpResponseCR httpResponse);
-        BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
+        BentleyStatus ParseBody(Http::ResponseCR httpResponse);
+        BentleyStatus ParseJsonError(Http::ResponseCR httpResponse);
+        BentleyStatus ParseXmlError(Http::ResponseCR httpResponse);
 
         void SetStatusServerNotSupported();
         void SetStatusReceivedError
@@ -101,7 +101,7 @@ struct WSError : public AsyncError
     public:
         WSCLIENT_EXPORT WSError();
         //! Handle supported server response
-        WSCLIENT_EXPORT WSError(HttpResponseCR httpResponse);
+        WSCLIENT_EXPORT WSError(Http::ResponseCR httpResponse);
         //! Handle generic HttpError, unknow error will map to Id::Unknown
         WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
         //! Do not use in production code, this is for testing purposes only

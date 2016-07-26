@@ -2,16 +2,16 @@
  |
  |     $Source: Cache/Persistence/RepositoryInfoStore.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
 #pragma once
 
-#include <DgnClientFx/Utils/Threading/AsyncTask.h>
+#include <Bentley/Tasks/AsyncTask.h>
 #include <WebServices/Cache/Persistence/IRepositoryInfoStore.h>
 #include <WebServices/Cache/Transactions/ICacheTransactionManager.h>
-#include <DgnClientFx/Utils/Threading/WorkerThread.h>
+#include <Bentley/Tasks/WorkerThread.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE

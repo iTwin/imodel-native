@@ -9,7 +9,7 @@
 #include "BeSQLiteDbTransactionHandlerTests.h"
 
 #include <WebServices/Cache/Transactions/BeSQLiteDbTransactionHandler.h>
-#include <DgnClientFx/Utils/Threading/WorkerThread.h>
+#include <Bentley/Tasks/WorkerThread.h>
 #include "../CachingTestsHelper.h"
 
 using namespace ::testing;

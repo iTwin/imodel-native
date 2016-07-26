@@ -38,9 +38,7 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(WSCacheState& state, Utf
         return nullptr;
         }
 
-    bvector<ECN::ECSchemaCP> schemas;
-    state.GetECDbAdapter().GetECDb().Schemas().GetECSchemas(schemas);
-
+    bvector<ECN::ECSchemaCP> schemas = state.GetECDbAdapter().GetECDb().Schemas().GetECSchemas();
     return std::make_shared<ECDbDebugInfoHolder>(state.GetECDbAdapter().GetECDb(), schemas, "DataSourceCache debug information", context);
     }
 
@@ -339,8 +337,8 @@ BentleyStatus DataSourceCache::Reset()
         }
 
     // Remove all data
-    bvector<ECN::ECSchemaCP> ecSchemas;
-    if (SUCCESS != m_db.Schemas().GetECSchemas(ecSchemas))
+    bvector<ECN::ECSchemaCP> ecSchemas = m_db.Schemas().GetECSchemas();
+    if (ecSchemas.empty())
         {
         BeAssert(false);
         return ERROR;
@@ -489,6 +487,23 @@ DateTime DataSourceCache::ReadResponseAccessDate(CachedResponseKeyCR key)
     {
     ResponseKey responseKey = m_state->GetCachedResponseManager().ConvertResponseKey(key);
     return m_state->GetCachedResponseManager().ReadInfo(responseKey).GetAccessDate();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<CachedResponseKey> DataSourceCache::GetResponsesContainingInstance(ECInstanceKeyCR instance, Utf8StringCR responseName)
+    {
+    bset<CachedResponseKey> keys;
+
+    auto cachedInfoKey = m_state->GetObjectInfoManager().ReadInfoKey(instance);
+    if (!cachedInfoKey.IsValid())
+        return keys;
+
+    if (SUCCESS != m_state->GetCachedResponseManager().GetResponsesContainingInstance(cachedInfoKey, keys, responseName))
+        BeAssert(false);
+
+    return keys;
     }
 
 /*--------------------------------------------------------------------------------------+
