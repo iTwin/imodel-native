@@ -542,6 +542,105 @@ void GeometricPrimitive::AddToGraphic(Render::GraphicBuilderR graphic) const
     }
 
 /*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometricPrimitive::IsSolid() const
+    {
+    switch (GetGeometryType())
+        {
+        case GeometryType::SolidPrimitive:
+            return GetAsISolidPrimitive()->GetCapped();
+
+        case GeometryType::Polyface:
+            return GetAsPolyfaceHeader()->IsClosedByEdgePairing();
+
+        case GeometryType::SolidKernelEntity:
+            return ISolidKernelEntity::EntityType_Solid == GetAsISolidKernelEntity()->GetEntityType();
+
+        default:
+            return false;
+        }
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometricPrimitive::IsSheet() const
+    {
+    switch (GetGeometryType())
+        {
+        case GeometryType::CurveVector:
+            return GetAsCurveVector()->IsAnyRegionType();
+
+        case GeometryType::BsplineSurface:
+            return true;
+
+        case GeometryType::SolidPrimitive:
+            return !GetAsISolidPrimitive()->GetCapped();
+
+        case GeometryType::Polyface:
+            return !GetAsPolyfaceHeader()->IsClosedByEdgePairing();
+
+        case GeometryType::SolidKernelEntity:
+            return ISolidKernelEntity::EntityType_Sheet == GetAsISolidKernelEntity()->GetEntityType();
+
+        default:
+            return false;
+        }
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometricPrimitive::IsWire() const
+    {
+    switch (GetGeometryType())
+        {
+        case GeometryType::CurvePrimitive:
+            return true;
+
+        case GeometryType::CurveVector:
+            return GetAsCurveVector()->IsOpenPath();
+
+        case GeometryType::SolidKernelEntity:
+            return ISolidKernelEntity::EntityType_Wire == GetAsISolidKernelEntity()->GetEntityType();
+
+        default:
+            return false;
+        }
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ISolidKernelEntity::KernelEntityType GeometricPrimitive::GetKernelEntityType() const
+    {
+    switch (GetGeometryType())
+        {
+        case GeometryType::CurvePrimitive:
+            return ISolidKernelEntity::EntityType_Wire;
+
+        case GeometryType::CurveVector:
+            return (GetAsCurveVector()->IsAnyRegionType() ? ISolidKernelEntity::EntityType_Sheet : (GetAsCurveVector()->IsOpenPath() ? ISolidKernelEntity::EntityType_Wire : ISolidKernelEntity::EntityType_Minimal));
+
+        case GeometryType::BsplineSurface:
+            return ISolidKernelEntity::EntityType_Sheet;
+
+        case GeometryType::SolidPrimitive:
+            return GetAsISolidPrimitive()->GetCapped() ? ISolidKernelEntity::EntityType_Solid : ISolidKernelEntity::EntityType_Sheet;
+
+        case GeometryType::Polyface:
+            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? ISolidKernelEntity::EntityType_Solid : ISolidKernelEntity::EntityType_Sheet;
+
+        case GeometryType::SolidKernelEntity:
+            return GetAsISolidKernelEntity()->GetEntityType();
+
+        default:
+            return ISolidKernelEntity::EntityType_Minimal;
+        }
+    }
+
+/*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometricPrimitive::GeometricPrimitive(ICurvePrimitivePtr const& source) {m_type = GeometryType::CurvePrimitive; m_data = source;}
@@ -2379,7 +2478,7 @@ void GeometryStreamIO::Collection::GetGeometryPartIds(IdSet<DgnGeometryPartId>& 
 +===============+===============+===============+===============+===============+======*/
 struct BRepCache : DgnElement::AppData
 {
-static Key s_key;
+static DgnElement::AppData::Key const& GetKey() {static DgnElement::AppData::Key s_key; return s_key;}
 typedef bmap<uint16_t, ISolidKernelEntityPtr> IndexedGeomMap;
 IndexedGeomMap m_map;
 
@@ -2390,16 +2489,14 @@ virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
 
 static BRepCache* Get(DgnElementCR elem, bool addIfNotFound)
     {
-    BRepCache* cache = dynamic_cast<BRepCache*>(elem.FindAppData(s_key));
+    BRepCache* cache = dynamic_cast<BRepCache*>(elem.FindAppData(GetKey()));
 
     if (nullptr == cache && addIfNotFound)
-        elem.AddAppData(s_key, cache = new BRepCache);
+        elem.AddAppData(GetKey(), cache = new BRepCache);
 
     return cache;
     }
 };
-
-BRepCache::Key BRepCache::s_key;
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  02/2015

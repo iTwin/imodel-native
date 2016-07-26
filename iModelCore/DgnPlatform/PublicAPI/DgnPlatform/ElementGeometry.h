@@ -52,6 +52,18 @@ protected:
 public:
     DGNPLATFORM_EXPORT GeometryType GetGeometryType() const;
 
+    //! Return true if the geometry is or would be represented by a solid body. Accepted geometry includes BRep solids, capped SolidPrimitves, and closed Polyfaces. 
+    DGNPLATFORM_EXPORT bool IsSolid() const;
+
+    //! Return true if the geometry is or would be represented by a sheet body. Accepted geometry includes BRep sheets, un-capped SolidPrimitives, region CurveVectors, Bspline Surfaces, and unclosed Polyfaces.
+    DGNPLATFORM_EXPORT bool IsSheet() const;
+
+    //! Return true if the geometry is or would be represented by a wire body. Accepted geometry includes BRep wires and CurveVectors.
+    DGNPLATFORM_EXPORT bool IsWire() const;
+
+    // Return the type of solid kernel entity that would be used to represent this geometry.
+    DGNPLATFORM_EXPORT ISolidKernelEntity::KernelEntityType GetKernelEntityType() const;
+
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetAsICurvePrimitive() const;
     DGNPLATFORM_EXPORT CurveVectorPtr GetAsCurveVector() const;
     DGNPLATFORM_EXPORT ISolidPrimitivePtr GetAsISolidPrimitive() const;
