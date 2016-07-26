@@ -114,7 +114,7 @@ public:
     //! @param[in] binarySize size of the Byte array
     //! @param[in] allocator Allocator to use to copy the string into the RapidJson value.
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(RapidJsonValueR, Byte const* binaryArray, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator);
+    ECOBJECTS_EXPORT static BentleyStatus BinaryToJson(RapidJsonValueR json, Byte const* binaryArray, size_t binarySize, rapidjson::MemoryPoolAllocator<>& allocator);
 
     //! Converts the specified RapidJsonValue to a Byte array
     //! The RapidJsonValue must hold the Byte array as Base64 encoded string.
@@ -135,7 +135,7 @@ public:
     //! @param[out] pt the resulting point
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d&, RapidJsonValueCR);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToPoint2D(DPoint2d& pt, RapidJsonValueCR json);
     //! Converts the specified DPoint3d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".
     //! @param[out] json the resulting Json value
