@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include <Bentley/Base64Utilities.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -226,16 +227,20 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
     if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
         return ERROR;
 
-    Json::Value arrayElementVal;
+    Utf8String arrayElementJson;
     switch (arrayType)
         {
             case PRIMITIVETYPE_Binary:
-                if (SUCCESS != ECJsonUtilities::BinaryToJson(arrayElementVal, GetTestBlob(), GetTestBlobSize()))
-                    return ERROR;
+            {
+            Utf8String base64str;
+            if (SUCCESS != Base64Utilities::Encode(base64str, GetTestBlob(), GetTestBlobSize()))
+                return ERROR;
 
-                break;
+            arrayElementJson.append("\"").append(base64str).append("\"");
+            break;
+            }
             case PRIMITIVETYPE_Boolean:
-                arrayElementVal = Json::Value(BOOLVALUE);
+                arrayElementJson.append(BOOLVALUE ? "true" : "false");
                 break;
 
             case PRIMITIVETYPE_DateTime:
@@ -244,44 +249,65 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
             if (SUCCESS != GetTestDate().ToJulianDay(jd))
                 return ERROR;
 
-            arrayElementVal = Json::Value(jd);
+            Utf8String str;
+            str.Sprintf("%f", jd);
+            arrayElementJson.append(str);
             break;
             }
             case PRIMITIVETYPE_Double:
-                arrayElementVal = Json::Value(DOUBLEVALUE);
-                break;
-
+            {
+            Utf8String str;
+            str.Sprintf("%f", DOUBLEVALUE);
+            arrayElementJson.append(str);
+            break;
+            }
             case PRIMITIVETYPE_IGeometry:
             {
             bvector<Byte> fb;
             BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
-            if (SUCCESS != ECJsonUtilities::BinaryToJson(arrayElementVal, fb.data(), fb.size()))
+            Utf8String base64str;
+            if (SUCCESS != Base64Utilities::Encode(base64str, fb.data(), fb.size()))
                 return ERROR;
 
+            arrayElementJson.append("\"").append(base64str).append("\"");
             break;
             }
 
             case PRIMITIVETYPE_Integer:
-                arrayElementVal = Json::Value(INTVALUE);
-                break;
+            {
+            Utf8String str;
+            str.Sprintf("%d", INTVALUE);
+            arrayElementJson.append(str);
+            break;
+            }
 
             case PRIMITIVETYPE_Long:
-                arrayElementVal = BeJsonUtilities::StringValueFromInt64(INT64VALUE);
-                break;
-
-            case PRIMITIVETYPE_String:
-                arrayElementVal = Json::Value(STRINGVALUE);
-                break;
-
+            {
+            //int64 must be serialized as strings in JSON
+            char str[32];
+            sprintf(str, "\"%" PRId64 "\"", INT64VALUE);
+            arrayElementJson.append(str);
+            break;
+            }
             case PRIMITIVETYPE_Point2D:
-                if (SUCCESS != ECJsonUtilities::Point2DToJson(arrayElementVal, GetTestPoint2d()))
-                    return ERROR;
-                break;
-
+            {
+            Utf8String str;
+            str.Sprintf("{\"x\":%f,\"y\":%f}", POINTXVALUE, POINTYVALUE);
+            arrayElementJson.append(str);
+            break;
+            }
             case PRIMITIVETYPE_Point3D:
-                if (SUCCESS != ECJsonUtilities::Point3DToJson(arrayElementVal, GetTestPoint3d()))
-                    return ERROR;
-                break;
+            {
+            Utf8String str;
+            str.Sprintf("{\"x\":%f,\"y\":%f,\"z\":%f}", POINTXVALUE, POINTYVALUE, POINTZVALUE);
+            arrayElementJson.append(str);
+            break;
+            }
+            case PRIMITIVETYPE_String:
+            {
+            arrayElementJson.append("\"" STRINGVALUE "\"");
+            break;
+            }
 
             default:
                 return ERROR;
@@ -295,15 +321,17 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
 
     for (int i = 0; i < rowCount; i++)
         {
-        Json::Value arrayVal(Json::arrayValue);
+        Utf8String json("[");
         for (uint32_t j = 0; j < arraySize; j++)
             {
-            arrayVal.append(arrayElementVal);
+            if (j > 0)
+                json.append(",");
+
+            json.append(arrayElementJson);
             }
 
-        Json::FastWriter writer;
-        Utf8String jsonStr = writer.write(arrayVal);
-        if (BE_SQLITE_OK != stmt.BindText(1, jsonStr.c_str(), Statement::MakeCopy::No))
+        json.append("]");
+        if (BE_SQLITE_OK != stmt.BindText(1, json.c_str(), Statement::MakeCopy::No))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt.Step())
@@ -343,20 +371,21 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        Utf8CP jsonStr = stmt.GetValueText(0);
-        Json::Value arrayJson;
-        Json::Reader reader;
-        if (!reader.Parse(jsonStr, arrayJson, false))
+        rapidjson::Document arrayJson;
+        if (arrayJson.Parse<0>(stmt.GetValueText(0)).HasParseError())
             return ERROR;
 
-        for (JsonValueCR arrayElement : arrayJson)
+        for (auto it = arrayJson.Begin(); it != arrayJson.End(); ++it)
             {
             switch (arrayType)
                 {
                     case PRIMITIVETYPE_Binary:
                     {
+                    if (!it->IsString())
+                        return ERROR;
+
                     bvector<Byte> blob;
-                    if (SUCCESS != ECJsonUtilities::JsonToBinary(blob, arrayElement))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blob, *it))
                         return ERROR;
 
                     if (blob.size() != GetTestBlobSize() ||
@@ -368,20 +397,20 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
                     case PRIMITIVETYPE_Boolean:
                     {
-                    if (!arrayElement.isBool())
+                    if (!it->IsBool())
                         return ERROR;
 
-                    if (BOOLVALUE != arrayElement.asBool())
+                    if (BOOLVALUE != it->GetBool())
                         return ERROR;
 
                     break;
                     }
                     case PRIMITIVETYPE_DateTime:
                     {
-                    if (!arrayElement.isDouble())
+                    if (!it->IsDouble())
                         return ERROR;
 
-                    double jd = arrayElement.asDouble();
+                    double jd = it->GetDouble();
                     DateTime dt;
                     if (SUCCESS != DateTime::FromJulianDay(dt, jd, DateTime::Info(DateTime::Kind::Utc)))
                         return ERROR;
@@ -392,18 +421,21 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
                     case PRIMITIVETYPE_Double:
                     {
-                    if (!arrayElement.isDouble())
+                    if (!it->IsDouble())
                         return ERROR;
 
-                    if (arrayElement.asDouble() < 0)
+                    if (it->GetDouble() < 0)
                         return ERROR;
 
                     break;
                     }
                     case PRIMITIVETYPE_IGeometry:
                     {
+                    if (!it->IsString())
+                        return ERROR;
+
                     bvector<Byte> fb;
-                    if (SUCCESS != ECJsonUtilities::JsonToBinary(fb, arrayElement))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(fb, *it))
                         return ERROR;
 
                     IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
@@ -415,20 +447,20 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
                     case PRIMITIVETYPE_Integer:
                     {
-                    if (!arrayElement.isInt())
+                    if (!it->IsInt())
                         return ERROR;
 
-                    if (INTVALUE != arrayElement.asInt())
+                    if (INTVALUE != it->GetInt())
                         return ERROR;
 
                     break;
                     }
                     case PRIMITIVETYPE_Long:
                     {
-                    int64_t val = BeJsonUtilities::Int64FromValue(arrayElement, INT64_C(-1));
-                    if (val < 0)
+                    if (!it->IsString())
                         return ERROR;
 
+                    const int64_t val = ECRapidJsonUtilities::Int64FromJson(*it);
                     if (INT64VALUE != val)
                         return ERROR;
 
@@ -437,7 +469,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     case PRIMITIVETYPE_Point2D:
                     {
                     DPoint2d pt;
-                    if (SUCCESS != ECJsonUtilities::JsonToPoint2D(pt, arrayElement))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2D(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint2d()))
@@ -448,7 +480,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     case PRIMITIVETYPE_Point3D:
                     {
                     DPoint3d pt;
-                    if (SUCCESS != ECJsonUtilities::JsonToPoint3D(pt, arrayElement))
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3D(pt, *it))
                         return ERROR;
 
                     if (!pt.AlmostEqual(GetTestPoint3d()))
@@ -458,10 +490,10 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                     }
                     case PRIMITIVETYPE_String:
                     {
-                    if (!arrayElement.isString())
+                    if (!it->IsString())
                         return ERROR;
 
-                    if (strcmp(arrayElement.asCString(), STRINGVALUE) != 0)
+                    if (strcmp(it->GetString(), STRINGVALUE) != 0)
                         return ERROR;
                     break;
                     }

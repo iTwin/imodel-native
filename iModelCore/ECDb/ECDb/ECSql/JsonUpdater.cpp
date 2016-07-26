@@ -15,16 +15,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonUpdater::JsonUpdater (ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
-: m_ecdb (ecdb), m_ecClass (ecClass), m_ecinstanceUpdater (ecdb, ecClass, ecsqlOptions)
+JsonUpdater::JsonUpdater(ECDbCR ecdb, ECClassCR ecClass, Utf8CP ecsqlOptions)
+    : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceUpdater(ecdb, ecClass, ecsqlOptions)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JsonUpdater::IsValid () const
+bool JsonUpdater::IsValid() const
     {
-    return m_ecinstanceUpdater.IsValid ();
+    return m_ecinstanceUpdater.IsValid();
     }
 
 //---------------------------------------------------------------------------------------
@@ -92,12 +92,12 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 
     IECInstancePtr ecInstance = CreateEmptyInstance(m_ecClass);
 
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
 
-    return m_ecinstanceUpdater.Update (*ecInstance);
+    return m_ecinstanceUpdater.Update(*ecInstance);
     }
 
 //---------------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 
     IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
 
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue(*ecInstance, jsonValue))
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
@@ -125,7 +125,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Shaun.Sewall                    01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update (ECInstanceId const& instanceId, RapidJsonValueCR jsonValue) const
+BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, RapidJsonValueCR jsonValue) const
     {
     if (m_ecClass.GetRelationshipClassCP() != nullptr)
         {
@@ -134,13 +134,13 @@ BentleyStatus JsonUpdater::Update (ECInstanceId const& instanceId, RapidJsonValu
         }
 
     IECInstancePtr ecInstance = ECInstanceAdapterHelper::CreateECInstance(m_ecClass);
-    
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJsonValue(*ecInstance, jsonValue))
+
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
 
-    return m_ecinstanceUpdater.Update (*ecInstance);
+    return m_ecinstanceUpdater.Update(*ecInstance);
     }
 
 //---------------------------------------------------------------------------------------
@@ -156,8 +156,8 @@ BentleyStatus  JsonUpdater::Update(ECInstanceId const& instanceId, RapidJsonValu
         }
 
     IECInstancePtr ecInstance = CreateEmptyRelInstance(*relClass, sourceKey, targetKey);
-   
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJsonValue(*ecInstance, jsonValue))
+
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceAdapterHelper::SetECInstanceId(*ecInstance, instanceId);
