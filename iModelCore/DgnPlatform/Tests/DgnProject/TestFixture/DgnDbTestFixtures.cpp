@@ -30,6 +30,17 @@ void DgnDbTestFixture::TearDownTestCase()
     {
     //DgnDbTestUtils::EmptySubDirectory(DgnDbTestFixture::s_seedFileInfo.fileName.GetDirectoryName());
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                     Umar.Hayat                   07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnDbTestFixture::GetSeedDbCopy(BeFileNameR actualName, WCharCP newName)
+    {
+    BeFileName outPath;
+    DgnDbStatus status = DgnDbTestUtils::MakeSeedDbCopy(outPath, DgnDbTestFixture::s_seedFileInfo.fileName, newName);
+    BeTest::GetHost().GetOutputRoot(actualName);
+    actualName.AppendToPath(outPath.c_str());
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Set up method that creates a copy of 3dMetricGeneral.ibim at Output
@@ -40,7 +51,7 @@ void DgnDbTestFixture::SetupSeedProject()
     {
     WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
     fileName.append(L".bim");
-    SetupSeedProject`(fileName.c_str(), Db::OpenMode::ReadWrite);
+    SetupSeedProject(fileName.c_str(), Db::OpenMode::ReadWrite);
     }
 
 /*---------------------------------------------------------------------------------**//**

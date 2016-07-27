@@ -37,10 +37,8 @@ public:
 //=======================================================================================
 // @bsiclass                                        Umar.Hayat              07/16
 //=======================================================================================
-struct DgnDbTest : public ::testing::Test
+struct DgnDbTest : public DgnDbTestFixture
 {
-private:
-    ScopedDgnHost autoDgnHost;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -72,8 +70,8 @@ TEST_F (DgnDbTest, Settings)
 
     if (true)
         {
-        DgnDbTestDgnManager tdm(L"2dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
-        DgnDbP newProject = tdm.GetDgnProjectP();
+        SetupSeedProject();
+        DgnDbP newProject = m_db.get();
         ASSERT_TRUE( newProject != NULL );
     
         projectName.SetNameUtf8(newProject->GetDbFileName());
@@ -96,6 +94,8 @@ TEST_F (DgnDbTest, Settings)
         newProject->SavePropertyString(test1, val3);   // change it to a new value again
         newProject->QueryProperty(val, test1);
         ASSERT_TRUE (0 == strcmp(val.c_str(), val3));  // make sure we have new value in temp table.
+        SaveDb();
+        CloseDb();
         } // NOW - close the file. The setting should be saved persistently in its second state.
 
     // reopen the project
@@ -110,6 +110,7 @@ TEST_F (DgnDbTest, Settings)
     sameProjectPtr->DeleteProperty(test1);              // delete the setting
     BeSQLite::DbResult rc = sameProjectPtr->QueryProperty(val, test1);    // verify we can't read it any more.
     ASSERT_NE (BE_SQLITE_ROW, rc);
+    sameProjectPtr->SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,8 +121,8 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     //DbResult rc;
     Utf8String val;
 
-    DgnDbTestDgnManager tdm(L"2dMetricGeneral.ibim", __FILE__, Db::OpenMode::Readonly, false);
-    DgnDbP project = tdm.GetDgnProjectP();
+    SetupSeedProject();
+    DgnDbP project = m_db.get();
     ASSERT_TRUE( project != NULL );
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
@@ -131,7 +132,6 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("Description",       "dgn_Proj"      )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("Units",             "dgn_Proj"      )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("LastEditor",        "dgn_Proj"      )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("DefaultView",       "dgn_View"      )) );
     
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "be_Db"         )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "ec_Db"         )) );
@@ -152,8 +152,8 @@ TEST_F (DgnDbTest, CheckStandardProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, ProjectSchemaVersions)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, TestDgnManager::DGNINITIALIZEMODE_None);
-    DgnDbP project = tdm.GetDgnProjectP();
+    SetupSeedProject();
+    DgnDbP project = m_db.get();
     ASSERT_TRUE( project != NULL);
 
     // Get Schema version details
@@ -208,11 +208,8 @@ TEST_F(DgnDbTest, ProjectWithDuplicateName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, MultipleReadWrite)
     {
-    BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"3dMetricGeneral.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"3dMetricGeneral.ibim");
-    BeFileName::BeCopyFile(fullFileName, testFile);
+    BeFileName testFile;
+    ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(testFile, L"MultipleReadWrite.bim"));
 
     DbResult status1;
     DgnDbPtr dgnProj1;
@@ -305,14 +302,8 @@ TEST_F(DgnDbTest, FileNotFoundToOpen)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, OpenAlreadyOpen)
     {
-    WCharCP testFileName = L"3dMetricGeneral.ibim";
-    BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath(testFileName);
-
     BeFileName dgndbFileName;
-    BeTest::GetHost().GetOutputRoot(dgndbFileName);
-    dgndbFileName.AppendToPath(testFileName);
-
-    BeFileName::BeCopyFile(sourceFile, dgndbFileName, false);
+    ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(dgndbFileName, L"OpenAlreadyOpen.bim"));
 
     DbResult status;
     DgnDbPtr dgnProj = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Exclusive));
@@ -331,18 +322,14 @@ TEST_F(DgnDbTest, OpenAlreadyOpen)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, GetCoordinateSystemProperties)
     {
-    BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"GeoCoordinateSystem.i.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    //Open project
-    DgnDbPtr dgnProj;
-    openProject(dgnProj, fullFileName, BeSQLite::Db::OpenMode::Readonly);
-    DgnGCS* dgnGCS = dgnProj->Units().GetDgnGCS();
+    SetupWithPrePublishedFile(L"GeoCoordinateSystem.i.ibim", L"GetCoordinateSystemProperties.ibim", BeSQLite::Db::OpenMode::Readonly);
+    DgnGCS* dgnGCS = m_db->Units().GetDgnGCS();
     double azimuth = (dgnGCS != nullptr) ? dgnGCS->GetAzimuth() : 0.0;
     double azimuthExpected = 178.29138626108181;
     double eps = 0.0001;
     EXPECT_TRUE(fabs(azimuthExpected - azimuth) < eps) << "Expected different azimuth ";
     GeoPoint gorigin;
-    dgnProj->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
+    m_db->Units().LatLongFromXyz(gorigin, DPoint3d::FromZero());
     double const latitudeExpected = 42.3413;
     EXPECT_TRUE(fabs(latitudeExpected - gorigin.latitude) < eps)<<"Expected diffrent latitude ";
     double const longitudeExpected = -71.0806;
@@ -352,10 +339,10 @@ TEST_F(DgnDbTest, GetCoordinateSystemProperties)
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
-struct DgnProjectPackageTest : public testing::Test
+struct DgnProjectPackageTest : public DgnDbTestFixture
     {
      public:
-        ScopedDgnHost m_autoDgnHost;
+        //ScopedDgnHost m_autoDgnHost;
         /*---------------------------------------------------------------------------------**//**
         * @bsiclass                                            Julija.Suboc                08/13
         +---------------+---------------+---------------+---------------+---------------+------*/
@@ -458,18 +445,14 @@ struct DgnProjectPackageTest : public testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     {
-    //Copy file to temp directory
-    BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, L"3dMetricGeneral.ibim", DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"3dMetricGeneral.ibim");
-    BeFileName::BeCopyFile(fullFileName, testFile);
     //Collect properties for later verification
     DbResult status;
-    DgnDbPtr dgnProj;
-    openProject(dgnProj, testFile, BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    BeFileName testFile (m_db->GetDbFileName(),true);
+    Utf8String testDatabase(testFile.GetFileNameAndExtension());
     PropertiesInTable propertiesInTable;
-    getPropertiesInTable(dgnProj, propertiesInTable);
-    dgnProj->CloseDb();
+    getPropertiesInTable(m_db, propertiesInTable);
+    m_db->CloseDb();
     //Create package and open it for verification
     BeFileName packageFile = DgnDbTestDgnManager::GetOutputFilePath(L"package.db");
     CreateIModelParams createParams;
@@ -483,7 +466,7 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     //Check embedded files table and get file id
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     ASSERT_EQ(1, embeddedFiles.MakeIterator().QueryCount())<<"There should be only one embeded file";
-    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile("3dMetricGeneral.ibim");
+    BeBriefcaseBasedId fileId = embeddedFiles.QueryFile(testDatabase.c_str());
     //Verify properties
     Utf8String propertToVerify;
     PropertiesInTable propertiesInTableV;
@@ -498,22 +481,17 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     {
-    WCharCP testDatabase = L"3dMetricGeneral.ibim";
-    //Copy file to temp directory
-    BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, testDatabase, DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(L"3dMetricGeneral.ibim");
-    BeFileName::BeCopyFile(fullFileName, testFile);
     //Get some information which can be used later to verify if file was extracted correctly
     DbResult status;
-    DgnDbPtr dgnProj;
-    openProject(dgnProj, testFile, BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    BeFileName testFile(m_db->GetDbFileName(), true);
+    WString testDatabase = testFile.GetFileNameAndExtension();
     //Get properties for later verification
     ProjectProperties projectProp;
-    getProjectProperties(dgnProj, projectProp);
+    getProjectProperties(m_db, projectProp);
     PropertiesInTable properties;
-    getPropertiesInTable(dgnProj, properties);
-    dgnProj->CloseDb();
+    getPropertiesInTable(m_db, properties);
+    m_db->CloseDb();
     //Create package
     BeFileName packageFile = DgnDbTestDgnManager::GetOutputFilePath(L"package.db");
     CreateIModelParams createParams;
@@ -527,8 +505,7 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     extractedFileDir.AppendToPath(DgnDbTestDgnManager::GetOutputFilePath(L"extractedFile"));
     if (!BeFileName::IsDirectory(extractedFileDir.GetName()))
         BeFileName::CreateNewDirectory(extractedFileDir.GetName());
-    Utf8String fileName;
-    BeStringUtilities::WCharToUtf8(fileName, testDatabase);
+    Utf8String fileName(testDatabase.c_str());
     auto filestat = DgnIModel::Extract(dbResult, extractedFileDir.GetNameUtf8().c_str(), fileName.c_str(), packageFile, true);
     EXPECT_EQ(DgnDbStatus::Success, filestat);
     EXPECT_TRUE(BE_SQLITE_OK == dbResult);
@@ -553,22 +530,16 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     {
-    //Copy project to temp folder
-    WCharCP fileName = L"3dMetricGeneral.ibim";
-    BeFileName fullFileName;
-    TestDataManager::FindTestData(fullFileName, fileName, DgnDbTestDgnManager::GetUtDatPath(__FILE__));
-    BeFileName testFile = DgnDbTestDgnManager::GetOutputFilePath(fileName);
-    ASSERT_TRUE(BeFileNameStatus::Success ==BeFileName::BeCopyFile(fullFileName, testFile))<<"Failed to copy file";
     //Open project
     DbResult status;
-    DgnDbPtr dgnProj;
-    openProject(dgnProj, testFile, BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+    BeFileName testFile(m_db->GetDbFileName(), true);
     //Get properties for later verification
     ProjectProperties projectProp;
-    getProjectProperties(dgnProj, projectProp);
+    getProjectProperties(m_db, projectProp);
     PropertiesInTable properties;
-    getPropertiesInTable(dgnProj, properties);
-    dgnProj->CloseDb();
+    getPropertiesInTable(m_db, properties);
+    m_db->CloseDb();
     
     //Create package
     BeFileName packageFile = DgnDbTestDgnManager::GetOutputFilePath(L"package.db");
@@ -610,19 +581,8 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     {
-    WCharCP testFileName = L"2dMetricGeneral.ibim";
-    BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath(testFileName);
+    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"EnforceLinkTableFor11Relationship.ibim");
 
-    BeFileName dgndbFileName;
-    BeTest::GetHost().GetOutputRoot(dgndbFileName);
-    dgndbFileName.AppendToPath(testFileName);
-
-    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(sourceFile, dgndbFileName, false));
-
-    DbResult status;
-    DgnDbPtr dgnProj = DgnDb::OpenDgnDb(&status, dgndbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
-    EXPECT_EQ(DbResult::BE_SQLITE_OK, status) << status;
-    ASSERT_TRUE(dgnProj != NULL);
 
     BeFileName ecSchemaPath;
     BeTest::GetHost().GetDocumentsRoot(ecSchemaPath);
@@ -639,10 +599,10 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_EQ(SUCCESS, ImportSchema(*schema, *dgnProj));
+    ASSERT_EQ(SUCCESS, ImportSchema(*schema, *m_db));
 
-    ASSERT_TRUE(dgnProj->TableExists("sdde_ArchStoreyWithElements"));
-    ASSERT_TRUE(dgnProj->TableExists("sdde_ArchWithHVACStorey"));
+    ASSERT_TRUE(m_db->TableExists("sdde_ArchStoreyWithElements"));
+    ASSERT_TRUE(m_db->TableExists("sdde_ArchWithHVACStorey"));
     }
 
 //---------------------------------------------------------------------------------------

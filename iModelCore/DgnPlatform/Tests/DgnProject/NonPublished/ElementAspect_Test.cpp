@@ -442,10 +442,10 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
     if (true)
         {        
         // Open Destination DB
-        //SetupProject(L"3dMetricGeneral.ibim", L"DestinationDb.ibim", Db::OpenMode::ReadWrite);
-       // DgnDbPtr db2 = m_db;
+        BeFileName destinationFile;
+        ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(destinationFile, L"DestinationDb.bim"));
         DgnDbPtr db2;
-        DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", L"DestinationDb.ibim"), DgnDb::OpenMode::ReadWrite, true);
+        DgnDbTestFixture::OpenDb(db2, destinationFile, DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
         ASSERT_TRUE(DgnDbStatus::Success == status);

@@ -63,6 +63,8 @@ public:
     static void OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase = false);
     void CloseDb() { m_db->CloseDb(); }
 
+    static DgnDbStatus GetSeedDbCopy(BeFileNameR actualName, WCharCP newName);
+
     void SaveDb() {
         if (m_db.IsValid() && m_db->IsDbOpen() && !m_db->IsReadonly())
             m_db->SaveChanges();
