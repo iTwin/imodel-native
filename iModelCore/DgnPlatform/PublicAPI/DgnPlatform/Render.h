@@ -1560,7 +1560,7 @@ public:
     virtual void _FinishHeal(HealAborted) = 0;
     virtual bool _NeedsHeal(BSIRectR) const = 0;
     virtual void _DrawFrame(StopWatch&) = 0;
-    virtual Image _ReadImage(Point2d targetSize) = 0;
+    virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
     virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
@@ -1601,6 +1601,13 @@ public:
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
     void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
     DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
+
+    //! Make the specified rectangle have the specified aspect ratio 
+    //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture
+    //! @param[in] targetAspectRatio The desired aspect ratio 
+    //! @return The adjusted rectangle that captures as much of the requested rectangle as possible 
+    //!         with one of its dimensions adjusted to match the aspect ratio of targetSize.
+    DGNPLATFORM_EXPORT static BSIRect SetAspectRatio(BSIRectCR requestedRect, double targetAspectRatio);
 };
 
 END_BENTLEY_RENDER_NAMESPACE

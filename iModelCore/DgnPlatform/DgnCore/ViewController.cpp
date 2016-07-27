@@ -1550,8 +1550,6 @@ void CameraViewController::_RestoreFromSettings()
     m_camera.SetLensAngle(m_settings[VIEW_SETTING_CameraAngle].asDouble());
     m_camera.SetFocusDistance(m_settings[VIEW_SETTING_CameraFocalLength].asDouble());
 
-    m_camera.ValidateLens();
-
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, m_settings[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);

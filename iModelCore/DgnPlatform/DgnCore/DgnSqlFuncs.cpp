@@ -910,8 +910,7 @@ void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
     for (RTreeMatchFunction* func : s_matchFuncs)
         db.AddRTreeMatchFunction(*func);
 
-    extern void compatibility_DgnBaseDomain_AddMissingCustomAttributes(DgnDbR);
-    compatibility_DgnBaseDomain_AddMissingCustomAttributes(db);
+    AddMissingCustomAttributes(db);
     }
 
 #ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnDbSqlFunctions @{  at the top of the file

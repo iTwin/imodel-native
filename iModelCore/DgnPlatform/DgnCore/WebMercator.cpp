@@ -642,10 +642,12 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
+#if defined(BENTLEYCONFIG_GRAPHICS_DIRECTX)    // NOTE: In dgndb61-16q2, there is something wrong with Map tiles in OpenGL. For now, just disable them. TFS#496902
     CreateCache();
 
     WebMercatorDisplay display(*this, *context.GetViewport());
     display.DrawView(context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
