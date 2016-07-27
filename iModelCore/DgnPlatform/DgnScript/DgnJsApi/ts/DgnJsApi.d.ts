@@ -1075,7 +1075,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param el    The element to which this geometry will be attached
          * @param o     The placement origin
          * @param angles The placement angles
-         * @see SetGeometryStreamAndPlacement for how to copy the geometry in this builder to an element.
+         * @see Finish for how to copy the geometry in this builder to an element.
         */
         constructor(el: GeometrySourceP, o: DPoint3dP, angles: YawPitchRollAnglesP);
 
@@ -1174,14 +1174,14 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param element   The element
          * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
          */
-        SetGeometryStreamAndPlacement(element: GeometrySourceP): cxx_int32_t;
+        Finish(element: GeometrySourceP): cxx_int32_t;
 
         /**
          * Copy the geometry in this builder to a DgnGeometryPart.
          * @param part  The DgnGeometryPart
          * @return non-zero error status if \a part is invalid or if this geometry stream is invalid
          */
-        SetGeometryStream(part: DgnGeometryPartP): cxx_int32_t;
+        FinishPart(part: DgnGeometryPartP): cxx_int32_t;
 
         OnDispose(): void;
         Dispose(): void;

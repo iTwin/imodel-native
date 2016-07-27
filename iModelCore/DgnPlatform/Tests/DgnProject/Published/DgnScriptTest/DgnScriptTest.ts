@@ -276,7 +276,7 @@ module DgnScriptTests {
         for (var i = 0; i < geoms.length; ++i)
             builder.AppendGeometry(geoms[i]);
         var geompart = be.DgnGeometryPart.Create(db);
-        builder.SetGeometryStream(geompart);
+        builder.FinishPart(geompart);
         geompart.Insert();
         return geompart;
     }
@@ -312,7 +312,7 @@ module DgnScriptTests {
         builder.AppendRenderGeometryParams(gparams);
         builder.AppendGeometryPart(geompart, new be.Placement3d(new be.DPoint3d(3, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
 
-        builder.SetGeometryStreamAndPlacement(ele);
+        builder.Finish(ele);
         ele.Insert();
 
         var geomcollection = ele.Geometry;
@@ -381,7 +381,7 @@ module DgnScriptTests {
             builder.AppendCopyOfGeometry(builders[i], new be.Placement3d(new be.DPoint3d(i, 0, 0), new be.YawPitchRollAngles(0, 0, 0)));
 
         //  Write the element to the Db
-        builder.SetGeometryStreamAndPlacement(ele);
+        builder.Finish(ele);
         ele.Insert();
 
         //  Verify that the element's geometry is a concatenation of the input builders
@@ -671,8 +671,8 @@ module DgnScriptTests {
         Shift (bspline5, shiftCount, 6);     builder.AppendGeometry (bspline5);
 
 
-        if (0 != builder.SetGeometryStreamAndPlacement(ele))
-            be.Script.ReportError('SetGeometryStreamAndPlacement failed');
+        if (0 != builder.Finish(ele))
+            be.Script.ReportError('Finish failed');
 
         ele.Insert();
 
