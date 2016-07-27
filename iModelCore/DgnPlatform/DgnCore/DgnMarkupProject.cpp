@@ -162,6 +162,19 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void MarkupDomain::_OnDgnDbOpened(DgnDbR db) const
+    {
+    if (!CustomPropertyRegistry::HasOldDgnSchema(db))
+        return;
+
+    CustomPropertyRegistry prop;
+    prop.SetClass(db, "Markup", "MarkupExternalLink");
+    prop.Register("LinkedElementId");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus queryPropertyAsJson(JsonValueR json, DgnDbCR project, DgnModelId mid, RedlineModelProperty::ProjectProperty const& propSpec, uint64_t id)

@@ -84,7 +84,7 @@ private:
     void PrependLeadingZeroIfNeeded(Utf8StringR inString, double value) const;
 
 public: 
-    void InitModelSettings(GeometricModelCR);
+    DGNPLATFORM_EXPORT void InitModelSettings(GeometricModelCR);
     DGNPLATFORM_EXPORT uint16_t GetLegacyFormat() const;
     uint16_t GetLegacyPrecision() const  {return static_cast <uint16_t> (m_precision);}
     DGNPLATFORM_EXPORT StatusInt SetAngleModeFromLegacy(AngleFormatVals value);

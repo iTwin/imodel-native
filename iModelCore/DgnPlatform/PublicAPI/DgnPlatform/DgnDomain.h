@@ -469,6 +469,7 @@ struct DgnBaseDomain : DgnDomain
     DOMAIN_DECLARE_MEMBERS(DgnBaseDomain,DGNPLATFORM_EXPORT)
 
     void _OnDgnDbOpened(DgnDbR db) const override;
+    void AddMissingCustomAttributes(DgnDbR) const;
 
 public:
     DgnBaseDomain();

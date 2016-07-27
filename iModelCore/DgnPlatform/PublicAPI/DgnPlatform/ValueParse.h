@@ -70,7 +70,7 @@ private:
     void Init() {m_angleMode = AngleMode::Degrees;}
 
 public:
-    void InitModelSettings(GeometricModelCR);
+    DGNPLATFORM_EXPORT void InitModelSettings(GeometricModelCR);
     DGNPLATFORM_EXPORT BentleyStatus SetAngleModeFromLegacy(AngleFormatVals value);
     DGNPLATFORM_EXPORT uint16_t GetLegacyFormat() const;
 

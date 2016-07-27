@@ -161,3 +161,99 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnBaseDomain::AddMissingCustomAttributes(DgnDbR db) const
+    {
+    if (!CustomPropertyRegistry::HasOldDgnSchema(db))
+        return;
+
+    CustomPropertyRegistry prop;
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element);
+    prop.Register("ModelId", ECSqlClassParams::StatementType::Insert);
+    prop.Register("Code", ECSqlClassParams::StatementType::InsertUpdate);
+    prop.Register("Label", ECSqlClassParams::StatementType::InsertUpdate);
+    prop.Register("ParentId", ECSqlClassParams::StatementType::InsertUpdate);
+    prop.Register("UserProperties", ECSqlClassParams::StatementType::None);
+    prop.Register("LastMod", ECSqlClassParams::StatementType::None);
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Category);
+    prop.Register("Descr");
+    prop.Register("Scope");
+    prop.Register("Rank");
+    prop.Register("LastMod", ECSqlClassParams::StatementType::None);
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SubCategory);
+    prop.Register("Descr");
+    prop.Register("Properties");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricElement2d);
+    prop.Register("CategoryId");
+    prop.Register("Origin");
+    prop.Register("BBoxLow");
+    prop.Register("BBoxHigh");
+    prop.Register("GeometryStream");
+    prop.Register("Rotation");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricElement3d);
+    prop.Register("CategoryId");
+    prop.Register("Origin");
+    prop.Register("BBoxLow");
+    prop.Register("BBoxHigh");
+    prop.Register("GeometryStream");
+    prop.Register("InSpatialIndex");
+    prop.Register("Yaw");
+    prop.Register("Pitch");
+    prop.Register("Roll");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationFrameStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationLeaderStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationTextStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TextAnnotationSeed);
+    prop.Register("Data");
+    prop.Register("Descr");
+    /*
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, "DimensionStyle");
+    prop.Register("TextStyleId");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, "LinearDimension");
+    prop.Register("StyleId");
+    prop.Register("Points");
+    */
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_TrueColor);
+    prop.Register("Data", ECSqlClassParams::StatementType::ReadOnly);
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LightDefinition);
+    prop.Register("Descr");
+    prop.Register("Value");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_MaterialElement);
+    prop.Register("Descr");
+    prop.Register("Data");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Texture);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.Register("Format");
+    prop.Register("Width");
+    prop.Register("Height");
+    prop.Register("Flags");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ViewDefinition);
+    prop.Register("Descr");
+    prop.Register("Source");
+    prop.Register("BaseModelId");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometryPart);
+    prop.Register("GeometryStream");
+    prop.Register("BBoxLow");
+    prop.Register("BBoxHigh");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_UrlLink);
+    prop.Register("Url");
+    prop.Register("Descr");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_EmbeddedFileLink);
+    prop.Register("Name");
+    prop.Register("Descr");
+    prop.SetClass(db, DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ViewAttachment);
+    prop.Register("ViewId");
+    prop.Register("Scale");
+    }
