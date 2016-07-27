@@ -93,7 +93,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     box[4] = box[0];
     builder->Append(*ICurvePrimitive::CreateLineString(box, 5));
 
-    builder->SetGeometryStreamAndPlacement(*this);
+    builder->Finish(*this);
     }
 
 //----------------------------------------------------------------------------------------
