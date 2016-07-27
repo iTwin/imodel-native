@@ -129,7 +129,7 @@ always:
 PchCompiland = $(baseDir)ECDbPch.cpp
 PchOutputDir = $(o)
 PchExtraOptions = -Zm200
-%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
@@ -352,7 +352,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if $(BUILD_TOOLSET) == "CLANG"
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
     OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
     LLVMCommonCompOpts + -Wno-error=deprecated-writable-strings
     LLVMCommonCompOpts + -Wno-error=unused-function
@@ -411,7 +411,7 @@ nonportObjs=%$(MultiCompileObjectList)
     ClangCommonCompOpts = $(OldClangCommonCompOpts)
 %endif
 
-%if $(BUILD_TOOLSET) == "CLANG"
+%if $(BUILD_TOOLSET) == "APPLE_CLANG"
     LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
 %endif
 
