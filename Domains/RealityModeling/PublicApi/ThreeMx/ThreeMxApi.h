@@ -10,6 +10,7 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/RealityDataCache.h>
+#include <forward_list>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
 #define END_BENTLEY_THREEMX_NAMESPACE        } END_BENTLEY_NAMESPACE
@@ -105,7 +106,7 @@ struct DrawArgs
     SceneR m_scene;
     Dgn::Render::GraphicArray m_graphics;
     MissingNodes m_missing;
-    TimePoint m_now ;
+    TimePoint m_now;
     TimePoint m_purgeOlderThan;
 
     DrawArgs(Dgn::RenderContextR context, SceneR scene, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
@@ -142,7 +143,7 @@ private:
     double m_radius = 0.0;
     double m_maxScreenDiameter = 0.0;
     NodeP m_parent;
-    std::list<GeometryPtr> m_geometry;
+    std::forward_list<GeometryPtr> m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
     BeAtomic<int> m_childLoad;
     ChildNodes m_childNodes;
@@ -294,4 +295,3 @@ struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
-

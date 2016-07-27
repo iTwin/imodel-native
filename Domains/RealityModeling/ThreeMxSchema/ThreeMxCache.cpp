@@ -28,7 +28,7 @@ struct ThreeMxTileCache : RealityData::Cache
 };
 
 //=======================================================================================
-// This object is created to load a single 3mx file asynchronously. Its virtual methods are called on other threads.
+// This object is created to load a single 3mx file asynchronously. 
 // @bsiclass                                        Grigas.Petraitis            04/2015
 //=======================================================================================
 struct ThreeMxFileData

@@ -26,6 +26,7 @@ HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 RasterFileProperties::RasterFileProperties()
     :m_fileId("")
     {
+    m_transform.InitIdentity();
     }
 
 //----------------------------------------------------------------------------------------
@@ -35,6 +36,26 @@ static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
     {
     JsonUtils::DPoint2dFromJson (range.low, inValue["low"]);
     JsonUtils::DPoint2dFromJson (range.high, inValue["high"]);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     7/2016
+//----------------------------------------------------------------------------------------
+static void DMatrix4dFromJson (DMatrix4dR matrix, JsonValueCR inValue)
+    {
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x++)
+            matrix.coff[y][x] = inValue[y][x].asDouble();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     7/2016
+//----------------------------------------------------------------------------------------
+static void DMatrix4dToJson (JsonValueR outValue, DMatrix4dCR matrix)
+    {
+    for (int y = 0; y < 4; y++)
+        for (int x = 0; x < 4; x++)
+            outValue[y][x] = matrix.coff[y][x];
     }
 
 //----------------------------------------------------------------------------------------
@@ -53,6 +74,7 @@ void RasterFileProperties::ToJson(Json::Value& v) const
     {
     v["fileId"] = m_fileId.c_str();
     DRange2dToJson(v["bbox"], m_boundingBox);
+    DMatrix4dToJson(v["transform"], m_transform);
     }
 
 //----------------------------------------------------------------------------------------
@@ -62,6 +84,7 @@ void RasterFileProperties::FromJson(Json::Value const& v)
     {
     m_fileId = v["fileId"].asString();
     DRange2dFromJson(m_boundingBox, v["bbox"]);
+    DMatrix4dFromJson(m_transform, v["transform"]);
     }
 
 //----------------------------------------------------------------------------------------
@@ -103,6 +126,15 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
     RasterFileProperties props;
     props.m_fileId = params.m_fileId;
     props.m_boundingBox = rasterRange;
+
+    if (params.m_transformP != nullptr)
+        props.m_transform = *params.m_transformP;
+    else
+        {
+        //&&ep - is this ok ?
+        props.m_transform = rasterFilePtr->GetGeoTransform();
+        }
+
 
     // Create model in DgnDb
     RasterFileModelPtr model = new RasterFileModel(params, props);

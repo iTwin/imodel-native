@@ -17,6 +17,7 @@ HANDLER_DEFINE_MEMBERS(ModelHandler)
 Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP renderSys) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(renderSys)
     {
     m_isHttp = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
+
     if (m_isHttp)
         m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
     else
