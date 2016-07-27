@@ -59,7 +59,6 @@
     <ClCompile Include="NonPublished\MissingHandler_Test.cpp" />
     <ClCompile Include="NonPublished\Polyface_Test.cpp" />
     <ClCompile Include="NonPublished\Raster_Test.cpp" />
-    <ClCompile Include="NonPublished\RealityDataCache_Test.cpp" />
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\ComponentModel_PerfTest.cpp" />

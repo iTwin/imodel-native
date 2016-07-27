@@ -73,9 +73,6 @@
     <ClCompile Include="Published\DgnECNavigator_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\RealityDataCache_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="Published\RealityDataCache_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>

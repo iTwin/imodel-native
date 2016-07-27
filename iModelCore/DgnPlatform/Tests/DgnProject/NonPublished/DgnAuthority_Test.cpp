@@ -18,11 +18,6 @@ struct DgnAuthoritiesTest : public DgnDbTestFixture
     {
     DgnDbR GetDb() { return *m_db; }
 
-    void SetupProject(WCharCP testProjFile)
-        {
-        DgnDbTestFixture::SetupProject(L"3dMetricGeneral.ibim", testProjFile, Db::OpenMode::ReadWrite);
-        }
-
     void Compare(DgnAuthorityId id, Utf8CP name)
         {
         DgnAuthorityCPtr auth = GetDb().Authorities().GetAuthority(id);
@@ -68,7 +63,7 @@ struct DgnAuthoritiesTest : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnAuthoritiesTest, Authorities)
     {
-    SetupProject(L"authorities.ibim");
+    SetupSeedProject();
 
     // Create some new authorities
     auto auth1Id = Create("Auth1")->GetAuthorityId();
@@ -89,7 +84,7 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnAuthoritiesTest, IterateCodes)
     {
-    SetupProject(L"IterateCodes.ibim");
+    SetupSeedProject();
 
     EXPECT_TRUE(CodeExists(GetDb().GetDictionaryModel().GetCode()));
 
@@ -145,7 +140,7 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnAuthoritiesTest, ModelAndElementUniqueness)
     {
-    SetupProject(L"ModelAndElementUniqueness.ibim");
+    SetupSeedProject();
     auto auth1 = Create("Auth1");
     auto auth2 = Create("Auth2");
 

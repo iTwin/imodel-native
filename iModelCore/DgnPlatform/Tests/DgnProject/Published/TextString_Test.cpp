@@ -6,11 +6,6 @@
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/TextStyleInterop.h>
 
-// Rebuild API:             bb re DgnPlatform:PublicAPI DgnPlatform:PublishedApi
-// Rebuild code:            bb re DgnPlatformDLL
-// Rebuild test & harness:  bb re DgnProjectUnitTests BeGTestExe
-// Rebuild everything:      bb re DgnPlatform:PublicAPI DgnPlatform:PublishedApi DgnPlatformDLL DgnProjectUnitTests BeGTestExe
-
 USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================

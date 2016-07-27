@@ -722,7 +722,7 @@ TEST_F(DirectionParserTest, Clone)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DirectionParserTest, FromModel)
 {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
@@ -999,7 +999,7 @@ struct AreaVolumeParserTest : public DgnDbTestFixture {};
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
@@ -1010,7 +1010,7 @@ TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 
     AreaParserPtr areaPar = AreaParser::Create(*geomModelP);
     
-    ASSERT_EQ (0.001, areaPar->GetMasterUnitsScale()); //The model's master Units are in mm.
+    ASSERT_EQ (1.0, areaPar->GetMasterUnitsScale()); //The model's master Units are in mm.
     ASSERT_EQ (1.0, areaPar->GetScale()); //The scale is 1.0
 
     areaPar->SetScale(2.0);
@@ -1025,7 +1025,7 @@ TEST_F(AreaVolumeParserTest, AreaParserCreateFromModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AreaVolumeParserTest, VolumeParserCreateFromModel)
 {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
@@ -1036,7 +1036,7 @@ TEST_F(AreaVolumeParserTest, VolumeParserCreateFromModel)
 
     VolumeParserPtr volPar = VolumeParser::Create(*geomModelP);
 
-    ASSERT_EQ(0.001, volPar->GetMasterUnitsScale()); //The model's master Units are in mm.
+    ASSERT_EQ(1.0, volPar->GetMasterUnitsScale()); //The model's master Units are in mm.
     ASSERT_EQ(1.0, volPar->GetScale()); //The scale is 1.0
 
     VolumeParserPtr volPar2 = volPar->Clone();
