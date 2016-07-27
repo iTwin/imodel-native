@@ -227,92 +227,6 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
     if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
         return ERROR;
 
-    Utf8String arrayElementJson;
-    switch (arrayType)
-        {
-            case PRIMITIVETYPE_Binary:
-            {
-            Utf8String base64str;
-            if (SUCCESS != Base64Utilities::Encode(base64str, GetTestBlob(), GetTestBlobSize()))
-                return ERROR;
-
-            arrayElementJson.append("\"").append(base64str).append("\"");
-            break;
-            }
-            case PRIMITIVETYPE_Boolean:
-                arrayElementJson.append(BOOLVALUE ? "true" : "false");
-                break;
-
-            case PRIMITIVETYPE_DateTime:
-            {
-            double jd = -1.0;
-            if (SUCCESS != GetTestDate().ToJulianDay(jd))
-                return ERROR;
-
-            Utf8String str;
-            str.Sprintf("%f", jd);
-            arrayElementJson.append(str);
-            break;
-            }
-            case PRIMITIVETYPE_Double:
-            {
-            Utf8String str;
-            str.Sprintf("%f", DOUBLEVALUE);
-            arrayElementJson.append(str);
-            break;
-            }
-            case PRIMITIVETYPE_IGeometry:
-            {
-            bvector<Byte> fb;
-            BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
-            Utf8String base64str;
-            if (SUCCESS != Base64Utilities::Encode(base64str, fb.data(), fb.size()))
-                return ERROR;
-
-            arrayElementJson.append("\"").append(base64str).append("\"");
-            break;
-            }
-
-            case PRIMITIVETYPE_Integer:
-            {
-            Utf8String str;
-            str.Sprintf("%d", INTVALUE);
-            arrayElementJson.append(str);
-            break;
-            }
-
-            case PRIMITIVETYPE_Long:
-            {
-            //int64 must be serialized as strings in JSON
-            char str[32];
-            sprintf(str, "\"%" PRId64 "\"", INT64VALUE);
-            arrayElementJson.append(str);
-            break;
-            }
-            case PRIMITIVETYPE_Point2D:
-            {
-            Utf8String str;
-            str.Sprintf("{\"x\":%f,\"y\":%f}", POINTXVALUE, POINTYVALUE);
-            arrayElementJson.append(str);
-            break;
-            }
-            case PRIMITIVETYPE_Point3D:
-            {
-            Utf8String str;
-            str.Sprintf("{\"x\":%f,\"y\":%f,\"z\":%f}", POINTXVALUE, POINTYVALUE, POINTZVALUE);
-            arrayElementJson.append(str);
-            break;
-            }
-            case PRIMITIVETYPE_String:
-            {
-            arrayElementJson.append("\"" STRINGVALUE "\"");
-            break;
-            }
-
-            default:
-                return ERROR;
-        }
-
     timer.Start();
 
     Statement stmt;
@@ -321,17 +235,95 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
 
     for (int i = 0; i < rowCount; i++)
         {
-        Utf8String json("[");
+        rapidjson::Document json;
+        json.SetArray();
         for (uint32_t j = 0; j < arraySize; j++)
             {
-            if (j > 0)
-                json.append(",");
+            rapidjson::Value arrayElementJson;
+            switch (arrayType)
+                {
+                    case PRIMITIVETYPE_Binary:
+                    {
+                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
+                        return ERROR;
+                    break;
+                    }
 
-            json.append(arrayElementJson);
+                    case PRIMITIVETYPE_Boolean:
+                    {
+                    arrayElementJson.SetBool(BOOLVALUE);
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_DateTime:
+                    {
+                    double jd = -1.0;
+                    if (SUCCESS != GetTestDate().ToJulianDay(jd))
+                        return ERROR;
+
+                    arrayElementJson.SetDouble(jd);
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Double:
+                    {
+                    arrayElementJson.SetDouble(DOUBLEVALUE);
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_IGeometry:
+                    {
+                    bvector<Byte> fb;
+                    BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+
+                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Integer:
+                    {
+                    arrayElementJson.SetInt(INTVALUE);
+                    break;
+                    }
+                    case PRIMITIVETYPE_Long:
+                    {
+                    ECRapidJsonUtilities::Int64ToStringJsonValue(arrayElementJson, INT64VALUE, json.GetAllocator());
+                    break;
+                    }
+                    case PRIMITIVETYPE_Point2D:
+                    {
+                    if (ECRapidJsonUtilities::Point2DToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
+                        return ERROR;
+
+                    break;
+                    }
+                    case PRIMITIVETYPE_Point3D:
+                    {
+                    if (ECRapidJsonUtilities::Point3DToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
+                        return ERROR;
+
+                    break;
+                    }
+                    case PRIMITIVETYPE_String:
+                    {
+                    arrayElementJson.SetString(STRINGVALUE);
+                    break;
+                    }
+
+                    default:
+                        return ERROR;
+                }
+
+            json.PushBack(arrayElementJson, json.GetAllocator());
             }
 
-        json.append("]");
-        if (BE_SQLITE_OK != stmt.BindText(1, json.c_str(), Statement::MakeCopy::No))
+        rapidjson::StringBuffer stringBuffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
+        json.Accept(writer);
+
+        if (BE_SQLITE_OK != stmt.BindText(1, stringBuffer.GetString(), Statement::MakeCopy::No))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt.Step())
