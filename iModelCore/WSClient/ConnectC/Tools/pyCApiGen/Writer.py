@@ -98,7 +98,7 @@ class Writer(object):
             comment_str += "* \param[out] outStringSize Pointer to store the string length\n"
         elif property_type == "dateTime":
             comment_str += "* \param[in] strLength buffer length\n"
-            comment_str += "* \param[out] str Pointer to buffer to store dateTime property\n"
+            comment_str += "* \param[out] dateTime Pointer to buffer to store dateTime property\n"
         elif property_type == "guid":
             comment_str += "* \param[in] strLength guid-buffer length\n"
             comment_str += "* \param[out] guid Pointer to buffer to store GUID property\n"

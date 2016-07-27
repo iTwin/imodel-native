@@ -9,7 +9,7 @@
 
 #include <Bentley/Bentley.h>
 #include <DgnClientFx/DgnClientFxL10N.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>

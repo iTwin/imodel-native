@@ -104,8 +104,14 @@ IHTTPHANDLERPTR customHandler
         );
 
     if (api->AttemptLoginUsingToken(make_shared<SamlToken>(authenticatedToken)))
+        {
         return (CWSCCHANDLE) api;
-    return nullptr;
+        }
+    else
+        {
+        ConnectWebServicesClientC_FreeApi((CWSCCHANDLE) api);
+        return nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,8 +155,14 @@ IHTTPHANDLERPTR customHandler
         );
 
     if (api->AttemptLoginUsingCredentials(Credentials(username, password)))
+        {
         return (CWSCCHANDLE) api;
-    return nullptr;
+        }
+    else
+        {
+        ConnectWebServicesClientC_FreeApi((CWSCCHANDLE) api);
+        return nullptr;
+        }
     }
 
 
@@ -187,7 +199,6 @@ CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus sta
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -215,23 +226,73 @@ WCharCP ProjectGuid
     objectCreationJson["instance"] = instance;
     ObjectId objectId("GlobalSchema", "ProjectFavorite", "");
 
-    if (api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
         {
         api->CreateWSRepositoryClient
             (
-            UrlProvider::Urls::ConnectWsgGlobal.Get(),
+            connectwsgglobalUrl,
             "BentleyCONNECT.Global--CONNECT.GLOBAL"
             );
         }
 
-    auto client = api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
     auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
     if (!result.IsSuccess())
         return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
 
     api->SetCreatedObjectResponse(result.GetValue());
     api->SetStatusMessage("Successful operation");
-    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectMRU completed successfully.");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite completed successfully.");
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP ProjectGuid
+)
+    {
+    VERIFY_API
+
+    Json::Value instance;
+
+    if (ProjectGuid == nullptr)
+        {
+        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite_V2.");
+        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite_V2 instance.");
+        return INVALID_PARAMETER;
+        }
+    instance["instanceId"] = Utf8String(ProjectGuid);
+    instance["schemaName"] = "GlobalSchema";
+    instance["className"] = "ProjectFavorite_V2";
+
+    Json::Value objectCreationJson;
+    objectCreationJson["instance"] = instance;
+    ObjectId objectId("GlobalSchema", "ProjectFavorite_V2", "");
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+        {
+        api->CreateWSRepositoryClient
+            (
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
+            );
+        }
+
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
+    if (!result.IsSuccess())
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetCreatedObjectResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite_V2 completed successfully.");
     return SUCCESS;
     }
 
@@ -265,6 +326,32 @@ CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCC
     if (!result.IsSuccess())
         return httperrorToConnectWebServicesClientStatus(api, result.GetError().GetHttpStatus(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
     
+    /* TODO: How can all of this be done, yet be included in the auto gen stuff? Maybe have a manually created Free, GetBufferData...etc which either calls manually created functions, or the autoGenOne (which will proppagate accordingly)
+             Can have a globally unique schema for all manually created ones, which pipes to functions which free, get...etc manually created stuff, and the other would pipe to autoGen
+             Yup, all buffer functions are broken for anything buffer related which isn't autoGen. Currently that is only _GetUserInfo, but that could be a lot more, and there should only be one exposed API call for both manual and autoGen
+    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
+    if (buf == nullptr)
+        {
+        free(buf);
+        api->SetStatusMessage("Memory failed to initialize interally.");
+        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
+        return INTERNAL_MEMORY_ERROR;
+        }
+
+    //Note this below is wrong for SolrClient. It is just a stub saying this needs to be done to properly set the out buffer
+    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())
+        {
+        LPCWSCCORGANIZATIONBUFFER bufToFill = new CWSCCORGANIZATIONBUFFER;
+        Organization_BufferStuffer(bufToFill, instance.GetProperties());
+        buf->lItems.push_back(bufToFill);
+        }
+
+    buf->lCount = buf->lItems.size();
+    buf->lClassType = BUFF_TYPE_ORGANIZATION;
+    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
+    *organizationBuffer = (CWSCCDATABUFHANDLE) buf;
+    */
+
     api->SetStatusMessage("Success!");
     api->SetStatusDescription("The IMS user info was successfully retreived.");
     return SUCCESS;
@@ -472,7 +559,13 @@ ConnectWebServicesClientC_internal::~ConnectWebServicesClientC_internal()
 bool ConnectWebServicesClientC_internal::AttemptLoginUsingCredentials(Credentials credentials)
     {
     auto result = m_connectSignInManager->SignInWithCredentials(credentials)->GetResult();
-    return result.IsSuccess();
+    bool isSuccess = result.IsSuccess();
+    if (isSuccess)
+        {
+        SetStatusMessage("Login successful.");
+        SetStatusDescription("Login using credentials performed successfully.");
+        }
+    return isSuccess;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,7 +574,13 @@ bool ConnectWebServicesClientC_internal::AttemptLoginUsingCredentials(Credential
 bool ConnectWebServicesClientC_internal::AttemptLoginUsingToken(SamlTokenPtr token)
     {
     auto result = m_connectSignInManager->SignInWithToken(token)->GetResult();
-    return result.IsSuccess();
+    bool isSuccess = result.IsSuccess();
+    if (isSuccess)
+        {
+        SetStatusMessage("Login successful.");
+        SetStatusDescription("Login using credentials performed successfully.");
+        }
+    return isSuccess;
     }
 
 /*---------------------------------------------------------------------------------**//**

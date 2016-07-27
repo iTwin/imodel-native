@@ -14,7 +14,7 @@
 #include <WebServices/ConnectC/CWSCCBufferGenPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <Bentley/Bentley.h>
 
 struct ConnectWebServicesClientCTests : public WSClientBaseTest

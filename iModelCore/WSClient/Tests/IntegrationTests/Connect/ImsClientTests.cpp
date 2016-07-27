@@ -112,7 +112,7 @@ TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForVal
     {
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_HTTP, BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, BentleyApi::NativeLogging::LOG_TRACE);
 
     StubLocalState localState;
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);

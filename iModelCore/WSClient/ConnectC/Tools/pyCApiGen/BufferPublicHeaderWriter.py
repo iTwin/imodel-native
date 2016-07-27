@@ -42,6 +42,7 @@ class BufferPublicHeaderWriter(Writer):
 
     def __write_api_get_functions(self):
         self.__write_api_string_accessors()
+        self.__write_api_datetime_accessor()
         self.__write_api_guid_accessor()
         self.__write_api_bool_accessor()
         self.__write_api_integer_accessor()
@@ -56,6 +57,12 @@ class BufferPublicHeaderWriter(Writer):
         if self.ecschemas_have_ecclass_with_property_type('StringLength'):
             self._file.write(self._get_api_buffer_accessor_function_comment("StringLength"))
             self._file.write(self._get_api_buffer_accessor_function_definition("StringLength"))
+            self._write_spacing()
+
+    def __write_api_datetime_accessor(self):
+        if self.ecschemas_have_ecclass_with_property_type('dateTime'):
+            self._file.write(self._get_api_buffer_accessor_function_comment("dateTime"))
+            self._file.write(self._get_api_buffer_accessor_function_definition("dateTime"))
             self._write_spacing()
 
     def __write_api_guid_accessor(self):
