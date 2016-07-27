@@ -15,6 +15,9 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
     private : 
 
         SMSQLiteFilePtr m_smSQLiteFile;        
+        SMSQLiteFilePtr m_smFeatureSQLiteFile;
+
+        SMSQLiteFilePtr GetFeatureSQLiteFile();
 
     public : 
     
@@ -37,6 +40,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
+
+        virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 

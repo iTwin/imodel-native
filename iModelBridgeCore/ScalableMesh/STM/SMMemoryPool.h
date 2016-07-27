@@ -367,6 +367,7 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
     private:
 
         IHPMDataStore<DataType>* m_store;
+        ISMNodeDataStoreTypePtr<DataType> m_dataStore;
 
     public:
 
@@ -384,12 +385,37 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
                 }
             }
 
-        virtual ~SMStoredMemoryPoolGenericBlobItem()
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
+            : SMMemoryPoolGenericBlobItem(nullptr,dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {
+            m_dataStore = dataStore;
+
+            if (m_size > 0)
+                {
+                m_data = (Byte*)new DataType();
+                HPMBlockID blockID(m_nodeId);
+                size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)m_data, m_size, blockID);
+                m_size = nbBytesLoaded;
+                }
+            }
+
+        
+
+
+        virtual ~SMStoredMemoryPoolGenericBlobItem()
+            {            
             if (m_dirty)
                 {
                 HPMBlockID blockID(m_nodeId);
-                m_store->StoreBlock((DataType*)m_data, 1, blockID);
+
+                if (m_dataStore.IsValid())
+                    {
+                    m_dataStore->StoreBlock((DataType*)m_data, 1, blockID);
+                    }
+                else
+                    {
+                    m_store->StoreBlock((DataType*)m_data, 1, blockID);
+                    }
                 }
             }
     };

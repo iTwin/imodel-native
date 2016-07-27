@@ -159,9 +159,10 @@ public:
     size_t GetClipPolygonByteCount(int64_t clipID);
     size_t GetSkirtPolygonByteCount(int64_t skirtID);
 
+    void GetAllClipIDs(bvector<uint64_t>& allIds); 
 
-    void GetAllClipIDs(bvector<uint64_t>& allIds);
-
+    bool GetFileName(Utf8String& fileName) const; 
+    
     bool m_autocommit = true;
 private:
     ScalableMeshDb* m_database;

@@ -105,6 +105,18 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
     return smSQLiteFile;
     }
 
+bool SMSQLiteFile::GetFileName(Utf8String& fileName) const
+    {
+    if (m_database == 0)
+        {
+        return false;
+        }
+
+    fileName = Utf8String(m_database->GetDbFileName());
+
+    return true;
+    }        
+
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 {
     if (m_database == nullptr)

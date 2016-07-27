@@ -1880,6 +1880,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
             for (auto& polyline : features)
                 {
                 DRange3d extent = DRange3d::From(polyline);
+#if 0 
                     {
                     WString namePoly = L"E:\\output\\scmesh\\2016-06-14\\afterstitchpoly_";
                     namePoly.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
@@ -1898,6 +1899,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                     fwrite(&polyline[0], sizeof(DPoint3d), polyline.size(), polyCliPFile);
                     fclose(polyCliPFile);
                     }
+#endif
                 node->AddFeatureDefinitionSingleNode((ISMStore::FeatureType)types[&polyline - &features.front()], polyline, extent);
             }
         }
