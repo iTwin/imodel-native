@@ -166,7 +166,7 @@ PchCompiland        = $(baseDir)DgnPlatformInternal.cpp
 PchOutputDir        = $(DgnPlatformObj)
 PchExtraOptions     = -Zm170
 
-%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Compiling using DgnHandlerInternal.h.gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
@@ -641,8 +641,8 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext
                             $(ContextSubpartsLibs)$(libprefix)freetype2$(libext) \
                             $(ContextSubpartsLibs)$(libprefix)BeIcu4c$(libext)
 
-%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM))
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+%if defined (BENTLEYCONFIG_FOLLY)
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 %endif
 
 %if defined (BENTLEYCONFIG_OPENCASCADE)

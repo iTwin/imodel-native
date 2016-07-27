@@ -32,14 +32,6 @@ struct DgnModelTests : public DgnDbTestFixture
 {
     DgnModelPtr m_model;
     
-    void SetUp() override
-        {
-        //DgnDbTestDgnManager tdm(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
-        //SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
-
-        //m_db = tdm.GetDgnProjectP();
-        }
-
     void LoadModel(Utf8CP name)
         {
         DgnModels& modelTable =  m_db->Models();
@@ -79,7 +71,7 @@ public:
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetGraphicElements)
     {
-    SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"GetGraphicElements.ibim", Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
@@ -98,7 +90,7 @@ TEST_F(DgnModelTests, GetGraphicElements)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetName)
     {
-    SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"GetName.ibim", Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     Utf8String name = m_model->GetCode().GetValue();
     EXPECT_TRUE(name.CompareTo("Splines")==0);
@@ -122,7 +114,7 @@ TEST_F(DgnModelTests, GetName)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, EmptyList)
     {
-    SetupProject(L"XGraphicsElements.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"XGraphicsElements.ibim", L"EmptyList.ibim", Db::OpenMode::ReadWrite);
     LoadModel("Splines");
     ASSERT_TRUE(0 != m_model->GetElements().size());
     m_model->EmptyModel();
@@ -136,7 +128,7 @@ TEST_F(DgnModelTests, EmptyList)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    SetupProject(L"ModelRangeTest.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"ModelRangeTest.ibim", L"GetRange.ibim", Db::OpenMode::ReadWrite);
     LoadModel("RangeTest");
 
     AxisAlignedBox3d range = m_model->ToGeometricModel()->QueryModelRange();
@@ -153,8 +145,8 @@ TEST_F(DgnModelTests, GetRange)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
-    LoadModel("Default");
+    SetupSeedProject();
+    LoadModel("DefaultModel");
 
     AxisAlignedBox3d thirdRange = m_model->ToGeometricModel()->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
@@ -206,7 +198,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelCRUD)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     static Utf8CP s_sheet1Name = "Sheet1";
     static Utf8CP s_sheet1NameUPPER = "SHEET1";
@@ -291,6 +283,8 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         DgnModelPtr sheet2Model = db->Models().GetModel(sheet2Id);
         ASSERT_EQ( DgnDbStatus::Success, sheet2Model->Delete());
         ASSERT_EQ( 1 , countSheets(*db) );
+        db->SaveChanges();
+        db->CloseDb();
         }        
 
     if (true)
@@ -305,6 +299,8 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         // Verify that we can only place drawing elements in a sheet
         InsertElement(*db, mid, false, true);
         InsertElement(*db, mid, true, false);
+        db->SaveChanges();
+        db->CloseDb();
         }
     }
 
@@ -314,7 +310,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, WorkWithDgnModelTable)
     {
-    SetupProject(L"ElementsSymbologyByLevel.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", L"WorkWithDgnModelTable.ibim", Db::OpenMode::ReadWrite);
 
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();
@@ -347,7 +343,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, DictionaryModel)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr model = db.Models().GetModel(DgnModel::DictionaryId());
@@ -381,7 +377,7 @@ TEST_F(DgnModelTests, DictionaryModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ModelsIterator)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -459,7 +455,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AbandonChanges)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -506,7 +502,7 @@ struct TestAppData : DgnModel::AppData
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, AddAppData)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -540,7 +536,7 @@ TEST_F (DgnModelTests, AddAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, DropAppData)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models ().GetModel (db.Models ().QueryFirstModelId ());
@@ -569,7 +565,7 @@ TEST_F (DgnModelTests, DropAppData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnModelTests, ReplaceInvalidCharacter)
     {
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";
@@ -587,8 +583,8 @@ TEST_F (DgnModelTests, ReplaceInvalidCharacter)
 * @bsimethod                                    Majd.Uddin                      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, UnitDefinitionLabel)
-{
-    SetupProject(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite);
+    {
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnModelPtr seedModel = db.Models().GetModel(db.Models().QueryFirstModelId());
@@ -598,6 +594,6 @@ TEST_F(DgnModelTests, UnitDefinitionLabel)
     // For TFS 473760: The returned label was truncated before the fix i.e. 'm' instead of 'mm'
     // Adding the test so that this doesn't happen again
     GeometricModel::DisplayInfo const& displayInfo = seedModel->ToGeometricModel()->GetDisplayInfo();
-    EXPECT_STREQ("mm", displayInfo.GetMasterUnits().GetLabel().c_str());
-    EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
-}
+    EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
+    EXPECT_STREQ("m", displayInfo.GetSubUnits().GetLabel().c_str());
+    }

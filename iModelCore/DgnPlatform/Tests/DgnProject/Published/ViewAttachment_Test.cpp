@@ -30,7 +30,7 @@ protected:
 public:
     DEFINE_T_SUPER(GenericDgnModelTestFixture);
 
-    ViewAttachmentTest() /*: T_Super(__FILE__, true, true)*/ { }
+    ViewAttachmentTest()  { }
 
     virtual void SetUp() override;
 

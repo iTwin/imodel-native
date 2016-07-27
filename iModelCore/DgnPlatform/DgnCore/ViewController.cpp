@@ -1534,8 +1534,6 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     m_camera.SetLensAngle(jsonObj[VIEW_SETTING_CameraAngle].asDouble());
     m_camera.SetFocusDistance(jsonObj[VIEW_SETTING_CameraFocalLength].asDouble());
 
-    m_camera.ValidateLens();
-
     DPoint3d eyePt;
     JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);

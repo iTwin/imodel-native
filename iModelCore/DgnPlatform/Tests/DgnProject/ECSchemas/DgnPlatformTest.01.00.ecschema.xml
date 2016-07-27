@@ -30,105 +30,66 @@
         <ECProperty propertyName="TestElementProperty" typeName="string">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestIntegerProperty1" typeName="int">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestIntegerProperty2" typeName="int">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestIntegerProperty3" typeName="int">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestIntegerProperty4" typeName="int">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestDoubleProperty1"  typeName="double">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestDoubleProperty2"  typeName="double">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestDoubleProperty3"  typeName="double">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestDoubleProperty4"  typeName="double">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestPointProperty1"   typeName="Point3d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestPointProperty2"   typeName="Point3d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestPointProperty3"   typeName="Point3d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="TestPointProperty4"   typeName="Point3d">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECClass>
@@ -284,25 +245,16 @@
         <ECProperty propertyName='Prop1_1' typeName='string'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName='Prop1_2' typeName='long'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName='Prop1_3' typeName='double'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECClass>
@@ -315,25 +267,16 @@
         <ECProperty propertyName='Prop2_1' typeName='string'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName='Prop2_2' typeName='long'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName='Prop2_3' typeName='double'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECClass>
@@ -346,25 +289,16 @@
         <ECProperty propertyName='Prop3_1' typeName='string'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName='Prop3_2' typeName='long'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName='Prop3_3' typeName='double'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
       </ECClass>
@@ -383,17 +317,11 @@
         <ECProperty propertyName='Prop_point3d' typeName='point3d'>
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
         </ECProperty>
         <ECStructProperty propertyName="Prop_struct" typeName="TestStruct">
           <ECCustomAttributes>
             <CustomHandledProperty/>
-            <PropertyStatementType>
-              <StatementTypes>7</StatementTypes>
-            </PropertyStatementType>
           </ECCustomAttributes>
           </ECStructProperty>
         </ECClass>

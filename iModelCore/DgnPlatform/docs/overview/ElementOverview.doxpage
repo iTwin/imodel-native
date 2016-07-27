@@ -45,6 +45,13 @@ An element can also be deleted.
 - DgnElements::Delete
 - DgnElement::Delete
 
+And copied or imported.
+
+- DgnElement::Clone
+- DgnElement::Import
+
+Don't forget to call DgnElement::Insert on the copy, in order to write it to the destination.
+
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_ElementClasses Element Classes

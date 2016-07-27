@@ -84,6 +84,7 @@ enum DgnMarkupProjectSchemaValues
 struct MarkupDomain : Dgn::DgnDomain
     {
     DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
+        void _OnDgnDbOpened(DgnDbR) const override;
     public:
         MarkupDomain();
     };

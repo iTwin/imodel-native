@@ -129,6 +129,60 @@ DgnDbStatus TestElement::_InsertInDb()
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_SetProperty(Utf8CP propName, ECN::ECValueCR value)
+    {
+#define SETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.ToString(); return DgnDbStatus::Success;}
+#define SETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetInteger(); return DgnDbStatus::Success;}
+#define SETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetDouble(); return DgnDbStatus::Success;}
+#define SETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {PVAL = value.GetPoint3D(); return DgnDbStatus::Success;}
+
+    SETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
+    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
+    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty2, m_intProps[1])
+    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty3, m_intProps[2])
+    SETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty4, m_intProps[3])
+    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty1, m_doubleProps[0])
+    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty2, m_doubleProps[1])
+    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty3, m_doubleProps[2])
+    SETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty4, m_doubleProps[3])
+    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty1, m_pointProps[0])
+    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty2, m_pointProps[1])
+    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
+    SETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
+
+    return T_Super::_SetProperty(propName, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_GetProperty(ECN::ECValueR value, Utf8CP propName) const
+    {
+#define GETSTRPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL.c_str()); return DgnDbStatus::Success;}
+#define GETINTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
+#define GETDBLPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
+#define GETPNTPROP(CASEN,PVAL) if (0 == strcmp(propName, CASEN)) {value = ECN::ECValue(PVAL); return DgnDbStatus::Success;}
+
+    GETSTRPROP(DPTEST_TEST_ELEMENT_TestElementProperty, m_testElemProperty)
+    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty1, m_intProps[0])
+    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty2, m_intProps[1])
+    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty3, m_intProps[2])
+    GETINTPROP(DPTEST_TEST_ELEMENT_IntegerProperty4, m_intProps[3])
+    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty1, m_doubleProps[0])
+    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty2, m_doubleProps[1])
+    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty3, m_doubleProps[2])
+    GETDBLPROP(DPTEST_TEST_ELEMENT_DoubleProperty4, m_doubleProps[3])
+    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty1, m_pointProps[0])
+    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty2, m_pointProps[1])
+    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty3, m_pointProps[2])
+    GETPNTPROP(DPTEST_TEST_ELEMENT_PointProperty4, m_pointProps[3])
+
+    return T_Super::_GetProperty(value, propName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)

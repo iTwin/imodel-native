@@ -55,6 +55,35 @@ void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFrom
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAspectRatio)
+    {
+    BSIRect rect = requestedRect;
+
+    if (targetAspectRatio >= 1.0)
+        {
+        double requestedWidth = rect.Width();
+        double requiredWidth = rect.Height() * targetAspectRatio;
+        double adj = requiredWidth - requestedWidth;
+        rect.Inset((int)(-adj/2.0), 0);
+        BeAssert(0 == BeNumerical::Compare(rect.Width(), requiredWidth));
+        }
+    else
+        {
+        double requestedHeight = rect.Height();
+        double requiredHeight = rect.Width() / targetAspectRatio;
+        double adj = requiredHeight - requestedHeight;
+        rect.Inset(0, (int)(-adj/2.0));
+        BeAssert(0 == BeNumerical::Compare(rect.Height(), requiredHeight));
+        }
+
+    BeAssert(0 == BeNumerical::Compare(rect.Aspect(), targetAspectRatio));
+
+    return rect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::AddTask(Task& task)

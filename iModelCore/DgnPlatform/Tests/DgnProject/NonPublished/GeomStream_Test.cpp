@@ -12,17 +12,23 @@ USING_NAMESPACE_BENTLEY_DGN
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-class GeometryStreamTest : public testing::Test
+class GeometryStreamTest : public GenericDgnModelTestFixture
 {
 protected:
-ScopedDgnHost       m_host;
-DgnDbTestDgnManager m_testDataManager;
+    DgnModelPtr                 m_defaultModelP;
 
 public:
-    GeometryStreamTest() : m_testDataManager (L"2dMetricGeneral.ibim", "", Db::OpenMode::ReadWrite, false){BeAssert( NULL != GetDgnModelP() );}
+    GeometryStreamTest() {  }
     virtual ~GeometryStreamTest () {}
 
-    DgnModelP GetDgnModelP() {return m_testDataManager.GetDgnModelP();}
+    DgnModelP GetDgnModelP() { return m_defaultModelP.get(); }
+    virtual void SetUp()
+        {
+        DgnDbPtr db = GetDgnDb(WString(TEST_NAME, true).c_str());
+        m_defaultModelP = db->Models().GetModel(db->Models().QueryFirstModelId());
+        ASSERT_TRUE(m_defaultModelP.IsValid());
+        m_defaultModelP->FillModel();
+        }
 };
     
 static bool hasGeom(GeometryStreamCR el) {return (NULL != el.GetData()) && 3 == el.GetSize();}

@@ -8,6 +8,7 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -92,17 +93,16 @@ static void checkGeometryStream(GeometrySourceCR gel, GeometricPrimitive::Geomet
 //=======================================================================================
 // @bsiclass                                                    Umar.Hayat     11/2015
 //=======================================================================================
-struct DgnScriptTest : public ::testing::Test
+struct DgnScriptTest : public DgnDbTestFixture
 {
-    ScopedDgnHost autoDgnHost;
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, TestEga)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
-    DgnDbP project = tdm.GetDgnProjectP();
+    SetupSeedProject();
+    DgnDbP project = m_db.get();// tdm.GetDgnProjectP();
     ASSERT_TRUE( project != NULL );
 
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
@@ -149,7 +149,7 @@ TEST_F(DgnScriptTest, TestEga)
 })();\
 ";
 
-    autoDgnHost.SetFetchScriptCallback(&jsProg);
+    m_host.SetFetchScriptCallback(&jsProg);
 
     parms["X"] = 1.0;
     parms["Y"] = 2.0;
@@ -247,15 +247,9 @@ TEST_F(DgnScriptTest, RunScripts)
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
 
-
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
-    DgnDbP project = tdm.GetDgnProjectP();
+    SetupSeedProject();
+    DgnDbP project = m_db.get();
     ASSERT_TRUE(project != NULL);
-
-    auto status = BentleyApi::DPTest::DgnPlatformTestDomain::GetDomain().ImportSchema(*project);
-    ASSERT_TRUE(DgnDbStatus::Success == status);
-
-    project->SaveChanges(); // digest the schema import
 
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
@@ -297,9 +291,8 @@ static bool areDateTimesEqual(DateTime const& d1, DateTime const& d2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, CRUD)
     {
-
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, /*needBriefcase*/false);
-    DgnDbP project = tdm.GetDgnProjectP();
+    SetupSeedProject();
+    DgnDbP project = m_db.get(); //tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 
     T_HOST.GetScriptAdmin().RegisterScriptNotificationHandler(*new DgnScriptTest_DetectJsErrors);
