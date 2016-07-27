@@ -93,11 +93,29 @@ void ChangeTestFixture::OpenDgnDb()
     m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
 
+    if (!m_testModelId.IsValid())
+        {
+        m_testModelId = m_testDb->Models().QueryModelId(DgnModel::CreateModelCode("TestModel"));
+        ASSERT_TRUE(m_testModelId.IsValid());
+        }
+
     m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
 
+    if (!m_testAuthorityId.IsValid())
+        {
+        m_testAuthorityId = m_testDb->Authorities().QueryAuthorityId("TestAuthority");
+        ASSERT_TRUE(m_testAuthorityId.IsValid());
+        }
+
     m_testAuthority = m_testDb->Authorities().Get<NamespaceAuthority>(m_testAuthorityId);
     ASSERT_TRUE(m_testAuthority.IsValid());
+
+    if (!m_testCategoryId.IsValid())
+        {
+        m_testCategoryId = DgnCategory::QueryCategoryId(DgnCategory::CreateCategoryCode("TestCategory"), *m_testDb);
+        ASSERT_TRUE(m_testCategoryId.IsValid());
+        }
     }
 
 //---------------------------------------------------------------------------------------
