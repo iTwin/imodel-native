@@ -37,11 +37,19 @@ PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay()
     INFO_PRINTF("END Display firstPass=%ld progressive=%ld TotalProgressive=%ld", m_firstPassPts, m_progressivePts, m_totalProgressivePts);
     }
 
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
 void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     {
+    auto spatial = context.GetViewport()->GetViewController()._ToSpatialView();
+    if (nullptr==spatial)
+        {
+        BeAssert(false);
+        return;
+        }
+
     PointCloudVortex::SetViewport(m_ptViewport->GetId());
     VisualizationManager::SetViewportInfo(context, m_model.GetSceneToWorld(), m_sceneRangeWorld);
 
@@ -52,13 +60,7 @@ void PointCloudProgressiveDisplay::SetupPtViewport(Dgn::RenderContextR context)
     // Changing the global density has no effect once points have been loaded. Instead, alter the display query density 
     PointCloudVortex::GlobalDensity(1.0f);
 
-    auto spatial = context.GetViewport()->GetViewController()._ToSpatialView();
-    if (nullptr==spatial)
-        {
-        BeAssert(false);
-        return;
-        }
-    auto const& settings = spatial->GetPointCloudViewSettings();
+    auto const& settings = PointCloudViewSettings::FromView(*spatial);
 
     PointCloudVortex::SetEnabledState(PtEnable::RGB_SHADER, settings.GetUseRgb());
     PointCloudVortex::SetEnabledState(PtEnable::FRONT_BIAS, settings.GetUseFrontBias());

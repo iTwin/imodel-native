@@ -41,6 +41,7 @@ pointCloudSchemaDepends         = $(_MakeFileSpec)                              
                                   $(SrcPointCloudSchema)PointCloudProgressiveDisplay.h             \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudDomain.h                \
                                   $(PointCloudSchemaPublicApiSrc)PointCloudSchemaApi.h             \
+                                  $(PointCloudSchemaPublicApiSrc)PointCloudSettings.h            \
                                   
 
 always:
@@ -77,6 +78,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(o)VisualizationManager$(oext)         : $(SrcPointCloudSchema)VisualizationManager.cpp           $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
 $(o)PointCloudViewport$(oext)           : $(SrcPointCloudSchema)PointCloudViewport.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
+
+$(o)PointCloudSettings$(oext)           : $(SrcPointCloudSchema)PointCloudSettings.cpp             $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
 $(o)PointCloudRamps$(oext)              : $(SrcPointCloudSchema)PointCloudRamps.cpp                $(pointCloudSchemaDepends)  ${MultiCompileDepends} 
 
