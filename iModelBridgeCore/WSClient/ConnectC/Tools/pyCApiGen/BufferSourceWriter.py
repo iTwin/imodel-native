@@ -69,6 +69,8 @@ class BufferSourceWriter(Writer):
         self._write_spacing()
         self.__write_api_accessors('StringLength')
         self._write_spacing()
+        self.__write_api_accessors('dateTime')
+        self._write_spacing()
         self.__write_api_accessors('guid')
         self._write_spacing()
         self.__write_api_accessors('boolean')

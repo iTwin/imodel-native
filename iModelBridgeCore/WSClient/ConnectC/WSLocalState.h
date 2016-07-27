@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct WSLocalState : public ILocalState
+struct WSLocalState : public IJsonLocalState
     {
     private:
         Json::Value m_map;
@@ -25,11 +25,11 @@ struct WSLocalState : public ILocalState
             return m_map;
             }
 
-        void _SaveValue(Utf8CP nameSpace, Utf8CP key, JsonValueCR value) override
+        void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value) override
             {
             Utf8PrintfString identifier("%s/%s", nameSpace, key);
 
-            if (value.isNull())
+            if (value == "null")
                 {
                 m_map.removeMember(identifier);
                 }
@@ -39,9 +39,9 @@ struct WSLocalState : public ILocalState
                 }
             };
 
-        Json::Value _GetValue(Utf8CP nameSpace, Utf8CP key) const override
+        Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const override
             {
             Utf8PrintfString identifier("%s/%s", nameSpace, key);
-            return m_map[identifier];
+            return m_map.isMember(identifier) ? m_map[identifier].asCString() : "null";
             };
     };

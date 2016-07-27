@@ -97,6 +97,18 @@ WCharCP ProjectGuid
 );
 
 /************************************************************************************//**
+* \brief Create a new projectfavorite_v2
+* \param[in] apiHandle API object
+* \param[in] ProjectGuid
+* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+****************************************************************************************/
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP ProjectGuid
+);
+
+/************************************************************************************//**
 * \brief Generic REST utility
 * \param[in] apiHandle Previously created API object
 * \param[out] projectBuffer of User Project data
