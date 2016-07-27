@@ -1524,7 +1524,7 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         istmt.BindId(icol+1, (remappedDstId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [1] targetcol
         ++icol;
 
-        if (remappedSrcId.IsValid() && remappedDstId.IsVaild())
+        if (remappedSrcId.IsValid() && remappedDstId.IsValid())
             {
             if (nullptr != classcol)
                 {
