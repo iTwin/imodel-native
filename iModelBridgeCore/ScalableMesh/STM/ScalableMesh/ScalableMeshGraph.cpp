@@ -1135,7 +1135,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                 triExt = DRange3d::From(pts[0], pts[1], pts[2]);
 
                 triExt.low.z = -DBL_MAX; //Don't consider z.
-                triExt.high.z = DBL_MAX; //NEEDS_WORK_SM: this is probably dependent on the specific drape direction (clip should be negated along the ray direction not just in z). Not sure how to modify that for the general case.
+                triExt.high.z = DBL_MAX; 
                 if (!toEdgeRay.ClipToRange(triExt, segmentRay, fraction))
                     {
                     edgeID = graphP->FSucc(edgeID);
@@ -1221,7 +1221,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
         bool stopProgression = false;
         MTGNodeId currentTriangle = triangleStartEdge;
         int triangle[3];
-        DVec3d drapeDirection = DVec3d::From(0, 0, -1);//NEEDS_WORK_SM: We may want to support different directions
+        DVec3d drapeDirection = DVec3d::From(0, 0, -1);
         graphP->TryGetLabel(currentTriangle, 0, triangle[0]);
         graphP->TryGetLabel(graphP->FSucc(currentTriangle), 0, triangle[1]);
         graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(currentTriangle)), 0, triangle[2]);

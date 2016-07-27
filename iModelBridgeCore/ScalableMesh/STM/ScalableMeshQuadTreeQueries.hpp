@@ -477,10 +477,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {
         // If this is the appropriate level or it is a higher level and progressive is set.
-        if (/*node->IsLeaf()
-            7744xx..
-            
-            || */ //NEEDS_WORK_SM : Why leaf, this is the given level that we wants?
+        if (
             m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
@@ -551,7 +548,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {            
         // If this is the appropriate level or it is a higher level and progressive is set.
-        if (/*node->IsLeaf() || */ //NEEDS_WORK_SM : Why leaf, this is the given level that we wants?
+        if (
             m_requestedLevel == node->GetLevel() /*|| 
             (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {
@@ -818,11 +815,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));                                            
                 }
             auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(node);
-            //int status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&node->operator[](node->size()), 0, 0, 0);
-            // NEEDS_WORK_SM : texture logique !
- /*           std::ofstream file_s;
-            file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
-            file_s << "PushIndices etc... -- shit 9" << endl;*/
 
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
 
@@ -1229,8 +1221,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         // sometimes the value is slightly greater than 1 by a minuscule amount. A 1 percent tolerance is quite acceptable
         // for our purpose and will not result in any ill effect.
 
-        //NEEDS_WORK_SM : Stitching triangles usually cross the tile boundary.
-        assert((visibleExtentToNodeExtentScale > 0) /*&& (visibleExtentToNodeExtentScale <= 1.01)*/);
+
+        assert((visibleExtentToNodeExtentScale > 0));
 
         EXTENT contentExtent = node->GetContentExtent();
                         

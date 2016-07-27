@@ -107,11 +107,9 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-#ifdef SM_BESQL_FORMAT
+
 bool s_useSQLFormat = true;
-#else
-bool s_useSQLFormat = false;
-#endif
+
 #define USE_CODE_FOR_ERROR_DETECTION
 
 
@@ -832,10 +830,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
         if (hasPoints || !isSingleFile)
             {    
-         //   HFCPtr<HPMCountLimitedPool<POINT> > pMemoryPool(PoolSingleton<POINT>());
+
 
          //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
+
             auto_ptr<ISMMeshIndexFilter<POINT, YProtPtExtentType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, YProtPtExtentType>());
 
                 if (!isSingleFile)

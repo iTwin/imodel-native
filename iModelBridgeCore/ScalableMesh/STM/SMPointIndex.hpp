@@ -79,9 +79,9 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     
     m_isGrid = false;
 
-#ifdef SM_BESQL_FORMAT
+
     m_nodeId = ++s_nextNodeID;    
-#endif
+
     m_isDirty = false;
 
     this->ValidateInvariantsSoft();
@@ -153,11 +153,10 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         }
     m_isGrid = pi_rpParentNode->m_isGrid;
     
-#ifdef SM_BESQL_FORMAT
+
     m_nodeId = ++s_nextNodeID;
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
-    //pi_rpParentNode->AdviseSubNodeIDChanged(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
-#endif
+
     m_isDirty = false;
 
     this->ValidateInvariantsSoft();
@@ -232,11 +231,10 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
         }
     m_isGrid = pi_rpParentNode->m_isGrid;
     
-#ifdef SM_BESQL_FORMAT    
+   
     m_nodeId = ++s_nextNodeID;
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
-    //pi_rpParentNode->AdviseSubNodeIDChanged(const_cast<SMPointIndexNode<POINT, EXTENT>*>(this));
-#endif
+
 
     m_isDirty = false;
 
@@ -681,15 +679,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
             }
         }
 
-    /*NEEDS_WORK_SM Does we need that?
-    for (size_t indexNode = 0 ; indexNode < MAX_NEIGHBORNODES_COUNT; indexNode++)
-    {
-    if (m_apNeighborNodes[indexNode] != 0)
-    {
-    m_apNeighborNodes[indexNode]->Destroy();
-    }
-    }
-    */
 
     for (size_t neighborPosInd = 0; neighborPosInd < MAX_NEIGHBORNODES_COUNT; neighborPosInd++)
         {
@@ -756,9 +745,9 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::AddChi
     m_nodeHeader.m_IsLeaf = false;
     m_nodeHeader.m_IsBranched = true;
     m_nodeHeader.m_apSubNodeID.resize(m_nodeHeader.m_numberOfSubNodesOnSplit);
-#ifdef SM_BESQL_FORMAT
+
     for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
-#endif
+
     SetDirty(true);
     return childNodeP;
     }
@@ -1001,9 +990,9 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
     m_nodeHeader.m_IsBranched = true;
 
     SetupNeighborNodesAfterSplit();
-#ifdef SM_BESQL_FORMAT
+
     for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
-#endif
+
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
@@ -1014,28 +1003,6 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
 
 
     SetDirty(true);
-    //NEEDS_WORK_SM: this was used to rebalance upon add, but is unnecessary now that we have a dedicated balancing process and allow unbalanced trees
-   /*
-    if (propagateSplit)
-        {
-        if (GetParentNode() != NULL)
-            {
-            size_t targetLevel = max(GetLevel() + 1, deepestLevelNumber);
-            if (targetLevel > GetLevel() + 1)
-                {
-                // In this case sub-nodes must be pushed down
-                for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
-                    {
-                    if (!m_isGenerating)
-                        {
-                        if (m_needsBalancing)  m_apSubNodes[indexNodes]->PushNodeDown(targetLevel);
-                        else m_apSubNodes[indexNodes]->PushNodeDownVirtual(targetLevel);
-                        }
-                    }
-                }
-            GetParentNode()->PropagateSplitNode(this, targetLevel);
-            }
-        }*/
 
 
     HINVARIANTS;
@@ -1147,9 +1114,9 @@ void SMPointIndexNode<POINT, EXTENT>::SplitNode(POINT splitPosition, bool propag
             }
 
         SetupNeighborNodesAfterSplit();
-#ifdef SM_BESQL_FORMAT
+
         for (auto& node : m_apSubNodes) this->AdviseSubNodeIDChanged(node);
-#endif
+
         for (auto& node : meshNodes)
             {
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(node.m_indexNode->GetPointsPtr());
@@ -1694,9 +1661,9 @@ void SMPointIndexNode<POINT, EXTENT>::PushNodeDown(size_t targetLevel)
         // The node is a leaf and its level is insufficiant
         m_pSubNodeNoSplit = this->CloneUnsplitChild(EXTENT(m_nodeHeader.m_nodeExtent));
         m_nodeHeader.m_IsLeaf = false;
-#ifdef SM_BESQL_FORMAT
+
         this->AdviseSubNodeIDChanged(m_pSubNodeNoSplit);
-#endif
+
         // We copy the whole content to this sub-node
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePtsPtr(m_pSubNodeNoSplit->GetPointsPtr());
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
@@ -2043,10 +2010,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Store(
 
     if (HasRealChildren())
         {
-#ifdef SM_BESQL_FORMAT
-/*        for (auto& node : m_apSubNodes)  if(node!= nullptr)const_cast<SMPointIndexNode<POINT, EXTENT>*>(this)->AdviseSubNodeIDChanged(node);
-        if (m_pSubNodeNoSplit != nullptr) const_cast<SMPointIndexNode<POINT, EXTENT>*>(this)->AdviseSubNodeIDChanged(m_pSubNodeNoSplit);*/
-#endif
+
         if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
             {
             static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->Store();     
@@ -4518,7 +4482,6 @@ bool SMPointIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseDat
             //NEEDS_WORK_SM : Should have some kind of invalid stitching here instead of invalidating the whole mesh
             //                of neighbor nodes. 
             RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
-
             size_t ind = ptsPtr->size();
             //size_t totalSize = sizeTotal();
             size_t totalSize = ptsPtr->size();
@@ -7940,16 +7903,12 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
         m_indexHeader.m_balanced = false;
  
         //SetBalanced(!keepUnbalanced);
-         /*   auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode);
-            volatile size_t nFeaturesInit = meshNode->CountAllFeatures();
-           nFeaturesInit = nFeaturesInit;*/
+
         //NEEDS_WORK_SM - Couldn't we pass the depth to the function given that it 
         //might require loading and passing all the node.
          Balance();
         }
-    /*auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode);
-    volatile size_t nFeaturesEnd = meshNode->CountAllFeatures();
-    nFeaturesEnd = nFeaturesEnd;*/
+
     assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());    
     //assert(depth == m_pRootNode->GetDepth());
     }
@@ -8701,19 +8660,12 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::PushRootDo
     pNewRootNode->m_nodeHeader.m_contentExtentDefined = m_pRootNode->m_nodeHeader.m_contentExtentDefined;
     pNewRootNode->m_nodeHeader.m_totalCount = m_pRootNode->m_nodeHeader.m_totalCount;
     pNewRootNode->m_nodeHeader.m_totalCountDefined = m_pRootNode->m_nodeHeader.m_totalCountDefined;
-#ifdef SM_BESQL_FORMAT
+
     for (auto& node : pNewRootNode->m_apSubNodes) pNewRootNode->AdviseSubNodeIDChanged(node);
-#endif
+
     // Set new root as root
     m_pRootNode = pNewRootNode;
 
-    // If is balanced ... propagate a depth change (this will generate subnodes to the new nodes)
-    //NEEDS_WORK_SM: this was used to rebalance upon add, but is unnecessary now that we have a dedicated balancing process and allow unbalanced trees
-     /*
-    if (IsBalanced())
-        {
-        m_pRootNode->PropagateSplitNode(NULL, fullDepth + 1);
-        }*/
 
     HINVARIANTS;
 

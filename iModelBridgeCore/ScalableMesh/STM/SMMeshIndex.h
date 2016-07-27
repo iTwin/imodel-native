@@ -549,8 +549,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             return poolMemVectorItemPtr;
                             
         if (!SMMemoryPool::GetInstance()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex))
-            {                  
-            //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()            
+            {                          
             ISMUVCoordsDataStorePtr nodeDataStore;
             bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
             assert(result == true);        

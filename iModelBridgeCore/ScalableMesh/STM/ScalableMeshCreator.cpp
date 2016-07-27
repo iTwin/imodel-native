@@ -127,10 +127,10 @@ inline const GCS& GetDefaultGCS ()
 
 }
 
-#ifdef SM_BESQL_FORMAT
+
 //NEEDS_WORK_SM : Should be part of the index instead to avoid having very big odd values.
 std::atomic<uint64_t> s_nextNodeID = 0;
-#endif
+
 
 
 /*==================================================================*/

@@ -1061,20 +1061,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         IScalableMeshATP::StoreInt(L"nOfGraphLoadAttempts", loadAttempts);
         IScalableMeshATP::StoreInt(L"nOfGraphStoreMisses", loadMisses);
 #endif
-        /*vector<DPoint3d> dataPoints(m_node->size());
 
-        PtToPtConverter converter;
-        
-        for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
-            {
-            dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));
-            }*/
         ScalableMeshMeshWithGraphPtr meshPtr = ScalableMeshMeshWithGraph::Create(graphPtr->EditData(), ArePoints3d());
-        //int status = meshPtr->AppendMesh(m_node->size(), &dataPoints[0], m_node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&m_node->operator[](m_node->size()), 0, 0, 0);
-        // NEEDS_WORK_SM : texture logique !
-/*        std::ofstream file_s;
-        file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
-        file_s << "PushIndices etc... -- shit 10" << endl;*/
+
 
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(m_meshNode->GetPtsIndicePtr());
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_meshNode->GetPointsPtr());
@@ -1082,25 +1071,17 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         int status = meshPtr->AppendMesh(pointsPtr->size(), const_cast<DPoint3d*>(&pointsPtr->operator[](0)), ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
         assert(status == SUCCESS);
         meshP = meshPtr.get();
-        //m_meshNode->ReleaseGraph();
         }
     else
         {               
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly  
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
         if (pointsPtr->size() > 0)
-            {
-            //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);            
+            {           
             ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
         
             vector<DPoint3d> dataPoints(pointsPtr->size());
             pointsPtr->get(&dataPoints[0], dataPoints.size());
-            /*PtToPtConverter converter; 
-
-            for (size_t pointInd = 0; pointInd < m_node->size(); pointInd++)
-                {
-                dataPoints[pointInd] = converter.operator()(m_node->operator[](pointInd));                                            
-                }*/
 
             int status = meshPtr->AppendMesh(pointsPtr->size(), &dataPoints[0],0,0, 0, 0, 0, 0, 0,0);
                                    

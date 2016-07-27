@@ -766,67 +766,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::DumpOct
 //=======================================================================================
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload() 
     {
-   /* if (m_featureDefinitions.size() > 0)
-        {
-        for (auto& vec : m_featureDefinitions) if(!vec.Discarded()) vec.Discard();
-        }*/
-/*    if (!m_differenceSets.Discarded())
-        {
-        if(m_differenceSets.size() > 0) m_differenceSets.Discard();
-        else m_differenceSets.SetDirty(false);
-        }*/
     SMPointIndexNode<POINT, EXTENT>::Unload();
     }
 
-
-//=======================================================================================
-// @bsimethod                                                  Elenie.Godzaridis 03/15
-//=======================================================================================
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::CreateGraph(bool shouldPinGraph) const
-    {
-/*    m_graphVec.SetDiscarded(false);
-    if (m_graphVec.size() == 0) m_graphVec.push_back(MTGGraph());
-    if (shouldPinGraph)
-        {
-        nGraphPins++;
-        m_graphVec.Pin();
-        }*/
-    }
-
-//=======================================================================================
-// @bsimethod                                                  Elenie.Godzaridis 03/15
-//=======================================================================================
-//NEEDS_WORK_SM : Need to be redesign like difference set.
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadGraph(bool shouldPinGraph) const
-    {
-/*    if (m_graphVec.GetBlockID().IsValid() && (!IsGraphLoaded() || m_graphVec.Discarded()))
-        {
-        if (shouldPinGraph) m_graphInflateMutex.lock();
-        if (!m_graphVec.Discarded())
-            {
-            m_graphVec.SetDirty(false);
-            m_graphVec.Discard();
-            }
-        if (shouldPinGraph)
-            {
-            nGraphPins++;
-            m_graphVec.Pin();
-            }
-        else m_graphVec.Inflate();
-        m_isGraphLoaded = true;
-        if (shouldPinGraph) m_graphInflateMutex.unlock();
-        }*/
-    }
-
-//=======================================================================================
-// @bsimethod                                                  Elenie.Godzaridis 03/15
-//=======================================================================================
-template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreGraph() const
-    {
- /*   const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)->ReleaseGraph();
-    if (m_graphVec.size() > 0 && !m_graphVec.Discarded()) m_graphVec.Discard();
-        m_nodeHeader.m_graphID = m_graphVec.GetBlockID();*/
-    }
 
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::PushPtsIndices(const int32_t* indices, size_t size)
     {    
@@ -2499,10 +2441,10 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
 
     SetupNeighborNodesAfterSplit();
 
-#ifdef SM_BESQL_FORMAT
+
     for (auto& node : m_apSubNodes) 
         this->AdviseSubNodeIDChanged(node);
-#endif
+
 
    SplitMeshForChildNodes();
     SetDirty(true);
@@ -2702,7 +2644,6 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
 
     if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
         {                  
-        //NEEDS_WORK_SM : SharedPtr for GetPtsIndiceStore().get()
         ISMInt32DataStorePtr faceIndDataStore;
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader, SMStoreDataType::TriPtIndices);
         assert(result == true);      
@@ -3127,48 +3068,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::IsClip
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips()
     {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
-#ifdef USE_DIFFSET
-    for (auto& diffSet : m_differenceSets)
-        {
-        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;
-        }
-    bvector<bvector<DPoint3d>> clips;
-    for (auto& diffSet : m_differenceSets)
-        {
-        uint64_t upperId = (diffSet.clientID >> 32);
-        if (upperId == 0)
-            {
-            clips.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID - 1, clips.back());
-            }
-        }
-    if (clips.size() == 0) return;
 
-
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-
-    vector<DPoint3d> points(pointsPtr->size());
-    
-    PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
-
-    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
-                                        ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
-
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-
-    Clipper clipNode(&points[0], points.size(), (int32_t*)&pointsPtr->operator[](pointsPtr->size()), m_nodeHeader.m_nbFaceIndexes, nodeRange);
-    DifferenceSet allClips = clipNode.ClipSeveralPolygons(clips);
-    allClips.clientID = (uint64_t)-1;
-    bool added = false;
-    for (auto& diffSet : m_differenceSets)
-        if (diffSet.clientID == (uint64_t)-1) { diffSet = allClips; added = true; }
-    if (!added)
-        {
-        m_differenceSets.push_back(allClips);
-        (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
-        m_nbClips++;
-        }
-#else
     {
     if (diffSetPtr->size() == 0) return;
     for (const auto& diffSet : *diffSetPtr)
@@ -3304,7 +3204,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
     //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
-#endif
+
     }
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildSkirts()
@@ -3426,9 +3326,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         bool emptyClip = false;
         //if (nodeRange.XLength() <= clipExt.XLength() * 10000 && nodeRange.YLength() <= clipExt.YLength() * 10000)
         if (ClipIntersectsBox(clipId, m_nodeHeader.m_nodeExtent))
-#ifdef USE_DIFFSET
-            d = clipNode.ClipNonConvexPolygon2D(&clipPts[0], clipPts.size());
-#else
+
             {
                     bool clipFound = false;
         RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
@@ -3449,48 +3347,14 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
             
             }
 
-#endif
+
         else
             {
             emptyClip = true;
             //std::cout << " discounting clip " << clipId << " for node " << GetBlockID().m_integerID << " because test failed " << std::endl;
             }
        // if (d.addedFaces.size() == 0 && d.removedFaces.size() == 0 && d.addedVertices.size() == 0 && d.removedVertices.size() == 0) emptyClip = true;
-#ifdef USE_DIFFSET
-        d.clientID = clipId;
-        vector<DifferenceSet> merged;
-        if (!emptyClip)
-            {
-            for (auto& other : m_differenceSets)
-                {
-                if (other.clientID == ((uint64_t)-1)) other.upToDate = false;
-                }
-            }
-       /* if (!emptyClip)
-            {
-            for (auto& other : m_differenceSets)
-                {
-                uint64_t upperId = (other.clientID >> 32);
-                if (upperId == 0 && other.clientID != d.clientID && d.ConflictsWith(other))
-                    {
-                    bvector<DPoint3d> otherClipPts;
-                    GetClipRegistry()->GetClip(other.clientID - 1, otherClipPts);
-                    if (otherClipPts.size() == 0) continue;
-                    DifferenceSet mergedSet = d.MergeSetWith(other, &points[0], clipPts, otherClipPts);
-                    mergedSet.clientID = other.clientID > d.clientID ? other.clientID << 32 | d.clientID : d.clientID << 32 | other.clientID;
-                    merged.push_back(mergedSet);
-                    }
-                }
-            }*/
-        m_differenceSets.push_back(d);
-        (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
-        for (auto& mergeSet : merged)
-            {
-            m_differenceSets.push_back(mergeSet);
-            (m_differenceSets.begin() + (m_differenceSets.size() - 1))->upToDate = true;
-            }
-        m_nbClips++;
-#endif
+
         if (isVisible && !emptyClip)
             {
             PropagateClipUpwards(clipId, ClipAction::ACTION_ADD);
@@ -3499,9 +3363,7 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
         PropagateClip(clipId, ClipAction::ACTION_ADD);
         return !emptyClip;
         }
-#ifdef USE_DIFFSET
-    else return false;
-#endif
+
     }
 
 //=======================================================================================
@@ -3581,73 +3443,27 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
     if (pointsPtr->size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return true;
-#ifdef USE_DIFFSET
-    bvector<DPoint3d> clipPts;
-    GetClipRegistry()->GetClip(clipId, clipPts);
-    if (clipPts.size() == 0) return false;
-    DRange3d clipExt = DRange3d::From(&clipPts[0], (int32_t)clipPts.size());
-    DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
-                                        ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
-    bool clipIntersects = clipExt.IntersectsWith(nodeRange);
-#endif
+
     bool found = false;
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
     for (auto it = diffSetPtr->begin(); it != diffSetPtr->end(); ++it)
         {
         if (it->clientID == clipId && it->toggledForID == setToggledWhenIdIsOn)
             {
-#ifdef USE_DIFFSET
-            if (isVisible)
-                {
-                PropagateClipUpwards(clipId, ClipAction::ACTION_MODIFY);
-                PropagateClipToNeighbors(clipId, ClipAction::ACTION_MODIFY);
-                }
-            if (!clipIntersects)
-                {
-                m_differenceSets.erase(it);
-                m_nbClips--;
-                PropagateDeleteClipImmediately(clipId);
-                }
-            else
-                {
-                vector<DPoint3d> points(size());
 
-                std::transform(begin(), end(), &points[0], PtToPtConverter());
-
-                PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());        
-
-                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptsIndices(GetPtsIndicePtr());
-
-                Clipper clipNode(&points[0], size(), (int32_t*)&(*ptsIndices)[0], m_nodeHeader.m_nbFaceIndexes, nodeRange);
-                DifferenceSet d = clipNode.ClipNonConvexPolygon2D(&clipPts[0], clipPts.size());
-                if (d.addedFaces.size() == 0 && d.removedFaces.size() == 0 && d.addedVertices.size() == 0 && d.removedVertices.size() == 0)
-                    {
-                    m_differenceSets.erase(it);
-                    m_nbClips--;
-                    if (m_nodeHeader.m_level < 7) PropagateDeleteClipImmediately(clipId);
-                    }
-                else
-                    {
-                    d.clientID = clipId;
-                    m_differenceSets.modify(it - m_differenceSets.begin(), d);
-                    if (m_nodeHeader.m_level < 7) PropagateClip(clipId, ClipAction::ACTION_MODIFY);
-                    return true;
-                    }
-
-#else
             //std::cout << " updating clip " << clipId << " to node " << GetBlockID().m_integerID << " toggle is "<<setToggledWhenIdIsOn<< std::endl;
             const_cast<DifferenceSet&>(*it) = DifferenceSet();
             const_cast<DifferenceSet&>(*it).clientID = clipId;
             const_cast<DifferenceSet&>(*it).toggledForID = setToggledWhenIdIsOn;
             found = true;
-#endif
+
             }
-#ifndef USE_DIFFSET
+
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
             }
-#endif
+
         }
     if (!found)
         {
