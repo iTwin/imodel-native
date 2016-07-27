@@ -52,7 +52,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 
     geomElement->SetCategoryId (categoryId);
 
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld (*geomElement);
+    GeometryBuilderPtr builder = GeometryBuilder::Create (*geomElement);
 
     builder->Append (*ICurvePrimitive::CreateLine (DSegment3d::From (DPoint3d::From (s_xCoord, s_yCoord, s_zCoord), DPoint3d::From (s_xCoord + s_increment, s_yCoord + s_increment, s_zCoord + s_increment))));
 

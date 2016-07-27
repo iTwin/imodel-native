@@ -244,7 +244,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
     else
         gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
 
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(subcat);
     if (nullptr != customParms)
         builder->Append(*customParms);
@@ -659,8 +659,8 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     db1_text->GetStyleR().SetHeight(1.0);
 
     GenericPhysicalObjectPtr db1_element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db1, db1->Models().QueryFirstModelId(), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
-    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWorld(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
-    db1_builder->Append(*db1_text);
+    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWithAutoPlacement(*db1->Models().GetModel(db1->Models().QueryFirstModelId()), DgnCategory::QueryFirstCategoryId(*db1));
+    db1_builder->Append(*db1_text, GeometryBuilder::CoordSystem::World);
     db1_builder->Finish(*db1_element->ToGeometrySourceP());
 
     DgnElementCPtr db1_insertedElement = db1_element->Insert();
