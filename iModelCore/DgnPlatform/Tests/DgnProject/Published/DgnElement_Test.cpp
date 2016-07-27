@@ -876,7 +876,7 @@ TEST_F(DgnElementTests, TestAutoHandledProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, CreateFromECInstance)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"TestAutoHandledPropertiesGetSet.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnElementId eid;
         {

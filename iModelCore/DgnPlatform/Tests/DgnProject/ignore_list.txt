@@ -77,3 +77,9 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
 ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction # notified Raman
 ChangeSummaryTestFixture.ElementChangesFromSavedTransactions # notified Raman
 ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
+
+#WIP: Umar - Test Refactoring to remove pre-published data dependency
+CategoryTests.SubCategoryInvariants
+ElementGeomPartTests.ElementUsesGeometryParts
+TransactionManagerTests.UndoRedo
+ImportTest.ImportElementsWithAuthorities
