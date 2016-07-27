@@ -59,7 +59,7 @@ CPchOpts =
 #----------------------------------------------------------------------
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if ("CLANG" == $(BUILD_TOOLSET))
+%if ("APPLE_CLANG" == $(BUILD_TOOLSET))
     OldLLVMCommonCompOpts =% $(LLVMCommonCompOpts)
     LLVMCommonCompOpts + -w
 %endif
@@ -80,7 +80,7 @@ $(o)compressRAW$(oext) : $(SrcOpenCtm)compressRAW.c ${threeMxDepends} ${MultiCom
 %include MultiCppCompileGo.mki
 nonportObjs=%$(MultiCompileObjectList)
 
-%if ("CLANG" == $(BUILD_TOOLSET))
+%if ("APPLE_CLANG" == $(BUILD_TOOLSET))
     LLVMCommonCompOpts = $(OldLLVMCommonCompOpts)
 %endif
 
@@ -110,8 +110,8 @@ LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(stlibext) \
                    $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
 
-%if (("Windows" == TARGET_PLATFORM) || ("WinRT" == TARGET_PLATFORM) || ("iOS" == TARGET_PLATFORM) || ($(BUILD_TOOLSET) == "ANDROID_CLANG"))
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
+%if defined (BENTLEYCONFIG_FOLLY)
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 %endif
 
 %include $(sharedMki)LinkLibrary.mki
