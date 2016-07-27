@@ -1015,7 +1015,8 @@ protected:
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
-    DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
+    void ClearAllAppData(){m_appData.clear();}//< @private
+    
 
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned

@@ -526,7 +526,8 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
         }
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
-    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, true);
+
+    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, false);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
     // Get the number of meters / pixel that we are showing in the view

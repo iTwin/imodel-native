@@ -124,21 +124,21 @@ ClipVectorPtr SectioningViewController::GetClipVectorInternal(ClipVolumePass pas
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SectioningViewController::_SaveToSettings(JsonValueR val) const
+void SectioningViewController::_SaveToSettings() const
     {
-    T_Super::_SaveToSettings(val);
+    T_Super::_SaveToSettings();
 
     if (m_clip.IsValid())
-        IViewClipObject::Factory::ToJson(val["dgn_SectioningView_clip"], *m_clip);
+        IViewClipObject::Factory::ToJson(m_settings["dgn_SectioningView_clip"], *m_clip);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SectioningViewController::_RestoreFromSettings(JsonValueCR val) 
+void SectioningViewController::_RestoreFromSettings() 
     {
-    T_Super::_RestoreFromSettings(val);
-    m_clip = IViewClipObject::Factory::FromJson(val["dgn_SectioningView_clip"]);
+    T_Super::_RestoreFromSettings();
+    m_clip = IViewClipObject::Factory::FromJson(m_settings["dgn_SectioningView_clip"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
