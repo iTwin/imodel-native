@@ -40,8 +40,7 @@
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <!-- *** WIP_ANDROID_CLANG *** -->
-    <Part Name="FollyShim" ExcludePlatforms="Android*,MacOS*,Linux*">
+    <Part Name="FollyShim" ExcludePlatforms="MacOS*,Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
