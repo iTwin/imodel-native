@@ -36,7 +36,7 @@ static const DgnCode s_geomPartCode = DgnGeometryPart::CreateCode("GeomPart", "T
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -91,7 +91,7 @@ TEST_F(ElementGeomPartTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CreateElements)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -106,10 +106,10 @@ TEST_F(ElementGeomPartTests, CreateElements)
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
-    DgnElementId elementId1 = InsertElementUsingGeometryPart(geomPartPtr->GetCode());
+    DgnElementId elementId1 = InsertElementUsingGeometryPart(existingPartId);
     EXPECT_TRUE(elementId1.IsValid());
     
-    DgnElementId elementId2 = InsertElementUsingGeometryPart(geomPartPtr->GetCode());
+    DgnElementId elementId2 = InsertElementUsingGeometryPart(existingPartId);
     EXPECT_TRUE(elementId2.IsValid());
 
     DgnElementId elementId3 = InsertElement()->GetElementId();
@@ -120,7 +120,7 @@ TEST_F(ElementGeomPartTests, CreateElements)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -152,7 +152,7 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -186,7 +186,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -219,7 +219,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -254,7 +254,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeomParts.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape());
@@ -270,10 +270,10 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     EXPECT_TRUE(existingPartId.IsValid());
 
     //Add two elements using this GeometryPart
-    DgnElementId elementId1 = InsertElementUsingGeometryPart(geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId1 = InsertElementUsingGeometryPart(existingPartId, m_defaultModelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId1.IsValid());
 
-    DgnElementId elementId2 = InsertElementUsingGeometryPart(geomPartPtr->GetCode());
+    DgnElementId elementId2 = InsertElementUsingGeometryPart(existingPartId);
     EXPECT_TRUE(elementId2.IsValid());
 
     DgnElementId elementId3 = InsertElement()->GetElementId();
@@ -292,8 +292,8 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
-{
-    SetupProject(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    {
+    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
@@ -304,7 +304,7 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
-     
+
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 

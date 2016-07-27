@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../TestFixture/BlankDgnDbTestFixture.h"
+#include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnLight.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnLightsTest : public BlankDgnDbTestFixture
+struct DgnLightsTest : public GenericDgnModelTestFixture
 {
     Utf8String MakeLightValue(Utf8CP dummyJsonValue)
         {
@@ -26,7 +26,7 @@ struct DgnLightsTest : public BlankDgnDbTestFixture
 
     LightDefinition::CreateParams MakeParams(Utf8CP name, Utf8CP dummyJsonValue, Utf8CP descr=nullptr)
         {
-        return LightDefinition::CreateParams(*m_db, name, MakeLightValue(dummyJsonValue).c_str(), descr);
+            return LightDefinition::CreateParams(*m_dgnDb, name, MakeLightValue(dummyJsonValue).c_str(), descr);
         }
 
     template<typename T, typename U> void Compare(T const& lhs, U const& rhs)
@@ -43,7 +43,7 @@ struct DgnLightsTest : public BlankDgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLightsTest, CRUD)
     {
-    SetupProject(L"lights.ibim");
+    DgnDbPtr db = GetDgnDb(L"CRUD.bim");
     auto params = MakeParams("Light1", "one");
     LightDefinition lt(params);
     LightDefinitionCPtr persistent = lt.Insert();
@@ -62,13 +62,13 @@ TEST_F(DgnLightsTest, CRUD)
     Compare(lt, *updatedLt);
 
     // Query 
-    LightDefinitionCPtr toFind = LightDefinition::QueryLightDefinition(lightId, *m_db);
+    LightDefinitionCPtr toFind = LightDefinition::QueryLightDefinition(lightId, *db);
     Compare(*updatedLt, *toFind);
 
-    DgnLightId idToFind = LightDefinition::QueryLightId("Light1", *m_db);
+    DgnLightId idToFind = LightDefinition::QueryLightId("Light1", *db);
     EXPECT_TRUE(lightId == idToFind);
 
-    idToFind = LightDefinition::QueryLightId(lightCode, *m_db);
+    idToFind = LightDefinition::QueryLightId(lightCode, *db);
     EXPECT_TRUE(lightId == idToFind);
 
     }

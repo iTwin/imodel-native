@@ -100,7 +100,7 @@ void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8Stri
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
     {
-    SetupProject(L"04_Plant.i.ibim", L"SelectQueriesOnDbGeneratedDuringBuild_04Plant.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"04_Plant.i.ibim", L"SelectQueriesOnDbGeneratedDuringBuild_04Plant.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (*m_db, "SELECT TAG FROM appdw.Equipment WHERE EQUIP_NO='50P-104B'"));
