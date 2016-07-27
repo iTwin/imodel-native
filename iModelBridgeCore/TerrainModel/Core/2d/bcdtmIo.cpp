@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -63,6 +63,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
 /*
 **  Write to Standard Out
 */
+#ifdef OUTPUTTOCONSOLE
 #ifndef _WIN32_WCE
    if(stdout)
     {
@@ -71,7 +72,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
     printf("%s %s\n",Tstr,Message) ;
     }
 #endif
-/*
+#endif
+   /*
 **  Update Global DTM Error Register
 */
     if( MessageType >= 1 && MessageType <= 2 ) 

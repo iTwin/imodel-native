@@ -156,7 +156,24 @@ bool DTMElement::HasSymbologyOverride::get()
 //=======================================================================================
 void DTMElement::HasSymbologyOverride::set (bool value)
     {
-//    PIN_ELEMENTHANDLE
+    PIN_ELEMENTHANDLE_ADJUSTFINALIZE
+
+    bool hadOverrideSymbology = HasSymbologyOverride;
+    DgnPlatform::DgnModelRef* activeModel = thisEeh->GetModelRef()->GetRoot();
+    if (value != hadOverrideSymbology)
+        {
+        bool hasOverrideSymbology = false;
+        DgnPlatform::ElementHandle elementHandle2;
+        if (TMSymbologyOverrideManager::GetElementForSymbology(*thisEeh, elementHandle2, activeModel))
+            hasOverrideSymbology = thisEeh->GetElementRef() != elementHandle2.GetElementRef();
+        else
+            hasOverrideSymbology = false;
+        if (!hasOverrideSymbology && value)
+            TMSymbologyOverrideManager::CreateSymbologyOverride(*thisEeh, activeModel);
+        else if (hasOverrideSymbology && !value)
+            TMSymbologyOverrideManager::DeleteSymbologyOverride(*thisEeh, activeModel);
+        }
+
     }
 
 //=======================================================================================
@@ -230,11 +247,10 @@ void DTMElement::ThematicDisplayStyle::set (System::String^ value)
     int dsIndex = -1;
     if (value)
         {
-        DisplayStyleCP ds = DisplayStyleManager::FindDisplayStyleByName (p, thisEeh->GetDgnFileP ());
+        DisplayStyleCP ds = DisplayStyleList::CreateForFile(*thisEeh->GetDgnFileP(), DISPLAY_STYLE_LIST_OPTIONS_IncludeAll).FindDisplayStyleByName(p);
 
         if (ds)
             {
-            ds = DisplayStyleManager::EnsureDisplayStyleIsInFile(*ds, *thisEeh->GetDgnFileP());
             dsIndex = ds->GetIndex();
             }
         }
@@ -1550,11 +1566,16 @@ public ref class Helper
            dtmElement->ReleaseElementHandler ();
         }
     };
+
+void DTMElement::RegisterManagedElementHandler()
+    {
+    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension(DTMElementHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory(gcnew DGNET::Elements::ElementFactoryDelegate(&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension(TMSymbologyOverrideHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory(gcnew DGNET::Elements::ElementFactoryDelegate(&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    }
 END_BENTLEY_TERRAINMODELNET_ELEMENT_NAMESPACE
 
 EXPORT_ATTRIBUTE void registerManagedElementHandler()
     {
-    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (DTMElementHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
-    DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension (TMSymbologyOverrideHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory (gcnew DGNET::Elements::ElementFactoryDelegate (&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
+    Bentley::TerrainModelNET::Element::DTMElement::RegisterManagedElementHandler();
     }
 
