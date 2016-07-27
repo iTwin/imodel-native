@@ -17,11 +17,7 @@
 #include <WebServices/Azure/EventServiceClient.h>
 #include <DgnDbServer/Client/DgnDbServerEventSubscription.h>
 #include <DgnDbServer/Client/DgnDbServerEventSAS.h>
-#include <DgnDbServer/Client/DgnDbServerEventParser.h>
-#include <DgnDbServer/Client/DgnDbServerLockEvent.h>
-#include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
-#include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
-#include <DgnDbServer/Client/DgnDbServerDeletedEvent.h>
+#include <DgnDbServer/Client/Events/DgnDbServerEventParser.h>
 #include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
@@ -85,6 +81,7 @@ private:
     RepositoryInfo                          m_repositoryInfo;
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
+    // TODO: Make non static
     static EventServiceClient*         m_eventServiceClient;
     DgnDbServerEventSubscriptionPtr m_eventSubscription;
     DgnDbServerEventSASPtr m_eventSAS;
@@ -92,7 +89,6 @@ private:
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
     friend struct DgnDbRepositoryManager;
-    friend struct EventServiceClient;
 
     DgnDbRepositoryConnection (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler);
 
@@ -102,8 +98,11 @@ private:
     //! Sets EventServiceClient.
     bool SetEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Sets EventServiceSubscription and EventServiceSAS.
-    bool SetEventServiceSubscriptionAndSAS(bool isCreate, bool getOnlySAS = false, bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    //! Sets the EventSASToken in the EventServiceClient
+    bool SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Sets the EventSubscription in the EventServiceClient
+    bool SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
@@ -135,17 +134,17 @@ private:
     // This pointer needs to change to be generic
     DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DgnDbServerEventSASTaskPtr GetEventServiceSAS(ICancellationTokenPtr cancellationToken = nullptr) const;
+    //! Gets the Event SAS Token from EventServiceClient
+    DgnDbServerEventSASTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Get EventSubscription with the given Event Types
     DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Update the EventSubscription to the given EventTypes
     DgnDbServerEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
-    bool GetEventServiceResponses(bvector<Utf8String>& responseStrings, bvector<Utf8CP>& contentTypes, bool longpolling = true);
-
-    //! Get Responses from the EventServiceClient
-    bool GetEventServiceResponse(Http::ResponseR returnResponse, bool longpolling = true);
+    Http::Response GetEventServiceResponse(bool longpolling = true, int numOfRetries = 3);
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -263,16 +262,19 @@ public:
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
-    DGNDBSERVERCLIENT_EXPORT bool UpdateEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    //! Update the Event Subscription
+    //! @param[in] eventTypes
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT bool SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr    GetEvents(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Receive Events from EventService
+    //! @param[in] longPolling
+    //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancel Events from EventService
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    UnsubscribeToEvents (ICancellationTokenPtr cancellationToken = nullptr);
 
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

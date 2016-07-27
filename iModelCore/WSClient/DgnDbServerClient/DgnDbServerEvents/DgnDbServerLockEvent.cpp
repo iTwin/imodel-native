@@ -1,72 +1,70 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnDbServerClient/DgnDbServerCodeEvent.cpp $
+|     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerLockEvent.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerCodeEvent.h>
-#include "DgnDbServerUtils.h"
+#include <DgnDbServer/Client/Events/DgnDbServerLockEvent.h>
+#include "../DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             65/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerCodeEvent::DgnDbServerCodeEvent
+DgnDbServerLockEvent::DgnDbServerLockEvent
 (
-Utf8String eventTopic,
-Utf8String fromEventSubscriptionId,
-Utf8String codeAuthorityId,
-Utf8String codeNamespace,
-bvector<Utf8String> values,
-Utf8String state,
-Utf8String briefcaseId,
-Utf8String usedWithRevision
+Utf8String eventTopic, 
+Utf8String fromSubscriptionId, 
+bvector<Utf8String> objectIds, 
+Utf8String lockType, 
+Utf8String lockLevel, 
+Utf8String briefcaseId, 
+Utf8String releasedWithRevision
 )
     {
     m_eventTopic = eventTopic;
-    m_fromEventSubscriptionId = fromEventSubscriptionId;
-    m_codeAuthorityId = codeAuthorityId;
-    m_codeNamespace = codeNamespace;
-    m_values = values;
-    m_state = state;
+    m_fromEventSubscriptionId = fromSubscriptionId;
+    m_objectIds = objectIds;
+    m_lockType = lockType;
+    m_lockLevel = lockLevel;
     m_briefcaseId = briefcaseId;
-    m_usedWithRevision = usedWithRevision;
+    m_releasedWithRevision = releasedWithRevision;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-std::shared_ptr<struct DgnDbServerCodeEvent> DgnDbServerCodeEvent::Create
+std::shared_ptr<struct DgnDbServerLockEvent> DgnDbServerLockEvent::Create
 (
-Utf8String eventTopic,
-Utf8String fromEventSubscriptionId,
-Utf8String codeAuthorityId,
-Utf8String codeNamespace,
-bvector<Utf8String> values,
-Utf8String state,
-Utf8String briefcaseId,
-Utf8String usedWithRevision
+Utf8String eventTopic, 
+Utf8String fromSubscriptionId, 
+bvector<Utf8String> objectIds, 
+Utf8String lockType, 
+Utf8String lockLevel, 
+Utf8String briefcaseId, 
+Utf8String releasedWithRevision
 )
     {
-    return std::shared_ptr<struct DgnDbServerCodeEvent>
-        (new DgnDbServerCodeEvent
-                (
-                eventTopic,
-                fromEventSubscriptionId,
-                codeAuthorityId,
-                codeNamespace,
-                values,
-                state,
-                briefcaseId,
-                usedWithRevision));
+    return std::shared_ptr<struct DgnDbServerLockEvent>
+        (new DgnDbServerLockEvent
+               (
+               eventTopic, 
+               fromSubscriptionId, 
+               objectIds, 
+               lockType, 
+               lockLevel, 
+               briefcaseId, 
+               releasedWithRevision
+               )
+         );
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetEventTopic()
+Utf8String DgnDbServerLockEvent::GetEventTopic()
     {
     return m_eventTopic;
     }
@@ -74,7 +72,7 @@ Utf8String DgnDbServerCodeEvent::GetEventTopic()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetFromEventSubscriptionId()
+Utf8String DgnDbServerLockEvent::GetFromEventSubscriptionId()
     {
     return m_fromEventSubscriptionId;
     }
@@ -82,55 +80,49 @@ Utf8String DgnDbServerCodeEvent::GetFromEventSubscriptionId()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetCodeAuthorityId()
+bvector<Utf8String> DgnDbServerLockEvent::GetObjectIds()
     {
-    return m_codeAuthorityId;
+    return m_objectIds;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetNamespace()
+Utf8String DgnDbServerLockEvent::GetLockType()
     {
-    return m_codeNamespace;
+    return m_lockType;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//@bsimethod                                   Caleb.Shafer						06/2016
 //---------------------------------------------------------------------------------------
-bvector<Utf8String> DgnDbServerCodeEvent::GetValues()
+Utf8String DgnDbServerLockEvent::GetLockLevel()
     {
-    return m_values;
+    return m_lockLevel;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//@bsimethod                                   Caleb.Shafer						06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetState()
-    {
-    return m_state;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetBriefcaseId()
+Utf8String DgnDbServerLockEvent::GetBriefcaseId()
     {
     return m_briefcaseId;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//@bsimethod                                   Caleb.Shafer						06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetUsedWithRevision()
+Utf8String DgnDbServerLockEvent::GetReleasedWithRevision()
     {
-    return m_usedWithRevision;
+    return m_releasedWithRevision;
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                   Arvind.Venkateswaran             07/2016
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEvent::DgnDbServerEventType DgnDbServerCodeEvent::GetEventType()
+DgnDbServerEvent::DgnDbServerEventType DgnDbServerLockEvent::GetEventType()
     {
-    return DgnDbServerEvent::DgnDbServerEventType::CodeEvent;
+    /*const type_info& tp = typeid(this);
+    return tp;*/
+    return DgnDbServerEvent::DgnDbServerEventType::LockEvent;
     }
