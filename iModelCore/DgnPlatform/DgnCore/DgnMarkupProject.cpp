@@ -409,9 +409,9 @@ void SpatialRedlineViewController::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_SaveToSettings(JsonValueR jsonObj) const 
+void SpatialRedlineViewController::_SaveToSettings() const 
     {
-    m_subjectView._SaveToSettings(jsonObj);
+    m_subjectView._SaveToSettings();
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
@@ -450,9 +450,9 @@ AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_RestoreFromSettings(JsonValueCR settings)
+void SpatialRedlineViewController::_RestoreFromSettings()
     {
-    T_Super::_RestoreFromSettings(settings);
+    T_Super::_RestoreFromSettings();
     SynchWithSubjectViewController();
     }
 
@@ -1027,7 +1027,7 @@ void DgnViewAssociationData::FromDgnProject(DgnDbCR dgnProject, ViewControllerCR
 
     m_viewId = projectView.GetViewId();
 
-    projectView.SaveToSettings(m_viewGeometry);
+    projectView.SaveToSettings();
     }
 
 //---------------------------------------------------------------------------------------

@@ -145,7 +145,7 @@ protected:
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
-    DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
+    DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
@@ -555,7 +555,6 @@ public:
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
     virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:

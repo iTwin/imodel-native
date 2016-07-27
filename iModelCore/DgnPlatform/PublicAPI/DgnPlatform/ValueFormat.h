@@ -101,7 +101,6 @@ public:
     //! Get the decimal separator used by this formatter.
     WChar GetDecimalSeparator() const {return m_decimalSeparator;}
 
-
     //! Test if this formatter will include a leading zero.  A leading zero is only
     //! included for values less than 1.0.  Ex. "0.5" vs. ".5"
     bool GetLeadingZero() const {return m_leadingZero;}

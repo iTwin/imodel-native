@@ -1365,3 +1365,11 @@ DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void drawEnvironment()
+    {
+    }
+

@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
@@ -24,8 +23,6 @@ static Utf8CP VIEW_SETTING_Origin                = "origin";
 static Utf8CP VIEW_SETTING_RotAngle              = "rotAngle";
 static Utf8CP VIEW_SETTING_Rotation              = "rotation";
 static Utf8CP VIEW_SETTING_SubCategories         = "subCategories";
-static Utf8CP VIEW_SETTING_PointCloud            = "pointCloud";
-static Utf8CP VIEW_SETTING_PointCloudClassif     = "pointCloudClassif";
 static Utf8CP VIEW_SubCategoryId                 = "subCategoryId";
 
 static Utf8CP VIEWFLAG_construction              = "construct";
@@ -188,12 +185,34 @@ ViewController::ViewController(DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::SaveToSettings() const
+    {
+    _SaveToSettings();
+
+    for (auto const& appdata : m_appData)
+        appdata.second->_SaveToSettings(m_settings);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::RestoreFromSettings()
+    {
+    _RestoreFromSettings();
+
+    for (auto const& appdata : m_appData)
+        appdata.second->_RestoreFromSettings(m_settings);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LoadCategories(JsonValueCR settings)
+void ViewController::LoadCategories()
     {
-    if (settings.isMember(VIEW_SETTING_Categories))
-        m_viewedCategories.FromString(settings[VIEW_SETTING_Categories].asString());
+    if (m_settings.isMember(VIEW_SETTING_Categories))
+        m_viewedCategories.FromString(m_settings[VIEW_SETTING_Categories].asString());
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
@@ -206,13 +225,13 @@ void ViewController::LoadCategories(JsonValueCR settings)
         m_subCategories.Insert(id, appearance);
         }
 
-    if (!settings.isMember(VIEW_SETTING_SubCategories))
+    if (!m_settings.isMember(VIEW_SETTING_SubCategories))
         return;
 
-    JsonValueCR facetJson = settings[VIEW_SETTING_SubCategories];
-    for (Json::ArrayIndex i=0; i<facetJson.size(); ++i)
+    JsonValueCR subcatJson = m_settings[VIEW_SETTING_SubCategories];
+    for (Json::ArrayIndex i=0; i<subcatJson.size(); ++i)
         {
-        JsonValueCR val=facetJson[i];
+        JsonValueCR val=subcatJson[i];
         DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asUInt64());
         if (subCategoryId.IsValid())
             OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
@@ -222,19 +241,19 @@ void ViewController::LoadCategories(JsonValueCR settings)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_RestoreFromSettings(JsonValueCR settings)
+void ViewController::_RestoreFromSettings()
     {
-    if (!settings.isMember(VIEW_SETTING_Flags))
+    if (!m_settings.isMember(VIEW_SETTING_Flags))
         m_viewFlags.InitDefaults();
     else
-        m_viewFlags.FromBaseJson(settings[VIEW_SETTING_Flags]);
+        m_viewFlags.FromBaseJson(m_settings[VIEW_SETTING_Flags]);
 
-    if (!settings.isMember(VIEW_SETTING_BackgroundColor))
+    if (!m_settings.isMember(VIEW_SETTING_BackgroundColor))
         m_backgroundColor = ColorDef::Black();
     else
-        m_backgroundColor = ColorDef(settings[VIEW_SETTING_BackgroundColor].asUInt());
+        m_backgroundColor = ColorDef(m_settings[VIEW_SETTING_BackgroundColor].asUInt());
 
-    LoadCategories(settings);
+    LoadCategories();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,14 +276,12 @@ DbResult ViewController::Load()
     DbResult rc = entry->QuerySettings(settingsStr);
     if (BE_SQLITE_ROW != rc)
         {
-        Json::Value json;
-        _RestoreFromSettings(json);
+        _RestoreFromSettings();
         return BE_SQLITE_OK;
         }
 
-    Json::Value json;
-    Json::Reader::Parse(settingsStr, json);
-    _RestoreFromSettings(json);
+    Json::Reader::Parse(settingsStr, m_settings);
+    _RestoreFromSettings();
 
     // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     // the model is not already loaded.
@@ -277,19 +294,19 @@ DbResult ViewController::Load()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_SaveToSettings(JsonValueR settings) const
+void ViewController::_SaveToSettings() const
     {
-    m_viewFlags.ToBaseJson(settings[VIEW_SETTING_Flags]);
+    m_viewFlags.ToBaseJson(m_settings[VIEW_SETTING_Flags]);
 
     // only save background color if it's not the default (black)...
     if (ColorDef::Black() != m_backgroundColor)
-        settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
+        m_settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
-    settings[VIEW_SETTING_Categories] = m_viewedCategories.ToString();
+    m_settings[VIEW_SETTING_Categories] = m_viewedCategories.ToString();
     if (m_subCategoryOverrides.empty())
         return;
 
-    JsonValueR ovrJson = settings[VIEW_SETTING_SubCategories];
+    JsonValueR ovrJson = m_settings[VIEW_SETTING_SubCategories];
     int i=0;
     for (auto const& it : m_subCategoryOverrides)
         {
@@ -304,10 +321,9 @@ void ViewController::_SaveToSettings(JsonValueR settings) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::Save()
     {
-    Json::Value settings;
-    _SaveToSettings(settings);
+    _SaveToSettings();
 
-    return ViewDefinition::SaveSettings(Json::FastWriter::ToString(settings), m_viewId, m_dgndb);
+    return ViewDefinition::SaveSettings(Json::FastWriter::ToString(m_settings), m_viewId, m_dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1101,7 +1117,7 @@ bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode
 // just so they are to the same space and their row versus column usage is clarified by the gyroByRow parameter.
 // @bsimethod                                                   Earlin.Lutz     12/2015
 //---------------------------------------------------------------------------------------
-void ApplyGyroChangeToViewingVectors(UiOrientation ui, RotMatrixCR gyro0, RotMatrixCR gyro1, DVec3dCR forward0, DVec3dCR up0, DVec3dR forward1, DVec3dR up1)
+static void applyGyroChangeToViewingVectors(UiOrientation ui, RotMatrixCR gyro0, RotMatrixCR gyro1, DVec3dCR forward0, DVec3dCR up0, DVec3dR forward1, DVec3dR up1)
     {
     RotMatrix gyroToBSIColumnShuffler;
     
@@ -1189,7 +1205,7 @@ bool SpatialViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR 
             {
             //  orientation is arranged in columns.  The axis from the home button to other end of tablet is Y.  Z is out of the screen.  X is Y cross Z.
             //  Therefore, when the UiOrientation is Portrait, orientation Y is up and orientation X points to the right.
-            ApplyGyroChangeToViewingVectors(ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
+            applyGyroChangeToViewingVectors(ui, m_defaultDeviceOrientation, orientation, s_defaultForward, s_defaultUp, forward, up);
             break;
             }
         }
@@ -1526,18 +1542,18 @@ DPoint3d CameraViewController::_GetTargetPoint() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
+void CameraViewController::_RestoreFromSettings()
     {
-    T_Super::_RestoreFromSettings(jsonObj);
+    T_Super::_RestoreFromSettings();
 
-    m_isCameraOn = jsonObj[VIEW_SETTING_IsCameraOn].asBool();
-    m_camera.SetLensAngle(jsonObj[VIEW_SETTING_CameraAngle].asDouble());
-    m_camera.SetFocusDistance(jsonObj[VIEW_SETTING_CameraFocalLength].asDouble());
+    m_isCameraOn = m_settings[VIEW_SETTING_IsCameraOn].asBool();
+    m_camera.SetLensAngle(m_settings[VIEW_SETTING_CameraAngle].asDouble());
+    m_camera.SetFocusDistance(m_settings[VIEW_SETTING_CameraFocalLength].asDouble());
 
     m_camera.ValidateLens();
 
     DPoint3d eyePt;
-    JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
+    JsonUtils::DPoint3dFromJson(eyePt, m_settings[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
     m_camera.ValidateLens();
 
@@ -1558,69 +1574,51 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void SpatialViewController::_RestoreFromSettings(JsonValueCR jsonObj)
+void SpatialViewController::_RestoreFromSettings()
     {
-    T_Super::_RestoreFromSettings(jsonObj);
+    T_Super::_RestoreFromSettings();
 
-    if (jsonObj.isMember(VIEW_SETTING_Models))
-        m_viewedModels.FromString(jsonObj[VIEW_SETTING_Models].asString());
+    if (m_settings.isMember(VIEW_SETTING_Models))
+        m_viewedModels.FromString(m_settings[VIEW_SETTING_Models].asString());
 
-    m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
+    m_viewFlags.From3dJson(m_settings[VIEW_SETTING_Flags]);
 
-    JsonUtils::DPoint3dFromJson(m_origin, jsonObj[VIEW_SETTING_Origin]);
-    JsonUtils::DPoint3dFromJson(m_delta, jsonObj[VIEW_SETTING_Delta]);
-    JsonUtils::RotMatrixFromJson(m_rotation, jsonObj[VIEW_SETTING_Rotation]);
+    JsonUtils::DPoint3dFromJson(m_origin, m_settings[VIEW_SETTING_Origin]);
+    JsonUtils::DPoint3dFromJson(m_delta, m_settings[VIEW_SETTING_Delta]);
+    JsonUtils::RotMatrixFromJson(m_rotation, m_settings[VIEW_SETTING_Rotation]);
 
     if (!m_rotation.SquareAndNormalizeColumns(m_rotation, 0, 1))   
         m_rotation.InitIdentity();
 
     DgnViewport::ValidateViewDelta(m_delta, false);
-
-    // Point cloud view settings
-    if (!jsonObj.isMember(VIEW_SETTING_PointCloud))
-        m_pointCloudViewSettings.InitDefaults();
-    else
-        m_pointCloudViewSettings.FromJson(jsonObj[VIEW_SETTING_PointCloud]);
-
-    if (!jsonObj.isMember(VIEW_SETTING_PointCloudClassif))
-        m_pointCloudClassificationSettings.InitDefaults();
-    else
-        m_pointCloudClassificationSettings.FromJson(jsonObj[VIEW_SETTING_PointCloudClassif]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
+void CameraViewController::_SaveToSettings() const
     {
-    T_Super::_SaveToSettings(jsonObj);
+    T_Super::_SaveToSettings();
 
-    jsonObj[VIEW_SETTING_IsCameraOn] = m_isCameraOn;
-    jsonObj[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
-    JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
-    jsonObj[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
-
+    m_settings[VIEW_SETTING_IsCameraOn] = m_isCameraOn;
+    m_settings[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
+    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
+    m_settings[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void SpatialViewController::_SaveToSettings(JsonValueR jsonObj) const
+void SpatialViewController::_SaveToSettings() const
     {
-    T_Super::_SaveToSettings(jsonObj);
+    T_Super::_SaveToSettings();
 
-    m_viewFlags.To3dJson(jsonObj[VIEW_SETTING_Flags]);
-    jsonObj[VIEW_SETTING_Models] = m_viewedModels.ToString();
+    m_viewFlags.To3dJson(m_settings[VIEW_SETTING_Flags]);
+    m_settings[VIEW_SETTING_Models] = m_viewedModels.ToString();
 
-    JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Origin], m_origin);
-    JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Delta], m_delta);
-    JsonUtils::RotMatrixToJson(jsonObj[VIEW_SETTING_Rotation], m_rotation);
-
-    // Only save point cloud view settings if they're not set to default values
-    if (!m_pointCloudViewSettings.AreSetToDefault())
-        m_pointCloudViewSettings.ToJson(jsonObj[VIEW_SETTING_PointCloud]);
-    if (!m_pointCloudClassificationSettings.AreSetToDefault())
-        m_pointCloudClassificationSettings.ToJson(jsonObj[VIEW_SETTING_PointCloudClassif]);
+    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_Origin], m_origin);
+    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_Delta], m_delta);
+    JsonUtils::RotMatrixToJson(m_settings[VIEW_SETTING_Rotation], m_rotation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1780,11 +1778,11 @@ void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void ViewController2d::_RestoreFromSettings(JsonValueCR settings)
+void ViewController2d::_RestoreFromSettings()
     {
-    T_Super::_RestoreFromSettings(settings);
+    T_Super::_RestoreFromSettings();
 
-    JsonValueCR area2d = settings[VIEW_SETTING_Area2d];
+    JsonValueCR area2d = m_settings[VIEW_SETTING_Area2d];
 
     JsonUtils::DPoint2dFromJson(m_origin, area2d[VIEW_SETTING_Origin]);
     JsonUtils::DPoint2dFromJson(m_delta, area2d[VIEW_SETTING_Delta]);
@@ -1794,11 +1792,11 @@ void ViewController2d::_RestoreFromSettings(JsonValueCR settings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void ViewController2d::_SaveToSettings(JsonValueR settings) const
+void ViewController2d::_SaveToSettings() const
     {
-    T_Super::_SaveToSettings(settings);
+    T_Super::_SaveToSettings();
 
-    JsonValueR area2d = settings[VIEW_SETTING_Area2d];
+    JsonValueR area2d = m_settings[VIEW_SETTING_Area2d];
 
     JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Origin], m_origin);
     JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Delta], m_delta);
