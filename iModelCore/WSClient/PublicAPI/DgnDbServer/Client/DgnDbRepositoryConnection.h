@@ -85,7 +85,7 @@ private:
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
 
     //! Update repository info from the server.
-    DgnDbServerStatusTaskPtr UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken = nullptr);
+    DgnDbServerStatusTaskPtr UpdateRepositoryInfo (Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Acquire a new briefcase id for this repository.
     AsyncTaskPtr<WSCreateObjectResult> AcquireBriefcaseId (ICancellationTokenPtr cancellationToken = nullptr) const;
