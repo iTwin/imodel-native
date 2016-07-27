@@ -360,20 +360,16 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
     }
 
 
-template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadTextureBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DecompressTextureData(bvector<uint8_t>& texData, DATATYPE* DataTypeArray, size_t uncompressedSize)
     {
     assert(sizeof(DATATYPE) == 1);
-    bvector<uint8_t> ptData;
-    size_t uncompressedSize = 0;
-    m_smSQLiteFile->GetTexture(blockID.m_integerID, ptData, uncompressedSize);
 
-    assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
     HCDPacket pi_uncompressedPacket((Byte*)DataTypeArray + sizeof(int) * 3, uncompressedSize, uncompressedSize);    
     HCDPacket pi_compressedPacket;
-    pi_compressedPacket.SetBuffer(ptData.data() + 4 * sizeof(int), ptData.size() - 4 * sizeof(int));
-    pi_compressedPacket.SetDataSize(ptData.size() - 4 * sizeof(int));
+    pi_compressedPacket.SetBuffer(texData.data() + 4 * sizeof(int), texData.size() - 4 * sizeof(int));
+    pi_compressedPacket.SetDataSize(texData.size() - 4 * sizeof(int));
     
-    int *pHeader = (int*)(ptData.data());
+    int *pHeader = (int*)(texData.data());
     int w = pHeader[0];
     int h = pHeader[1];
     int nOfChannels = pHeader[2];
@@ -382,7 +378,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     ((int*)DataTypeArray)[0] = w;
     ((int*)DataTypeArray)[1] = h;
     ((int*)DataTypeArray)[2] = nOfChannels;
-    return maxCountData;    
+    return uncompressedSize + sizeof(int) * 3;
     }
 
 
@@ -433,43 +429,18 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     */
 #endif
 
+    bvector<uint8_t> nodeData;
+    size_t uncompressedSize = 0;
+    this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
         {        
-        return LoadTextureBlock(DataTypeArray, maxCountData, blockID);
+        assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
+        return DecompressTextureData(nodeData, DataTypeArray, uncompressedSize);
         }
 
-    bvector<uint8_t> nodeData;
-    size_t uncompressedSize = 0;        
 
-    switch (m_dataType)
-        {        
-        case SMStoreDataType::Graph : 
-            m_smSQLiteFile->GetGraph(blockID.m_integerID, nodeData, uncompressedSize);
-
-            if (uncompressedSize == 0)
-                return 1; 
-            break;
-        case SMStoreDataType::LinearFeature :
-            m_smSQLiteFile->GetFeature(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::Points : 
-            m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
-            break;
-        case SMStoreDataType::TriPtIndices : 
-            m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::UvCoords :
-            m_smSQLiteFile->GetUVs(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        case SMStoreDataType::TriUvIndices :             
-            m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
-        default : 
-            assert(!"Unsupported type");
-            break;
-        }    
-    
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_compressedPacket.SetBuffer(&nodeData[0], nodeData.size());
     pi_compressedPacket.SetDataSize(nodeData.size());
@@ -487,9 +458,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
         pi_uncompressedPacket.SetBufferOwnership(false);
         }
-    
-    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
 
+    LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
+                
     if (m_dataType == SMStoreDataType::Graph)
         {
         assert(typeid(DATATYPE) == typeid(MTGGraph));
@@ -504,6 +475,48 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         }                
 
     return std::min(uncompressedSize, maxCountData*sizeof(DATATYPE));        
+    }
+
+template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetCompressedBlock(bvector<uint8_t>& nodeData, size_t& uncompressedSize, HPMBlockID blockID)
+    {
+    switch (m_dataType)
+        {        
+        case SMStoreDataType::Graph : 
+            m_smSQLiteFile->GetGraph(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::LinearFeature :
+            m_smSQLiteFile->GetFeature(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Points:
+            m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::TriPtIndices:
+            m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::UvCoords:
+            m_smSQLiteFile->GetUVs(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::TriUvIndices:
+            m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Texture:
+            m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        default:
+            assert(!"Unsupported type");
+            break;
+        }
+    }
+
+template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, EXTENT>::LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+    {
+    bvector<uint8_t> nodeData;
+    size_t uncompressedSize = 0;
+    this->GetCompressedBlock(nodeData, uncompressedSize, blockID);
+    assert(uncompressedSize <= maxCountData*sizeof(DATATYPE));
+    assert(nodeData.size() <= maxCountData*sizeof(DATATYPE));
+    memcpy(DataTypeArray.data(), nodeData.data(), nodeData.size()*sizeof(DATATYPE));
+    return nodeData.size();
     }
 
 template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::DestroyBlock(HPMBlockID blockID)

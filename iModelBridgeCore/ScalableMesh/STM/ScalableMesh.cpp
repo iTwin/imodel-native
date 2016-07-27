@@ -387,9 +387,9 @@ int IScalableMesh::LoadAllNodeData(size_t& nbLoadedNodes, int level) const
     return _LoadAllNodeData(nbLoadedNodes, level);
 }
 
-int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
+int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
-    return _SaveGroupedNodeHeaders(pi_pOutputDirPath);
+    return _SaveGroupedNodeHeaders(pi_pOutputDirPath, pi_pGroupMode);
     }
 #endif
 
@@ -840,6 +840,9 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                 if (!isSingleFile)
                     {
+                    bool isVirtualGroups = false; // Streaming without node grouping by default
+                    isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
+
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
                     auto position = m_path.find_last_of(L".stm");
                     auto filenameWithoutExtension = m_path.substr(0, position - 3);
@@ -854,24 +857,24 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         return BSIERROR; // Error loading layer gcs
                     }
 
-
-                    pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::Points, AreDataCompressed(), s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
+                    // NEEDS_WORK_SM - Remove old streaming stores after they are all replaced by the new refactored stores.
+                    //pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::Points, AreDataCompressed(), s_stream_from_grouped_store);
+                    //pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
+                    //pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
+                    //pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
+                    //pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
                     
-                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store));                    
+                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups));
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
-                                                       &*pStreamingTileStore,                                                            
-                                                            &*pStreamingIndiceTileStore,
+                                                       0,//&*pStreamingTileStore,                                                            
+                                                            0,//&*pStreamingIndiceTileStore,
                                                     //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
                                                             new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
-                                                            &*pStreamingTextureTileStore,                                                            
-                                                            &*pStreamingUVTileStore,                                                            
-                                                            &*pStreamingUVsIndicesTileStore,
+                                                            0,//&*pStreamingTextureTileStore,                                                            
+                                                            0,//&*pStreamingUVTileStore,                                                            
+                                                            0,//&*pStreamingUVsIndicesTileStore,
                                                             10000,
                                                             filterP.get(),
                                                             false,
@@ -2174,15 +2177,18 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeData(size_t& nbLoade
 /*----------------------------------------------------------------------------+
 |MrDTM::_GroupNodeHeaders
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
+template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
     if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
+    s_is_virtual_grouping = pi_pGroupMode == SMNodeGroup::VIRTUAL;
 
-    m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, true);
+    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMNodeGroup::VIRTUAL);
+
+    m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
     return SUCCESS;
     }
 #endif

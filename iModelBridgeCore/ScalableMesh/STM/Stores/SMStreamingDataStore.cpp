@@ -12,6 +12,12 @@
 #include "SMStreamingDataStore.h"
 #include "SMStreamingDataStore.hpp"
 
+bool s_stream_from_disk = true;
+bool s_stream_from_file_server = false;
+bool s_stream_from_grouped_store = false;
+bool s_stream_enable_caching = false;
+bool s_is_virtual_grouping = true;
+
 template class SMStreamingStore<DRange3d>;
 
 template class SMStreamingNodeDataStore<DPoint3d, DRange3d>;

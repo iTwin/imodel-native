@@ -15,6 +15,27 @@
 
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
+#ifdef VANCOUVER_API
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
+#else
+#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
+#endif
+
+extern bool s_stream_from_disk;
+extern bool s_stream_from_file_server;
+extern bool s_stream_from_grouped_store;
+extern bool s_stream_enable_caching;
+extern bool s_is_virtual_grouping;
+
+//extern std::mutex fileMutex;
+
+#ifndef NDEBUG
+#define DEBUG_STREAMING_DATA_STORE
+extern std::mutex s_consoleMutex;
+#endif
+
 class DataSourceAccount; 
 
 template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
@@ -25,6 +46,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         WString m_rootDirectory;        
         WString m_pathToHeaders;
         bool m_use_node_header_grouping;
+        bool m_use_virtual_grouping;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
 
@@ -41,7 +63,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
     public : 
     
-        SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
 
@@ -102,7 +124,7 @@ public:
 
     DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
         
-    void Load(DataSourceAccount *dataSourceAccount);
+    void Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize = uint64_t(-1));
         
     void UnLoad();
             
@@ -144,14 +166,16 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     private:
         
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        HFCPtr<SMNodeGroup>           m_nodeGroup;
         DataSourceAccount*            m_dataSourceAccount;
         WString                       m_pathToNodeData;
         SMStoreDataType               m_dataType;
-        WString                       m_storage_connection_string;        
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;
         mutable std::mutex m_pointCacheLock;
+
+        uint64_t GetBlockSizeFromNodeHeader() const;
 
     protected: 
 
@@ -159,7 +183,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
        
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup = nullptr, bool compress = true);
             
         virtual ~SMStreamingNodeDataStore();
               
@@ -238,7 +262,7 @@ struct Texture : public bvector<uint8_t>
             return dataSource;
             }
 
-        void Load(DataSourceAccount *dataSourceAccount)
+        void Load(DataSourceAccount *dataSourceAccount, uint64_t blockSize = uint64_t(-1))
             {
             std::unique_ptr<DataSource::Buffer[]>       dest;
             DataSource                              *   dataSource;
@@ -259,11 +283,12 @@ struct Texture : public bvector<uint8_t>
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
                 return;
 
-            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+            if (blockSize == uint64_t(-1)) blockSize = 0;
+            if (dataSource->read(dest.get(), destSize, readSize, blockSize).isFailed())
                 return;
 
             dataSource->close();
-//          dataSourceAccount->destroyDataSource(dataSource);
+            //dataSourceAccount->destroyDataSource(dataSource);
 
             if (readSize > 0)
                 {

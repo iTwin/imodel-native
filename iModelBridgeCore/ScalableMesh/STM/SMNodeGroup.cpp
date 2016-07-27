@@ -25,7 +25,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     if (!lk.try_lock() || m_isLoading)
     {
         // Someone else is loading the group
-        if (nodeHeader.size == 0)
+        if (nodeHeader.offset == (uint32_t)-1)
             {
             // Data not ready yet, wait until it becomes ready
             if (lk.owns_lock()) lk.unlock();
@@ -36,7 +36,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
     {
         assert(m_isLoading == false);
         m_isLoading = true;
-        if (s_is_virtual_grouping)
+        if (m_mode == VIRTUAL)
             {
             this->LoadGroupParallel();
 
@@ -46,15 +46,11 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             }
         else 
         {
-            assert(m_isLoading == false);
-
             std::unique_ptr<DataSource::Buffer[]>       dest;
             DataSource                              *   dataSource;
             DataSource::DataSize                        readSize;
 
             DataSourceBuffer::BufferSize                destSize = 5 * 1024 * 1024;
-
-            m_isLoading = true;
 
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)
@@ -94,7 +90,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
             }
         }
     }
-    assert(nodeHeader.size > 0);
+    assert(nodeHeader.offset != (uint32_t)-1);
     return SUCCESS;
 }
 
@@ -105,9 +101,10 @@ void SMNodeGroup::LoadGroupParallel()
         {
 #ifdef DEBUG_GROUPS
         static uint64_t s_numProcessedNodeId = 0;
-        s_consoleMutex.lock();
+        {
+        std::lock_guard<mutex> lk(s_consoleMutex);
         std::cout << "[" << std::this_thread::get_id() << "," << group->GetID() << "] Distributing... " << std::endl;
-        s_consoleMutex.unlock();
+        }
 #endif
         assert(group->m_nodeDistributorPtr != nullptr);
         for (auto nodeHeader : *group->m_groupHeader)
@@ -115,19 +112,21 @@ void SMNodeGroup::LoadGroupParallel()
             group->m_nodeDistributorPtr->AddWorkItem(DistributeData(nodeHeader.blockid, group.GetPtr()));
             }
 #ifdef DEBUG_GROUPS
-        s_consoleMutex.lock();
+        {
+        std::lock_guard<mutex> lk(s_consoleMutex);
         std::cout << "[" << std::this_thread::get_id() << "," << group->GetID() << "] waiting for nodes to process... " << std::endl;
-        s_consoleMutex.unlock();
+        }
 #endif
         group->m_nodeDistributorPtr->Wait([group]()
             {
             return group->m_progress == group->m_groupHeader->size();
             });
 #ifdef DEBUG_GROUPS
+        {
+        std::lock_guard<mutex> lk(s_consoleMutex);
         s_numProcessedNodeId += group->m_groupHeader->size();
-        s_consoleMutex.lock();
         std::cout << "[" << std::this_thread::get_id() << "," << group->GetID() << "] " << group->m_groupHeader->size() << " nodes (total " << s_numProcessedNodeId << ")" << std::endl;
-        s_consoleMutex.unlock();
+        }
 #endif
         group->m_isLoading = false;
         group->m_isLoaded = true;
@@ -145,3 +144,34 @@ void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const u
     memmove(m_rawHeaders.data() + m_currentPosition, rawHeader, nodeHeader.size);
     m_currentPosition += nodeHeader.size;
     }
+
+void SMNodeGroup::WaitFor(SMNodeHeader& pi_pNode)
+    {
+    std::unique_lock<mutex> lk(m_groupMutex);
+    {
+#ifdef DEBUG_GROUPS
+    //std::lock(m_groupMutex, s_consoleMutex);
+    {
+    std::lock_guard<mutex> consoleLock(s_consoleMutex);
+    std::cout << "[" << std::this_thread::get_id() << "," << this->m_groupHeader->GetID() << "," << pi_pNode.blockid << "] waiting..." << std::endl;
+    }
+#endif
+    assert(lk.owns_lock());
+    m_groupCV.wait(lk, [this, &pi_pNode]
+        {
+        if (!m_isLoading && m_isLoaded)
+            {
+            assert(pi_pNode.offset != (uint32_t)-1);
+            return true;
+            }
+        return pi_pNode.offset != (uint32_t)-1;
+        });
+#ifdef DEBUG_GROUPS
+        {
+        std::lock_guard<mutex> consoleLock(s_consoleMutex);
+        std::cout << "[" << std::this_thread::get_id() << "," << this->m_groupHeader->GetID() << "," << pi_pNode.blockid << "] ready!" << std::endl;
+        }
+#endif
+    }
+    }
+
