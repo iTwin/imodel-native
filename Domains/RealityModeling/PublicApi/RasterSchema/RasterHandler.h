@@ -46,7 +46,7 @@ protected:
     virtual void _OnFitView(Dgn::FitContextR) override;
 
     //This how we make our raster pick-able
-    virtual void _DrawModel(Dgn::ViewContextR) override;
+//    virtual void _DrawModel(Dgn::ViewContextR) override;
     
     virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
 

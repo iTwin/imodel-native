@@ -24,22 +24,17 @@ struct PointCloudProgressiveDisplay : Dgn::ProgressiveTask
 
 private:
     RefCountedPtr<PtViewport>   m_ptViewport;        
-    DRange3d                    m_sceneRangeWorld;      // point could scene range in World unit.
-
+    DRange3d    m_sceneRangeWorld;      // point could scene range in World unit.
     uint64_t    m_nextRetryTime;                             //!< When to re-try to query points. unix millis UTC
     uint64_t    m_waitTime;                                  //!< How long to wait before re-trying to query points. millis 
-
     uint32_t    m_tentativeId;
-
     bool        m_doLowDensity;
-
     bool        m_lastTentativeStopped;
-
     uint64_t    m_firstPassPts;         // low density quick draw
     uint64_t    m_progressivePts;       // the last progressive display iteration. Usually the one that completed
     uint64_t    m_totalProgressivePts;  // Total number of points drawn 
 
-    static bool ShouldDrawInContext (Dgn::RenderContextR context);
+    static bool ShouldDrawInContext(Dgn::RenderContextR context);
 
     void SetupPtViewport(Dgn::RenderContextR context);
 
@@ -51,9 +46,9 @@ protected:
     //! Displays point cloud and schedules downloads. 
     virtual Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
 
-    void DrawView (Dgn::RenderContextR);
+    void DrawView(Dgn::RenderContextR);
 
-    PointCloudProgressiveDisplay (PointCloudModel const& model, PtViewport&);
+    PointCloudProgressiveDisplay(PointCloudModel const& model, PtViewport&);
     virtual ~PointCloudProgressiveDisplay();
     };
 
