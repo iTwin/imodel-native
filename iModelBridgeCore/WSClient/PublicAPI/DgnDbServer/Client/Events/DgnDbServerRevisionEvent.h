@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbServer/Client/DgnDbServerRevisionEvent.h $
+|     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnDbServer/Client/DgnDbServerEvent.h>
+#include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnDbServer/Client/DgnDbServerEvent.h $
+|     $Source: PublicAPI/DgnDbServer/Client/Events/DgnDbServerEvent.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -102,9 +102,9 @@ namespace DgnDbServerEvent
     struct GenericEvent
         {
         public:
-            //DGNDBSERVERCLIENT_EXPORT virtual const type_info& GetEventType() { return typeid(this); }
             DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventType GetEventType() { return UnknownEventType; }
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic() { return ""; }
+
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId() { return ""; }
         };
     }

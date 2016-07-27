@@ -94,5 +94,6 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesCache$(stlibext)
     %include $(sharedMki)LinkLibrary.mki    
 %endif

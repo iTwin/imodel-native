@@ -72,11 +72,18 @@ public:
     //! @return Asynchronous task that returns success or an error.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr IsBriefcaseUpToDate(ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    DGNDBSERVERCLIENT_EXPORT bool                               SetEventTypes (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventStringTaskPtr      GetEventString(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    //! Return true if able to subscribe to given event types
+    //! @param[in] eventTypes
+    DGNDBSERVERCLIENT_EXPORT bool                               SubscribeToEvents (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
+
+    //! 
+    //! @param[in] longPolling
+    //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr            GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventCollectionTaskPtr  GetEvents(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr      CancelEventRequest(ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Cancels the get event request 
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr      UnsubscribeToEvents(ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.

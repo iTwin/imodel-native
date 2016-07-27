@@ -53,30 +53,6 @@ Http::Response EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-//todo: need to return with more error status
-bool EventServiceClient::Receive(Utf8StringR msgOut, bool longPolling)
-    {
-    Http::Response response = MakeReceiveDeleteRequest(longPolling);
-    switch (response.GetHttpStatus())
-        {
-            case HttpStatus::OK: //received a message
-                msgOut = response.GetBody().AsString();
-                return true;
-            case HttpStatus::NoContent: //no incoming message
-                msgOut = NULL;
-                return true;
-            case HttpStatus::NotFound: //subscription not setup yet
-                return false;
-            case HttpStatus::Unauthorized: //token may be expired
-                return false;
-            default:
-                return false;
-        }
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Jeehwan.cho   05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 void EventServiceClient::UpdateSASToken(Utf8StringCR sasToken)
     {
     m_token = sasToken;

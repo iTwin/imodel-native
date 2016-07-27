@@ -118,6 +118,7 @@
 
     <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke"  ApiNumber="G06" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>

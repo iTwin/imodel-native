@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnDbServerClient/DgnDbServerRevisionEvent.cpp $
+|     $Source: DgnDbServerClient/DgnDbServerEvents/DgnDbServerRevisionEvent.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerRevisionEvent.h>
-#include "DgnDbServerUtils.h"
+#include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
+#include "../DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 

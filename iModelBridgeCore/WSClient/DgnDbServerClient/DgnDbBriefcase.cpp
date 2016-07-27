@@ -260,124 +260,17 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Caleb.Shafer	                    06/2016
 //---------------------------------------------------------------------------------------
-bool DgnDbBriefcase::SetEventTypes(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
+bool DgnDbBriefcase::SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
-        {
         return false;
-        }
     if (!m_repositoryConnection)
-        {
         return false;
-        }
 
-    m_repositoryConnection->UpdateEventServiceClient(eventTypes, nullptr);
+    m_repositoryConnection->SubscribeToEvents(eventTypes, nullptr);
 
     return true;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEventStringTaskPtr DgnDbBriefcase::GetEventString(bool longPolling, ICancellationTokenPtr cancellationToken)
-    {
-    auto currentEventTask = GetEvent(longPolling, cancellationToken)->GetResult();
-    if (!currentEventTask.IsSuccess())
-        return CreateCompletedAsyncTask<DgnDbServerEventStringResult>(DgnDbServerEventStringResult::Error(currentEventTask.GetError()));
-
-    DgnDbServerEventPtr currentEvent = currentEventTask.GetValue();
-    /*DgnDbServerEvent::DgnDbServerEventType eventType = DgnDbServerEventParser::GetInstance().GetEventType(currentEvent);*/
-    DgnDbServerEvent::DgnDbServerEventType eventType = currentEvent->GetEventType();
-    switch (eventType)
-        {
-            case DgnDbServerEvent::DgnDbServerEventType::LockEvent:
-                {
-                std::shared_ptr<DgnDbServerLockEvent> lockEvent = DgnDbServerEventParser::GetInstance().GetLockEvent(currentEvent);
-                if (lockEvent == nullptr)
-                    return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                                    (DgnDbServerEventStringResult::Error
-                                    (
-                                    DgnDbServerError::Id::InternalServerError
-                                    ));
-
-                Utf8String idStr;
-                for (auto const& id : lockEvent->GetObjectIds())
-                    {
-                    idStr.append(id);
-                    idStr.append(" ");
-                    }
-
-                return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                                    (DgnDbServerEventStringResult::Success
-                                    (
-                                    "Lock Info -> Object Ids: " + idStr + 
-                                    " LockType: " + lockEvent->GetLockType()
-                                    ));
-                }
-
-            case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:
-                {
-                std::shared_ptr<DgnDbServerRevisionEvent> revisionEvent = DgnDbServerEventParser::GetInstance().GetRevisionEvent(currentEvent);
-                if (revisionEvent == nullptr)
-                    return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Error
-                    (
-                    DgnDbServerError::Id::InternalServerError
-                    ));
-                return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Success
-                    (
-                    "Revision Info-> RevisionId: " + revisionEvent->GetRevisionId()
-                    ));
-                }
-
-            case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:
-                {
-                std::shared_ptr<DgnDbServerCodeEvent> codeEvent = DgnDbServerEventParser::GetInstance().GetCodeEvent(currentEvent);
-                if (codeEvent == nullptr)
-                    return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                                (DgnDbServerEventStringResult::Error(DgnDbServerError::Id::InternalServerError));
-
-                Utf8String valueStr;
-                for (auto const& value : codeEvent->GetValues())
-                    {
-                    valueStr.append(value);
-                    valueStr.append(" ");
-                    }
-
-                return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Success
-                    (
-                    "Code Info-> Values: " + valueStr +
-                    " State: " + codeEvent->GetState()
-                    ));
-                }
-
-            case DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent:
-            case DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent:
-                {
-                std::shared_ptr<DgnDbServerDeletedEvent> deletedEvent = DgnDbServerEventParser::GetInstance().GetDeletedEvent(currentEvent);
-                if (deletedEvent == nullptr)
-                    return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Error
-                    (
-                    DgnDbServerError::Id::InternalServerError
-                    ));
-                return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Success
-                    (
-                    DgnDbServerEvent::Helper::GetEventNameFromEventType(eventType) + " Activated"
-                    ));
-                }
-
-            case DgnDbServerEvent::DgnDbServerEventType::UnknownEventType:
-            default:
-                {
-                return CreateCompletedAsyncTask<DgnDbServerEventStringResult>
-                    (DgnDbServerEventStringResult::Error(DgnDbServerError::Id::NoEventsFound));
-                }
-        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -395,39 +288,22 @@ DgnDbServerEventTaskPtr  DgnDbBriefcase::GetEvent(bool longPolling, ICancellatio
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
-    DgnDbServerEventTaskPtr currentEventTask = m_repositoryConnection->GetEvent(longPolling, cancellationToken);
-    auto getEventResult = currentEventTask->GetResult();
-    if (!getEventResult.IsSuccess())
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
+    return m_repositoryConnection->GetEvent(longPolling, cancellationToken)->Then<DgnDbServerEventResult>([=](DgnDbServerEventResult result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError);
 
-    DgnDbServerEventPtr currentEvent = getEventResult.GetValue();
-    if (currentEvent == nullptr)
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
-    return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Success(currentEvent));
+        DgnDbServerEventPtr currentEvent = result.GetValue();
+        if (currentEvent == nullptr)
+            return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
+        return DgnDbServerEventResult::Success(currentEvent);
+        });
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventCollectionTaskPtr DgnDbBriefcase::GetEvents(bool longPolling, ICancellationTokenPtr cancellationToken)
-    {
-    BeAssert(DgnDbServerHost::IsInitialized());
-    if (!m_db.IsValid() || !m_db->IsDbOpen())
-        {
-        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::FileNotFound));
-        }
-    if (!m_repositoryConnection)
-        {
-        return CreateCompletedAsyncTask<DgnDbServerEventCollectionResult>(DgnDbServerEventCollectionResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-        }
-
-    return m_repositoryConnection->GetEvents(longPolling, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerCancelEventTaskPtr  DgnDbBriefcase::CancelEventRequest(ICancellationTokenPtr cancellationToken)
+DgnDbServerCancelEventTaskPtr  DgnDbBriefcase::UnsubscribeToEvents(ICancellationTokenPtr cancellationToken)
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -439,7 +315,7 @@ DgnDbServerCancelEventTaskPtr  DgnDbBriefcase::CancelEventRequest(ICancellationT
         return CreateCompletedAsyncTask<DgnDbServerCancelEventResult>(DgnDbServerCancelEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
 
-    return m_repositoryConnection->CancelEventRequest(cancellationToken);
+    return m_repositoryConnection->UnsubscribeToEvents(cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
