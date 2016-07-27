@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: uwp/MakeCppUnitProject.mke $
+#     $Source: uwp/MakeUwpTestProject.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -58,6 +58,7 @@ always:
 # Copy the entire project structure (physical directories + symlinked files)
 # The VS project file will be modified (and we don't want to check that in) so make a hard copy for it
 # Also create a hard copy of the .sln so that there is no confusion over which vcxproj to open
+# N.B. The key file cannot by a symlink. If it is, you'll get "Loading certificate file '...' failed. Unspecified error".
 #--------------------------------------------------------------------------------------
 always:
     CopyWithSymlinks.py $(baseDir)VisualStudioProject/BeTestTest1 $(projectDir)
@@ -65,7 +66,9 @@ always:
     $(copyCmd) $(baseDir)VisualStudioProject/BeTestTest1/BeTestTest1.vcxproj $(projectDir)BeTestTest1.vcxproj
     !-$(deleteCmd) $(projectDir)BeTestTest1.sln
     $(copyCmd) $(baseDir)VisualStudioProject/BeTestTest1/BeTestTest1.sln $(projectDir)BeTestTest1.sln
-    
+    !-$(deleteCmd) $(projectDir)BeTestTest1_TemporaryKey.pfx
+    $(copyCmd) $(baseDir)VisualStudioProject/BeTestTest1/BeTestTest1_TemporaryKey.pfx $(projectDir)BeTestTest1_TemporaryKey.pfx
+
 #--------------------------------------------------------------------------------------
 # CppUnit wrappers
 #
@@ -75,6 +78,7 @@ always:
 #--------------------------------------------------------------------------------------
 $(tmp)GenerateCppUnitSource.mki : $[@wildcard $(collectionTestObjectsDir)*UnitTests.list.h] $(baseDir)CppUnit.cpp.template $(_MakeFileSpec)
     $(msg)
+    | $(baseDir)GenerateCppUnitSource.py $(collectionTestObjectsDir) $(baseDir)CppUnit.cpp.template
     !@$(baseDir)GenerateCppUnitSource.py $(collectionTestObjectsDir) $(baseDir)CppUnit.cpp.template > $@
     ~time
 
@@ -155,7 +159,22 @@ $(projectDir)VendorApi : $(BuildContext)VendorApi
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 #--------------------------------------------------------------------------------------
+# Build
+#--------------------------------------------------------------------------------------
+MSBuildExe = msbuild.exe
+MSBuildArgs = \/verbosity:Normal \/target:Build
+
+%if !defined (NDEBUG)
+    MSBuildProperties + Configuration=Debug
+%else
+    MSBuildProperties + Configuration=Release
+%endif
+    
+always:
+    $(MSBuildExe) $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+
+#--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/WnRTCpU/$(TEST_NAME)/Project : $(o)Project
+$(BuildContext)Delivery/UwpTest/$(TEST_NAME)/Project : ${projectDir}
     $(LinkFirstDepToFirstTargetAsDirectory)

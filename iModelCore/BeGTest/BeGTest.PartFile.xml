@@ -260,7 +260,7 @@
     </Part>
 
     <!-- *********************************************************************************************** -->
-    <!-- ProductDirectory used by all Android JUnit products -->
+    <!-- ProductDirectory used by all XCTest products -->
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="iOSXCTestProduct">
         <ProductDirectory Name="iOSXCTestProject" Path="" LibType="static"/>
@@ -273,18 +273,18 @@
     </ProductDirectoryList>
 
   <!-- *********************************************************************************************** -->
-  <!-- This part should be used by any part that wants to build and/or run an CppUnit project -->
+  <!-- This part should be used by any part that wants to build and/or run a UWP project -->
   <!-- *********************************************************************************************** -->
-  <Part Name="WinRTCppUnitTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
+  <Part Name="UwpTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
     <SubPart PartName="Base"/>
-    <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+    <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite"/>
   </Part>
 
   <!-- *********************************************************************************************** -->
-  <!-- ProductDirectory used by all Android JUnit products -->
+  <!-- ProductDirectory used by all UWP test products -->
   <!-- *********************************************************************************************** -->
-  <ProductDirectoryList ListName="WinRTCppUnitTestProduct">
-    <ProductDirectory Name="WinRTCppUnitTestProject" Path=""/>
+  <ProductDirectoryList ListName="UwpTestProduct">
+    <ProductDirectory Name="UwpTestProject" Path=""/>
 
     <ProductDirectory Name="Libs" Deliver="false"/>
     <ProductDirectory Name="PublicAPI" Deliver="false"/>
@@ -292,6 +292,5 @@
     <ProductDirectory Name="VendorNotices" Deliver="false" />
     <ProductDirectory Name="BentleyNativeAssemblies" Deliver="false"/>
   </ProductDirectoryList>
-
 
 </BuildContext>

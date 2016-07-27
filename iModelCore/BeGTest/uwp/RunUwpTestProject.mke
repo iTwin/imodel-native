@@ -1,0 +1,30 @@
+#--------------------------------------------------------------------------------------
+#     $Source: uwp/RunUwpTestProject.mke $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+%if ("WinRT" != $(TARGET_PLATFORM))
+    %error This makefile can only be used when targetting UWP.
+%endif
+
+%if !defined(UWPTEST_PRODUCT)
+    %error Must define UWPTEST_PRODUCT as the name of the Product that contains the solution for the test suite.
+%endif
+
+ConfigDir = Release
+%if !defined (NDEBUG)
+    ConfigDir = Debug
+%endif
+
+TestLibrary = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/$(ConfigDir)/BeTestTest1/BeTestTest1.dll
+
+%ifnofile $(TestLibrary)
+    %error Indicated test library file '$(TestLibrary)' does not exist. Please check the value of UWPTEST_PRODUCT ('$(UWPTEST_PRODUCT)').
+%endif
+
+always:
+    pushd $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/
+    MSTest.exe \/testcontainer:$(TestLibrary)
+    popd
