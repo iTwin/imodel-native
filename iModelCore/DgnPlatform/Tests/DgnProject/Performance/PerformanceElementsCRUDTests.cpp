@@ -42,7 +42,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
     if (!seedFilePath.DoesPathExist())
         {
-        SetupProject(L"3dMetricGeneral.ibim", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
+        SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
         ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
         BeFileName searchDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
