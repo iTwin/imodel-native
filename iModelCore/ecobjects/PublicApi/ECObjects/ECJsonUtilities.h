@@ -50,7 +50,7 @@ public:
     //! @param[out] binaryArray the resulting Byte array
     //! @param[in] json the Json value
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>&, Json::Value const&);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>& binaryArray, Json::Value const& json);
     //! Converts the specified DPoint2d to a Json value
     //! The point is converted to a Json object with keys "x" and "y".
     //! @param[out] json the resulting Json value
@@ -121,7 +121,7 @@ public:
     //! @param[out] binaryArray the resulting Byte array
     //! @param[in] json The RapidJsonValue
     //! @return SUCCESS or ERROR
-    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>& byteArray, RapidJsonValueCR json);
+    ECOBJECTS_EXPORT static BentleyStatus JsonToBinary(bvector<Byte>& binaryArray, RapidJsonValueCR json);
 
     //! Converts the specified DPoint2d to a Json value
     //! The point is converted to a Json object with keys "x", "y" and "z".
