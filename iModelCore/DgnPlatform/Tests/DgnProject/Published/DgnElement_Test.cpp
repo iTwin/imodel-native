@@ -681,7 +681,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
         // Non-null placement + non-null geom
         el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
         auto geom = CreateGeom();
-        EXPECT_EQ(SUCCESS, geom->SetGeometryStreamAndPlacement(*el));
+        EXPECT_EQ(SUCCESS, geom->Finish(*el));
         placement = el->GetPlacement();
         EXPECT_TRUE(placement.IsValid());
         EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
@@ -695,7 +695,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
 
         // Null placement + non-null geom
         el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
-        EXPECT_EQ(SUCCESS, geom->SetGeometryStreamAndPlacement(*el));
+        EXPECT_EQ(SUCCESS, geom->Finish(*el));
         el->SetPlacement(Placement3d());
         DgnDbStatus status;
         EXPECT_FALSE(m_db->Elements().Insert(*el, &status).IsValid());

@@ -56,7 +56,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 
     builder->Append (*ICurvePrimitive::CreateLine (DSegment3d::From (DPoint3d::From (s_xCoord, s_yCoord, s_zCoord), DPoint3d::From (s_xCoord + s_increment, s_yCoord + s_increment, s_zCoord + s_increment))));
 
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement (*geomElement))
+    if (SUCCESS != builder->Finish (*geomElement))
         return ERROR;
 
     out = element;

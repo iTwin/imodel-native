@@ -45,7 +45,7 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (BSISUCCESS != builder->SetGeometryStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeometryStreamAndPlacement
+    if (BSISUCCESS != builder->Finish(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in Finish
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -140,7 +140,7 @@ TEST_F(DgnScriptTest, TestEga)
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
         var builder = new Bentley.Dgn.GeometryBuilder(element, origin, angles); \
         builder.AppendGeometry(box); \
-        builder.SetGeometryStreamAndPlacement(element); \
+        builder.Finish(element); \
         return 0;\
     } \
     function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\

@@ -77,7 +77,7 @@ void VolumeElement::SetupGeomStream(DPoint3dCR origin, bvector<DPoint2d> const& 
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, GetCategoryId(), origin, YawPitchRollAngles());
     builder->Append(*extrusionSolid);
-    builder->SetGeometryStreamAndPlacement(*this);
+    builder->Finish(*this);
     }
 
 //--------------------------------------------------------------------------------------

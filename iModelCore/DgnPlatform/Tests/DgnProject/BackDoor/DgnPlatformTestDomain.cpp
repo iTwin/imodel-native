@@ -85,9 +85,9 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId));
 
     //  Add some hard-wired geometry
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*testElement);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*testElement); // Create at origin...
     builder->Append(*computeShape(shapeSize));
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*testElement))
+    if (SUCCESS != builder->Finish(*testElement))
         return nullptr;
 
     return testElement;
@@ -101,10 +101,10 @@ TestElementPtr TestElement::Create(Dgn::DgnDbR db, Render::GeometryParamsCR ep, 
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
 
     //  Add some hard-wired geometry
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*testElement);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*testElement); // Create at origin...
     EXPECT_TRUE(builder->Append(ep));
     EXPECT_TRUE(builder->Append(*computeShape(shapeSize)));
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*testElement))
+    if (SUCCESS != builder->Finish(*testElement))
         return nullptr;
 
     return testElement;
@@ -246,9 +246,9 @@ void TestElement::_CopyFrom(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElement::ChangeElement(double len)
     {
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*this);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*this);
     builder->Append(*computeShape(len));
-    builder->SetGeometryStreamAndPlacement(*this);
+    builder->Finish(*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -277,9 +277,9 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
         return nullptr;
 
     //  Add some hard-wired geometry
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*testElement);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*testElement); // Create at origin...
     EXPECT_TRUE(builder->Append(*computeShape2d(length)));
-    return (SUCCESS != builder->SetGeometryStreamAndPlacement(*testElement)) ? nullptr : testElement;
+    return (SUCCESS != builder->Finish(*testElement)) ? nullptr : testElement;
 }
 
 /*---------------------------------------------------------------------------------**//**

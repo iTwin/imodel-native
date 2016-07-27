@@ -3584,7 +3584,7 @@ BentleyStatus GeometryBuilder::GetGeometryStream(GeometryStreamR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometryBuilder::SetGeometryStream(DgnGeometryPartR part)
+BentleyStatus GeometryBuilder::Finish(DgnGeometryPartR part)
     {
     if (!m_isPartCreate)
         return ERROR; // Invalid builder for creating part geometry...
@@ -3622,7 +3622,7 @@ BentleyStatus GeometryBuilder::SetGeometryStream(DgnGeometryPartR part)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GeometryBuilder::SetGeometryStreamAndPlacement(GeometrySourceR source)
+BentleyStatus GeometryBuilder::Finish(GeometrySourceR source)
     {
     if (m_isPartCreate)
         return ERROR; // Invalid builder for creating element geometry...
@@ -3781,6 +3781,12 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRange, bool isSubGraphic)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::ConvertToLocal(GeometricPrimitiveR geom)
     {
+    if (m_isPartCreate)
+        {
+        BeAssert(false); // Part geometry must be supplied in local coordinates...
+        return false; 
+        }
+
     Transform   localToWorld;
 
     if (!m_havePlacement)
@@ -3840,6 +3846,12 @@ bool GeometryBuilder::ConvertToLocal(GeometricPrimitiveR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::AppendLocal(GeometricPrimitiveCR geom)
     {
+    if (!m_havePlacement)
+        {
+        BeAssert(false); // placement must already be defined...
+        return false; 
+        }
+
     DRange3d localRange;
 
     if (!geom.GetRange(localRange))
@@ -3867,7 +3879,7 @@ bool GeometryBuilder::AppendWorld(GeometricPrimitiveR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(GeometricPrimitiveCR geom)
+bool GeometryBuilder::Append(GeometricPrimitiveCR geom, CoordSystem coord)
     {
     if (!m_is3d && is3dGeometryType(geom.GetGeometryType()))
         {
@@ -3875,7 +3887,7 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom)
         return false;
         }
 
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         return AppendLocal(geom);
 
     GeometricPrimitivePtr geomPtr = geom.Clone();
@@ -3886,9 +3898,9 @@ bool GeometryBuilder::Append(GeometricPrimitiveCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(ICurvePrimitiveCR geom)
+bool GeometryBuilder::Append(ICurvePrimitiveCR geom, CoordSystem coord)
     {
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
 
@@ -3911,9 +3923,9 @@ bool GeometryBuilder::Append(ICurvePrimitiveCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(CurveVectorCR geom)
+bool GeometryBuilder::Append(CurveVectorCR geom, CoordSystem coord)
     {
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
 
@@ -3936,7 +3948,7 @@ bool GeometryBuilder::Append(CurveVectorCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(ISolidPrimitiveCR geom)
+bool GeometryBuilder::Append(ISolidPrimitiveCR geom, CoordSystem coord)
     {
     if (!m_is3d)
         {
@@ -3944,7 +3956,7 @@ bool GeometryBuilder::Append(ISolidPrimitiveCR geom)
         return false;
         }
 
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
 
@@ -3965,7 +3977,7 @@ bool GeometryBuilder::Append(ISolidPrimitiveCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(MSBsplineSurfaceCR geom)
+bool GeometryBuilder::Append(MSBsplineSurfaceCR geom, CoordSystem coord)
     {
     if (!m_is3d)
         {
@@ -3973,7 +3985,7 @@ bool GeometryBuilder::Append(MSBsplineSurfaceCR geom)
         return false;
         }
 
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
 
@@ -3994,7 +4006,7 @@ bool GeometryBuilder::Append(MSBsplineSurfaceCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(PolyfaceQueryCR geom)
+bool GeometryBuilder::Append(PolyfaceQueryCR geom, CoordSystem coord)
     {
     if (!m_is3d)
         {
@@ -4002,7 +4014,7 @@ bool GeometryBuilder::Append(PolyfaceQueryCR geom)
         return false;
         }
 
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
 
@@ -4019,31 +4031,33 @@ bool GeometryBuilder::Append(PolyfaceQueryCR geom)
 
     return AppendWorld(*geomPtr);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Earlin.Lutz 03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(IGeometryCR geometry)
+bool GeometryBuilder::Append(IGeometryCR geometry, CoordSystem coord)
     {
-    switch (geometry.GetGeometryType ())
+    switch (geometry.GetGeometryType())
         {
         case IGeometry::GeometryType::CurvePrimitive:
-            return Append (*geometry.GetAsICurvePrimitive());
+            return Append(*geometry.GetAsICurvePrimitive(), coord);
         case IGeometry::GeometryType::CurveVector:
-            return Append(*geometry.GetAsCurveVector());
+            return Append(*geometry.GetAsCurveVector(), coord);
         case IGeometry::GeometryType::Polyface:
-            return Append(*geometry.GetAsPolyfaceHeader());
+            return Append(*geometry.GetAsPolyfaceHeader(), coord);
         case IGeometry::GeometryType::SolidPrimitive:
-            return Append(*geometry.GetAsISolidPrimitive());
+            return Append(*geometry.GetAsISolidPrimitive(), coord);
         case IGeometry::GeometryType::BsplineSurface:
-            return Append(*geometry.GetAsMSBsplineSurface());
+            return Append(*geometry.GetAsMSBsplineSurface(), coord);
+        default:
+            return false;
         }
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
+bool GeometryBuilder::Append(ISolidKernelEntityCR geom, CoordSystem coord)
     {
     if (!m_is3d)
         {
@@ -4051,7 +4065,7 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
         return false;
         }
 
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
 
@@ -4073,9 +4087,9 @@ bool GeometryBuilder::Append(ISolidKernelEntityCR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(TextStringCR text)
+bool GeometryBuilder::Append(TextStringCR text, CoordSystem coord)
     {
-    if (m_haveLocalGeom)
+    if (CoordSystem::Local == coord)
         {
         DRange3d localRange;
         if (!getRange(text, localRange, nullptr))
@@ -4099,11 +4113,12 @@ BEGIN_UNNAMED_NAMESPACE
 struct TextAnnotationDrawToGeometricPrimitive : IGeometryProcessor
 {
 private:
-    GeometryBuilderR    m_builder;
-    TextAnnotationCR    m_text;
+    GeometryBuilderR m_builder;
+    TextAnnotationCR m_text;
+    GeometryBuilder::CoordSystem m_coord;
 
 public:
-    TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, GeometryBuilderR builder) : m_text(text), m_builder(builder) {}
+    TextAnnotationDrawToGeometricPrimitive(TextAnnotationCR text, GeometryBuilderR builder, GeometryBuilder::CoordSystem coord) : m_text(text), m_builder(builder), m_coord(coord) {}
 
     virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
     virtual bool _ProcessCurveVector(CurveVectorCR, bool isFilled, SimplifyGraphic&) override;
@@ -4119,7 +4134,7 @@ bool TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR tex
 
     if (graphic.GetLocalToWorldTransform().IsIdentity())
         {
-        m_builder.Append(text);
+        m_builder.Append(text, m_coord);
 
         return true;
         }
@@ -4127,7 +4142,7 @@ bool TextAnnotationDrawToGeometricPrimitive::_ProcessTextString(TextStringCR tex
     TextString transformedText(text);
 
     transformedText.ApplyTransform(graphic.GetLocalToWorldTransform());
-    m_builder.Append(transformedText);
+    m_builder.Append(transformedText, m_coord);
 
     return true;
     }
@@ -4141,7 +4156,7 @@ bool TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR c
 
     if (graphic.GetLocalToWorldTransform().IsIdentity())
         {
-        m_builder.Append(curves);
+        m_builder.Append(curves, m_coord);
 
         return true;
         }
@@ -4149,7 +4164,7 @@ bool TextAnnotationDrawToGeometricPrimitive::_ProcessCurveVector(CurveVectorCR c
     CurveVector transformedCurves(curves);
 
     transformedCurves.TransformInPlace(graphic.GetLocalToWorldTransform());
-    m_builder.Append(transformedCurves);
+    m_builder.Append(transformedCurves, m_coord);
 
     return true;
     }
@@ -4172,9 +4187,9 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(TextAnnotationCR text)
+bool GeometryBuilder::Append(TextAnnotationCR text, CoordSystem coord)
     {
-    TextAnnotationDrawToGeometricPrimitive annotationDraw(text, *this);
+    TextAnnotationDrawToGeometricPrimitive annotationDraw(text, *this, coord);
 
     GeometryProcessor::Process(annotationDraw, m_dgnDb);
 
@@ -4187,8 +4202,8 @@ bool GeometryBuilder::Append(TextAnnotationCR text)
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement) : m_dgnDb(dgnDb), m_is3d(true), m_writer(dgnDb)
     {
     m_placement3d = placement;
-    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
-    m_haveLocalGeom = m_havePlacement = true;
+    m_placement2d.GetElementBoxR().Init(); // throw away pre-existing bounding box...
+    m_havePlacement = true;
     m_appearanceChanged = false;
     m_appendAsSubGraphics = false;
 
@@ -4202,8 +4217,8 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement) : m_dgnDb(dgnDb), m_is3d(false), m_writer(dgnDb)
     {
     m_placement2d = placement;
-    m_placement2d.GetElementBoxR().Init(); //throw away pre-existing bounding box...
-    m_haveLocalGeom = m_havePlacement = true;
+    m_placement2d.GetElementBoxR().Init(); // throw away pre-existing bounding box...
+    m_havePlacement = true;
     m_appearanceChanged = false;
     m_appendAsSubGraphics = false;
 
@@ -4216,10 +4231,11 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d) : m_dgnDb(dgnDb), m_is3d(is3d), m_writer(dgnDb)
     {
-    m_haveLocalGeom = m_havePlacement = m_isPartCreate = false;
-    m_elParams.SetCategoryId(categoryId);
+    m_havePlacement = false;
     m_appearanceChanged = false;
     m_appendAsSubGraphics = false;
+    m_isPartCreate = false;
+    m_elParams.SetCategoryId(categoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4401,6 +4417,21 @@ GeometryBuilderPtr GeometryBuilder::CreateGeometryPart(DgnDbR db, bool is3d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+GeometryBuilderPtr GeometryBuilder::CreateWithAutoPlacement(DgnModelR model, DgnCategoryId categoryId)
+    {
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel)
+        return nullptr;
+
+    return new GeometryBuilder(model.GetDgnDb(), categoryId, geomModel->Is3d());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
     if (!categoryId.IsValid())
@@ -4410,10 +4441,7 @@ GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId catego
     if (nullptr == geomModel || !geomModel->Is3d())
         return nullptr;
 
-    Placement3d placement;
-
-    placement.GetOriginR() = origin;
-    placement.GetAnglesR() = angles;
+    Placement3d placement(origin, angles);
 
     return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
     }
@@ -4430,63 +4458,9 @@ GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId catego
     if (nullptr == geomModel || geomModel->Is3d())
         return nullptr;
 
-    Placement2d placement;
-
-    placement.GetOriginR() = origin;
-    placement.GetAngleR()  = angle;
+    Placement2d placement(origin, angle);
 
     return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryBuilderPtr GeometryBuilder::CreateWorld(DgnModelR model, DgnCategoryId categoryId)
-    {
-    if (!categoryId.IsValid())
-        return nullptr;
-
-    auto geomModel = model.ToGeometricModel();
-    if (nullptr == geomModel)
-        return nullptr;
-
-    return new GeometryBuilder(model.GetDgnDb(), categoryId, geomModel->Is3d());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryBuilderPtr GeometryBuilder::Create(GeometrySource3dCR source, DPoint3dCR origin, YawPitchRollAngles const& angles)
-    {
-    DgnCategoryId categoryId = source.GetCategoryId();
-
-    if (!categoryId.IsValid())
-        return nullptr;
-
-    Placement3d placement;
-
-    placement.GetOriginR() = origin;
-    placement.GetAnglesR() = angles;
-
-    return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, placement);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryBuilderPtr GeometryBuilder::Create(GeometrySource2dCR source, DPoint2dCR origin, AngleInDegrees const& angle)
-    {
-    DgnCategoryId categoryId = source.GetCategoryId();
-
-    if (!categoryId.IsValid())
-        return nullptr;
-
-    Placement2d placement;
-
-    placement.GetOriginR() = origin;
-    placement.GetAngleR()  = angle;
-
-    return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4503,17 +4477,4 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source)
         return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource3d()->GetPlacement());
 
     return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.ToGeometrySource2d()->GetPlacement());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeometryBuilderPtr GeometryBuilder::CreateWorld(GeometrySourceCR source)
-    {
-    DgnCategoryId categoryId = source.GetCategoryId();
-
-    if (!categoryId.IsValid())
-        return nullptr;
-
-    return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, nullptr != source.ToGeometrySource3d());
     }

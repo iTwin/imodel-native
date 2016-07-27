@@ -75,8 +75,8 @@ module DgnScriptPerformanceTests {
                     else
                         geom = be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(0, 0, 1), 1, 1, true);
                     builder.AppendGeometry(geom);
-                    if (0 != builder.SetGeometryStreamAndPlacement(ele)) {
-                        be.Script.ReportError('SetGeometryStreamAndPlacement failed');
+                    if (0 != builder.Finish(ele)) {
+                        be.Script.ReportError('Finish failed');
                         return -1;
                     }
                     //PopulateProperties(ele);

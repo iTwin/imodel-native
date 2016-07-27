@@ -208,8 +208,8 @@ TEST_F(ScriptTest, Test)
                 else
                     geom = createCircularCone(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, 1), 1, 1, true);
                 builder->Append(*geom);
-                if (0 != builder->SetGeometryStreamAndPlacement(*ele)) {
-                    FAIL() << "SetGeometryStreamAndPlacement failed";
+                if (0 != builder->Finish(*ele)) {
+                    FAIL() << "Finish failed";
                     return;
                 }
                 PopulateProperties(*ele);

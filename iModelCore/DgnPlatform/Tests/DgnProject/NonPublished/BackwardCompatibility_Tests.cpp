@@ -51,10 +51,10 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 
     geomElement->SetCategoryId(categoryId);
 
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*geomElement);
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*geomElement);
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1, 0, 0)));
     builder->Append(*line);
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElement))
+    if (SUCCESS != builder->Finish(*geomElement))
         return ERROR;
 
     out = element;

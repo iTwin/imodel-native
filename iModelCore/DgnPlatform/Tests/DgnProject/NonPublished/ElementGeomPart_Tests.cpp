@@ -44,7 +44,7 @@ TEST_F(ElementGeomPartTests, CRUD)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
     
     // Test the range
     ElementAlignedBox3d partBox = geomPartPtr->GetBoundingBox();
@@ -73,7 +73,7 @@ TEST_F(ElementGeomPartTests, CRUD)
 
     // Update
     builder->Append(*elGPtr);
-    builder->SetGeometryStream(*geomPartPtr);
+    builder->Finish(*geomPartPtr);
     ASSERT_TRUE(partId == geomPartPtr->GetId());
     EXPECT_TRUE(geomPartPtr->GetGeometryStream().GetSize() > size);
     ASSERT_TRUE(geomPartPtr->GetId().IsValid());
@@ -99,7 +99,7 @@ TEST_F(ElementGeomPartTests, CreateElements)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
@@ -128,7 +128,7 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
     EXPECT_TRUE(geomPartPtr->GetCode().IsValid());
@@ -160,7 +160,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
@@ -194,7 +194,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
@@ -227,7 +227,7 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
@@ -262,7 +262,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
 
@@ -301,7 +301,7 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     builder->Append(*elGPtr);
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(*m_db, s_geomPartCode);
     EXPECT_TRUE(geomPartPtr != NULL);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStream(*geomPartPtr));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
 
     EXPECT_TRUE(m_db->Elements().Insert<DgnGeometryPart>(*geomPartPtr).IsValid());
      

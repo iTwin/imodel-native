@@ -164,7 +164,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     GeometryBuilderPtr builder = GeometryBuilder::Create(*geomEl, DPoint2d::From(3,2));
 
     builder->Append(*curve);
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomEl));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomEl));
     EXPECT_TRUE(el->Insert().IsValid());
 
     DrawingViewController viewController(db, m_viewId);

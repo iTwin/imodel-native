@@ -600,7 +600,7 @@ TEST_F (CategoryTests, QueryByElementId)
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     EXPECT_TRUE(builder->Append(*ellipse));
 
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
     auto elem = m_db->Elements().Insert(*el);
     EXPECT_TRUE(elem.IsValid());
     }

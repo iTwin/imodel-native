@@ -195,7 +195,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
             var origin = new Bentley.Dgn.DPoint3d(i,i,i);\
             var builder = new Bentley.Dgn.GeometryBuilder(element, origin, angles); \
             builder.Append(solid); \
-            builder.SetGeometryStreamAndPlacement(element); \
+            builder.Finish(element); \
             element.Insert(); \
             }\
         return 0;\
@@ -224,7 +224,7 @@ static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestMode
         builder->Append(*testGeomPtr);
         }
 
-    builder->SetGeometryStreamAndPlacement(*testElement);
+    builder->Finish(*testElement);
 
     eid = physicalTestModel.GetDgnDb().Elements().Insert(*testElement)->GetElementId();
     }

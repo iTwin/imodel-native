@@ -29,7 +29,7 @@ PhysicalElementPtr ElementGroupTests::CreateAndInsertElement(DgnModelP model)
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,/**/  0, 0, 2, /**/ 0, 3, 0, /**/ 0.0, Angle::TwoPi());
     ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateArc(ellipseData);
     builder->Append(*curvePrimitive);
-    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*testElement);
+    BentleyStatus status = builder->Finish(*testElement);
     if (SUCCESS != status)
         return NULL;
 
