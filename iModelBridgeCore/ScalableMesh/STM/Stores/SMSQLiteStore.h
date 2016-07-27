@@ -15,6 +15,9 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
     private : 
 
         SMSQLiteFilePtr m_smSQLiteFile;        
+        SMSQLiteFilePtr m_smFeatureSQLiteFile;
+
+        SMSQLiteFilePtr GetFeatureSQLiteFile();
 
     public : 
     

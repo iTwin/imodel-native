@@ -6,13 +6,26 @@
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
     {
-    m_smSQLiteFile = database;
+    m_smSQLiteFile = database;   
     }
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
     {
     // We didn't want to close it. It's ScalableMesh which did this stuff now (and if SMSQLiteFilePtr is destroy, close is automatically called)
-    //m_smSQLiteFile->Close();
+    //m_smSQLiteFile->Close();    
+
+    if (m_smFeatureSQLiteFile.IsValid())
+        {
+        Utf8String dbFileName;         
+        bool result = m_smFeatureSQLiteFile->GetFileName(dbFileName); 
+        assert(result == true);
+        assert(m_smFeatureSQLiteFile->GetRefCount() == 1);
+        m_smFeatureSQLiteFile->Close();
+        m_smFeatureSQLiteFile = 0;        
+        WString dbFileNameW;
+        dbFileNameW.AssignUtf8(dbFileName.c_str());
+        _wremove(dbFileNameW.c_str());
+        }
     }
 
 template <class EXTENT> uint64_t SMSQLiteStore<EXTENT>::GetNextID() const
@@ -90,11 +103,44 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointDat
     return true;    
     }
 
+
+template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetFeatureSQLiteFile()
+    {
+    if (!m_smFeatureSQLiteFile.IsValid())
+        {
+        Utf8String dbFileName;         
+        bool result = m_smSQLiteFile->GetFileName(dbFileName); 
+        assert(result == true);
+
+        WString name;
+        name.AssignUtf8(dbFileName.c_str());
+
+        WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
+        _wremove(featureFilePath.c_str());
+
+        m_smFeatureSQLiteFile = new SMSQLiteFile();
+        m_smFeatureSQLiteFile->Create(featureFilePath); 
+        }
+
+    return m_smFeatureSQLiteFile;
+    }
+
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
-    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices);
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices || dataType == SMStoreDataType::LinearFeature);
+    SMSQLiteFilePtr sqliteFilePtr;      
+
+    if (dataType == SMStoreDataType::LinearFeature)
+        {
+        sqliteFilePtr = GetFeatureSQLiteFile();            
+        assert(sqliteFilePtr.IsValid() == true);
+        }
+    else
+        {
+        sqliteFilePtr = m_smSQLiteFile;
+        }
     
-    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<int32_t, EXTENT>(dataType, nodeHeader, sqliteFilePtr);
                     
     return true;    
     }
@@ -221,9 +267,12 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             m_smSQLiteFile->StoreGraph(id, nodeData, dataSize);
             free(dataBuffer);
             break;                                
+        case SMStoreDataType::LinearFeature :
+            m_smSQLiteFile->StoreFeature(id, nodeData, countData*sizeof(DATATYPE));
+            break;
         case SMStoreDataType::UvCoords : 
             m_smSQLiteFile->StoreUVs(id, nodeData, countData*sizeof(DATATYPE));
-            break;        
+            break;                
         default : 
             assert(!"Unsupported type");
             break;
@@ -248,6 +297,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         {
         case SMStoreDataType::Graph : 
             return 1; 
+            break;
+        case SMStoreDataType::LinearFeature :
+            m_smSQLiteFile->GetNumberOfFeaturePoints(blockID.m_integerID);
             break;
         case SMStoreDataType::Points : 
             blockDataCount = m_nodeHeader->m_nodeCount;            
@@ -296,6 +348,7 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             break;  
 
         //MST_TS
+        case SMStoreDataType::LinearFeature :
         case SMStoreDataType::UvCoords :
         case SMStoreDataType::TriUvIndices :
         case SMStoreDataType::Texture :
@@ -393,6 +446,12 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         {        
         case SMStoreDataType::Graph : 
             m_smSQLiteFile->GetGraph(blockID.m_integerID, nodeData, uncompressedSize);
+
+            if (uncompressedSize == 0)
+                return 1; 
+            break;
+        case SMStoreDataType::LinearFeature :
+            m_smSQLiteFile->GetFeature(blockID.m_integerID, nodeData, uncompressedSize);
             break;
         case SMStoreDataType::Points : 
             m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
@@ -417,15 +476,18 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     if (m_dataType == SMStoreDataType::Graph)
         {
-        pi_uncompressedPacket.SetBuffer(DataTypeArray, uncompressedSize);
+        pi_uncompressedPacket.SetDataSize(uncompressedSize);        
+        pi_uncompressedPacket.SetBuffer(new Byte[uncompressedSize], uncompressedSize);
+        pi_uncompressedPacket.SetBufferOwnership(true);
+
         }
     else
         {
         assert(uncompressedSize == maxCountData*sizeof(DATATYPE));
         pi_uncompressedPacket.SetBuffer(DataTypeArray, maxCountData*sizeof(DATATYPE));
+        pi_uncompressedPacket.SetBufferOwnership(false);
         }
-
-    pi_uncompressedPacket.SetBufferOwnership(false);
+    
     LoadCompressedPacket(pi_compressedPacket, pi_uncompressedPacket);
 
     if (m_dataType == SMStoreDataType::Graph)
