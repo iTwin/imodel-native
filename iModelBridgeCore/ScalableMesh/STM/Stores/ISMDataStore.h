@@ -21,22 +21,35 @@ need be.
 #include <ImagePP\all\h\HFCPtr.h>
 #include <ImagePP\all\h\HPMDataStore.h>
 USING_NAMESPACE_IMAGEPP
-
-//template <class MasterHeaderType, class NodeHeaderType> class ISMDataStore;      
-
-template <class DataType, class NodeHeaderType> class ISMNodeDataStore : public RefCountedBase
+    
+enum class SMStoreDataType
     {
-    private : 
-        
-        NodeHeaderType* m_nodeHeader;
-        //ISMDataStore*   m_store;
-        
-    public : 
+    Points = 0,
+    TriPtIndices,    
+    TriUvIndices, 
+    UvCoords, 
+    DiffSet, 
+    Graph,
+    Texture,
+    Display, //Use to represents data created for display purpose, like QV element. 
+    LinearFeature,
+    BcDTM,
 
-        ISMNodeDataStore(/*ISMDataStore* m_store, */NodeHeaderType* nodeHeader)
+    //Composite datatype - allows to treat different data as an atomic pool item.
+    PointAndTriPtIndices, 
+
+    Unknown, 
+    };
+
+
+template <class DataType> class ISMNodeDataStore : public RefCountedBase
+    {    
+    public : 
+                
+        typedef RefCountedPtr<ISMNodeDataStore<DataType>> Ptr;                               
+
+        ISMNodeDataStore()
             {
-            m_nodeHeader = nodeHeader;
-            //m_store = store;
             }    
 
         ~ISMNodeDataStore()
@@ -47,7 +60,17 @@ template <class DataType, class NodeHeaderType> class ISMNodeDataStore : public 
 
         virtual HPMBlockID StoreBlock(DataType* DataTypeArray, size_t countData, HPMBlockID blockID) = 0;
 
+        //Valid only for store handling only one type of data.
         virtual size_t GetBlockDataCount(HPMBlockID blockID) const = 0;
+
+        //Valid only for store handling only multiple type of data.
+        virtual size_t GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const = 0;
+
+        //Valid only for store handling only one type of data.
+        virtual void   ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) = 0;
+
+        //Valid only for store handling only multiple type of data.
+        virtual void   ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) = 0;
 
         virtual size_t LoadBlock(DataType* DataTypeArray, size_t maxCountData, HPMBlockID blockID) = 0;
 
@@ -74,17 +97,26 @@ template <class DataType, class NodeHeaderType> class ISMNodeDataStore : public 
             {
             HASSERT(false); // Not implemented;
             return 0;
-            }
-
-        /**----------------------------------------------------------------------------
-        This method serializes the node for streaming.        
-        -----------------------------------------------------------------------------*/
-        virtual void SerializeHeaderToBinary(const NodeHeaderType* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize, uint32_t pi_pMaxDataSize = 3000) const
-            {
-            HASSERT(false); // Not implemented;
-            }
+            }              
     };
 
+
+struct PointAndTriPtIndicesBase
+    {        
+    DPoint3d* m_pointData;
+    int32_t*  m_indicesData;
+    };
+
+typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISMPointDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>> ISMMTGGraphDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Byte>>     ISMTextureDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>> ISMUVCoordsDataStorePtr;
+
+typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
+
+
+//typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
@@ -112,14 +144,14 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
          but should contain all information pertinent to the designated block except the
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
-        virtual size_t StoreHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t StoreNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Loads the block header in the store. The block header is of an undefined type
          but should contain all information pertinent to the designated block except the
          block of data of type DataType.
         -----------------------------------------------------------------------------*/
-        virtual size_t LoadHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
+        virtual size_t LoadNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.
@@ -127,7 +159,18 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual uint64_t GetNextID() const = 0;
 
         virtual void Close () = 0;
-                
-        virtual RefCountedPtr<ISMNodeDataStore<DPoint3d, NodeHeaderType>> GetNodeDataStore(NodeHeaderType* nodeHeader) = 0;
-                            
+                                        
+        virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+
+        virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
+
+        virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        
+        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        
+        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;               
+
+        //Multi-items loading store
+        virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+                                            
     };

@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#include <assert.h>
 #include "DataSourceAccount.h"
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAccountCached.h"

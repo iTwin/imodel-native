@@ -19,6 +19,7 @@ void PerformConstraintTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformTestDrapeRandomLines(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformSqlFileUpdateTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ExportDrapeLine(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ExportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);
 //void ImportVolume(BeXmlNodeP pTestNode, FILE* pResultFile);

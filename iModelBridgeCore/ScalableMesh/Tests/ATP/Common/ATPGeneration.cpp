@@ -201,63 +201,63 @@ IDTMSourcePtr CreateSourceFor(const WString&          sourcePath,
     }
 
 bool ParseExportToUnityOptions(WString& outputDir, int& maxLevel, bool& exportTexture, BeXmlNodeP pTestNode)
-	{
-	bool isSuccess = true;
+    {
+    bool isSuccess = true;
 
-	BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
+    BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
-	while ((0 != pTestChildNode) && (isSuccess == true))
-		{
-		if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "Options"))
-			{
-			//Output Directory
-			WString outputDirAttr;
-			StatusInt status = pTestChildNode->GetAttributeStringValue(outputDirAttr, "outputDir");
-			if ( (status == BEXML_Success) && (!outputDirAttr.empty()) )
-				{
-				outputDir = outputDirAttr;
-				}
-			else
-				{
-				printf("ERROR : invalid outputDir attribute for Options node\r\n");
-				isSuccess = false;
-				}
+    while ((0 != pTestChildNode) && (isSuccess == true))
+        {
+        if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "Options"))
+            {
+            //Output Directory
+            WString outputDirAttr;
+            StatusInt status = pTestChildNode->GetAttributeStringValue(outputDirAttr, "outputDir");
+            if ( (status == BEXML_Success) && (!outputDirAttr.empty()) )
+                {
+                outputDir = outputDirAttr;
+                }
+            else
+                {
+                printf("ERROR : invalid outputDir attribute for Options node\r\n");
+                isSuccess = false;
+                }
 
-			//Max Level
-			int32_t maxLevelAttr;
-			status = pTestChildNode->GetAttributeInt32Value(maxLevelAttr, "maxLevel");
-			if ( (status == BEXML_Success) && (maxLevelAttr >= 0) && (maxLevelAttr < 10) )
-				{
-				maxLevel = maxLevelAttr;
-				}
-			else
-				{
-				printf("ERROR : invalid maxLevel attribute for Options node\r\n");
-				isSuccess = false;
-				}
+            //Max Level
+            int32_t maxLevelAttr;
+            status = pTestChildNode->GetAttributeInt32Value(maxLevelAttr, "maxLevel");
+            if ( (status == BEXML_Success) && (maxLevelAttr >= 0) && (maxLevelAttr < 10) )
+                {
+                maxLevel = maxLevelAttr;
+                }
+            else
+                {
+                printf("ERROR : invalid maxLevel attribute for Options node\r\n");
+                isSuccess = false;
+                }
 
-			//Export Texture
-			int32_t exportTextureAttr;
-			status = pTestChildNode->GetAttributeInt32Value(exportTextureAttr, "exportTexture");
-			if ((status == BEXML_Success) && (exportTextureAttr >= 0) )
-				{
-				if (exportTextureAttr == 0)
-					exportTexture = false;
-				else
-					exportTexture = true;
-				}
-			else
-				{
-				printf("ERROR : invalid exportTexture attribute for Options node\r\n");
-				isSuccess = false;
-				}
-			}
+            //Export Texture
+            int32_t exportTextureAttr;
+            status = pTestChildNode->GetAttributeInt32Value(exportTextureAttr, "exportTexture");
+            if ((status == BEXML_Success) && (exportTextureAttr >= 0) )
+                {
+                if (exportTextureAttr == 0)
+                    exportTexture = false;
+                else
+                    exportTexture = true;
+                }
+            else
+                {
+                printf("ERROR : invalid exportTexture attribute for Options node\r\n");
+                isSuccess = false;
+                }
+            }
 
-		pTestChildNode = pTestChildNode->GetNextSibling();
-		}
+        pTestChildNode = pTestChildNode->GetNextSibling();
+        }
 
-	return isSuccess;
-	}
+    return isSuccess;
+    }
 
 bool ParseGenerationOptions(ScalableMeshMesherType* mesherType, ScalableMeshFilterType* filterType, int* trimmingMethod, ScalableMeshSaveType* saveType, BeXmlNodeP pTestNode)
     {

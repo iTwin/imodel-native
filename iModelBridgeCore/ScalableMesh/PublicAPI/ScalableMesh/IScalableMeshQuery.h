@@ -508,7 +508,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
 
-		virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const = 0;
+        virtual bvector<IScalableMeshNodePtr> _GetChildrenNodes() const = 0;
         
         virtual void     _ApplyAllExistingClips() const = 0;
 
@@ -573,7 +573,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         //Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal. 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetNeighborAt(char relativePosX,  char relativePosY,  char relativePosZ) const;
 
-		BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetChildrenNodes() const;
+        BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetChildrenNodes() const;
 
         BENTLEY_SM_EXPORT void     ApplyAllExistingClips() const;
 
@@ -601,7 +601,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT bool IsMeshLoaded() const;
 
-        BENTLEY_SM_EXPORT void LoadHeader() const;
+        BENTLEY_SM_EXPORT void LoadNodeHeader() const;
 
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
 

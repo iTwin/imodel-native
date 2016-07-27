@@ -14,7 +14,7 @@
         <Files ProductDirectoryName="MdlsysAsneeded" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>          
       </Bindings>
     </Part>
-	
+
     <Part Name="AzureSDK">
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
@@ -32,7 +32,7 @@
             <VendorAPI Domain="CloudDataSource" />
         </Bindings>
     </Part>
-	    
+
     <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <!--<SubPart PartName="PCLWrapper" />
@@ -47,7 +47,7 @@
         <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-	   <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
+       <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
       <SdkSource>ScalableMeshSDK</SdkSource>
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
@@ -122,6 +122,7 @@
         <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
         <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
@@ -157,8 +158,8 @@
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshSDK" />        
     </Product>
-	
-	<ProductDirectoryList ListName="ScalableMeshATP">
+
+  <ProductDirectoryList ListName="ScalableMeshATP">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
@@ -172,6 +173,7 @@
         <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
         <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
         <ProductDirectory Name="PdfLibinitNativeAssemblies" Path="Dlls"/>
@@ -194,16 +196,16 @@
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
-		<ProductDirectory Name="Assemblies" Path="Dlls"/>
-		<ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
-		<ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="Assemblies" Path="Dlls"/>
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
+        <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
         <ProductDirectory Name="wastorageAssemblies" Path="Dlls" />
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>
         <ProductDirectory Name="cpprestsdkAssemblies" Path="Dlls" />
-		<ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
-		<ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
+        <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
+        <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
-    <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
+        <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
     </ProductDirectoryList>
     
     <Product Name="ScalableMeshATP" SaveProduct="true" >

@@ -36,6 +36,25 @@ bool SMSQLiteFile::Close()
     return true;
     }
 
+bool SMSQLiteFile::UpdateDatabase()
+    {         
+    CachedStatementPtr stmtTest;
+    m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
+    assert(stmtTest != nullptr);
+    stmtTest->Step();
+
+    SchemaVersion databaseSchema(stmtTest->GetValueText(0));    
+    SchemaVersion databaseSchemaV1(1, 0, 0, 0);
+
+    if (databaseSchema.CompareTo(databaseSchemaV1) == 0)
+        {
+        //ALTER TABLE SMNodeHeader ADD  CHAR(25) DEFAULT '10' NOT NULL
+        }
+    
+    assert(!"ERROR - Unknown database schema version");
+    return false;
+    }
+
 
 bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly)
     {
@@ -44,8 +63,26 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     DbResult result;
     if (m_database->IsDbOpen())
         m_database->CloseDb();
+
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
 
+    if (result == BE_SQLITE_SCHEMA)
+        {
+        Db::OpenParams openParamUpdate(Db::OpenMode::ReadWrite);
+
+        openParamUpdate.m_skipSchemaCheck = true;
+
+        result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
+
+        assert(result == BE_SQLITE_OK);
+        
+        UpdateDatabase();
+
+        m_database->CloseDb();
+
+        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+        }
+    
     return result == BE_SQLITE_OK;
     }
 
@@ -67,6 +104,18 @@ SMSQLiteFilePtr SMSQLiteFile::Open(const WString& filename, bool openReadOnly, S
     status = result ? 1 : 0;
     return smSQLiteFile;
     }
+
+bool SMSQLiteFile::GetFileName(Utf8String& fileName) const
+    {
+    if (m_database == 0)
+        {
+        return false;
+        }
+
+    fileName = Utf8String(m_database->GetDbFileName());
+
+    return true;
+    }        
 
 bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
 {
@@ -423,6 +472,32 @@ void SMSQLiteFile::GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& unco
     pts.resize(stmt->GetValueInt64(1));
     uncompressedSize = stmt->GetValueInt64(2);
     if(pts.size() > 0) memcpy(&pts[0], stmt->GetValueBlob(0), pts.size());
+    }
+
+
+void SMSQLiteFile::GetPointsAndIndices(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSizePts, bvector<uint8_t>& indices, size_t& uncompressedSizeIndices)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;    
+    m_database->GetCachedStatement(stmt, "SELECT PointData, length(PointData), SizePts, IndexData, length(IndexData), SizeIndices FROM SMPoint WHERE NodeId=?");
+    stmt->BindInt64(1, nodeID);
+    DbResult status = stmt->Step();
+   // assert(status == BE_SQLITE_ROW);
+    if (status != BE_SQLITE_ROW)
+        {
+        uncompressedSizePts = 0;
+        uncompressedSizeIndices = 0;
+        return;
+        }
+
+    pts.resize(stmt->GetValueInt64(1));
+    uncompressedSizePts = stmt->GetValueInt64(2);
+    if(pts.size() > 0) memcpy(&pts[0], stmt->GetValueBlob(0), pts.size());
+
+    indices.resize(stmt->GetValueInt64(4));
+    uncompressedSizeIndices = stmt->GetValueInt64(5);
+    if(indices.size() > 0) memcpy(&indices[0], stmt->GetValueBlob(3), indices.size());
+
     }
 
 void SMSQLiteFile::GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize)

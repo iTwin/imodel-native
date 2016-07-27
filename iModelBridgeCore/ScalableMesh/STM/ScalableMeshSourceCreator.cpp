@@ -47,7 +47,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include "ScalableMeshQuery.h"
 #include "Edits/ClipUtilities.hpp"
-#include "SMSQLiteFeatureTileStore.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #ifdef MAPBOX_PROTOTYPE
     #include <ImagePP\all\h\HRFMapboxFile.h>
@@ -450,21 +449,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             }
         }
 
-
-    
-    typedef SMPointTileStore<int32_t,
-        PointIndexExtentType>             GenericTileStoreType;
-    WString name = m_scmFileName;
-    WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
-    _wremove(featureFilePath.c_str());
-    //ISMStore::File::Ptr featureFilePtr = ISMStore::File::Create(featureFilePath.c_str());
-    SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
-    sqliteFeatureFile->Create(featureFilePath);
-    HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);
-    //pFeatureTileStore->StoreMasterHeader(NULL, 0);
-    pDataIndex->SetFeatureStore(pFeatureTileStore);
-    auto pool = ScalableMeshMemoryPools<PointType>::Get()->GetFeaturePool();
-    pDataIndex->SetFeaturePool(pool);
+           
     // Remove sources which have been removed or modified
 
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
@@ -651,13 +636,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     pDataIndex = 0;
     //store->Close();
     if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
-    //featureFilePtr->Close();
-   // featureFilePtr = 0;
-    sqliteFeatureFile->Close();
-    sqliteFeatureFile = 0;
-    char* outPath = new char[featureFilePath.GetMaxLocaleCharBytes()];
-    std::remove(featureFilePath.ConvertToLocaleChars(outPath));
-    delete[] outPath;
+            
     return BSISUCCESS;
     }
 
@@ -830,7 +809,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
             pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
             }
         else
-#endif		
+#endif
             {
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
             }

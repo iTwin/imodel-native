@@ -278,8 +278,6 @@ $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.
 
 $(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h $(stmDir)SMPointTileStore.h ${MultiCompileDepends}
 
-$(o)AzureStorage$(oext) : $(stmDir)ScalableMesh/Streaming/AzureStorage.cpp $(stmDir)ScalableMesh/Streaming/AzureStorage.h $(PCHHeaderDepends) ${MultiCompileDepends}
-
 $(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
@@ -293,6 +291,10 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 #   Build Stores
 #-----------------------------------------------------------------------
 $(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
+
+$(o)SMStreamingDataStore$(oext) : $(stmDir)Stores/SMStreamingDataStore.cpp $(stmDir)Stores/SMStreamingDataStore.h $(stmDir)Stores/SMStreamingDataStore.hpp ${MultiCompileDepends}
+
+$(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 

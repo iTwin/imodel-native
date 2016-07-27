@@ -11,69 +11,79 @@ class DataSourceBuffer
 {
 public:
 
-	typedef unsigned char				BufferData;
-	typedef unsigned long long			BufferSize;
-	typedef unsigned int				SegmentIndex;
-	typedef ActivitySemaphore::Timeout	Timeout;
-	typedef ActivitySemaphore::Status	TimeoutStatus;
+    typedef unsigned char               BufferData;
+    typedef unsigned long long          BufferSize;
+    typedef unsigned int                SegmentIndex;
+    typedef ActivitySemaphore::Timeout  Timeout;
+    typedef ActivitySemaphore::Status   TimeoutStatus;
 
 protected:
-	typedef std::vector<BufferData>		Buffer;
+    typedef std::vector<BufferData>     Buffer;
 
 protected:
 
-	DataSourceLocator					locator;
+    DataSourceLocator                   locator;
 
-	std::mutex							segmentMutex;
-	ActivitySemaphore					activitySemaphore;
+    std::mutex                          segmentMutex;
+    ActivitySemaphore                   activitySemaphore;
 
-	Buffer								buffer;
+    Buffer                              buffer;
 
-	BufferData						*	externalBuffer;
-	BufferSize							externalBufferSize;
+    BufferData                        * externalBuffer;
+    BufferSize                          externalBufferSize;
 
-	BufferSize							segmentSize;
-	SegmentIndex						currentSegmentIndex;
+    BufferSize                          segmentSize;
+    SegmentIndex                        currentSegmentIndex;
 
-	void								setSegmentSize						(BufferSize size);
-	BufferSize							getSegmentSize						(void);
-	BufferSize							getLastSegmentSize					(void);
+    DataSourceStatus                    transferStatus;
 
-	void								setCurrentSegmentIndex				(SegmentIndex index);
-	SegmentIndex						getCurrentSegmentIndex				(void);
+protected:
 
-	BufferData						*	getSegment							(SegmentIndex index);
+    void                                setSegmentSize                      (BufferSize size);
+    BufferSize                          getSegmentSize                      (void);
+    BufferSize                          getLastSegmentSize                  (void);
 
-	void								setExternalBuffer					(BufferData *extBuffer);
+    void                                setCurrentSegmentIndex              (SegmentIndex index);
+    SegmentIndex                        getCurrentSegmentIndex              (void);
 
-	void								setExternalBufferSize				(BufferSize size);
+    BufferData                        * getSegment                          (SegmentIndex index);
 
-	ActivitySemaphore				&	getActivitySemaphore				(void);
+    void                                setExternalBuffer                   (BufferData *extBuffer);
+
+    void                                setExternalBufferSize               (BufferSize size);
+
+    ActivitySemaphore                &  getActivitySemaphore                (void);
+
+    DataSourceStatus                    getDataSourceStatus                 (TimeoutStatus status);
+
+    void                                setTransferStatus                   (DataSourceStatus status);
+    DataSourceStatus                    getTransferStatus                   (void);
 
 public:
 
-										DataSourceBuffer					(void);
-										DataSourceBuffer					(BufferSize size, BufferData *extBuffer = nullptr);
+                                        DataSourceBuffer                    (void);
+                                        DataSourceBuffer                    (BufferSize size, BufferData *extBuffer = nullptr);
 
-	void								initializeSegments					(void);
-	void								initializeSegments					(BufferSize segmentSize);
+    void                                initializeSegments                  (void);
+    void                                initializeSegments                  (BufferSize segmentSize);
 
-	void								setLocator							(const DataSourceLocator &newLocator);
-	DataSourceLocator				&	getLocator							(void);
+    void                                setLocator                          (const DataSourceLocator &newLocator);
+    DataSourceLocator                &  getLocator                          (void);
 
-	BufferSize							getSize								(void);
-	SegmentIndex						getNumSegments						(void);
+    BufferSize                          getSize                             (void);
+    SegmentIndex                        getNumSegments                      (void);
 
-	DataSourceStatus					clear								(void);
-	DataSourceStatus					append								(BufferData *source, BufferSize size);
-	DataSourceStatus					expand								(BufferSize size);
+    DataSourceStatus                    clear                               (void);
+    DataSourceStatus                    append                              (BufferData *source, BufferSize size);
+    DataSourceStatus                    expand                              (BufferSize size);
 
-	SegmentIndex						getAndAdvanceCurrentSegment			(BufferData ** dest, BufferSize * size);
-	bool								signalSegmentProcessed				(void);
-	TimeoutStatus						waitForSegments						(Timeout timeoutMilliseconds);
+    SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
+    bool                                signalSegmentProcessed              (void);
+    void                                signalCancelled                     (void);
+    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds);
 
-	BufferData						*	getExternalBuffer					(void);
-	BufferSize							getExternalBufferSize				(void);
+    BufferData                        * getExternalBuffer                   (void);
+    BufferSize                          getExternalBufferSize               (void);
 
 };
 

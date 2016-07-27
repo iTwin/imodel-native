@@ -1,18 +1,17 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: STM/ScalableMesh/Streaming/AzureStorage.cpp $
+//:>     $Source: STM/Stores/SMStreamingDataStore.cpp $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <ScalableMeshPCH.h>
-#include "AzureStorage.h"
 
-#ifndef NDEBUG
-std::mutex s_consoleMutex;
-#endif
 
-BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+#include "SMStreamingDataStore.h"
+#include "SMStreamingDataStore.hpp"
 
-END_BENTLEY_SCALABLEMESH_NAMESPACE
+template class SMStreamingStore<DRange3d>;
+
+template class SMStreamingNodeDataStore<DPoint3d, DRange3d>;

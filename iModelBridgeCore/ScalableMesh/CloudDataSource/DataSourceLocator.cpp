@@ -4,95 +4,95 @@
 
 DataSourceLocator::DataSourceLocator(void)
 {
-	setService(nullptr);
-	setAccount(nullptr);
+    setService(nullptr);
+    setAccount(nullptr);
 }
 
 DataSourceLocator::DataSourceLocator(DataSourceLocator & locator)
 {
-	setPrefixPath(locator.getPrefixPath());
-	setSubPath(locator.getSubPath());
-	setService(locator.getService());
-	setAccount(locator.getAccount());
+    setPrefixPath(locator.getPrefixPath());
+    setSubPath(locator.getSubPath());
+    setService(locator.getService());
+    setAccount(locator.getAccount());
 }
 
 
 void DataSourceLocator::getURL(DataSourceURL &url)
 {
-	url = getPrefixPath();
+    url = getPrefixPath();
 
-	url.append(getSubPath());
+    url.append(getSubPath());
 }
 
 void DataSourceLocator::setService(DataSourceService * newService)
 {
-	service = newService;
+    service = newService;
 }
 
 DataSourceService * DataSourceLocator::getService(void)
 {
-	return service;
+    return service;
 }
 
 void DataSourceLocator::setAccount(DataSourceAccount * sourceAccount)
 {
-	account = sourceAccount;
+    account = sourceAccount;
 }
 
 DataSourceAccount * DataSourceLocator::getAccount(void) const
 {
-	return account;
+    return account;
 }
 
 void DataSourceLocator::setPrefixPath(const DataSourceURL & path)
 {
-	prefixPath = path;
+    prefixPath = path;
 }
 
 const DataSourceURL & DataSourceLocator::getPrefixPath(void)
 {
-	return prefixPath;
+    return prefixPath;
 }
 
 void DataSourceLocator::setSubPath(const DataSourceURL & path)
 {
-	subPath = path;
+    subPath = path;
 }
 
 const DataSourceURL & DataSourceLocator::getSubPath(void)
 {
-	return subPath;
+    return subPath;
 }
 
 void DataSourceLocator::setSegmentName(DataSourceURL & name)
 {
-	segmentName = name;
+    segmentName = name;
 }
 
 
 const DataSourceURL &DataSourceLocator::getSegmentName(void) const
 {
-	return segmentName;
+    return segmentName;
 }
 
 void DataSourceLocator::setMode(DataSourceMode sourceMode)
 {
-	mode = sourceMode;
+    mode = sourceMode;
 }
 
 DataSourceMode DataSourceLocator::getMode(void) const
 {
-	return mode;
+    return mode;
 }
 
 /*
 void DataSourceLocator::getFullSubPath(DataSourceURL &dest) const
 {
-	dest = getSubPath();
+    dest = getSubPath();
 
-	if (getSegmentName().size() > 0)
-	{
-		dest += getSegmentName();
-	}
+    if (getSegmentName().size() > 0)
+    {
+        dest += getSegmentName();
+    }
 }
 */

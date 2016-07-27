@@ -126,6 +126,7 @@ public:
 
     void GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize);
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
+    void GetPointsAndIndices(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSizePts, bvector<uint8_t>& indices, size_t& uncompressedSizeIndices);    
     void GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize);
     bool LoadSources(SourcesDataSQLite& sourcesData);
     void GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvIndices, size_t& uncompressedSize);
@@ -158,9 +159,10 @@ public:
     size_t GetClipPolygonByteCount(int64_t clipID);
     size_t GetSkirtPolygonByteCount(int64_t skirtID);
 
+    void GetAllClipIDs(bvector<uint64_t>& allIds); 
 
-    void GetAllClipIDs(bvector<uint64_t>& allIds);
-
+    bool GetFileName(Utf8String& fileName) const; 
+    
     bool m_autocommit = true;
 private:
     ScalableMeshDb* m_database;
@@ -171,5 +173,8 @@ private:
     const std::string m_sGraphTable = "SMGraph";
     const std::string m_sSourceTable = "SMSources";
     std::mutex dbLock;
+
+
+    bool UpdateDatabase();
 
 };

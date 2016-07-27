@@ -10,20 +10,20 @@ class DataSourceManagerTest
 
 protected:
 
-	DataSourceManager	dataSourceManager;
+    DataSourceManager   dataSourceManager;
 
 protected:
 
-	DataSourceStatus	testBasicWriteRead			(DataSource *dataSource, const DataSourceURL &url, DataSourceBuffer::BufferSize size);
-	DataSourceStatus	testBasicRead				(DataSource *dataSource, const DataSourceURL &url, DataSourceBuffer::BufferSize size);
-	DataSourceStatus	testUpload					(DataSource *dataSource, const DataSourceURL &directory);
+    DataSourceStatus    testBasicWriteRead           (DataSource *dataSource, const DataSourceURL &url, DataSourceBuffer::BufferSize size);
+    DataSourceStatus    testBasicRead                (DataSource *dataSource, const DataSourceURL &url, DataSourceBuffer::BufferSize size);
+    DataSourceStatus    testUpload                   (DataSource *dataSource, const DataSourceURL &directory);
 
 public:
 
-	DataSourceStatus	testDataSources				(void);
+    DataSourceStatus    testDataSources              (void);
 
-	DataSourceStatus	testDataSourceFile			(void);
-	DataSourceStatus	testDataSourceAzure			(void);
+    DataSourceStatus    testDataSourceFile           (void);
+    DataSourceStatus    testDataSourceAzure          (void);
 
 };
 

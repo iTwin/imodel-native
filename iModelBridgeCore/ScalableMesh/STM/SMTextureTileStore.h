@@ -335,12 +335,12 @@ class TextureTileStore : public IScalableMeshDataStore<Byte, float, float> // JP
             }
 
 
-        virtual size_t StoreHeader(float* header, HPMBlockID blockID)
+        virtual size_t StoreNodeHeader(float* header, HPMBlockID blockID)
             {
             return 1;
             }
 
-        virtual size_t LoadHeader(float* header, HPMBlockID blockID)
+        virtual size_t LoadNodeHeader(float* header, HPMBlockID blockID)
             {
 
             return 1;

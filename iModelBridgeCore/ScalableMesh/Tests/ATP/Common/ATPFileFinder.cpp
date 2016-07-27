@@ -32,7 +32,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsimethod                                                  Hiba.Dorias   	04/2008
+* @bsimethod                                                  Hiba.Dorias       04/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 ATPFileFinder::ATPFileFinder()
     {
@@ -40,7 +40,7 @@ ATPFileFinder::ATPFileFinder()
 
 /*---------------------------------------------------------------------------------**//**
 * @description
-* @bsimethod                                                  Hiba.Dorias   	04/2008
+* @bsimethod                                                  Hiba.Dorias       04/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 ATPFileFinder::~ATPFileFinder()
     {
@@ -50,7 +50,7 @@ ATPFileFinder::~ATPFileFinder()
 * @description  Searches the SourceFolderPath for files.
 *               Returns a AString with the complete path of each file found
 *               separated by a comma.
-* @bsimethod                                                  Hiba.Dorias   	04/2008
+* @bsimethod                                                  Hiba.Dorias       04/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
                               WString&       pi_FilePaths,  //=>should be initially an empty AString
@@ -109,7 +109,7 @@ void ATPFileFinder::FindFiles(const WString& pi_rSourceFolderPath,
 * @description  Returns the FilePaths AString, less the first path; which is in the
 *               other AString.
 *               Returns false if the FilePaths AString is empty.
-* @bsimethod                                                  Hiba.Dorias   	04/2008
+* @bsimethod                                                  Hiba.Dorias       04/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ATPFileFinder::ParseFilePaths(WString& pio_FilePaths,
                                    WString& pio_FirstPath) const

@@ -436,7 +436,7 @@ bool MeshTraversalQueue::CollectIntersects(bool& findTriangleAlongRay)
             }
         }
     if(m_collectedNodes.size() > 0) m_nodesRemainingToDrape.push(m_collectedNodes.begin()->second);
-	return m_collectedNodes.size() > 0;
+    return m_collectedNodes.size() > 0;
     }
 
 void MeshTraversalQueue::ComputeDirectionOfNextNode(MeshTraversalStep& start)

@@ -5,16 +5,16 @@
 
 DataSource::DataSource(DataSourceAccount *sourceAccount)
 {
-	setService(nullptr);
+    setService(nullptr);
 
-	setAccount(sourceAccount);
+    setAccount(sourceAccount);
 
-	setTimeout(DataSource::Timeout(0));
+    setTimeout(DataSource::Timeout(0));
 
-	if (sourceAccount)
-	{
-		setPrefixPath(sourceAccount->getPrefixPath());
-	}
+    if (sourceAccount)
+    {
+        setPrefixPath(sourceAccount->getPrefixPath());
+    }
 }
 
 DataSource::~DataSource(void)
@@ -23,41 +23,47 @@ DataSource::~DataSource(void)
 
 DataSourceStatus DataSource::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
 {
-	setSubPath(sourceURL);
+    setSubPath(sourceURL);
 
-	setMode(sourceMode);
+    setMode(sourceMode);
 
-	return DataSourceStatus();
+    return DataSourceStatus();
 }
 
 bool DataSource::isValid(void)
 {
-	return false;
+    return false;
 }
 
 void DataSource::setTimeout(Timeout timeMilliseconds)
 {
-	timeout = timeMilliseconds;
+    timeout = timeMilliseconds;
 }
 
 
 DataSource::Timeout DataSource::getTimeout(void)
 {
-	return timeout;
+    return timeout;
 }
 
 
 void DataSource::setCachingEnabled(bool enabled)
 {
-	(void) enabled;
+    (void) enabled;
 
-	DataSourceStatus status(DataSourceStatus::Status_Error_Not_Supported);
+    DataSourceStatus status(DataSourceStatus::Status_Error_Not_Supported);
 }
 
 bool DataSource::getCachingEnabled(void)
 {
-	DataSourceStatus status(DataSourceStatus::Status_Error_Not_Supported);
-	return false;
+    DataSourceStatus status(DataSourceStatus::Status_Error_Not_Supported);
+    return false;
+}
+
+DataSource * DataSource::getCacheDataSource(void)
+{
+                                                            // By default, DataSource types do not have cache DataSources
+    return nullptr;
 }
 
 
