@@ -65,10 +65,32 @@ public:
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_db)));
+    context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetECClassId, nullptr, const_cast<ECDbP>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, const_cast<ECDbP>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("HasRelatedInstance", nullptr, &HasRelatedInstance, const_cast<ECDbP>(&m_db)));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedValue", nullptr, &GetRelatedValue, const_cast<ECDbP>(&m_db)));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                07/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ExpressionStatus ECDbExpressionSymbolProvider::GetECClassId(EvaluationResult& evalResult, void* context, EvaluationResultVector& args)
+    {
+    if (2 != args.size())
+        return ExpressionStatus::WrongNumberOfArguments;
+
+    if (!args[0].IsECValue() || !args[0].GetECValue()->IsString()
+        || !args[1].IsECValue() || !args[1].GetECValue()->IsString())
+        return ExpressionStatus::WrongType;
+
+    Utf8CP className = args[0].GetECValue()->GetUtf8CP();
+    Utf8CP schemaName = args[1].GetECValue()->GetUtf8CP();
+    ECDbCR db = *reinterpret_cast<ECDbCP>(context);
+    ECClassId classId = db.Schemas().GetECClassId(schemaName, className);
+    evalResult.InitECValue().SetLong(classId.GetValueUnchecked());
+    return ExpressionStatus::Success;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2016
