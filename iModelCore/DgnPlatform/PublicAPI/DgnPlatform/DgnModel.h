@@ -813,7 +813,7 @@ protected:
     virtual void _AddTerrainGraphics(TerrainContextR) const {}
 
     virtual void _OnFitView(FitContextR) {}
-    virtual void _DrawModel(ViewContextR) {}
+//    virtual void _DrawModel(ViewContextR) {}
 
     DGNPLATFORM_EXPORT virtual DgnRangeTree* _GetRangeIndexP(bool create) const override;
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private

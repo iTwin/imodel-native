@@ -315,6 +315,7 @@ void DgnQueryView::_DrawView(ViewContextR context)
 
     _VisitAllElements(context);
 
+#if defined (NEEDS_WORK_REALTY_DATA)
     // Allow models to participate in picking
     for (DgnModelId modelId : GetViewedModels())
         {
@@ -327,6 +328,7 @@ void DgnQueryView::_DrawView(ViewContextR context)
         if (nullptr != geomModel)
             geomModel->_DrawModel(context);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1366,10 +1368,31 @@ DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     }
 
 
+#if defined (NEEDS_WORK_REALTY_DATA)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void drawEnvironment()
+void drawGroundPlane()
     {
+    DRay3d viewRay;
+    viewRay.direction = GetZVector();
+
+    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal(DPoint3d(0,0,elevation), DVec3d::From(0, 0, 1.0));
+
+    Frustum  worldFrust = vp.GetFrustum();
+    DRange3d groundRange = DRange3d::NullRange();
+
+    for (DPoint3dCR pt : worldFrust.m_pts)
+        {
+        DPoint3d xyzPt;
+        viewRay.origin = pt;
+        double param;
+        if (!viewRay.Intersect(xyzPt, param, xyPlane))
+            return;
+
+        xyRange.Extend(xyzPt);
+        }
+
     }
+#endif
 

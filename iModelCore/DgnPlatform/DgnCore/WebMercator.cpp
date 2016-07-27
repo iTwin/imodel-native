@@ -525,14 +525,10 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
         xyRange.Extend(xyzPt);
         }
 
-//    DPoint3d center = DPoint3d::FromInterpolate(viewRange.low, .5, viewRange.high);
     double worldDiag = xyRange.low.Distance(xyRange.high);
-//    DRange3d viewRange(xyRange);
-  //  vp.WorldToView(&viewRange.low, &viewRange.low, 2);
 
     Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, false);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
-//    viewDiag = viewRange.low.Distance(viewRange.high);
 
     // Get the number of meters / pixel that we are showing in the view
     double viewResolution = worldDiag / viewDiag;
