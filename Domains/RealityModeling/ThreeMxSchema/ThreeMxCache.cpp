@@ -8,7 +8,7 @@
 #include "ThreeMxInternal.h"
 #include <BeHttp/HttpRequest.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS) /* || defined(__clang__) WIP_ANDROID_CLANG */
+#if defined(BENTLEYCONFIG_FOLLY)
     #include <folly/futures/Future.h>
 #endif
 
@@ -276,7 +276,7 @@ BentleyStatus ThreeMxTileCache::_Cleanup() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* output)
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
+#if defined(BENTLEYCONFIG_FOLLY)
     DgnDb::VerifyClientThread();
     BeAssert(output || node);
 
