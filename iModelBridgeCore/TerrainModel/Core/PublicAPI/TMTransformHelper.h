@@ -185,7 +185,7 @@ struct TMTransformHelper : RefCountedBase
                     {
                     m_params = params;
                     }
-                DTMFenceParamsCopy(DTMFenceParamsCopy&& copy) : DPoint3dCopy(copy)
+				DTMFenceParamsCopy(DTMFenceParamsCopy&& copy) : DPoint3dCopy((DTMFenceParamsCopy&&)copy)
                     {
 
                     }
@@ -209,6 +209,10 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<double*>(values);
                     m_ownValues = ownValues;
                     }
+                DoubleCopy(DoubleCopy&& copy) : DoubleCopy((DoubleCopy&&)copy)
+                    {
+
+                    }
                 ~DoubleCopy ()
                     {
                     if (m_ownValues) delete [] m_values;
@@ -229,6 +233,10 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<VOLRANGETAB*>(values);
                     m_ownValues = ownValues;
                     }
+				VOLRANGETABCopy(VOLRANGETABCopy&& copy) : VOLRANGETABCopy((VOLRANGETABCopy&&)copy)
+                    {
+
+                    }
                 ~VOLRANGETABCopy ()
                     {
                     if (m_ownValues) delete [] m_values;
@@ -248,6 +256,10 @@ struct TMTransformHelper : RefCountedBase
                     {
                     m_values = const_cast<DRange1d*>(values);
                     m_ownValues = ownValues;
+                    }
+				DRange1dCopy(DRange1dCopy&& copy) : DRange1dCopy((DRange1dCopy&&)copy)
+                    {
+
                     }
                 ~DRange1dCopy ()
                     {

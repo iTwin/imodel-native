@@ -2,13 +2,15 @@
 |
 |     $Source: TerrainModelNET/DTMTinEditor.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
 #include "DTMTinEditor.h"
 #include "DTMException.h"
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
+
+#pragma warning (disable:4456)
 
 //=======================================================================================
 // @bsimethod                                               Daryl.Holmwood     4/2008
