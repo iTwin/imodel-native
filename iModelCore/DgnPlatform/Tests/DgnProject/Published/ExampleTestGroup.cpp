@@ -21,8 +21,8 @@ struct ExampleTestGroup : ::testing::Test
     ExampleTestGroup() { }
 
     // Insert the following macros into the definition of your test group subclass to declare that you want to set up shared resources for all of the tests in your group.
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+    public: static void SetUpTestCase();
+    public: static void TearDownTestCase();
 };
 
 DgnDbTestUtils::SeedDbInfo ExampleTestGroup::s_seedFileInfo;
@@ -34,7 +34,7 @@ DgnDbTestUtils::SeedDbInfo ExampleTestGroup::s_seedFileInfo;
 //  tests in this group. There's no point in making a group copy if the tests can start with a root seed file just as well.
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(ExampleTestGroup) 
+void ExampleTestGroup::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
 
@@ -63,7 +63,7 @@ BETEST_TC_SETUP(ExampleTestGroup)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(ExampleTestGroup)
+void ExampleTestGroup::TearDownTestCase()
     {
     // Note: leave your subdirectory in place. Don't remove it. That allows the 
     // base class to detect and throw an error if two groups try to use a directory of the same name.

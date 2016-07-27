@@ -166,9 +166,6 @@ namespace dgn_ElementHandler
     struct TextAnnotationSeedHandler : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TextAnnotationSeed, TextAnnotationSeed, TextAnnotationSeedHandler, Element, DGNPLATFORM_EXPORT);
-
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
 

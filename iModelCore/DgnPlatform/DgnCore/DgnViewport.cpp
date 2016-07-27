@@ -379,7 +379,7 @@ static void validateCamera(CameraViewControllerR controller)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Adjust the back clip planes to include the project extents.
+* Adjust the front and back clip planes to include the project extents.
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR viewController) const
@@ -387,8 +387,8 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     if (!m_is3dView)
         return;
 
-    DPoint3d originWorld=origin;
-
+    DPoint3d saveOrg = origin;
+    DVec3d saveDelta = delta;
     m_rotMatrix.Multiply(origin);   // put origin into view orientation
 
     Transform viewTransform;
@@ -403,22 +403,27 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     extents = extFrust.ToRange();
 
     origin.z = extents.low.z;
-
-    if (m_isCameraOn)
-        {
-        DVec3d cameraDir;
-        cameraDir.DifferenceOf(m_camera.GetEyePoint(), originWorld);
-        m_rotMatrix.Multiply(cameraDir);
-
-        // set the front plane distance to about twice the length of the average human nose
-        delta.z = cameraDir.z - (120.0 * DgnUnits::OneMillimeter()); 
-        }
-    else
-        {
-        delta.z = std::max(extents.high.z - origin.z, DgnUnits::OneMeter());
-        }
+    delta.z = extents.high.z - origin.z;
+    delta.z = std::max(delta.z, DgnUnits::OneMeter());
 
     m_rotMatrix.MultiplyTranspose(origin);
+
+    if (!m_isCameraOn)
+        return;
+
+    DVec3d cameraDir;
+    cameraDir.DifferenceOf(m_camera.GetEyePoint(), origin);
+    m_rotMatrix.Multiply(cameraDir);
+
+    if (cameraDir.z < DgnUnits::OneMeter()) // camera is outside project extents, pointed away. Reset to original values.
+        {
+        origin = saveOrg;
+        delta = saveDelta;
+        return;
+        }
+
+    // set the front plane distance to about twice the length of the average human nose
+    delta.z = cameraDir.z - (120.0 * DgnUnits::OneMillimeter());
     }
 
 struct ViewChangedCaller
@@ -645,21 +650,16 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Get an 8-point box corresponding to the 8 corners of the viewport in the specified coordinate system.
-* When front or back clipping is turned off, there are two sets of corners that may be of interest.
-* The "expanded" box is the one that is computed by examining the extents of the content of the view and moving
-* the front and back planes to enclose everything in the view. The "unexpanded" box is the one that is saved in
-* the view definition.
 * @bsimethod                                                    KeithBentley    08/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
+Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool adjustedBox) const
     {
     Frustum  box;
 
     // if they are looking for the "unexpanded" (that is before f/b clipping expansion) box, we need to get the npc
     // coordinates that correspond to the unexpanded box in the npc space of the Expanded view (that's the basis for all
     // of the root-based maps.)
-    if (!expandedBox && m_zClipAdjusted)
+    if (!adjustedBox && m_zClipAdjusted)
         {
         // to get unexpanded box, we have to go recompute rootToNpc from original viewController.
         DMap4d  ueRootToNpc;

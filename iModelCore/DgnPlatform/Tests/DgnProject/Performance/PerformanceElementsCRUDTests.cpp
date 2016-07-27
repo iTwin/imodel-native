@@ -17,11 +17,6 @@ HANDLER_DEFINE_MEMBERS (PerformanceElement4Handler)
 
 DOMAIN_DEFINE_MEMBERS (PerformanceElementTestDomain)
 
-void PerformanceElement1Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement1::GetParams(params); }
-void PerformanceElement2Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement2::GetParams(params); }
-void PerformanceElement3Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement3::GetParams(params); }
-void PerformanceElement4Handler::_GetClassParams(ECSqlClassParams& params) { T_Super::_GetClassParams(params); PerformanceElement4::GetParams(params); }
-
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -172,16 +167,6 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "    </Target>"
         "  </ECRelationshipClass>"
         "</ECSchema>";
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement1::GetParams(ECSqlClassParams& params)
-    {
-    params.Add("Prop1_1");
-    params.Add("Prop1_2");
-    params.Add("Prop1_3");
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
@@ -342,16 +327,6 @@ void PerformanceElement1::ExtendGeometry()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement2::GetParams(ECSqlClassParams& params)
-    {
-    params.Add("Prop2_1");
-    params.Add("Prop2_2");
-    params.Add("Prop2_3");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus PerformanceElement2::BindParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop2_1"), m_prop2_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
@@ -433,16 +408,6 @@ PerformanceElement2CPtr PerformanceElement2::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement3::GetParams(ECSqlClassParams& params)
-    {
-    params.Add("Prop3_1");
-    params.Add("Prop3_2");
-    params.Add("Prop3_3");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
 DgnDbStatus PerformanceElement3::BindParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     if ((ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex("Prop3_1"), m_prop3_1.c_str(), IECSqlBinder::MakeCopy::Yes)) ||
@@ -519,16 +484,6 @@ PerformanceElement3CPtr PerformanceElement3::Insert()
 PerformanceElement3CPtr PerformanceElement3::Update()
     {
     return GetDgnDb().Elements().Update<PerformanceElement3> (*this);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-void PerformanceElement4::GetParams(ECSqlClassParams& params)
-    {
-    params.Add("Prop4_1");
-    params.Add("Prop4_2");
-    params.Add("Prop4_3");
     }
 
 //---------------------------------------------------------------------------------------

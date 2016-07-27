@@ -84,6 +84,7 @@ enum DgnMarkupProjectSchemaValues
 struct MarkupDomain : Dgn::DgnDomain
     {
     DOMAIN_DECLARE_MEMBERS(MarkupDomain, DGNPLATFORM_EXPORT)
+        void _OnDgnDbOpened(DgnDbR) const override;
     public:
         MarkupDomain();
     };
@@ -636,7 +637,6 @@ public:
 private:
     DgnElementId m_linkedElementId;
 
-    static void AddClassParams(ECSqlClassParamsR params);
     Dgn::DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -718,7 +718,6 @@ namespace dgn_ElementHandler
 struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
-    virtual void _GetClassParams(ECSqlClassParamsR params) override { T_Super::_GetClassParams(params); MarkupExternalLink::AddClassParams(params); }
 };
 
 //! The handler for MarkupExternalLinkGroup elements

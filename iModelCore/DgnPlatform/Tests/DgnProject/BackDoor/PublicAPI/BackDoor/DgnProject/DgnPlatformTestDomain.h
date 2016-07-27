@@ -85,6 +85,8 @@ protected:
     virtual Dgn::DgnDbStatus _InsertInDb() override;
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
+    virtual Dgn::DgnDbStatus _SetProperty(Utf8CP, ECN::ECValueCR) override;
+    virtual Dgn::DgnDbStatus _GetProperty(ECN::ECValueR, Utf8CP) const override;
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
@@ -134,8 +136,6 @@ typedef TestElement const& TestElementCR;
 struct TestElementHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Geometric3d, )
-protected: 
-    virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
 
 //=======================================================================================

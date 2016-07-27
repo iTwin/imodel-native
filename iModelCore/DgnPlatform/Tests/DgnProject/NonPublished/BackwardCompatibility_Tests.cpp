@@ -225,4 +225,5 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
         else
             fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
         }
+    fclose(f);
     }

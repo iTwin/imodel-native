@@ -1486,6 +1486,47 @@ uint32_t DgnElements::CachedSelectStatement::Release()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct GenericClassParamsProvider : IECSqlClassParamsProvider
+    {
+    DgnClassId m_classId;
+    DgnElements const& m_elements;
+    GenericClassParamsProvider(DgnClassId classId, DgnElements const& e) : m_classId(classId), m_elements(e) {}
+    void _GetClassParams(ECSqlClassParamsR ecSqlParams) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
+    {
+    // *** WIP_AUTO_HANDLED_PROPERTIES: "ECInstanceId" is handled specially. It's in the table but not in the properties collection
+    ecSqlParams.Add("ECInstanceId", ECSqlClassParams::StatementType::Insert);
+
+    auto ecclass = m_elements.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(m_classId.GetValue()));
+    AutoHandledPropertiesCollection props(*ecclass, m_elements.GetDgnDb(), ECSqlClassParams::StatementType::All, true);
+    for (auto i = props.begin(); i != props.end(); ++i)
+        {
+        ecSqlParams.Add((*i)->GetName(), i.GetStatementType());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) const
+    {
+    ECSqlClassParams& params = m_classParams[classId];
+    if (!params.IsInitialized())
+        {
+        GenericClassParamsProvider provider(classId, *this);
+        params.Initialize(provider);
+        }
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
@@ -1496,7 +1537,9 @@ DgnElements::ClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
         return found->second;
 
     ClassInfo& classInfo = m_classInfos[classId];
-    bool populated = el.GetElementHandler().GetECSqlClassParams().BuildClassInfo(classInfo, GetDgnDb(), classId);
+    ECSqlClassParams const& params = GetECSqlClassParams(classId);
+
+    bool populated = params.BuildClassInfo(classInfo, GetDgnDb(), classId);
     BeAssert(populated);
     UNUSED_VARIABLE(populated);
 
@@ -1538,7 +1581,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
     if (stmt.IsValid())
         stmt->BindId(1, el.GetElementId());
 
-    return ElementSelectStatement(stmt.get(), el.GetElementHandler().GetECSqlClassParams());
+    return ElementSelectStatement(stmt.get(), GetECSqlClassParams(el.GetElementClassId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1546,7 +1589,7 @@ DgnElements::ElementSelectStatement DgnElements::GetPreparedSelectStatement(DgnE
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) const
     {
-    // Not bothering to cache per handler...use our general-purpose ECSql statement cache
+    // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetInsertStmt(GetDgnDb());
     }
 
@@ -1555,19 +1598,8 @@ CachedECSqlStatementPtr DgnElements::GetPreparedInsertStatement(DgnElementR el) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr DgnElements::GetPreparedUpdateStatement(DgnElementR el) const
     {
-    // Not bothering to cache per handler...use our general-purpose ECSql statement cache
+    // Not bothering to cache per class...use our general-purpose ECSql statement cache
     return FindClassInfo(el).GetUpdateStmt(GetDgnDb(), ECInstanceId(el.GetElementId().GetValue()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassParams const& dgn_ElementHandler::Element::GetECSqlClassParams()
-    {
-    if (!m_classParams.IsInitialized())
-        m_classParams.Initialize(*this);
-
-    return m_classParams;
     }
 
 /*---------------------------------------------------------------------------------**//**

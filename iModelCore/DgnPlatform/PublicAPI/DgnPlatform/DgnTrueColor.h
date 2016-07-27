@@ -143,8 +143,6 @@ namespace dgn_ElementHandler
     struct TrueColor : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TrueColor, DgnTrueColor, TrueColor, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
 

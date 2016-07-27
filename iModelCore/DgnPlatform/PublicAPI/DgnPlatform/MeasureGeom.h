@@ -33,43 +33,32 @@ enum OperationType
     };
 
 //__PUBLISH_SECTION_END__
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-struct IGeomProvider
-{
-//! Allow an application to accumulate measure results by drawing directly to output without creating elements.
-virtual void _OutputGraphics (ViewContextR context) = 0;
-};
-#endif
-
 protected:
 
-OperationType       m_opType;
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-IGeomProvider*      m_geomProvider;
-#endif
-GeometricPrimitivePtr m_geomPrimitive;
-Transform             m_geomTransform;
+OperationType           m_opType;
+GeometricPrimitivePtr   m_geomPrimitive;
+Transform               m_geomTransform;
 
-IFacetOptionsPtr    m_facetOptions;
-Transform           m_invCurrTransform;
-Transform           m_preFlattenTransform;
-bool                m_inFlatten;
+IFacetOptionsPtr        m_facetOptions;
+Transform               m_invCurrTransform;
+Transform               m_preFlattenTransform;
+bool                    m_inFlatten;
 
-double              m_amountSum;    // Accumated area or volume for centroid/moment calculation...
-double              m_volumeSum;
-double              m_areaSum;
-double              m_perimeterSum;
-double              m_lengthSum;
-double              m_iXY;
-double              m_iXZ;
-double              m_iYZ;
-DPoint3d            m_moment1;
-DPoint3d            m_moment2;
-double              m_closureError;
-int                 m_calculationMode;  // 0=best available, 1=solid kernel preferred, 2=facets preferred.
+double                  m_amountSum; // Accumated area or volume for centroid/moment calculation...
+double                  m_volumeSum;
+double                  m_areaSum;
+double                  m_perimeterSum;
+double                  m_lengthSum;
+double                  m_iXY;
+double                  m_iXZ;
+double                  m_iYZ;
+DPoint3d                m_moment1;
+DPoint3d                m_moment2;
+double                  m_closureError;
+int                     m_calculationMode; // 0=best available, 1=solid kernel preferred, 2=facets preferred.
 
-mutable DPoint3d    m_spinMoments; // Holds computed result...
-mutable DPoint3d    m_centroidSum; // Holds computed result...
+mutable DPoint3d        m_spinMoments; // Holds computed result...
+mutable DPoint3d        m_centroidSum; // Holds computed result...
 
 virtual DrawPurpose _GetProcessPurpose() const override {return DrawPurpose::Measure;}
 virtual IFacetOptionsP _GetFacetOptionsP() override;
@@ -175,12 +164,7 @@ DGNPLATFORM_EXPORT void SetCalculationMethod (int selector);
 //! Query the calculation mode.
 DGNPLATFORM_EXPORT int GetCalculationMethod () const;
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-//! Call IGeomProvider::_OutputGraphics instead of visiting an element.
-DGNPLATFORM_EXPORT BentleyStatus Process (IGeomProvider&, DgnDbR);
-#endif
 //__PUBLISH_SECTION_START__
-
 //! Visit the supplied geometric primitive and accumulate the measure information.
 DGNPLATFORM_EXPORT BentleyStatus Process (GeometricPrimitiveCR, DgnDbR, TransformCP transform = nullptr);
 

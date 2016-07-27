@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
-#include "ColorUtil.h"
 #include "ViewController.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -45,17 +44,6 @@ struct FitViewParams
     bool m_useElementAlignedBox = false;
     bool m_fitDepthOnly = false;
     bool m_limitByVolume = false;
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum class ViewportResizeMode
-{
-    KeepCurrent      = 0, //!< The viewport size is unchanged (this is the default). The viewport is unchanged, and the view contents are resized to match the viewport aspect ratio.
-    RelativeRect     = 1, //!< The viewport is resized to the same size, relative to the available area, that is specifed in viewPortInfo
-    AspectRatio      = 2, //!< The viewport is resized to match the aspect ratio of the viewInfo.
-    Size             = 3, //!< The viewport is resized to match the exact size 
 };
 
 //=======================================================================================
@@ -134,10 +122,10 @@ protected:
     Byte            m_flashingTransparency = 100;
     int             m_maxUndoSteps = 20;
     uint32_t        m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
-    DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
-    DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
-    DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
-    DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
+    DPoint3d        m_viewOrg;                  // view origin, potentially expanded
+    DVec3d          m_viewDelta;                // view delta, potentially expanded
+    DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
+    DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
     Render::TargetPtr m_renderTarget;
@@ -211,7 +199,7 @@ public:
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     void Destroy() {_Destroy();}
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
-    DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
+    DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
     void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
     void SetNeedsHeal() const {m_sync.InvalidateController();}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
@@ -259,7 +247,7 @@ public:
     //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
     //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
     //! @private
-    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=NULL);
+    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=nullptr);
 
     //! @return the point to use as the default rotation point at the center of the visible elements in the view.
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
@@ -332,17 +320,16 @@ public:
     DVec2d GetDpiScale() const {return m_renderTarget->GetDpiScale();}
 
     //! Get an 8-point frustum corresponding to the 8 corners of the DgnViewport in the specified coordinate system.
-    //! When front or back clipping is turned \em off, there are two sets of corners that may be of interest.
-    //! The "expanded" box is the one that is computed by examining the extents of the content of the view and moving
+    //! There are two sets of corners that may be of interest.
+    //! The "adjusted" box is the one that is computed by examining the "project extents" and moving
     //! the front and back planes to enclose everything in the view [N.B. this is the way that views implement
-    //! the concept of "no front/back clipping", since there always must be a view frustum]. The "unexpanded" box is
-    //! the one that is saved in the view definition.
+    //! the concept of "no front/back clipping", since there always must be a view frustum]. The "unadjusted" box is
+    //! the one that is stored in the ViewController.
     //! @param[in] sys Coordinate system for \c points
-    //! @param[in] adjustedBox If true, and if f/b clipping is OFF, retrieve the "adjusted" box. Otherwise retrieve the box that came from the view definition.
+    //! @param[in] adjustedBox If true, retrieve the adjusted box. Otherwise retrieve the box that came from the view definition.
     //! @return the view frustum
-    //! @note The "adjusted" box may, in reality, be either larger or smaller than the "unexpanded" box since the expanded box depends on the current
-    //!       content of the view.
-    DGNPLATFORM_EXPORT Frustum GetFrustum(DgnCoordSystem sys=DgnCoordSystem::World, bool adjustedBox=false) const;
+    //! @note The "adjusted" box may be either larger or smaller than the "unadjusted" box.
+    DGNPLATFORM_EXPORT Frustum GetFrustum(DgnCoordSystem sys=DgnCoordSystem::World, bool adjustedBox=true) const;
 
     //! Get the size of a single pixel at a given point as a distance along the view-x axis.
     //! The size of a pixel will only differ at different points within the same DgnViewport if the camera is on for this DgnViewport (in which case,
@@ -462,8 +449,8 @@ public:
     //! @return true if the grid display is on.
     bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
 
-    //! Determine whether this viewport is a 3D view.
-    //! @remarks Will be true only for a physical view.
+    //! Determine whether this viewport is a 3d view.
+    //! @remarks Will be true only for a physical views.
     bool Is3dView() const {return m_is3dView;}
 
     Render::TargetP GetRenderTarget() const {return m_renderTarget.get();}
@@ -528,9 +515,9 @@ public:
     //! for the frustum in DgnCoordSystem::World coordinates.
     //! This method will change the DgnViewport's frustum, but does \em not update the screen (even if the DgnViewport happens
     //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
-    //! @param[in]      newCenterRoot   The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
-    //! @param[in]      factor          Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
-    //!                                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
+    //! @param[in] newCenterRoot The position, in DgnCoordSystem::World, for the new center of the frustum. If NULL, center is unchanged.
+    //! @param[in] factor Scale factor to apply to current frustum. Scale factors greater than 1.0 zoom out (that is, the view
+    //!                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
     DGNPLATFORM_EXPORT ViewportStatus Zoom(DPoint3dCP newCenterRoot, double factor);
 
     //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
@@ -552,13 +539,19 @@ public:
     DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
     void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
-    //! Read the current image from this viewport from the Rendering system.
-    //! @param[in] targetSize The requested size for the Image. If either x or y value is 0 or greater than the current size of this viewport, the viewport size is used.
-    //! @return the Image containing the RGBA pixels from the viewpoert. On error, image.IsValid() will return false.
-    DGNVIEW_EXPORT Render::Image ReadImage(Point2d targetSize={0,0});
+    //! Read the current image from this viewport from the Rendering system. 
+    //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specfy a view rectangle that lies outside the actual view. If not specified, the entire view is captured.
+    //! @param[in] targetSize The size of the Image to be returned. The size can be larger or smaller than the original view. If not specified, the returned image is full size.
+    //! @note By using a combination of \a viewRect and \a targetSize, you can tell this function to both clip and
+    //! scale the image in the view. For example, use \a viewRect to specify a rectangle within the view to get a clipped image.
+    //! Specify \a targetSize to be less than the size of the view rectangle to scale the image down. 
+    //! @note The viewRect is adjusted as necessary to preserve the aspect ratio.
+    //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
+    //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
+    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = {{0,0},{-1,-1}}, Point2dCR targetSize={0,0});
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
-    static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
+    static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
     static double GetCameraPlaneRatio() {return 300.0;}
 };
 

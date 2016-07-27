@@ -12,15 +12,15 @@
 #include    "DgnModel.h"
 #include    <Bentley/ValueFormat.h>
 
-DGNPLATFORM_TYPEDEFS(AngleFormatter);
-DGNPLATFORM_TYPEDEFS(DirectionFormatter);
-DGNPLATFORM_TYPEDEFS(DistanceFormatter);
-DGNPLATFORM_TYPEDEFS(PointFormatter);
-DGNPLATFORM_TYPEDEFS(AreaFormatter);
-DGNPLATFORM_TYPEDEFS(VolumeFormatter);
-DGNPLATFORM_TYPEDEFS(DateTimeFormatter);
-
 BEGIN_BENTLEY_DGN_NAMESPACE
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AngleFormatter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DirectionFormatter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DistanceFormatter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(PointFormatter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AreaFormatter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(VolumeFormatter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DateTimeFormatter);
 
 typedef RefCountedPtr<AngleFormatter>       AngleFormatterPtr;
 typedef RefCountedPtr<DirectionFormatter>   DirectionFormatterPtr;
@@ -61,21 +61,21 @@ private:
     ANGLE_UNIT_Radians              = 5,
     };
 
-   AngleMode           m_angleMode;
-   AnglePrecision      m_precision;
-   bool                m_leadingZero;
-   bool                m_trailingZeros;
-   bool                m_allowNegative;
-   bool                m_allowUnclamped;
+   AngleMode      m_angleMode;
+   AnglePrecision m_precision;
+   bool           m_leadingZero;
+   bool           m_trailingZeros;
+   bool           m_allowNegative;
+   bool           m_allowUnclamped;
 
 protected:  
-    Utf8Char           m_decimalSeparator;
+    Utf8Char m_decimalSeparator;
 
 private:
-    AngleFormatter();
+    AngleFormatter() {Init();}
     AngleFormatter(AngleFormatterCR other);
 
-    void Init();
+    DGNPLATFORM_EXPORT void Init();
     void ConcatUnitLabel(Utf8StringR, AngleUnit) const;
     void ConcatIntegerString(Utf8StringR, int value, AngleUnit) const;
     void ConcatPrecisionString(Utf8StringR, double value, AngleUnit, double delta) const;
@@ -84,69 +84,68 @@ private:
     void PrependLeadingZeroIfNeeded(Utf8StringR inString, double value) const;
 
 public: 
-    void InitModelSettings(GeometricModelCR);
+    DGNPLATFORM_EXPORT void InitModelSettings(GeometricModelCR);
     DGNPLATFORM_EXPORT uint16_t GetLegacyFormat() const;
-    DGNPLATFORM_EXPORT uint16_t GetLegacyPrecision() const;
+    uint16_t GetLegacyPrecision() const  {return static_cast <uint16_t> (m_precision);}
     DGNPLATFORM_EXPORT StatusInt SetAngleModeFromLegacy(AngleFormatVals value);
     DGNPLATFORM_EXPORT StatusInt SetAnglePrecisionFromLegacy(int value);
-    DGNPLATFORM_EXPORT bool GetAllowUnclamped() const;
-    DGNPLATFORM_EXPORT void SetAllowUnclamped(bool newVal);
-
-public:
+    bool GetAllowUnclamped() const {return m_allowUnclamped;}
+    void SetAllowUnclamped(bool newVal) {m_allowUnclamped = newVal;}
 
     //! Get the AngleMode used by this formatter.
-    DGNPLATFORM_EXPORT AngleMode GetAngleMode() const;
+    AngleMode GetAngleMode() const {return m_angleMode;}
 
     //! Get the Precision used by this formatter.
-    DGNPLATFORM_EXPORT AnglePrecision GetAnglePrecision() const;
+    AnglePrecision GetAnglePrecision() const {return m_precision;}
 
     //! Get the decimal separator used by this formatter.
-    DGNPLATFORM_EXPORT WChar GetDecimalSeparator() const;
+    WChar GetDecimalSeparator() const {return m_decimalSeparator;}
+
 
     //! Test if this formatter will include a leading zero.  A leading zero is only
     //! included for values less than 1.0.  Ex. "0.5" vs. ".5"
-    DGNPLATFORM_EXPORT bool GetLeadingZero() const;
+    bool GetLeadingZero() const {return m_leadingZero;}
 
     //! Test if this formatter will include trailing zeros.  Trailing zeros are only included
     //! up to the requested precision.  Ex. "30.500" vs. "30.5"
-    DGNPLATFORM_EXPORT bool GetTrailingZeros() const;
+    bool GetTrailingZeros() const {return m_trailingZeros;}
 
     //! Test if this formatter will include a negative sign for input values less than zero.
     //! Ex. "-30" vs. "30"
-    DGNPLATFORM_EXPORT bool GetAllowNegative() const;
+    bool GetAllowNegative() const {return m_allowNegative;}
 
     //! Change the AngleMode used by this formatter.
-    DGNPLATFORM_EXPORT void SetAngleMode(AngleMode newVal);
+    void SetAngleMode(AngleMode newVal) {m_angleMode = newVal;}
 
     //! Change the Precision used by this formatter.
-    DGNPLATFORM_EXPORT void SetAnglePrecision(AnglePrecision newVal);
+    void SetAnglePrecision(AnglePrecision newVal) {m_precision = newVal;}
 
     //! Set the formatter's decimal separator.
-    DGNPLATFORM_EXPORT void SetDecimalSeparator(Utf8Char newVal);
+    void SetDecimalSeparator(Utf8Char newVal) {m_decimalSeparator = newVal;}
 
     //! Set the formatter's leading zero behavior.  A leading zero is only
     //! included for values less than 1.0.  Ex. "0.5" vs. ".5"
     //! @param[in] newVal pass true to include a leading zero for values less than 1.0
-    DGNPLATFORM_EXPORT void SetLeadingZero(bool newVal);
+    void SetLeadingZero(bool newVal) {m_leadingZero = newVal;}
 
     //! Set the formatter's trailing zeros behavior.  Trailing zeros are only included
     //! up to the requested precision.  Ex. "30.500" vs. "30.5"
     //! @param[in] newVal pass true to zero pad the output string to the requested precision.
-    DGNPLATFORM_EXPORT void SetTrailingZeros(bool newVal);
+    void SetTrailingZeros(bool newVal) {m_trailingZeros = newVal;}
 
     //! Set the formatter's negative value behavior.  If allowed a negative sign will be
     //! included for values less than zero. Ex. "-30" vs. "30"
-    DGNPLATFORM_EXPORT void SetAllowNegative(bool newVal);
+    void SetAllowNegative(bool newVal) {m_allowNegative = newVal;}
 
     //! Construct a formatter with default settings.
-    static DGNPLATFORM_EXPORT AngleFormatterPtr Create();
+    static AngleFormatterPtr Create() {return new AngleFormatter();}
 
     //! Construct a formatter with settings from a model.
     //! @param[in] model Initialize the formatter from the settings in this model.
-    static DGNPLATFORM_EXPORT AngleFormatterPtr Create(GeometricModelCR model);
+    static AngleFormatterPtr Create(GeometricModelCR model) {AngleFormatterPtr formatter = Create(); formatter->InitModelSettings(model); return formatter;}
 
     //! Construct a formatter which is a duplicate of an existing formatter.
-    DGNPLATFORM_EXPORT AngleFormatterPtr Clone() const;
+    AngleFormatterPtr Clone() const {return new AngleFormatter(*this);}
 
     //! Use the settings defined in this formatter to convert an angle value to a string.
     //! @param[in] value Angle in degrees.
@@ -154,7 +153,7 @@ public:
 
     //! Use the settings defined in this formatter to convert an angle value to a string.
     //! @param[in]  value       Angle in radians.
-    DGNPLATFORM_EXPORT Utf8String ToStringFromRadians(double value) const;
+    Utf8String ToStringFromRadians(double value) const {double degrees = Angle::RadiansToDegrees(value); return ToString(degrees);}
 }; // AngleFormatter
 
 //=======================================================================================
@@ -204,10 +203,10 @@ private:
     bool                m_clockwise;
     bool                m_bearingSpaces;
 
-    DirectionFormatter();
+    DirectionFormatter() {Init();}
     DirectionFormatter(DirectionFormatterCR other);
-    void Init();
-    void InitModelSettings(GeometricModelCR);
+    DGNPLATFORM_EXPORT void Init();
+    DGNPLATFORM_EXPORT void InitModelSettings(GeometricModelCR);
 
 public: 
     static DGNPLATFORM_EXPORT void DirFormatFromLegacyAngleMode(DirFormat& dirFormat, int tentsubmode);
@@ -218,44 +217,44 @@ public:
 
     //! Get the angle formatter used by this formatter for the numeric portion of the direction.
     //! Changes made to this object will affect the future behavior of the DirectionFormatter.
-    DGNPLATFORM_EXPORT AngleFormatterR GetAngleFormatter();
+    AngleFormatterR GetAngleFormatter() {return *m_angleFormatter;}
 
     //! Get the DirectionMode used by this formatter.
-    DGNPLATFORM_EXPORT DirectionMode GetDirectionMode() const;
+    DirectionMode GetDirectionMode() const {return m_mode;}
 
     //! Test if the formatter's true north value will be used.
-    DGNPLATFORM_EXPORT bool GetAddTrueNorth() const;
+    bool GetAddTrueNorth() const {return m_addTrueNorth;}
 
     //! Get the formatter's true north value.  If it is enabled, the formatter will
     //! add the true north value to the input value before formatting it.
-    DGNPLATFORM_EXPORT double GetTrueNorthValue() const;
+    double GetTrueNorthValue() const {return m_trueNorth;}
 
     //! Get the base direction for this formatter.  For details see #SetBaseDirection.
-    DGNPLATFORM_EXPORT double GetBaseDirection() const;
+    double GetBaseDirection() const {return m_baseDirection;}
 
     //! Get the orientation for azimuth directions.
     //! @note: Only used when DirectionMode is DirectionMode::Azimuth.
     //! @return true if directions are measure clockwise.
-    DGNPLATFORM_EXPORT bool GetClockwise() const;
+    bool GetClockwise() const {return m_clockwise;}
 
     //! Test if bearing directions will use additional spaces.  Ex. "N 60 E" vs. "N60E".
     //! @note: Only used when DirectionMode is DirectionMode::Bearing.
-    DGNPLATFORM_EXPORT bool GetBearingSpaces() const;
+    bool GetBearingSpaces() const {return m_bearingSpaces;}
 
     //! Set the angle formatter used by this formatter for the numeric portion of the direction.
     //! A copy of the supplied object will be stored by the DirectionFormatter.  To access the
     //! copy, use GetAngleFormatter.
-    DGNPLATFORM_EXPORT void SetAngleFormatter(AngleFormatterCR);
+    void SetAngleFormatter(AngleFormatterCR f) {m_angleFormatter = f.Clone();}
 
     //! Set the DirectionMode used by this formatter.
-    DGNPLATFORM_EXPORT void SetDirectionMode(DirectionMode newVal);
+    void SetDirectionMode(DirectionMode newVal) {m_mode = newVal;}
 
     //! Enable or disable the formatter's true north adjustment.
-    DGNPLATFORM_EXPORT void SetAddTrueNorth(bool newVal);
+    void SetAddTrueNorth(bool newVal) {m_addTrueNorth = newVal;}
 
     //! Set the formatter's true north value.  If it is enabled, the formatter will
     //! add the true north value to the input value before formatting it.
-    DGNPLATFORM_EXPORT void SetTrueNorthValue(double newVal);
+    void SetTrueNorthValue(double newVal) {m_trueNorth = newVal;}
 
     //! Set the base direction for this formatter.  The base direction is defined as
     //! the direction that is formatted as 0.0.
@@ -263,25 +262,25 @@ public:
     //! @return The base direction is specified as an angle in degrees measured
     //! counter-clockwise from the positive x-axis.  For example, the positive x-axis
     //! is 0.0 and the positive y-axis is 90.0.
-    DGNPLATFORM_EXPORT void SetBaseDirection(double newVal);
+    void SetBaseDirection(double newVal) {m_baseDirection = newVal;}
 
     //! Set the orientation for azimuth directions.
     //! @note: Only used when DirectionMode is DirectionMode::Azimuth.
-    DGNPLATFORM_EXPORT void SetClockwise(bool newVal);
+    void SetClockwise(bool newVal) {m_clockwise = newVal;}
 
     //! Enable or disable additional spaces for bearing directions.  Ex. "N 60 E" vs. "N60E".
     //! @note: Only used when DirectionMode is DirectionMode::Bearing.
-    DGNPLATFORM_EXPORT void SetBearingSpaces(bool newVal);
+    void SetBearingSpaces(bool newVal) {m_bearingSpaces = newVal;}
 
     //! Construct a formatter with default settings.
-    static DGNPLATFORM_EXPORT DirectionFormatterPtr Create();
+    static DirectionFormatterPtr Create() {return new DirectionFormatter();}
 
     //! Construct a formatter with settings from a model.
     //! @param[in] model Initialize the formatter from the settings in this model.
-    static DGNPLATFORM_EXPORT DirectionFormatterPtr Create(GeometricModelCR model);
+    static DirectionFormatterPtr Create(GeometricModelCR model) {DirectionFormatterPtr formatter = Create(); formatter->InitModelSettings(model); return formatter;}
 
     //! Construct a formatter which is a duplicate of an existing formatter.
-    DGNPLATFORM_EXPORT DirectionFormatterPtr Clone() const;
+    DirectionFormatterPtr Clone() const {return new DirectionFormatter(*this);}
 
     //! Use the settings defined in this formatter to convert a direction value to a string.
     //! @param[in]  value       Direction in degrees measured counter clockwise from the positive x-axis.
@@ -289,8 +288,7 @@ public:
 
     //! Use the settings defined in this formatter to convert a direction value to a string.
     //! @param[in]  value       Direction in radians measured counter clockwise from the positive x-axis.
-    DGNPLATFORM_EXPORT Utf8String ToStringFromRadians(double value) const;
-
+    Utf8String ToStringFromRadians(double value) const {double degrees = Angle::RadiansToDegrees(value); return ToString(degrees);}
 }; // DirectionFormatter
 
 //=======================================================================================
@@ -310,10 +308,7 @@ public:
 //!       - Comma ex. 10,5
 //!   - Many more
 //!
-//! @note  The input value is assumed to be supplied in Units of Resolution (uors).  Before
-//! being formatted, the uor value will be scaled by the supplied UorPerStorageUnit value and
-//! then converted from Storage units to the desired output units using the provided
-//! UnitDefinitions.  An optional additional scale factor can also be supplied.
+//! @note  The input value is assumed to be supplied in meters.
 //!
 // @bsiclass
 //=======================================================================================
@@ -321,88 +316,86 @@ struct DistanceFormatter : DoubleFormatterBase, RefCountedBase
 {
     DEFINE_T_SUPER(DoubleFormatterBase)
 private:
-    bool                m_unitFlag;
-    bool                m_suppressZeroMasterUnits;
-    bool                m_suppressZeroSubUnits;
-    bool                m_isDgnCoordReadOutCapable;
-    DgnUnitFormat       m_unitFormat;
-    UnitDefinition      m_masterUnit;       //!< Master Unit information
-    UnitDefinition      m_subUnit;          //!< Sub Unit information
-    double              m_scaleFactor;
-    bool                m_useDWGFormattingLogic;
-    DwgUnitFormat       m_dwgUnitFormat;
+    bool m_unitFlag;
+    bool m_suppressZeroMasterUnits;
+    bool m_suppressZeroSubUnits;
+    bool m_isDgnCoordReadOutCapable;
+    DgnUnitFormat m_unitFormat;
+    UnitDefinition m_masterUnit;       //!< Master Unit information
+    UnitDefinition m_subUnit;          //!< Sub Unit information
+    double m_scaleFactor;
+    bool m_useDWGFormattingLogic;
+    DwgUnitFormat m_dwgUnitFormat;
 
-    Utf8String          ToStringForDWG(double uors) const;
-
-    DistanceFormatter();
+    DistanceFormatter() {Init();}
     DistanceFormatter(DistanceFormatterCR other);
-    void Init();
-    void InitModelSettings(GeometricModelCR);
+    DGNPLATFORM_EXPORT void Init();
+    DGNPLATFORM_EXPORT void InitModelSettings(GeometricModelCR);
     double GetSubPerMaster() const;
 
 public: 
-    bool GetUseDWGFormattingLogic() const;
-    DGNPLATFORM_EXPORT void SetUseDWGFormattingLogic(bool newVal);
-    DGNPLATFORM_EXPORT DwgUnitFormat GetDWGUnitFormat() const;
+    bool GetUseDWGFormattingLogic() const {return m_useDWGFormattingLogic;}
+    void SetUseDWGFormattingLogic(bool newVal) {m_useDWGFormattingLogic = newVal;}
+    DwgUnitFormat GetDWGUnitFormat() const {return m_dwgUnitFormat;}
     DGNPLATFORM_EXPORT void SetDWGUnitFormat(DwgUnitFormat newVal);
-    DGNPLATFORM_EXPORT void SetPrecisionByte(Byte newVal);
+    void SetPrecisionByte(Byte newVal) {m_precisionByte = newVal;}
 
     static DGNPLATFORM_EXPORT BentleyStatus ToDwgUnitFormat(DwgUnitFormat& dwgUnitFormatOut, DgnUnitFormat dgnUnitFormat, PrecisionFormat dgnPrecision, UnitDefinitionCR masterUnit, UnitDefinitionCR subUnit);
 
     //! Get the DgnUnitFormat used by this formatter.
-    DGNPLATFORM_EXPORT DgnUnitFormat GetUnitFormat() const;
+    DgnUnitFormat GetUnitFormat() const {return m_unitFormat;}
 
     //! Get the Master UnitDefinition used by this formatter.
-    DGNPLATFORM_EXPORT UnitDefinitionCR GetMasterUnits() const;
+    UnitDefinitionCR GetMasterUnits() const {return m_masterUnit;}
 
     //! Get the Sub UnitDefinition used by this formatter.
-    DGNPLATFORM_EXPORT UnitDefinitionCR GetSubUnits() const;
+    UnitDefinitionCR GetSubUnits() const {return m_subUnit;}
 
     //! Get the system scale factor applied by this formatter.
-    DGNPLATFORM_EXPORT double GetScaleFactor() const;
+    double GetScaleFactor() const {return m_scaleFactor;}
 
     //! Get the unit flag used by this formatter. Ex. "1M 0.000mm"
-    DGNPLATFORM_EXPORT bool GetUnitLabelFlag() const;
+    bool GetUnitLabelFlag() const {return m_unitFlag;}
 
     //! Get the suppress zero master unit flag used by this formatter.
-    DGNPLATFORM_EXPORT bool GetSuppressZeroMasterUnits() const;
+    bool GetSuppressZeroMasterUnits() const {return m_suppressZeroMasterUnits;}
 
     //! Get the suppress zero sub unit flag used by this formatter.
-    DGNPLATFORM_EXPORT bool GetSuppressZeroSubUnits() const;
+    bool GetSuppressZeroSubUnits() const {return m_suppressZeroSubUnits;}
 
     //! Get the DgnCoorinateReadOutCapable flag used by this formatter.
-    DGNPLATFORM_EXPORT bool GetIsDgnCoordReadOutCapable() const;
+    bool GetIsDgnCoordReadOutCapable() const {return m_isDgnCoordReadOutCapable;}
 
-    //! Get the displayable resolution of this formatter in uors.  This is a calculated value.
+    //! Get the displayable resolution of this formatter.  This is a calculated value.
     DGNPLATFORM_EXPORT double GetMinimumResolution() const;
 
     //! Set the formatter's UnitFormat.
-    DGNPLATFORM_EXPORT void SetUnitFormat(DgnUnitFormat newVal);
+    void SetUnitFormat(DgnUnitFormat newVal) {m_unitFormat = newVal;}
 
     //! Set the formatter's working units.
     DGNPLATFORM_EXPORT StatusInt SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCP newSubUnit);
 
     //! Set the formatter's scale factor.
-    DGNPLATFORM_EXPORT void SetScaleFactor(double newVal);
+    void SetScaleFactor(double scaleFactor) {if (scaleFactor != 0.0) m_scaleFactor = scaleFactor;}
 
     //! Set the formatter's unit flag.
-    DGNPLATFORM_EXPORT void SetUnitLabelFlag(bool newVal);
+    void SetUnitLabelFlag(bool newVal) {m_unitFlag = newVal;}
 
     //! Set the formatter's suppress zero master units flag (only applies if UnitFormat=UNIT_FORMAT_MUSU).
-    DGNPLATFORM_EXPORT void SetSuppressZeroMasterUnits(bool newVal);
+    void SetSuppressZeroMasterUnits(bool newVal) {m_suppressZeroMasterUnits = newVal;}
 
     //! Set the formatter's suppress zero sub units flag (only applies if UnitFormat=UNIT_FORMAT_MUSU).
-    DGNPLATFORM_EXPORT void SetSuppressZeroSubUnits(bool newVal);
+    void SetSuppressZeroSubUnits(bool newVal) {m_suppressZeroSubUnits = newVal;}
 
     //! Set the formatter's IsDgnCoordinateReadoutCapable flag.
-    DGNPLATFORM_EXPORT void SetIsDgnCoordReadOutCapable(bool newVal);
+    void SetIsDgnCoordReadOutCapable(bool newVal) {m_isDgnCoordReadOutCapable = newVal;}
 
     //! Construct a formatter with default settings.
-    static DGNPLATFORM_EXPORT DistanceFormatterPtr Create();
+    static DistanceFormatterPtr Create() {return new DistanceFormatter();}
 
     //! Construct a formatter with settings from a model.
     //! @param[in] model Initialize the formatter from the settings in this model.
-    static DGNPLATFORM_EXPORT DistanceFormatterPtr Create(GeometricModelCR model);
+    static DistanceFormatterPtr Create(GeometricModelCR model) {DistanceFormatterPtr formatter = Create(); formatter->InitModelSettings(model); return formatter;}
 
     //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
     //! target model and the scale from the viewport's ACS.
@@ -410,12 +403,11 @@ public:
     static DGNPLATFORM_EXPORT DistanceFormatterPtr Create(DgnViewportR vp);
 
     //! Construct a formatter which is a duplicate of an existing formatter.
-    DGNPLATFORM_EXPORT DistanceFormatterPtr Clone() const;
+    DistanceFormatterPtr Clone() const {return new DistanceFormatter(*this);}
 
     //! Use the settings defined in this formatter to convert a value in meters to a string.
-    //! @param[in] uors uor value.
     DGNPLATFORM_EXPORT Utf8String ToString(double meters) const;
-}; // DistanceFormatter
+};
 
 //=======================================================================================
 //! Used to construct a string from a DPoint3d value.
@@ -452,7 +444,7 @@ public:
     DGNPLATFORM_EXPORT  IAuxCoordSysR   GetAuxCoordSys();
 
     //! Get the is3d value used by this formatter.
-    DGNPLATFORM_EXPORT bool GetIs3d() const;
+    bool GetIs3d() const {return m_is3d;}
 
     //! Set the distance formatter used by this formatter for rectangular coordinates.
     //! A copy of the supplied object will be stored by the PointFormatter.  To access the
@@ -465,7 +457,7 @@ public:
     DGNPLATFORM_EXPORT void SetAuxCoordSys(IAuxCoordSysCR);
 
     //! Set the formatter's is3d flag.
-    DGNPLATFORM_EXPORT void SetIs3d(bool newVal);
+    void SetIs3d(bool newVal) {m_is3d = newVal;}
 
     //! Construct a formatter with default settings.
     static DGNPLATFORM_EXPORT PointFormatterPtr Create();
@@ -488,7 +480,6 @@ public:
     DGNPLATFORM_EXPORT PointFormatterPtr Clone() const;
 
     //! Use the settings defined in this formatter to convert a point value to a string.
-    //! @param[in] point uor value.
     DGNPLATFORM_EXPORT Utf8String ToString(DPoint3dCR point) const;
 }; // PointFormatter
 
@@ -499,50 +490,50 @@ struct AreaOrVolumeFormatterBase : DoubleFormatterBase
 {
     DEFINE_T_SUPER(DoubleFormatterBase)
 protected:  
-    bool                m_showUnitLabel;
-    UnitDefinition      m_masterUnit;       //!< Master Unit information
-    double              m_scaleFactor;
-    bool                m_useDWGFormattingLogic;
-    DwgUnitFormat       m_dwgUnitFormat;
-    bool                m_labelDecoratorAsSuffix;
+    bool m_showUnitLabel;
+    bool m_useDWGFormattingLogic;
+    bool m_labelDecoratorAsSuffix;
+    UnitDefinition m_masterUnit;       //!< Master Unit information
+    double m_scaleFactor;
+    DwgUnitFormat m_dwgUnitFormat;
 
-    void Init();
+    DGNPLATFORM_EXPORT void Init();
     void InitFrom(AreaOrVolumeFormatterBase const&);
     void InitModelSettings(GeometricModelCR);
 
 public:     
-    bool GetUseDWGFormattingLogic() const;
-    DGNPLATFORM_EXPORT void SetUseDWGFormattingLogic(bool newVal);
-    DGNPLATFORM_EXPORT DwgUnitFormat GetDWGUnitFormat() const;
-    DGNPLATFORM_EXPORT void SetDWGUnitFormat(DwgUnitFormat newVal);
+    bool GetUseDWGFormattingLogic() const {return m_useDWGFormattingLogic;}
+    void SetUseDWGFormattingLogic(bool newVal) {m_useDWGFormattingLogic = newVal;}
+    DwgUnitFormat GetDWGUnitFormat() const {return m_dwgUnitFormat;}
+    void SetDWGUnitFormat(DwgUnitFormat newVal);
 
 protected:
-    AreaOrVolumeFormatterBase();
+    AreaOrVolumeFormatterBase() {Init();}
 
 //! Get the Master UnitDefinition used by this formatter.
 public: 
-    DGNPLATFORM_EXPORT UnitDefinitionCR GetMasterUnits() const;
+    UnitDefinitionCR GetMasterUnits() const {return m_masterUnit;}
 
     //! Get the system scale factor applied by this formatter.
-    DGNPLATFORM_EXPORT double GetScaleFactor() const;
+    double GetScaleFactor() const {return m_scaleFactor;}
 
     //! Get the flag which controls the use of unit labels by this formatter. Ex. "100mm"
-    DGNPLATFORM_EXPORT bool GetShowUnitLabel() const;
+    bool GetShowUnitLabel() const {return m_showUnitLabel;}
 
     //! Get the flag which sets unit label to m2 or Sq.m. Returns true for m2 and false for Sq.m.
-    DGNPLATFORM_EXPORT bool GetLabelDecoratorAsSuffix() const;
+    bool GetLabelDecoratorAsSuffix() const {return m_labelDecoratorAsSuffix;}
 
     //! Set the formatter's working units.
-    DGNPLATFORM_EXPORT StatusInt SetMasterUnit(UnitDefinitionCR newUnit);
+    StatusInt SetMasterUnit(UnitDefinitionCR newMasterUnit) {if (!newMasterUnit.IsValid()) return ERROR; m_masterUnit = newMasterUnit; return SUCCESS;}
 
     //! Set the formatter's scale factor.
-    DGNPLATFORM_EXPORT void SetScaleFactor(double newVal);
+    void SetScaleFactor(double scaleFactor) {if (scaleFactor != 0.0) m_scaleFactor = scaleFactor;}
 
     //! Set the formatter's unit flag.
-    DGNPLATFORM_EXPORT void SetShowUnitLabel(bool newVal);
+    void SetShowUnitLabel(bool newVal) {m_showUnitLabel = newVal;}
 
     //! Set the formatter's unit label to m2 or Sq.m. Pass true for m2 and false for Sq.m.
-    DGNPLATFORM_EXPORT void SetLabelDecoratorAsSuffix(bool newVal);
+    void SetLabelDecoratorAsSuffix(bool newVal) {m_labelDecoratorAsSuffix = newVal;}
 };
 
 //=======================================================================================
@@ -560,9 +551,7 @@ private:
     AreaFormatter(AreaFormatterCR other);
     void Init();
 
-    Utf8String ToStringForDWG(double uors) const;
-
-    DGNPLATFORM_EXPORT void SetPrecisionByte(Byte newVal);
+    void SetPrecisionByte(Byte newVal) {m_precisionByte = newVal;}
 
 public:
     //! Construct a formatter with default settings.
@@ -574,26 +563,18 @@ public:
 
     //! Construct a formatter with settings from a viewport.  Gets the settings from the viewport's
     //! target model and the scale from the viewport's ACS.
-    //! @param[in] vp                       Initialize the formatter from the settings in this viewport.
+    //! @param[in] vp Initialize the formatter from the settings in this viewport.
     static DGNPLATFORM_EXPORT AreaFormatterPtr Create(DgnViewportR vp);
 
     //! Construct a formatter which is a duplicate of an existing formatter.
     DGNPLATFORM_EXPORT AreaFormatterPtr Clone() const;
 
     //! Use the settings defined in this formatter to convert a value in meters to a string.
-    //! @param[in] meters meter value.
     DGNPLATFORM_EXPORT Utf8String ToString(double meters) const;
-
-}; // AreaFormatter
+};
 
 //=======================================================================================
 //! Used to construct a string from a numerical area value.
-//!
-//! @note  The input value is assumed to be supplied in squared Units of Resolution (uors).
-//! Before being formatted, the uor value will be scaled by the supplied UorPerStorage
-//! value and then converted from millimeters to the desired output unit using the provided
-//! UnitDefinitions.  An optional additional scale factor can also be supplied.
-//!
 // @bsiclass
 //=======================================================================================
 struct VolumeFormatter : AreaOrVolumeFormatterBase, RefCountedBase
@@ -623,8 +604,7 @@ public:
     //! Use the settings defined in this formatter to convert a value in meters to a string.
     //! @param[in] meters value.
     DGNPLATFORM_EXPORT Utf8String ToString(double meters) const;
-
-}; // VolumeFormatter
+};
 
 //=======================================================================================
 //! Used to construct a string from a time point value.
@@ -642,62 +622,67 @@ public:
 // @bsiclass
 //=======================================================================================
 struct DateTimeFormatter : RefCountedBase
-    {
+{
 private:
     typedef bvector<DateTimeFormatPart> PartList;
 
-    PartList                m_partList;
-    uint8_t                 m_fractionalPrecision;
-    bool                    m_fractionalTrailingZeros;
-    bool                    m_convertToLocalTime;
-    Utf8Char                m_dateSeparator;
-    Utf8Char                m_timeSeparator;
-    Utf8Char                m_decimalSeparator;
+    PartList m_partList;
+    uint8_t m_fractionalPrecision;
+    bool m_fractionalTrailingZeros;
+    bool m_convertToLocalTime;
+    Utf8Char m_dateSeparator;
+    Utf8Char m_timeSeparator;
+    Utf8Char m_decimalSeparator;
 
-    DateTimeFormatter();
-    DateTimeFormatter(DateTimeFormatterCR other);
+    DateTimeFormatter() {Reset();}
+    DGNPLATFORM_EXPORT DateTimeFormatter(DateTimeFormatterCR other);
+
 public:
     //! Get the character used as a decimal separator.
-    DGNPLATFORM_EXPORT Utf8Char GetDecimalSeparator() const;
+    Utf8Char GetDecimalSeparator() const {return m_decimalSeparator;}
     //! Get the character used to separate time components. Ex: ':' in "4:50"
-    DGNPLATFORM_EXPORT Utf8Char GetTimeSeparator() const;
-    //! Get the character used to separate date components. Ex: '/' in "4/5/2012"
-    DGNPLATFORM_EXPORT Utf8Char GetDateSeparator() const;
+    Utf8Char GetTimeSeparator() const {return m_timeSeparator;}
+    //! Get the character used to separate date components. Ex: '/' in "4/5/2016"
+    Utf8Char GetDateSeparator() const {return m_dateSeparator;}
     //! Get the precision used when formatting fractional seconds
-    DGNPLATFORM_EXPORT uint8_t GetFractionalSecondPrecision() const;
+    uint8_t GetFractionalSecondPrecision() const {return m_fractionalPrecision;}
     //! Get whether trailing zeros are included when formatting fractional seconds in order to match the specified precision
-    DGNPLATFORM_EXPORT bool GetTrailingZeros() const;
+    bool GetTrailingZeros() const {return m_fractionalTrailingZeros;}
     //! Get whether times should be converted to user's local time before formatting is applied. True by default.
-    DGNPLATFORM_EXPORT bool GetConvertToLocalTime() const;
+    bool GetConvertToLocalTime() const {return m_convertToLocalTime;}
 
     //! Set the character used as a decimal separator.
-    DGNPLATFORM_EXPORT void SetDecimalSeparator(Utf8Char separator);
+    void SetDecimalSeparator(Utf8Char separator) {m_decimalSeparator = separator;}
     //! Set the character used to separate time components.
-    DGNPLATFORM_EXPORT void SetTimeSeparator(Utf8Char separator);
+    void SetTimeSeparator(Utf8Char separator) {m_timeSeparator = separator;}
     //! Set the character used to separate date components.
-    DGNPLATFORM_EXPORT void SetDateSeparator(Utf8Char separator);
+    void SetDateSeparator(Utf8Char separator) {m_dateSeparator = separator;}
     //! Set the precision used when formatting fractional seconds.
-    DGNPLATFORM_EXPORT void SetFractionalSecondPrecision(uint8_t precision);
+    void SetFractionalSecondPrecision(uint8_t precision) {m_fractionalPrecision = precision;}
     //! Set whether trailing zeros should be included when formatting fractional seconds in order to match the specified precision.
-    DGNPLATFORM_EXPORT void SetTrailingZeros(bool show);
+    void SetTrailingZeros(bool show) {m_fractionalTrailingZeros = show;}
     //! Set whether times should be converted to user's local time before formatting is applied.
-    DGNPLATFORM_EXPORT void SetConvertToLocalTime(bool convert);
+    void SetConvertToLocalTime(bool convert){m_convertToLocalTime = convert;}
 
     //! Add a component to the ordered formatting sequence.
     DGNPLATFORM_EXPORT void AppendFormatPart(DateTimeFormatPart part);
+
     //! Remove all components from the formatting sequence.
-    DGNPLATFORM_EXPORT void ClearFormatParts();
+    void ClearFormatParts() {m_partList.clear();}
+
     //! Reset all options to defaults and remove all components from the formatting sequence.
     DGNPLATFORM_EXPORT void Reset();
 
     //! Construct a new DateTimeFormatter with default settings.
-    static DGNPLATFORM_EXPORT DateTimeFormatterPtr Create();
+    static DateTimeFormatterPtr Create() {return new DateTimeFormatter();}
+
     //! Construct a copy of this DateTimeFormatter.
-    DGNPLATFORM_EXPORT DateTimeFormatterPtr Clone() const;
+    DateTimeFormatterPtr Clone() const {return new DateTimeFormatter(*this);}
+
     //! Format the time point value.
     //! If no components have been added to the formatting sequence, uses DATETIME_PART_General.
     DGNPLATFORM_EXPORT Utf8String ToString(DateTimeCR) const;
-    }; // DateTimeFormatter
+}; // DateTimeFormatter
 
 END_BENTLEY_DGN_NAMESPACE
 

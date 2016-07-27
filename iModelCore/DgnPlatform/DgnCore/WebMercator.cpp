@@ -9,7 +9,7 @@
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 #endif
@@ -508,7 +508,7 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
     viewRay.direction = vp.GetViewController().GetZVector();
 
     DPlane3d xyPlane = DPlane3d::FromOriginAndNormal(DPoint3d::FromZero(), DVec3d::From(0, 0, 1.0));
-    Frustum  worldFrust = vp.GetFrustum();
+    Frustum  worldFrust = vp.GetFrustum(DgnCoordSystem::World, true);
     DRange2d xyRange = DRange2d::NullRange();
 
     BeAssert(!m_tileRange.IsValid());
@@ -526,7 +526,7 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
         }
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
-    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View);
+    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, true);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
     // Get the number of meters / pixel that we are showing in the view
@@ -637,10 +637,12 @@ void WebMercatorDisplay::DrawCoarserTiles(DrawArgs& args, uint8_t zoomLevel, uin
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
     {
+#if defined(BENTLEYCONFIG_GRAPHICS_DIRECTX)    // NOTE: In dgndb61-16q2, there is something wrong with Map tiles in OpenGL. For now, just disable them. TFS#496902
     CreateCache();
 
     WebMercatorDisplay display(*this, *context.GetViewport());
     display.DrawView(context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1020,8 +1022,8 @@ private:
 
 public:
     StatusInt LoadFromHttp() const;
-    StatusInt LoadFromDb() const;
-    StatusInt SaveToDb() const;
+    StatusInt LoadFromCache() const;
+    StatusInt SaveToCache() const;
 
     TileData(RealityData::Cache* cache, TileR tile, Render::SystemR renderSys, ColorDef color, Utf8CP url) : m_cache(cache), m_tile(&tile), m_renderSys(renderSys), m_color(color), m_url(url) {}
     ByteStream const& GetData() const {return m_data;}
@@ -1100,7 +1102,7 @@ BentleyStatus TileData::LoadTile() const
 
     ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data));
     auto texture = m_renderSys._CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No);
-    m_data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the SQLite cache.
+    m_data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the TileCache.
 
     graphic->SetSymbology(m_color, m_color, 0);
     graphic->AddTile(*texture, m_tile->m_corners.m_pts);
@@ -1125,7 +1127,7 @@ StatusInt TileData::LoadFromHttp() const
         return SUCCESS;
         }
 
-    if (SUCCESS == LoadFromDb())
+    if (SUCCESS == LoadFromCache())
         return SUCCESS;
 
     Http::HttpByteStreamBodyPtr responseBody = Http::HttpByteStreamBody::Create();
@@ -1146,14 +1148,14 @@ StatusInt TileData::LoadFromHttp() const
     m_data = std::move(responseBody->GetByteStream());
 
     LoadTile();
-    SaveToDb();
+    SaveToCache();
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TileData::LoadFromDb() const
+StatusInt TileData::LoadFromCache() const
     {
     if (nullptr==m_cache)
         return ERROR;
@@ -1183,7 +1185,7 @@ StatusInt TileData::LoadFromDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TileData::SaveToDb() const
+StatusInt TileData::SaveToCache() const
     {
     if (nullptr==m_cache)
         return SUCCESS;
@@ -1244,7 +1246,7 @@ void WebMercatorModel::CreateCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) const
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
     DgnDb::VerifyClientThread();
 
     tile.SetQueued();

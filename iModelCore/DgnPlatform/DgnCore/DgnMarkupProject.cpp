@@ -67,14 +67,6 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
-void MarkupExternalLink::AddClassParams(ECSqlClassParamsR params)
-    {
-    params.Add(MARKUPEXTERNALLINK_LinkedElementId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    04/2016
-//---------------------------------------------------------------------------------------
 DgnDbStatus MarkupExternalLink::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat = BindParams(statement);
@@ -167,6 +159,19 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
     RegisterHandler(dgn_ElementHandler::RedlineViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::MarkupExternalLinkHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::MarkupExternalLinkGroupHandler::GetHandler());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void MarkupDomain::_OnDgnDbOpened(DgnDbR db) const
+    {
+    if (!CustomPropertyRegistry::HasOldDgnSchema(db))
+        return;
+
+    CustomPropertyRegistry prop;
+    prop.SetClass(db, "Markup", "MarkupExternalLink");
+    prop.Register("LinkedElementId");
     }
 
 /*---------------------------------------------------------------------------------**//**

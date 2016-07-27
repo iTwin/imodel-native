@@ -16,6 +16,8 @@ USING_NAMESPACE_BENTLEY_DPTEST
 struct DgnElementTests : public DgnDbTestFixture
     {
     TestElementCPtr AddChild(DgnElementCR parent);
+    void TestAutoHandledPropertiesGetSet();
+    void TestAutoHandledPropertiesCA();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -739,10 +741,48 @@ TEST_F(DgnElementTests, HandlerlessClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, TestUnhandledProperties)
+void DgnElementTests::TestAutoHandledPropertiesCA()
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"TestUnhandledProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
-    
+#ifdef WIP_AUTO_HANDLED_PROPERTIES // *** test Custom Attributes when we get them
+    DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+    TestElement el(params);
+
+    static Utf8CP s_autoHandledPropNames[] = {
+        "IntegerProperty1"
+        ,"IntegerProperty2"
+        ,"IntegerProperty3"
+        ,"IntegerProperty4"
+        ,"DoubleProperty1"
+        ,"DoubleProperty2"
+        ,"DoubleProperty3"
+        ,"DoubleProperty4"
+        ,"PointProperty1"
+        ,"PointProperty2"
+        ,"PointProperty3"
+        ,"PointProperty4"
+        ,"StringProperty"
+        ,"IntProperty"
+        };
+
+    for (int i=0; i<_countof(s_autoHandledPropNames); ++i)
+        {
+        ECN::ECValue checkValue;
+        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, s_autoHandledPropNames[i]));
+        EXPECT_TRUE(checkValue.IsNull());
+        }
+
+    // Check a few non-auto-handled props
+    ECN::ECValue checkValue;
+    EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "TestIntegerProperty1"));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElementTests::TestAutoHandledPropertiesGetSet()
+    {
     DgnElementCPtr persistentEl;
     if (true)
         {
@@ -752,15 +792,15 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
         //  No unhandled properties yet
         ECN::ECValue checkValue;
-        EXPECT_EQ(DgnDbStatus::Success, el._GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "StringProperty"));
         EXPECT_TRUE(checkValue.IsNull());
 
         //  Set unhandled property (in memory)
-        ASSERT_EQ(DgnDbStatus::Success, el._SetProperty("StringProperty", ECN::ECValue("initial value")));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetProperty("StringProperty", ECN::ECValue("initial value")));
 
         //      ... check that we see the pending value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, el._GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Insert the element
@@ -771,7 +811,7 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
     // Check that we see the stored value
     ECN::ECValue checkValue;
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
     if (true)
@@ -781,20 +821,20 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
         //      ... initially we still see the initial/stored value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->_GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Set a new value (in memory)
-        EXPECT_EQ(DgnDbStatus::Success, editEl->_SetProperty("StringProperty", ECN::ECValue("changed value")));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->SetProperty("StringProperty", ECN::ECValue("changed value")));
 
         //      ... check that we now see the pending value on the edited copy ...
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->_GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
         //      ... but no change on the persistent element
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Update the element
@@ -803,8 +843,107 @@ TEST_F(DgnElementTests, TestUnhandledProperties)
 
     // Check that the stored value was changed
     checkValue.Clear();
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->_GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+
+    // REALLY check that the stored value was changed
+    auto fileName = m_db->GetFileName();
+    auto elid = persistentEl->GetElementId();
+    persistentEl = nullptr;
+    m_db->SaveChanges();
+    m_db->CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, fileName, Db::OpenMode::Readonly, true);
+    persistentEl = m_db->Elements().GetElement(elid);
+    ASSERT_TRUE(persistentEl.IsValid());
+    checkValue.Clear();
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_STREQ("changed value", checkValue.ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, TestAutoHandledProperties)
+    {
+    SetupProject(L"3dMetricGeneral.ibim", L"TestAutoHandledPropertiesGetSet.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    TestAutoHandledPropertiesCA();
+    TestAutoHandledPropertiesGetSet();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, CreateFromECInstance)
+    {
+    SetupProject(L"3dMetricGeneral.ibim", L"TestAutoHandledPropertiesGetSet.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+
+    DgnElementId eid;
+        {
+        ECN::ECClassCP testClass = m_db->Schemas().GetECClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
+        auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        // custom-handled properties
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Label", ECN::ECValue("my label")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_PointProperty1, ECN::ECValue(DPoint3d::From(99, 99, 99))));
+        // auto-handled properties
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("IntegerProperty1", ECN::ECValue(199)));
+
+        DgnDbStatus status;
+        auto ele = DgnElement::CreateElement(&status, *m_db, *testClassInstance);
+        ASSERT_TRUE(ele.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+
+        ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
+        ECN::ECValue v;
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
+        ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+        ASSERT_STREQ("my label", v.ToString().c_str());
+        ASSERT_STREQ("my label", ele->GetLabel());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+        ASSERT_STREQ("a string", v.ToString().c_str());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+        ASSERT_EQ(99, v.GetInteger());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+        ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+        ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+
+        // Now, make sure that we can actually insert the element
+        auto persistentEl = ele->Insert();
+        ASSERT_TRUE(persistentEl.IsValid());
+        
+        eid = persistentEl->GetElementId();
+        }
+
+    // Now close and re-open, so that we read the element from the disk.
+    auto filename = m_db->GetFileName();
+    CloseDb();
+    m_db = nullptr;
+    OpenDb(m_db, filename, BeSQLite::Db::OpenMode::Readonly);
+    auto ele = m_db->Elements().GetElement(eid);
+    ASSERT_TRUE(ele.IsValid());
+
+    ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
+    ECN::ECValue v;
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
+    ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+    ASSERT_STREQ("my label", v.ToString().c_str());
+    ASSERT_STREQ("my label", ele->GetLabel());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+    ASSERT_STREQ("a string", v.ToString().c_str());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+    ASSERT_EQ(99, v.GetInteger());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+    ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+    ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
     }
 
 /*---------------------------------------------------------------------------------**//**

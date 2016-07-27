@@ -67,16 +67,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(AnnotationFrameStyleHandler);
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     11/2015
-//---------------------------------------------------------------------------------------
-void AnnotationFrameStyleHandler::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROP_Data);
-    params.Add(PROP_Description);
-    }
 }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

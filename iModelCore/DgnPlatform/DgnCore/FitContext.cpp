@@ -283,6 +283,17 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
         }
 
     Frustum corner(range);
+
+    DPoint3d orgView;
+    m_rotMatrix.Multiply(&orgView, &m_viewOrg, 1);
+
+    // limit values between front plane and back plane. Otherwise NPC doesn't work in camera views.
+    double min = orgView.z;
+    double max = min + m_viewDelta.z;
+
+    for (int i=0; i<8; ++i)
+        LIMIT_RANGE(min, max, corner.m_pts[i].z);
+
     m_rotMatrix.MultiplyTranspose(corner.m_pts, corner.m_pts, 8);
     WorldToNpc(corner.m_pts, corner.m_pts, 8);
 

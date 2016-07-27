@@ -122,8 +122,6 @@ namespace dgn_ElementHandler
     struct LightDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LightDefinition, LightDefinition, LightDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 }
 

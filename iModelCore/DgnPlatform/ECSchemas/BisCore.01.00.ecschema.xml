@@ -54,7 +54,26 @@
         <ECArrayProperty propertyName="Restrictions" typeName="string" description="List of actions which are not permitted when the associated handler is not available" minOccurs="0" maxOccurs="unbounded"/>
     </ECCustomAttributeClass>
 
-    <!-- ////////////////////////////////////////////////////////////////////////////// -->
+    <!-- Must match the ECSqlClassParams::StatementType enum -->
+    <ECEnumeration typeName="CustomHandledPropertyStatementType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="None"/>
+        <ECEnumerator value="1" displayLabel="Select"/>
+        <ECEnumerator value="2" displayLabel="Insert"/>
+        <ECEnumerator value="3" displayLabel="ReadOnly = Select|Insert"/>
+        <ECEnumerator value="4" displayLabel="Update"/>
+        <ECEnumerator value="6" displayLabel="InsertUpdate = Insert | Update"/>
+        <ECEnumerator value="7" displayLabel="All = Select | Insert | Update"/>
+    </ECEnumeration>
+
+    <ECCustomAttributeClass typeName="CustomHandledProperty" description="Applied to an element's property to indicate that the property's value is handled specially by a C++ class." appliesTo="Any">
+    </ECCustomAttributeClass>
+
+    <ECCustomAttributeClass typeName="PropertyStatementType" description="Applied to an element's property to indicate the kinds of statements in which the property should appear." appliesTo="Any">
+      <!-- The kinds of statements in which the property should appear. -->
+      <ECProperty propertyName="StatementTypes" typeName="CustomHandledPropertyStatementType"/>
+    </ECCustomAttributeClass>
+
+  <!-- ////////////////////////////////////////////////////////////////////////////// -->
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
@@ -440,6 +459,10 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>2</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward">
@@ -448,6 +471,10 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>6</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty> 
         <ECProperty propertyName="Label" typeName="string">
@@ -457,14 +484,29 @@
                     <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>6</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson"/>
+        <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>0</StatementTypes>
+                </PropertyStatementType>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>0</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -532,8 +574,16 @@
             </ClassMap>
         </ECCustomAttributes>
         <BaseClass>LinkElement</BaseClass>
-        <ECProperty propertyName="Url" displayLabel="URL" typeName="string"/>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+        <ECProperty propertyName="Url" displayLabel="URL" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="EmbeddedFileLink">
@@ -552,8 +602,16 @@
             </ClassMap>
         </ECCustomAttributes>
         <BaseClass>LinkElement</BaseClass>
-        <ECProperty propertyName="Name" typeName="string"/>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+        <ECProperty propertyName="Name" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
@@ -596,6 +654,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary">
@@ -604,6 +663,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean">
@@ -612,6 +672,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point3d">
@@ -620,6 +681,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Yaw" typeName="double">
@@ -628,6 +690,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Pitch" typeName="double">
@@ -636,6 +699,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Roll" typeName="double">
@@ -644,6 +708,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">
@@ -652,6 +717,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d">
@@ -660,6 +726,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -698,13 +765,37 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward"/>
-        <ECProperty propertyName="GeometryStream" typeName="binary"/>
-        <ECProperty propertyName="Origin" typeName="point2d" />
-        <ECProperty propertyName="Rotation" typeName="double" />
-        <ECProperty propertyName="BBoxLow" typeName="point2d" />
-        <ECProperty propertyName="BBoxHigh" typeName="point2d" />
-    </ECEntityClass>
+        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECNavigationProperty>
+        <ECProperty propertyName="GeometryStream" typeName="binary">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Origin" typeName="point2d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Rotation" typeName="double">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BBoxLow" typeName="point2d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="BBoxHigh" typeName="point2d">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECEntityClass>
     <ECEntityClass typeName="GraphicalElement2d" modifier="Abstract">
         <!-- 2D geometric element that is used to convey information within graphical presentations (like drawings). -->
         <BaseClass>GeometricElement2d</BaseClass>
@@ -898,15 +989,27 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="TextStyleId" typeName="long"/>
+        <ECProperty propertyName="TextStyleId" typeName="long">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="LinearDimension">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="StyleId" typeName="long"/>
-        <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points"/>
+        <ECProperty propertyName="StyleId" typeName="long">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="LinearDimension2d">
@@ -932,9 +1035,16 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward"/>
+        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECNavigationProperty>
         <ECProperty propertyName="Scale" typeName="double">
             <!-- Should have IsNullable=False but shared table... -->
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
@@ -1139,6 +1249,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Scope" typeName="int">
@@ -1147,6 +1258,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Rank" typeName="int">
@@ -1155,6 +1267,7 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
@@ -1166,6 +1279,10 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>0</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1174,8 +1291,16 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Properties" typeName="string"/>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Properties" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
@@ -1210,7 +1335,14 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Data" typeName="int"/>
+        <ECProperty propertyName="Data" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+            <PropertyStatementType>
+              <StatementTypes>3</StatementTypes>
+            </PropertyStatementType>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="MaterialElement">
@@ -1218,8 +1350,16 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Data" typeName="string"/>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTextStyle">
@@ -1227,57 +1367,102 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
-    </ECEntityClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationFrameStyle">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
-    </ECEntityClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationLeaderStyle">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
-    </ECEntityClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECEntityClass>
 
     <ECEntityClass typeName="TextAnnotationSeed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
-        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties"/>
-    </ECEntityClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+      </ECEntityClass>
 
     <ECEntityClass typeName="LineStyle">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style"/>
-        <ECProperty propertyName="Data" typeName="string" description="Encoded style properties"/>
-    </ECEntityClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Data" typeName="string" description="Encoded style properties">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+          </ECEntityClass>
 
     <ECEntityClass typeName="Texture">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded texture data">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
@@ -1285,6 +1470,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Width" typeName="int" displayLabel="Width">
@@ -1292,6 +1478,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Height" typeName="int" displayLabel="Height">
@@ -1299,6 +1486,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Flags" typeName="int">
@@ -1306,6 +1494,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable><!-- actually False, but shared table... -->
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1315,15 +1504,35 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Value" typeName="string"/>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Value" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="ViewDefinition" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
-        <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
-        <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView" direction="Backward"/>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Source" displayLabel="Source" typeName="int">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
+        <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView" direction="Backward">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
         <ECCustomAttributes>
@@ -1427,6 +1636,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">
@@ -1434,6 +1644,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d">
@@ -1441,6 +1652,7 @@
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
                 </PropertyMap>
+                <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>

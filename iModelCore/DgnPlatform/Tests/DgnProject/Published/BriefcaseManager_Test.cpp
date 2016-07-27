@@ -978,14 +978,10 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
     RepositoryManagerTest()
         {
         RegisterServer();
-        IBriefcaseManager::BackDoor_SetAutomaticAcquisition(false);
-        IBriefcaseManager::BackDoor_SetSupportFastQuery(true);
         }
 
     ~RepositoryManagerTest()
         {
-        IBriefcaseManager::BackDoor_SetSupportFastQuery(false);
-        IBriefcaseManager::BackDoor_SetAutomaticAcquisition(true);
         UnregisterServer();
         }
 

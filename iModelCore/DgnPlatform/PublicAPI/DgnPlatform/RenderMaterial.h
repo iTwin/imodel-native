@@ -116,7 +116,7 @@ public:
         DGNPLATFORM_EXPORT Mode GetMode() const;
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
         Type GetType() const {return m_type;}
-        double GetUnitScale(Units units) const;
+        DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;
         DgnTextureId Relocate(DgnImportContext& context);
         double GetDouble(Utf8CP name, double defaultVal) const {return !m_value[name].isDouble() ? defaultVal : m_value[name].asDouble();}
         bool GetBool(Utf8CP name, bool defaultVal) const {return !m_value[name].isBool() ? defaultVal : m_value[name].asBool();}

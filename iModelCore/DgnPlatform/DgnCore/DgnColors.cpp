@@ -14,16 +14,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
     HANDLER_DEFINE_MEMBERS(TrueColor);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TrueColor::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROP_Value, ECSqlClassParams::StatementType::ReadOnly);
-    }
-
 }
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

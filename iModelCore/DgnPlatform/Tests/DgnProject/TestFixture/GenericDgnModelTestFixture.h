@@ -44,8 +44,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericDgnModelTestFixture : public GenericBaseFixture
 {
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+    public: static void SetUpTestCase();
+    public: static void TearDownTestCase();
 public:
     DEFINE_T_SUPER(GenericBaseFixture);
 
@@ -66,8 +66,8 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GenericDgnModel2dTestFixture : public GenericBaseFixture
 {
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+    public: static void SetUpTestCase();
+    public: static void TearDownTestCase();
 public:
     DEFINE_T_SUPER(GenericBaseFixture);
 

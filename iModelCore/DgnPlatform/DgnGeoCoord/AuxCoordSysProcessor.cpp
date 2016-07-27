@@ -784,8 +784,8 @@ virtual StatusInt       _PointFromString (DPoint3dR outPoint, WStringR errorMsg,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BarryBentley    01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt       _StringFromPoint (WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
-                                        DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) override
+virtual StatusInt _StringFromPoint(WStringR outString, WStringR errorMsg, DPoint3dCR inPoint, bool delta, DPoint3dCP deltaOrigin, DgnModelRefR modelRef,
+                                    DistanceFormatterR distanceFormatter, DirectionFormatterR directionFormatter) override
     {
     // can't be relative
     if (delta)

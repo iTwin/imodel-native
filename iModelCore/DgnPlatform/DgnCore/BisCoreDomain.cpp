@@ -159,3 +159,99 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void BisCoreDomain::AddMissingCustomAttributes(DgnDbR db) const
+    {
+    if (!CustomPropertyRegistry::HasOldDgnSchema(db))
+        return;
+
+    CustomPropertyRegistry prop;
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    prop.Register("ModelId", ECSqlClassParams::StatementType::Insert);
+    prop.Register("Code", ECSqlClassParams::StatementType::InsertUpdate);
+    prop.Register("Label", ECSqlClassParams::StatementType::InsertUpdate);
+    prop.Register("ParentId", ECSqlClassParams::StatementType::InsertUpdate);
+    prop.Register("UserProperties", ECSqlClassParams::StatementType::None);
+    prop.Register("LastMod", ECSqlClassParams::StatementType::None);
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_Category);
+    prop.Register("Descr");
+    prop.Register("Scope");
+    prop.Register("Rank");
+    prop.Register("LastMod", ECSqlClassParams::StatementType::None);
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_SubCategory);
+    prop.Register("Descr");
+    prop.Register("Properties");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricElement2d);
+    prop.Register("CategoryId");
+    prop.Register("Origin");
+    prop.Register("BBoxLow");
+    prop.Register("BBoxHigh");
+    prop.Register("GeometryStream");
+    prop.Register("Rotation");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricElement3d);
+    prop.Register("CategoryId");
+    prop.Register("Origin");
+    prop.Register("BBoxLow");
+    prop.Register("BBoxHigh");
+    prop.Register("GeometryStream");
+    prop.Register("InSpatialIndex");
+    prop.Register("Yaw");
+    prop.Register("Pitch");
+    prop.Register("Roll");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationFrameStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationLeaderStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationTextStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationSeed);
+    prop.Register("Data");
+    prop.Register("Descr");
+    /*
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, "DimensionStyle");
+    prop.Register("TextStyleId");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, "LinearDimension");
+    prop.Register("StyleId");
+    prop.Register("Points");
+    */
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_LineStyle);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_TrueColor);
+    prop.Register("Data", ECSqlClassParams::StatementType::ReadOnly);
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_LightDefinition);
+    prop.Register("Descr");
+    prop.Register("Value");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_MaterialElement);
+    prop.Register("Descr");
+    prop.Register("Data");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_Texture);
+    prop.Register("Data");
+    prop.Register("Descr");
+    prop.Register("Format");
+    prop.Register("Width");
+    prop.Register("Height");
+    prop.Register("Flags");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition);
+    prop.Register("Descr");
+    prop.Register("Source");
+    prop.Register("BaseModelId");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_GeometryPart);
+    prop.Register("GeometryStream");
+    prop.Register("BBoxLow");
+    prop.Register("BBoxHigh");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_UrlLink);
+    prop.Register("Url");
+    prop.Register("Descr");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_EmbeddedFileLink);
+    prop.Register("Name");
+    prop.Register("Descr");
+    prop.SetClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment);
+    prop.Register("ViewId");
+    prop.Register("Scale");
+    }

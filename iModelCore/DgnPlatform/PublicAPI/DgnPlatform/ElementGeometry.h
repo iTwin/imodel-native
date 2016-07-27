@@ -107,13 +107,6 @@ struct GeometryStreamIO
         CurvePrimitive          = 10,   //!< Single CurvePrimitive
         SolidPrimitive          = 11,   //!< SolidPrimitive
         BsplineSurface          = 12,   //!< BSpline surface
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-        ParasolidBRep           = 13,   //!< Parasolid body
-        BRepPolyface            = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
-        BRepPolyfaceExact       = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
-        BRepEdges               = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
-        BRepFaceIso             = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
-#endif
         AreaFill                = 19,   //!< Opaque and gradient fills
         Pattern                 = 20,   //!< Hatch, cross-hatch, and area pattern
         Material                = 21,   //!< Render material
@@ -289,18 +282,6 @@ struct GeometryStreamIO
 //=======================================================================================
 struct GeometryCollection
 {
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    enum class BRepOutput
-    {
-        None    = 0,       //!< Output nothing.
-        Auto    = 1,       //!< Output ISolidKernelEntity when solids kernel is available and Polyface(s) when it is not.
-        BRep    = 1 << 1,  //!< Output ISolidKernelEntity and fail if solids kernel is not available.
-        Mesh    = 1 << 2,  //!< Output Polyface representation of surface geometry.
-        Edges   = 1 << 3,  //!< Output CurveVector representation of edge geometry.
-        FaceIso = 1 << 4,  //!< Output CurveVector representation for face hatch geometry.
-    };
-#endif
-
     //=======================================================================================
     //! Iterator
     //! @ingroup GROUP_Geometry
@@ -320,10 +301,6 @@ struct GeometryCollection
             Polyface            = 6,  //!< Polyface
             SolidKernelEntity   = 7,  //!< SolidKernelEntity
             TextString          = 8,  //!< TextString
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-            BRepPolyface        = 9,  //!< BRep surface mesh (from BRepOutput::Auto when Parasolid not available or if requested by BRepOutput::Mesh)
-            BRepCurveVector     = 10, //!< BRep edge/face curves (when requested by BRepOutput::Edges | BRepOutput::FaceIso)
-#endif
         };
 
         struct CurrentState
@@ -335,18 +312,12 @@ struct GeometryCollection
             Transform               m_geomToWorld;
             GeometricPrimitivePtr   m_geometry;
             GeometryStreamEntryId   m_geomStreamEntryId;
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-            BRepOutput              m_bRepOutput;
-#endif
 
             CurrentState(DgnDbR dgnDb) : m_dgnDb(dgnDb)
             {
                 m_sourceToWorld = Transform::FromIdentity();
                 m_geomToSource  = Transform::FromIdentity();
                 m_geomToWorld   = Transform::FromIdentity();
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-                m_bRepOutput    = BRepOutput::Auto;
-#endif
             }
         };
 
@@ -402,12 +373,6 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-    //! Override the default BRep handling option, BRepOutput::Auto. For example, an application can set to BRepOutput::BRep to
-    //! detect when BReps are present in the GeometryStream to avoid modifications when Parasolid is not available.
-    void SetBRepOutput(BRepOutput bRep) {m_state.m_bRepOutput = bRep;}
-#endif
-
     //! Iterate a GeometryStream for a DgnGeometryPart using the current GeometryParams and geometry to world transform
     //! for of part instance as found when iterating a GeometrySource with a part reference.
     DGNPLATFORM_EXPORT void SetNestedIteratorContext(Iterator const& iter);
@@ -423,10 +388,6 @@ public:
 }; // GeometryCollection
 
 typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
-
-#if defined (BENTLEYCONFIG_PARASOLIDS)
-ENUM_IS_FLAGS(GeometryCollection::BRepOutput)
-#endif
 
 //=======================================================================================
 //! GeometryBuilder provides methods for setting up an element's GeometryStream and Placement(2d/3d).

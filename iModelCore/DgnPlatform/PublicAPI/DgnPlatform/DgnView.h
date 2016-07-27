@@ -165,8 +165,6 @@ public:
     //! Look up a view by name
     static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) { return QueryView(QueryViewId(name, db), db); }
 
-    static void AddClassParams(ECSqlClassParams& params); //!< @private
-
     //! Query the settings associated with the specified view as a JSON string
     DGNPLATFORM_EXPORT static BeSQLite::DbResult QuerySettings(Utf8StringR settings, DgnViewId viewId, DgnDbR db);
     //! Save the settings associated with the specified view as a JSON string
@@ -464,8 +462,6 @@ namespace dgn_ElementHandler
     struct SpatialViewDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 
     //=======================================================================================
@@ -484,8 +480,6 @@ namespace dgn_ElementHandler
     struct DrawingViewDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 
     //=======================================================================================
@@ -495,8 +489,6 @@ namespace dgn_ElementHandler
     struct SheetViewDef : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Element, DGNPLATFORM_EXPORT);
-    protected:
-        DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParams& params) override;
     };
 
     //=======================================================================================

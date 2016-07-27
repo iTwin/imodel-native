@@ -9,7 +9,11 @@
             <ClassHasHandler xmlns="BisCore.01.00" />
         </ECCustomAttributes>
         <BaseClass>bis:LinkElement</BaseClass>
-        <ECProperty propertyName="LinkedElementId" typeName="long"/>
+        <ECProperty propertyName="LinkedElementId" typeName="long">
+          <ECCustomAttributes>
+            <CustomHandledProperty/>
+          </ECCustomAttributes>
+        </ECProperty>
     </ECEntityClass>
 
     <ECEntityClass typeName="MarkupExternalLinkGroup">

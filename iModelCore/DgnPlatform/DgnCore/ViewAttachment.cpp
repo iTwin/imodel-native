@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewAttachment.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -16,16 +16,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_ElementHandler
 {
 HANDLER_DEFINE_MEMBERS(ViewAttachmentHandler);
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewAttachmentHandler::_GetClassParams(ECSqlClassParams& params)
-    {
-    T_Super::_GetClassParams(params);
-    params.Add(PROP_ViewId);
-    params.Add(PROP_Scale);
-    }
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -38,8 +28,7 @@ DgnDbStatus ViewAttachment::BindParams(ECSqlStatement& stmt)
     if (ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(PROP_ViewId), GetViewId())
         || ECSqlStatus::Success != stmt.BindDouble(stmt.GetParameterIndex(PROP_Scale), GetViewScale()))
         return DgnDbStatus::BadArg;
-    else
-        return DgnDbStatus::Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
