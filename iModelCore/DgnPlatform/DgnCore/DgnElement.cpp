@@ -492,14 +492,14 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
         return DgnDbStatus::BadArg;
     if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         {
-        BeAssert(false && "insert or update statement must include Code value property");
+        BeAssert(false && "insert or update statement must include CodeValue property");
         return DgnDbStatus::BadArg;
         }
 
     if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
         (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         {
-        BeAssert(false && "insert or update statement must include Code authority and namespace properties");
+        BeAssert(false && "insert or update statement must include CodeAuthority and CodeNamespace properties");
         return DgnDbStatus::BadArg;
         }
 

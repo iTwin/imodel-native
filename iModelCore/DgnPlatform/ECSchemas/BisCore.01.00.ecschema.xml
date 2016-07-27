@@ -429,6 +429,10 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>6</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="CodeNamespace" typeName="string">
@@ -442,6 +446,10 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>6</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="CodeValue" displayLabel="Code" typeName="string">
@@ -451,6 +459,10 @@
                     <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                  <StatementTypes>6</StatementTypes>
+                </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">

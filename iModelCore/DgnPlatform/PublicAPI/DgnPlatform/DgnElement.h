@@ -273,17 +273,6 @@ struct AutoHandledPropertiesCollection
     const_iterator end() const { return Iterator(m_props.end(), *this); }
     };
 
-/* temporary helper class to work around missing CAs in dgn schema. */
-struct CustomPropertyRegistry
-    {
-    ECN::ECClassCP m_eclass;
-    CustomPropertyRegistry() : m_eclass(nullptr) { ; }
-    void SetClass(ECN::ECClassCP cls) { m_eclass = cls; }
-    DGNPLATFORM_EXPORT void SetClass(DgnDbR, Utf8CP schemaName, Utf8CP className);
-    DGNPLATFORM_EXPORT void Register(Utf8CP propName, ECSqlClassParams::StatementType = ECSqlClassParams::StatementType::All);
-    DGNPLATFORM_EXPORT static bool HasOldDgnSchema(DgnDbR db);
-    };
-
 //__PUBLISH_SECTION_START__
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \

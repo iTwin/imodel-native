@@ -166,12 +166,6 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MarkupDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-    if (!CustomPropertyRegistry::HasOldDgnSchema(db))
-        return;
-
-    CustomPropertyRegistry prop;
-    prop.SetClass(db, "Markup", "MarkupExternalLink");
-    prop.Register("LinkedElementId");
     }
 
 /*---------------------------------------------------------------------------------**//**

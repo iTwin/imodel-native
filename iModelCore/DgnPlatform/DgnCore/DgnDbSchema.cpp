@@ -7,133 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
-
-ECN::ECSchemaPtr s_fakeSchema;
-ECN::ECCustomAttributeClassP s_fakeCustomClass;
-ECN::ECCustomAttributeClassP s_fakeStypeClass;
-static std::map<Utf8String, bmap<Utf8String, bvector<IECInstancePtr>>> s_fakeCAs;
-
-/*---------------------------------------------------------------------------------**//**
-* Create a temporary, in-memory schema that defines a couple of CustomAttributes classes.
-* It's much faster to do it this way than to re-import the entire dgn schema.
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::ECSchemaP getFakeSchema()
-    {
-    if (s_fakeSchema.IsValid())
-        return s_fakeSchema.get();
-
-    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(s_fakeSchema, "CustomPropertyRegistry", 1, 0))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    s_fakeSchema->SetNamespacePrefix("CustomPropertyRegistry");
-
-    auto status = s_fakeSchema->CreateCustomAttributeClass(s_fakeCustomClass, "CustomHandledProperty");
-    if (ECN::ECObjectsStatus::Success != status)
-        {
-        BeAssert(false);
-        s_fakeSchema = nullptr;
-        return nullptr;
-        }
-
-    status = s_fakeSchema->CreateCustomAttributeClass(s_fakeStypeClass, "PropertyStatementType");
-    if (ECN::ECObjectsStatus::Success != status)
-        {
-        BeAssert(false);
-        s_fakeSchema = nullptr;
-        s_fakeStypeClass = nullptr;
-        return nullptr;
-        }
-
-    ECN::PrimitiveECPropertyP stypeProp;
-    status = s_fakeStypeClass->CreatePrimitiveProperty(stypeProp, "StatementTypes");
-    if (ECN::ECObjectsStatus::Success != status)
-        {
-        BeAssert(false);
-        s_fakeSchema = nullptr;
-        s_fakeStypeClass = nullptr;
-        s_fakeStypeClass = nullptr;
-        return nullptr;
-        }
-    stypeProp->SetType(ECN::PrimitiveType::PRIMITIVETYPE_Integer);
-
-    return s_fakeSchema.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* See if the specified (fake) CustomAttribute was registered for the specified property. 
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::IECInstancePtr getFakeCA(ECN::ECPropertyCR prop, ECN::ECClassCR desiredClass)
-    {
-    if (!s_fakeSchema.IsValid())
-        return nullptr;
-
-    auto iclass = s_fakeCAs.find(prop.GetClass().GetECSqlName());
-    if (iclass == s_fakeCAs.end())
-        return nullptr;
-
-    for (auto const& props: iclass->second)
-        {
-        if (props.first.Equals(prop.GetName()))
-            {
-            for (auto ca: props.second)
-                {
-                if (&ca->GetClass() == &desiredClass)
-                    return ca;
-                }
-            }
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomPropertyRegistry::HasOldDgnSchema(DgnDbR db)
-    {
-    return nullptr == db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomPropertyRegistry::Register(Utf8CP propName, ECSqlClassParams::StatementType stype)
-    {
-    if (nullptr == getFakeSchema())  // make sure fake schema is created
-        return;
-    BeAssert(nullptr != m_eclass->GetPropertyP(propName, false));
-    auto& cls = s_fakeCAs[m_eclass->GetECSqlName()];
-    auto& prop = cls[propName];
-    prop.push_back(s_fakeCustomClass->GetDefaultStandaloneEnabler()->CreateInstance());
-    if (ECSqlClassParams::StatementType::All != stype)
-        {
-        auto stypePropInstance = s_fakeStypeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        stypePropInstance->SetValue("StatementTypes", ECN::ECValue((int32_t)stype));
-        prop.push_back(stypePropInstance);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomPropertyRegistry::SetClass(DgnDbR db, Utf8CP schemaName, Utf8CP className) 
-    { 
-    SetClass(db.Schemas().GetECClass(schemaName, className));
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AutoHandledPropertiesCollection::HasCustomHandledProperty(ECN::ECPropertyCR prop) const
     {
-    if (nullptr != m_customHandledProperty)
-        return prop.IsDefined(*m_customHandledProperty);
+    if (nullptr == m_customHandledProperty)
+        {
+        BeAssert(false);
+        }
 
-    return getFakeCA(prop, *s_fakeCustomClass).IsValid();
+    return prop.IsDefined(*m_customHandledProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,11 +30,14 @@ bool DgnElement::IsCustomHandledProperty(Utf8CP propName) const
     if (nullptr == prop)
         return false;
         
-    auto customHandledProperty = GetDgnDb().Schemas().GetECClass("dgn", "CustomHandledProperty");
-    if (nullptr != customHandledProperty)
-        return prop->IsDefined(*customHandledProperty);
+    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    if (nullptr == customHandledProperty)
+        {
+        BeAssert(false);
+        return false;
+        }
 
-    return getFakeCA(*prop, *s_fakeCustomClass).IsValid();
+    return prop->IsDefined(*customHandledProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,8 +70,9 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
         printf("%s\n", eclass.GetName().c_str());
         printf("---------------------------\n");
     #endif
-    m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
-    m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
+    m_customHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    m_propertyStatementType = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "PropertyStatementType");
+    BeAssert(nullptr != m_customHandledProperty && nullptr != m_propertyStatementType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,10 +130,13 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
 ECSqlClassParams::StatementType AutoHandledPropertiesCollection::GetStatementType(ECN::ECPropertyCR prop) const
     {
     ECN::IECInstancePtr stype;
-    if (m_propertyStatementType != nullptr)
-        stype = prop.GetCustomAttribute(*m_propertyStatementType);
-    else
-        stype = getFakeCA(prop, *s_fakeStypeClass);
+    if (m_propertyStatementType == nullptr)
+        {
+        BeAssert(false);
+        return ECSqlClassParams::StatementType::All;
+        }
+
+    stype = prop.GetCustomAttribute(*m_propertyStatementType);
 
     if (!stype.IsValid())
         return ECSqlClassParams::StatementType::All;    // default = all statement types
