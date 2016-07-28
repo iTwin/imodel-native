@@ -180,7 +180,7 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url
     if ((status = url.getContainerAndBlob(containerName, blobPath)).isFailed())
         return status;
                                                             // Make sure container exists
-    AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Read);
+    AzureContainer container = initializeContainer(containerName, DataSourceMode::DataSourceMode_Write);
 
     azure::storage::cloud_block_blob    blockBlob = container.get_block_blob_reference(blobPath);
     if (blockBlob.is_valid() == false)
