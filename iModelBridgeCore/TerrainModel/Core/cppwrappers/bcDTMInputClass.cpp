@@ -2,7 +2,7 @@
 |
 //    $Source: Core/cppwrappers/bcDTMInputClass.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -54,7 +54,7 @@ DTMStatusInt BcDTM::AddPoint (DPoint3dCR point)
 DTMStatusInt BcDTM::AddPoints (DPoint3dCP ptsP, int numPts)
     {
     // Check arguments
-    if ( ptsP == NULL) return DTM_ERROR ;
+    if ( ptsP == nullptr) return DTM_ERROR ;
 
     // Store As Random Spots
 
@@ -128,7 +128,7 @@ DTMStatusInt BcDTM::AddLinearFeature (DTMFeatureType dtmFeatureType, DPoint3dCP 
     {
 
     // Check arguments
-    if ( ptsP == NULL) return DTM_ERROR ;
+    if ( ptsP == nullptr) return DTM_ERROR ;
 
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
         {
@@ -212,10 +212,10 @@ DTMStatusInt BcDTM::RemoveHull()
 //-----------------------------------------------------------------------
 DTMStatusInt BcDTM::JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* nJoinedFeatures, double tol)
     {
-    DTMStatusInt status;	
-    long	numFeat = 0, numJoined = 0 , numJoinUserTags = 0 ;
+    DTMStatusInt status;    
+    long    numFeat = 0, numJoined = 0 , numJoinUserTags = 0 ;
     DTMFeatureType dtmFeatureType = DTMFeatureType::None, joinedDtmFeatureType = DTMFeatureType::None;
-    DTM_JOIN_USER_TAGS *joinUserTagsP=NULL ;
+    DTM_JOIN_USER_TAGS *joinUserTagsP=nullptr ;
 
     if (dtmFeat == DTMFeatureType::Hole)
         {
@@ -229,7 +229,7 @@ DTMStatusInt BcDTM::JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* n
         }
     else
         {
-        return DTM_ERROR;
+        joinedDtmFeatureType = dtmFeatureType = dtmFeat;
         }
 
     if (SetMemoryAccess(DTMAccessMode::Write) != DTM_SUCCESS)
@@ -245,11 +245,11 @@ DTMStatusInt BcDTM::JoinFeatures (DTMFeatureType dtmFeat, int* nFeatures, int* n
         &numFeat,
         &numJoined,
         &joinUserTagsP,
-        &numJoinUserTags, true);
+        &numJoinUserTags, false);
 
     if (nFeatures) *nFeatures = numFeat;
     if (nJoinedFeatures) *nJoinedFeatures = numJoined;
-    if( joinUserTagsP != NULL ) free(&joinUserTagsP) ;
+    if( joinUserTagsP != nullptr ) free(&joinUserTagsP) ;
 
     return status;
     }

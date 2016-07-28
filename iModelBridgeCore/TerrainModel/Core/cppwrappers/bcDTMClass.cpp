@@ -1407,6 +1407,13 @@ bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR t
     return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
     }
 
+bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    DPoint3d endPoint;
+    endPoint.SumOf(testPoint, direction);
+    return IntersectVector(pointOnDTM, testPoint, endPoint);
+    }
+
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
@@ -1576,6 +1583,19 @@ DTMStatusInt BcDTM::SaveAsGeopakTinFile
     {
     // ToDo Translatation
     return((DTMStatusInt)bcdtmExport_geopakTriangulationFromDtmObject (GetTinHandle (), fileNameP));
+    }
+
+/*----------------------------------------------------------------------+
+|                                                                       |
+|   MathieuSt 4 april 2016                                              |
+|                                                                       |
++----------------------------------------------------------------------*/
+DTMStatusInt BcDTM::_ExportToGeopakTinFile 
+    (
+    WCharCP fileNameP
+    )
+    {
+    return SaveAsGeopakTinFile(fileNameP);
     }
 
 /*----------------------------------------------------------------------+
@@ -4027,6 +4047,17 @@ DTMStatusInt BcDTM::_GetBoundary(Bentley::TerrainModel::DTMPointArray& ret)
         bcMem_free (verticesP);
         }
     return status;
+    }
+
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Elenie.Godzaridis  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt BcDTM::_CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    DTMStatusInt retval = CalculateSlopeArea(flatArea, slopeArea, pts, numPoints);
+    progressiveCallback(retval,flatArea, slopeArea);
+    return retval;
     }
 
 /*---------------------------------------------------------------------------------------

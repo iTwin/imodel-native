@@ -46,8 +46,9 @@ Utf8CP cDefinition ( "Definition");
 Utf8CP cP ("P");
 Utf8CP cPnts ("Pnts");
 Utf8CP cFaces ("Faces");
-Utf8CP cF ("F");
-Utf8CP cUnits ("Units");
+Utf8CP cF("F");
+Utf8CP cI("i");
+Utf8CP cUnits("Units");
 Utf8CP cCoordinateSystem ("CoordinateSystem");
 Utf8CP cImperial ("Imperial");
 Utf8CP cMetric ("Metric");
@@ -900,14 +901,25 @@ void LandXMLImporter::ReadContour ()
                         {
                         if (m_pntRefs == NULL || m_secondPass)
                             {
-                            m_reader->Read ();  // ToDo needs work. Are these always 3?
+                            bool ignoreFace = false;
+                            Utf8String name;
                             WString value;
+                            while (m_reader->ReadToNextAttribute(&name, &value) == BEXML_Success)
+                                {
+                                if (name == cI)
+                                    ignoreFace = ConvertToInt(value) != 0;
+                                }
+
+                            m_reader->Read ();  // ToDo needs work. Are these always 3?
                             m_reader->GetCurrentNodeValue (value);
 
-                            int ptNums[3];
-                            ReadFaceIndexs (value, ptNums[0], ptNums[1], ptNums[2]);
+                            if (!ignoreFace)
+                                {
+                                int ptNums[3];
+                                ReadFaceIndexs(value, ptNums[0], ptNums[1], ptNums[2]);
 
-                            adjust.AddTriangle (ptNums, 3);
+                                adjust.AddTriangle(ptNums, 3);
+                                }
                             }
                         }
                     }

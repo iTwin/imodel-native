@@ -4383,7 +4383,12 @@ BENTLEYDTM_Public double bcdtmMath_calculateIncludedAngle(double X1,double Y1,do
  a = bcdtmMath_distance(X1,Y1,X3,Y3) ;
  b = bcdtmMath_distance(X1,Y1,X2,Y2) ;
  c = bcdtmMath_distance(X2,Y2,X3,Y3) ;
- return(acos((b*b+c*c-a*a)/(2.0*b*c))) ;
+
+ double value = (b*b + c*c - a*a) / (2.0*b*c);
+
+ if (value < -1) value = -1;
+ else if (value > 1) value = 1;
+ return acos(value);
 }
 /*-------------------------------------------------------------------+
 |                                                                    |

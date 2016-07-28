@@ -239,6 +239,8 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual Bentley::TerrainModel::IDTMVolume* _GetDTMVolume() override;
         virtual DTMStatusInt _GetBoundary (Bentley::TerrainModel::DTMPointArray& ret) override;
         virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints) override;
+        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override;
+		virtual DTMStatusInt _ExportToGeopakTinFile (WCharCP fileNameP) override;
         virtual DTMStatusInt _GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation) override;
         virtual bool _GetTransformation (TransformR transformation) override;
         // End IDTM Implementation
@@ -256,6 +258,8 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual DTMStatusInt _DrapeLinear (Bentley::TerrainModel::DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
 
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
+
+        virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
 
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
 

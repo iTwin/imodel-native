@@ -87,7 +87,6 @@ BcDTMPtr TriangulationPreserver::Finish ()
     // Add the void features to the TM.
     DTMFeatureEnumerator features (*m_stmDtm);
     bvector<DPoint3d> pts;
-
     // Add the Voids/Holes/Islands.
     for (const auto& feature : features)
         {
@@ -129,6 +128,16 @@ BcDTMPtr TriangulationPreserver::Finish ()
         // Adds the points, most should already be in the DTM, if if there isn't then the triangulation wont be the same.
         m_dtm->AddPoints (m_pts);
         m_dtm->Triangulate ();
+        }
+    else
+        {
+        BC_DTM_OBJ* dtmP = m_stmDtm->GetTinHandle();
+        long numPointsLeft = dtmP->numPoints;
+        for (int partition = 0; partition < dtmP->numPointPartitions; partition++)
+            {
+            m_dtm->AddPoints(dtmP->pointsPP[partition], numPointsLeft > dtmP->pointPartitionSize ? dtmP->pointPartitionSize : numPointsLeft);
+            numPointsLeft -= dtmP->pointPartitionSize;
+            }
         }
     if (0)
         {

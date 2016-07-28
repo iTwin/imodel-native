@@ -872,6 +872,44 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
+bool DTMMeshEnumerator::bcdtmList_isPointOnRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1) const
+/*
+** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
+*/
+    {
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+            {
+            if (m_regionMode == RegionMode::RegionUserTag)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                    return true;
+                }
+            else if (m_regionMode == RegionMode::RegionFeatureId)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                    return true;
+                }
+            else
+                return true;
+            }
+        clPtr = flistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const
 /*
 ** This Function Tests For A Void Triangle
@@ -885,9 +923,41 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
     /*
     ** If any Lines are Void Lines Then Triangle Is A Void triangle
     */
-    if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1)) return true;
-    if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2)) return true;
-    if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3)) return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1))
+        return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2))
+        return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3))
+        return true;
+
+    // If p1 is not on the region then this isn't in the region.
+    if (!bcdtmList_isPointOnRegionLineDtmObject(dtmP, P1))
+        return false;
+
+    // If this line is on the region but the otherway then it is on the outside.
+    if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2))
+        return false;
+
+    while (true)
+        {
+        int P4 = -1;
+        if ((P4 = bcdtmList_nextAntDtmObject(dtmP, P1, P2)) < 0)
+            return false;
+
+        if (P4 == P3)
+            return false;
+
+        if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P4))
+            return false;
+        if (bcdtmList_testForRegionLineDtmObject(dtmP, P4, P1))
+            {
+
+            return true;
+            }
+        P2 = P4;
+        }
+
+    // pick one of the lines, and go anticlockwise till we find the 
     return false;
     }
 
@@ -913,7 +983,7 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         if (pnt1 == -1)
             pnt1 = leftMostPnt;
         // Reset the pointers/counters.
-        m_polyface->PointIndex().resize(maxTriangles * 3);		
+        m_polyface->PointIndex().resize(maxTriangles * 3);
         faceP = m_polyface->PointIndex().data();
         numTriangles = 0;
         /*
@@ -1076,13 +1146,12 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
             if (nodeP->tPtr == nullPnt)
                 {
                 if (face < minTptrPnt) minTptrPnt = face;
-                else if (face > maxTptrPnt) maxTptrPnt = face;
+                if (face > maxTptrPnt) maxTptrPnt = face;
                 nodeP->tPtr = ++numMeshPts;
                 }
             }
         if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
 
-        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
         /*
         **                       Allocate Memory For Mesh Points
         */
