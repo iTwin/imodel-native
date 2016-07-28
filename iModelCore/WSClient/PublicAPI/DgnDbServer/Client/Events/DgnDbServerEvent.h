@@ -64,7 +64,6 @@ namespace DgnDbServerEvent
     +---------------+---------------+---------------+---------------+---------------+------*/
     struct Helper
         {
-
         DGNDBSERVERCLIENT_EXPORT static Utf8String GetEventNameFromEventType(DgnDbServerEventType eventType)
             {
             switch (eventType)
@@ -104,14 +103,11 @@ namespace DgnDbServerEvent
         public:
             DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEventType GetEventType() { return UnknownEventType; }
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic() { return ""; }
-
             DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId() { return ""; }
         };
     }
 
 typedef std::shared_ptr<struct DgnDbServerEvent::GenericEvent> DgnDbServerEventPtr;
-DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerEventPtr>, DgnDbServerEventCollection);
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventPtr, DgnDbServerEvent);
-DEFINE_TASK_TYPEDEFS(DgnDbServerEvent::DgnDbServerEventType, DgnDbServerEventType);
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

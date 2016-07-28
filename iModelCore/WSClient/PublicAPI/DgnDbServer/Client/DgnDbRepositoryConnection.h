@@ -37,6 +37,7 @@ DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
 DEFINE_TASK_TYPEDEFS(void, DgnDbServerCancelEvent);
+DEFINE_TASK_TYPEDEFS(Http::Response, DgnDbServerEventReponse);
 
 
 //=======================================================================================
@@ -144,7 +145,7 @@ private:
     DgnDbServerEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
-    Http::Response GetEventServiceResponse(bool longpolling = true, int numOfRetries = 3);
+    DgnDbServerEventReponseTaskPtr GetEventServiceResponse(bool longpolling = true, int numOfRetries = 3);
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;

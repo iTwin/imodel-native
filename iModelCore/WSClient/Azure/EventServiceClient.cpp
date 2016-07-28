@@ -29,8 +29,9 @@ EventServiceClient::EventServiceClient()
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
+                                                       Arvind.Venkateswaran   07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Http::Response EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
+AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     {
     char numBuffer[10];
     if (longPolling)
@@ -41,13 +42,18 @@ Http::Response EventServiceClient::MakeReceiveDeleteRequest(bool longPolling)
     Http::Request request(url.c_str(), "DELETE", nullptr);
     request.GetHeaders().Clear();
     request.GetHeaders().SetValue("Content-Length", "0");
-    //request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetValue("Content-Type", "application/atom+xml;type=entry;charset=utf-8");
     request.GetHeaders().SetAuthorization(m_token);
     request.SetTransferTimeoutSeconds(230);
-    m_ct = SimpleCancellationToken::Create ();
+    m_ct = SimpleCancellationToken::Create();
     request.SetCancellationToken(m_ct);
-    return request.Perform();
+    return request.PerformAsync()
+        ->Then<EventServiceResult>([=] (Http::Response& httpResponse)
+        {
+        if (httpResponse.IsSuccess())
+            return EventServiceResult::Success(httpResponse);
+        return EventServiceResult::Error(httpResponse);
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
