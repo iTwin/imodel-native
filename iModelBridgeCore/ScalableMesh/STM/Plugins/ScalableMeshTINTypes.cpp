@@ -14,6 +14,9 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Import/Plugin/DataTypeRegistry.h>
 
+#include "../Stores/SMStoreUtils.h"
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 
 

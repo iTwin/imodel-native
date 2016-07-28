@@ -55,7 +55,6 @@
 
 #include "ScalableMeshEditListener.h"
 #include "ScalableMeshStorage.h"
-#include "SMPointTileStore.h"
 #include "Stores\SMSQLiteStore.h"
 
 //#include <HGF3DExtent.h>

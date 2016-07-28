@@ -7,6 +7,8 @@
 #include <ImagePP/all/h/ISMStore.h>
 #include <Mtg/MtgStructs.h>
 
+#include "Stores/SMStoreUtils.h"
+
 class DTMGraphTileStore : public IScalableMeshDataStore<MTGGraph, Byte, Byte>
     {
     public:

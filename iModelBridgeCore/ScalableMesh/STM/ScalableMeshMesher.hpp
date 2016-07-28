@@ -1170,8 +1170,9 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         faceIndices.clear();
         }
 #endif
-    // *node->GetGraphPtr() = *meshGraphStitched;
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, node->GetGraphStore().GetPtr(), SMStoreDataType::Graph, (uint64_t)node->m_SMIndex));
+    
+    ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex));
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1984,9 +1985,7 @@ return true;
             CreateGraphFromIndexBuffer(/*node->GetGraphPtr()*/newGraphP, (const long*)meshP->GetFaceIndexes(), (int)meshP->GetNbFaceIndexes(), (int)nodePts.size(), componentPointsId, meshP->GetPoints());
             graphPtr->SetData(newGraphP);
             graphPtr->SetDirty();
-            
-            //node->SetGraphDirty();
-            //node->StoreGraph();
+
             vector<int> faceIndexes;
             const int*  indexList = meshP->GetFaceIndexes();
            for (int i = 0; i < meshP->GetNbFaceIndexes(); i+=3)

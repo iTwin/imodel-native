@@ -41,18 +41,7 @@ template <class EXTENT> class SMSQLiteFeatureTileStore : public SMPointTileStore
             }
 
     public:
-        // Don't need this
-        /*SMSQLiteIndiceTileStore(BENTLEY_NAMESPACE_NAME::WString filename, const ISMStore::AccessMode& accessMode)
-        {
-        m_smSQLiteFile = SMSQLiteFile::Create();
-        Utf8String filenameA;
-        BeStringUtilities::WCharToUtf8(filenameA, filename.c_str());
-        if (accessMode.m_HasCreateAccess)
-        m_smSQLiteFile->Create(filenameA.c_str());
-        else
-        m_smSQLiteFile->Open(filenameA.c_str());
-        }*/
-
+       
         SMSQLiteFeatureTileStore(SMSQLiteFilePtr file)
             {
             m_smSQLiteFile = file;

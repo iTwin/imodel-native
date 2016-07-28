@@ -182,7 +182,7 @@ $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  
 #   Build STM
 #-----------------------------------------------------------------------
 
-$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)IScalableMeshATP$(oext) : $(stmDir)IScalableMeshATP.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -276,9 +276,7 @@ $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderD
 
 $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.h ${MultiCompileDepends}
 
-$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h $(stmDir)SMPointTileStore.h ${MultiCompileDepends}
-
-$(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h ${MultiCompileDepends}
 
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
 

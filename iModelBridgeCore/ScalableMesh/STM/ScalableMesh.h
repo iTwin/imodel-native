@@ -47,9 +47,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "SMPointIndex.h"
 #include "SMMeshIndex.h"
-#include "SMPointTileStore.h"
 
-#include "SMStreamingTileStore.h"
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include "ScalableMeshMemoryPools.h"
@@ -188,21 +186,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
              
         friend struct IScalableMesh;        
         friend class auto_ptr<ScalableMesh>;
-        friend class ScalableMeshProgressiveQueryEngine;
-
-        typedef SMPointTileStore<INDEXPOINT, YProtPtExtentType >
-            TileStoreType;
-        
-        typedef SMStreamingPointTaggedTileStore<
-            INDEXPOINT,
-            YProtPtExtentType >        StreamingPointStoreType;
-        typedef SMStreamingPointTaggedTileStore<
-            int32_t,
-            YProtPtExtentType >        StreamingIndiceStoreType;
-        typedef SMStreamingPointTaggedTileStore<
-            DPoint2d,
-            YProtPtExtentType >        StreamingUVStoreType;
-
+        friend class ScalableMeshProgressiveQueryEngine;        
+                
         typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
                                         MeshIndexType;
         

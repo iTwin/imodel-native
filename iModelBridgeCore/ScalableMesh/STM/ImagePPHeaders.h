@@ -44,11 +44,3 @@
 //#include <RasterCore\RasterDEMFilters.h>
 //#include <RasterCore\msrastercore.h>
 
-
-#include "SMPointTileStore.h"
-
-#include "SMSQLitePointTileStore.h"
-#include "SMSQLiteTextureTileStore.h"
-
-#include "SMStreamingTileStore.h"
-#include "SMStreamingTextureTileStore.h"
