@@ -184,7 +184,7 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
         fprintf(f, "FileName, ConvertedThrough, TestedIn, FileOpeningStatus\n");
         }
     else
-        ASSERT_TRUE(false)<<"Error opening csv file";
+        ASSERT_TRUE(false) << "Error opening csv file";
 
     BeFileListIterator filesIterator(srcFilesPath, false);
     BeFileName dbName;
@@ -220,10 +220,16 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
             if (writeStatus)
                 fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
             else
+                {
                 fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", outputFilePath.GetFileNameAndExtension().c_str(), getCompatibilityStatusString(stat));
+                EXPECT_TRUE(false) << getCompatibilityStatusString(stat);
+                }
             }
         else
+            {
             fprintf(f, "%ls, DgnDb61-16Q2, DgnDb0601, %s\n", dbName.GetFileNameAndExtension().c_str(), "Error Copying File");
+            EXPECT_TRUE(false) << "copying file failed for:" << dbName.GetFileNameAndExtension().c_str();
+            }
         }
     fclose(f);
     }
