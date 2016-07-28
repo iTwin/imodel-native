@@ -261,7 +261,6 @@ void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, P
     DgnViewportP contextVp = context.GetViewport();
 
     ColorDef whiteColor = {255,255,255};
-    PointCloudClassificationSettings adjustedClassification;
     if (contextVp != NULL)
         {
         mediaColor = contextVp->GetBackgroundColor();
@@ -280,7 +279,7 @@ void PointCloudRenderer::ApplyClassification(PointCloudQueryBuffers& channels, P
         ColorDef blackColor = ColorDef::Black();
 
         // Take a copy of LasClassification, so that original classification is not altered. The color change will only be applied to display.
-        memcpy (&adjustedClassification, pClassifInfo, sizeof (PointCloudClassificationSettings));
+        PointCloudClassificationSettings adjustedClassification(*pClassifInfo);
 
         ColorDef color;
         for (int idxClassif = 0; idxClassif < CLASSIFICATION_COUNT; idxClassif++)
