@@ -1118,7 +1118,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECRelationshipConstraintId const& constraintId) const
     {
     CachedStatementPtr statement = nullptr;
-    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId, KeyProperties FROM ec_RelationshipConstraintClass WHERE ConstraintId=?"))
+    if (BE_SQLITE_OK != m_db.GetCachedStatement(statement, "SELECT ClassId FROM ec_RelationshipConstraintClass WHERE ConstraintId=?"))
         return ERROR;
 
     if (BE_SQLITE_OK != statement->BindId(1, constraintId))
@@ -1127,8 +1127,6 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
     while (statement->Step() == BE_SQLITE_ROW)
         {
         const ECClassId constraintClassId = statement->GetValueId<ECClassId>(0);
-        Utf8CP keyProperties = statement->IsColumnNull(1) ? nullptr : statement->GetValueText(1);
-
         ECClassCP constraintClass = GetECClass(ctx, constraintClassId);
         if (constraintClass == nullptr)
             return ERROR;
@@ -1143,12 +1141,6 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
         ECRelationshipConstraintClassP constraintClassObj = nullptr;
         if (ECObjectsStatus::Success != constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity))
             return ERROR;
-
-        if (keyProperties != nullptr)
-            {
-            if (SUCCESS != ECDbSchemaPersistenceHelper::DeserializeRelationshipKeyProperties(*constraintClassObj, keyProperties))
-                return ERROR;
-            }
         }
 
     return SUCCESS;

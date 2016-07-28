@@ -453,7 +453,7 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId const& 
 
     BeAssert(constraintId.IsValid());
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_RelationshipConstraintClass(ConstraintId,ClassId,KeyProperties) VALUES(?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_RelationshipConstraintClass(ConstraintId,ClassId) VALUES(?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -470,15 +470,6 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId const& 
 
         if (BE_SQLITE_OK != stmt->BindId(2, constraintClass.GetId()))
             return ERROR;
-
-        bvector<Utf8String> const& keyPropNames = constraintClassObj->GetKeys();
-        Utf8String keyPropJson;
-        if (!keyPropNames.empty())
-            {
-            ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(keyPropJson, keyPropNames);
-            if (BE_SQLITE_OK != stmt->BindText(3, keyPropJson.c_str(), Statement::MakeCopy::No))
-                return ERROR;
-            }
 
         if (BE_SQLITE_DONE != stmt->Step())
             return ERROR;

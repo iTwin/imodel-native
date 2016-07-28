@@ -390,8 +390,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE ec_RelationshipConstraintClass("
                            "Id INTEGER PRIMARY KEY,"
                            "ConstraintId INTEGER NOT NULL REFERENCES ec_RelationshipConstraint(Id) ON DELETE CASCADE,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "KeyProperties TEXT)");
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
