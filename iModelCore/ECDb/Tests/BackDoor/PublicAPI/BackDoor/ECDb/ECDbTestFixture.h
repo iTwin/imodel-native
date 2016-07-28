@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestFixture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbTests.h"
@@ -64,7 +64,7 @@ public:
     virtual void TearDown () override {}
 
     //! Initializes the test environment by setting up the schema read context and search dirs etc.
-    //! Gets implicitly called when calling CreateTestProject, too. Tests that don't use
+    //! Gets implicitly called when calling SetupECDb, too. Tests that don't use
     //! that method can call this method statically.
     static void Initialize();
     };
