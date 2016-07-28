@@ -107,7 +107,7 @@ struct PointAndTriPtIndicesBase
     int32_t*  m_indicesData;
     };
 
-typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISMPointDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISM3DPtDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>> ISMMTGGraphDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Byte>>     ISMTextureDataStorePtr;
@@ -160,7 +160,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
         virtual void Close () = 0;
                                         
-        virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
 

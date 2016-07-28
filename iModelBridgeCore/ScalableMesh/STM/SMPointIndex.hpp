@@ -712,7 +712,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Destro
         {        
         SMMemoryPool::GetInstance()->RemoveItem(m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex);
 
-        ISMPointDataStorePtr pointDataStore;
+        ISM3DPtDataStorePtr pointDataStore;
         bool result = GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader);
         assert(result == true);        
 
@@ -3984,7 +3984,7 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>>
                     
     if (!SMMemoryPool::GetInstance()->GetItem<POINT>(poolMemVectorItemPtr, m_pointsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Points, (uint64_t)m_SMIndex) && loadPts)
         {                          
-        ISMPointDataStorePtr pointDataStore;
+        ISM3DPtDataStorePtr pointDataStore;
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader);
         assert(result == true);        
 
