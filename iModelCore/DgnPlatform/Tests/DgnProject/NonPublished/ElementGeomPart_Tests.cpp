@@ -176,9 +176,9 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(1,stmt.GetValueInt(0));
+    ASSERT_EQ(1,(0xffffffffULL & stmt.GetValueInt64(0)));           // *** TRICKY: We are testing the low word, i.e., ignoring the briefcase id in the high word
     ASSERT_EQ(elementId.GetValue(), stmt.GetValueInt64(1));
-    ASSERT_EQ(existingPartId.GetValue(), (int64_t)stmt.GetValueInt(2));
+    ASSERT_EQ(existingPartId.GetValue(), stmt.GetValueInt64(2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -293,7 +293,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
     {
-    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite, false, true);
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
