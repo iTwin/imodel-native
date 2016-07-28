@@ -766,7 +766,7 @@ protected:
     //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
     //! You should then extract your subclass custom-handled properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    //! @note Don't forget override _GetProperty and _SetProperty to provide access to your custom-handled properties. This must be done even if you define special methods for them.
+    //! @note Don't forget to override #_GetProperty and #_SetProperty to provide access to your custom-handled properties. This must be done even if you define special methods for them.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
@@ -784,7 +784,7 @@ protected:
     //! @note If you override this method, you should bind your subclass custom-handled properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
     //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
-    //! @note Don't forget override _GetProperty and _SetProperty to provide access to your custom-handled properties. This must be done even if you define special methods for them.
+    //! @note Don't forget to override #_GetProperty and #_SetProperty to provide access to your custom-handled properties. This must be done even if you define special methods for them.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
 
     //! Override this method if your element needs to do additional Inserts into the database (for example,
@@ -1015,7 +1015,8 @@ protected:
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
-    DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
+    void ClearAllAppData(){m_appData.clear();}//< @private
+    
 
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
@@ -1284,7 +1285,7 @@ protected:
 
 public:
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
-    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
+    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box = ElementAlignedBox3d()): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
     Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
     Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
     Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; return *this;}
@@ -1346,7 +1347,7 @@ protected:
 
 public:
     Placement2d() : m_origin(DPoint2d::FromZero()) {}
-    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
+    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box = ElementAlignedBox2d()) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}

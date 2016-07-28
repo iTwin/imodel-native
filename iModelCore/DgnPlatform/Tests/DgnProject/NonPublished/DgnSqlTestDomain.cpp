@@ -50,12 +50,12 @@ static ICurvePrimitivePtr createBox (DPoint3dCR low, DPoint3dCR high)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, DgnCode elementCode)
+static void setUpElement(PhysicalElementR el, DgnModelR model, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, DgnCode elementCode)
     {
     el.SetCode(elementCode);
-    GeometryBuilderPtr builder = GeometryBuilder::Create(el, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(model, el.GetCategoryId(), origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
     builder->Append(curve);
-    StatusInt status = builder->SetGeometryStreamAndPlacement(el);
+    StatusInt status = builder->Finish(el);
     ASSERT_TRUE( SUCCESS == status );
     }
 
@@ -66,7 +66,7 @@ static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICu
 RobotElement::RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnCode elementCode)
     : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
-    setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(1,1,1)), elementCode);
+    setUpElement(*this, model, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(1,1,1)), elementCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,7 +76,7 @@ RobotElement::RobotElement(SpatialModelR model, DgnCategoryId categoryId, DPoint
 ObstacleElement::ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnCode elementCode)
     : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
-    setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode);
+    setUpElement(*this, model, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode);
     }
 
 /*---------------------------------------------------------------------------------**//**

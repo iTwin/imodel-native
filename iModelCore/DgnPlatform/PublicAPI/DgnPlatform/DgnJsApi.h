@@ -1001,13 +1001,13 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
             }
         }
 
-    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySourceP jgs)
+    BentleyStatus Finish (JsGeometrySourceP jgs)
         {
         DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jgs))
-        return m_builder->SetGeometryStreamAndPlacement(*jgs->m_el->ToGeometrySourceP());
+        return m_builder->Finish(*jgs->m_el->ToGeometrySourceP());
         }
 
-    BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}
+    BentleyStatus FinishPart (JsDgnGeometryPartP part) {return m_builder->Finish(*part->m_value);}
 
     void AppendCopyOfGeometry(JsGeometryBuilderP builder, JsPlacement3dP relativePlacement);
     void AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3dP relativePlacement);

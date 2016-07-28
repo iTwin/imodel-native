@@ -303,7 +303,7 @@ void PerformanceElement1::AddGeomtry()
         ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
     else
         ASSERT_TRUE(appendSolidPrimitive(*builder, 3.0, 1.5));
-    ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    ASSERT_EQ(SUCCESS, builder->Finish(*geomElem));
 
     ASSERT_TRUE(HasGeometry());
 }
@@ -320,7 +320,7 @@ void PerformanceElement1::ExtendGeometry()
     else
         ASSERT_TRUE(appendSolidPrimitive(*builder, 6.0, 3.0));
 
-    ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    ASSERT_EQ(SUCCESS, builder->Finish(*geomElem));
     ASSERT_TRUE(HasGeometry());
     }
 

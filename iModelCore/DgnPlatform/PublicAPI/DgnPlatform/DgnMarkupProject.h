@@ -342,8 +342,8 @@ protected:
 
     bool                    m_targetModelIsInSubjectView;
 
-    virtual void _SaveToSettings(JsonValueR) const override;
-    virtual void _RestoreFromSettings(JsonValueCR) override;
+    virtual void _SaveToSettings() const override;
+    virtual void _RestoreFromSettings() override;
     virtual void _DrawView(ViewContextR) override;
     virtual DPoint3d _GetOrigin() const override;
     virtual DVec3d _GetDelta() const override;
