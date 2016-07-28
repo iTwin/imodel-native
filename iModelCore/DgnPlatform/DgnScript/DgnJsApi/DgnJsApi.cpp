@@ -63,80 +63,6 @@ static DgnElementPtr createElementByClass(DgnModelR model, Utf8CP ecSqlClassName
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, JsDPoint3dP o, JsYawPitchRollAnglesP a)
-    {
-    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource() && o && a);
-    auto el = jsgs->m_el;
-
-#if defined (NOT_NOW)
-    GeometrySource3dCP source3d = el->ToGeometrySource3d();
-    if (nullptr != source3d)
-        m_builder = GeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
-    else
-        {
-        GeometrySource2dCP source2d = el->ToGeometrySource2d();
-        if (nullptr != source2d)
-            m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
-        }
-#else
-    // NEEDSWORK: Re-factor to mirror C++ api...
-    GeometrySourceCP source = el->ToGeometrySource();
-
-    if (nullptr == source)
-        return;
-
-    DgnModelPtr model = el->GetModel();
-
-    if (!model.IsValid())
-        return;
-
-    if (model->Is3d())
-        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), o->Get(), a->GetYawPitchRollAngles());
-    else
-        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees()));
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Earlin.Lutz                      03/16
-//---------------------------------------------------------------------------------------
-JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, DPoint3dCR o, YawPitchRollAnglesCR a)
-    {
-    DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource());
-    auto el = jsgs->m_el;
-
-#if defined (NOT_NOW)
-    GeometrySource3dCP source3d = el->ToGeometrySource3d();
-    if (nullptr != source3d)
-        m_builder = GeometryBuilder::Create(*source3d, o, a);
-    else
-        {
-        GeometrySource2dCP source2d = el->ToGeometrySource2d();
-        if (nullptr != source2d)
-            m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o.x, o.y), AngleInDegrees::FromDegrees(a.GetYaw ().Degrees ()));
-        }
-#else
-    // NEEDSWORK: Re-factor to mirror C++ api...
-    GeometrySourceCP source = el->ToGeometrySource();
-
-    if (nullptr == source)
-        return;
-
-    DgnModelPtr model = el->GetModel();
-
-    if (!model.IsValid())
-        return;
-
-    if (model->Is3d())
-        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), o, a);
-    else
-        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), DPoint2d::From(o.x, o.y), AngleInDegrees::FromDegrees(a.GetYaw().Degrees()));
-#endif
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      06/15
-//---------------------------------------------------------------------------------------
 void JsGeometryBuilder::AppendCopyOfGeometry(JsGeometryBuilderP jsbuilder, JsPlacement3dP jsrelativePlacement)
     {
     DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
@@ -213,7 +139,7 @@ JsGeometryP JsGeometricPrimitive::GetGeometry() const
         case GeometricPrimitive::GeometryType::CurvePrimitive:
             {
             ICurvePrimitivePtr curve = m_value->GetAsICurvePrimitive();
-            return JsCurvePrimitive::StronglyTypedJsCurvePrimitive (curve, true);
+            return JsCurvePrimitive::StronglyTypedJsCurvePrimitive(curve, true);
             }
         
         case GeometricPrimitive::GeometryType::CurveVector:
@@ -223,12 +149,15 @@ JsGeometryP JsGeometricPrimitive::GetGeometry() const
             }
         
         case GeometricPrimitive::GeometryType::Polyface:
-            return new JsPolyfaceMesh(m_value->GetAsPolyfaceHeader());
+            {
+            PolyfaceHeaderPtr mesh = m_value->GetAsPolyfaceHeader();
+            return new JsPolyfaceMesh(mesh);
+            }
 
         case GeometricPrimitive::GeometryType::SolidPrimitive:
             {
             ISolidPrimitivePtr solid = m_value->GetAsISolidPrimitive();
-            return JsSolidPrimitive::StronglyTypedJsSolidPrimitive (solid);
+            return JsSolidPrimitive::StronglyTypedJsSolidPrimitive(solid);
             }
         }
 

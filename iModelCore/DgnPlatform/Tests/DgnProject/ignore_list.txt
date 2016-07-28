@@ -83,3 +83,5 @@ CategoryTests.SubCategoryInvariants
 ElementGeomPartTests.ElementUsesGeometryParts
 TransactionManagerTests.UndoRedo
 ImportTest.ImportElementsWithAuthorities
+
+DgnScriptTest.TestEga
