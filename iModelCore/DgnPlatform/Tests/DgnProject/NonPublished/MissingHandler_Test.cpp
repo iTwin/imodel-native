@@ -308,7 +308,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     ASSERT_TRUE(cylinder.IsValid());
     builder->Append(*cylinder);
-    EXPECT_EQ(SUCCESS == builder->SetGeometryStreamAndPlacement(*pElem), ALLOWED(Restriction::SetGeometry));
+    EXPECT_EQ(SUCCESS == builder->Finish(*pElem), ALLOWED(Restriction::SetGeometry));
     }
 
 /*---------------------------------------------------------------------------------**//**

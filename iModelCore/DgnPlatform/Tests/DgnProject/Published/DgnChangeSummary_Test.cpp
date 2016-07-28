@@ -131,7 +131,7 @@ void DgnChangeSummaryTestFixture::InsertFloor(int iFloor)
 
             GeometryBuilderPtr builder = GeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
             builder->Append(*geomPtr);
-            BentleyStatus status = builder->SetGeometryStreamAndPlacement(*physicalElementPtr);
+            BentleyStatus status = builder->Finish(*physicalElementPtr);
             BeAssert(status == SUCCESS);
 
             m_testDb->Elements().Insert(*physicalElementPtr);

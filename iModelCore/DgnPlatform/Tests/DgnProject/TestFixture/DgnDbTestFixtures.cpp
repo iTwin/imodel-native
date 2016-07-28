@@ -242,7 +242,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->Finish(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -269,7 +269,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
     if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->Finish(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();

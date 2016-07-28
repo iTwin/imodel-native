@@ -188,7 +188,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCa
     DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
     GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
-    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*testElement);
+    BentleyStatus status = builder->Finish(*testElement);
     BeAssert(status == SUCCESS);
 
     DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();

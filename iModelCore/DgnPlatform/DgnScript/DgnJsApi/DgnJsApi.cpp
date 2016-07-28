@@ -68,6 +68,7 @@ JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, JsDPoint3dP o, JsYa
     DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource() && o && a);
     auto el = jsgs->m_el;
 
+#if defined (NOT_NOW)
     GeometrySource3dCP source3d = el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o->Get (), a->GetYawPitchRollAngles ());
@@ -77,6 +78,23 @@ JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, JsDPoint3dP o, JsYa
         if (nullptr != source2d)
             m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
         }
+#else
+    // NEEDSWORK: Re-factor to mirror C++ api...
+    GeometrySourceCP source = el->ToGeometrySource();
+
+    if (nullptr == source)
+        return;
+
+    DgnModelPtr model = el->GetModel();
+
+    if (!model.IsValid())
+        return;
+
+    if (model->Is3d())
+        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), o->Get(), a->GetYawPitchRollAngles());
+    else
+        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees()));
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,6 +105,7 @@ JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, DPoint3dCR o, YawPi
     DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jsgs) && jsgs->m_el->ToGeometrySource());
     auto el = jsgs->m_el;
 
+#if defined (NOT_NOW)
     GeometrySource3dCP source3d = el->ToGeometrySource3d();
     if (nullptr != source3d)
         m_builder = GeometryBuilder::Create(*source3d, o, a);
@@ -96,6 +115,23 @@ JsGeometryBuilder::JsGeometryBuilder(JsGeometrySourceP jsgs, DPoint3dCR o, YawPi
         if (nullptr != source2d)
             m_builder = GeometryBuilder::Create(*source2d, DPoint2d::From(o.x, o.y), AngleInDegrees::FromDegrees(a.GetYaw ().Degrees ()));
         }
+#else
+    // NEEDSWORK: Re-factor to mirror C++ api...
+    GeometrySourceCP source = el->ToGeometrySource();
+
+    if (nullptr == source)
+        return;
+
+    DgnModelPtr model = el->GetModel();
+
+    if (!model.IsValid())
+        return;
+
+    if (model->Is3d())
+        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), o, a);
+    else
+        m_builder = GeometryBuilder::Create(*model, source->GetCategoryId(), DPoint2d::From(o.x, o.y), AngleInDegrees::FromDegrees(a.GetYaw().Degrees()));
+#endif
     }
 
 //---------------------------------------------------------------------------------------
