@@ -13,6 +13,80 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    07/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3730::_Upgrade(ECDbCR ecdb) const
+    {
+    //Get ECSchemaId of MetaSchema
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id FROM ec_Schema WHERE Name='MetaSchema'"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Select ECSchemaId for MetaSchema ECSchema failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (BE_SQLITE_ROW != stmt.Step())
+        {
+        LOG.error("ECDb profile upgrade failed: Did not find MetaSchema ECSchema in the table ec_Schema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    const ECSchemaId metaSchemaId = stmt.GetValueId<ECSchemaId>(0);
+    Utf8String metaSchemaIdStr = metaSchemaId.ToString();
+
+    if (BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.error("ECDb profile upgrade failed: Found more than one entries for the MetaSchema ECSchema in ec_Schema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stmt.Finalize();
+
+    //Change ECEnumeration MetaSchema.ECCustomAttributeContainerType from non-strict to strict
+    Utf8String sql;
+    sql.Sprintf("UPDATE ec_Enumeration SET IsStrict=%d WHERE Name='ECCustomAttributeContainerType' AND SchemaId=%s",
+                DbSchemaPersistenceManager::BoolToSqlInt(true), metaSchemaIdStr.c_str());
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating ECEnumeration 'MetaSchema.ECCustomAttributeContainerType' from non-strict to strict failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.error("ECDb profile upgrade failed: Updating ECEnumeration 'MetaSchema.ECCustomAttributeContainerType' from non-strict to strict failed. SQL statement didn't affect a single row.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stmt.Finalize();
+
+    //Change ECRelationshipClassConstraint MetaSchema.ClassOwnsLocalProperties - Target from polymorphic to non-polymorphic
+    sql.Sprintf("UPDATE ec_RelationshipConstraint SET IsPolymorphic=%d WHERE RelationshipEnd=%d AND RelationshipClassId IN "
+                 "(SELECT Id FROM ec_Class WHERE Name='ClassOwnsLocalProperties' AND SchemaId=%s)",
+                DbSchemaPersistenceManager::BoolToSqlInt(false), (int) ECRelationshipEnd_Target, metaSchemaIdStr.c_str());
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.errorv("ECDb profile upgrade failed: Updating ECRelationshipClassConstraint 'MetaSchema.ClassOwnsLocalProperties [Target]' from polymorphic to non-polymorphic failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (ecdb.GetModifiedRowCount() != 1)
+        {
+        LOG.error("ECDb profile upgrade failed: Updating ECRelationshipClassConstraint 'MetaSchema.ClassOwnsLocalProperties [Target]' from polymorphic to non-polymorphic failed. SQL statement didn't affect a single row.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Updated ECEnumeration 'MetaSchema.ECCustomAttributeContainerType' from non-strict to strict and "
+             "ECRelationshipClassConstraint 'MetaSchema.ClassOwnsLocalProperties [Target]' from polymorphic to non-polymorphic.");
+    return BE_SQLITE_OK;
+    }
+
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3720::AddVirtualECClassIdToTableWhichDoesNotHaveIt(ECDbCR ecdb)
