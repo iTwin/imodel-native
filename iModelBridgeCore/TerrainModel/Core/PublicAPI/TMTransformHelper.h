@@ -704,11 +704,12 @@ struct TMTransformHelper : RefCountedBase
             // Need to get the transform between dtm and source and then clone and transform dtm.
             BcDTMPtr newDtm = dtm.Clone();
 
+            Transform convertTrsf;
             Transform transformInv;
-            transformInv.inverseOf (&trsf);
+            transformInv.inverseOf(&m_transform);
+            convertTrsf.productOf(&trsf, &transformInv);
 
-            newDtm->Transform (transformInv);
-            return newDtm;
+            newDtm->Transform(convertTrsf);
             }
 #ifdef ToDo
         struct PFTransformCallbackWrapper
