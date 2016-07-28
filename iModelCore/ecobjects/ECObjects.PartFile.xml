@@ -52,7 +52,6 @@
     <Part Name="PublicAPI" BentleyBuildMakeFile="ecobjects.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ECObjects" />
-            <PublicAPI Domain="ECPresentation" />
             <PublicAPI Domain="ECPresentationRules" />
             <PublicAPI Domain="ECUnits" />
         </Bindings>
