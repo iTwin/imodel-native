@@ -38,14 +38,14 @@ void ActivitySemaphore::increment(void)
 {
     std::unique_lock<std::mutex> lock(mutex);
 
-    setCounter(getCounter() + 1);
+    ++counter;
 }
 
 bool ActivitySemaphore::decrement(void)
 {
     std::unique_lock<std::mutex> lock(mutex);
 
-    setCounter(getCounter() - 1);
+    --counter;
 
     if(counter > 0)
     {

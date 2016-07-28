@@ -3,11 +3,21 @@
 
 #include "DataSourceManagerTest.h"
 #include "DataSourceAzure.h"
+#include "DataSourceStatus.h"
+#include "include\DataSourceManagerTest.h"
 
 typedef    unsigned long        TestValue;
 
 
-DataSourceStatus DataSourceManagerTest::testDataSources(void)
+CLOUD_EXPORT DataSourceManagerTest::DataSourceManagerTest(void)
+{
+}
+
+CLOUD_EXPORT DataSourceManagerTest::~DataSourceManagerTest(void)
+{
+}
+
+CLOUD_EXPORT DataSourceStatus DataSourceManagerTest::testDataSources(void)
 {
     DataSourceStatus    status;
 
@@ -182,10 +192,9 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
                                                             // Time I/O operation timeouts for threading
     dataSourceAzure->setTimeout(DataSource::Timeout(100000));
 
-
                                                             // Run basic write/read test
-//    if ((status = testBasicWriteRead(dataSourceAzure, DataSourceURL(L"testcontainer/testblob"), testDataSize)).isFailed())
-//        return status;
+    if ((status = testBasicWriteRead(dataSourceAzure, DataSourceURL(L"testcontainer/testblob"), testDataSize)).isFailed())
+        return status;
 
                                                             // Create an account for a local file cache
 
