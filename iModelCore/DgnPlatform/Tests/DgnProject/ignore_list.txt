@@ -27,10 +27,10 @@ DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
-ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
+ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does not element import aspects
 TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
-DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 
