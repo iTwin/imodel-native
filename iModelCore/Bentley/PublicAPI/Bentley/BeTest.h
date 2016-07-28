@@ -160,6 +160,9 @@ public:
     BENTLEYDLL_EXPORT void GetFrameworkSqlangFiles(BeFileName& path);
     };
 
+//! Query if BeTest is running
+BENTLEYDLL_EXPORT static bool IsInitialized();
+
 //! Get the test harness host
 BENTLEYDLL_EXPORT static Host&  GetHost ();
 
