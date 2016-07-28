@@ -1398,31 +1398,49 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Http::Response DgnDbRepositoryConnection::GetEventServiceResponse
+DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceResponse
 (
 bool longpolling,
 int numOfRetries
 )
     {
-    Http::Response response = m_eventServiceClient->MakeReceiveDeleteRequest(longpolling);
-    HttpStatus status = response.GetHttpStatus();
-    if (status == HttpStatus::OK || status == HttpStatus::NoContent)
-        return response;
-    else if (status == HttpStatus::Unauthorized && numOfRetries > 0)
+    return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
+        ->Then<DgnDbServerEventReponseResult>([=] (const EventServiceResult& result)
         {
-        //Retry logic for getting an event
-        if (SetEventSASToken())
-            m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
-
-        return GetEventServiceResponse(longpolling, numOfRetries--);
-        }
-
-    return response;
+        if (result.IsSuccess())
+            {
+            Http::Response response = result.GetValue();
+            HttpStatus status = response.GetHttpStatus();
+            if (status == HttpStatus::OK)
+                {
+                return DgnDbServerEventReponseResult::Success(response);
+                }
+            else if (status == HttpStatus::NoContent)
+                {
+                return DgnDbServerEventReponseResult::Error(DgnDbServerError::Id::NoEventsFound);
+                }
+            else
+                {
+                return DgnDbServerEventReponseResult::Error(DgnDbServerError::Id::InternalServerError);
+                }
+            //Ignoring retry for now
+            //else if (status == HttpStatus::Unauthorized && numOfRetries > 0)
+            //    {
+            //        //Retry logic for getting an event
+            //        if (SetEventSASToken())
+            //            m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
+            //        return GetEventServiceResponse(longpolling, numOfRetries--);
+            //    }
+            }
+        else
+            {
+            return DgnDbServerEventReponseResult::Error(DgnDbServerError(result.GetError()));
+            }
+        });
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-// TODO - Add async and handle cancellation
+//@bsimethod									Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventTaskPtr DgnDbRepositoryConnection::GetEvent
 (
@@ -1432,20 +1450,23 @@ ICancellationTokenPtr cancellationToken
     {
     if (m_eventSubscription == nullptr)
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
-    
-    Http::Response response = GetEventServiceResponse(longPolling);
 
-    if (HttpStatus::NoContent == response.GetHttpStatus())
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
-    
-    if (HttpStatus::OK != response.GetHttpStatus())
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InternalServerError));
-
-    DgnDbServerEventPtr ptr = DgnDbServerEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
-    if (ptr == nullptr)
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound));
-
-    return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Success(ptr));
+    return GetEventServiceResponse()->Then<DgnDbServerEventResult>
+        ([=] (DgnDbServerEventReponseResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            Http::Response response = result.GetValue();
+            DgnDbServerEventPtr ptr = DgnDbServerEventParser::ParseEvent(response.GetHeaders().GetContentType(), response.GetBody().AsString());
+            if (ptr == nullptr)
+                return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
+            return DgnDbServerEventResult::Success(ptr);
+            }
+        else
+            {
+            return DgnDbServerEventResult::Error(result.GetError());
+            }
+        });
     }
 
 //---------------------------------------------------------------------------------------

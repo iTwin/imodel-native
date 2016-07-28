@@ -11,10 +11,13 @@
 #include "../Client/WebServicesClient.h"
 #include <BeHttp/HttpError.h>
 #include <BeHttp/HttpResponse.h>
+#include <Bentley/Tasks/AsyncResult.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_HTTP
+
+typedef AsyncResult<Http::Response, HttpError> EventServiceResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jeehwan.cho   05/2016
@@ -29,7 +32,7 @@ struct EventServiceClient
 
     public:
         EventServiceClient(); //Need a default constructor for DgnDbClientRepository
-        WSCLIENT_EXPORT Http::Response MakeReceiveDeleteRequest(bool longPolling = true);
+        WSCLIENT_EXPORT AsyncTaskPtr<EventServiceResult> MakeReceiveDeleteRequest(bool longPolling = true);
         WSCLIENT_EXPORT EventServiceClient(Utf8StringCR baseAddress, Utf8StringCR repoId, Utf8StringCR userId);
         WSCLIENT_EXPORT void UpdateSASToken(Utf8StringCR sasToken);
         WSCLIENT_EXPORT void CancelRequest();
