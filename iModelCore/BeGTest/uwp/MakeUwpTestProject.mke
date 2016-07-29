@@ -110,6 +110,7 @@ always:
     >$(tmp)deliverables.list
     $[@subst $(collectionAssetsDir) "" $[@wildcard $(collectionAssetsDir)*]]
     $[@subst $(collectionAssembliesDir) "" $[@wildcard $(collectionAssembliesDir)*]]
+    C:/VisualStudio/14/Common7/IDE/CommonExtensions/Microsoft/TestWindow/Microsoft.VisualStudio.TestPlatform.Client.dll
     <
     $(baseDir)AddAssetReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)deliverables.list
     CopyWithSymlinks.py $(collectionAssetsDir) $(projectDir)
@@ -136,7 +137,7 @@ DLM_NO_SIGN         = 1
 DLM_NO_DEF          = 1
 DLM_NO_DLS          = 1
 DLM_NOENTRY         = 0
-LINKER_LIBRARIES   =   $[@wildcard $(collectionLibsDir)*$(libext)]
+LINKER_LIBRARIES    = $[@wildcard $(collectionLibsDir)*$(libext)]
 
 %include dlmlink.mki
 
@@ -162,7 +163,11 @@ $(projectDir)VendorApi : $(BuildContext)VendorApi
 # Build
 #--------------------------------------------------------------------------------------
 MSBuildExe = msbuild.exe
-MSBuildArgs = \/verbosity:Normal \/target:Build
+MSBuildArgs = \
+    \/verbosity:Normal \
+    \/target:Build \
+    $[@addprefix \/property:, $(MSBuildProperties)]
+MSBuildProperties = Platform=x86
 
 %if !defined (NDEBUG)
     MSBuildProperties + Configuration=Debug

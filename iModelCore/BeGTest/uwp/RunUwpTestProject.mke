@@ -26,5 +26,5 @@ TestLibrary = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/$(ConfigDir)/BeTestTest
 
 always:
     pushd $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/
-    MSTest.exe \/testcontainer:$(TestLibrary)
+    vstest.console.exe ...
     popd
