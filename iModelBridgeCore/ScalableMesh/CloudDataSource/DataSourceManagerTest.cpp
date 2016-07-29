@@ -59,13 +59,29 @@ DataSourceStatus DataSourceManagerTest::testBasicWriteRead(DataSource *dataSourc
             bufferSource[t] = t;
         }
                                                             // Write some data and close
-        dataSource->open(url, DataSourceMode_Write);
-        dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferSource), bufferSize);
-        dataSource->close();
+        status = dataSource->open(url, DataSourceMode_Write);
+        if (status.isFailed())
+            return status;
+
+        status = dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferSource), bufferSize);
+        if (status.isFailed())
+            return status;
+
+        status = dataSource->close();
+        if (status.isFailed())
+            return status;
                                                             // Read back data and close
-        dataSource->open(url, DataSourceMode_Read);
-        dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize, readSize, bufferSize);
-        dataSource->close();
+        status = dataSource->open(url, DataSourceMode_Read);
+        if (status.isFailed())
+            return status;
+
+        status = dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize, readSize, bufferSize);
+        if (status.isFailed())
+            return status;
+
+        status = dataSource->close();
+        if (status.isFailed())
+            return status;
 
                                                             // Verify dest buffer contents
         for (unsigned int t = 0; t < numTestValues; t++)
@@ -109,7 +125,7 @@ DataSourceStatus DataSourceManagerTest::testBasicRead(DataSource * dataSource, c
         if ((status = dataSource->open(url, DataSourceMode_Read)).isFailed())
             throw status;
 
-        if ((status = dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize, readSize)).isFailed())
+        if ((status = dataSource->read(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferDest), bufferSize, readSize, dataSize)).isFailed())
             throw status;
 
         if ((status = dataSource->close()).isFailed())
@@ -205,7 +221,9 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
     if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"FileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
-    accountAzure->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+//    accountAzure->setPrefixPath(DataSourceURL(L"testcontainer"));
+    accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
+
                                                             // Set up local file based caching
     accountAzure->setCaching(*accountCaching, DataSourceURL());
                                                             // Enable caching for this DataSource
