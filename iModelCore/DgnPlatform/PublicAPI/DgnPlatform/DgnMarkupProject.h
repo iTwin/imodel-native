@@ -356,7 +356,7 @@ protected:
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
     // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
-    virtual AxisAlignedBox3d _GetViewedExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     virtual ColorDef _GetBackgroundColor() const override;
     virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
     virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...

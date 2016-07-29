@@ -9,42 +9,46 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
-static Utf8CP VIEW_SETTING_Area2d                = "area2d";
-static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
-static Utf8CP VIEW_SETTING_CameraAngle           = "cameraAngle";
-static Utf8CP VIEW_SETTING_CameraFocalLength     = "cameraFocalLength";
-static Utf8CP VIEW_SETTING_CameraPosition        = "cameraPosition";
-static Utf8CP VIEW_SETTING_Delta                 = "delta";
-static Utf8CP VIEW_SETTING_Flags                 = "flags";
-static Utf8CP VIEW_SETTING_IsCameraOn            = "isCameraOn";
-static Utf8CP VIEW_SETTING_Categories            = "categories";
-static Utf8CP VIEW_SETTING_Models                = "models";
-static Utf8CP VIEW_SETTING_Origin                = "origin";
-static Utf8CP VIEW_SETTING_RotAngle              = "rotAngle";
-static Utf8CP VIEW_SETTING_Rotation              = "rotation";
-static Utf8CP VIEW_SETTING_SubCategories         = "subCategories";
-static Utf8CP VIEW_SubCategoryId                 = "subCategoryId";
+namespace ViewJson
+{
+    static Utf8CP VIEW_SETTING_Area2d()            {return "area2d";}
+    static Utf8CP VIEW_SETTING_BackgroundColor()   {return "bgColor";}
+    static Utf8CP VIEW_SETTING_CameraAngle()       {return "cameraAngle";}
+    static Utf8CP VIEW_SETTING_CameraFocalLength() {return "cameraFocalLength";}
+    static Utf8CP VIEW_SETTING_CameraPosition()    {return "cameraPosition";}
+    static Utf8CP VIEW_SETTING_Delta()             {return "delta";}
+    static Utf8CP VIEW_SETTING_Flags()             {return "flags";}
+    static Utf8CP VIEW_SETTING_IsCameraOn()        {return "isCameraOn";}
+    static Utf8CP VIEW_SETTING_Categories()        {return "categories";}
+    static Utf8CP VIEW_SETTING_Models()            {return "models";}
+    static Utf8CP VIEW_SETTING_Origin()            {return "origin";}
+    static Utf8CP VIEW_SETTING_RotAngle()          {return "rotAngle";}
+    static Utf8CP VIEW_SETTING_Rotation()          {return "rotation";}
+    static Utf8CP VIEW_SETTING_SubCategories()     {return "subCategories";}
+    static Utf8CP VIEW_SubCategoryId()             {return "subCategoryId";}
+    static Utf8CP VIEWFLAG_construction()          {return "construct";}
+    static Utf8CP VIEWFLAG_noText()                {return "noText";}
+    static Utf8CP VIEWFLAG_noDimension()           {return "noDim";}
+    static Utf8CP VIEWFLAG_noPattern()             {return "noPattern";}
+    static Utf8CP VIEWFLAG_noWeight()              {return "noWeight";}
+    static Utf8CP VIEWFLAG_noStyle()               {return "noStyle";}
+    static Utf8CP VIEWFLAG_noTransparency()        {return "noTransp";}
+    static Utf8CP VIEWFLAG_fill()                  {return "fill";}
+    static Utf8CP VIEWFLAG_grid()                  {return "grid";}
+    static Utf8CP VIEWFLAG_acs()                   {return "acs";}
+    static Utf8CP VIEWFLAG_useBgImage()            {return "noBgImage";}
+    static Utf8CP VIEWFLAG_noTexture()             {return "noTexture";}
+    static Utf8CP VIEWFLAG_noMaterial()            {return "noMaterial";}
+    static Utf8CP VIEWFLAG_noSceneLight()          {return "noSceneLight";}
+    static Utf8CP VIEWFLAG_visibleEdges()          {return "visEdges";}
+    static Utf8CP VIEWFLAG_hiddenEdges()           {return "hidEdges";}
+    static Utf8CP VIEWFLAG_shadows()               {return "shadows";}
+    static Utf8CP VIEWFLAG_noClipVolume()          {return "noClipVol";}
+    static Utf8CP VIEWFLAG_renderMode()            {return "renderMode";}
+    static Utf8CP VIEWFLAG_ignoreLighting()        {return "ignoreLighting";}
+};
 
-static Utf8CP VIEWFLAG_construction              = "construct";
-static Utf8CP VIEWFLAG_noText                    = "noText";
-static Utf8CP VIEWFLAG_noDimension               = "noDim";
-static Utf8CP VIEWFLAG_noPattern                 = "noPattern";
-static Utf8CP VIEWFLAG_noWeight                  = "noWeight";
-static Utf8CP VIEWFLAG_noStyle                   = "noStyle";
-static Utf8CP VIEWFLAG_noTransparency            = "noTransp";
-static Utf8CP VIEWFLAG_fill                      = "fill";
-static Utf8CP VIEWFLAG_grid                      = "grid";
-static Utf8CP VIEWFLAG_acs                       = "acs";
-static Utf8CP VIEWFLAG_useBgImage                = "noBgImage";
-static Utf8CP VIEWFLAG_noTexture                 = "noTexture";
-static Utf8CP VIEWFLAG_noMaterial                = "noMaterial";
-static Utf8CP VIEWFLAG_noSceneLight              = "noSceneLight";
-static Utf8CP VIEWFLAG_visibleEdges              = "visEdges";
-static Utf8CP VIEWFLAG_hiddenEdges               = "hidEdges";
-static Utf8CP VIEWFLAG_shadows                   = "shadows";
-static Utf8CP VIEWFLAG_noClipVolume              = "noClipVol";
-static Utf8CP VIEWFLAG_renderMode                = "renderMode";
-static Utf8CP VIEWFLAG_ignoreLighting            = "ignoreLighting";
+using namespace ViewJson;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
@@ -53,17 +57,17 @@ void ViewFlags::FromBaseJson(JsonValueCR val)
     {
     memset(this, 0, sizeof(*this));
 
-    constructions = val[VIEWFLAG_construction].asBool();
-    text = !val[VIEWFLAG_noText].asBool();
-    dimensions = !val[VIEWFLAG_noDimension].asBool();
-    patterns = !val[VIEWFLAG_noPattern].asBool();
-    weights = !val[VIEWFLAG_noWeight].asBool();
-    styles = !val[VIEWFLAG_noStyle].asBool();
-    transparency = !val[VIEWFLAG_noTransparency].asBool();
-    fill = val[VIEWFLAG_fill].asBool();
-    grid = val[VIEWFLAG_grid].asBool();
-    acs = val[VIEWFLAG_acs].asBool();
-    bgImage = val[VIEWFLAG_useBgImage].asBool();
+    constructions = val[VIEWFLAG_construction()].asBool();
+    text = !val[VIEWFLAG_noText()].asBool();
+    dimensions = !val[VIEWFLAG_noDimension()].asBool();
+    patterns = !val[VIEWFLAG_noPattern()].asBool();
+    weights = !val[VIEWFLAG_noWeight()].asBool();
+    styles = !val[VIEWFLAG_noStyle()].asBool();
+    transparency = !val[VIEWFLAG_noTransparency()].asBool();
+    fill = val[VIEWFLAG_fill()].asBool();
+    grid = val[VIEWFLAG_grid()].asBool();
+    acs = val[VIEWFLAG_acs()].asBool();
+    bgImage = val[VIEWFLAG_useBgImage()].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,16 +75,16 @@ void ViewFlags::FromBaseJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::From3dJson(JsonValueCR val)
     {
-    textures = !val[VIEWFLAG_noTexture].asBool();
-    materials = !val[VIEWFLAG_noMaterial].asBool();
-    sceneLights = val[VIEWFLAG_noSceneLight].asBool();
-    visibleEdges = val[VIEWFLAG_visibleEdges].asBool();
-    hiddenEdges = val[VIEWFLAG_hiddenEdges].asBool();
-    shadows = val[VIEWFLAG_shadows].asBool();
-    noClipVolume = val[VIEWFLAG_noClipVolume].asBool();
-    ignoreLighting = val[VIEWFLAG_ignoreLighting].asBool();
+    textures = !val[VIEWFLAG_noTexture()].asBool();
+    materials = !val[VIEWFLAG_noMaterial()].asBool();
+    sceneLights = val[VIEWFLAG_noSceneLight()].asBool();
+    visibleEdges = val[VIEWFLAG_visibleEdges()].asBool();
+    hiddenEdges = val[VIEWFLAG_hiddenEdges()].asBool();
+    shadows = val[VIEWFLAG_shadows()].asBool();
+    noClipVolume = val[VIEWFLAG_noClipVolume()].asBool();
+    ignoreLighting = val[VIEWFLAG_ignoreLighting()].asBool();
 
-    m_renderMode = RenderMode(val[VIEWFLAG_renderMode].asUInt());
+    m_renderMode = RenderMode(val[VIEWFLAG_renderMode()].asUInt());
 
 #if defined (TEST_FORCE_VIEW_SMOOTH_SHADE)
     static bool s_forceSmooth=true;
@@ -94,17 +98,17 @@ void ViewFlags::From3dJson(JsonValueCR val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::ToBaseJson(JsonValueR val) const
     {
-    if (constructions) val[VIEWFLAG_construction] = true;
-    if (!text) val[VIEWFLAG_noText] = true;
-    if (!dimensions) val[VIEWFLAG_noDimension] = true;
-    if (!patterns) val[VIEWFLAG_noPattern] = true;
-    if (!weights) val[VIEWFLAG_noWeight] = true;
-    if (!styles) val[VIEWFLAG_noStyle] = true;
-    if (!transparency) val[VIEWFLAG_noTransparency] = true;
-    if (fill) val[VIEWFLAG_fill] = true;
-    if (grid) val[VIEWFLAG_grid] = true;
-    if (acs) val[VIEWFLAG_acs] = true;
-    if (bgImage) val[VIEWFLAG_useBgImage] = true;
+    if (constructions) val[VIEWFLAG_construction()] = true;
+    if (!text) val[VIEWFLAG_noText()] = true;
+    if (!dimensions) val[VIEWFLAG_noDimension()] = true;
+    if (!patterns) val[VIEWFLAG_noPattern()] = true;
+    if (!weights) val[VIEWFLAG_noWeight()] = true;
+    if (!styles) val[VIEWFLAG_noStyle()] = true;
+    if (!transparency) val[VIEWFLAG_noTransparency()] = true;
+    if (fill) val[VIEWFLAG_fill()] = true;
+    if (grid) val[VIEWFLAG_grid()] = true;
+    if (acs) val[VIEWFLAG_acs()] = true;
+    if (bgImage) val[VIEWFLAG_useBgImage()] = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,16 +116,16 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::To3dJson(JsonValueR val) const
     {
-    if (!textures) val[VIEWFLAG_noTexture] = true;
-    if (!materials) val[VIEWFLAG_noMaterial] = true;
-    if (!sceneLights) val[VIEWFLAG_noSceneLight] = true;
-    if (visibleEdges) val[VIEWFLAG_visibleEdges] = true;
-    if (hiddenEdges) val[VIEWFLAG_hiddenEdges] = true;
-    if (shadows) val[VIEWFLAG_shadows] = true;
-    if (noClipVolume) val[VIEWFLAG_noClipVolume] = true;
-    if (ignoreLighting) val[VIEWFLAG_ignoreLighting] = true;
+    if (!textures) val[VIEWFLAG_noTexture()] = true;
+    if (!materials) val[VIEWFLAG_noMaterial()] = true;
+    if (!sceneLights) val[VIEWFLAG_noSceneLight()] = true;
+    if (visibleEdges) val[VIEWFLAG_visibleEdges()] = true;
+    if (hiddenEdges) val[VIEWFLAG_hiddenEdges()] = true;
+    if (shadows) val[VIEWFLAG_shadows()] = true;
+    if (noClipVolume) val[VIEWFLAG_noClipVolume()] = true;
+    if (ignoreLighting) val[VIEWFLAG_ignoreLighting()] = true;
 
-    val[VIEWFLAG_renderMode] =(uint8_t) m_renderMode;
+    val[VIEWFLAG_renderMode()] =(uint8_t) m_renderMode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,7 +206,7 @@ void ViewController::RestoreFromSettings()
     {
     _RestoreFromSettings();
 
-    for (auto const& appdata : m_appData)
+    for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
         appdata.second->_RestoreFromSettings(m_settings);
     }
 
@@ -211,8 +215,8 @@ void ViewController::RestoreFromSettings()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::LoadCategories()
     {
-    if (m_settings.isMember(VIEW_SETTING_Categories))
-        m_viewedCategories.FromString(m_settings[VIEW_SETTING_Categories].asString());
+    if (m_settings.isMember(VIEW_SETTING_Categories()))
+        m_viewedCategories.FromString(m_settings[VIEW_SETTING_Categories()].asString());
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(m_dgndb))
@@ -225,14 +229,14 @@ void ViewController::LoadCategories()
         m_subCategories.Insert(id, appearance);
         }
 
-    if (!m_settings.isMember(VIEW_SETTING_SubCategories))
+    if (!m_settings.isMember(VIEW_SETTING_SubCategories()))
         return;
 
-    JsonValueCR subcatJson = m_settings[VIEW_SETTING_SubCategories];
+    JsonValueCR subcatJson = m_settings[VIEW_SETTING_SubCategories()];
     for (Json::ArrayIndex i=0; i<subcatJson.size(); ++i)
         {
         JsonValueCR val=subcatJson[i];
-        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asUInt64());
+        DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId()].asUInt64());
         if (subCategoryId.IsValid())
             OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
         }
@@ -243,15 +247,15 @@ void ViewController::LoadCategories()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_RestoreFromSettings()
     {
-    if (!m_settings.isMember(VIEW_SETTING_Flags))
+    if (!m_settings.isMember(VIEW_SETTING_Flags()))
         m_viewFlags.InitDefaults();
     else
-        m_viewFlags.FromBaseJson(m_settings[VIEW_SETTING_Flags]);
+        m_viewFlags.FromBaseJson(m_settings[VIEW_SETTING_Flags()]);
 
-    if (!m_settings.isMember(VIEW_SETTING_BackgroundColor))
+    if (!m_settings.isMember(VIEW_SETTING_BackgroundColor()))
         m_backgroundColor = ColorDef::Black();
     else
-        m_backgroundColor = ColorDef(m_settings[VIEW_SETTING_BackgroundColor].asUInt());
+        m_backgroundColor = ColorDef(m_settings[VIEW_SETTING_BackgroundColor()].asUInt());
 
     LoadCategories();
     }
@@ -296,21 +300,21 @@ DbResult ViewController::Load()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_SaveToSettings() const
     {
-    m_viewFlags.ToBaseJson(m_settings[VIEW_SETTING_Flags]);
+    m_viewFlags.ToBaseJson(m_settings[VIEW_SETTING_Flags()]);
 
     // only save background color if it's not the default (black)...
     if (ColorDef::Black() != m_backgroundColor)
-        m_settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
+        m_settings[VIEW_SETTING_BackgroundColor()] = m_backgroundColor.GetValue();
 
-    m_settings[VIEW_SETTING_Categories] = m_viewedCategories.ToString();
+    m_settings[VIEW_SETTING_Categories()] = m_viewedCategories.ToString();
     if (m_subCategoryOverrides.empty())
         return;
 
-    JsonValueR ovrJson = m_settings[VIEW_SETTING_SubCategories];
+    JsonValueR ovrJson = m_settings[VIEW_SETTING_SubCategories()];
     int i=0;
     for (auto const& it : m_subCategoryOverrides)
         {
-        ovrJson[i][VIEW_SubCategoryId] = it.first.GetValue();
+        ovrJson[i][VIEW_SubCategoryId()] = it.first.GetValue();
         it.second.ToJson(ovrJson[i]);
         ++i;
         }
@@ -367,7 +371,7 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
 * return the extents of the target model, if there is one.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d ViewController::_GetViewedExtents() const
+AxisAlignedBox3d ViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
     GeometricModelP target = GetTargetModel();
     if (target && target->GetRangeIndexP(false))
@@ -1546,12 +1550,12 @@ void CameraViewController::_RestoreFromSettings()
     {
     T_Super::_RestoreFromSettings();
 
-    m_isCameraOn = m_settings[VIEW_SETTING_IsCameraOn].asBool();
-    m_camera.SetLensAngle(m_settings[VIEW_SETTING_CameraAngle].asDouble());
-    m_camera.SetFocusDistance(m_settings[VIEW_SETTING_CameraFocalLength].asDouble());
+    m_isCameraOn = m_settings[VIEW_SETTING_IsCameraOn()].asBool();
+    m_camera.SetLensAngle(m_settings[VIEW_SETTING_CameraAngle()].asDouble());
+    m_camera.SetFocusDistance(m_settings[VIEW_SETTING_CameraFocalLength()].asDouble());
 
     DPoint3d eyePt;
-    JsonUtils::DPoint3dFromJson(eyePt, m_settings[VIEW_SETTING_CameraPosition]);
+    JsonUtils::DPoint3dFromJson(eyePt, m_settings[VIEW_SETTING_CameraPosition()]);
     m_camera.SetEyePoint(eyePt);
     m_camera.ValidateLens();
 
@@ -1576,14 +1580,14 @@ void SpatialViewController::_RestoreFromSettings()
     {
     T_Super::_RestoreFromSettings();
 
-    if (m_settings.isMember(VIEW_SETTING_Models))
-        m_viewedModels.FromString(m_settings[VIEW_SETTING_Models].asString());
+    if (m_settings.isMember(VIEW_SETTING_Models()))
+        m_viewedModels.FromString(m_settings[VIEW_SETTING_Models()].asString());
 
-    m_viewFlags.From3dJson(m_settings[VIEW_SETTING_Flags]);
+    m_viewFlags.From3dJson(m_settings[VIEW_SETTING_Flags()]);
 
-    JsonUtils::DPoint3dFromJson(m_origin, m_settings[VIEW_SETTING_Origin]);
-    JsonUtils::DPoint3dFromJson(m_delta, m_settings[VIEW_SETTING_Delta]);
-    JsonUtils::RotMatrixFromJson(m_rotation, m_settings[VIEW_SETTING_Rotation]);
+    JsonUtils::DPoint3dFromJson(m_origin, m_settings[VIEW_SETTING_Origin()]);
+    JsonUtils::DPoint3dFromJson(m_delta, m_settings[VIEW_SETTING_Delta()]);
+    JsonUtils::RotMatrixFromJson(m_rotation, m_settings[VIEW_SETTING_Rotation()]);
 
     if (!m_rotation.SquareAndNormalizeColumns(m_rotation, 0, 1))   
         m_rotation.InitIdentity();
@@ -1598,10 +1602,10 @@ void CameraViewController::_SaveToSettings() const
     {
     T_Super::_SaveToSettings();
 
-    m_settings[VIEW_SETTING_IsCameraOn] = m_isCameraOn;
-    m_settings[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
-    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
-    m_settings[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
+    m_settings[VIEW_SETTING_IsCameraOn()] = m_isCameraOn;
+    m_settings[VIEW_SETTING_CameraAngle()] = m_camera.GetLensAngle();
+    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_CameraPosition()], m_camera.GetEyePoint());
+    m_settings[VIEW_SETTING_CameraFocalLength()] = m_camera.GetFocusDistance();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1611,12 +1615,12 @@ void SpatialViewController::_SaveToSettings() const
     {
     T_Super::_SaveToSettings();
 
-    m_viewFlags.To3dJson(m_settings[VIEW_SETTING_Flags]);
-    m_settings[VIEW_SETTING_Models] = m_viewedModels.ToString();
+    m_viewFlags.To3dJson(m_settings[VIEW_SETTING_Flags()]);
+    m_settings[VIEW_SETTING_Models()] = m_viewedModels.ToString();
 
-    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_Origin], m_origin);
-    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_Delta], m_delta);
-    JsonUtils::RotMatrixToJson(m_settings[VIEW_SETTING_Rotation], m_rotation);
+    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_Origin()], m_origin);
+    JsonUtils::DPoint3dToJson(m_settings[VIEW_SETTING_Delta()], m_delta);
+    JsonUtils::RotMatrixToJson(m_settings[VIEW_SETTING_Rotation()], m_rotation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1780,11 +1784,11 @@ void ViewController2d::_RestoreFromSettings()
     {
     T_Super::_RestoreFromSettings();
 
-    JsonValueCR area2d = m_settings[VIEW_SETTING_Area2d];
+    JsonValueCR area2d = m_settings[VIEW_SETTING_Area2d()];
 
-    JsonUtils::DPoint2dFromJson(m_origin, area2d[VIEW_SETTING_Origin]);
-    JsonUtils::DPoint2dFromJson(m_delta, area2d[VIEW_SETTING_Delta]);
-    m_rotAngle = area2d[VIEW_SETTING_RotAngle].asDouble();
+    JsonUtils::DPoint2dFromJson(m_origin, area2d[VIEW_SETTING_Origin()]);
+    JsonUtils::DPoint2dFromJson(m_delta, area2d[VIEW_SETTING_Delta()]);
+    m_rotAngle = area2d[VIEW_SETTING_RotAngle()].asDouble();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1794,11 +1798,11 @@ void ViewController2d::_SaveToSettings() const
     {
     T_Super::_SaveToSettings();
 
-    JsonValueR area2d = m_settings[VIEW_SETTING_Area2d];
+    JsonValueR area2d = m_settings[VIEW_SETTING_Area2d()];
 
-    JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Origin], m_origin);
-    JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Delta], m_delta);
-    area2d[VIEW_SETTING_RotAngle] = m_rotAngle;
+    JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Origin()], m_origin);
+    JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Delta()], m_delta);
+    area2d[VIEW_SETTING_RotAngle()] = m_rotAngle;
     }
 
 /*---------------------------------------------------------------------------------**//**

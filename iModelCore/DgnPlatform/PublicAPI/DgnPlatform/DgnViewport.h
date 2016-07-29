@@ -309,6 +309,9 @@ public:
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
     RotMatrixCR GetRotMatrix() const {return m_rotMatrix;}
+    DVec3d GetXVector() const {DVec3d v; GetRotMatrix().GetRow(v,0); return v;}
+    DVec3d GetYVector() const {DVec3d v; GetRotMatrix().GetRow(v,1); return v;}
+    DVec3d GetZVector() const {DVec3d v; GetRotMatrix().GetRow(v,2); return v;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
     BSIRect GetViewRect() const {return m_renderTarget->GetViewRect();}

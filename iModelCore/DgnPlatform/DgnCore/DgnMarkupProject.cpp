@@ -438,10 +438,10 @@ GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents() const
+AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
-    AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents();
-    AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents();
+    AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents(vp);
+    AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents(vp);
     AxisAlignedBox3d fullRange;
     fullRange.UnionOf(rdlRange, subjectRange);
     return fullRange;

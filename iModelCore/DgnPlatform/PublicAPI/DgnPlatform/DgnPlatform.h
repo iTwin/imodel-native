@@ -554,16 +554,6 @@ enum class DgnCoordSystem
     World     = 3,     //!< Coordinates are relative to the world coordinate system for the physical elements in the DgnDb
 };
 
-enum class GradientFlags
-{
-    None         = 0,
-    Invert       = (1 << 0),
-    Outline      = (1 << 1),
-    AlwaysFilled = (1 << 2),
-};
-
-ENUM_IS_FLAGS(GradientFlags)
-
 enum class ClipMask
 {
     None  = 0,
@@ -843,6 +833,7 @@ public:
     static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
     static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
     static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
+    static ColorDef Brown()       {return ColorDef(0xa5,0x2a,0x2a);}
     static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
     static ColorDef MediumGrey()  {return ColorDef(0x88,0x88,0x88);}
     static ColorDef DarkGrey()    {return ColorDef(0x55,0x55,0x55);}
@@ -852,6 +843,7 @@ public:
     static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //<! Olive
     static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //<! Teal
     static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //<! Purple
+    static ColorDef DarkBrown()   {return ColorDef(0x8b,0x45,0x13);}
 
     static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //<! Bluish color used to denote unselected state
     static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //<! Orangish color used to denote selected state

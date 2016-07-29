@@ -588,37 +588,56 @@ struct GradientSymb : RefCountedBase
 {
     enum
     {
-        MAX_GRADIENT_KEYS =  8,
+        MAX_GRADIENT_KEYS = 8,
+    };
+
+    enum class Flags
+    {
+        None         = 0,
+        Invert       = (1 << 0),
+        Outline      = (1 << 1),
+        AlwaysFilled = (1 << 2),
+    };
+
+    enum class Mode
+    {
+        None          = 0,
+        Linear        = 1,
+        Curved        = 2,
+        Cylindrical   = 3,
+        Spherical     = 4,
+        Hemispherical = 5,
     };
 
 protected:
-    GradientMode    m_mode;
-    uint16_t        m_flags;
-    uint16_t        m_nKeys;
-    double          m_angle;
-    double          m_tint;
-    double          m_shift;
-    ColorDef        m_colors[MAX_GRADIENT_KEYS];
-    double          m_values[MAX_GRADIENT_KEYS];
-    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
+    Mode m_mode;
+    uint16_t m_flags;
+    uint16_t m_nKeys;
+    double m_angle;
+    double m_tint;
+    double m_shift;
+    ColorDef m_colors[MAX_GRADIENT_KEYS];
+    double   m_values[MAX_GRADIENT_KEYS];
 
 public:
+    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
+    
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
     //! Create an instance of a GradientSymb.
-    DGNPLATFORM_EXPORT static GradientSymbPtr Create();
+    static GradientSymbPtr Create() {return new GradientSymb();}
 
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
 
     int GetNKeys() const {return m_nKeys;}
-    GradientMode GetMode() const {return m_mode;}
+    Mode GetMode() const {return m_mode;}
     uint16_t GetFlags() const {return m_flags;}
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
     void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
-    void SetMode(GradientMode mode) {m_mode = mode;}
+    void SetMode(Mode mode) {m_mode = mode;}
     void SetFlags(uint16_t flags) {m_flags = flags;}
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
@@ -790,7 +809,7 @@ public:
 
     void Cook(GeometryParamsCR, ViewContextR);
 
-    DGNPLATFORM_EXPORT GraphicParams();
+    GraphicParams() {Init();}
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
     DGNPLATFORM_EXPORT void Init();
 

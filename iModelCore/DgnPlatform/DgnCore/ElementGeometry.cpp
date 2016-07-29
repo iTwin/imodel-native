@@ -1564,7 +1564,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             if (FillDisplay::Never != fillDisplay)
                 {
                 double        transparency = ppfb->transparency();
-                GradientMode  mode = (GradientMode) ppfb->mode();
+                GradientSymb::Mode  mode = (GradientSymb::Mode) ppfb->mode();
 
                 if (transparency != elParams.GetFillTransparency())
                     {
@@ -1572,7 +1572,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     changed = true;
                     }
 
-                if (GradientMode::None == mode)
+                if (GradientSymb::Mode::None == mode)
                     {
                     if (ppfb->useColor())
                         {
