@@ -341,7 +341,8 @@ struct CustomPropertyRegistry
 * Defines new properties that are IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
 * Stores some of its data in Aspects|DgnElement::_Clone and DgnElement::_CloneForImport, as described below.
 * 
-* Normally, there is no need to override _Clone, as the base class implementation (which calls _CopyFrom) of will work for subclasses.
+* Normally, there is no need to override _Clone, as the base class implementation will work for subclasses, as it calls _CopyFrom.
+*
 * If you don't use Aspects, then normally, you won't need to override _Clone and _CloneForImport.
 *
 * <h2>The Central role of _CopyFrom</h2>
