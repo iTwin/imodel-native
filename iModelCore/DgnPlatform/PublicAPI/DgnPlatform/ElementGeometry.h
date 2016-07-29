@@ -500,6 +500,10 @@ public:
     //!       Generally it's best if the application specifies a more meaningful placement than just using a geometric primitive's local coordinate frame.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWithAutoPlacement (DgnModelR model, DgnCategoryId categoryId);
 
+    //! Create builder from model, category, and placement represented by a transform.
+    //! @note Transform must satisfy requirements of YawPitchRollAngles::TryFromTransform, scale is not supported.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, TransformCR transform);
+
     //! Create 3d builder from model, category, origin, and optional yaw/pitch/roll angles.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 

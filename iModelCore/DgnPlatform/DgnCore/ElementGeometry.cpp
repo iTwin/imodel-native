@@ -4432,6 +4432,39 @@ GeometryBuilderPtr GeometryBuilder::CreateWithAutoPlacement(DgnModelR model, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, TransformCR transform)
+    {
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel)
+        return nullptr;
+
+    DPoint3d origin;
+    YawPitchRollAngles angles;
+
+    if (!YawPitchRollAngles::TryFromTransform(origin, angles, transform))
+        return nullptr;
+
+    if (geomModel->Is3d())
+        {
+        Placement3d placement(origin, angles);
+
+        return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
+        }
+
+    if (0 != BeNumerical::Compare(origin.z, 0.0) || 0 != BeNumerical::Compare(angles.GetPitch().Degrees(), 0.0) || 0 != BeNumerical::Compare(angles.GetRoll().Degrees(), 0.0))
+        return nullptr; // Invalid transform for Placement2d...
+
+    Placement2d placement(DPoint2d::From(origin), angles.GetYaw());
+
+    return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
     if (!categoryId.IsValid())
