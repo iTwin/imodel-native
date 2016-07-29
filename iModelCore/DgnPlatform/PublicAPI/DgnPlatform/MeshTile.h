@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+/*__PUBLISH_SECTION_START__*/
+/*__PUBLISH_SECTION_END__*/
+// ###TODO: This header is only "internal only" because the GeomLibs XYZRangeTree stuff is...
 
 #include "Render.h"
 #include <Geom/XYZRangeTree.h>
@@ -31,6 +34,9 @@ typedef bvector<TileNodeP> TileNodePList;
 typedef bvector<TileGeometryPtr> TileGeometryList;
 
 //=======================================================================================
+//! Holds geometry processed during tile generation. Objects produced during this process
+//! may holds pointers into the cache; they become invalid once the cache itself is
+//! destroyed.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileGeometryCache
@@ -89,6 +95,7 @@ public:
 };
 
 //=======================================================================================
+//! Represents one triangle of a TileMesh.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct Triangle
@@ -109,6 +116,8 @@ struct Triangle
 };
 
 //=======================================================================================
+//! Represents a single mesh of uniform symbology within a TileNode, consisting of
+//! vertex/normal/uv-param/elementID arrays indexed by an array of triangles.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileMesh : RefCountedBase
@@ -131,12 +140,12 @@ public:
     DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT bool HasNonPlanarNormals() const;
 
-    GraphicParamsCP GetGraphicParams() const { return m_graphicParams; }
-    bvector<Triangle> const& Triangles() const { return m_triangles; }
-    bvector<DPoint3d> const& Points() const { return m_points; }
-    bvector<DVec3d> const& Normals() const { return m_normals; }
-    bvector<DPoint2d> const& Params() const { return m_uvParams; }
-    bvector<DgnElementId> const& ElementIds() const { return m_elementIds; }
+    GraphicParamsCP GetGraphicParams() const { return m_graphicParams; } //!< The mesh symbology
+    bvector<Triangle> const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
+    bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
+    bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
+    bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
+    bvector<DgnElementId> const& ElementIds() const { return m_elementIds; } //!< Vertex attribute array specifying the ID of the element from which the vertex was produced
 
     TriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
     DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
@@ -150,6 +159,8 @@ public:
 };
 
 //=======================================================================================
+//! Builds a single TileMesh to a specified level of detail, optionally applying vertex
+//! clustering.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileMeshBuilder : RefCountedBase
@@ -213,26 +224,28 @@ public:
     uint32_t AddClusteredVertex(VertexKey const& vertex);
     uint32_t AddVertex(VertexKey const& vertex);
 
-    TileMeshP GetMesh() { return m_mesh.get(); }
+    TileMeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
 };
 
 //=======================================================================================
+//! Representation of geometry processed by a TileGenerator, consisting of an IGeometry,
+//! an ISolidKernelEntity, or nothing.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileGeometry : RefCountedBase
 {
     enum class Type
     {
-        Solid,
-        Geometry,
-        Empty,
+        Solid,      //!< This TileGeometry contains an ISolidKernelEntity
+        Geometry,   //!< This TileGeometry contains an IGeometry
+        Empty,      //!< This TileGeometry contains no geometry
     };
 
     enum class NormalMode
     {
-        Never,
-        Always,
-        CurvedSurfacesOnly,
+        Never,              //!< Never generate normals
+        Always,             //!< Always generate normals
+        CurvedSurfacesOnly, //!< Generate normals only for curved surfaces
     };
 private:
     typedef bmap<double, PolyfaceHeaderPtr> Tesselations;
@@ -262,17 +275,19 @@ private:
 public:
     ~TileGeometry();
 
+    //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, GraphicParamsCR params, IFacetOptionsR facetOptions, bool isCurved);
+    //! Create a TileGeometry for an ISolidKernelEntity
     static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, GraphicParamsCR params, IFacetOptionsR facetOptions);
 
-    Type GetType() const { return m_type; }
-    ISolidKernelEntityP GetSolidEntity() const { return Type::Solid == GetType() ? m_solidEntity : nullptr; }
-    IGeometryP GetGeometry() const { return Type::Geometry == GetType() ? m_geometry : nullptr; }
+    Type GetType() const { return m_type; } //!< The type of geometry contained within
+    ISolidKernelEntityP GetSolidEntity() const { return Type::Solid == GetType() ? m_solidEntity : nullptr; } //!< The contained ISolidKernelEntity, if any
+    IGeometryP GetGeometry() const { return Type::Geometry == GetType() ? m_geometry : nullptr; } //!< The contained IGeometry, if any
 
     GraphicParamsCR GetGraphicParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetRange() const { return m_range; }
-    DgnElementId GetElementId() const { return m_elementId; }
+    DgnElementId GetElementId() const { return m_elementId; } //!< The ID of the element from which this geometry was produced
     size_t GetFacetCount() const { return m_facetCount; }
     double GetFacetCountDensity() const { return m_facetCountDensity; }
     bool IsCurved() const { return m_isCurved; }
@@ -282,6 +297,8 @@ public:
 };
 
 //=======================================================================================
+//! Represents one tile in a HLOD tree occupying a given range and containing higher-LOD
+//! child tiles within the same range.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileNode
@@ -304,15 +321,16 @@ public:
 
     DRange3dCR GetRange() const { return m_range; }
     TileNodeList const& GetChildren() const { return m_children; }
-    size_t GetDepth() const { return m_depth; }
-    size_t GetSiblingIndex() const { return m_siblingIndex; }
+    size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
+    size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }
-    TileNodeCP GetParent() const { return m_parent; }
-    TileNodeP GetParent() { return m_parent; }
+    TileNodeCP GetParent() const { return m_parent; } //!< The direct parent of this node
+    TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
 
     DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
 
+    //! Generate a list of meshes from this tile's geometry.
     DGNPLATFORM_EXPORT TileMeshList GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
     DGNPLATFORM_EXPORT TileMeshPtr GetDefaultMesh(TileGeometryCacheR geometryCache) const;
     DGNPLATFORM_EXPORT TileMeshPtr GetRangeMesh(TileGeometryCacheR geometryCache) const;
@@ -323,6 +341,7 @@ public:
 };
 
 //=======================================================================================
+//! Generates a HLOD tree of TileNodes from a set of elements.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileGenerator
@@ -340,19 +359,22 @@ struct TileGenerator
         CreatingTiles,
     };
 
+    //! Interface adopted by an object which collects generated tiles
     struct EXPORT_VTABLE_ATTRIBUTE ITileCollector
     {
+        //! Invoked from one of several worker threads for each generated tile.
         virtual Status _AcceptTile(TileNodeCR tileNode) = 0;
     };
 
+    //! Interface adopted by an object which tracks progress of the tile generation process
     struct EXPORT_VTABLE_ATTRIBUTE IProgressMeter
     {
-        virtual void _IndicateProgress(double fraction) { }
-        virtual void _Terminate() { }
-        virtual bool _WasAborted() { return false; }
-        virtual void _SetTaskName(TaskName taskName) { }
+        virtual void _IndicateProgress(double fraction) { } //!< Invoked to announce the current % completion
+        virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
+        virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
     };
 
+    //! Accumulates statistics during tile generation
     struct Statistics
     {
         size_t      m_tileCount = 0;
@@ -371,10 +393,14 @@ private:
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, IProgressMeter* progressMeter=nullptr);
 
+    //! Populates the TileGeometryCache from the contents of the specified viewport
     DGNPLATFORM_EXPORT Status LoadGeometry(DgnViewportR viewport, double toleranceInMeters);
+    //! Generates the HLOD tree from the contents of the TileGeometryCache within the specified range
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR rootTile, DRange3dCR range, double leafTolerance, size_t maxPointsPerTile=30000);
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
+
+    Statistics const& GetStatistics() const { return m_statistics; }
 };
 
 //=======================================================================================
