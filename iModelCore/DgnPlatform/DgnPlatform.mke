@@ -243,6 +243,10 @@ $(CoreObjs)DgnViewport$(oext) :                     $(DgnCoreDir)DgnViewport.cpp
 
 $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
 
+$(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+
+$(CoreObjs)FacetCount$(oext) :                      $(DgnCoreDir)FacetCount.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)WebMercator$(oext) :                     $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
