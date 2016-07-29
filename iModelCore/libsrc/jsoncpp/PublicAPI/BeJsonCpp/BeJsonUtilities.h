@@ -19,6 +19,7 @@ BEGIN_BENTLEY_NAMESPACE
 
 typedef Json::Value& JsonValueR;
 typedef Json::Value const& JsonValueCR;
+typedef Json::Value const* JsonValueCP;
 
 //=======================================================================================
 //! ILocalState wrapper that handles JSON - string conversion.
