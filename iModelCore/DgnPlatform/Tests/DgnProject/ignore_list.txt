@@ -85,3 +85,4 @@ TransactionManagerTests.UndoRedo
 ImportTest.ImportElementsWithAuthorities
 
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad # Fails when run by itself - notifed Umar
+DgnScriptTest.TestEga

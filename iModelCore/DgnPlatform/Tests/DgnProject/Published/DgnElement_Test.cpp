@@ -894,7 +894,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("IntegerProperty1", ECN::ECValue(199)));
 
         DgnDbStatus status;
-        auto ele = DgnElement::CreateElement(&status, *m_db, *testClassInstance);
+        auto ele = m_db->Elements().CreateElement(&status, *testClassInstance);
         ASSERT_TRUE(ele.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, status);
 
