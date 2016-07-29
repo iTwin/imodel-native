@@ -3233,18 +3233,28 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnElementPtr DgnElements::CreateElement(DgnDbStatus* inStat, ECN::IECInstanceCR properties)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
-    auto handler = dgn_ElementHandler::Element::FindHandler(db, classId);
+    auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), classId);
     if (nullptr == handler)
         {
         BeAssert(false);
         stat = DgnDbStatus::MissingHandler;
         return nullptr;
         }
+
+    return handler->_CreateNewElement(inStat, GetDgnDb(), properties);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
     DgnModelId mid;
         {
@@ -3262,7 +3272,9 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
             }
         }
 
-    CreateParams params(db, mid, classId);
+    DgnClassId classId(properties.GetClass().GetId().GetValue());
+
+    DgnElement::CreateParams params(db, mid, classId);
 
     auto ecinstanceid = properties.GetInstanceId();                 // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
     if (!ecinstanceid.empty())
@@ -3276,7 +3288,7 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
         params.SetElementId(DgnElementId(idvalue));
         }
 
-    auto ele = handler->Create(params);
+    auto ele = _CreateInstance(params);
 
 #ifdef WIP_AUTOHANDLED_PROPERTIES // *** ECValuesCollection does not return all properties!?
     ECValuesCollectionPtr propValues = ECValuesCollection::Create(properties);
