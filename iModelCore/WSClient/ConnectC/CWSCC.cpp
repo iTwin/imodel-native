@@ -180,26 +180,6 @@ CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                    04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description)
-    {
-    api->SetStatusMessage(message);
-    api->SetStatusDescription(description);
-    switch (status)
-        {
-        case HttpStatus::InternalServerError:
-            return ERROR500;
-        case HttpStatus::BadRequest:
-            return ERROR400;
-        case HttpStatus::NotFound:
-            return ERROR404;
-        default:
-            return ERROR500;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 CallStatus ConnectWebServicesClientC_CreateProjectFavorite
@@ -293,67 +273,6 @@ WCharCP ProjectGuid
     api->SetCreatedObjectResponse(result.GetValue());
     api->SetStatusMessage("Successful operation");
     api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite_V2 completed successfully.");
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* userBuffer)
-    {
-    VERIFY_API
-
-    if (userBuffer == NULL)
-        {
-        api->SetStatusMessage("The userBuffer parameter is NULL.");
-        api->SetStatusDescription("The userBuffer parameter passed into ConnectWebServicesClientC_GetIMSUserInfo is invalid.");
-        return INVALID_PARAMETER;
-        }
-
-    Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token"; //UrlProvider::Urls::ImsSearch.Get()
-    Utf8String collection = "IMS/User";
-    if (api->m_solrClients.find(searchApiUrl + collection) == api->m_solrClients.end())
-        {
-        api->CreateSolrClient
-            (
-            searchApiUrl,
-            collection
-            );
-        }
-
-    auto client = api->m_solrClients.find(searchApiUrl + collection)->second;
-    auto result = client->SendGetRequest()->GetResult();
-    if (!result.IsSuccess())
-        return httperrorToConnectWebServicesClientStatus(api, result.GetError().GetHttpStatus(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
-    
-    /* TODO: How can all of this be done, yet be included in the auto gen stuff? Maybe have a manually created Free, GetBufferData...etc which either calls manually created functions, or the autoGenOne (which will proppagate accordingly)
-             Can have a globally unique schema for all manually created ones, which pipes to functions which free, get...etc manually created stuff, and the other would pipe to autoGen
-             Yup, all buffer functions are broken for anything buffer related which isn't autoGen. Currently that is only _GetUserInfo, but that could be a lot more, and there should only be one exposed API call for both manual and autoGen
-    CWSCCBUFFER* buf = (CWSCCBUFFER*) calloc(1, sizeof(CWSCCBUFFER));
-    if (buf == nullptr)
-        {
-        free(buf);
-        api->SetStatusMessage("Memory failed to initialize interally.");
-        api->SetStatusDescription("Failed to calloc memory for CWSCCBUFFER.");
-        return INTERNAL_MEMORY_ERROR;
-        }
-
-    //Note this below is wrong for SolrClient. It is just a stub saying this needs to be done to properly set the out buffer
-    for (WSObjectsReader::Instance instance : result.GetValue().GetInstances())
-        {
-        LPCWSCCORGANIZATIONBUFFER bufToFill = new CWSCCORGANIZATIONBUFFER;
-        Organization_BufferStuffer(bufToFill, instance.GetProperties());
-        buf->lItems.push_back(bufToFill);
-        }
-
-    buf->lCount = buf->lItems.size();
-    buf->lClassType = BUFF_TYPE_ORGANIZATION;
-    buf->lSchemaType = SCHEMA_TYPE_GLOBALSCHEMA;
-    *organizationBuffer = (CWSCCDATABUFHANDLE) buf;
-    */
-
-    api->SetStatusMessage("Success!");
-    api->SetStatusDescription("The IMS user info was successfully retreived.");
     return SUCCESS;
     }
 
@@ -462,6 +381,26 @@ CallStatus wsresultToConnectWebServicesClientCStatus(LPCWSCC api, WSError::Id er
             return ERROR400;
         case WSError::Id::Conflict:
             return ERROR409;
+        default:
+            return ERROR500;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description)
+    {
+    api->SetStatusMessage(message);
+    api->SetStatusDescription(description);
+    switch (status)
+        {
+        case HttpStatus::InternalServerError:
+            return ERROR500;
+        case HttpStatus::BadRequest:
+            return ERROR400;
+        case HttpStatus::NotFound:
+            return ERROR404;
         default:
             return ERROR500;
         }

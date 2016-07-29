@@ -11,7 +11,7 @@
 #include <WebServicesTestsHelper.h>
 
 #include <WebServices/ConnectC/CWSCCPublic.h>
-#include <WebServices/ConnectC/CWSCCBufferGenPublic.h>
+#include <WebServices/ConnectC/CWSCCBufferPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h>
 #include <BeHttp/ProxyHttpHandler.h>
