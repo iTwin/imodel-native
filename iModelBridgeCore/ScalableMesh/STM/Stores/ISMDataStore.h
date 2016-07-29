@@ -107,7 +107,7 @@ struct PointAndTriPtIndicesBase
     int32_t*  m_indicesData;
     };
 
-typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISMPointDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISM3DPtDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>> ISMMTGGraphDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Byte>>     ISMTextureDataStorePtr;
@@ -154,13 +154,18 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual size_t LoadNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
+         Set the path of the files created for a given project (e.g. : dgndb file). 
+        -----------------------------------------------------------------------------*/
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
+
+        /**----------------------------------------------------------------------------
          Get the next node ID available.
         -----------------------------------------------------------------------------*/
         virtual uint64_t GetNextID() const = 0;
 
         virtual void Close () = 0;
                                         
-        virtual bool GetNodeDataStore(ISMPointDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
 

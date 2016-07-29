@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
+#include "../Stores/SMStoreUtils.h"
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 #include <ScalableMesh/Import/Plugin/DataTypeRegistry.h>
 

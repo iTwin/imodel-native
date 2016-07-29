@@ -574,6 +574,12 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
+    {
+    assert(!"Should be handled by local file");
+    return false;
+    }
+
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
@@ -779,9 +785,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
     return false;    
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {    
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, SMStoreDataType::Points, nodeHeader);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
 
     return true;    
     }

@@ -44,12 +44,6 @@ extern bool   GET_HIGHEST_RES;
 //#include "Edits\DiffSetTileStore.h"
 #include "SMSQLiteDiffsetTileStore.h"
 #include "Edits\ClipRegistry.h"
-#include "SMSQLitePointTileStore.h"
-#include "SMSQLiteGraphTileStore.h"
-#include "SMSQLiteIndiceTileStore.h"
-#include "SMSQLiteUVStore.h"
-#include "SMSQLiteUVIndiceTileStore.h"
-#include "SMSQLiteTextureTileStore.h"
 #include "Stores\SMStreamingDataStore.h"
 
 #include <Vu\VuApi.h>
@@ -60,7 +54,10 @@ extern bool   GET_HIGHEST_RES;
 //#include "CGALEdgeCollapse.h"
 
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
-
+extern bool s_stream_from_disk;
+extern bool s_stream_from_file_server;
+extern bool s_stream_from_grouped_store;
+extern bool s_is_virtual_grouping;
 
 ScalableMeshScheduler* s_clipScheduler = nullptr;
 std::mutex s_schedulerLock;
@@ -808,26 +805,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
         if (!LoadGCSFrom())
             return BSIERROR; // Error loading layer gcs
 
-        bool hasPoints = m_smSQLitePtr->HasPoints(); 
-
-
-
-        HFCPtr<TileStoreType> pTileStore;        
-        HFCPtr<StreamingPointStoreType>  pStreamingTileStore;
-        HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
-        HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
-        HFCPtr<StreamingIndiceStoreType> pStreamingUVsIndicesTileStore;
-        HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
-
-        HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pIndiceTileStore;
-        HFCPtr<SMPointTileStore<DPoint2d, YProtPtExtentType >> pUVTileStore;
-        HFCPtr<SMPointTileStore<int32_t, YProtPtExtentType >> pUVsIndicesTileStore;
-        HFCPtr<IScalableMeshDataStore<Byte, float, float>> pTextureTileStore;
-        HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
-        bool isSingleFile = true;
+        bool hasPoints = m_smSQLitePtr->HasPoints();                 
         
-
-        pTileStore = new SMSQLitePointTileStore<POINT, YProtPtExtentType>(m_smSQLitePtr);
+        bool isSingleFile = true;
+                
         isSingleFile = m_smSQLitePtr->IsSingleFile();
 
         if (hasPoints || !isSingleFile)
@@ -837,6 +818,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
          //NEEDS_WORK_SM - Why correct filter is not saved?                                             
          //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, YProtPtExtentType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, YProtPtExtentType>());
+
+            ISMDataStoreTypePtr<YProtPtExtentType> dataStore;
 
                 if (!isSingleFile)
                     {
@@ -850,67 +833,41 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
                     if (this->InitializeAzureTest().isFailed())
-                    {
+                        {
                         return BSIERROR; // Error loading layer gcs
-                    }
-
-
-                    pStreamingTileStore = new StreamingPointStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::Points, AreDataCompressed(), s_stream_from_grouped_store);
-                    pStreamingIndiceTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriPtIndices, AreDataCompressed());
-                    pStreamingUVTileStore = new StreamingUVStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::UvCoords, AreDataCompressed());
-                    pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(this->GetDataSourceAccount(), streamingSourcePath, SMStoreDataType::TriUvIndices, AreDataCompressed());
-                    pStreamingTextureTileStore = new StreamingTextureTileStore(this->GetDataSourceAccount(), streamingSourcePath);
-                    
-                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store));                    
+                        }
+                                        
+                    dataStore = new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
-                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
-                                                       &*pStreamingTileStore,                                                            
-                                                            &*pStreamingIndiceTileStore,
-                                                    //        ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
-                                                            new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection()),                                                            
-                                                            &*pStreamingTextureTileStore,                                                            
-                                                            &*pStreamingUVTileStore,                                                            
-                                                            &*pStreamingUVsIndicesTileStore,
-                                                            10000,
-                                                            filterP.get(),
-                                                            false,
-                                                            false,
-                                                            false,
-                                                            0,
-                                                            0);
+                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
+                                                      10000,
+                                                      filterP.get(),
+                                                      false,
+                                                      false,
+                                                      false,
+                                                      0,
+                                                      0);
 
                     }
                 else
-                    {
-                    //                    size_t n = 4;
-
-                    pIndiceTileStore = new SMSQLiteIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
-                    pUVTileStore = new SMSQLiteUVTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
-                    pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
-                    pTextureTileStore = new SMSQLiteTextureTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
-                    pGraphTileStore = new SMSQLiteGraphTileStore((dynamic_cast<SMSQLitePointTileStore<POINT, YProtPtExtentType>*>(pTileStore.GetPtr()))->GetDbConnection());
-                    
-                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
+                    {                                                                                                                       
+                    dataStore = new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr);
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
-                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                       
-                                                       &*pTileStore,                                                       
-                                                       &*pIndiceTileStore,
-                                                     //  ScalableMeshMemoryPools<POINT>::Get()->GetGraphPool(),
-                                                       //new HPMIndirectCountLimitedPool<MTGGraph>(new HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment(100, 2000*sizeof(POINT)), 600000000),
-                                                       &*pGraphTileStore,                                                       
-                                                       &*pTextureTileStore,                                                       
-                                                       &*pUVTileStore,                                                       
-                                                       &*pUVsIndicesTileStore,
-                                                       10000,
-                                                       filterP.get(),
-                                                       false,
-                                                       false,
-                                                       false,
-                                                       0,
-                                                       0);  
+                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
+                                                      10000,
+                                                      filterP.get(),
+                                                      false,
+                                                      false,
+                                                      false,
+                                                      0,
+                                                      0);  
                     }          
+                
+            BeFileName projectFilesPath(m_baseExtraFilesPath);
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
+            assert(result == true);
 
             WString clipFilePath = m_baseExtraFilesPath;
             clipFilePath.append(L"_clips"); 
@@ -923,6 +880,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
       //      m_scmIndexPtr->SetClipPool(pool);
             WString clipFileDefPath = m_baseExtraFilesPath;
             clipFileDefPath.append(L"_clipDefinitions");
+            
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
             m_scmIndexPtr->SetClipRegistry(registry);
             filterP.release();
@@ -1537,7 +1495,7 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
 template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
     {
-    auto nextID = m_scmIndexPtr->GetPointsStore()->GetNextID();
+    auto nextID = m_scmIndexPtr->GetDataStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
     m_scmIndexPtr->TextureFromRaster(mosaicP);

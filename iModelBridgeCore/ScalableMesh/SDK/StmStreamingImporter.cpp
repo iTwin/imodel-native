@@ -26,6 +26,8 @@
 #include <ScalableTerrainModel/Type/IMrDTMLinear.h>
 #include <ScalableTerrainModel/Type/IMrDTMTIN.h>
 
+#include "../Stores/SMStoreUtils.h"
+
 
 //#include <STMInternal/Foundations/PrivateStringTools.h>
 
