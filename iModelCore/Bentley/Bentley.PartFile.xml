@@ -157,4 +157,44 @@
         <SubProduct ProductName="Bentley-iOSXCTest"/>
     </Part>
 
+
+
+
+
+
+
+
+
+
+    
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <Part
+        Name="UwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=Bentley -dTEST_COLLECTION_PRODUCT=Bentley-Tests"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="Bentley-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/Bentley/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="Bentley-UwpTest" >
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=Bentley-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="Bentley-UwpTest"/>
+    </Part>
+
 </BuildContext>
