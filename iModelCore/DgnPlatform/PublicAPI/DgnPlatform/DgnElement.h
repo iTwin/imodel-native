@@ -309,7 +309,7 @@ struct CustomPropertyRegistry
 */
 
 /**
-* @addtogroup ElementCopying DgnElement Copying and Importing.
+* @addtogroup ElementCopying DgnElement Copying and Importing
 * 
 * There are 3 basic reasons why you would want to make a copy of an element, and there is a function for each one:
 *   1. DgnElement::Clone makes a copy of an element, suitable for inserting into the Db.
@@ -322,7 +322,7 @@ struct CustomPropertyRegistry
 */
 
 /** 
-* @addtogroup ElementCopyVirtualFunctions DgnElement Copy and Importing - Virtual Functions.
+* @addtogroup ElementCopyVirtualFunctions DgnElement Copy and Importing - Virtual Functions
 *
 * A DgnElement subclass will normally override a few virtual functions in order to support @ref ElementCopying.
 *
@@ -369,20 +369,20 @@ struct CustomPropertyRegistry
 */
 
 /**
-* @addtogroup ElementRestrictions DgnElement Restrictions.
+* @addtogroup ElementRestrictions DgnElement Restrictions
 *
 * Element restrictions specify what operations may be applied to an element when its handler is not present. 
 * Restrictions are specified in the ECSchema definition of an Element subclass.
 *
-* <em>If your DgnElement subclasss needs to valid property values or create side effects when the element in modified, 
-* your dgn.Element subclass schema definition should specify at lest Insert and Update restrictions.</em>
-* As a rule of thumb, if you write a subclass of dgn_ElementHandler::Element, then you should probably restrict at least Insert and Update in your Element's schema definition.
+* <b><em>If your DgnElement subclasss needs to do validation, then your dgn.Element should be restricted.</em></b>
+*
+* As a rule of thumb, if you write a subclass of dgn_ElementHandler::Element, then you should probably restrict all actions in your Element's schema definition.
 *
 * See DgnElement::RestrictedAction for the permissions that may be granted.
 */
 
 /**
-* @addtogroup ElementProperties DgnElement Properties.
+* @addtogroup ElementProperties DgnElement Properties
 *
 * A DgnElement may have two kinds of properties: Class-defined properties and user-defined properties.
 *
@@ -472,6 +472,7 @@ public:
         void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
+        bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
@@ -806,6 +807,8 @@ protected:
     ECN::IECInstanceP GetAutoHandledProperties() const;
     BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const;
     DgnDbStatus UpdateAutoHandledProperties();
+
+    static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
 
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
@@ -1296,6 +1299,10 @@ public:
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
     DgnDbStatus SetProperty(Utf8CP name, ECN::ECValueCR value) {return _SetProperty(name, value);}
+
+    //! Set the properties of this element from the specified instance. Calls _SetProperty for each non-NULL property in the input instance.
+    //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperties(ECN::IECInstanceCR);
 
     //! @}
 };
