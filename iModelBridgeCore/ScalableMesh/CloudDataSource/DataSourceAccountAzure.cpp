@@ -3,11 +3,14 @@
 #include "DataSourceAzure.h"
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
+#include "include\DataSourceAccountAzure.h"
 
 
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
     setAccount(name, identifier, key);
+                                                            // Default size is set by Service on creation
+    setDefaultSegmentSize(0);
 
                                                             // Multi-threaded segmented transfers used for Azure, so initialize it
     getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
@@ -68,7 +71,16 @@ DataSourceAccountAzure::AzureBlobClient &DataSourceAccountAzure::getBlobClient(v
 
 DataSource * DataSourceAccountAzure::createDataSource(void)
 {
-    return new DataSourceAzure(this);
+                                                            // NOTE: This method is for internal use only, don't call this directly.
+    DataSourceAzure *   dataSourceAzure;
+                                                            // Create a new DataSourceAzure
+    dataSourceAzure = new DataSourceAzure(this);
+    if (dataSourceAzure == nullptr)
+        return nullptr;
+                                                            // Set the segment size from the account's default (which comes from the Service's default)
+    dataSourceAzure->setSegmentSize(this->getDefaultSegmentSize());
+
+    return dataSourceAzure;
 }
 
 
@@ -84,6 +96,16 @@ DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSourc
     return DataSourceStatus(DataSourceStatus::Status_Error);
 }
 
+
+void DataSourceAccountAzure::setDefaultSegmentSize(DataSourceBuffer::BufferSize size)
+{
+    defaultSegmentSize = size;
+}
+
+DataSourceBuffer::BufferSize DataSourceAccountAzure::getDefaultSegmentSize(void)
+{
+    return defaultSegmentSize;
+}
 
 DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
