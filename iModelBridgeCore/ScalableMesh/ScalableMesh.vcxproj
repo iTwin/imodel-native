@@ -622,6 +622,7 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp" />
     <ClCompile Include="STM\3dDelaunay\TrimHull.cpp" />
     <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
+    <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
     <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />

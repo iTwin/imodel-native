@@ -1395,6 +1395,9 @@
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
+    <ClCompile Include="STM\Edits\ClipRegistry.cpp">
+      <Filter>Source\Core\Edits</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ScalableMesh.mke" />

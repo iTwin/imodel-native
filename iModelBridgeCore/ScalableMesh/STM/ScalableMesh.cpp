@@ -819,6 +819,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
          //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, YProtPtExtentType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, YProtPtExtentType>());
 
+            ISMDataStoreTypePtr<YProtPtExtentType> dataStore;
+
                 if (!isSingleFile)
                     {
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
@@ -831,11 +833,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
                     if (this->InitializeAzureTest().isFailed())
-                    {
+                        {
                         return BSIERROR; // Error loading layer gcs
-                    }
+                        }
                                         
-                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store));                    
+                    dataStore = new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
@@ -850,7 +852,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
                 else
                     {                                                                                                                       
-                    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
+                    dataStore = new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr);
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
@@ -862,6 +864,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0,
                                                       0);  
                     }          
+                
+            BeFileName projectFilesPath(m_baseExtraFilesPath);
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
+            assert(result == true);
 
             WString clipFilePath = m_baseExtraFilesPath;
             clipFilePath.append(L"_clips"); 
@@ -874,6 +880,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
       //      m_scmIndexPtr->SetClipPool(pool);
             WString clipFileDefPath = m_baseExtraFilesPath;
             clipFileDefPath.append(L"_clipDefinitions");
+            
             ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
             m_scmIndexPtr->SetClipRegistry(registry);
             filterP.release();

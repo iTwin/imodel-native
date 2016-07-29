@@ -154,13 +154,18 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual size_t LoadNodeHeader (NodeHeaderType* header, HPMBlockID blockID) = 0;
 
         /**----------------------------------------------------------------------------
+         Set the path of the files created for a given project (e.g. : dgndb file). 
+        -----------------------------------------------------------------------------*/
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
+
+        /**----------------------------------------------------------------------------
          Get the next node ID available.
         -----------------------------------------------------------------------------*/
         virtual uint64_t GetNextID() const = 0;
 
         virtual void Close () = 0;
                                         
-        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
 

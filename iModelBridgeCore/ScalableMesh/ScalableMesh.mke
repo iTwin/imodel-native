@@ -268,7 +268,9 @@ $(o)ScalableMeshLib$(oext) : $(stmDir)ScalableMeshLib.cpp $(PCHHeaderDepends)  $
 
 $(o)DifferenceSet$(oext) : $(stmDir)Edits/DifferenceSet.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ClipUtilities$(oext) : $(stmDir)Edits/ClipUtilities.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ClipRegistry$(oext) : $(stmDir)Edits/ClipRegistry.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ClipUtilities$(oext) : $(stmDir)Edits/ClipUtilities.cpp $(stmDir)Edits/ClipUtilities.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshScheduler$(oext) : $(stmDir)Threading/ScalableMeshScheduler.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
