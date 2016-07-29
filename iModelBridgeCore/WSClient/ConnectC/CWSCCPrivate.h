@@ -132,3 +132,9 @@ typedef ConnectWebServicesClientC_internal* LPCWSCC;
 * NOTE: Used in pyApiGen tool for error message conversion.
 */
 CallStatus wsresultToConnectWebServicesClientCStatus (LPCWSCC api, WSError::Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
+
+/*
+* Convert Httperror to CallStatus messages.
+* NOTE: Used for IMSSearchAPI response.
+*/
+CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description);

@@ -84,46 +84,20 @@ class Writer(object):
             self._file.write('//__BENTLEY_INTERNAL_ONLY__\n')
         self._file.write(self._COMMENT_AutoGen)
 
-    def _get_api_buffer_accessor_function_comment(self, property_type):
+    @staticmethod
+    def _get_wsg_buffer_accessor_function_comment(property_type):
         comment_str = "/************************************************************************************//**\n"
-        comment_str += "* \\brief Get a {0} property from a data buffer\n".format(property_type.title())
-        comment_str += "* \param[in] apiHandle handle to api\n"
-        comment_str += "* \param[in] dataBuffer Data buffer\n"
-        comment_str += "* \param[in] bufferProperty buffer property\n"
-        comment_str += "* \param[in] index buffer index\n"
-        if property_type == "string":
-            comment_str += "* \param[in] strLength buffer length\n"
-            comment_str += "* \param[out] str Pointer to buffer to store string property\n"
-        elif property_type == "StringLength":
-            comment_str += "* \param[out] outStringSize Pointer to store the string length\n"
-        elif property_type == "dateTime":
-            comment_str += "* \param[in] strLength buffer length\n"
-            comment_str += "* \param[out] dateTime Pointer to buffer to store dateTime property\n"
-        elif property_type == "guid":
-            comment_str += "* \param[in] strLength guid-buffer length\n"
-            comment_str += "* \param[out] guid Pointer to buffer to store GUID property\n"
-        elif property_type == "boolean":
-            comment_str += "* \param[out] boolean Pointer to bool to store property\n"
-        elif property_type == "int":
-            comment_str += "* \param[out] integer Pointer to int to store property\n"
-        elif property_type == "double":
-            comment_str += "* \param[out] pDouble Pointer to double to store property\n"
-        elif property_type == "long":
-            comment_str += "* \param[out] pLong Pointer to long to store property\n"
-        else:
-            raise PropertyTypeError("Property type {0} not accepted".format(property_type))
-        comment_str += "* \\return Success or error code. See \\ref {0}StatusCodes\n".format(self._api.get_api_name())
+        comment_str += "* Get a {0} property from a wsg buffer\n".format(property_type.title())
         comment_str += "****************************************************************************************/\n"
         return comment_str
 
-    def __get_api_buffer_accessor_function_def(self, property_type):
+    def __get_wsg_buffer_accessor_function_def(self, property_type):
         if property_type is 'StringLength':
-            accessor_str = "CallStatus {0}_DataBufferGetStringLength\n".format(self._api.get_api_name())
+            accessor_str = "CallStatus WSG_DataBufferGetStringLength\n"
         else:
-            accessor_str = "CallStatus {0}_DataBufferGet{1}Property\n".format(self._api.get_api_name(),
-                                                                              property_type.title())
+            accessor_str = "CallStatus WSG_DataBufferGet{0}Property\n".format(property_type.title())
         accessor_str += "(\n"
-        accessor_str += "{0}HANDLE apiHandle,\n{0}DATABUFHANDLE dataBuffer,\n".format(self._api.get_upper_api_acronym())
+        accessor_str += "LP{0} api,\nH{0}BUFFER buf,\n".format(self._api.get_upper_api_acronym())
         accessor_str += "int16_t bufferProperty,\n"
         accessor_str += "uint32_t index,\n"
         if property_type == "string":
@@ -150,20 +124,12 @@ class Writer(object):
         accessor_str += ")"
         return accessor_str
 
-    def _get_api_buffer_accessor_function_definition(self, property_type):
-        return "{0}_EXPORT ".format(self._api.get_upper_api_acronym()) + self.__get_api_buffer_accessor_function_def(property_type) + ';\n'
+    def _get_wsg_buffer_accessor_function_definition(self, property_type):
+        return self.__get_wsg_buffer_accessor_function_def(property_type) + ';\n'
 
-    def _get_api_buffer_accessor_function_implementation(self, property_type):
-        accessor_str = self.__get_api_buffer_accessor_function_def(property_type) + '\n'
+    def _get_wsg_buffer_accessor_function_implementation(self, property_type):
+        accessor_str = self.__get_wsg_buffer_accessor_function_def(property_type) + '\n'
         accessor_str += "    {\n"
-        accessor_str += "    VERIFY_API\n"
-        accessor_str += "    if(nullptr == dataBuffer)\n"
-        accessor_str += '        {\n'
-        accessor_str += '        api->SetStatusMessage("{1}");\n        api->SetStatusDescription("{2}");\n' \
-                        '        return {0};\n        }}\n\n'.format("INVALID_PARAMETER", self._status_codes["INVALID_PARAMETER"].message,
-                                                                     "The dataBuffer passed into {0} data access function is invalid."
-                                                                     .format(self._api.get_api_name()))
-        accessor_str += "    H{0}BUFFER buf = (H{0}BUFFER) dataBuffer;\n\n".format(self._api.get_api_acronym())
         accessor_str += "    switch (buf->lSchemaType)\n"
         accessor_str += "        {\n"
         for schema in self._ecschemas:

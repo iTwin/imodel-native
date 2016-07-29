@@ -109,13 +109,6 @@ WCharCP ProjectGuid
 );
 
 /************************************************************************************//**
-* \brief Generic REST utility
-* \param[in] apiHandle Previously created API object
-* \param[out] projectBuffer of User Project data
-****************************************************************************************/
-CWSCC_EXPORT CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* projectBuffer);
-
-/************************************************************************************//**
 * \brief Retrieve the previous status message
 * \param[in] apiHandle Previously created API object
 * \return last status message
