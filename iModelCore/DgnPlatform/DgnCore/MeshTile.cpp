@@ -255,7 +255,42 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId,
     {
     BeAssert(3 == visitor.Point().size());
 
-    // ###TODO...
+    Triangle newTriangle(!visitor.GetTwoSided());
+    bvector<DPoint2d> params;
+
+    // ###TODO: Materials...
+
+    params = visitor.Param();
+    bool haveNormals = !visitor.Normal().empty();
+    for (size_t i = 0; i < 3; i++)
+        {
+        VertexKey vertex(visitor.Point().at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, params.empty() ? nullptr : &params.at(i), elemId);
+        newTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
+        }
+
+    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
+    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+
+    AddTriangle(newTriangle);
+    ++m_triangleIndex;
+
+    if (visitor.GetTwoSided() && duplicateTwoSidedTriangles)
+        {
+        Triangle dupTriangle(false);
+        for (size_t i = 0; i < 3; i++)
+            {
+            size_t reverseIndex = 2 - i;
+            DVec3d reverseNormal;
+            if (haveNormals)
+                reverseNormal.Negate(visitor.Normal().at(reverseIndex));
+
+            VertexKey vertex(visitor.Point().at(reverseIndex), haveNormals ? &reverseNormal : nullptr, params.empty() ? nullptr : &params.at(reverseIndex), elemId);
+            dupTriangle.m_indices[i] = doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            }
+
+        AddTriangle(dupTriangle);
+        ++m_triangleIndex;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
