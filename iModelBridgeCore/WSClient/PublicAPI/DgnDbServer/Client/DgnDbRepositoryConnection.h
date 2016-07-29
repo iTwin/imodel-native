@@ -36,7 +36,6 @@ DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
-DEFINE_TASK_TYPEDEFS(void, DgnDbServerCancelEvent);
 DEFINE_TASK_TYPEDEFS(Http::Response, DgnDbServerEventReponse);
 
 
@@ -266,16 +265,16 @@ public:
     //! Update the Event Subscription
     //! @param[in] eventTypes
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT bool SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr   SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Receive Events from EventService
     //! @param[in] longPolling
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr    GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancel Events from EventService
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr    UnsubscribeToEvents (ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents(ICancellationTokenPtr cancellationToken = nullptr);
 
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

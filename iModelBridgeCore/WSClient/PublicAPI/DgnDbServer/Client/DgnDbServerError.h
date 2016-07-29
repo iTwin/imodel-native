@@ -77,6 +77,8 @@ struct DgnDbServerError : public Tasks::AsyncError
 			NoEventsFound,
             NoSubscriptionFound,
             NoSASFound,
+            NotSubscribedToEventService,
+            EventServiceSubscribingError,
 			
             AzureError,
             DgnDbError

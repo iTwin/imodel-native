@@ -74,16 +74,16 @@ public:
 
     //! Return true if able to subscribe to given event types
     //! @param[in] eventTypes
-    DGNDBSERVERCLIENT_EXPORT bool                               SubscribeToEvents (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
 
     //! 
     //! @param[in] longPolling
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr            GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr   GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancels the get event request 
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCancelEventTaskPtr      UnsubscribeToEvents(ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeToEvents(ICancellationTokenPtr cancellationToken = nullptr);
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.
