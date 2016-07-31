@@ -29,6 +29,7 @@ protected:
     AzureStorageAccount                     storageAccount;
     AzureBlobClient                         blobClient;
     AzureConnectionString                   connectionString;
+    DataSourceBuffer::BufferSize            defaultSegmentSize;
 
 protected:
 
@@ -49,6 +50,9 @@ protected:
 public:
                                             DataSourceAccountAzure              (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountAzure              (void) = default;
+
+        void                                setDefaultSegmentSize               (DataSourceBuffer::BufferSize size);
+        DataSourceBuffer::BufferSize        getDefaultSegmentSize               (void);
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 

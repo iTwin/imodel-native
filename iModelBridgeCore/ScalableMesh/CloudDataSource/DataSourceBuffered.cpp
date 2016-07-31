@@ -6,7 +6,8 @@
 
 DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super(sourceAccount)
 {
-
+                                                            // Default segment size is zero until initialized
+    setSegmentSize(0);
 }
 
 void DataSourceBuffered::setBuffer(DataSourceBuffer * newBuffer)

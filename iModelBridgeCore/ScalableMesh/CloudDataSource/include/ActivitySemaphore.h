@@ -2,13 +2,15 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 
 class ActivitySemaphore
 {
 public:
 
-    typedef unsigned int                Counter;
+    typedef int                         CounterValue;
+    typedef std::atomic<CounterValue>   Counter;
     typedef std::chrono::milliseconds   Timeout;
 
     enum Status
@@ -21,17 +23,17 @@ public:
 
 protected:
 
-    std::mutex                          mutex;
     std::condition_variable             condition;
     Counter                             counter;
+    std::mutex                          mutex;
 
 public:
                                         ActivitySemaphore       (void);
-                                        ActivitySemaphore       (Counter value);
+                                        ActivitySemaphore       (CounterValue value);
                                        ~ActivitySemaphore       (void);
 
-    void                                setCounter              (Counter value);
-    Counter                             getCounter              (void);
+    void                                setCounter              (CounterValue value);
+    CounterValue                        getCounter              (void);
 
     void                                increment               (void);
     bool                                decrement               (void);
