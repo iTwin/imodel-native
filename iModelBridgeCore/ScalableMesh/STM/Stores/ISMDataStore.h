@@ -35,14 +35,14 @@ enum class SMStoreDataType
     UvCoords, 
     DiffSet, 
     Graph,
-    Texture,
-    Display, //Use to represents data created for display purpose, like QV element. 
-    LinearFeature,
-    BcDTM,
+    Texture,    
+    LinearFeature,    
+    //Not persisted data type
+    Display,
+    BcDTM,     
 
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
-
     Unknown, 
     };
 

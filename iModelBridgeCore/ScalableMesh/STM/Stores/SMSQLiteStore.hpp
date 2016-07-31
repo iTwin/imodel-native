@@ -25,7 +25,7 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
         WString dbFileNameW;
         dbFileNameW.AssignUtf8(dbFileName.c_str());
         _wremove(dbFileNameW.c_str());
-        }
+        }    
     }
 
 template <class EXTENT> uint64_t SMSQLiteStore<EXTENT>::GetNextID() const
@@ -110,7 +110,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     }    
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
-    {                
+    {                    
     dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
 
     return true;    
@@ -184,7 +184,7 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
 
         case SMStoreDataType::DiffSet : 
             {
-            if (!m_smFeatureSQLiteFile.IsValid())
+            if (!m_smClipSQLiteFile.IsValid())
                 {
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);  
@@ -193,8 +193,7 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
 
                 if (status == 0)
-                    {
-                    m_smClipSQLiteFile = new SMSQLiteFile();
+                    {                    
                     m_smClipSQLiteFile->Create(sqlFileName); 
                     }                                                                
                 }
@@ -268,7 +267,7 @@ template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>:
     }
 
 template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::~SMSQLiteNodeDataStore()
-    {            
+    {                
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
