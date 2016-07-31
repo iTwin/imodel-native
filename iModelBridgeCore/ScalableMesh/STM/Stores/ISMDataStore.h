@@ -20,6 +20,11 @@ need be.
 ////MST_TS
 #include <ImagePP\all\h\HFCPtr.h>
 #include <ImagePP\all\h\HPMDataStore.h>
+
+#include "..\Edits\DifferenceSet.h"
+
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
 USING_NAMESPACE_IMAGEPP
     
 enum class SMStoreDataType
@@ -107,16 +112,17 @@ struct PointAndTriPtIndicesBase
     int32_t*  m_indicesData;
     };
 
-typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>> ISM3DPtDataStorePtr;
-typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
-typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>> ISMMTGGraphDataStorePtr;
-typedef RefCountedPtr<ISMNodeDataStore<Byte>>     ISMTextureDataStorePtr;
-typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>> ISMUVCoordsDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>>      ISM3DPtDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<DifferenceSet>> ISDiffSetDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<int32_t>>       ISMInt32DataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>>      ISMMTGGraphDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Byte>>          ISMTextureDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
 
+
+//NEEDS_WORK_SM : Put that and all multiple item demo code in define 
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
 
-
-//typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
     {
@@ -166,6 +172,8 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual void Close () = 0;
                                         
         virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;
+
+        virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
 

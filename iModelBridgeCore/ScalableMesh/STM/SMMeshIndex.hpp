@@ -260,7 +260,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore() != nullptr)dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore()->DestroyBlock(GetBlockID());
+        ISDiffSetDataStorePtr nodeDiffsetStore;
+        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                        
+        assert(result == true && nodeDiffsetStore.IsValid());         
+        nodeDiffsetStore->DestroyBlock(GetBlockID());        
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
         GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex);
@@ -2626,6 +2629,26 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
     }
 #endif
 
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> SMMeshIndexNode<POINT, EXTENT>::GetDiffSetPtr() const
+    {
+    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
+
+    if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
+        {   
+        ISDiffSetDataStorePtr nodeDataStore;
+        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+        assert(result == true);  
+
+        RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex));
+        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
+        m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
+        assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        poolMemItemPtr = storedMemoryPoolItem.get();
+        const_cast<atomic<size_t>&>(m_nbClips) = poolMemItemPtr->size();
+        }
+    return poolMemItemPtr;
+    }
+
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> SMMeshIndexNode<POINT, EXTENT>::GetGraphPtr(bool loadGraph = true)
     {
     std::lock_guard<std::mutex> lock(m_graphMutex); //don't want to add item twice
@@ -3860,8 +3883,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
     {
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;    
-    m_clipStore = nullptr;
-//    m_clipPool = nullptr;
+
     s_importedFeatures = 0;
     if (m_indexHeader.m_rootNodeBlockID.IsValid() && m_pRootNode == nullptr)
         {
@@ -4245,21 +4267,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
     HINVARIANTS;
     }
 
-template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore)
-    {
-    m_clipStore = clipStore;
-    //if (!m_clipStore->LoadMasterHeader(NULL, 1)) m_clipStore->StoreMasterHeader(NULL, 0);
-    //if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetStore(m_clipStore);
-    }
-
-
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRegistry(ClipRegistry* clipRegistry)
     {
     m_clipRegistry = clipRegistry;
-    }
-
-template<class POINT, class EXTENT>  void SMMeshIndex<POINT, EXTENT>::SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool)
-    {
- //   m_clipPool = clipPool;
-//    if (m_pRootNode != nullptr)dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(m_pRootNode.GetPtr())->m_differenceSets.SetPool(m_clipPool);
     }

@@ -17,6 +17,7 @@
 #include <atomic>
 #include <mutex> 
 #include <excpt.h> 
+#include <map>
 
 
 #include <Bentley/Bentley.h>

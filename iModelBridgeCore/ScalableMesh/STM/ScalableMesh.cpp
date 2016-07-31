@@ -41,8 +41,6 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshDraping.h"
 #include "ScalableMeshVolume.h"
 
-//#include "Edits\DiffSetTileStore.h"
-#include "SMSQLiteDiffsetTileStore.h"
 #include "Edits\ClipRegistry.h"
 #include "Stores\SMStreamingDataStore.h"
 
@@ -868,16 +866,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             BeFileName projectFilesPath(m_baseExtraFilesPath);
             bool result = dataStore->SetProjectFilesPath(projectFilesPath);
             assert(result == true);
-
-            WString clipFilePath = m_baseExtraFilesPath;
-            clipFilePath.append(L"_clips"); 
-           // ISMStore::File::Ptr clipFilePtr = ISMStore::File::Create(clipFilePath.c_str());
-            HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> store = new SMSQLiteDiffsetTileStore(clipFilePath, 0);//DiffSetTileStore(clipFilePath, 0);
-            ((SMSQLiteDiffsetTileStore*)(store.GetPtr()))->Open();
-            //store->StoreMasterHeader(NULL,0);
-            m_scmIndexPtr->SetClipStore(store);
-      //      auto pool = ScalableMeshMemoryPools<POINT>::Get()->GetDiffSetPool();
-      //      m_scmIndexPtr->SetClipPool(pool);
+                                         
             WString clipFileDefPath = m_baseExtraFilesPath;
             clipFileDefPath.append(L"_clipDefinitions");
             

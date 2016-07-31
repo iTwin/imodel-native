@@ -228,23 +228,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true);       
 
-    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const
-        {
-        RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
-
-
-        if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
-            {      
-            RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->GetClipStore().GetPtr(), SMStoreDataType::DiffSet, (uint64_t)m_SMIndex));
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
-            m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_diffSetsItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemItemPtr = storedMemoryPoolItem.get();
-            const_cast<atomic<size_t>&>(m_nbClips) = poolMemItemPtr->size();
-            }
-        return poolMemItemPtr;
-        }
-
+    virtual RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> GetDiffSetPtr() const;
+        
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> GetTileDTM()
         {
         std::lock_guard<std::mutex> lock(m_dtmLock); //don't want to add item twice
@@ -665,14 +650,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ClipRegistry* GetClipRegistry()
             {
             return m_clipRegistry.GetPtr();
-            }
-
-        HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& GetClipStore()
-            {
-            return m_clipStore;
-            }
-
-        void                SetClipPool(HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>& clipPool);
+            }        
+        
 
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
         void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
@@ -705,8 +684,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMDataStoreTypePtr<EXTENT> m_smDataStore;
                 
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
-        ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;        
-        HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>> m_clipStore;
+        ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
 
 
