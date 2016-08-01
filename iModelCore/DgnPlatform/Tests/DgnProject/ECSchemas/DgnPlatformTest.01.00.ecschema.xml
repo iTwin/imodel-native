@@ -3,7 +3,7 @@
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
     <ECClass typeName="TestElement" isDomainClass="True">

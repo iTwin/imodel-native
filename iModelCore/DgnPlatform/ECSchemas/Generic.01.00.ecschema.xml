@@ -2,7 +2,7 @@
 <ECSchema schemaName="Generic" nameSpacePrefix="generic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Graphic3d">
         <!-- A generic Graphic3d is used by a conversion process when: -->
@@ -53,11 +53,10 @@
     <!-- Base class for all relationships where the domain is unknown in order to avoid that they get persisted as foreign keys in the dgn_Element table-->
     <ECRelationshipClass typeName="ElementRefersToElement" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
+                    <Strategy>TablePerHierarchy</Strategy>
                     <Options>SharedColumns</Options>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

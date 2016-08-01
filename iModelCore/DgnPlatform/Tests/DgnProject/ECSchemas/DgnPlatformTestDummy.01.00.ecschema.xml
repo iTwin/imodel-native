@@ -3,7 +3,7 @@
     <!-- The purpose of this "dummy" schema is just to introduce some classes, so that schemas imported later will have classids that do not start from 1. -->
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
     <ECClass typeName="DummyTestElement" isDomainClass="True">

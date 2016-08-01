@@ -849,7 +849,7 @@ TEST_F(ImportTests, simpleSchemaImport)
     {
     Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'BisCore' version = '01.00' prefix = 'bis' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Element1' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
