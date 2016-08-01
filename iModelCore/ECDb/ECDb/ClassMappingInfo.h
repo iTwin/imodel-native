@@ -65,17 +65,17 @@ protected:
     ClassMap const* m_baseClassMap;
 
 private:
-    BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
+    BentleyStatus DoEvaluateMapStrategy(UserECDbMapStrategy&, ClassMap const* baseClassMap);
 
-    bool GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps, bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECN::ECClassCR) const;
+    MappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
     MappingStatus EvaluateMapStrategy();
     virtual MappingStatus _EvaluateMapStrategy();
 
 protected:
-    BentleyStatus EvaluateSharedTableMapStrategy(ClassMap const& baseClassMap, UserECDbMapStrategy const&);
-    bool ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const;
+    BentleyStatus EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, UserECDbMapStrategy const&);
+    bool ValidateTablePerHierarchyChildStrategy(ECDbMapStrategy const& baseStrategy, UserECDbMapStrategy const&) const;
     virtual BentleyStatus _InitializeFromSchema();
 
     IssueReporter const& Issues() const;

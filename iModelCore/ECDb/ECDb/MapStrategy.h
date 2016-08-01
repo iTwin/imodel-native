@@ -90,8 +90,9 @@ public:
         {
         NotMapped = 0,
         OwnTable = 1,
-        SharedTable = 2,
+        TablePerHierarchy = 2,
         ExistingTable = 3,
+        SharedTable = 4,
 
         ForeignKeyRelationshipInTargetTable = 100,
         ForeignKeyRelationshipInSourceTable = 101
@@ -112,19 +113,18 @@ private:
     Strategy m_strategy;
     Options m_options;
     int m_minimumSharedColumnCount;
-    bool m_appliesToSubclasses;
     bool m_isResolved;
 
 public:
-    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_options(Options::None), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_appliesToSubclasses(false), m_isResolved(false) {}
+    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_options(Options::None), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isResolved(false) {}
 
     //operators
-    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_options == rhs.m_options && m_appliesToSubclasses == rhs.m_appliesToSubclasses && m_isResolved == rhs.m_isResolved; }
+    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_options == rhs.m_options && m_isResolved == rhs.m_isResolved; }
     bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
 
     BentleyStatus Assign(UserECDbMapStrategy const&);
-    BentleyStatus Assign(Strategy, Options, int minimumSharedColumnCount, bool appliesToSubclasses);
-    BentleyStatus Assign(Strategy strategy, bool appliesToSubclasses) { return Assign(strategy, Options::None, ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT, appliesToSubclasses); }
+    BentleyStatus Assign(Strategy, Options, int minimumSharedColumnCount);
+    BentleyStatus Assign(Strategy strategy) { return Assign(strategy, Options::None, ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT); }
 
     bool IsValid() const;
 
@@ -133,7 +133,6 @@ public:
     Options GetOptions() const { return m_options; }
     //!@returns Minimum shared column count or ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT if unset
     int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
-    bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
 
     bool IsResolved() const { return m_isResolved; }
     //Helper

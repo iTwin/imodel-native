@@ -303,7 +303,7 @@ DbResult DbSchemaPersistenceManager::ReadPropertyMappings(ClassDbMapping& classM
 //static
 DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, BaseId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses FROM ec_ClassMap ORDER BY Id");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, BaseId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount FROM ec_ClassMap ORDER BY Id");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -320,7 +320,7 @@ DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbC
         ECDbMapStrategy mapStrategy;
         if (SUCCESS != mapStrategy.Assign(Enum::FromInt<ECDbMapStrategy::Strategy>(stmt->GetValueInt(3)),
                                           Enum::FromInt<ECDbMapStrategy::Options>(stmt->GetValueInt(4)),
-                                          minSharedColCount, IsTrue(stmt->GetValueInt(6))))
+                                          minSharedColCount))
             {
             BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");
             return BE_SQLITE_ERROR;
@@ -646,7 +646,7 @@ DbResult DbSchemaPersistenceManager::InsertPropertyMapping(ECDbCR ecdb, Property
 //static
 DbResult DbSchemaPersistenceManager::InsertClassMapping(ECDbCR ecdb, ClassDbMapping const& cm)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, BaseId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, BaseId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount) VALUES (?,?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -665,8 +665,6 @@ DbResult DbSchemaPersistenceManager::InsertClassMapping(ECDbCR ecdb, ClassDbMapp
     const int minSharedColCount = cm.GetMapStrategy().GetMinimumSharedColumnCount();
     if (minSharedColCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
         stmt->BindInt(6, minSharedColCount);
-
-    stmt->BindInt(7, cm.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
 
     const DbResult stat = stmt->Step();
     return stat == BE_SQLITE_DONE ? BE_SQLITE_OK : stat;
@@ -1490,7 +1488,8 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable == 100 &&
                   (int) ECDbMapStrategy::Strategy::NotMapped == 0 &&
                   (int) ECDbMapStrategy::Strategy::OwnTable == 1 &&
-                  (int) ECDbMapStrategy::Strategy::SharedTable == 2, "Persisted Enum has changed: ECDbMapStrategy::Strategy.");
+                  (int) ECDbMapStrategy::Strategy::SharedTable == 4 &&
+                  (int) ECDbMapStrategy::Strategy::TablePerHierarchy == 2, "Persisted Enum has changed: ECDbMapStrategy::Strategy.");
 
     static_assert((int) ECPropertyKind::Navigation == 4 &&
                   (int) ECPropertyKind::Primitive == 0 &&

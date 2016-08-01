@@ -1726,7 +1726,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
         }
 
     //Delete all instances
-    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
+    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy;
     if (purgeECInstances)
         {
         if (DeleteECInstances(deletedClass) != SUCCESS)

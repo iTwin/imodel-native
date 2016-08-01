@@ -658,10 +658,10 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     std::map<ECClassId, PersistedMapStrategy> expectedResults {
-            {ecdb.Schemas().GetECClassId("ReferredSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::ParentOfJoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("ReferredSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::SharedTable, PersistedMapStrategy::Options::JoinedTable, true)}
+            {ecdb.Schemas().GetECClassId("ReferredSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::ParentOfJoinedTable)},
+            {ecdb.Schemas().GetECClassId("ReferredSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::JoinedTable)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::JoinedTable)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::JoinedTable)}
         };
 
     for (std::pair<ECClassId, PersistedMapStrategy> const& kvPair : expectedResults)
@@ -673,7 +673,6 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
         ASSERT_TRUE(TryGetPersistedMapStrategy(actualMapStrategy, ecdb, classId));
         ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
         ASSERT_EQ(expectedMapStrategy.m_options, actualMapStrategy.m_options);
-        ASSERT_EQ(expectedMapStrategy.m_appliesToSubclasses, actualMapStrategy.m_appliesToSubclasses);
         }
     }
 

@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //********************* ECDbPolicy ******************************************
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
@@ -35,8 +35,8 @@ ECDbPolicy& ECDbPolicy::operator= (ECDbPolicy&& rhs)
     {
     if (this != &rhs)
         {
-        m_isSupported = std::move (rhs.m_isSupported);
-        m_notSupportedMessage = std::move (rhs.m_notSupportedMessage);
+        m_isSupported = std::move(rhs.m_isSupported);
+        m_notSupportedMessage = std::move(rhs.m_notSupportedMessage);
         }
 
     return *this;
@@ -53,7 +53,7 @@ IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::s_noECSqlTypeFilter
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicyAssertion const& IsValidInECSqlPolicyAssertion::Get ()
+ECDbPolicyAssertion const& IsValidInECSqlPolicyAssertion::Get()
     {
     return s_noECSqlTypeFilterAssertionFlyweight;
     }
@@ -62,9 +62,9 @@ ECDbPolicyAssertion const& IsValidInECSqlPolicyAssertion::Get ()
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::Get (ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
+IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::Get(ECSqlType ecSqlTypeFilter, bool isPolymorphicClassExpression)
     {
-    return IsValidInECSqlPolicyAssertion (ecSqlTypeFilter, isPolymorphicClassExpression);
+    return IsValidInECSqlPolicyAssertion(ecSqlTypeFilter, isPolymorphicClassExpression);
     }
 
 
@@ -73,15 +73,15 @@ IsValidInECSqlPolicyAssertion IsValidInECSqlPolicyAssertion::Get (ECSqlType ecSq
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::GetClassPolicy (ClassMap const& classMap, ECDbPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::GetClassPolicy(ClassMap const& classMap, ECDbPolicyAssertion const& assertion)
     {
-    switch (assertion.GetType ())
+    switch (assertion.GetType())
         {
-        case ECDbPolicyAssertion::Type::IsValidInECSql:
-            return DoGetClassPolicy (classMap, static_cast<IsValidInECSqlPolicyAssertion const&> (assertion));
+            case ECDbPolicyAssertion::Type::IsValidInECSql:
+                return DoGetClassPolicy(classMap, static_cast<IsValidInECSqlPolicyAssertion const&> (assertion));
 
-        default:
-            return ECDbPolicy::CreateNotSupported ();
+            default:
+                return ECDbPolicy::CreateNotSupported();
         }
     }
 

@@ -159,7 +159,7 @@ struct ClassMap : RefCountedBase
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
 
-        ClassMap const* FindSharedTableRootClassMap() const;
+        ClassMap const* FindTablePerHierarchyRootClassMap() const;
         ClassMap const* FindClassMapOfParentOfJoinedTable() const;
         BentleyStatus GetPathToParentOfJoinedTable(std::vector<ClassMap const*>& path) const;
         ClassMap const* GetParentOfJoinedTable() const;

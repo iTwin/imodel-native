@@ -427,7 +427,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "        <ClassMap xmlns='ECDbMap.01.01'>"
                                           "                <MapStrategy>"
                                           "                   <Strategy>NotMapped</Strategy>"
-                                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
                                           "                </MapStrategy>"
                                           "        </ClassMap>"
                                           "    </ECCustomAttributes>"
@@ -444,7 +443,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "        <ClassMap xmlns='ECDbMap.01.01'>"
                                           "                <MapStrategy>"
                                           "                   <Strategy>NotMapped</Strategy>"
-                                          "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
                                           "                </MapStrategy>"
                                           "        </ClassMap>"
                                           "    </ECCustomAttributes>"
@@ -462,15 +460,12 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
             PersistedMapStrategy mapStrategy;
             ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
             ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
-            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
 
             ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
             ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
-            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
 
             ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
             ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
-            ASSERT_FALSE(mapStrategy.m_appliesToSubclasses);
             }
 
             {
@@ -491,7 +486,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "        <ClassMap xmlns='ECDbMap.01.01'>"
                                           "                <MapStrategy>"
                                           "                   <Strategy>NotMapped</Strategy>"
-                                          "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
                                           "                </MapStrategy>"
                                           "        </ClassMap>"
                                           "    </ECCustomAttributes>"
@@ -526,15 +520,12 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
             PersistedMapStrategy mapStrategy;
             ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
             ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
-            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
 
             ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
             ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
-            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
 
             ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
             ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
-            ASSERT_TRUE(mapStrategy.m_appliesToSubclasses);
             }
 
     }
@@ -873,7 +864,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "        <ClassMap xmlns='ECDbMap.01.01'>"
                    "            <MapStrategy>" 
                    "               <Strategy>NotMapped</Strategy>"
-                   "               <AppliesToSubclasses>True</AppliesToSubclasses>"
                    "           </MapStrategy>"
                    "        </ClassMap>"
                    "    </ECCustomAttributes>"
@@ -889,7 +879,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "        <ClassMap xmlns='ECDbMap.01.01'>"
                    "            <MapStrategy>"
                    "               <Strategy>NotMapped</Strategy>"
-                   "               <AppliesToSubclasses>True</AppliesToSubclasses>"
                    "           </MapStrategy>"
                    "        </ClassMap>"
                    "    </ECCustomAttributes>"

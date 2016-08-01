@@ -58,9 +58,9 @@ protected:
             {
             NotMapped,
             OwnTable,
-            SharedTable,
+            TablePerHierarachy,
             ExistingTable,
-
+            SharedTable,
             ForeignKeyRelationshipInTargetTable = 100,
             ForeignKeyRelationshipInSourceTable = 101
             };
@@ -75,10 +75,9 @@ protected:
 
         Strategy m_strategy;
         Options m_options;
-        bool m_appliesToSubclasses;
 
-        PersistedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None), m_appliesToSubclasses(false) {}
-        PersistedMapStrategy(Strategy strategy, Options options, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_appliesToSubclasses(appliesToSubclasses) {}
+        PersistedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None) {}
+        PersistedMapStrategy(Strategy strategy, Options options) : m_strategy(strategy), m_options(options) {}
         };
 
     bool TryGetPersistedMapStrategy(PersistedMapStrategy& strategy, ECDbCR ecdb, ECN::ECClassId classId) const;

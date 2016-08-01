@@ -424,7 +424,6 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
                            "MapStrategyOptions INTEGER NOT NULL,"
-                           "MapStrategyAppliesToSubclasses BOOLEAN NOT NULL CHECK (MapStrategyAppliesToSubclasses IN (0,1)),"
                            "MapStrategyMinSharedColumnCount INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;

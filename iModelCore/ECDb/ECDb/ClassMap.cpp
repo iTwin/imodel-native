@@ -35,7 +35,7 @@ MappingStatus ClassMap::Map(SchemaImportContext& schemaImportContext, ClassMappi
     ECDbMapStrategy const& mapStrategy = GetMapStrategy();
 
     BeAssert(mapInfo.GetBaseClassMap() == nullptr ||
-        mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable ||
+        mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy ||
          mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable ||
          mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
 
@@ -153,8 +153,8 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
     ECDbMapStrategy const& strategy = mappingInfo.GetMapStrategy();
     switch (strategy.GetStrategy())
         {
-        //ExistingTable: For now we just declare that only a single ECClass can map to an existing table
             case ECDbMapStrategy::Strategy::ExistingTable:
+            case ECDbMapStrategy::Strategy::SharedTable:
                 return false;
 
                 //OwnedTable obviously always has an exclusive root because only a single class is mapped to the table.
@@ -165,19 +165,15 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
                 break;
         }
 
-    //Shared table for unrelated classes: Can have multiple roots
-    if (!strategy.AppliesToSubclasses())
-        return false;
-
-    //For subclasses in a shared table hierarchy, true must be returned for joined table root classes
+    //For subclasses in a TablePerHierarchy, true must be returned for joined table root classes
     ClassMap const* baseClassMap = mappingInfo.GetBaseClassMap();
-    if (baseClassMap == nullptr) //this is the root of the shared table class hierarchy
+    if (baseClassMap == nullptr) //this is the root of the TablePerHierarchy class hierarchy
         return true;
 
-    //if base class doesn't have SharedTable, this class is the starting point, and therefore the exclusive root.
+    //if base class doesn't have TablePerHierarchy, this class is the starting point, and therefore the exclusive root.
     //if base class has shared table strategy and is the direct parent of the joined table, this class is the
     //starting point of the joined table, so also the exclusive root (of the joined table)
-    return baseClassMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable ||
+    return baseClassMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::TablePerHierarchy ||
         baseClassMap->IsParentOfJoinedTable();
     }
 
@@ -864,10 +860,10 @@ ClassMap const* ClassMap::FindClassMapOfParentOfJoinedTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  01/2016
 //---------------------------------------------------------------------------------------
-ClassMap const* ClassMap::FindSharedTableRootClassMap() const
+ClassMap const* ClassMap::FindTablePerHierarchyRootClassMap() const
     {
     ECDbMapStrategy mapStrategy = GetMapStrategy();
-    if (mapStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && !mapStrategy.AppliesToSubclasses())
+    if (mapStrategy.GetStrategy() != ECDbMapStrategy::Strategy::TablePerHierarchy)
         return nullptr;
 
     ECClassId parentId = GetBaseClassId();
@@ -881,7 +877,7 @@ ClassMap const* ClassMap::FindSharedTableRootClassMap() const
         return nullptr;
         }
 
-    return parent->FindSharedTableRootClassMap();
+    return parent->FindTablePerHierarchyRootClassMap();
     }
 
 //---------------------------------------------------------------------------------------
@@ -982,7 +978,7 @@ Utf8CP ClassMap::TypeToString(Type type)
 ColumnFactory::ColumnFactory(ClassMapCR classMap) : m_classMap(classMap), m_usesSharedColumnStrategy(false)
     {
     m_usesSharedColumnStrategy = Enum::Contains(m_classMap.GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::SharedColumns);
-    BeAssert(!m_usesSharedColumnStrategy || m_classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable);
+    BeAssert(!m_usesSharedColumnStrategy || m_classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy);
 
     Update();
     }

@@ -939,7 +939,7 @@ DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> con
     ClassMap const* firstClassMap = *classMaps.begin();
     bool addClassIdCol = false;
     if (classMaps.size() == 1)
-        addClassIdCol = firstClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable;
+        addClassIdCol = firstClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy;
     else
         addClassIdCol = classMaps.size() > 1;
 
@@ -1077,7 +1077,7 @@ std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshi
             return classMaps;
             }
 
-        const bool recursive = classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable && constraint.GetIsPolymorphic();
+        const bool recursive = classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::TablePerHierarchy && constraint.GetIsPolymorphic();
         if (SUCCESS != GetClassMapsFromRelationshipEnd(classMaps, *ecClass, recursive))
             {
             BeAssert(false);

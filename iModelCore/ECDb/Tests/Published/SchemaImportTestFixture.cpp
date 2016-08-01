@@ -199,7 +199,7 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbMappingTestFixture::TryGetPersistedMapStrategy(PersistedMapStrategy& strategy, ECDbCR ecdb, ECN::ECClassId classId) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, MapStrategyOptions, MapStrategyAppliesToSubclasses FROM ec_ClassMap WHERE ClassId = ?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, MapStrategyOptions FROM ec_ClassMap WHERE ClassId = ?");
     EXPECT_TRUE(stmt != nullptr);
 
     stmt->BindId(1, classId);
@@ -207,8 +207,7 @@ bool ECDbMappingTestFixture::TryGetPersistedMapStrategy(PersistedMapStrategy& st
         {
         const PersistedMapStrategy::Strategy strat = (PersistedMapStrategy::Strategy) stmt->GetValueInt(0);
         const PersistedMapStrategy::Options options = (PersistedMapStrategy::Options) stmt->GetValueInt(1);
-        const bool appliesToSubclasses = stmt->GetValueInt(2) == 1;
-        strategy = PersistedMapStrategy(strat, options, appliesToSubclasses);
+        strategy = PersistedMapStrategy(strat, options);
         return true;
         }
 

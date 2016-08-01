@@ -1682,7 +1682,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName(Utf8Stri
     if (table.FindColumn(columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable || GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy || GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         return true;
 
     //Following error occure in Upgrading ECSchema but is not fatal.
@@ -1702,7 +1702,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName(Utf8StringR
     if (table.FindColumn(columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable || GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy || GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
         return true;
 
     //Following error occurs in Upgrading ECSchema but is not fatal.

@@ -77,9 +77,9 @@ MappingStatus ClassMappingInfo::EvaluateMapStrategy()
     if (m_ecInstanceIdColumnName.empty())
         m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
 
-    //! We override m_isMapToVirtualTable if SharedTable was used.
+    //! We override m_isMapToVirtualTable if TablePerHierarchy was used.
     if (m_isMapToVirtualTable)
-        m_isMapToVirtualTable = m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::SharedTable;
+        m_isMapToVirtualTable = m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::TablePerHierarchy;
 
     return MappingStatus::Success;
     }
@@ -91,14 +91,14 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
     if (m_ecClass.IsCustomAttributeClass() || m_ecClass.IsStructClass())
         {
         LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.");
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
+        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped);
         return MappingStatus::Success;
         }
 
     if (ClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
         {
         LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
+        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped);
         return MappingStatus::Success;
         }
 
@@ -110,9 +110,13 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
         return MappingStatus::Error;
         }
 
-    bool baseClassesNotMappedYet = false;
-    if (SUCCESS != DoEvaluateMapStrategy(baseClassesNotMappedYet, *userStrategy))
-        return baseClassesNotMappedYet ? MappingStatus::BaseClassesNotMapped : MappingStatus::Error;
+    ClassMap const* baseClassMap = nullptr;
+    MappingStatus stat = TryGetBaseClassMap(baseClassMap);
+    if (stat != MappingStatus::Success)
+        return stat;
+
+    if (SUCCESS != DoEvaluateMapStrategy(*userStrategy, baseClassMap))
+        return MappingStatus::Error;
 
     BeAssert(m_resolvedStrategy.IsResolved());
     return MappingStatus::Success;
@@ -121,20 +125,21 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy& userStrategy)
+BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userStrategy, ClassMap const* baseClassMap)
     {
-    bvector<ClassMap const*> baseClassMaps;
-    bvector<ClassMap const*> polymorphicSharedTableClassMaps; // SharedTable (AppliesToSubclasses) have the highest priority, but there can be only one
-    bvector<ClassMap const*> polymorphicOwnTableClassMaps; // OwnTable (AppliesToSubclasses) have second priority
-    bvector<ClassMap const*> polymorphicNotMappedClassMaps; // NotMapped (AppliesToSubclasses) has priority only over NotMapped
-
-    baseClassesNotMappedYet = !GatherBaseClassMaps(baseClassMaps, polymorphicSharedTableClassMaps, polymorphicOwnTableClassMaps, polymorphicNotMappedClassMaps, m_ecClass);
-    if (baseClassesNotMappedYet)
-        return ERROR;
-
-    if (baseClassMaps.empty())
+    if (baseClassMap == nullptr)
         {
-        BeAssert(polymorphicSharedTableClassMaps.empty() && polymorphicOwnTableClassMaps.empty() && polymorphicNotMappedClassMaps.empty());
+        if (m_isMapToVirtualTable)
+            {
+            if (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable || 
+                userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::OwnTable || 
+                (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy.AppliesToSubclasses()))
+                {
+                Issues().Report(ECDbIssueSeverity::Error, "Invalid MapStrategy '%s' on abstract ECClass '%s'. Only MapStrategies 'TablePerHierarchy' or 'NotMapped' are allowed on abstract classes.", userStrategy.ToString().c_str(), m_ecClass.GetFullName());
+                return ERROR;
+                }
+            }
+
         if (SUCCESS != m_resolvedStrategy.Assign(userStrategy))
             {
             Issues().Report(ECDbIssueSeverity::Error, "Invalid MapStrategy '%s' on ECClass '%s'.", userStrategy.ToString().c_str(), m_ecClass.GetFullName());
@@ -144,82 +149,61 @@ BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(bool& baseClassesNotMapped
         return SUCCESS;
         }
 
-    // ClassMappingRule: No more than one ancestor of a class can use SharedTable-Polymorphic strategy. Mapping fails if this is violated
-    if (polymorphicSharedTableClassMaps.size() > 1)
+    BeAssert(baseClassMap != nullptr);
+    ECDbMapStrategy const& baseStrategy = baseClassMap->GetMapStrategy();
+    
+    switch (baseStrategy.GetStrategy())
         {
-        if (Issues().IsSeverityEnabled(ECDbIssueSeverity::Error))
+            case ECDbMapStrategy::Strategy::OwnTable:
+            case ECDbMapStrategy::Strategy::ExistingTable:
+            case ECDbMapStrategy::Strategy::SharedTable:
+                //Those parent strategies are not inherited to subclasses.
+                return m_resolvedStrategy.Assign(userStrategy);
+
+            case ECDbMapStrategy::Strategy::NotMapped:
             {
-            Utf8String baseClasses;
-            for (ClassMap const* baseMap : polymorphicSharedTableClassMaps)
+            if (!userStrategy.IsUnset())
                 {
-                baseClasses.append(baseMap->GetClass().GetFullName());
-                baseClasses.append(" ");
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class's MapStrategy 'NotMapped'. "
+                                "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
+                                m_ecClass.GetFullName(), userStrategy.ToString().c_str());
+                return ERROR;
                 }
 
-            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (AppliesToSubclasses)'. This is not supported. The base ECClasses are : %s",
-                            m_ecClass.GetFullName(), baseClasses.c_str());
+            return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped);
             }
 
-        return ERROR;
+            case ECDbMapStrategy::Strategy::TablePerHierarchy:
+            {
+            if (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::NotMapped)
+                return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped);
+
+            m_baseClassMap = baseClassMap; //only need to hold the base class map for TPH case
+            return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, userStrategy);
+            }
+            default:
+                BeAssert(false && "should not be called");
+                return ERROR;
         }
-
-    ClassMap const* parentClassMap = nullptr;
-    if (!polymorphicSharedTableClassMaps.empty())
-        parentClassMap = polymorphicSharedTableClassMaps[0];
-    else if (!polymorphicOwnTableClassMaps.empty())
-        parentClassMap = polymorphicOwnTableClassMaps[0];
-    else if (!polymorphicNotMappedClassMaps.empty())
-        parentClassMap = polymorphicNotMappedClassMaps[0];
-    else
-        parentClassMap = baseClassMaps[0];
-
-    BeAssert(parentClassMap != nullptr);
-    ECDbMapStrategy const& parentStrategy = parentClassMap->GetMapStrategy();
-    if (!ValidateChildStrategy(parentStrategy, userStrategy))
-        return ERROR;
-
-    if (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::NotMapped)
-        return m_resolvedStrategy.Assign(userStrategy);
-
-    // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable (AppliesToSubclasses), use this
-    if (polymorphicSharedTableClassMaps.size() == 1)
-        {
-        m_baseClassMap = parentClassMap; //only need to hold the parent class map for shared table case
-        return EvaluateSharedTableMapStrategy(*parentClassMap, userStrategy);
-        }
-
-    // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
-    if (polymorphicOwnTableClassMaps.size() > 0)
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, true);
-
-    // ClassMappingRule: If one or more parent is using NotMapped-polymorphic, use NotMapped-polymorphic
-    if (polymorphicNotMappedClassMaps.size() > 0)
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
-
-    return m_resolvedStrategy.Assign(userStrategy);
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& parentClassMap, UserECDbMapStrategy const& userStrategy)
+BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, UserECDbMapStrategy const& userStrategy)
     {
-    ECDbMapStrategy const& parentStrategy = parentClassMap.GetMapStrategy();
-    BeAssert(parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentStrategy.AppliesToSubclasses());
+    ECDbMapStrategy const& baseStrategy = baseClassMap.GetMapStrategy();
+    BeAssert(baseStrategy.GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy);
 
-    if (!m_ecInstanceIdColumnName.empty())
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. For subclasses of an ECClass with MapStrategy SharedTable(AppliesToSubclasses), ECInstanceIdColumn may not be defined in the ClassMap custom attribute.",
-                        m_ecClass.GetFullName());
+    if (!ValidateTablePerHierarchyChildStrategy(baseStrategy, userStrategy))
         return ERROR;
-        }
 
-    DbTable const& parentJoinedTable = parentClassMap.GetJoinedTable();
-    m_tableName = parentJoinedTable.GetName();
-    m_ecInstanceIdColumnName.assign(parentJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName());
+    DbTable const& baseClassJoinedTable = baseClassMap.GetJoinedTable();
+    m_tableName = baseClassJoinedTable.GetName();
+    m_ecInstanceIdColumnName.assign(baseClassJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName());
 
-    UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClassMap.GetClass());
-    if (parentUserStrategy == nullptr)
+    UserECDbMapStrategy const* baseClassUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(baseClassMap.GetClass());
+    if (baseClassUserStrategy == nullptr)
         {
         BeAssert(false);
         return ERROR;
@@ -231,8 +215,8 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
     int minimumSharedColumnCount = ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
     if (!Enum::Contains(userOptions, UserECDbMapStrategy::Options::DisableSharedColumns) &&
         (Enum::Contains(userOptions, UserECDbMapStrategy::Options::SharedColumns) ||
-         Enum::Contains(parentStrategy.GetOptions(), ECDbMapStrategy::Options::SharedColumns) ||
-         Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
+         Enum::Contains(baseStrategy.GetOptions(), ECDbMapStrategy::Options::SharedColumns) ||
+         Enum::Contains(baseClassUserStrategy->GetOptions(), UserECDbMapStrategy::Options::SharedColumnsForSubclasses)))
         {
         options = ECDbMapStrategy::Options::SharedColumns;
 
@@ -241,32 +225,32 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
             minimumSharedColumnCount = userStrategy.GetMinimumSharedColumnCount();
 
         if (minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
-            minimumSharedColumnCount = parentUserStrategy->GetMinimumSharedColumnCount();
+            minimumSharedColumnCount = baseClassUserStrategy->GetMinimumSharedColumnCount();
         }
 
     if (Enum::Contains(userOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
         options = options | ECDbMapStrategy::Options::ParentOfJoinedTable;
-    else if (Enum::Intersects(parentStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
+    else if (Enum::Intersects(baseStrategy.GetOptions(), ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable))
         {
         for (ECClassCP anotherBaseClass : m_ecClass.GetBaseClasses())
             {
             ClassMap const* anotherBaseClassMap = GetECDbMap().GetClassMap(*anotherBaseClass);
             BeAssert(anotherBaseClassMap != nullptr);
-            if (anotherBaseClassMap == &parentClassMap || anotherBaseClassMap->GetMapStrategy().IsNotMapped())
+            if (anotherBaseClassMap == &baseClassMap || anotherBaseClassMap->GetMapStrategy().IsNotMapped())
                 continue;
 
             //! Skip interface classes implement by primary class
             if (anotherBaseClassMap->IsMappedToSingleTable() && anotherBaseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
                 continue;
 
-            if (&parentClassMap.GetPrimaryTable() != &anotherBaseClassMap->GetPrimaryTable() || &parentClassMap.GetJoinedTable() != &anotherBaseClassMap->GetJoinedTable())
+            if (&baseClassMap.GetPrimaryTable() != &anotherBaseClassMap->GetPrimaryTable() || &baseClassMap.GetJoinedTable() != &anotherBaseClassMap->GetJoinedTable())
                 {
                 m_ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                                              "ECClass '%s' has two base ECClasses which don't map to the same tables. "
                                                                              "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'. "
                                                                              "Base ECClass '%s' is mapped to primary table '%s' and joined table '%s'.",
-                                                                             m_ecClass.GetFullName(), parentClassMap.GetClass().GetFullName(),
-                                                                             parentClassMap.GetPrimaryTable().GetName().c_str(), parentClassMap.GetJoinedTable().GetName().c_str(),
+                                                                             m_ecClass.GetFullName(), baseClassMap.GetClass().GetFullName(),
+                                                                             baseClassMap.GetPrimaryTable().GetName().c_str(), baseClassMap.GetJoinedTable().GetName().c_str(),
                                                                              anotherBaseClass->GetFullName(), anotherBaseClassMap->GetPrimaryTable().GetName().c_str(),
                                                                              anotherBaseClassMap->GetJoinedTable().GetName().c_str());
                 return ERROR;
@@ -274,7 +258,7 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
             }
 
         options = options | ECDbMapStrategy::Options::JoinedTable;
-        if (Enum::Contains(parentUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
+        if (Enum::Contains(baseClassUserStrategy->GetOptions(), UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass))
             {
             //Joined tables are named after the class which becomes the root class of classes in the joined table
             if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
@@ -282,10 +266,10 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
 
             //For classes in the joined table the id column name is determined like this:
             //"<Rootclass name><Rootclass ECInstanceId column name>"
-            ClassMap const* rootClassMap = parentClassMap.FindSharedTableRootClassMap();
+            ClassMap const* rootClassMap = baseClassMap.FindTablePerHierarchyRootClassMap();
             if (rootClassMap == nullptr)
                 {
-                BeAssert(false && "There should always be a root class map which defines the shared table strategy");
+                BeAssert(false && "There should always be a root class map which defines the TablePerHierarchy strategy");
                 return ERROR;
                 }
 
@@ -293,75 +277,45 @@ BentleyStatus ClassMappingInfo::EvaluateSharedTableMapStrategy(ClassMap const& p
             }
         }
 
-    return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, options, minimumSharedColumnCount, true);
+    return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::TablePerHierarchy, options, minimumSharedColumnCount);
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ClassMappingInfo::ValidateChildStrategy(ECDbMapStrategy const& parentStrategy, UserECDbMapStrategy const& childStrategy) const
+bool ClassMappingInfo::ValidateTablePerHierarchyChildStrategy(ECDbMapStrategy const& baseStrategy, UserECDbMapStrategy const& strategy) const
     {
-    if (!parentStrategy.AppliesToSubclasses())
+    BeAssert(baseStrategy.GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy);
+    if (!m_ecInstanceIdColumnName.empty())
         {
-        BeAssert(parentStrategy.AppliesToSubclasses() && "In ClassMapInfo::ValidateChildStrategy parentStrategy should always apply to subclasses");
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. For subclasses of an ECClass with MapStrategy TablePerHierarchy, ECInstanceIdColumn may not be defined in the ClassMap custom attribute.",
+                        m_ecClass.GetFullName());
         return false;
         }
 
-    if (parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::NotMapped)
-        {
-        const bool isValid = childStrategy.IsUnset();
-        if (!isValid)
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the parent's MapStrategy 'NotMapped (AppliesToSubclasses=True)'. "
-                            "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
-                            m_ecClass.GetFullName(), childStrategy.ToString().c_str());
-            }
+    const ECDbMapStrategy::Options baseOptions = baseStrategy.GetOptions();
+    const UserECDbMapStrategy::Options options = strategy.GetOptions();
+    bool isValid = strategy.GetStrategy() == UserECDbMapStrategy::Strategy::None;
 
-        return isValid;
-        }
+    //if shared columns has already been specified on parent, neither SharedColumnsForSubclasses nor
+    //minimum shared col count can be specified on child
+    if (isValid && Enum::Contains(baseOptions, ECDbMapStrategy::Options::SharedColumns))
+        isValid = !Enum::Contains(options, UserECDbMapStrategy::Options::SharedColumnsForSubclasses) &&
+        strategy.GetMinimumSharedColumnCount() == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
 
-    //If parent is not 'NotMapped' already, NotMapped can be applied at any point (but is then valid for all subclasses too (if any) - that was checked
-    //in InitializeFromSchema already)
-    if (childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::NotMapped)
-        return true;
+    if (isValid)
+        isValid = !Enum::Contains(options, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass) ||
+        !Enum::Intersects(baseOptions, ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable);
 
-    if (parentStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
-        {
-        const ECDbMapStrategy::Options parentOptions = parentStrategy.GetOptions();
-        const UserECDbMapStrategy::Options childOptions = childStrategy.GetOptions();
-        bool isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None && !childStrategy.AppliesToSubclasses();
-
-        //if shared columns has already been specified on parent, neither SharedColumnsForSubclasses nor
-        //minimum shared col count can be specified on child
-        if (isValid && Enum::Contains(parentOptions, ECDbMapStrategy::Options::SharedColumns))
-            isValid = !Enum::Contains(childOptions, UserECDbMapStrategy::Options::SharedColumnsForSubclasses) &&
-            childStrategy.GetMinimumSharedColumnCount() == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
-
-        if (isValid)
-            isValid = !Enum::Contains(childOptions, UserECDbMapStrategy::Options::JoinedTablePerDirectSubclass) ||
-            !Enum::Intersects(parentOptions, ECDbMapStrategy::Options::JoinedTable | ECDbMapStrategy::Options::ParentOfJoinedTable);
-
-        if (!isValid)
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the parent's MapStrategy 'SharedTable (AppliesToSubclasses)'. "
-                            "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses): Strategy must be 'NotMapped' or unset; "
-                            "if unset, Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES " and MinimumSharedColumnCount must not be set "
-                            "if 'shared columns' were already enabled on a base class; "
-                            "Options must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " "
-                            "if it was already specified on a base class.",
-                            m_ecClass.GetFullName(), childStrategy.ToString().c_str());
-            }
-
-        return isValid;
-        }
-
-    //all other cases
-    bool const isValid = childStrategy.IsUnset();
     if (!isValid)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the parent's MapStrategy '%s'. "
-                        "Subclasses of an ECClass with that MapStrategy must not define a MapStrategy.",
-                        m_ecClass.GetFullName(), childStrategy.ToString().c_str(), parentStrategy.ToString().c_str());
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the parent's MapStrategy 'TablePerHierarchs'. "
+                        "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses): Strategy must be 'NotMapped' or unset; "
+                        "if unset, Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES " and MinimumSharedColumnCount must not be set "
+                        "if 'shared columns' were already enabled on a base class; "
+                        "Options must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " "
+                        "if it was already specified on a base class.",
+                        m_ecClass.GetFullName(), strategy.ToString().c_str());
         }
 
     return isValid;
@@ -399,16 +353,6 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             if (!m_tableName.empty())
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
-                                m_ecClass.GetFullName());
-                return ERROR;
-                }
-            }
-
-        if (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::NotMapped)
-            {
-            if (!userStrategy->AppliesToSubclasses() && m_ecClass.GetClassModifier() != ECClassModifier::Sealed)
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. MapStrategy 'NotMapped' with AppliesToSubclasses=False cannot be set for ECClasses that might have subclasses.",
                                 m_ecClass.GetFullName());
                 return ERROR;
                 }
@@ -459,33 +403,28 @@ BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Returns true if all base classes have been mapped.
-* @bsimethod                                   Ramanujam.Raman                   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassMappingInfo::GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMaps, bvector<ClassMap const*>& tphMaps,
-                                           bvector<ClassMap const*>& tpcMaps, bvector<ClassMap const*>& nmhMaps, ECClassCR ecClass) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& baseClassMap) const
     {
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
+    std::vector<ClassMap const*> tphBaseClassMaps;
+    ClassMap const* ownTableBaseClassMap = nullptr;
+    ClassMap const* notMappedBaseClassMap = nullptr;
+    for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
         {
         ClassMap const* baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
-            return false;
+            return MappingStatus::BaseClassesNotMapped;
 
         ECDbMapStrategy const& baseMapStrategy = baseClassMap->GetMapStrategy();
-        if (!baseMapStrategy.AppliesToSubclasses())
-            {
-            // ClassMappingRule: non-polymorphic MapStrategies used in base classes have no effect on child classes
-            return true;
-            }
-
-        DbTable const& baseTable = baseClassMap->GetPrimaryTable();
         switch (baseMapStrategy.GetStrategy())
             {
-                case ECDbMapStrategy::Strategy::SharedTable:
+                case ECDbMapStrategy::Strategy::TablePerHierarchy:
                 {
+                DbTable const& baseTable = baseClassMap->GetPrimaryTable();
                 bool add = true;
-                for (ClassMap const* classMap : tphMaps)
+                for (ClassMap const* classMap : tphBaseClassMaps)
                     {
                     if (&classMap->GetPrimaryTable() == &baseTable)
                         {
@@ -495,27 +434,51 @@ bool ClassMappingInfo::GatherBaseClassMaps(bvector<ClassMap const*>& baseClassMa
                     }
 
                 if (add)
-                    tphMaps.push_back(baseClassMap);
+                    tphBaseClassMaps.push_back(baseClassMap);
                 break;
                 }
 
                 case ECDbMapStrategy::Strategy::OwnTable:
-                    tpcMaps.push_back(baseClassMap);
+                    ownTableBaseClassMap = baseClassMap;
                     break;
 
                 case ECDbMapStrategy::Strategy::NotMapped:
-                    nmhMaps.push_back(baseClassMap);
+                    notMappedBaseClassMap = baseClassMap;
                     break;
 
                 default:
                     BeAssert(false && "Unhandled MapStrategy for regular ECClass");
                     break;
             }
-
-        baseClassMaps.push_back(baseClassMap);
         }
 
-    return true;
+    if (tphBaseClassMaps.size() > 1)
+        {
+        // ClassMappingRule: No more than one ancestor of a class can use TablePerHierarchy strategy. Mapping fails if this is violated
+        if (Issues().IsSeverityEnabled(ECDbIssueSeverity::Error))
+            {
+            Utf8String baseClasses;
+            for (ClassMap const* baseMap : tphBaseClassMaps)
+                {
+                baseClasses.append(baseMap->GetClass().GetFullName());
+                baseClasses.append(" ");
+                }
+
+            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' has more than one base ECClass with the MapStrategy 'TablePerHierarchy'. This is not supported. The violating base ECClasses are: %s",
+                            m_ecClass.GetFullName(), baseClasses.c_str());
+            }
+
+        return MappingStatus::Error;
+        }
+
+    if (!tphBaseClassMaps.empty())
+        baseClassMap = tphBaseClassMaps[0];
+    else if (ownTableBaseClassMap != nullptr)
+        baseClassMap = ownTableBaseClassMap;
+    else
+        baseClassMap = notMappedBaseClassMap;
+
+    return MappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -699,7 +662,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     if (ContainsClassWithNotMappedStrategy(sourceClasses) || ContainsClassWithNotMappedStrategy(targetClasses))
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
+        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped);
         return MappingStatus::Success;
         }
 
@@ -723,18 +686,31 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::BaseClassesNotMapped;
 
         baseStrategy = &baseClassMap->GetMapStrategy();
-        if (!ValidateChildStrategy(*baseStrategy, *userStrategy))
+
+        if (baseStrategy->GetStrategy() == ECDbMapStrategy::Strategy::NotMapped)
+            {
+            if (!userStrategy->IsUnset())
+                {
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class's MapStrategy 'NotMapped'. "
+                                "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
+                                m_ecClass.GetFullName(), userStrategy->ToString().c_str());
+                return MappingStatus::Error;
+                }
+
+            m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped);
+            return MappingStatus::Success;
+            }
+
+        if (baseStrategy->GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'ExistingTable' which is not supported in an ECRelationshipClass hierarchy.",
+                            m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
             return MappingStatus::Error;
+            }
 
         if (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::NotMapped)
             {
             m_resolvedStrategy.Assign(*userStrategy);
-            return MappingStatus::Success;
-            }
-
-        if (baseStrategy->GetStrategy() == ECDbMapStrategy::Strategy::NotMapped)
-            {
-            m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
             return MappingStatus::Success;
             }
 
@@ -850,25 +826,18 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(UserECDbMapStra
         BeAssert(!m_allowDuplicateRelationships && "m_allowDuplicateRelationships is expected to only be set in root class");
         m_allowDuplicateRelationships = DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP());
 
-        if (baseClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
-            return EvaluateSharedTableMapStrategy(*baseClassMap, userStrategy);
-
-        if (baseClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'ExistingTable' which is not supported in an ECRelationshipClass hierarchy.",
-                            m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
-            return ERROR;
-            }
+        if (baseClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy)
+            return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, userStrategy);
         }
 
     if (!userStrategy.IsUnset())
         return m_resolvedStrategy.Assign(userStrategy);
 
     if (m_ecClass.GetClassModifier() == ECClassModifier::Abstract)
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, true);
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::TablePerHierarchy);
 
     //sealed rel classes without base class get own table
-    return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false);
+    return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable);
     }
 
 
@@ -887,7 +856,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
         return ERROR;
         }
 
-    if (!userStrategy.IsUnset() && userStrategy.GetStrategy() != UserECDbMapStrategy::Strategy::NotMapped)
+    if (!userStrategy.IsUnset())
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It implies the ForeignKey type mapping, but also has the ClassMap custom attribute. ForeignKey type mappings can only have the ClassMap custom attribute when the MapStrategy is set to 'NotMapped'.",
                         m_ecClass.GetFullName());
@@ -988,8 +957,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(UserECDbMapStr
         //return SUCCESS;
         }
 
-    //For relationship class the strategy must apply to subclasses, too. Subclasses cannot change the strategy
-    return m_resolvedStrategy.Assign(resolvedStrategy, true);
+    return m_resolvedStrategy.Assign(resolvedStrategy);
     }
 
 //---------------------------------------------------------------------------------------

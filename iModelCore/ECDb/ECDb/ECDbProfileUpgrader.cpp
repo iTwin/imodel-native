@@ -376,14 +376,13 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='01.00.01' prefix='ecdbmap' /> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
         "            <ClassMap xmlns='ECDbMap.01.00.01'> "
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses> "
         "                </MapStrategy>"
         "            </ClassMap> "
         "        </ECCustomAttributes> "
@@ -433,7 +432,6 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "            <ClassMap xmlns='ECDbMap.01.00.01'>"
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
-        "                   <AppliesToSubclasses>True</AppliesToSubclasses> "
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
