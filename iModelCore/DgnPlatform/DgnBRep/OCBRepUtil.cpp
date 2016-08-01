@@ -18,16 +18,14 @@ TopAbs_ShapeEnum OCBRepUtil::GetShapeType(TopoDS_Shape const& shape)
     if (TopAbs_COMPOUND != shapeType)
         return shapeType;
 
-    TopoDS_Iterator shapeIter(shape);
-
-    if (!shapeIter.More() || TopAbs_COMPOUND == (shapeType = GetShapeType(shapeIter.Value())))
-        return shapeType;
-
-    shapeIter.Next();
-
-    for (; shapeIter.More(); shapeIter.Next())
+    // NOTE: Ignore empty child compound shapes from Parasolid import (Mantis Issue #27733)...
+    for (TopoDS_Iterator shapeIter(shape); shapeIter.More(); shapeIter.Next())
         {
-        if (shapeType != GetShapeType(shapeIter.Value()))
+        TopAbs_ShapeEnum childShapeType = GetShapeType(shapeIter.Value());
+
+        if (TopAbs_COMPOUND == shapeType)
+            shapeType = childShapeType;
+        else if (shapeType != childShapeType)
             return TopAbs_COMPOUND;
         }
 
