@@ -45,7 +45,7 @@ always:
 
     always:
         >$(LogDir)run.bat
-        $[@realpath $(GTEST_EXE)] | $(SrcRoot)bsicommon/build/TeeGtest.py $(ResultsCapture)
+        $[@realpath $(GTEST_EXE)] | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
         exit
         <
         -$(RunPrefix) $(LogDir)run.bat
