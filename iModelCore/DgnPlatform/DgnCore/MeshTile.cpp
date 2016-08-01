@@ -725,6 +725,7 @@ void TileGeometry::Init(IGeometryR geom, IFacetOptionsR options)
     {
     geom.AddRef();
     m_geometry = &geom;
+    m_type = Type::Geometry;
     m_facetCount = FacetCountUtil::GetFacetCount(geom, options);
 
     double rangeVolume = m_range.Volume();
@@ -736,7 +737,15 @@ void TileGeometry::Init(IGeometryR geom, IFacetOptionsR options)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometry::Init(ISolidKernelEntityR solid, IFacetOptionsR options)
     {
-    // ###TODO: Solids...
+    solid.AddRef();
+    m_solidEntity = &solid;
+    m_type = Type::Solid;
+
+    m_facetCount = /* ###TODO SolidUtil::GetFacetCountApproximation(solid, options) */ 0;
+
+    double rangeVolume = m_range.Volume();
+    m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
+    m_isCurved = /* ###TODO T_HOST.GetSolidsKernelAdmin()._QueryEntityData(solid, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge) */ false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -860,6 +869,175 @@ PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode no
     return polyface;
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct TileGeometryProcessor : IGeometryProcessor
+{
+    Transform                       m_dgnToTarget;
+    XYZRangeTreeRootP               m_rangeTree;
+    DgnViewportR                    m_viewport;
+    DRange3d                        m_range;
+    IFacetOptionsR                  m_facetOptions;
+    ViewContextP                    m_viewContext;
+    TileGenerator::IProgressMeter&  m_progressMeter;
+    TileGeometryCacheR              m_geometryCache;
+    IFacetOptionsPtr                m_targetFacetOptions;
+
+    TileGeometryProcessor(DgnViewportR viewport, TileGeometryCacheR geometryCache, XYZRangeTreeRootP rangeTree, TransformCR dgnToTarget, IFacetOptionsR facetOptions, TileGenerator::IProgressMeter& progressMeter)
+        : m_dgnToTarget(dgnToTarget), m_rangeTree(rangeTree), m_viewport(viewport), m_range(DRange3d::NullRange()), m_facetOptions(facetOptions), m_viewContext(nullptr),
+          m_progressMeter(progressMeter), m_geometryCache(geometryCache), m_targetFacetOptions(facetOptions.Clone())
+        {
+        m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * dgnToTarget.ColumnXMagnitude());
+        }
+
+    virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
+
+    // ###TODO: IGeometryProcessor changes...
+    // virtual bool _ProcessAsBody(bool isCurved) const override { return isCurved; }
+    // virtual bool _ProcessAsFacets(bool isPolyface) const override { return true; }
+
+    void OnNewGeometry();
+    bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
+
+    virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
+    virtual bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
+    virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
+    virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
+    virtual bool _ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) override;
+
+    virtual void _OutputGraphics(ViewContextR context) override;
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::OnNewGeometry()
+    {
+    // ###TODO: Abort...
+    // if (m_progressMeter._WasAborted())
+    //    m_viewContext->SetAborted();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
+    {
+    OnNewGeometry();
+
+    DRange3d range;
+    if (!geom.TryGetRange(range))
+        return true;    // ignore and continue
+
+    Transform tf = Transform::FromProduct(m_dgnToTarget, gf.GetLocalToWorldTransform());
+    tf.Multiply(range, range);
+    m_range.Extend(range);
+
+    auto const& gfParams = gf.GetCurrentGraphicParams();
+    m_geometryCache.ResolveTexture(gfParams);
+    m_rangeTree->Add(new RangeTreeNode(geom, tf, range, DgnElementId(/*###TODO*/), gfParams, *m_targetFacetOptions, isCurved), range);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
+    {
+    if (!curves.IsAnyRegionType())
+        return true;    // ignore non-closed for now...
+    else if (!curves.ContainsNonLinearPrimitive())
+        return false;   // process as facets.
+
+    CurveVectorPtr clone = curves.Clone();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    return ProcessGeometry(*geom, false, gf);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
+    {
+    bool hasCurvedFaceOrEdge = prim.HasCurvedFaceOrEdge();
+    if (!hasCurvedFaceOrEdge)
+        return false;   // Process as facets.
+
+    ISolidPrimitivePtr clone = prim.Clone();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
+    {
+    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
+    clone->CopyFrom(surface);
+    IGeometryPtr geom = IGeometry::Create(clone);
+
+    bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
+    return ProcessGeometry(*geom, isCurved, gf);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
+    {
+    OnNewGeometry();
+
+    PolyfaceHeaderPtr clone = polyface.Clone();
+    if (!clone->IsTriangulated())
+        clone->Triangulate();
+
+    clone->Transform(Transform::FromProduct(m_dgnToTarget, gf.GetLocalToWorldTransform()));
+
+    DRange3d range = clone->PointRange();
+    m_range.Extend(range);
+
+    auto const& gfParams = gf.GetCurrentGraphicParams();
+    m_geometryCache.ResolveTexture(gfParams);
+
+    IGeometryPtr geom = IGeometry::Create(clone);
+    m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, DgnElementId(/*###TODO*/), gfParams, *m_targetFacetOptions, false), range);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
+    {
+    ISolidKernelEntityPtr clone = solid.Clone();
+    DRange3d range = clone->GetEntityRange();
+
+    Transform localTo3mx = Transform::FromProduct(m_dgnToTarget, gf.GetLocalToWorldTransform());
+    Transform solidTo3mx = Transform::FromProduct(localTo3mx, clone->GetEntityTransform());
+
+    solidTo3mx.Multiply(range, range);
+    m_range.Extend(range);
+
+    auto const& gfParams = gf.GetCurrentGraphicParams();
+    m_geometryCache.ResolveTexture(gfParams);
+    m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, DgnElementId(/*###TODO*/), gfParams, *m_targetFacetOptions), range);
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
+    {
+    m_viewContext = &context;
+    // ###TODO: and stuff...
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -874,7 +1052,19 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgr
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::LoadGeometry(DgnViewportR vp, double toleranceInMeters)
     {
-    return Status::NoGeometry; // ###TODO...
+    m_progressMeter._SetTaskName(TaskName::CollectingGeometry);
+
+    IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
+    TileGeometryProcessor processor(vp, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformToDgn(), *facetOptions, m_progressMeter);
+    
+    /* BEGIN_DELTA_TIMER(m_statistics.m_collectionTime); ###TODO: Statistics */
+    GeometryProcessor::Process(processor, vp.GetViewController().GetDgnDb());
+    /* END_DELTA_TIMER(m_statistics.m_collectionTime); ###TODO: Statistics */
+
+    if (m_progressMeter._WasAborted())
+        return Status::Aborted;
+
+    return processor.m_range.IsNull() ? Status::NoGeometry : Status::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -882,7 +1072,10 @@ TileGenerator::Status TileGenerator::LoadGeometry(DgnViewportR vp, double tolera
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, DRange3dCR range, double leafTolerance, size_t maxPointsPerTile)
     {
-    return Status::NoGeometry; // ###TODO...
+    double tolerance = pow(range.Volume()/maxPointsPerTile, 1.0/3.0);
+    root = TileNode(range, 0, 0, tolerance, nullptr);
+    root.ComputeTiles(m_geometryCache, leafTolerance, maxPointsPerTile);
+    return Status::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -890,7 +1083,7 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, DRange3dCR ra
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector& collector)
     {
-    return Status::NoGeometry; // ###TODO...
+    return Status::NoGeometry; // ###TODO...MRMeshPublish::PublishTiles()...
     }
 
 /*---------------------------------------------------------------------------------**//**
