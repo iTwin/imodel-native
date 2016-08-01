@@ -380,9 +380,9 @@ int IScalableMesh::LoadAllNodeData(size_t& nbLoadedNodes, int level) const
     return _LoadAllNodeData(nbLoadedNodes, level);
 }
 
-int IScalableMesh::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
+int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
-    return _SaveGroupedNodeHeaders(dataSourceAccount, pi_pOutputDirPath, pi_pGroupMode);
+    return _SaveGroupedNodeHeaders(pi_pOutputDirPath, pi_pGroupMode);
     }
 #endif
 

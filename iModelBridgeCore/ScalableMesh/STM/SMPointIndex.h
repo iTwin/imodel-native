@@ -21,14 +21,13 @@
 #include <ImagePP/all/h/HGF2DTemplateExtent.h>
 #include <ImagePP/all/h/HVE2DSegment.h>
 //#include "HGFSpatialIndex.h"
-#include "SMPointTileStore.h"
-#include "SMNodeGroup.h"
 #include "SMMemoryPool.h"
 #include <ImagePP/all/h/HVEShape.h>
 
 #include <ScalableMesh\IScalableMeshQuery.h>
 
 #include "Stores\SMSQLiteStore.h"
+#include "SMNodeGroup.h"
 
 class DataSourceAccount;
 
@@ -406,15 +405,7 @@ public:
     @return true if node and sub-nodes are empty
     -----------------------------------------------------------------------------*/
     bool IsEmpty() const;
-    
-    /**----------------------------------------------------------------------------
-     Get the point store
-    -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointTileStore<POINT, EXTENT> > GetPointsStore()
-        {
-        return m_SMIndex->GetPointsStore();
-        }
-
+        
     /**----------------------------------------------------------------------------
      Get the data store
     -----------------------------------------------------------------------------*/
@@ -1184,7 +1175,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     };
 
 
-    template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>//public HGFSpatialIndex <POINT, POINT, EXTENT, SMPointIndexNode<POINT, EXTENT>, SMPointIndexHeader<EXTENT> >
+    template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>
     {
 
 public:
@@ -1219,13 +1210,7 @@ public:
     -----------------------------------------------------------------------------*/
     HFCPtr<HPMCountLimitedPool<POINT> >
     GetPool() const;
-
-    /**----------------------------------------------------------------------------
-     Returns the point store
-    -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointTileStore<POINT, EXTENT> >
-    GetPointsStore() const;
-
+    
     /**----------------------------------------------------------------------------
      Returns the data store
     -----------------------------------------------------------------------------*/
@@ -1494,8 +1479,7 @@ protected:
         // Notice that even if we have strong aggregation we do not check invariants of root node
 #endif
         };
-   
-    HFCPtr<SMPointTileStore<POINT, EXTENT> > m_store;
+       
     ISMDataStoreTypePtr<EXTENT>              m_dataStore;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    

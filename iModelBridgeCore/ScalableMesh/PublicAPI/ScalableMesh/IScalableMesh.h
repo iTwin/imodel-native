@@ -12,7 +12,6 @@
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
-#include <CloudDataSource/DataSourceAccount.h>
 #include <Bentley/RefCounted.h>
 namespace BENTLEY_NAMESPACE_NAME
     {
@@ -284,7 +283,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
-        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
+        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
 
     };
 

@@ -476,7 +476,6 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
         }
     if (m_nodeHeader.m_level == 0)
         WaitForThreadStop();
-#endif
     }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
@@ -4103,7 +4102,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMe
     {
     this->SaveMasterHeaderToCloud(dataSourceAccount);
 
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pCompress);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(dataSourceAccount, pi_pCompress);
 
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pDataStore);
 
