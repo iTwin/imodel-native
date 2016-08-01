@@ -227,14 +227,13 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
-                        <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>
+                                    <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -299,14 +298,13 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
-                        <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                           <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>
+                                    <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -344,15 +342,14 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
-                        <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
-                        </MapStrategy>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                       <MapStrategy>
+                          <Strategy>TablePerHierarchy</Strategy>
+                       </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -389,14 +386,13 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
-                        <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                     <ClassMap xmlns="ECDbMap.02.00">
+                       <MapStrategy>
+                           <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -434,14 +430,13 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatch
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -501,14 +496,13 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingR
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -545,14 +539,13 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
@@ -599,14 +592,13 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsip
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="Base">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>

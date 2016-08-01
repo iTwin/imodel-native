@@ -2,14 +2,13 @@
 <ECSchema schemaName="WSCache" nameSpacePrefix="wsc" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="ECDb_FileInfo" version="02.00" prefix="ecdbf"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Node" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -18,7 +17,7 @@
     <ECEntityClass typeName="Root">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_RootName</Name>
@@ -86,7 +85,7 @@
     <ECEntityClass typeName="CachedObjectInfo">
         <BaseClass>ChangeInfo</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_ClassIdAndRemoteId</Name>
@@ -124,7 +123,7 @@
     <ECEntityClass typeName="CachedRelationshipInfo">
         <BaseClass>CachedObjectInfo</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_ClassIdAndNonUniqueRemoteId</Name>
@@ -158,7 +157,7 @@
     <ECEntityClass typeName="CachedResponseInfo">
         <BaseClass>Node</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <Indexes>
                     <DbIndex>
                         <Name>WSC_Index_QueryName</Name>
