@@ -592,4 +592,33 @@ TEST(GroupingRulesTest, TestGroupingRules)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ValidateDisplaySpecifications(DisplayRelatedItemsSpecificationCR displaySpec, bool logicalChildren, int nestedDepth, Utf8CP relationshipClasses)
+    {
+    EXPECT_EQ(logicalChildren, displaySpec.GetLogicalChildren());
+    EXPECT_EQ(nestedDepth, displaySpec.GetNestingDepth());
+    EXPECT_STREQ(relationshipClasses, displaySpec.GetRelationshipClasses().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(SelectedNodeInstanceTest, VerifyDisplayRelatedItemsSpecifications)
+    {
+    SelectedNodeInstancesSpecification spec(1, false, "SchemaComplex", "Class1", false);
+    DisplayRelatedItemsSpecificationP displaySpec = new DisplayRelatedItemsSpecification();
+    spec.GetDisplayRelatedItems().push_back(new DisplayRelatedItemsSpecification(false, 0, ""));
+    spec.GetDisplayRelatedItems().push_back(displaySpec);
+
+    int displayRelatedItemsCount = 0;
+    for (DisplayRelatedItemsSpecificationList::const_iterator iter = spec.GetDisplayRelatedItems().begin(); iter != spec.GetDisplayRelatedItems().end(); ++iter)
+        {
+        ++displayRelatedItemsCount;
+        ValidateDisplaySpecifications(**iter, false, 0, "");
+        }
+    ASSERT_EQ(2, displayRelatedItemsCount);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
