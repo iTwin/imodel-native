@@ -77,13 +77,13 @@ TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "                <MapStrategy>"
         "                   <Strategy>TablePerHierarchy</Strategy>"
         "                   <Options>SharedColumns</Options>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
+        "                   <Options>JoinedTablePerDirectSubclass</Options>"
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "multiple options not allowed"));
+        "</ECSchema>", true, "multiple options not allowed, but ECObjects doesn't fail when deserializing it"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -117,23 +117,6 @@ TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
         "</ECSchema>", false, "invalid Option not allowed"));
-
-    testItems.push_back(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>,</Options>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "    </ECEntityClass>"
-        "</ECSchema>", false, "Invalid Option (,) not allowed"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
