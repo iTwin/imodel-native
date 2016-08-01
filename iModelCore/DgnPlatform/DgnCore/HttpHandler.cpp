@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/HttpHandler.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -128,6 +128,11 @@ HttpRequestStatus HttpHandler::Request(HttpResponsePtr& response, HttpRequest co
     curl_easy_setopt(curl.Get(), CURLOPT_WRITEDATA, &responseBody);
     curl_easy_setopt(curl.Get(), CURLOPT_HEADERFUNCTION, &HttpHandler::HttpHeaderParser);
     curl_easy_setopt(curl.Get(), CURLOPT_HEADERDATA, &responseHeader);
+#if (0)
+    // ONLY USE FOR TESTING ON SERVERS WITHOUT VALID CERTIFICATES
+    curl_easy_setopt(curl.Get(), CURLOPT_SSL_VERIFYHOST, 0);
+    curl_easy_setopt(curl.Get(), CURLOPT_SSL_VERIFYPEER, 0);
+#endif
 
     if (nullptr != cancellationToken)
         {
