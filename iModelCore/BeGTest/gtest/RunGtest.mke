@@ -37,13 +37,15 @@ always:
 
 %if $(TARGET_PLATFORM)=="Windows"
     
+    exeName = $[@realpath $(GTEST_EXE)]
+    testName = $[@basename $(exeName)]
+
     %if defined(RUN_GTEST_MINIMIZED)
-        RunPrefix=start \/WAIT \/MIN
+        RunPrefix=start "$(testName)" \/WAIT \/MIN
     %else
-        RunPrefix=start \/WAIT
+        RunPrefix=start "$(testName)" \/WAIT
     %endif
 
-    exeName = $[@realpath $(GTEST_EXE)]
 
     always:
         >$(LogDir)run.bat
