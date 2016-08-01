@@ -132,6 +132,9 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {   
+    if (m_projectFilesPath.empty())
+        return false; 
+
     SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
     assert(sqliteFilePtr.IsValid() == true);    
 

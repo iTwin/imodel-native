@@ -2630,15 +2630,18 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
 #endif
 
 template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> SMMeshIndexNode<POINT, EXTENT>::GetDiffSetPtr() const
-    {
+    {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
+
+    if (m_SMIndex->IsTerrain() == false) 
+        return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
         ISDiffSetDataStorePtr nodeDataStore;
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-        assert(result == true);  
-
+        assert(result == true);
+        
         RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericVectorItem<DifferenceSet>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex));
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
         m_diffSetsItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
@@ -3115,6 +3118,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::IsClip
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ComputeMergedClips()
     {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
+
+    if (!diffSetPtr.IsValid())
+        return;
+
 #ifdef USE_DIFFSET
     for (auto& diffSet : m_differenceSets)
         {
@@ -3298,7 +3305,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildSkirts()
     {
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
-    if (diffsetPtr->size() == 0) return;
+    if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
     for (const auto& diffSet : *diffsetPtr)
             {
             if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) return;

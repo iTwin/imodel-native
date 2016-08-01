@@ -16,17 +16,12 @@
 #include <ImagePP/all/h/HFCPtr.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "..\SMPointTileStore.h"
-#include "..\SMSQLiteClipDefinitionsTileStore.h"
-#include "..\SMSQLiteSkirtDefinitionsTileStore.h"
-//#include "..\PointTypeDPoint3d.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-//typedef ISMStore::Extent3d64f        Extent3dType;
 typedef DRange3d       Extent3dType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
-    {        
-    HFCPtr<SMSQLiteClipDefinitionsTileStore<Extent3dType>> m_clipStore;    
+    {            
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
     uint64_t m_maxID;

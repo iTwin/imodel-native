@@ -136,7 +136,7 @@ void ClipRegistry::GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts)
 
 size_t ClipRegistry::GetNbClips()
     {
-    return 0;//m_clipStore->CountClips();// m_clips.size();
+    return 0;
     }
 
 void ClipRegistry::SetClipMetadata(uint64_t id, double importance, int nDimensions)
@@ -162,7 +162,7 @@ void ClipRegistry::GetClipMetadata(uint64_t id, double& importance, int& nDimens
 void ClipRegistry::GetAllClipsIds(bvector<uint64_t>& allClipIds)
     {    
     ISM3DPtDataStorePtr dataStore;
-    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);
+    m_smDataStore->GetNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition);    
 
     IClipDefinitionExtOpsPtr clipDefinitionExOpsPtr;
     dataStore->GetClipDefinitionExtOps(clipDefinitionExOpsPtr);            

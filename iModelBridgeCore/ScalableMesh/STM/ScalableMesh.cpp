@@ -861,12 +861,17 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0);  
                     }          
                 
-            BeFileName projectFilesPath(m_baseExtraFilesPath);
-            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
-            assert(result == true);
+            //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
+            if (isSingleFile && m_scmIndexPtr->IsTerrain())
+                {
+                BeFileName projectFilesPath(m_baseExtraFilesPath);
+                bool result = dataStore->SetProjectFilesPath(projectFilesPath);
+                assert(result == true);
                                                                  
-            ClipRegistry* registry = new ClipRegistry(dataStore);
-            m_scmIndexPtr->SetClipRegistry(registry);
+                ClipRegistry* registry = new ClipRegistry(dataStore);
+                m_scmIndexPtr->SetClipRegistry(registry);
+                }
+
             filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
