@@ -105,6 +105,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
     //Force the opening/creation of project file in main thread to avoid global mutex.
     GetSisterSQLiteFile(SMStoreDataType::DiffSet);        
+    GetSisterSQLiteFile(SMStoreDataType::Skirt);        
 
     return true; 
     }    
@@ -113,7 +114,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
     {                   
     SMSQLiteFilePtr sqlFilePtr;
 
-    if (dataType == SMStoreDataType::Skirt)
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition)
         {
         sqlFilePtr = GetSisterSQLiteFile(dataType);
         }
@@ -121,6 +122,8 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
         {
         sqlFilePtr = m_smSQLiteFile;
         }
+
+    assert(sqlFilePtr.IsValid());
 
     dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
 
@@ -159,7 +162,8 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterSQLiteFileName(WStr
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clips"); 
             return true;
-
+            break;
+        case SMStoreDataType::ClipDefinition :
         case SMStoreDataType::Skirt :
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions"); 
@@ -197,8 +201,8 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
             sqlFilePtr = m_smFeatureSQLiteFile;        
             }
             break;
-
-        case SMStoreDataType::DiffSet : 
+        
+        case SMStoreDataType::DiffSet :         
             {
             if (!m_smClipSQLiteFile.IsValid())
                 {
@@ -218,6 +222,7 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
             }
             break;
 
+        case SMStoreDataType::ClipDefinition :
         case SMStoreDataType::Skirt : 
             {
             if (!m_smClipDefinitionSQLiteFile.IsValid())
@@ -232,7 +237,9 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
                     {                    
                     m_smClipDefinitionSQLiteFile->Create(sqlFileName); 
                     }                                                                
-                }           
+                }  
+
+            sqlFilePtr = m_smClipDefinitionSQLiteFile;                   
             }
             break;            
 
@@ -440,7 +447,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             delete [] dataBuffer;
             break;             
         case SMStoreDataType::Skirt :             
-            m_smSQLiteFile->StoreSkirtPolygon(id, nodeData, dataSize);            
+            m_smSQLiteFile->StoreSkirtPolygon(id, nodeData, countData*sizeof(DATATYPE));            
+            break;
+        case SMStoreDataType::ClipDefinition :
+            m_smSQLiteFile->StoreClipPolygon(id, nodeData, countData*sizeof(DATATYPE));
             break;                         
         default : 
             assert(!"Unsupported type");
@@ -498,7 +508,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }
             break;
         case SMStoreDataType::Skirt : 
-            blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DPoint3d);
+            blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
+            break;
+        case SMStoreDataType::ClipDefinition :
+            blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         default : 
             assert(!"Unsupported type");
@@ -657,7 +670,10 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             break;
         case SMStoreDataType::TriUvIndices :             
             m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;            
+            break;       
+        case SMStoreDataType::ClipDefinition :
+            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize);           
+            break;       
         default : 
             assert(!"Unsupported type");
             break;
@@ -733,3 +749,18 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
     {
     return false;
     }
+
+
+template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr)
+    {
+    if (m_dataType != SMStoreDataType::ClipDefinition)
+        {
+        assert(!"Unexpected call");
+        return false;
+        }
+
+    clipDefinitionExOpsPtr = new SMSQLiteClipDefinitionExtOps(m_smSQLiteFile);
+
+    return true;
+    }
+   

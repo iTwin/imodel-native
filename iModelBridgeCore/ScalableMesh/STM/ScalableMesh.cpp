@@ -864,11 +864,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             BeFileName projectFilesPath(m_baseExtraFilesPath);
             bool result = dataStore->SetProjectFilesPath(projectFilesPath);
             assert(result == true);
-                                         
-            WString clipFileDefPath = m_baseExtraFilesPath;
-            clipFileDefPath.append(L"_clipDefinitions");
-            
-            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
+                                                                 
+            ClipRegistry* registry = new ClipRegistry(dataStore);
             m_scmIndexPtr->SetClipRegistry(registry);
             filterP.release();
 
@@ -1909,7 +1906,7 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
 template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
-    m_scmIndexPtr->GetClipRegistry()->GetFile()->m_autocommit = !toggleInsertClips;
+    m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
     if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
     }
 

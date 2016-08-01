@@ -38,6 +38,7 @@ enum class SMStoreDataType
     Texture,    
     LinearFeature,    
     Skirt,     
+    ClipDefinition,     
     //Not persisted data type
     Display,
     BcDTM,     
@@ -46,6 +47,23 @@ enum class SMStoreDataType
     PointAndTriPtIndices, 
     Unknown, 
     };
+
+
+class IClipDefinitionExtOps : public RefCountedBase
+    {
+    public : 
+
+        virtual void GetMetadata(uint64_t id, double& importance, int& nDimensions) = 0;
+
+        virtual void SetMetadata(uint64_t id, double importance, int nDimensions) = 0;
+
+        virtual void GetAllIDs(bvector<uint64_t>& allIds) = 0;
+
+        virtual void SetAutoCommit(bool autoCommit) = 0;
+        
+    };
+
+typedef RefCountedPtr<IClipDefinitionExtOps> IClipDefinitionExtOpsPtr;
 
 
 template <class DataType> class ISMNodeDataStore : public RefCountedBase
@@ -101,7 +119,13 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
             {
             HASSERT(false); // Not implemented;
             return 0;
-            }              
+            }   
+
+        virtual bool GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr)
+            {
+            HASSERT(!"Unexpected call");
+            return false;
+            }                   
     };
 
 

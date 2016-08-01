@@ -26,26 +26,19 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 typedef DRange3d       Extent3dType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {        
-    HFCPtr<SMSQLiteClipDefinitionsTileStore<Extent3dType>> m_clipStore;
-    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<Extent3dType>> m_skirtStore;    
+    HFCPtr<SMSQLiteClipDefinitionsTileStore<Extent3dType>> m_clipStore;    
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
     uint64_t m_maxID;
     
-    //ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
+    ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
 
     public:
 
-    ClipRegistry(const WString& fileName);
-        
-    SMSQLiteFilePtr GetFile();
+    ClipRegistry(ISMDataStoreTypePtr<Extent3dType>& smDataStore);            
         
     ~ClipRegistry();
-        
-    void OpenStore();
-        
-    void LoadAllClips();
-        
+                    
     void StoreAllClips();        
 
     uint64_t AddClip(const DPoint3d* clip, size_t clipSize);
@@ -74,7 +67,9 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void GetClipMetadata(uint64_t id, double& importance, int& nDimensions);
         
-    void GetAllClipsIds(bvector<uint64_t>& allClipIds);        
+    void GetAllClipsIds(bvector<uint64_t>& allClipIds);  
+
+    void SetAutoCommit(bool autoCommit);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

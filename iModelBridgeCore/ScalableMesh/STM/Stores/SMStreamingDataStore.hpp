@@ -795,7 +795,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {    
     //NEW_SSTORE_RB : Need to be implement
-    assert(dataType != SMStoreDataType::Skirt);
+    assert(dataType != SMStoreDataType::Skirt && dataType != SMStoreDataType::ClipDefinition);
 
     dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
 
