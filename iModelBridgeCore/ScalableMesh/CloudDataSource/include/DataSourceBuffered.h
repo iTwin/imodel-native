@@ -27,7 +27,7 @@ public:
     DataSourceStatus            close                   (void);
 
     DataSourceStatus            read                    (Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size = 0);
-    DataSourceStatus            write                   (Buffer * source, DataSize size);
+    DataSourceStatus            write                   (const Buffer * source, DataSize size);
 
     DataSourceStatus            flush                   (void);
 
@@ -36,7 +36,7 @@ public:
 
     DataSourceBuffer        *   transferBuffer          (void);
 
-    DataSourceStatus            setSegmentSize          (DataSource::DataSize size);
+    CLOUD_EXPORT    DataSourceStatus            setSegmentSize          (DataSource::DataSize size);
     DataSource::DataSize        getSegmentSize          (void);
 
     DataSourceStatus            waitForSegments         (DataSourceBuffer::Timeout timeoutMilliseconds);

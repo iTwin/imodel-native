@@ -46,8 +46,6 @@ protected:
     void                                setCurrentSegmentIndex              (SegmentIndex index);
     SegmentIndex                        getCurrentSegmentIndex              (void);
 
-    BufferData                        * getSegment                          (SegmentIndex index);
-
     void                                setExternalBuffer                   (BufferData *extBuffer);
 
     void                                setExternalBufferSize               (BufferSize size);
@@ -74,8 +72,10 @@ public:
     SegmentIndex                        getNumSegments                      (void);
 
     DataSourceStatus                    clear                               (void);
-    DataSourceStatus                    append                              (BufferData *source, BufferSize size);
+    DataSourceStatus                    append                              (const BufferData *source, BufferSize size);
     DataSourceStatus                    expand                              (BufferSize size);
+
+    BufferData                        * getSegment(SegmentIndex index);
 
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);

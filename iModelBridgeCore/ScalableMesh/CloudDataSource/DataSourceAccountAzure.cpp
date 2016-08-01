@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <assert.h>
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAzure.h"
 #include <cpprest/rawptrstream.h>
@@ -159,9 +160,18 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL &u
 
         readSize = p;
 
-        stream.close().wait();
-
-        pcb.getn(dest, size).wait();
+        stream.close()
+            .then([&pcb, dest, size]()
+            {
+            return pcb.getn(dest, size);
+            })
+            .then([&readSize,size](size_t nBytes) -> pplx::task<void>
+            {
+            assert(nBytes == readSize || nBytes == size);
+            if (nBytes != size) readSize = nBytes;
+            return pplx::task_from_result();
+            })
+            .wait();
     }
     catch (...)
     {

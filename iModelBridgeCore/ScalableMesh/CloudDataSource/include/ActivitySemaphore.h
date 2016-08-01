@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 
@@ -23,7 +24,7 @@ protected:
 
     std::mutex                          mutex;
     std::condition_variable             condition;
-    Counter                             counter;
+    std::atomic<Counter>                counter;
 
 public:
                                         ActivitySemaphore       (void);

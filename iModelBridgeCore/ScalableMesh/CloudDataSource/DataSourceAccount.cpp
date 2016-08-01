@@ -122,7 +122,7 @@ DataSource * DataSourceAccount::createDataSource(DataSourceManager::DataSourceNa
     }
 
 
-DataSource * DataSourceAccount::getOrCreateDataSource(DataSourceManager::DataSourceName &name, bool *created)
+DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceManager::DataSourceName &name, bool *created)
     {
     return getDataSourceManager().getOrCreateDataSource(name, *this, created);
     }
@@ -166,7 +166,13 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    return buffer->waitForSegments(DataSourceBuffered::Timeout(1000000));
+    auto wait_status = buffer->waitForSegments(DataSourceBuffered::Timeout(1000000));
+    if (buffer->getLocator().getMode() == DataSourceMode_Write || buffer->getLocator().getMode() == DataSourceMode_Write_Segmented)
+        {
+        // Upload of this buffer is complete, delete it
+        delete buffer;
+        }
+    return wait_status;
     }
 
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)

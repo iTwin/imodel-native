@@ -7799,59 +7799,57 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress));                    
+    this->SaveMasterHeaderToCloud(dataSourceAccount);
+
+    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pCompress));                    
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
-
-    this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 
     return SUCCESS;
     }
 /**----------------------------------------------------------------------------
-This method saves the points for streaming.
+This method saves the master header for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath) const
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount)
     {
-    Json::Value masterHeader;
-    masterHeader["balanced"] = this->IsBalanced();
-    masterHeader["depth"] = (uint32_t)this->GetDepth();
-    masterHeader["rootNodeBlockID"] = this->GetRootNode()->GetBlockID().m_integerID;
-    masterHeader["splitThreshold"] = this->GetSplitTreshold();
-    masterHeader["singleFile"] = false;
+    SMIndexMasterHeader<EXTENT> masterHeader;
+    this->GetDataStore()->LoadMasterHeader(&masterHeader, sizeof(masterHeader));
 
-    auto filename = (pi_pOutputDirPath + L"MasterHeader.sscm").c_str();
-    BeFile file;
-    uint64_t buffer_size;
-    auto jsonWriter = [&file, &buffer_size](BeFile& file, Json::Value& object) {
+    Json::Value masterHeaderJson;
+    masterHeaderJson["balanced"] = masterHeader.m_balanced;
+    masterHeaderJson["depth"] = (uint32_t)masterHeader.m_depth;
+    masterHeaderJson["rootNodeBlockID"] = masterHeader.m_rootNodeBlockID.m_integerID;
+    masterHeaderJson["splitThreshold"] = masterHeader.m_SplitTreshold;
+    masterHeaderJson["isTerrain"] = masterHeader.m_isTerrain;
+    masterHeaderJson["singleFile"] = false; // cloud format is always multifile
 
-        Json::StyledWriter writer;
-        auto buffer = writer.write(object);
-        buffer_size = buffer.size();
-        file.Write(NULL, buffer.c_str(), buffer_size);
-        };
-    if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))
-        {
-        jsonWriter(file, masterHeader);
-        }
-    else if (BeFileStatus::Success == file.Create(filename))
-        {
-        jsonWriter(file, masterHeader);
-        }
-    else
-        {
-        HASSERT(!"Problem saving master header file to cloud");
-        return ERROR;
-        }
-    file.Close();
+    auto jsonBuffer = Json::StyledWriter().write(masterHeaderJson);
+
+    DataSourceStatus writeStatus;
+    DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
+
+    DataSource *dataSource = dataSourceAccount->getOrCreateDataSource(L"MasterHeader");
+    assert(dataSource != nullptr);
+
+    writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write);
+    assert(writeStatus.isOK());
+
+    writeStatus = dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
+    assert(writeStatus.isOK());
+
+    writeStatus = dataSource->close();
+    assert(writeStatus.isOK());
+
+    //dataSourceAccount->uploadBlobSync(dataSourceURL, reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
 
     return SUCCESS;
     }

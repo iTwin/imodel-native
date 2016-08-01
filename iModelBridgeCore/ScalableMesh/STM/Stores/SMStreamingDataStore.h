@@ -15,14 +15,6 @@
 
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
-#ifdef VANCOUVER_API
-#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
-#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::Read)
-#else
-#define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
-#define OPEN_FILE_SHARE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode)
-#endif
-
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_grouped_store;
@@ -63,7 +55,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
     public : 
     
-        SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
 
@@ -183,7 +175,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
        
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup = nullptr, bool compress = true);
             
         virtual ~SMStreamingNodeDataStore();
               
@@ -205,9 +197,6 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     };
 
 
-// Helper texture data structure
-void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID);
-
 struct Texture : public bvector<uint8_t>
     {
     public:
@@ -216,8 +205,9 @@ struct Texture : public bvector<uint8_t>
         Texture(const int& width, const int& height, const int& numChannels)
             : m_Width{width}, m_Height{height}, m_NbChannels(numChannels)
             {}
-        void SetDataSource(const WString& pi_DataSource)
+        void SetDataSource(DataSourceAccount * dataSourceAccount, const WString& pi_DataSource)
             {
+            m_dataSourceAccount = dataSourceAccount;
             m_DataSource = pi_DataSource;
             }
         void SavePixelDataToDisk(uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID)
@@ -229,7 +219,7 @@ struct Texture : public bvector<uint8_t>
 
             CompressTexture(pi_uncompressedPacket, pi_compressedPacket);
 
-            // Second, save to disk
+            // Second, save to DataSource
             int format = 0; // Keep an int to define the format and possible other options
 
             bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
@@ -240,10 +230,22 @@ struct Texture : public bvector<uint8_t>
             pHeader[3] = format;
             memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
 
-            BeFile file;
-            OpenOrCreateBeFile(file, m_DataSource, blockID);
-            file.Write(NULL, texData.data(), (uint32_t)(texData.size()));
-            file.Close();
+            DataSourceStatus writeStatus;
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), blockID.m_integerID);
+            DataSourceURL    dataSourceURL(buffer);
+
+            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+            assert(dataSource != nullptr);
+
+            writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
+            assert(writeStatus.isOK()); // problem opening a DataSource
+
+            writeStatus = dataSource->write(texData.data(), (uint32_t)(texData.size()));
+            assert(writeStatus.isOK()); // problem writing a DataSource
+
+            writeStatus = dataSource->close();
+            assert(writeStatus.isOK()); // problem closing a DataSource
             }
 
         DataSource *InitializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
@@ -262,7 +264,7 @@ struct Texture : public bvector<uint8_t>
             return dataSource;
             }
 
-        void Load(DataSourceAccount *dataSourceAccount, uint64_t blockSize = uint64_t(-1))
+        void Load(uint64_t blockSize = uint64_t(-1))
             {
             std::unique_ptr<DataSource::Buffer[]>       dest;
             DataSource                              *   dataSource;
@@ -276,7 +278,7 @@ struct Texture : public bvector<uint8_t>
 
             DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
-            dataSource = this->InitializeDataSource(dataSourceAccount, dest, destSize);
+            dataSource = this->InitializeDataSource(m_dataSourceAccount, dest, destSize);
             if (dataSource == nullptr)
                 return;
 
@@ -290,7 +292,7 @@ struct Texture : public bvector<uint8_t>
             dataSource->close();
             //dataSourceAccount->destroyDataSource(dataSource);
 
-            if (readSize > 0)
+            if (blockSize > 0)
                 {
                 m_Width = reinterpret_cast<int&>(dest.get()[0]);
                 m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
@@ -298,7 +300,7 @@ struct Texture : public bvector<uint8_t>
                 m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
 
                 auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-                uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
+                uint32_t compressedSize = (uint32_t)blockSize - sizeof(4 * sizeof(int));
 
                 DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
                 }
@@ -417,7 +419,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
         Texture& GetTexture(HPMBlockID blockID) const;
             
-        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const WString& directory, SMIndexNodeHeader<EXTENT>* nodeHeader);
+        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader);
 
         virtual ~StreamingNodeTextureStore();
             

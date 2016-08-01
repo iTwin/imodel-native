@@ -4511,34 +4511,58 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
-void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
+void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, cloudOutDirPath, result;
+    WString smFileName, cloudContainer, cloudName, result;
+    bool uploadToAzure = false;
     // Parses the test(s) definition:
-    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
-        printf("ERROR : scmFileName attribute not found\r\n");
+        printf("ERROR : smFileName attribute not found\r\n");
         return;
         }
 
-    if (pTestNode->GetAttributeStringValue(cloudOutDirPath, "cloudOutDirPath") != BEXML_Success || cloudOutDirPath.compare(L"") == 0 || cloudOutDirPath.compare(L"default") == 0)
+    if (pTestNode->GetAttributeBooleanValue(uploadToAzure, "azure") != BEXML_Success)
+        {
+        printf("Saving cloud format to local directory ");
+        }
+    if (uploadToAzure)
+        {
+        if (pTestNode->GetAttributeStringValue(cloudContainer, "container") != BEXML_Success)
+            {
+            printf("ERROR : container attribute not found\r\n");
+            return;
+            }
+        if (pTestNode->GetAttributeStringValue(cloudName, "name") != BEXML_Success)
+            {
+            printf("ERROR : name attribute not found\r\n");
+            return;
+            }
+        printf("Saving to Azure... container: %ls  name: %ls", cloudContainer.c_str(), cloudName.c_str());
+        }
+    else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
         // Use default path to output files
-        auto position = scmFileName.find_last_of(L".stm");
-        cloudOutDirPath = scmFileName.substr(0, position - 3) + L"_stream\\";
+        auto position = smFileName.find_last_of(L".stm");
+        cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
+        printf("%ls\n", cloudContainer.c_str());
         }
+    // remove trailing slashes if any
+    size_t position;
+    if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
+    if ((position = cloudContainer.find_last_of(L"/")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
 
     bool allTestPass = true;
     double t = 0;
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), true, true, status);
+    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
 
-    if (scmFile != 0 && status == SUCCESS)
+    if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = scmFile->ConvertToCloud(cloudOutDirPath);
+        status = smFile->ConvertToCloud(cloudContainer, cloudName, uploadToAzure);
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }
@@ -4549,8 +4573,8 @@ void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     fwprintf(pResultFile, L"%s,%s,%s,%0.5f\n",
-             scmFileName.c_str(),
-             cloudOutDirPath.c_str(),
+             smFileName.c_str(),
+             cloudContainer.c_str(),
              allTestPass ? L"true" : L"false",
              (double)t / CLOCKS_PER_SEC
              );

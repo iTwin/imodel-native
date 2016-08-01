@@ -119,7 +119,7 @@ public:
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
     
-    DataSourceStatus                    InitializeAzureTest     (void);
+    DataSourceStatus                    InitializeAzureTest     (const WString& directory);
 
     };
 
@@ -312,7 +312,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
-        virtual int                                _ConvertToCloud(const WString& pi_pOutputDirPath) const override;
+        virtual int                                _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, bool uploadToAzure) const override;
 
 
         virtual void                               _GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes) override;
@@ -428,7 +428,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _SynchWithSources() override;
 
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const override;
-        virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
+        virtual int                    _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, bool uploadToAzure) const override { return ERROR; }
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
         virtual IScalableMeshNodePtr               _GetRootNode() override

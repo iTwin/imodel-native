@@ -49,7 +49,7 @@ DataSourceStatus DataSourceManagerTest::testBasicWriteRead(DataSource *dataSourc
             bufferSource[t] = t;
         }
                                                             // Write some data and close
-        dataSource->open(url, DataSourceMode_Write);
+        dataSource->open(url, DataSourceMode_Write_Segmented);
         dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData *>(bufferSource), bufferSize);
         dataSource->close();
                                                             // Read back data and close

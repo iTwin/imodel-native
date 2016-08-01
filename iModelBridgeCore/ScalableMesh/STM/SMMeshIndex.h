@@ -508,6 +508,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         }
 
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
+    void         UploadMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
     virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
 
@@ -688,7 +689,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
 
-        StatusInt           SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const bool& pi_pCompress);
+        StatusInt           SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const bool& pi_pCompress);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
 

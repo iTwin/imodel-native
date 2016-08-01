@@ -647,7 +647,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, SMStoreDataType::TriUvIndices, (SCM_COMPRESSION_DEFLATE == m_compressionType));
             pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
             
-            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
             
             pDataIndex = new MeshIndexType(dataStore, 
                                            ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       

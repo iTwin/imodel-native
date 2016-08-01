@@ -84,16 +84,16 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
     {
                                                                 // Download unknown size
         status = account->downloadBlobSync(*this, dest, destSize, readSize);
-    }
+        assert(destSize >= readSize); // Not enough memory was allocated to the buffer!
+     }
 
     assert(status.isOK());
-    assert(destSize >= readSize);                               // Not enough memory was allocated to the buffer!
 
                                                                 // Return status
     return status;
 }
 
-DataSourceStatus DataSourceBuffered::write(Buffer * source, DataSize size)
+DataSourceStatus DataSourceBuffered::write(const Buffer * source, DataSize size)
 {
     DataSourceStatus    status;
                                                                 // If buffer is not defined, initialize one
@@ -143,10 +143,18 @@ DataSourceStatus DataSourceBuffered::flush(void)
     if ((account = getAccount()) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
 
-    if (getMode() == DataSourceMode_Write)
+    if (getMode() == DataSourceMode_Write_Segmented)
     {
         account->uploadSegments(*this);
     }
+    else if (getMode() == DataSourceMode_Write)
+        {
+        auto buffer = this->getBuffer();
+
+        DataSourceURL    url;
+        this->getURL(url);
+        account->uploadBlobSync(url, buffer->getSegment(0), buffer->getSize());
+        }
 
 
     return status;

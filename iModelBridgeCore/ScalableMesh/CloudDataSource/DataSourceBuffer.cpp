@@ -155,7 +155,7 @@ DataSourceStatus DataSourceBuffer::clear(void)
     return DataSourceStatus();
 }
 
-DataSourceStatus DataSourceBuffer::append(BufferData *source, BufferSize size)
+DataSourceStatus DataSourceBuffer::append(const BufferData *source, BufferSize size)
 {
     if (getExternalBuffer())
     {

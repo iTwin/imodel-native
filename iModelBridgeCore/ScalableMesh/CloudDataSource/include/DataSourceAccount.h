@@ -64,7 +64,7 @@ CLOUD_EXPORT    const AccountName &     getAccountName                  (void) c
     virtual DataSource            *     createDataSource                (void) = 0;
             DataSource            *     createDataSource                (DataSource::Name &name);
 
-            DataSource            *     getOrCreateDataSource           (DataSource::Name &name, bool *created = nullptr);
+    CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSource::Name &name, bool *created = nullptr);
     CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (bool *created = nullptr);
 
             DataSourceStatus            destroyDataSources              (void);
@@ -83,8 +83,8 @@ CLOUD_EXPORT    const AccountName &     getAccountName                  (void) c
     virtual void                        setCacheAccount                 (DataSourceAccount *account);
     virtual DataSourceAccount    *      getCacheAccount                 (void);
 
-    CLOUD_EXPORT void                   setPrefixPath                   (const DataSourceURL &url);
-    const   DataSourceURL               getPrefixPath                   (void) const;
+    CLOUD_EXPORT         void           setPrefixPath                   (const DataSourceURL &url);
+    CLOUD_EXPORT const   DataSourceURL  getPrefixPath                   (void) const;
 
     virtual DataSourceStatus            getFormattedCacheURL            (const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
 

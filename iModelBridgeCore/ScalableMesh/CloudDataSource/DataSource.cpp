@@ -9,7 +9,7 @@ DataSource::DataSource(DataSourceAccount *sourceAccount)
 
     setAccount(sourceAccount);
 
-    setTimeout(DataSource::Timeout(0));
+    setTimeout(DataSource::Timeout(100000));
 
     if (sourceAccount)
     {

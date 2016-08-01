@@ -62,7 +62,7 @@ WString GetHeaderForTestType(TestType t)
         case TEST_STREAMING:
             return L"File Name Original, File Name Streaming, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time streaming load all node headers, points Node Pass\n";
             break;
-        case TEST_SCM_TO_CLOUD:
+        case TEST_SM_TO_CLOUD:
             return L"File Name Original, Directory Name Cloud, AllTestPass, Point Count Pass, Node Count Pass, time load all node headers, time load all node headers, points Node Pass\n";
             break;
         case TEST_RANDOM_DRAPE:
@@ -144,8 +144,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_SDK_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"streaming"))
             t = TEST_STREAMING;
-        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"scmToCloud"))
-            t = TEST_SCM_TO_CLOUD;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"smToCloud"))
+            t = TEST_SM_TO_CLOUD;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeRandom"))
             t = TEST_RANDOM_DRAPE;
         //else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportLine"))
@@ -305,8 +305,8 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_STREAMING:
                 PerformStreaming(pTestNode, pResultFile);
                 break;
-            case TEST_SCM_TO_CLOUD:
-                PerformSCMToCloud(pTestNode, pResultFile);
+            case TEST_SM_TO_CLOUD:
+                PerformSMToCloud(pTestNode, pResultFile);
                 break;
             case TEST_RANDOM_DRAPE:
                 PerformTestDrapeRandomLines(pTestNode, pResultFile);

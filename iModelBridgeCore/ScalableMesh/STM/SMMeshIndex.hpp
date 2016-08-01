@@ -4111,18 +4111,13 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
 /**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const bool& pi_pCompress)
     {
-    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
-        {
-        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
-        }
+    this->SaveMasterHeaderToCloud(dataSourceAccount);
 
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pCompress);
 
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pDataStore);
-
-    this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
 
     return SUCCESS;
     }
