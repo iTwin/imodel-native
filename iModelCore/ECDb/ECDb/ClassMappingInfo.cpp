@@ -133,7 +133,7 @@ BentleyStatus ClassMappingInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userS
             {
             if (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable || 
                 userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::OwnTable || 
-                (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy.AppliesToSubclasses()))
+                (userStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable))
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "Invalid MapStrategy '%s' on abstract ECClass '%s'. Only MapStrategies 'TablePerHierarchy' or 'NotMapped' are allowed on abstract classes.", userStrategy.ToString().c_str(), m_ecClass.GetFullName());
                 return ERROR;
@@ -309,8 +309,8 @@ bool ClassMappingInfo::ValidateTablePerHierarchyChildStrategy(ECDbMapStrategy co
 
     if (!isValid)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the parent's MapStrategy 'TablePerHierarchs'. "
-                        "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses): Strategy must be 'NotMapped' or unset; "
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the parent's MapStrategy 'TablePerHierarchy'. "
+                        "For subclasses of a class with MapStrategy 'TablePerHierarchy': Strategy must be 'NotMapped' or unset; "
                         "if unset, Options must not specify " USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES " and MinimumSharedColumnCount must not be set "
                         "if 'shared columns' were already enabled on a base class; "
                         "Options must not specify " USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS " "
@@ -339,11 +339,11 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             return ERROR;
 
         if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
-            (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
+            (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable)))
             {
             if (m_tableName.empty())
                 {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. TableName must not be empty in ClassMap custom attribute if MapStrategy is 'SharedTable' or 'ExistingTable'.",
                                 m_ecClass.GetFullName());
                 return ERROR;
                 }
@@ -352,7 +352,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
             {
             if (!m_tableName.empty())
                 {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. TableName must only be set in ClassMap custom attribute if MapStrategy is 'SharedTable' or 'ExistingTable'.",
                                 m_ecClass.GetFullName());
                 return ERROR;
                 }

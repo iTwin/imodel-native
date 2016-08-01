@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="IntegrityCheck" nameSpacePrefix="ic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECEntityClass typeName="SourceBase">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -24,10 +23,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="TargetBase">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -36,7 +34,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="SourceToTarget_Embedding" strength="embedding" strengthDirection="forward" modifier="Sealed">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Cascade</OnDeleteAction>
                 <OnUpdateAction>NoAction</OnUpdateAction>
                 <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>

@@ -37,10 +37,10 @@ BentleyStatus CreateRangeTreeTestProject(Utf8StringR ecdbPath)
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"RangeTreeTest\" nameSpacePrefix=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "  <ECSchemaReference version='01.12' prefix='bsca' name ='Bentley_Standard_CustomAttributes' />"
-        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName=\"DemoRTree\" >"
         "       <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
         "                <MapStrategy>"
         "                   <Strategy>ExistingTable</Strategy>"
         "                </MapStrategy>"

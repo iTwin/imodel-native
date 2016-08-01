@@ -2,18 +2,17 @@
 <ECSchema schemaName="StartupCompany" nameSpacePrefix="stco" version="02.00" description="My Startup Company" displayLabel="My Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
-        <SchemaMap xmlns="ECDbMap.01.00.01">
+        <SchemaMap xmlns="ECDbMap.02.00">
             <TablePrefix>sc</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
     <ECEntityClass typeName="AAA" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -32,10 +31,9 @@
     </ECStructClass>
     <ECEntityClass typeName="AAFoo" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -73,7 +71,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb" modifier="Sealed">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
@@ -97,10 +95,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="Asset" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -147,7 +144,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="BuildingFloorRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <ForeignKeyColumn>Building__src_11_Id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -231,7 +228,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="ClassWithPrimitiveProperties" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy/>
                 <Indexes>
                     <DbIndex>
@@ -264,28 +261,28 @@
         </ECCustomAttributes>
         <ECProperty propertyName="intProp" typeName="int" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_intProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="longProp" typeName="long" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_longProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="doubleProp" typeName="double" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_doubleProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="stringProp" typeName="string" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_stringProp</ColumnName>
                     <Collation>NoCase</Collation>
                 </PropertyMap>
@@ -293,35 +290,35 @@
         </ECProperty>
         <ECProperty propertyName="dateTimeProp" typeName="dateTime" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_dateTimeProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="binaryProp" typeName="binary" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_binaryProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="booleanProp" typeName="boolean" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_booleanProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="point2dProp" typeName="point2d" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_point2dProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="point3dProp" typeName="point3d" readOnly="false">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00.01">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>myColumn_point3dProp</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -457,7 +454,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="CompanyProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <ForeignKeyColumn>Company__src_11_id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -735,7 +732,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeeCompany" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <ForeignKeyColumn>Company__trg_11_id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -748,7 +745,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeFurniture" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01" />
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00" />
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="Employee using furniture" polymorphic="true">
             <Class class="Employee"/>
@@ -759,7 +756,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeHardware" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00.01">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>Hardware__trg_0N_id</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -773,7 +770,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeOffice" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00.01">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <SourceECInstanceIdColumn>Employee__src_0N_id</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>Cubicle__trg_0N_id</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -793,7 +790,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeePhone" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01"/>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="Phone used by employee" polymorphic="true">
             <Class class="Employee"/>
@@ -804,7 +801,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00.01">
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <SourceECInstanceIdColumn>Employee__src_1N_id</SourceECInstanceIdColumn>
                 <TargetECInstanceIdColumn>Project__trg_1N_id</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
@@ -818,7 +815,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="FloorCubicle" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00.01">
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <ForeignKeyColumn>BuildingFloor__src_11_id</ForeignKeyColumn>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
@@ -831,10 +828,9 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="Foo" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -1021,10 +1017,9 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="LikesToShare2" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <TableName>SharedTable</TableName>
             </ClassMap>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="RSComponents" nameSpacePrefix="rsc" version="01.00" description="RS Compoents Library" displayLabel="RS Components" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>RSComponents.01.00</SchemaFullNameAtEditingStart>
@@ -88,10 +88,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="THBase" modifier="None">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

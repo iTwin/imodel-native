@@ -407,12 +407,12 @@
     
     #### How to fix unsupported ECRelationshipClasses
     - For a polymorphic @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" consider to apply
-    the mapping strategy <b>Shared Table</b> with <c>AppliesToSubclasses=True</c> to the root class of the class hierarchy. 
+    the mapping strategy <b>TablePerHierarchy</b> to the root class of the class hierarchy. 
     See @ref CustomClassMapDescription for details.
     - If the classes specified in the @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint" are not members
-    of the same class hierarchy, consider to apply the mapping strategy <b>Shared Table</b> with <c>AppliesToSubclasses=False</c> to 
+    of the same class hierarchy, consider to apply the mapping strategy <b>TablePerHierarchy</b> to 
     each class of the constraint. See @ref CustomClassMapDescription for details.
-    - If the <i>Shared Table</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
+    - If the <i>TablePerHierarchy</i> strategy cannot be applied, consider breaking the ECRelationshipClass apart into several separate
     ECRelationshipClasses.
     
     ## Referential Integrity
@@ -496,30 +496,28 @@
 
     - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
         - Property @b Strategy (optional):
-            - @c NotMapped : The class is not mapped to any database table.
-            - @c OwnTable : This class is mapped to its own table.
-            - @c SharedTable : This class is mapped to @em table shared by other classes as well. If @b AppliesToSubclasses is false,
-            the @b TableName ECProperty must also be specified. Otherwise it is optional.
+            - @c NotMapped : The class is not mapped to any database table. If the class has subclasses, the MapStrategy
+            applies to the subclasses, too 
+            - @c OwnTable (default): This class is mapped to its own table.
+            - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table.
+            - @c SharedTable : This class is mapped to @em table shared by other classes as well. The @b TableName ECProperty 
+            must also be specified.
             - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
             The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
             <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
         - Property @b Options (optional): The above values can be combined with these options:
             - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
-            This can only be applied to @b SharedTable.
+            This can only be applied to MapStrategy @b TablePerHierarchy.
             - @c SharedColumnsForSubclasses : Like @em SharedColumns, except that the ECProperties of the class holding the ClassMap
             custom attribute do not share columns.
             - @c DisableSharedColumns: This option disables the column sharing for the class and all its subclasses, if
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
-            to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with @b SharedTable and @b AppliesToSubclasses being true.
-        - Property @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class.
-          If false (default), the MapStrategy only applies to this class.
-        - @b Note: @b NotMapped always applies to subclasses to, if there are any. It is therefore not possible to unmap an ECClass 
-        that has subclasses which are mapped. Consequently, for @em NotMapped @b AppliesToSubclasses must be set to @c True if the
-        ECClass is <b>not sealed</b>.
-    - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
-    Specify a table name for this class (instead of letting ECDb choose a name)
+            to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with
+            MapStrategy @b TablePerHierarchy.
+    - @b TableName (optional, required for MapStrategies @em ExistingTable and @em SharedTable):
+    Specify a table name for this class for the MapStrategy.
     - @b Indexes (optional) : List of indexes to be created for properties of this class.
     It can be use to improve query performance or to add a unique constraint.
         - @b Name (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
@@ -539,21 +537,19 @@
                 <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>
                       <Strategy>NotMapped</Strategy>
-                       <AppliesToSubclasses>False</AppliesToSubclasses>
                     </MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="Name" typeName="string" />
         </ECEntityClass>
 
-    #### MapStrategy  SharedTable for class hierarchy
+    #### MapStrategy  TablePerHierarchy for a class hierarchy
 
         <ECEntityClass typeName="Foo">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>
-                       <Strategy>SharedTable</Strategy>
-                       <AppliesToSubclasses>True</AppliesToSubclasses>
+                       <Strategy>TablePerHierarchy</Strategy>
                     </MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>

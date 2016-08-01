@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ECSqlTest" nameSpacePrefix="ecsql" version="01.00" description="ECSQL test schema" displayLabel="ECSQL test schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>ECSqlTest.01.00</SchemaFullNameAtEditingStart>
             <TrackingEnabled>True</TrackingEnabled>
         </SchemaChangeTrackingState>
-        <SchemaMap xmlns="ECDbMap.01.00.01">
+        <SchemaMap xmlns="ECDbMap.02.00">
             <TablePrefix>ecsqltest</TablePrefix>
         </SchemaMap>
     </ECCustomAttributes>
@@ -51,10 +51,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="AbstractTablePerHierarchy" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -330,10 +329,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="THBase">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -409,7 +407,7 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="PUnmapped" modifier="Sealed" description="Class not mapped to a DB table">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>

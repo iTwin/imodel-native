@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="NestedStructArrayTest" nameSpacePrefix="nsat" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
             <SchemaFullNameAtEditingStart>NestedStructArrayTest.01.00</SchemaFullNameAtEditingStart>
@@ -10,10 +10,9 @@
     </ECCustomAttributes>
     <ECEntityClass typeName="ClassA" modifier="None">
 		<ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -50,7 +49,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="BaseHasDerivedA" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="ClassA"/>
@@ -79,7 +78,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="DerivedBHasChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="DerivedB"/>

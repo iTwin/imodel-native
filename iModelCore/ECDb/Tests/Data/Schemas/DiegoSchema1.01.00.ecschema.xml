@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="DiegoSchema1" nameSpacePrefix="ds1" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECEntityClass typeName="CivilModel">
         <ECProperty propertyName="CMId" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="DataSetModel">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

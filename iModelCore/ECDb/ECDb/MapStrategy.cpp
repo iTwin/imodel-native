@@ -13,12 +13,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Options options, int minimumSharedColumnCount, bool appliesToSubclasses)
+BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Options options, int minimumSharedColumnCount)
     {
     m_strategy = strategy;
     m_options = options;
     m_minimumSharedColumnCount = minimumSharedColumnCount;
-    m_appliesToSubclasses = appliesToSubclasses;
     return IsValid() ? SUCCESS : ERROR;
     }
 
@@ -35,25 +34,22 @@ bool UserECDbMapStrategy::IsValid() const
         {
             case Strategy::None:
             {
-            bool isValid = !m_appliesToSubclasses && !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
+            bool isValid = !Enum::Contains(m_options, invalidOptions1) && !Enum::Contains(m_options, invalidOptions2) && !Enum::Contains(m_options, invalidOptions3);
             if (!isValid)
                 return false;
 
             return m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT || Enum::Intersects(m_options, Options::SharedColumns | Options::SharedColumnsForSubclasses);
             }
-            case Strategy::SharedTable:
+            case Strategy::TablePerHierarchy:
             {
-            if (!m_appliesToSubclasses)
-                return m_options == Options::None || m_options == Options::SharedColumns;
-
             if (Enum::Contains(m_options, invalidOptions1) || Enum::Contains(m_options, invalidOptions2) || Enum::Contains(m_options, invalidOptions3))
                 return false;
 
             return m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT || Enum::Intersects(m_options, Options::SharedColumns | Options::SharedColumnsForSubclasses);
             }
 
-            case Strategy::ExistingTable:
-                return !m_appliesToSubclasses && m_options == Options::None && m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
+            case Strategy::SharedTable:
+                return m_options == Options::None || m_options == Options::SharedColumns;
 
             default:
                 //these strategies must not have any options
@@ -75,7 +71,7 @@ BentleyStatus UserECDbMapStrategy::TryParse(UserECDbMapStrategy& mapStrategy, EC
     if (SUCCESS != TryParse(option, mapStrategyCustomAttribute.GetOptions()))
         return ERROR;
 
-    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.GetMinimumSharedColumnCount(), mapStrategyCustomAttribute.AppliesToSubclasses());
+    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.GetMinimumSharedColumnCount());
     }
 
 //---------------------------------------------------------------------------------
@@ -90,6 +86,8 @@ BentleyStatus UserECDbMapStrategy::TryParse(Strategy& mapStrategy, Utf8CP mapStr
         mapStrategy = Strategy::NotMapped;
     else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "OwnTable") == 0)
         mapStrategy = Strategy::OwnTable;
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "TablePerHierarchy") == 0)
+        mapStrategy = Strategy::TablePerHierarchy;
     else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "SharedTable") == 0)
         mapStrategy = Strategy::SharedTable;
     else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "ExistingTable") == 0)
@@ -148,6 +146,10 @@ Utf8String UserECDbMapStrategy::ToString() const
     Utf8String str;
     switch (m_strategy)
         {
+            case Strategy::ExistingTable:
+                str.append("ExistingTable");
+                break;
+
             case Strategy::None:
                 str.append("None");
                 break;
@@ -164,17 +166,14 @@ Utf8String UserECDbMapStrategy::ToString() const
                 str.append("SharedTable");
                 break;
 
-            case Strategy::ExistingTable:
-                str.append("ExistingTable");
+            case Strategy::TablePerHierarchy:
+                str.append("TablePerHierarchy");
                 break;
 
             default:
                 BeAssert(false);
                 break;
         }
-
-    if (m_appliesToSubclasses)
-        str.append(" (applies to subclasses)");
 
     if (m_options != Options::None)
         str.append(" Options: ").append(ToString(m_options));
@@ -234,15 +233,21 @@ BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
             case UserECDbMapStrategy::Strategy::ExistingTable:
                 m_strategy = Strategy::ExistingTable;
                 break;
+
             case UserECDbMapStrategy::Strategy::NotMapped:
                 m_strategy = Strategy::NotMapped;
                 break;
+
             case UserECDbMapStrategy::Strategy::None: //default
             case UserECDbMapStrategy::Strategy::OwnTable:
                 m_strategy = Strategy::OwnTable;
                 break;
             case UserECDbMapStrategy::Strategy::SharedTable:
-                m_strategy = userStrategy.AppliesToSubclasses() ? Strategy::TablePerHierarchy : Strategy::SharedTable;
+                m_strategy = Strategy::SharedTable;
+                break;
+
+            case UserECDbMapStrategy::Strategy::TablePerHierarchy:
+                m_strategy = Strategy::TablePerHierarchy;
                 break;
 
             default:

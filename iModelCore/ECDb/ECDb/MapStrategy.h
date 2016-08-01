@@ -30,8 +30,9 @@ public:
         None,
         NotMapped,
         OwnTable,
-        SharedTable,
-        ExistingTable
+        TablePerHierarchy,
+        ExistingTable,
+        SharedTable
         };
 
     //---------------------------------------------------------------------------------
@@ -50,14 +51,13 @@ private:
     Strategy m_strategy;
     Options m_options;
     int m_minimumSharedColumnCount;
-    bool m_appliesToSubclasses;
 
-    BentleyStatus Assign(Strategy strategy, Options, int minimumSharedColumnCount, bool appliesToSubclasses);
+    BentleyStatus Assign(Strategy strategy, Options, int minimumSharedColumnCount);
     static BentleyStatus TryParse(Strategy&, Utf8CP str);
     static BentleyStatus TryParse(Options& option, Utf8CP str);
 
 public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_appliesToSubclasses(false) {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT) {}
     ~UserECDbMapStrategy() {}
 
     bool IsValid() const;
@@ -65,10 +65,9 @@ public:
     Strategy GetStrategy() const { return m_strategy; }
     Options GetOptions() const { return m_options; }
     int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
-    bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
 
     //! Indicates whether this strategy represents the 'unset' strategy
-    bool IsUnset() const { return m_strategy == Strategy::None && m_options == Options::None && m_minimumSharedColumnCount == ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT && !m_appliesToSubclasses; }
+    bool IsUnset() const { return m_strategy == Strategy::None && m_options == Options::None && m_minimumSharedColumnCount == ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT; }
 
     Utf8String ToString() const;
     static Utf8String ToString(Options);

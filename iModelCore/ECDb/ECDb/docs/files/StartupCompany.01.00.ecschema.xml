@@ -2,7 +2,7 @@
 <ECSchema schemaName="StartupCompany" nameSpacePrefix="stco" version="1.0" description="Startup Company Sample ECSchema" displayLabel="Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca" />
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap" />
+    <ECSchemaReference name="ECDbMap" version="02.00.00" prefix="ecdbmap" />
   
     <ECEntityClass typeName="Company">
         <ECProperty propertyName="Name" typeName="string" />
@@ -51,10 +51,9 @@
       
     <ECEntityClass typeName="Asset" modifier="abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>

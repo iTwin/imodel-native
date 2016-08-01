@@ -555,8 +555,8 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)
             SchemaItem testSchema(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                "            <SchemaMap xmlns='ECDbMap.01.00'>"
+                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                "            <SchemaMap xmlns='ECDbMap.02.00'>"
                 "                <TablePrefix>mytables_</TablePrefix>"
                 "            </SchemaMap>"
                 "</ECSchema>");
@@ -596,10 +596,10 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)
             SchemaItem testSchema(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='ClassA'>"
                 "        <ECCustomAttributes>"
-                "            <SchemaMap xmlns='ECDbMap.01.00'>"
+                "            <SchemaMap xmlns='ECDbMap.02.00'>"
                 "                <TablePrefix>mytables_</TablePrefix>"
                 "            </SchemaMap>"
                 "        </ECCustomAttributes>"
@@ -1065,13 +1065,12 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithSubclassesToBaseClassInExistingSc
         {
         Utf8CP baseSchemaXml =
             "<ECSchema schemaName='Planning' nameSpacePrefix='p' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
             "  <ECEntityClass typeName='Element'>"
             "    <ECCustomAttributes>"
-            "        <ClassMap xmlns='ECDbMap.01.00'>"
+            "        <ClassMap xmlns='ECDbMap.02.00'>"
             "            <MapStrategy>"
-            "               <Strategy>SharedTable</Strategy>"
-            "               <AppliesToSubclasses>True</AppliesToSubclasses>"
+            "               <Strategy>TablePerHierarchy</Strategy>"
             "            </MapStrategy>"
             "        </ClassMap>"
             "    </ECCustomAttributes>"

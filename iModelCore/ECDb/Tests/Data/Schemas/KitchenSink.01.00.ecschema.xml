@@ -2,7 +2,7 @@
 <ECSchema schemaName="KitchenSink" nameSpacePrefix="ks" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="01.00.01" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
     <ECCustomAttributes>
         <IdentificationOfStandardClasses xmlns="Bentley_Standard_CustomAttributes.01.12">
             <FolderBaseClass>Folder</FolderBaseClass>
@@ -23,10 +23,9 @@
                 <Description>The default category</Description>
                 <Priority>100000</Priority>
             </Category>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -235,10 +234,9 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="FM_Equipment" displayLabel="Equipment" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
