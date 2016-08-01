@@ -18,7 +18,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -29,7 +28,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -40,7 +38,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -51,7 +48,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -62,7 +58,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -73,7 +68,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -84,7 +78,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -95,7 +88,6 @@
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
