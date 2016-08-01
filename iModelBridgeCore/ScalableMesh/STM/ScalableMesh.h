@@ -65,8 +65,8 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 extern bool s_useSQLFormat;
-//typedef ISMStore::Extent3d64f        YProtPtExtentType;
-typedef DRange3d YProtPtExtentType;
+//typedef ISMStore::Extent3d64f        Extent3dType;
+typedef DRange3d Extent3dType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 /*----------------------------------------------------------------------------+
@@ -188,7 +188,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         friend class auto_ptr<ScalableMesh>;
         friend class ScalableMeshProgressiveQueryEngine;        
                 
-        typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
+        typedef SMMeshIndex<INDEXPOINT, Extent3dType>
                                         MeshIndexType;
         
 
@@ -219,8 +219,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         int                             Close                          ();
 
   
-        unsigned __int64                CountPointsInExtent(YProtPtExtentType&  extent, 
-                                                            HFCPtr<SMPointIndexNode<INDEXPOINT, YProtPtExtentType>> nodePtr,
+        unsigned __int64                CountPointsInExtent(Extent3dType&  extent, 
+                                                            HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> nodePtr,
                                                             const unsigned __int64& maxNumberCountedPoints) const;
 
         unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;
@@ -233,7 +233,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         void                            AddBreaklineSet                (list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
                                                                         BC_DTM_OBJ*                         po_ppBcDtmObj);
 
-        ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const;
+        ISMPointIndexFilter<INDEXPOINT, Extent3dType>* CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const;
 #endif
         void CreateSpatialIndexFromExtents(list<HVE2DSegment>& pi_rpBreaklineList, 
                                            BC_DTM_OBJ**        po_ppBcDtmObj);
@@ -244,7 +244,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
     protected : 
 
-        HFCPtr<SMPointIndexNode<INDEXPOINT, YProtPtExtentType>> GetRootNode();                    
+        HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> GetRootNode();                    
         virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
  
         virtual __int64          _GetPointCount() override;
@@ -342,13 +342,13 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
         GeoCoords::GCS                                  m_sourceGCS;
         
     protected : 
 
-        ScalableMeshSingleResolutionPointIndexView(HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> scmPointIndexPtr, 
+        ScalableMeshSingleResolutionPointIndexView(HFCPtr<SMPointIndex<POINT, Extent3dType>> scmPointIndexPtr, 
                                                    int                                             resolutionIndex, 
                                                    GeoCoords::GCS                             sourceGCS);
 
@@ -419,7 +419,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
             assert(false);
-            auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+            auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
             return new ScalableMeshNode<POINT>(ptr);
             }
 

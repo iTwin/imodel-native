@@ -667,44 +667,44 @@ template <class POINT> ScalableMesh<POINT>::~ScalableMesh()
     Close();
     }
 
-template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent(YProtPtExtentType& extent, 
-                                                                          HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> nodePtr,
+template <class POINT> unsigned __int64 ScalableMesh<POINT>::CountPointsInExtent(Extent3dType& extent, 
+                                                                          HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr,
                                                                           const unsigned __int64& maxNumberCountedPoints) const
     {
     const unsigned __int64 maxCount = maxNumberCountedPoints <= 0 ? std::numeric_limits<unsigned __int64>::max() : maxNumberCountedPoints;
 
-    if(ExtentOp<YProtPtExtentType>::Overlap(nodePtr->GetContentExtent(),extent))
+    if(ExtentOp<Extent3dType>::Overlap(nodePtr->GetContentExtent(),extent))
         {
         if(nodePtr->IsLeaf())
             {
-            if (ExtentOp<YProtPtExtentType>::Contains2d(nodePtr->GetContentExtent(), extent))
+            if (ExtentOp<Extent3dType>::Contains2d(nodePtr->GetContentExtent(), extent))
                 {
                 // Approximate number of points. The points are assumed to be evenly distributed in the tile extent.
                 // This could potentially lead to poor performance if the points are concentrated in specific areas of
                 // the tile extent.
-                double nodeExtentDistanceX = ExtentOp<YProtPtExtentType>::GetWidth(nodePtr->GetContentExtent());
-                double nodeExtentDistanceY = ExtentOp<YProtPtExtentType>::GetHeight(nodePtr->GetContentExtent());
+                double nodeExtentDistanceX = ExtentOp<Extent3dType>::GetWidth(nodePtr->GetContentExtent());
+                double nodeExtentDistanceY = ExtentOp<Extent3dType>::GetHeight(nodePtr->GetContentExtent());
                 double nodeExtentArea = nodeExtentDistanceX * nodeExtentDistanceY;
-                double extentDistanceX = ExtentOp<YProtPtExtentType>::GetWidth(extent);
-                double extentDistanceY = ExtentOp<YProtPtExtentType>::GetHeight(extent);
+                double extentDistanceX = ExtentOp<Extent3dType>::GetWidth(extent);
+                double extentDistanceY = ExtentOp<Extent3dType>::GetHeight(extent);
                 double extentArea = extentDistanceX * extentDistanceY;
                 return unsigned __int64(nodePtr->GetCount()*(extentArea/nodeExtentArea));
                 }
             else {
-                double nodeExtentDistanceX = ExtentOp<YProtPtExtentType>::GetWidth(nodePtr->GetContentExtent());
-                double nodeExtentDistanceY = ExtentOp<YProtPtExtentType>::GetHeight(nodePtr->GetContentExtent());
+                double nodeExtentDistanceX = ExtentOp<Extent3dType>::GetWidth(nodePtr->GetContentExtent());
+                double nodeExtentDistanceY = ExtentOp<Extent3dType>::GetHeight(nodePtr->GetContentExtent());
                 double nodeExtentArea = nodeExtentDistanceX * nodeExtentDistanceY;
                 // Create intersection extent
-                double xAxisValues[] = { ExtentOp<YProtPtExtentType>::GetXMin(nodePtr->GetContentExtent()), ExtentOp<YProtPtExtentType>::GetXMax(nodePtr->GetContentExtent()),
-                    ExtentOp<YProtPtExtentType>::GetXMin(extent), ExtentOp<YProtPtExtentType>::GetXMax(extent) };
+                double xAxisValues[] = { ExtentOp<Extent3dType>::GetXMin(nodePtr->GetContentExtent()), ExtentOp<Extent3dType>::GetXMax(nodePtr->GetContentExtent()),
+                    ExtentOp<Extent3dType>::GetXMin(extent), ExtentOp<Extent3dType>::GetXMax(extent) };
                 vector<double> xAxisValuesV (xAxisValues,xAxisValues+sizeof(xAxisValues)/ sizeof(double)) ;
                 sort(xAxisValuesV.begin(),xAxisValuesV.end());
-                double yAxisValues[] = { ExtentOp<YProtPtExtentType>::GetYMin(nodePtr->GetContentExtent()), ExtentOp<YProtPtExtentType>::GetYMax(nodePtr->GetContentExtent()), 
-                    ExtentOp<YProtPtExtentType>::GetYMin(extent), ExtentOp<YProtPtExtentType>::GetYMax(extent) };
+                double yAxisValues[] = { ExtentOp<Extent3dType>::GetYMin(nodePtr->GetContentExtent()), ExtentOp<Extent3dType>::GetYMax(nodePtr->GetContentExtent()), 
+                    ExtentOp<Extent3dType>::GetYMin(extent), ExtentOp<Extent3dType>::GetYMax(extent) };
                 vector<double> yAxisValuesV (yAxisValues,yAxisValues+sizeof(yAxisValues)/ sizeof(double)) ;
                 sort(yAxisValuesV.begin(),yAxisValuesV.end());
-                YProtPtExtentType intersectionExtent = ExtentOp<YProtPtExtentType>::Create(xAxisValuesV[1],yAxisValuesV[1],xAxisValuesV[2],yAxisValuesV[2]);
-                double intersectionArea = ExtentOp<YProtPtExtentType>::GetWidth(intersectionExtent)*ExtentOp<YProtPtExtentType>::GetHeight(intersectionExtent);
+                Extent3dType intersectionExtent = ExtentOp<Extent3dType>::Create(xAxisValuesV[1],yAxisValuesV[1],xAxisValuesV[2],yAxisValuesV[2]);
+                double intersectionArea = ExtentOp<Extent3dType>::GetWidth(intersectionExtent)*ExtentOp<Extent3dType>::GetHeight(intersectionExtent);
                 //return nodePtr->GetCount();
                 return unsigned __int64( (intersectionArea != 0 && nodeExtentArea != 0) ? nodePtr->GetCount()*(intersectionArea/nodeExtentArea) : 0);
                 }
@@ -740,14 +740,14 @@ template <class POINT> Count ScalableMesh<POINT>::_GetCountInRange (const DRange
         case COUNTTYPE_POINTS:
         case COUNTTYPE_BOTH:
             {
-            HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> nodePtr = m_scmIndexPtr->GetRootNode();
-            YProtPtExtentType pointExtent;
-            ExtentOp<YProtPtExtentType>::SetXMax(pointExtent, range.high.x);
-            ExtentOp<YProtPtExtentType>::SetXMin(pointExtent, range.low.x);
-            ExtentOp<YProtPtExtentType>::SetYMax(pointExtent, range.high.y);
-            ExtentOp<YProtPtExtentType>::SetYMin(pointExtent, range.low.y);
-            ExtentOp<YProtPtExtentType>::SetZMax(pointExtent, 0.0);
-            ExtentOp<YProtPtExtentType>::SetZMin(pointExtent, 0.0);
+            HFCPtr<SMPointIndexNode<POINT, Extent3dType>> nodePtr = m_scmIndexPtr->GetRootNode();
+            Extent3dType pointExtent;
+            ExtentOp<Extent3dType>::SetXMax(pointExtent, range.high.x);
+            ExtentOp<Extent3dType>::SetXMin(pointExtent, range.low.x);
+            ExtentOp<Extent3dType>::SetYMax(pointExtent, range.high.y);
+            ExtentOp<Extent3dType>::SetYMin(pointExtent, range.low.y);
+            ExtentOp<Extent3dType>::SetZMax(pointExtent, 0.0);
+            ExtentOp<Extent3dType>::SetZMin(pointExtent, 0.0);
             qty.m_nbPoints = CountPointsInExtent (pointExtent, nodePtr, maxNumberCountedPoints);
             }
         case COUNTTYPE_LINEARS:
@@ -812,10 +812,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
          //   HFCPtr<HPMCountLimitedPool<POINT> > pMemoryPool(PoolSingleton<POINT>());
 
          //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
-            auto_ptr<ISMMeshIndexFilter<POINT, YProtPtExtentType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, YProtPtExtentType>());
+         //auto_ptr<ISMPointIndexFilter<POINT, Extent3dType>> filterP(CreatePointIndexFilter(featureDir));
+            auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
-            ISMDataStoreTypePtr<YProtPtExtentType> dataStore;
+            ISMDataStoreTypePtr<Extent3dType> dataStore;
 
                 if (!isSingleFile)
                     {
@@ -833,7 +833,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         return BSIERROR; // Error loading layer gcs
                         }
                                         
-                    dataStore = new SMStreamingStore<YProtPtExtentType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
+                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
@@ -848,7 +848,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }
                 else
                     {                                                                                                                       
-                    dataStore = new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr);
+                    dataStore = new SMSQLiteStore<Extent3dType>(m_smSQLitePtr);
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
@@ -967,14 +967,14 @@ template <class POINT> int ScalableMesh<POINT>::Close
 template <class POINT>
 DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   pointIndexP)
     {
-    typedef ExtentOp<YProtPtExtentType>         PtExtentOpType;
+    typedef ExtentOp<Extent3dType>         PtExtentOpType;
 
     DRange3d totalExtent;
     memset(&totalExtent, 0, sizeof(totalExtent));
 
     if ((pointIndexP != 0) && (!pointIndexP->IsEmpty()))
         {
-        YProtPtExtentType ExtentPoints = pointIndexP->GetContentExtent();
+        Extent3dType ExtentPoints = pointIndexP->GetContentExtent();
         totalExtent.low.x = PtExtentOpType::GetXMin(ExtentPoints);
         totalExtent.high.x = PtExtentOpType::GetXMax(ExtentPoints);
         totalExtent.low.y = PtExtentOpType::GetYMin(ExtentPoints);
@@ -989,7 +989,7 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   po
 /*----------------------------------------------------------------------------+
 |ScalableMesh::CreatePointIndexFilter
 +----------------------------------------------------------------------------*/
-template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMesh<POINT>::CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const
+template <class POINT> ISMPointIndexFilter<POINT, Extent3dType>* ScalableMesh<POINT>::CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const
     {
     HPRECONDITION(pointDirPtr != 0);
 
@@ -1005,7 +1005,7 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
         return 0;
  
 
-    ISMPointIndexFilter<POINT, YProtPtExtentType>* pFilter = 0;                            
+    ISMPointIndexFilter<POINT, Extent3dType>* pFilter = 0;                            
     ISMStore::FilterType filteringType = filteringDir->GetType();
 
     if (indexHandler->IsProgressive())
@@ -1013,7 +1013,7 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
         switch (filteringType)
             {
             case ISMStore::FILTER_TYPE_DUMB :
-                pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, YProtPtExtentType>();                           
+                pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, Extent3dType>();                           
                 break;            
             default : 
                 assert(0);
@@ -1024,7 +1024,7 @@ template <class POINT> ISMPointIndexFilter<POINT, YProtPtExtentType>* ScalableMe
         switch (filteringType)
             {
             case FILTER_TYPE_DUMB :
-                pFilter = new ScalableMeshQuadTreeBCLIBFilter1<POINT, YProtPtExtentType>();                           
+                pFilter = new ScalableMeshQuadTreeBCLIBFilter1<POINT, Extent3dType>();                           
                 break;                        
             default : 
                 assert(0);
@@ -1441,9 +1441,9 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<
 /*----------------------------------------------------------------------------+
 |ScalableMesh::GetRootNode
 +----------------------------------------------------------------------------*/
-template <class POINT> HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> ScalableMesh<POINT>::GetRootNode()
+template <class POINT> HFCPtr<SMPointIndexNode<POINT, Extent3dType>> ScalableMesh<POINT>::GetRootNode()
     {
-    HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> pRootNode;
+    HFCPtr<SMPointIndexNode<POINT, Extent3dType>> pRootNode;
 
     if (m_scmIndexPtr != 0)
         {
@@ -1969,7 +1969,7 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
 
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
     {
-    auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+    auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
     if (m_scmIndexPtr == nullptr) return new ScalableMeshNode<POINT>(ptr);
     auto nodeP = m_scmIndexPtr->GetRootNode();
     return new ScalableMeshNode<POINT>(nodeP);
@@ -2134,7 +2134,7 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
 /*----------------------------------------------------------------------------+
 |ScalableMeshSingleResolutionPointIndexView Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
-template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::ScalableMeshSingleResolutionPointIndexView(HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> scmPointIndexPtr, 
+template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::ScalableMeshSingleResolutionPointIndexView(HFCPtr<SMPointIndex<POINT, Extent3dType>> scmPointIndexPtr, 
                                                                                                        int                                              resolutionIndex, 
                                                                                                        GeoCoords::GCS                                   sourceGCS)
 : m_sourceGCS(sourceGCS)
@@ -2184,14 +2184,14 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMeshS
 
 template <class POINT> DTMStatusInt ScalableMeshSingleResolutionPointIndexView<POINT>::_GetRange(DRange3dR range)
     {        
-    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
+    Extent3dType ExtentPoints = m_scmIndexPtr->GetContentExtent();
 
-    range.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
-    range.high.x = ExtentOp<YProtPtExtentType>::GetXMax(ExtentPoints);
-    range.low.y = ExtentOp<YProtPtExtentType>::GetYMin(ExtentPoints);
-    range.high.y = ExtentOp<YProtPtExtentType>::GetYMax(ExtentPoints);
-    range.low.z = ExtentOp<YProtPtExtentType>::GetZMin(ExtentPoints);
-    range.high.z = ExtentOp<YProtPtExtentType>::GetZMax(ExtentPoints);   
+    range.low.x = ExtentOp<Extent3dType>::GetXMin(ExtentPoints);
+    range.high.x = ExtentOp<Extent3dType>::GetXMax(ExtentPoints);
+    range.low.y = ExtentOp<Extent3dType>::GetYMin(ExtentPoints);
+    range.high.y = ExtentOp<Extent3dType>::GetYMax(ExtentPoints);
+    range.low.z = ExtentOp<Extent3dType>::GetZMin(ExtentPoints);
+    range.high.z = ExtentOp<Extent3dType>::GetZMax(ExtentPoints);   
     return DTM_SUCCESS;
     }
 
@@ -2215,15 +2215,15 @@ template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_G
     {
     StatusInt status = SUCCESS;
 
-    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
+    Extent3dType ExtentPoints = m_scmIndexPtr->GetContentExtent();
 
     DRange3d initialRange;
-    initialRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
-    initialRange.high.x = ExtentOp<YProtPtExtentType>::GetXMax(ExtentPoints);
-    initialRange.low.y = ExtentOp<YProtPtExtentType>::GetYMin(ExtentPoints);
-    initialRange.high.y = ExtentOp<YProtPtExtentType>::GetYMax(ExtentPoints);
-    initialRange.low.z = ExtentOp<YProtPtExtentType>::GetZMin(ExtentPoints);
-    initialRange.high.z = ExtentOp<YProtPtExtentType>::GetZMax(ExtentPoints);
+    initialRange.low.x = ExtentOp<Extent3dType>::GetXMin(ExtentPoints);
+    initialRange.high.x = ExtentOp<Extent3dType>::GetXMax(ExtentPoints);
+    initialRange.low.y = ExtentOp<Extent3dType>::GetYMin(ExtentPoints);
+    initialRange.high.y = ExtentOp<Extent3dType>::GetYMax(ExtentPoints);
+    initialRange.low.z = ExtentOp<Extent3dType>::GetZMin(ExtentPoints);
+    initialRange.high.z = ExtentOp<Extent3dType>::GetZMax(ExtentPoints);
 
     DRange3d reprojectedRange;
     status = ReprojectRangeDomainLimited(reprojectedRange, initialRange, const_cast<BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr&>(m_sourceGCS.GetGeoRef().GetBasePtr()), targetGCS);

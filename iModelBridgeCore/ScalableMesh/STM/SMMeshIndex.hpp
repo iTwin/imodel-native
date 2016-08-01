@@ -4101,7 +4101,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFor
                                                                                           const bool& pi_pCompress,
                                                                                           ISMDataStoreTypePtr<EXTENT>&     po_pDataStore) const
     {    
-    po_pDataStore = new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);    
+    po_pDataStore = new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);    
     }
 
 /**----------------------------------------------------------------------------

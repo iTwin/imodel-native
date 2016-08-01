@@ -94,7 +94,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*                                                                  */
 /*==================================================================*/
 
-ISMPointIndexFilter<DPoint3d, YProtPtExtentType>* s_filter = nullptr;
+ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filter = nullptr;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
@@ -601,7 +601,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             // Pip ToDo: Create account?
             DataSourceAccount *account = nullptr;                                    
             
-            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
             
             pDataIndex = new MeshIndexType(dataStore, 
                                            ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
@@ -620,7 +620,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             pDataIndex->SetClipRegistry(registry);
             }
         else {
-            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMSQLiteStore<Extent3dType>(m_smSQLitePtr));
 
             pDataIndex = new MeshIndexType(dataStore,
                                            ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),

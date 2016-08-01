@@ -22,17 +22,17 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-//typedef ISMStore::Extent3d64f        YProtPtExtentType;
-typedef DRange3d       YProtPtExtentType;
+//typedef ISMStore::Extent3d64f        Extent3dType;
+typedef DRange3d       Extent3dType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
     {        
-    HFCPtr<SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>> m_clipStore;
-    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>> m_skirtStore;    
+    HFCPtr<SMSQLiteClipDefinitionsTileStore<Extent3dType>> m_clipStore;
+    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<Extent3dType>> m_skirtStore;    
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
     uint64_t m_maxID;
     
-    //ISMDataStoreTypePtr<YProtPtExtentType> m_smDataStore;
+    //ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
 
     public:
 

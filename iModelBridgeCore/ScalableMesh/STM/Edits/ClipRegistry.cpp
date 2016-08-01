@@ -16,12 +16,12 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 ClipRegistry::ClipRegistry(const WString& fileName)
     {              
-    ISMDataStoreTypePtr<YProtPtExtentType> m_dataStore;
+    ISMDataStoreTypePtr<Extent3dType> m_dataStore;
 
     StatusInt status;
     SMSQLiteFilePtr filePtr = SMSQLiteFile::Open(fileName.c_str(), false, status);
     m_path = fileName;
-    if (status && nullptr != filePtr.get()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);
+    if (status && nullptr != filePtr.get()) m_clipStore = new SMSQLiteClipDefinitionsTileStore<Extent3dType>(filePtr);
     
     m_maxID = 0;
 
@@ -32,7 +32,7 @@ ClipRegistry::ClipRegistry(const WString& fileName)
     
     if (filePtr != NULL && m_clipStore != NULL)
         {
-        m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>(filePtr);
+        m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<Extent3dType>(filePtr);
         LoadAllClips();
         }
     }
@@ -57,8 +57,8 @@ void ClipRegistry::OpenStore()
     if (status==0) filePtr->Create(utf8Path.c_str());
     if (filePtr.get() != nullptr && filePtr->IsOpen())
         {
-        m_clipStore = new SMSQLiteClipDefinitionsTileStore<YProtPtExtentType>(filePtr);
-        m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<YProtPtExtentType>(filePtr);
+        m_clipStore = new SMSQLiteClipDefinitionsTileStore<Extent3dType>(filePtr);
+        m_skirtStore = new SMSQLiteSkirtDefinitionsTileStore<Extent3dType>(filePtr);
         }
     }
 

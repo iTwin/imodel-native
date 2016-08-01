@@ -373,7 +373,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     bvector<bvector<IScalableMeshCachedDisplayNodePtr>>       m_foundMeshNodes;
     std::mutex*                                               m_foundMeshNodeMutexes;
 
-    bvector<NodeQueryProcessor<DPoint3d, YProtPtExtentType>::Ptr>  m_nodeQueryProcessors;
+    bvector<NodeQueryProcessor<DPoint3d, Extent3dType>::Ptr>  m_nodeQueryProcessors;
     std::mutex*                                                    m_nodeQueryProcessorMutexes;
 
     ISMPointIndexQuery<POINT, EXTENT>*                        m_queryObjectP;
@@ -394,7 +394,7 @@ public:
 
 private:
 
-    typedef std::list<ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr> ProcessingQueryList;
+    typedef std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr> ProcessingQueryList;
 
     bvector<int>                  m_processingQueryIndexes;
     ProcessingQueryList           m_processingQueries;
@@ -411,20 +411,20 @@ private:
 
     struct InLoadingNode : public RefCountedBase
         {
-        InLoadingNode(HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> visibleNode, 
+        InLoadingNode(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> visibleNode, 
                       IScalableMeshCachedDisplayNodePtr                     displayNode)
             {
             m_visibleNode = visibleNode;
             m_displayNode = displayNode; 
             }
 
-        static InLoadingNodePtr Create(HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> visibleNode, 
+        static InLoadingNodePtr Create(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> visibleNode, 
                                        IScalableMeshCachedDisplayNodePtr                     displayNode)
             {
             return new InLoadingNode(visibleNode, displayNode);
             }
 
-        HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> m_visibleNode;
+        HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> m_visibleNode;
         IScalableMeshCachedDisplayNodePtr                     m_displayNode;         
         };    
 
@@ -432,7 +432,7 @@ private:
     bvector<InLoadingNodePtr> m_inLoadingNodes;
 
 
-    void LoadNodeDisplayData(IScalableMeshCachedDisplayNodePtr& meshNodePtr, HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>& visibleNode, bool loadTexture, const bset<uint64_t>& clipVisibilities, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
+    void LoadNodeDisplayData(IScalableMeshCachedDisplayNodePtr& meshNodePtr, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& visibleNode, bool loadTexture, const bset<uint64_t>& clipVisibilities, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
         {
         InLoadingNodePtr inloadingNodePtr; 
         bool inLoading = false;
@@ -514,7 +514,7 @@ private:
         {
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 
-        ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr processingQueryPtr;
+        ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr;
 
         do
             {
@@ -536,7 +536,7 @@ private:
             //NEEDS_WORK_MST : Maybe we should prioritize the first processing query found
             if (processingQueryPtr != 0)
                 {
-                HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> nodePtr;
+                HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;
 
                 //processingQueryPtr->m_searchingNodeMutexes[threadId].lock();
 
@@ -551,7 +551,7 @@ private:
                 if (nodePtr != 0)
                     {
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].lock();
-                    processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, YProtPtExtentType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &processingQueryPtr->m_producedFoundNodes, threadId);
+                    processingQueryPtr->m_nodeQueryProcessors[threadId] = NodeQueryProcessor<DPoint3d, Extent3dType>::Create(nodePtr, processingQueryPtr->m_queryObjectP, 0, processingQueryPtr->m_loadTexture, &processingQueryPtr->m_producedFoundNodes, threadId);
                     processingQueryPtr->m_nodeQueryProcessorMutexes[threadId].unlock();
 
                     processingQueryPtr->m_searchingNodeMutexes[threadId].lock();                                    
@@ -571,7 +571,7 @@ private:
                     }
                 
                 //Load unloaded node
-                //HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> nodePtr;                
+                //HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> nodePtr;                
                 if (processingQueryPtr->m_toLoadNodes[threadId].size() > 0)
                     {                    
                     nodePtr = processingQueryPtr->m_toLoadNodes[threadId].back();                    
@@ -598,7 +598,7 @@ private:
                 //NEED_WORK_SM : Part of node query processor;
                 while (m_nbMissed < MAX_MISSED && !processingQueryPtr->m_isCancel)                            
                     {
-                    HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> consumedNodePtr;
+                    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> consumedNodePtr;
 
                     if (!processingQueryPtr->m_producedFoundNodes.WaitConsumption())
                         {
@@ -683,9 +683,9 @@ public:
         }
 
     void AddQuery(int                                                             queryId,
-                  ISMPointIndexQuery<DPoint3d, YProtPtExtentType>*                queryObjectP,
-                  bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>& searchingNodes,
-                  bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>& toLoadNodes,                  
+                  ISMPointIndexQuery<DPoint3d, Extent3dType>*                queryObjectP,
+                  bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
+                  bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes,                  
                   bool                                                            loadTexture, 
                   const bset<uint64_t>&                                            clipVisibilities,
                   IScalableMeshPtr&                                                scalableMeshPtr,
@@ -705,7 +705,7 @@ public:
                 assert(!"Query already processing");
             }
 #endif
-        ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, YProtPtExtentType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr));
+        ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr(ProcessingQuery<DPoint3d, Extent3dType>::Create(queryId, m_numWorkingThreads, queryObjectP, searchingNodes, toLoadNodes, loadTexture, clipVisibilities, scalableMeshPtr, displayCacheManagerPtr));
 
         size_t currentNbProcessingQueries;
 
@@ -724,7 +724,7 @@ public:
 
     StatusInt CancelAllQueries()
         {
-        ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr toCancelQueryPtr;        
+        ProcessingQuery<DPoint3d, Extent3dType>::Ptr toCancelQueryPtr;        
 
         m_processingQueriesMutex.lock();
 
@@ -766,7 +766,7 @@ public:
         fflush(logger.GetFile());                                        
 #endif
 
-        ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr toCancelQueryPtr;
+        ProcessingQuery<DPoint3d, Extent3dType>::Ptr toCancelQueryPtr;
 
         m_processingQueriesMutex.lock();
 
@@ -809,7 +809,7 @@ public:
             {
             bool isQueryComplete = true;
             
-            ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr queryPtr;
+            ProcessingQuery<DPoint3d, Extent3dType>::Ptr queryPtr;
 
             //m_processingQueriesMutex.lock();                    
 
@@ -881,8 +881,8 @@ public:
             {             
             StatusInt status;
 
-            std::list<ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr>::iterator queryItr(m_processingQueries.begin());
-            std::list<ProcessingQuery<DPoint3d, YProtPtExtentType>::Ptr>::iterator queryItrEnd(m_processingQueries.end());
+            std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr>::iterator queryItr(m_processingQueries.begin());
+            std::list<ProcessingQuery<DPoint3d, Extent3dType>::Ptr>::iterator queryItrEnd(m_processingQueries.end());
 
             while (queryItr != queryItrEnd)
                 {
@@ -934,8 +934,8 @@ ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
     s_queryProcessor.CancelAllQueries();    
     }
 
-template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>* viewDependentQueryP,
-    ISMPointIndexQuery<POINT, YProtPtExtentType>*&                        pQueryObject,
+template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP,
+    ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
     const DPoint3d*                                                       pQueryExtentPts,
     int                                                                   nbQueryExtentPts,
     IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam)
@@ -945,14 +945,14 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 
     int status = SUCCESS;
 
-    YProtPtExtentType queryExtent;
+    Extent3dType queryExtent;
     /*
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
 
-    double minZ = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
 
-    YProtPtExtentType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<YProtPtExtentType>(pQueryExtentPts,
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
     nbQueryExtentPts,
     minZ,
     maxZ));
@@ -963,7 +963,7 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 
     memcpy(rootToViewMatrix, queryParam->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
 
-    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>(queryExtent,
+    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>(queryExtent,
         rootToViewMatrix,
         viewportRotMatrix,
         queryParam->GetViewBox(),
@@ -984,7 +984,7 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
         }   
 
 
-    pQueryObject = (ISMPointIndexQuery<POINT, YProtPtExtentType>*)(viewDependentQueryP);
+    pQueryObject = (ISMPointIndexQuery<POINT, Extent3dType>*)(viewDependentQueryP);
 
     return status;
     }
@@ -1015,11 +1015,11 @@ static double s_firstNodeSearchingDelay = (double)1 / 30 * CLOCKS_PER_SEC;
 #endif
 //static int    s_nbIterClock;
 
-void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNodes, HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities/*, IScalableMeshPtr& scalableMeshPtr*/)
+void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNodes, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities/*, IScalableMeshPtr& scalableMeshPtr*/)
     {    
     assert(node->IsParentSet() == true);
         
-    HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> parentNodePtr(node->GetParentNodePtr());
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> parentNodePtr(node->GetParentNodePtr());
     assert(parentNodePtr != node);
 
     //NEEDS_WORK_MST : Root node could be loaded at load time instead. 
@@ -1064,9 +1064,9 @@ class NewQueryStartingNodeProcessor
     {
     private : 
 
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType>* m_nodesToSearch;
+        ProducedNodeContainer<DPoint3d, Extent3dType>* m_nodesToSearch;
         size_t                                              m_nodeToSearchCurrentInd;
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType>* m_foundNodes;
+        ProducedNodeContainer<DPoint3d, Extent3dType>* m_foundNodes;
         bool                                                m_loadTexture; 
         RequestedQuery*                                     m_newQuery;
         bset<uint64_t>*                                     m_activeClips;
@@ -1074,7 +1074,7 @@ class NewQueryStartingNodeProcessor
     
         bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                     m_lowerResOverviewNodes;
         bvector<bvector<IScalableMeshCachedDisplayNodePtr>>                     m_requiredMeshNodes;    
-        bvector<bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>> m_toLoadNodes;
+        bvector<bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>> m_toLoadNodes;
         
         int          m_numWorkingThreads;
         std::thread* m_workingThreads;    
@@ -1159,11 +1159,11 @@ class NewQueryStartingNodeProcessor
 
         void Execute(RequestedQuery&                                                 newQuery, 
                      bvector<IScalableMeshCachedDisplayNodePtr>&                     lowerResOverviewNodes,
-                     bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>& searchingNodes,
-                     bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>& toLoadNodes,                 
-                     ProducedNodeContainer<DPoint3d, YProtPtExtentType>&             nodesToSearch,
+                     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
+                     bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes,                 
+                     ProducedNodeContainer<DPoint3d, Extent3dType>&             nodesToSearch,
                      size_t                                                          nodeToSearchCurrentInd,
-                     ProducedNodeContainer<DPoint3d, YProtPtExtentType>&             foundNodes, 
+                     ProducedNodeContainer<DPoint3d, Extent3dType>&             foundNodes, 
                      bset<uint64_t>&                                                 activeClips,
                      IScalableMeshPtr& scalableMeshPtr)
             {        
@@ -1232,11 +1232,11 @@ void TerminateProgressiveQueries()
 
 void ComputeOverviewSearchToLoadNodes(RequestedQuery&                                                 newQuery, 
                                       bvector<IScalableMeshCachedDisplayNodePtr>&                     lowerResOverviewNodes,
-                                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>& searchingNodes,
-                                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>>& toLoadNodes, 
-                                      ProducedNodeContainer<DPoint3d, YProtPtExtentType>&             nodesToSearch, 
+                                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
+                                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, 
+                                      ProducedNodeContainer<DPoint3d, Extent3dType>&             nodesToSearch, 
                                       size_t                                                          currentInd,
-                                      ProducedNodeContainer<DPoint3d, YProtPtExtentType>&             foundNodes, 
+                                      ProducedNodeContainer<DPoint3d, Extent3dType>&             foundNodes, 
                                       bset<uint64_t>&                                                 activeClips,
                                       IScalableMeshPtr& scalableMeshPtr)
     {   
@@ -1302,19 +1302,19 @@ void ComputeOverviewSearchToLoadNodes(RequestedQuery&                           
 #endif    
     }
     
-void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
+void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes)
     {
     static int s_maxLevel = 2;
        
-    HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>> rootNodePtr(((ScalableMesh<DPoint3d>*)m_scalableMeshPtr.get())->GetRootNode());
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)m_scalableMeshPtr.get())->GetRootNode());
 
     assert(rootNodePtr != 0);
 
     if (s_newOverview)
         {
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType> overviewNodes;
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType> nodesToSearch;
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType> foundNodes;
+        ProducedNodeContainer<DPoint3d, Extent3dType> overviewNodes;
+        ProducedNodeContainer<DPoint3d, Extent3dType> nodesToSearch;
+        ProducedNodeContainer<DPoint3d, Extent3dType> foundNodes;
         
         nodesToSearch.AddNode(rootNodePtr);        
 
@@ -1338,8 +1338,8 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         assert(s_LoadQVDuringQuery);
         
         bvector<IScalableMeshCachedDisplayNodePtr>                     lowerResOverviewNodes;
-        bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>> searchingNodes;
-        bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>> toLoadNodes;
+        bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> searchingNodes;
+        bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> toLoadNodes;
                   
         ComputeOverviewSearchToLoadNodes(newQuery, lowerResOverviewNodes, searchingNodes, toLoadNodes, nodesToSearch, currentInd, foundNodes, m_activeClips, m_scalableMeshPtr);
         
@@ -1367,9 +1367,9 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
         }
     else
         {             
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType> overviewNodes;
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType> nodesToSearch;
-        ProducedNodeContainer<DPoint3d, YProtPtExtentType> foundNodes;
+        ProducedNodeContainer<DPoint3d, Extent3dType> overviewNodes;
+        ProducedNodeContainer<DPoint3d, Extent3dType> nodesToSearch;
+        ProducedNodeContainer<DPoint3d, Extent3dType> foundNodes;
 
         rootNodePtr->QueryOverview(queryObjectP, s_maxLevel, overviewNodes, foundNodes, nodesToSearch, 0);
         
@@ -1399,7 +1399,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
                     }
                 }
                       
-            bvector<HFCPtr<SMPointIndexNode<DPoint3d, YProtPtExtentType>>> toLoadNodes;
+            bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>> toLoadNodes;
 
             s_queryProcessor.AddQuery(newQuery.m_queryId, queryObjectP, nodesToSearch.GetNodes(), toLoadNodes, newQuery.m_loadTexture, m_activeClips, m_scalableMeshPtr, m_displayCacheManagerPtr);
 
@@ -1494,7 +1494,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
     requestedQuery.m_loadTexture = loadTexture;
     requestedQuery.m_clipVisibilities = clipVisibilities;
 
-    ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP;
+    ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP;
 
     BuildQueryObject<DPoint3d>(queryObjectP, 0/*pQueryExtentPts*/, 0/*nbQueryExtentPts*/, queryParam);
 
