@@ -789,7 +789,6 @@
             <ClassMap xmlns="ECDbMap.01.01">
                 <MapStrategy>
                     <Strategy>OwnTable</Strategy>
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -802,7 +801,6 @@
             <ClassMap xmlns="ECDbMap.01.01">
                 <MapStrategy>
                     <Strategy>OwnTable</Strategy>
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>

@@ -826,8 +826,6 @@
                 <MapStrategy>
                     <!-- Each ElementUniqueAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
-                    <!-- Each ElementUniqueAspect subclass should determine its own MapStrategy -->
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
@@ -843,8 +841,6 @@
                 <MapStrategy>
                     <!-- Each ElementMultiAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
-                    <!-- Each ElementMultiAspect subclass should determine its own MapStrategy -->
-                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
