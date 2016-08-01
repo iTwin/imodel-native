@@ -1,0 +1,48 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: TilePublisher/TilePublisherExe.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+SrcDir              = $(_MakeFilePath)
+SubpartLibs         = $(BuildContext)SubParts/Libs/
+o                   = $(OutputRootDir)Build/TilePublisher/
+ContextDeliveryDir  = $(BuildContext)Delivery/
+appName             = TilePublisher
+
+always:
+    ~mkdir $(o)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)TilePublisher.h ${MultiCompileDepends}
+
+$(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)TilePublisher.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+EXE_NO_SIGN         = 1
+EXE_DEST            = $(o)
+EXE_NAME            = $(appName)
+EXE_OBJS            = $(MultiCompileObjectList)
+EXE_LOPT1           = -entry:wmainCRTStartup
+
+LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
+                      $(SubpartLibs)BeSQLite.lib          \
+                      $(SubpartLibs)BeSQLiteEC.lib        \
+                      $(SubpartLibs)BeLibXml2.lib         \
+                      $(SubpartLibs)BentleyGeom.lib       \
+                      $(SubpartLibs)DgnPlatform.lib       \
+                      $(SubpartLibs)ECObjects.lib         \
+                      $(SubpartLibs)Units.lib             \
+                      $(SubpartLibs)BeJsonCpp.lib         \
+                      gdi32.lib                           \
+                      user32.lib                          \
+
+%include $(SharedMki)linktool.mki
+
