@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include <Geom/XYZRangeTree.h>
 
 USING_NAMESPACE_BENTLEY_RENDER
 
@@ -58,6 +59,14 @@ TileGeometryCache::~TileGeometryCache()
     m_tree->Traverse(handler);
 
     XYZRangeTreeRoot::Free(m_tree);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d TileGeometryCache::GetRange() const
+    {
+    return m_tree->Range();
     }
 
 /*---------------------------------------------------------------------------------**//**

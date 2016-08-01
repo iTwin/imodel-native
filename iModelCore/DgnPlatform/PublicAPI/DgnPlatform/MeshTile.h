@@ -6,13 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__BENTLEY_INTERNAL_ONLY__
 /*__PUBLISH_SECTION_START__*/
-/*__PUBLISH_SECTION_END__*/
-// ###TODO: This header is only "internal only" because the GeomLibs XYZRangeTree stuff is...
 
 #include "Render.h"
-#include <Geom/XYZRangeTree.h>
+
+BEGIN_BENTLEY_GEOMETRY_NAMESPACE
+class XYZRangeTreeRoot;
+END_BENTLEY_GEOMETRY_NAMESPACE
 
 BENTLEY_RENDER_TYPEDEFS(TileGeometryCache);
 BENTLEY_RENDER_TYPEDEFS(Triangle);
@@ -77,7 +77,7 @@ private:
     typedef RefCountedPtr<TextureImage> TextureImagePtr;
     typedef bmap<TextureImageKey, TextureImagePtr> TextureImageMap;
 
-    XYZRangeTreeRootP       m_tree;
+    XYZRangeTreeRoot*       m_tree;
     TextureImageMap         m_textures;
     Transform               m_transformToDgn;
     Transform               m_transformFromDgn;
@@ -87,7 +87,7 @@ public:
     DGNPLATFORM_EXPORT ~TileGeometryCache();
 
     XYZRangeTreeRoot& GetTree() const { return *m_tree; }
-    DRange3d GetRange() const { return m_tree->Range(); }
+    DGNPLATFORM_EXPORT DRange3d GetRange() const;
     TransformCR GetTransformToDgn() const { return m_transformToDgn; }
 
     void ResolveTexture(GraphicParamsCR params);
