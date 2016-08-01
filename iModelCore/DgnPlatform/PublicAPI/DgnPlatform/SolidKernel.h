@@ -82,10 +82,11 @@ public:
 
 enum KernelEntityType
     {
-    EntityType_Solid   = 0, //!< Body consisting of at least one solid region.
-    EntityType_Sheet   = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
-    EntityType_Wire    = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
-    EntityType_Minimal = 3, //!< Body consisting of a single vertex.
+    EntityType_Solid    = 0, //!< Body consisting of at least one solid region.
+    EntityType_Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
+    EntityType_Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
+    EntityType_Minimal  = 3, //!< Body consisting of a single vertex.
+    EntityType_Compound = 4, //!< Body consisting of a non-homogeneous group of solids, sheets, and wires.
     };
 
 protected:
