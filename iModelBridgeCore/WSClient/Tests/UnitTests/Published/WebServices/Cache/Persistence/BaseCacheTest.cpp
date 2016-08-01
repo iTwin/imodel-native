@@ -22,13 +22,12 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
     Utf8String schemaXml =
         R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
             <ECClass typeName="TestClass" >
                 <ECCustomAttributes>
-                   <ClassMap xmlns='ECDbMap.01.00'>
-                        <MapStrategy>
-                           <Strategy>SharedTable</Strategy>
-                           <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>
+                                    <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>"
                     </ClassMap>"
                 </ECCustomAttributes>"

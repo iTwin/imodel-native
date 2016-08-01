@@ -27,14 +27,13 @@ SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
 
     auto schema = ParseSchema(R"xml(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">    
-            <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
 
             <ECClass typeName="TestClass" isDomainClass="True">
                 <ECCustomAttributes>
-                    <ClassMap xmlns="ECDbMap.01.00">
+                    <ClassMap xmlns="ECDbMap.02.00">
                         <MapStrategy>
-                            <Strategy>SharedTable</Strategy>
-                            <AppliesToSubclasses>True</AppliesToSubclasses>
+                            <Strategy>TablePerHierarchy</Strategy>
                         </MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>

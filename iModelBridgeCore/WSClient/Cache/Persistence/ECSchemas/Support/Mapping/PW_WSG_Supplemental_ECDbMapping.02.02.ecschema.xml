@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="PW_WSG_Supplemental_ECDbMapping" nameSpacePrefix="pwwsg_ecdbmapping" version="02.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECCustomAttributes>
         <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
             <PrimarySchemaName>PW_WSG</PrimarySchemaName>
@@ -16,10 +16,9 @@
     <ECClass typeName="Document">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -28,10 +27,9 @@
     <ECClass typeName="Environment">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -40,10 +38,9 @@
     <ECClass typeName="ProjectType">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>true</AppliesToSubclasses>
+                    <Strategy>TablePerHierarchy</Strategy>
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
@@ -52,7 +49,7 @@
     <ECRelationshipClass typeName="ItemAddress" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
@@ -63,7 +60,7 @@
     <ECRelationshipClass typeName="SavedSearchParent" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
@@ -74,7 +71,7 @@
     <ECRelationshipClass typeName="SavedSearchResult" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
@@ -85,7 +82,7 @@
     <ECRelationshipClass typeName="SavedSearchDirectParent" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
@@ -96,7 +93,7 @@
     <ECRelationshipClass typeName="SpatialObjectLocation" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
@@ -107,7 +104,7 @@
     <ECRelationshipClass typeName="WorkflowStates" >
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map this embedding relationship -->
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Strategy>NotMapped</Strategy>
                 </MapStrategy>
