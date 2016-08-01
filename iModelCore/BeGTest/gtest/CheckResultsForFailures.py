@@ -49,15 +49,15 @@ if __name__ == '__main__':
         print ""
         print "*** TESTS FAILED ***"
         comma = ""
-        faileTestsStr = ""
+        failedTestsStr = ""
         for t in failedtests:
             print t
-            faileTestsStr = faileTestsStr + comma + t
+            failedTestsStr = failedTestsStr + comma + t
             comma = ","
         print "********************"
         print ""
         print "To re-run failing tests, run the following command in your debugger:"
-        print "    " + sys.argv[2] + " --gtest_break_on_failure --gtest_filter=" + faileTestsStr
+        print "    " + sys.argv[2] + " --gtest_break_on_failure --gtest_filter=" + failedTestsStr
         print ""
 
     exit (len(failedtests))
