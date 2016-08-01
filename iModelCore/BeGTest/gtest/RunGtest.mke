@@ -43,14 +43,16 @@ always:
         RunPrefix=start \/WAIT
     %endif
 
+    exeName = $[@realpath $(GTEST_EXE)]
+
     always:
         >$(LogDir)run.bat
-        $[@realpath $(GTEST_EXE)] | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+        $(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
         exit
         <
         -$(RunPrefix) $(LogDir)run.bat
         %message See $(ResultsCapture)
-        python $(_makeFilePath)CheckResultsForFailures.py $(ResultsCapture)
+        python $(_makeFilePath)CheckResultsForFailures.py $(ResultsCapture) $(exeName)
         
     %return
 
@@ -79,7 +81,7 @@ always:
     always:
         -$(exeName) | tee $(ResultsCapture)
         %message See $(ResultsCapture)
-        python $(_makeFilePath)CheckResultsForFailures.py $(ResultsCapture)
+        python $(_makeFilePath)CheckResultsForFailures.py $(ResultsCapture) $(exeName)
 
     %return
 
