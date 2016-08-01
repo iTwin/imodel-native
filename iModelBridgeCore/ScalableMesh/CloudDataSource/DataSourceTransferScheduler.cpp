@@ -81,27 +81,50 @@ void DataSourceTransferScheduler::shutDown(void)
 
 DataSourceStatus DataSourceTransferScheduler::addBuffer(DataSourceBuffer & buffer)
     {
-    // Lock the DataSourceBuffer queue
-    std::unique_lock<std::mutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
+                                                            // Lock the DataSourceBuffer queue
+    std::unique_lock<DataSourceBuffersMutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
 
-    // Begin processing segments
+                                                            // Begin processing segments
     buffer.initializeSegments();
-    // Add a DataSourceBuffer to the back of the queue
+                                                            // Add a DataSourceBuffer to the back of the queue
     dataSourceBuffers.push_back(&buffer);
 
 
     DataSourceBuffer::SegmentIndex numSegments;
-    // Number of tasks to notify if min of number of tasks availabe and number of segments
+                                                            // Number of tasks to notify if min of number of tasks availabe and number of segments
     numSegments = std::min(buffer.getNumSegments(), getMaxTasks());
-    // Notify one task for each new segment.
-    // If tasks are currently busy, one will just pick up the job without notification
+                                                            // Notify one task for each new segment.
+                                                            // If tasks are currently busy, one will just pick up the job without notification
     for (unsigned int s = 0; s < numSegments; s++)
         {
         dataSourceBufferReady.notify_one();
         }
-    // Return OK
+                                                            // Return OK
     return DataSourceStatus();
     }
+
+
+DataSourceStatus DataSourceTransferScheduler::removeBuffer(DataSourceBuffer &buffer)
+{
+                                                            // Lock the DataSourceBuffer queue
+    std::unique_lock<DataSourceBuffersMutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
+
+                                                            // Find buffer
+    for (auto it = dataSourceBuffers.begin(); it != dataSourceBuffers.end(); it++)
+    {
+                                                            // If found, delete the entry
+        if (*it == &buffer)
+        {
+            dataSourceBuffers.erase(it);
+                                                            // Return OK
+            return DataSourceStatus();
+        }
+    }
+                                                            // Return not found
+    return DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
+}
+
+
 
 void DataSourceTransferScheduler::setShutDownFlag(bool value)
     {
@@ -165,12 +188,13 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             DataSourceAccount                *  account;
             DataSourceStatus                    status;
 
-            // Scope the mutex while the next job is obtained
+                                                            // Scope the mutex while the next job is obtained
             {
-            std::unique_lock<std::mutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
-            // Wait while queue of DataSourceBuffers is empty or no longer need processing
+                std::unique_lock<DataSourceBuffersMutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
+                                                            // Wait while queue of DataSourceBuffers is empty or no longer need processing
             while (((buffer = getNextSegmentJob(&segmentBuffer, &segmentSize, &segmentIndex)) == nullptr) && getShutDownFlag() == false)
                 {
+                                                            // Wait for buffer data. Note: wait() releases the mutex and blocks
                 dataSourceBufferReady.wait(dataSourceBuffersLock);
                 }
             }
@@ -189,20 +213,20 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 
             DataSourceURL    url;
             locator.getURL(url);
-            // Segment name is blob name with index
+                                                            // Segment name is blob name with index
             DataSourceURL segmentName = url + DataSourceURL(L"-" + std::to_wstring(segmentIndex));
 
-            // Get the Account
+                                                            // Get the Account
             if ((account = locator.getAccount()) == nullptr)
                 {
                 assert(false);
                 return DataSourceStatus(DataSourceStatus::Status_Error);
                 }
 
-            // Download or Upload blob based on mode
+                                                            // Download or Upload blob based on mode
             if (locator.getMode() == DataSourceMode_Read)
                 {
-                // Attempt to download a single segment
+                                                            // Attempt to download a single segment
                 if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
                     {
                     assert(false);
@@ -212,7 +236,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
             else
                 if (locator.getMode() == DataSourceMode_Write || locator.getMode() == DataSourceMode_Write_Segmented)
                     {
-                    // Attempt to upload a single segment
+                                                            // Attempt to upload a single segment
                     if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
                         {
                         assert(false);
@@ -220,23 +244,18 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                         }
                     }
 
-            // Segment has been processed, so signal this. Waiting threads are signalled once all are completed.
+                                                            // Segment has been processed, so signal this. Waiting threads are signalled once all are completed.
             if (buffer->signalSegmentProcessed())
                 {
-                // All buffer's segments have been processed and waiting threads have been notified
-                std::unique_lock<std::mutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
+                                                            // All buffer's segments have been processed and waiting threads have been notified
 
-                // Remove buffer from buffer queue
-                for (auto& dataBuffer : dataSourceBuffers)
+                                                            // Remove bufer from buffer queue
+                removeBuffer(*buffer);
+                if(locator.getMode() == DataSourceMode_Write || locator.getMode() == DataSourceMode_Write_Segmented)
                     {
-                    if (dataBuffer == buffer) dataBuffer = nullptr;
+                                                            // Upload of this buffer is complete, delete it
+                    delete buffer;
                     }
-                while (!dataSourceBuffers.empty() && dataSourceBuffers.front() == nullptr) dataSourceBuffers.pop_front();
-                //if (locator.getMode() == DataSourceMode_Write || locator.getMode() == DataSourceMode_Write_Segmented)
-                //    {
-                //    // Upload of this buffer is complete, delete it
-                //    delete buffer;
-                //    }
                 }
             }
 
@@ -246,7 +265,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
     // Set up uploader worker tasks
     setMaxTasks(numTasks);
 
-    // Run max number of transfer threads
+                                                            // Run max number of transfer threads
     for (unsigned int t = 0; t < numTasks; t++)
         {
         transferThreads.push_back(std::thread(transferDataSourceBufferSegments));
@@ -256,96 +275,8 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 #endif
         }
 
-    // Return OK
-    return DataSourceStatus();
-    }
-
-/*
-DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned int numTasks)
-{
-    auto transferDataSourceBufferSegments = [this](void) -> DataSourceStatus
-    {
-        while (getShutDownFlag() == false)
-        {
-            DataSourceBuffer                *   buffer;
-            DataSourceBuffer::BufferData    *   segmentBuffer;
-            DataSourceBuffer::BufferSize        segmentSize;
-            DataSourceBuffer::BufferSize        readSize;
-            DataSourceBuffer::SegmentIndex      segmentIndex;
-            DataSourceAccount                *  account;
-            DataSourceStatus                    status;
-
-                                                            // Scope the mutex while the next job is obtained
-            {
-                std::unique_lock<std::mutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
-                                                            // Wait while queue of DataSourceBuffers is empty or no longer need processing
-                while (((buffer = getNextSegmentJob(&segmentBuffer, &segmentSize, &segmentIndex)) == nullptr) && getShutDownFlag() == false)
-                {
-                    dataSourceBufferReady.wait(dataSourceBuffersLock);
-                }
-            }
-
-            if (getShutDownFlag())
-            {
-                buffer->signalCancelled();
-                DataSourceStatus();
-            }
-
-            DataSourceLocator &locator = buffer->getLocator();
-
-            DataSourceURL    url;
-            locator.getURL(url);
-                                                            // Segment name is blob name with index
-            DataSourceURL segmentName = url + DataSourceURL(L"-" + std::to_wstring(segmentIndex));
-
-                                                            // Get the Account
-            if((account = locator.getAccount()) == nullptr)
-                return DataSourceStatus(DataSourceStatus::Status_Error);
-
-                                                            // Download or Upload blob based on mode
-            if (locator.getMode() == DataSourceMode_Read)
-            {
-                                                            // Attempt to download a single segment
-                if ((status = account->downloadBlobSync(segmentName, segmentBuffer, readSize, segmentSize)).isFailed())
-                    return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-            }
-            else
-            if(locator.getMode() == DataSourceMode_Write)
-            {
-                                                            // Attempt to upload a single segment
-                if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
-                    return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Upload);
-            }
-
-                                                            // Segment has been processed, so signal this. Waiting threads are signalled once all are completed.
-            if (buffer->signalSegmentProcessed())
-            {
-                                                            // All buffer's segments have been processed and waiting threads have been notified
-                std::unique_lock<std::mutex>    dataSourceBuffersLock(dataSourceBuffersMutex);
-                                                            // Remove bufer from buffer queue
-                dataSourceBuffers.pop_front();
-
-                if(locator.getMode() == DataSourceMode_Write)
-                {
-                                                            // Upload of this buffer is complete, delete it
-                    delete buffer;
-                }
-            }
-        }
-
-        return DataSourceStatus();
-    };
-
-                                                            // Set up uploader worker tasks
-    setMaxTasks(numTasks);
-
-    for (unsigned int t = 0; t < numTasks; t++)
-    {
-        transferTasks.run(transferDataSourceBufferSegments);
-    }
-
                                                             // Return OK
     return DataSourceStatus();
-}
-*/
+    }
+
 

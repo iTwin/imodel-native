@@ -6,7 +6,8 @@
 
 DataSourceBuffered::DataSourceBuffered(DataSourceAccount *sourceAccount) : Super(sourceAccount)
 {
-
+                                                            // Default segment size is zero until initialized
+    setSegmentSize(0);
 }
 
 void DataSourceBuffered::setBuffer(DataSourceBuffer * newBuffer)
@@ -63,8 +64,12 @@ bool DataSourceBuffered::isValid(void)
 
 DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
 {
-    DataSourceStatus        status;
-    DataSourceAccount *        account;
+    DataSourceStatus            status;
+    DataSourceAccount *         account;
+
+                                                                // Make buffer is at least the right size
+    if (destSize < size)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Dest_Buffer_Too_Small);
 
                                                                 // Get the associated account
     if ((account = getAccount()) == nullptr)
@@ -79,6 +84,11 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
 
                                                                 // Download segments to the buffer
         status = account->downloadSegments(*this, dest, size);
+                                                                // If all segments read OK, total size read is given size
+        if (status.isOK())
+        {
+            readSize = size;
+        }
     }
     else
     {
@@ -88,7 +98,6 @@ DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataS
      }
 
     assert(status.isOK());
-
                                                                 // Return status
     return status;
 }

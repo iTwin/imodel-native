@@ -14,6 +14,7 @@
 #include "ImagePPHeaders.h"
 #include "SMPointIndex.h"
 #include "InternalUtilityFunctions.h"
+#include "Stores/SMStoreUtils.h"
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>

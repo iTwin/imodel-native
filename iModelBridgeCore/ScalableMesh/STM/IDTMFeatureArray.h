@@ -13,7 +13,7 @@
 #pragma once
 
 #include "HPUCompositeArray.h"
-#include "SMPointTileStore.h"
+#include "Stores/SMStoreUtils.h"
 //#include "IDTMFileDirectories/FeatureHeaderTypes.h"
 
 template <typename PointType, typename HeaderType> class IDTMFeatureArray;

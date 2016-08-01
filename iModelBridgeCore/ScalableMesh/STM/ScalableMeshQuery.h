@@ -52,8 +52,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct ScalableMeshViewDependentQueryParams;
 class ScalableMeshViewDependentQuery;
 
-//typedef ISMStore::Extent3d64f YProtPtExtentType;
-typedef DRange3d YProtPtExtentType;
+//typedef ISMStore::Extent3d64f Extent3dType;
+typedef DRange3d Extent3dType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
@@ -517,7 +517,7 @@ template <class POINT> class ScalableMeshFullResolutionPointQuery : public Scala
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
 
     protected :
@@ -530,7 +530,7 @@ template <class POINT> class ScalableMeshFullResolutionPointQuery : public Scala
                            
     public :
         
-        ScalableMeshFullResolutionPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr, 
+        ScalableMeshFullResolutionPointQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr, 
                                       int                                              resolutionIndex);
         
         virtual ~ScalableMeshFullResolutionPointQuery();     
@@ -546,7 +546,7 @@ template <class POINT> class ScalableMeshViewDependentPointQuery : public Scalab
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
 
     protected :
@@ -559,7 +559,7 @@ template <class POINT> class ScalableMeshViewDependentPointQuery : public Scalab
                            
     public :
 
-        ScalableMeshViewDependentPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        ScalableMeshViewDependentPointQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
         
         virtual ~ScalableMeshViewDependentPointQuery();       
 
@@ -577,7 +577,7 @@ template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public Sc
 
     private : 
         
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         GeoCoords::GCS                                  m_pointIndexGCS;
 
     protected :
@@ -590,7 +590,7 @@ template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public Sc
                            
     public :
 
-        ScalableMeshFixResolutionViewPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr, 
+        ScalableMeshFixResolutionViewPointQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr, 
                                          const GeoCoords::GCS&                                  pointIndexGCS);
         
         virtual ~ScalableMeshFixResolutionViewPointQuery();       
@@ -970,7 +970,7 @@ template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScala
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         
     protected :
 
@@ -987,7 +987,7 @@ template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScala
                            
     public :
 
-        ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
         
         virtual ~ScalableMeshFullResolutionMeshQuery();
     };
@@ -1003,7 +1003,7 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
 
     private:
 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
 
     protected:
 
@@ -1020,7 +1020,7 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
 
     public:
 
-        ScalableMeshViewDependentMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        ScalableMeshViewDependentMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
 
         virtual ~ScalableMeshViewDependentMeshQuery();
     };
@@ -1036,7 +1036,7 @@ template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalabl
     private:
 
         IScalableMeshMeshQueryPtr         m_originalQueryPtr;
-        HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMMeshIndex<POINT, Extent3dType>> m_scmIndexPtr;
 
         GeoCoords::GCS          m_sourceGCS;
         GeoCoords::GCS          m_targetGCS;
@@ -1061,7 +1061,7 @@ template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalabl
     public:
 
         ScalableMeshReprojectionMeshQuery(IScalableMeshMeshQueryPtr         originalQueryPtr,
-                                   const HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>>& indexPtr,
+                                   const HFCPtr<SMMeshIndex<POINT, Extent3dType>>& indexPtr,
                                const GeoCoords::GCS&      sourceGCS,
                                const GeoCoords::GCS&      targetGCS,
                                const DRange3d&        extentInTargetGCS);
@@ -1147,7 +1147,7 @@ template <class POINT> class ScalableMeshNodeRayQuery : public IScalableMeshNode
 
     private:
 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
 
     protected:
 
@@ -1166,7 +1166,7 @@ template <class POINT> class ScalableMeshNodeRayQuery : public IScalableMeshNode
 
     public:
 
-        ScalableMeshNodeRayQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        ScalableMeshNodeRayQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
 
         virtual ~ScalableMeshNodeRayQuery();
     };
@@ -1236,7 +1236,7 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
 
     private:
 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
 
     protected:
 
@@ -1252,7 +1252,7 @@ template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMe
 
     public:
 
-        ScalableMeshNodePlaneQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        ScalableMeshNodePlaneQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
 
         virtual ~ScalableMeshNodePlaneQuery();
     };
@@ -1284,7 +1284,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
     {                
     protected:
-        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;        
+        HFCPtr<SMPointIndexNode<POINT, Extent3dType>> m_node;        
 
         void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, bool applyAllClips = false) const;
 
@@ -1352,10 +1352,10 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         
     public:         
-        ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
+        ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
         ScalableMeshNode() {};
 
-        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> GetNodePtr()
+        HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
             return m_node;
             }
@@ -1384,10 +1384,10 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
     public:             
 
-            ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, bool loadTexture)
+            ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture)
             : ScalableMeshNode(nodePtr)
                 {           
-                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+                auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
                 m_loadTexture = loadTexture;
                 }
@@ -1400,7 +1400,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             virtual StatusInt _GetCachedTexture(SmCachedDisplayTexture*& cachedTexture) const override {return ERROR;}            
 
-            static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, bool loadTexture) 
+            static ScalableMeshCachedMeshNode* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture) 
                 {
                 return new ScalableMeshCachedMeshNode(nodePtr, loadTexture);
                 }
@@ -1441,7 +1441,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
           
     public:             
             
-            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
+            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
 
             virtual ~ScalableMeshCachedDisplayNode();
                 
@@ -1453,7 +1453,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
             void RemoveDisplayDataFromCache();
                 
-            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr);
                 }
@@ -1492,10 +1492,10 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual void _LoadHeader() const override;
 
     public:
-        ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
+        ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
         ScalableMeshNodeEdit() {};
 
-        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> GetNodePtr()
+        HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
             return m_node;
             }
@@ -1516,7 +1516,7 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
     public:
         ScalableMeshNodeWithReprojection(IScalableMeshNodePtr nodeInfo, const GeoCoords::Reprojection& reproject);
-        ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject);
+        ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const GeoCoords::Reprojection& reproject);
     };
 
 /*==================================================================*/

@@ -7,10 +7,8 @@ ActivitySemaphore::ActivitySemaphore(void)
     setCounter(0);
 }
 
-ActivitySemaphore::ActivitySemaphore(Counter value)
+ActivitySemaphore::ActivitySemaphore(CounterValue value)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
-
     setCounter(value);
 }
 
@@ -21,54 +19,50 @@ ActivitySemaphore::~ActivitySemaphore(void)
     condition.notify_all();
 }
 
-void ActivitySemaphore::setCounter(Counter value)
+void ActivitySemaphore::setCounter(CounterValue value)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
-
     counter = value;
 }
 
-ActivitySemaphore::Counter ActivitySemaphore::getCounter(void)
+ActivitySemaphore::CounterValue ActivitySemaphore::getCounter(void)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
-
     return counter;
 }
 
 void ActivitySemaphore::increment(void)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
-
-    setCounter(getCounter() + 1);
+                                                            // Atomic increment
+    counter.fetch_add(1, std::memory_order_relaxed);
 }
 
 bool ActivitySemaphore::decrement(void)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
-
-    setCounter(getCounter() - 1);
-
-    if(counter > 0)
+    CounterValue    previousValue;
+                                                            // Atomic decrement on counter    
+    previousValue = counter.fetch_sub(1, std::memory_order_relaxed);
+                                                            // If counter value is greater than zero (previously greater than 1)
+    if(previousValue > 1)
     {
+                                                            // Return not notified
         return false;
     }
-
+                                                            // Notify all threads waiting for the zero counter condition
     condition.notify_all();
-
+                                                            // Return notified
     return true;
 }
 
 void ActivitySemaphore::wait(void)
 {
     std::unique_lock<std::mutex>    lock(mutex);
-
+                                                            // Wait for counter zero condition indefinitely. Note: This is not good practice! Try timeout verison instead.
     condition.wait(lock);
 }
 
 ActivitySemaphore::Status ActivitySemaphore::waitFor(Timeout timeout)
 {
     std::unique_lock<std::mutex>    lock(mutex);
-
+                                                            // Wait for counter zero condition with specified timeout
     std::chrono::time_point<std::chrono::system_clock> start, end;
     start = std::chrono::system_clock::now();
 
@@ -78,8 +72,12 @@ ActivitySemaphore::Status ActivitySemaphore::waitFor(Timeout timeout)
     std::chrono::duration<double> waiting_time = end - start;
     std::cout << "Activity semaphore waited: " << waiting_time.count() << std::endl;
     if (cv_wakeup_status == std::cv_status::no_timeout)
+    {
+                                                            // Successfully waited, with no timeout
         return Status_NoTimeout;
+    }
 
+                                                            // Timeout occured
     return Status_Timeout;
 }
 

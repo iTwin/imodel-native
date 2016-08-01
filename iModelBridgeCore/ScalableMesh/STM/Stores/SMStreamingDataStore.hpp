@@ -586,6 +586,12 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
+    {
+    assert(!"Should be handled by local file");
+    return false;
+    }
+
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
@@ -803,16 +809,25 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
         }   
     }
 
+
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+    {   
+    assert(!"Should not be called");
+    return false;    
+    }
+
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {        
     assert(!"Should not be called");
     return false;    
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMPointDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {
+    //NEW_SSTORE_RB : Need to be implement
+    assert(dataType != SMStoreDataType::Skirt);
     auto nodeGroup = this->GetGroup(nodeHeader->m_id);
-    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, SMStoreDataType::Points, nodeHeader, nodeGroup);
+    dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
 
     return true;    
     }
@@ -925,12 +940,6 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     {            
     for (auto it = m_pointCache.begin(); it != m_pointCache.end(); ++it) it->second.clear();
     m_pointCache.clear();
-    }
-
-template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
-    {            
-    assert(false); // Should not pass here
-    return HPMBlockID(-1);
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)

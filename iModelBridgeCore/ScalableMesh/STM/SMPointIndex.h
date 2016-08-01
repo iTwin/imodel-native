@@ -22,6 +22,7 @@
 #include <ImagePP/all/h/HVE2DSegment.h>
 //#include "HGFSpatialIndex.h"
 #include "SMPointTileStore.h"
+#include "SMNodeGroup.h"
 #include "SMMemoryPool.h"
 #include <ImagePP/all/h/HVEShape.h>
 
@@ -1206,7 +1207,7 @@ public:
                                    node after which the node may be split.
 
     -------------------------------------------------------------------------------------------------*/
-    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
+    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
     /**----------------------------------------------------------------------------
      Destructor
      If the index has unstored nodes then those will be stored.

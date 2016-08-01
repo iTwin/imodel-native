@@ -289,10 +289,6 @@ DataSourceStatus DataSourceBuffer::getTransferStatus(void)
     return transferStatus;
 }
 
-
-
-
-
 DataSourceStatus DataSourceBuffer::waitForSegments(Timeout timeoutMilliseconds)
 {
     TimeoutStatus   timeoutStatus;

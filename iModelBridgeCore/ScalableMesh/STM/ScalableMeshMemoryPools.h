@@ -18,8 +18,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 template <typename POINT> class ScalableMeshMemoryPools
     {
     private:        
-        
-        size_t m_featurePoolSize;
+                
         size_t m_diffSetPoolSize;
         size_t m_genericPoolSize;                
         HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment * m_myMemMgr;        
@@ -30,9 +29,7 @@ template <typename POINT> class ScalableMeshMemoryPools
         static ScalableMeshMemoryPools* m_instance;
 
     public:
-        static ScalableMeshMemoryPools* Get();        
-        HFCPtr<HPMIndirectCountLimitedPool<MTGGraph>> GetGraphPool();                
-        HFCPtr<HPMCountLimitedPool<int32_t>> GetFeaturePool();
+        static ScalableMeshMemoryPools* Get();                        
         HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>> GetDiffSetPool();
         SMMemoryPoolPtr& GetGenericPool();
     };
@@ -55,11 +52,6 @@ template <typename POINT> ScalableMeshMemoryPools<POINT>*  ScalableMeshMemoryPoo
         m_instance = new ScalableMeshMemoryPools();
         }
     return m_instance;
-    }
-
-template <typename POINT> HFCPtr<HPMCountLimitedPool<int32_t>>   ScalableMeshMemoryPools<POINT>::GetFeaturePool()
-    {
-    return m_featurePool;
     }
 
 template <typename POINT> HFCPtr<HPMIndirectCountLimitedPool<DifferenceSet>>   ScalableMeshMemoryPools<POINT>::GetDiffSetPool()

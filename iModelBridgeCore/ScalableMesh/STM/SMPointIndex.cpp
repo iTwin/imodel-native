@@ -36,11 +36,11 @@ template <> class SpatialOp<HGF3DFilterCoord<double, double>, HGF3DFilterCoord<d
     };
 
 
-template class ISMPointIndexQuery<DPoint3d, YProtPtExtentType>;
+template class ISMPointIndexQuery<DPoint3d, Extent3dType>;
 
-template class SMPointIndexNode<DPoint3d, YProtPtExtentType>;
+template class SMPointIndexNode<DPoint3d, Extent3dType>;
 
-template class SMPointIndex<DPoint3d, YProtPtExtentType>;
+template class SMPointIndex<DPoint3d, Extent3dType>;
 
 //template class SMPointIndex<HGF3DFilterCoord<double, double>, HGF3DExtent<double>>;
 

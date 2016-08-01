@@ -6512,7 +6512,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::LoadTr
     nLoaded++;
 
     if (!headersOnly)
-        {
+        {        
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
         }
 
@@ -6763,18 +6763,10 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveAl
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore)
     {
     // Simply transfer data from this store to the other store passed in parameter
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-
-    if (pointsPtr->size() != 0)
-        {
-        ISMPointDataStorePtr pointDataStore;
-        bool result = pi_pDataStreamingStore->GetNodeDataStore(pointDataStore, &m_nodeHeader);
-        assert(result == true);
-        pointDataStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), pointsPtr->size(), this->GetBlockID());
-        }
-
-    // Specific order must be kept to allow fetching blob sizes for streaming performance
     pi_pDataStreamingStore->StoreNodeHeader(&m_nodeHeader, this->GetBlockID());
+
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    pi_pDataStreamingStore->StoreBlock(const_cast<POINT*>(&pointsPtr->operator[](0)), count, this->GetBlockID());
     }
 
 /**----------------------------------------------------------------------------
@@ -6783,9 +6775,7 @@ This method saves the node for streaming.
 @param
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore)
-    {
-    assert(pi_pDataStore != nullptr);
-
+    {    
     if (!IsLoaded())
         Load();
 
@@ -6848,11 +6838,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
             nextGroup = s_OpenGroups.count(nextLevel) > 0 ? s_OpenGroups[nextLevel] : nullptr;
             if (!nextGroup)
                 {
-                nextGroup = new SMNodeGroup(pi_pGroup->GetDataSourceAccount(),
-                                            pi_pGroup->GetFilePath(), 
-                                            nextLevel, 
-                                            ++s_GroupID, 
-                                            pi_pGroup->GetMode());
+                nextGroup = new SMNodeGroup(pi_pGroup->GetFilePath(), nextLevel, ++s_GroupID);
                 this->AddOpenGroup(nextLevel, nextGroup);
                 pi_pGroupsHeader->AddGroup(s_GroupID);
                 }
@@ -7641,7 +7627,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
                                node after which the node may be split.
 
 -------------------------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
+template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, size_t pi_SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter,bool balanced, bool propagatesDataDown, bool shouldCreateRoot)
   : m_dataStore(newDataStore),
     m_store (store),
     m_filter (filter)
@@ -7760,18 +7746,20 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const short& pi_pGroupMode, bool pi_pCompress) const
     {
-    if (pi_pGroupMode == SMNodeGroup::NORMAL && 0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
+    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::Mode( pi_pGroupMode ));
+        HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0);
 
     HFCPtr<SMNodeGroupMasterHeader> groupMasterHeader(new SMNodeGroupMasterHeader());
-    SMIndexMasterHeader<EXTENT> oldMasterHeader;
-    this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+    SMIndexMasterHeader<EXTENT> oldMasterHeader;    
+    ISMDataStoreTypePtr<EXTENT> dataStore((const_cast<SMPointIndex<POINT, EXTENT>*>(this))->GetDataStore());
+
+    dataStore->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
     // Force multi file (in case the originating dataset is single file)
     oldMasterHeader.m_singleFile = false;
     groupMasterHeader->SetOldMasterHeaderData(oldMasterHeader);
@@ -7782,15 +7770,13 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     auto rootNode = GetRootNode();
     rootNode->AddOpenGroup(0, group);
 
-    rootNode->SaveGroupedNodeHeaders(group, groupMasterHeader);
+    rootNode->SaveGroupedNodeHeaders(dataSourceAccount, group, groupMasterHeader);
 
     // Handle all open groups 
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    auto position = pi_pOutputDirPath.find_last_of(L"_stream\\");
-    auto masterHeaderPath = pi_pOutputDirPath.substr(0, position - 10);
-    groupMasterHeader->SaveToFile(masterHeaderPath, pi_pGroupMode);
+    groupMasterHeader->SaveToFile(pi_pOutputDirPath + L"../");
 
     return SUCCESS;
     }
@@ -7799,7 +7785,7 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress) const
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
@@ -7808,48 +7794,50 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
 
     this->SaveMasterHeaderToCloud(dataSourceAccount);
 
-    ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(dataSourceAccount, pi_pCompress));                    
+    ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pCompress));                    
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
 
     return SUCCESS;
     }
 /**----------------------------------------------------------------------------
-This method saves the master header for streaming.
+This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath) const
     {
-    SMIndexMasterHeader<EXTENT> masterHeader;
-    this->GetDataStore()->LoadMasterHeader(&masterHeader, sizeof(masterHeader));
+    Json::Value masterHeader;
+    masterHeader["balanced"] = this->IsBalanced();
+    masterHeader["depth"] = (uint32_t)this->GetDepth();
+    masterHeader["rootNodeBlockID"] = this->GetRootNode()->GetBlockID().m_integerID;
+    masterHeader["splitThreshold"] = this->GetSplitTreshold();
+    masterHeader["singleFile"] = false;
 
-    Json::Value masterHeaderJson;
-    masterHeaderJson["balanced"] = masterHeader.m_balanced;
-    masterHeaderJson["depth"] = (uint32_t)masterHeader.m_depth;
-    masterHeaderJson["rootNodeBlockID"] = masterHeader.m_rootNodeBlockID.m_integerID;
-    masterHeaderJson["splitThreshold"] = masterHeader.m_SplitTreshold;
-    masterHeaderJson["isTerrain"] = masterHeader.m_isTerrain;
-    masterHeaderJson["singleFile"] = false; // cloud format is always multifile
+    auto filename = (pi_pOutputDirPath + L"MasterHeader.sscm").c_str();
+    BeFile file;
+    uint64_t buffer_size;
+    auto jsonWriter = [&file, &buffer_size](BeFile& file, Json::Value& object) {
 
-    auto jsonBuffer = Json::StyledWriter().write(masterHeaderJson);
-
-    DataSourceStatus writeStatus;
-    DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
-
-    DataSource *dataSource = dataSourceAccount->getOrCreateDataSource(L"MasterHeader");
-    assert(dataSource != nullptr);
-
-    writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write);
-    assert(writeStatus.isOK());
-
-    writeStatus = dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
-    assert(writeStatus.isOK());
-
-    writeStatus = dataSource->close();
-    assert(writeStatus.isOK());
-
-    //dataSourceAccount->uploadBlobSync(dataSourceURL, reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
+        Json::StyledWriter writer;
+        auto buffer = writer.write(object);
+        buffer_size = buffer.size();
+        file.Write(NULL, buffer.c_str(), buffer_size);
+        };
+    if (BeFileStatus::Success == OPEN_FILE(file, filename, BeFileAccess::Write))
+        {
+        jsonWriter(file, masterHeader);
+        }
+    else if (BeFileStatus::Success == file.Create(filename))
+        {
+        jsonWriter(file, masterHeader);
+        }
+    else
+        {
+        HASSERT(!"Problem saving master header file to cloud");
+        return ERROR;
+        }
+    file.Close();
 
     return SUCCESS;
     }
