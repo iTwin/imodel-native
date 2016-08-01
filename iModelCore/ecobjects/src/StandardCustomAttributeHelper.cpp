@@ -467,11 +467,6 @@ ECObjectsStatus ECDbClassMap::TryGetMapStrategy(MapStrategy& mapStrategy) const
     if (ECObjectsStatus::Success != stat)
         return stat;
 
-    bool appliesToSubclasses = false;
-    stat = CustomAttributeReader::TryGetBooleanValue(appliesToSubclasses, *m_ca, "MapStrategy.AppliesToSubclasses");
-    if (ECObjectsStatus::Success != stat)
-        return stat;
-
     int minimumSharedColumnCount = MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT;
     stat = CustomAttributeReader::TryGetIntegerValue(minimumSharedColumnCount, *m_ca, "MapStrategy.MinimumSharedColumnCount");
     //MinimumSharedColumnCount property was added in a later version of the schema. So PropertyNotFound error would indicate
@@ -480,7 +475,7 @@ ECObjectsStatus ECDbClassMap::TryGetMapStrategy(MapStrategy& mapStrategy) const
     if (ECObjectsStatus::Success != stat && ECObjectsStatus::PropertyNotFound != stat)
         return stat;
 
-    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), minimumSharedColumnCount, appliesToSubclasses);
+    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), minimumSharedColumnCount);
     return ECObjectsStatus::Success;
     }
 

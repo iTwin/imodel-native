@@ -275,12 +275,11 @@ public:
         Utf8String m_strategy;
         Utf8String m_options;
         int m_minimumSharedColumnCount;
-        bool m_appliesToSubclasses;
 
-        MapStrategy(Utf8CP strategy, Utf8CP options, int minimumSharedColumnCount, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_minimumSharedColumnCount(minimumSharedColumnCount), m_appliesToSubclasses(appliesToSubclasses) {}
+        MapStrategy(Utf8CP strategy, Utf8CP options, int minimumSharedColumnCount) : m_strategy(strategy), m_options(options), m_minimumSharedColumnCount(minimumSharedColumnCount) {}
 
     public:
-        MapStrategy() : m_appliesToSubclasses(false), m_minimumSharedColumnCount(UNSET_MINIMUMSHAREDCOLUMNCOUNT) {}
+        MapStrategy() : m_minimumSharedColumnCount(UNSET_MINIMUMSHAREDCOLUMNCOUNT) {}
 
         //! Gets the Strategy.
         //! @return Strategy or nullptr if not set in the custom attribute
@@ -292,9 +291,6 @@ public:
         //! if the map strategy implies column sharing.
         //! @return Minimum count of shared columns or @p UNSET_MINIMUMSHAREDCOLUMNCOUNT if property wasn't set.
         int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
-        //! Gets a value indicating whether the MapStrategy is also applied to subclasses of the class that
-        //! holds the ClassMap custom attribute or not
-        bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
         };
 
 
