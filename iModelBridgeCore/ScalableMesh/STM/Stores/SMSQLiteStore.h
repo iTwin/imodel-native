@@ -17,6 +17,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         SMSQLiteFilePtr m_smSQLiteFile;        
         SMSQLiteFilePtr m_smFeatureSQLiteFile;
         SMSQLiteFilePtr m_smClipSQLiteFile;
+        SMSQLiteFilePtr m_smClipDefinitionSQLiteFile;
         BeFileName      m_projectFilesPath;
 
         bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType);
@@ -79,9 +80,7 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
               
         SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
             
-        virtual ~SMSQLiteNodeDataStore();
-              
-        virtual HPMBlockID StoreNewBlock(DATATYPE* DataTypeArray, size_t countData) override;
+        virtual ~SMSQLiteNodeDataStore();                      
             
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
             

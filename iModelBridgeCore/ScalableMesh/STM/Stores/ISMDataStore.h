@@ -37,6 +37,7 @@ enum class SMStoreDataType
     Graph,
     Texture,    
     LinearFeature,    
+    Skirt,     
     //Not persisted data type
     Display,
     BcDTM,     
@@ -59,9 +60,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
 
         ~ISMNodeDataStore()
             {
-            }
-
-        virtual HPMBlockID StoreNewBlock(DataType* DataTypeArray, size_t countData) = 0;
+            }        
 
         virtual HPMBlockID StoreBlock(DataType* DataTypeArray, size_t countData, HPMBlockID blockID) = 0;
 

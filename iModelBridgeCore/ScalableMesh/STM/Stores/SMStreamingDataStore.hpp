@@ -794,6 +794,9 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMMTGGr
 
 template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {    
+    //NEW_SSTORE_RB : Need to be implement
+    assert(dataType != SMStoreDataType::Skirt);
+
     dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, m_rootDirectory, dataType, nodeHeader);
 
     return true;    
@@ -908,12 +911,6 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     {            
     for (auto it = m_pointCache.begin(); it != m_pointCache.end(); ++it) it->second.clear();
     m_pointCache.clear();
-    }
-
-template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
-    {            
-    assert(false); // Should not pass here
-    return HPMBlockID(-1);
     }
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)

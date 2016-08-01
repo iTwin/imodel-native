@@ -31,6 +31,8 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
     uint64_t m_maxID;
+    
+    //ISMDataStoreTypePtr<YProtPtExtentType> m_smDataStore;
 
     public:
 

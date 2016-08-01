@@ -110,8 +110,19 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     }    
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
-    {                    
-    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
+    {                   
+    SMSQLiteFilePtr sqlFilePtr;
+
+    if (dataType == SMStoreDataType::Skirt)
+        {
+        sqlFilePtr = GetSisterSQLiteFile(dataType);
+        }
+    else
+        {
+        sqlFilePtr = m_smSQLiteFile;
+        }
+
+    dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
 
     return true;    
     }
@@ -147,6 +158,11 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterSQLiteFileName(WStr
         case SMStoreDataType::DiffSet :
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clips"); 
+            return true;
+
+        case SMStoreDataType::Skirt :
+            sqlFileName = m_projectFilesPath;
+            sqlFileName.append(L"_clipDefinitions"); 
             return true;
             break;
 
@@ -201,6 +217,24 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
             sqlFilePtr = m_smClipSQLiteFile;                   
             }
             break;
+
+        case SMStoreDataType::Skirt : 
+            {
+            if (!m_smClipDefinitionSQLiteFile.IsValid())
+                {
+                WString sqlFileName;
+                GetSisterSQLiteFileName(sqlFileName, dataType);  
+
+                StatusInt status;
+                m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status);
+
+                if (status == 0)
+                    {                    
+                    m_smClipDefinitionSQLiteFile->Create(sqlFileName); 
+                    }                                                                
+                }           
+            }
+            break;            
 
         default : 
             assert(!"Unknown datatype");
@@ -270,14 +304,6 @@ template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>:
     {                
     }
 
-template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreNewBlock(DATATYPE* DataTypeArray, size_t countData)
-    {     
-    assert(!"Should not be called");
-   
-    return HPMBlockID(-1);
-    }
-
-
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
@@ -337,9 +363,7 @@ int32_t* SerializeDiffSet(size_t& countAsPts, DifferenceSet* DataTypeArray, size
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
-    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);    
-
-    if (!blockID.IsValid()) return StoreNewBlock(DataTypeArray, countData);
+    assert(m_dataType != SMStoreDataType::PointAndTriPtIndices);        
 
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
@@ -415,7 +439,9 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             m_smSQLiteFile->StoreDiffSet(id, nodeData, dataSize);
             delete [] dataBuffer;
             break;             
-
+        case SMStoreDataType::Skirt :             
+            m_smSQLiteFile->StoreSkirtPolygon(id, nodeData, dataSize);            
+            break;                         
         default : 
             assert(!"Unsupported type");
             break;
@@ -471,6 +497,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
                 memcpy(&blockDataCount , &nodeData[0], sizeof(size_t)); //NEEDS_WORK_SM : never persist size_t, change that to uint64_t instead                
             }
             break;
+        case SMStoreDataType::Skirt : 
+            blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DPoint3d);
+            break;
         default : 
             assert(!"Unsupported type");
             break;
@@ -503,9 +532,10 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
         //MST_TS
         case SMStoreDataType::DiffSet : 
         case SMStoreDataType::LinearFeature :
-        case SMStoreDataType::UvCoords :
+        case SMStoreDataType::Skirt :        
         case SMStoreDataType::TriUvIndices :
-        case SMStoreDataType::Texture :        
+        case SMStoreDataType::Texture :   
+        case SMStoreDataType::UvCoords :        
             break;
         default : 
             assert(!"Unsupported type");
@@ -616,6 +646,9 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
         case SMStoreDataType::Points : 
             m_smSQLiteFile->GetPoints(blockID.m_integerID, nodeData, uncompressedSize);            
             break;
+        case SMStoreDataType::Skirt :
+            m_smSQLiteFile->GetSkirtPolygon(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
         case SMStoreDataType::TriPtIndices : 
             m_smSQLiteFile->GetIndices(blockID.m_integerID, nodeData, uncompressedSize);
             break;
@@ -624,7 +657,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             break;
         case SMStoreDataType::TriUvIndices :             
             m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
-            break;
+            break;            
         default : 
             assert(!"Unsupported type");
             break;

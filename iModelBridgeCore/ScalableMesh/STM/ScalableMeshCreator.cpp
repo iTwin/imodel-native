@@ -15,8 +15,6 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshCreator.h"
-//#include "DTMGraphTileStore.h"
-//#include "SMTextureTileStore.h"
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 /*----------------------------------------------------------------------+
@@ -63,7 +61,6 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <STMInternal/GeoCoords/WKTUtils.h>
 
 #include "ScalableMeshMesher.h"
-//#include "Edits\DiffSetTileStore.h"
 #include "Edits\ClipRegistry.h"
 //#include <DgnPlatform\Tools\ConfigurationManager.h>
 #include "Edits/ClipUtilities.hpp"

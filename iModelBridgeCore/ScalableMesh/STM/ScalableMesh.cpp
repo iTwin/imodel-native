@@ -19,8 +19,6 @@ extern bool   GET_HIGHEST_RES;
 +------------------------------------------------------------------*/
 #include "InternalUtilityFunctions.h"
 #include "ScalableMesh.h"
-//#include "DTMGraphTileStore.h"
-//#include "SMTextureTileStore.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshQuadTreeQueries.h"
 

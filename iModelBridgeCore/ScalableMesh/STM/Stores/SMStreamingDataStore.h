@@ -165,9 +165,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
        
         SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
             
-        virtual ~SMStreamingNodeDataStore();
-              
-        virtual HPMBlockID StoreNewBlock(DATATYPE* DataTypeArray, size_t countData) override;
+        virtual ~SMStreamingNodeDataStore();                      
             
         virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
             
@@ -402,9 +400,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;            
                         
-        virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
-
-        virtual HPMBlockID StoreNewBlock(DATATYPE* DataTypeArray, size_t countData) override {return HPMBlockID(-1);}
+        virtual HPMBlockID StoreBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;        
             
         virtual HPMBlockID StoreCompressedBlock(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID) override;
             
