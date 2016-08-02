@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_BENTLEY
 
@@ -26,30 +27,17 @@ struct Publisher
         Success = SUCCESS,
         NoGeometry,
         Aborted,
-        CantOpenBim,
-        CantOpenView,
         CantWriteToBaseDirectory,
         CantCreateSubDirectory,
         ErrorWritingScene,
         ErrorWritingNode,
     };
-
-    struct CreateParams
-    {
-        BeFileName      m_inputFileName;    //!< Path to the .bim
-        Utf8String      m_viewName;         //!< Name of the view definition from which to publish
-        BeFileName      m_outputDir;        //!< Directory in which to place the output
-        Utf8String      m_tilesetName;      //!< Root name of the output tileset files
-
-        CreateParams(BeFileNameCR inputFileName, Utf8StringCR viewName, BeFileNameCR outputDir, Utf8StringCR tilesetName)
-            : m_inputFileName(inputFileName), m_viewName(viewName), m_outputDir(outputDir), m_tilesetName(tilesetName) { }
-
-        CreateParams() { }
-    };
 private:
-    CreateParams    m_createParams;
+    ViewControllerR     m_viewController;
+    BeFileName          m_outputDir;
+    WString             m_rootName;
 public:
-    Publisher(CreateParams const& params);
+    Publisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName) : m_viewController(viewController), m_outputDir(outputDir), m_rootName(tilesetName) { }
 
     Status Publish();
 };

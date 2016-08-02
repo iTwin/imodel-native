@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "TilePublisher.h"
+#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
@@ -91,10 +92,96 @@ struct CommandArg
         }
 };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct PublisherParams
+{
+private:
+    BeFileName      m_inputFileName;    //!< Path to the .bim
+    Utf8String      m_viewName;         //!< Name of the view definition from which to publish
+    BeFileName      m_outputDir;        //!< Directory in which to place the output
+    WString         m_tilesetName;      //!< Root name of the output tileset files
+
+    DgnViewId GetViewId(DgnDbR db) const;
+public:
+    BeFileNameCR GetInputFileName() const { return m_inputFileName; }
+    BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
+    WStringCR GetTilesetName() const { return m_tilesetName; }
+
+    bool ParseArgs(int ac, wchar_t const** av);
+    DgnDbPtr OpenDgnDb() const;
+    ViewControllerPtr LoadViewController(DgnDbR db) const;
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool parseArgs(Publisher::CreateParams& params, int ac, wchar_t const** av)
+DgnViewId PublisherParams::GetViewId(DgnDbR db) const
+    {
+    if (!m_viewName.empty())
+        return ViewDefinition::QueryViewId(m_viewName, db);
+
+    // Try default view
+    DgnViewId viewId;
+    if (BeSQLite::BE_SQLITE_ROW == db.QueryProperty(&viewId, sizeof(viewId), DgnViewProperty::DefaultView()) && viewId.IsValid())
+        return viewId;
+
+    // Try first spatial view
+    for (auto const& entry : ViewDefinition::MakeIterator(db))
+        {
+        auto view = ViewDefinition::QueryView(entry.GetId(), db);
+        if (view.IsValid() && view->IsSpatialView())
+            {
+            viewId = view->GetViewId();
+            break;
+            }
+        }
+
+    return viewId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db) const
+    {
+    DgnViewId viewId = GetViewId(db);
+    ViewDefinitionCPtr view = ViewDefinition::QueryView(viewId, db);
+    if (view.IsNull())
+        {
+        printf("View not found\n");
+        return false;
+        }
+
+    ViewControllerPtr controller = view->LoadViewController();
+    if (controller.IsNull())
+        {
+        printf("Failed to load view %hs\n", view->GetName().c_str());
+        return false;
+        }
+
+    // ###TODO: Anything else?
+    return controller;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr PublisherParams::OpenDgnDb() const
+    {
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
+    DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, m_inputFileName, openParams);
+    if (db.IsNull())
+        printf("Failed to open file %ls\n", m_inputFileName.c_str());
+
+    return db;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
     {
     if (ac < 2)
         return false;
@@ -107,30 +194,34 @@ static bool parseArgs(Publisher::CreateParams& params, int ac, wchar_t const** a
             {
             case ParamId::Input:
                 haveInput = true;
-                BeFileName::FixPathName(params.m_inputFileName, arg.m_value.c_str());
+                BeFileName::FixPathName(m_inputFileName, arg.m_value.c_str());
                 break;
             case ParamId::View:
-                params.m_viewName = Utf8String(arg.m_value.c_str());
+                m_viewName = Utf8String(arg.m_value.c_str());
                 break;
             case ParamId::Output:
-                BeFileName::FixPathName(params.m_outputDir, arg.m_value.c_str());
+                BeFileName::FixPathName(m_outputDir, arg.m_value.c_str());
                 break;
             case ParamId::Name:
-                params.m_tilesetName = Utf8String(arg.m_value.c_str());
+                m_tilesetName = arg.m_value.c_str();
                 break;
             default:
+                printf("Unrecognized command option %ls\n", av[i]);
                 return false;
             }
         }
 
     if (!haveInput)
+        {
+        printf("Input filename is required\n");
         return false;
+        }
 
-    if (params.m_outputDir.empty())
-        params.m_outputDir = params.m_inputFileName.GetDirectoryName();
+    if (m_outputDir.empty())
+        m_outputDir = m_inputFileName.GetDirectoryName();
 
-    if (params.m_tilesetName.empty())
-        params.m_tilesetName = Utf8String(params.m_inputFileName.GetFileNameWithoutExtension().c_str());
+    if (m_tilesetName.empty())
+        m_tilesetName = m_inputFileName.GetFileNameWithoutExtension().c_str();
 
     return true;
     }
@@ -159,8 +250,6 @@ static void printStatus(Publisher::Status status)
         "Publishing succeeded",
         "No geometry to publish",
         "Publishing aborted",
-        "Failed to open input .bim",
-        "Failed to open view",
         "Failed to write to base directory",
         "Failed to create subdirectory",
         "Failed to write scene",
@@ -172,22 +261,53 @@ static void printStatus(Publisher::Status status)
     printf("Result: %hs.\n", msg);
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct Host : DgnPlatformLib::Host
+{
+private:
+    virtual void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
+    virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
+    virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
+        {
+        BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+        sqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
+        return BeSQLite::L10N::SqlangFiles(sqlang);
+        }
+
+    static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+        {
+        printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
+        }
+public:
+    Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain(int ac, wchar_t const** av)
     {
-    Publisher::CreateParams createParams;
-    if (!parseArgs(createParams, ac, av))
+    PublisherParams createParams;
+    if (!createParams.ParseArgs(ac, av))
         {
         printUsage(av[0]);
         return 1;
         }
 
-    // ###TODO: stuff...
-    printf("Publishing view %hs from file %ls to %ls%hs.html\n", createParams.m_viewName.c_str(), createParams.m_inputFileName.c_str(), createParams.m_outputDir.c_str(), createParams.m_tilesetName.c_str());
+    Host host;
+    DgnPlatformLib::Initialize(host, false);
 
-    Publisher publisher(createParams);
+    DgnDbPtr db = createParams.OpenDgnDb();
+    if (db.IsNull())
+        return 1;
+
+    ViewControllerPtr viewController = createParams.LoadViewController(*db);
+    if (viewController.IsNull())
+        return 1;
+
+    Publisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName());
     auto status = publisher.Publish();
 
     printStatus(status);
