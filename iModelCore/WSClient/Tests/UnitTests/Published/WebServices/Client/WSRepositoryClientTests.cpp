@@ -387,7 +387,11 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithF
         {
         EXPECT_STREQ("https://srv.com/ws/v1.1/DataSources/foo/Files/TestClass/TestId", request.GetUrl().c_str());
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+        EXPECT_TRUE(httpFileBody.IsValid());
+		if (httpFileBody.IsValid())
+			{
+        	EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+			}
         return StubHttpResponse();
         });
 
@@ -426,7 +430,11 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFou
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_EQ("http://file.location/", request.GetUrl());
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+        EXPECT_TRUE(httpFileBody.IsValid());
+        if (httpFileBody.IsValid())
+            {
+            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+            }
         return StubHttpResponse();
         });
 
@@ -460,8 +468,11 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
         EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-
+        EXPECT_TRUE(httpFileBody.IsValid());
+        if (httpFileBody.IsValid())
+            {
+            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+            }
         return StubHttpResponse(HttpStatus::OK);
         });
 
@@ -484,8 +495,11 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24_SendsCorrectUrlAndA
         EXPECT_STREQ("true", request.GetHeaders().GetValue("Mas-Allow-Redirect"));
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-
+        EXPECT_TRUE(httpFileBody.IsValid());
+        if (httpFileBody.IsValid())
+            {
+            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+            }
         return StubHttpResponse(HttpStatus::OK);
         });
 
@@ -513,8 +527,11 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectRece
         EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-
+        EXPECT_TRUE(httpFileBody.IsValid());
+        if (httpFileBody.IsValid())
+            {
+            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+            }
         return StubHttpResponse(HttpStatus::OK);
         });
 
@@ -542,8 +559,11 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectRe
         EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-
+        EXPECT_TRUE(httpFileBody.IsValid());
+        if (httpFileBody.IsValid())
+            {
+            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
+            }
         return StubHttpResponse(HttpStatus::OK);
         });
 
