@@ -118,10 +118,6 @@ struct DateTimeInfo
 struct StandardCustomAttributeHelper : NonCopyableClass
     {
 private:
-    static Utf8CP const SYSTEMSCHEMA_CA_NAME;
-    static Utf8CP const DYNAMICSCHEMA_CA_NAME;
-	static Utf8CP const SYSTEMSCHEMA_CA_SCHEMA;
-
     //static class
     StandardCustomAttributeHelper ();
     ~StandardCustomAttributeHelper ();
@@ -176,6 +172,7 @@ public:
 
 struct ECDbSchemaMap;
 struct ECDbClassMap;
+struct ShareColumns;
 struct ECDbPropertyMap;
 struct ECDbLinkTableRelationshipMap;
 struct ECDbForeignKeyRelationshipMap;
@@ -203,6 +200,17 @@ public:
     //! @param[in] ecClass ECClass to retrieve the custom attribute from.
     //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool TryGetClassMap(ECDbClassMap& classMap, ECClassCR ecClass);
+
+    //! Tries to retrieve the ShareColumns custom attribute from the specified ECClass.
+    //! @param[out] shareColumns Retrieved ShareColumns
+    //! @param[in] ecClass ECClass to retrieve the custom attribute from.
+    //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool TryGetShareColumns(ShareColumns& shareColumns, ECClassCR ecClass);
+
+    //! Indicates whether the specified ECClass has the JoinedTablePerDirectSubclass custom attribute or not.
+    //! @param[in] ecClass ECClass to retrieve the custom attribute from.
+    //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool HasJoinedTablePerDirectSubclass(ECClassCR ecClass);
 
     //! Tries to retrieve the PropertyMap custom attribute from the specified ECProperty.
     //! @param[out] propertyMap Retrieved property map
@@ -259,42 +267,6 @@ friend struct ECDbMapCustomAttributeHelper;
 
 public:
     //=======================================================================================    
-    //! MapStrategy is a convenience wrapper around the MapStrategy struct in the ECDbMap ECSchema
-    //! that simplifies reading the values of that struct
-    //! @bsiclass
-    //=======================================================================================    
-    struct MapStrategy
-        {
-    public:
-        friend struct ECDbClassMap;
-        
-        //!@see MapStrategy::GetMinimumSharedColumnCount
-        static const int UNSET_MINIMUMSHAREDCOLUMNCOUNT = -1;
-
-    private:
-        Utf8String m_strategy;
-        Utf8String m_options;
-        int m_minimumSharedColumnCount;
-
-        MapStrategy(Utf8CP strategy, Utf8CP options, int minimumSharedColumnCount) : m_strategy(strategy), m_options(options), m_minimumSharedColumnCount(minimumSharedColumnCount) {}
-
-    public:
-        MapStrategy() : m_minimumSharedColumnCount(UNSET_MINIMUMSHAREDCOLUMNCOUNT) {}
-
-        //! Gets the Strategy.
-        //! @return Strategy or nullptr if not set in the custom attribute
-        Utf8CP GetStrategy() const { return m_strategy.c_str(); }
-        //! Gets the strategy options as comma separated list
-        //! @return strategy options or nullptr if not set in the custom attribute
-        Utf8CP GetOptions() const { return m_options.c_str(); }
-        //! Gets the minimum count of shared columns which should be created in the respective table
-        //! if the map strategy implies column sharing.
-        //! @return Minimum count of shared columns or @p UNSET_MINIMUMSHAREDCOLUMNCOUNT if property wasn't set.
-        int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
-        };
-
-
-    //=======================================================================================    
     //! DbIndex is a convenience wrapper around the DbIndex struct in the ECDbMap ECSchema
     //! that simplifies reading the values of that struct
     //! @bsiclass
@@ -336,10 +308,13 @@ private:
 public:
     ECDbClassMap() : m_class(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the values of the MapStrategy struct property from the ClassMap.
+    //! @return true if the ClassMap CA exists on the ECClass, false if it doesn't exist on the ECClass.
+    bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
+
+    //! Tries to get the value of the MapStrategy property from the ClassMap.
     //! @param[out] mapStrategy MapStrategy. It remains unchanged, if the MapStrategy property wasn't set in the ClassMap.
-    //! @return ECOBJECTSTATUS_Success if MapStrategy and MapStrategyOptions were set or unset in the ClassMap. Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetMapStrategy(MapStrategy& mapStrategy) const;
+    //! @return ECOBJECTSTATUS_Success if MapStrategy was set or unset in the ClassMap. Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetMapStrategy(Utf8String& mapStrategy) const;
     //! Tries to get the value of the TableName property in the ClassMap.
     //! @param[out] tableName Table name. It remains unchanged, if the TableName property wasn't set in the ClassMap.
     //! @return ECOBJECTSTATUS_Success if TableName was set or unset in the ClassMap, Error codes otherwise
@@ -353,6 +328,43 @@ public:
     //! @return SUCCESS if Indexes property is set or unset in ClassMap. Error codes if Indexes property has invalid values
     ECOBJECTS_EXPORT ECObjectsStatus TryGetIndexes(bvector<DbIndex>& indexes) const;
     };
+
+//=======================================================================================    
+//! ShareColumns is a convenience wrapper around the ShareColumns custom attribute in the ECDbMap ECSchema
+//! @bsiclass
+//=======================================================================================    
+struct ShareColumns
+    {
+friend struct ECDbMapCustomAttributeHelper;
+
+private:
+    ECClassCP m_class;
+    IECInstanceCP m_ca;
+
+    ShareColumns::ShareColumns(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+
+public:
+    ShareColumns() : m_class(nullptr), m_ca(nullptr) {}
+
+    //! @return true if ShareColumns exists on the ECClass, false if it doesn't exist on the ECClass.
+    bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
+
+    //! Tries to get the value of the SharedColumnCount property from the ShareColumns custom attribute.
+    //! @param[out] sharedColumnCount Number of shared columns to use. It remains unchanged, if the SharedColumnCount property wasn't set.
+    //! @return ECOBJECTSTATUS_Success if SharedColumnCount was set or unset in the ShareColumns custom attribute, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetSharedColumnCount(int& sharedColumnCount) const;
+
+    //! Tries to get the value of the ExcessColumnName property in the ShareColumns custom attribute.
+    //! @param[out] excessColumnName Name of excess column. It remains unchanged, if the ExcessColumnName property wasn't set.
+    //! @return ECOBJECTSTATUS_Success if ExcessColumnName was set or unset in the ShareColumns custom attribute, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetExcessColumnName(Utf8String& excessColumnName) const;
+
+    //! Tries to get the value of the ApplyToSubclassesOnly property from the ShareColumns custom attribute.
+    //! @param[out] applyToSubclassesOnly ApplyToSubclassesOnly flag. It remains unchanged, if the ApplyToSubclassesOnly property wasn't set.
+    //! @return ECOBJECTSTATUS_Success if ApplyToSubclassesOnly was set or unset in the ShareColumns custom attribute, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetApplyToSubclassesOnly(bool& applyToSubclassesOnly) const;
+    };
+
 
 //=======================================================================================    
 //! ECDbPropertyMap is a convenience wrapper around the PropertyMap custom attribute that simplifies
