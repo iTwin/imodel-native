@@ -122,7 +122,7 @@ private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
         
-        virtual void _IndicateProgress(double fraction) override { printf("%s: %.0f\n", m_taskName.c_str(), 100.0 * fraction); }
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override { printf("%s: %u/%u\n", m_taskName.c_str(), completed, total); }
         virtual void _SetTaskName(TileGenerator::TaskName task) override { m_taskName = TileGenerator::TaskName::CreatingTiles == task ? "Creating Tiles" : "Collecting Geometry"; }
         virtual bool _WasAborted() override { return TilesetPublisher::Status::Success != m_publisher.GetTileStatus(); }
     public:

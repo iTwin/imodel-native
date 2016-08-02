@@ -369,7 +369,7 @@ struct TileGenerator
     //! Interface adopted by an object which tracks progress of the tile generation process
     struct EXPORT_VTABLE_ATTRIBUTE IProgressMeter
     {
-        virtual void _IndicateProgress(double fraction) { } //!< Invoked to announce the current % completion
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
         virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
         virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
     };

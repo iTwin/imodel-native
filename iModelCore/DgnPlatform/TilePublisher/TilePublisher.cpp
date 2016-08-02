@@ -97,7 +97,7 @@ void BatchIdMap::ToJson(Json::Value& value) const
     {
     Json::Value elementIds(Json::arrayValue);
     for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
-        elementIds.append(elemIter->GetValue());
+        elementIds.append(elemIter->GetValueUnchecked());   // ###TODO: Convert to string...javascript doesn't support 64-bit integers...
 
     value["element"] = elementIds;
     }
@@ -803,7 +803,13 @@ TilesetPublisher::Status TilesetPublisher::Setup()
     if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
         return Status::CantWriteToBaseDirectory;
 
-    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write) && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
+    bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
+    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(m_dataDir.c_str()))
+        return Status::CantCreateSubDirectory;
+    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
+        return Status::CantCreateSubDirectory;
+
+    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
         return Status::CantCreateSubDirectory;
 
     return Status::Success;
@@ -851,7 +857,7 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     ProgressMeter progressMeter(*this);
     TileGenerator generator(transformFromDgn, &progressMeter);
 
-    static const double s_toleranceInMeters = 0.01;
+    static double s_toleranceInMeters = 0.01;
     status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
     if (Status::Success != status)
         return status;

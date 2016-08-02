@@ -891,6 +891,7 @@ struct TileGeometryProcessor : IGeometryProcessor
     TileGenerator::IProgressMeter&  m_progressMeter;
     TileGeometryCacheR              m_geometryCache;
     IFacetOptionsPtr                m_targetFacetOptions;
+    DgnElementId                    m_curElemId;
 
     TileGeometryProcessor(ViewControllerR view, TileGeometryCacheR geometryCache, XYZRangeTreeRootP rangeTree, TransformCR dgnToTarget, IFacetOptionsR facetOptions, TileGenerator::IProgressMeter& progressMeter)
         : m_dgnToTarget(dgnToTarget), m_rangeTree(rangeTree), m_view(view), m_range(DRange3d::NullRange()), m_facetOptions(facetOptions),
@@ -944,7 +945,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
 
     auto const& gfParams = gf.GetCurrentGraphicParams();
     m_geometryCache.ResolveTexture(gfParams);
-    m_rangeTree->Add(new RangeTreeNode(geom, tf, range, DgnElementId(/*###TODO*/), gfParams, *m_targetFacetOptions, isCurved), range);
+    m_rangeTree->Add(new RangeTreeNode(geom, tf, range, m_curElemId, gfParams, *m_targetFacetOptions, isCurved), range);
 
     return true;
     }
@@ -1011,7 +1012,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     m_geometryCache.ResolveTexture(gfParams);
 
     IGeometryPtr geom = IGeometry::Create(clone);
-    m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, DgnElementId(/*###TODO*/), gfParams, *m_targetFacetOptions, false), range);
+    m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, m_curElemId, gfParams, *m_targetFacetOptions, false), range);
 
     return true;
     }
@@ -1032,17 +1033,61 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 
     auto const& gfParams = gf.GetCurrentGraphicParams();
     m_geometryCache.ResolveTexture(gfParams);
-    m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, DgnElementId(/*###TODO*/), gfParams, *m_targetFacetOptions), range);
+    m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, gfParams, *m_targetFacetOptions), range);
 
     return true;
     }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct ModelAndCategorySet : VirtualSet
+{
+private:
+    DgnModelIdSet const&    m_models;
+    DgnCategoryIdSet const& m_categories;
+
+    virtual bool _IsInSet(int nVals, DbValue const* vals) const override
+        {
+        BeAssert(2 == nVals);
+        return m_models.Contains(DgnModelId(vals[0].GetValueUInt64())) && m_categories.Contains(DgnCategoryId(vals[1].GetValueUInt64()));
+        }
+public:
+    ModelAndCategorySet(ViewControllerCR view) : m_models(view.GetViewedModels()), m_categories(view.GetViewedCategories()) { }
+
+    bool IsEmpty() const { return m_models.empty() || m_categories.empty(); }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
-    m_view.DrawView(context);
+    // ###TODO? The dependencies between ViewContext, ViewController, and DgnViewport are pretty tangled up...
+    // e.g., ViewController::DrawView() takes a ViewContext, but requires that the ViewContext has a DgnViewport...
+    // DgnViewport requires a Target which requires a Device which requires a Window...
+    // ViewContext::CookGeometryParams() requires a viewport in order to apply the view controller's appearance overrides...
+    // m_view.DrawView(context);
+
+    ModelAndCategorySet vset(m_view);
+    if (vset.IsEmpty())
+        return;
+
+    DgnDbR db = m_view.GetDgnDb();
+    context.SetDgnDb(db);
+
+    static const Utf8CP s_ecsql3d = "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometricElement3d) " WHERE InVirtualSet(?, ModelId, CategoryId)",
+                        s_ecsql2d = "SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_GeometricElement2d) " WHERE InVirtualSet(?, ModelId, CategoryId)";
+
+    bool is2d = nullptr != dynamic_cast<ViewController2d const*>(&m_view);
+    auto stmt = db.GetPreparedECSqlStatement(is2d ? s_ecsql2d : s_ecsql3d);
+
+    stmt->BindVirtualSet(1, vset);
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        m_curElemId = stmt->GetValueId<DgnElementId>(0);
+        context.VisitElement(m_curElemId, true);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1060,6 +1105,7 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgr
 TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double toleranceInMeters)
     {
     m_progressMeter._SetTaskName(TaskName::CollectingGeometry);
+    m_progressMeter._IndicateProgress(0, 1);
 
     IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
     TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformToDgn(), *facetOptions, m_progressMeter);
@@ -1070,6 +1116,8 @@ TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double t
 
     if (m_progressMeter._WasAborted())
         return Status::Aborted;
+
+    m_progressMeter._IndicateProgress(1, 1);
 
     return processor.m_range.IsNull() ? Status::NoGeometry : Status::Success;
     }
@@ -1241,11 +1289,12 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 
     static const uint32_t s_sleepMillis = 1000.0;
 
+    uint32_t numTotalTiles = static_cast<uint32_t>(tiles.size());
+
     BEGIN_DELTA_TIMER(m_statistics.m_tileCreationTime);
     do
         {
-        double progress = 1.0 - static_cast<double>(tileQueue.GetNumRemainingTiles()) / static_cast<double>(tiles.size());
-        m_progressMeter._IndicateProgress(progress);
+        m_progressMeter._IndicateProgress(numTotalTiles - static_cast<uint32_t>(tileQueue.GetNumRemainingTiles()), numTotalTiles);
         if (m_progressMeter._WasAborted())
             tileQueue.AbortProcessing();
 
@@ -1258,7 +1307,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     for (auto& tileWorker : tileWorkers)
         delete tileWorker;
 
-    m_progressMeter._IndicateProgress(1.0);
+    m_progressMeter._IndicateProgress(numTotalTiles, numTotalTiles);
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
 
