@@ -1,7 +1,7 @@
 import sys, os, re, string
 import stat
 
-def processDir (dirNameIn, listfilename, templateFile):
+def processDir (dirNameIn, rootDir, listfilename, templateFile):
     dirName = dirNameIn.replace ('\\', '/') # <outputdir>/build/UnitTests/<reponame>/Published<reponame>UnitTests/
 
     if rootDir[-1] != '/':
@@ -18,7 +18,7 @@ def processDir (dirNameIn, listfilename, templateFile):
     print testFilePath + ' : ' + unitTestsListHfileName + ' ' + templateFile
     print '     $(msg)'
     print '     !~@mkdir ' + testFileDir
-    print '     ${SrcRoot}bsicommon/sharedmki/Cat.py ' + templateFile + '.prepend > $@'
+    print '     $(SrcRoot)bsicommon/sharedmki/Cat.py ' + templateFile + '.prepend > $@'
     print '     ~time'
     print ''
     
@@ -43,7 +43,7 @@ def processDir (dirNameIn, listfilename, templateFile):
             print '     $(CPreprocCmd) -I ' + dirName + testClassDefine + templateFile + ' > $@'
             print '     $(baseDir)SearchAndReplace.py $@ __REPO__ ' + repoUT
             print '     $(baseDir)SearchAndReplace.py $@ __FIXTURE__ ' + utClassName
-            print '     ${SrcRoot/bsicommon/sharedmki/Cat.py $@ >> ' + testFilePath
+            print '     $(SrcRoot)bsicommon/sharedmki/Cat.py $@ >> ' + testFilePath
             print '     ~time'
             print ''
 
@@ -67,7 +67,7 @@ def main():
             continue
         for file in files:
             if file == 'UnitTests.list.h':
-                processDir (dir, root, file, templateFile)
+                processDir (root, dir, file, templateFile)
 
 if __name__ == '__main__':
     main()
