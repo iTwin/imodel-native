@@ -26,7 +26,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementHasLinks:0:LinkElement</RelationshipPath>
+                    <RelationshipPath>ElementsHaveLinks:0:LinkElement</RelationshipPath>
                     <DerivedClasses>
                         <string>UrlLink</string>
                         <string>EmbeddedFileLink</string>
@@ -34,7 +34,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementHasLinks:0:LinkElement</RelationshipPath>
+                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementsHaveLinks:0:LinkElement</RelationshipPath>
                     <DerivedClasses>
                         <string>UrlLink</string>
                         <string>EmbeddedFileLink</string>
@@ -1074,17 +1074,38 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
+        <!-- WIP: should be abstract -->
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
                 <!-- The Element API will handle cascading the delete -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is on 1 element" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementEncapsulatesElements" strength="embedding">
+        <!-- Relationship that indicates that child elements are "hidden" -->
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhysicalElementAssemblesPhysicalElements" strength="embedding">
+        <!-- Relationship that indicates a physical assembly of child PhysicalElements -->
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="PhysicalElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1224,7 +1245,28 @@
     </ECRelationshipClass>
     -->
 
+    <ECRelationshipClass typeName="ElementsReferToElements" strength="referencing" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.01">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <Options>SharedColumns</Options>
+                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
+                </MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
+        <!-- WIP: Rename to ElementsDriveElements? -->
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1234,6 +1276,7 @@
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
                     <AppliesToSubclasses>True</AppliesToSubclasses>
+                    <!-- WIP: SharedColumns? MinimumSharedColumnCount? -->
                 </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
@@ -1591,20 +1634,14 @@
         </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>LinkId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="true">
+    <ECRelationshipClass typeName="ElementsHaveLinks" description="Associates links to an element." strength="referencing">
+        <!-- WIP: Rename to ElementsHaveLinks? -->
+        <BaseClass>ElementsReferToElements</BaseClass>
+        <Source cardinality="(1,N)" polymorphic="true">
+            <!-- WIP: (0,N)? -->
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="LinkElement"/>
         </Target>
     </ECRelationshipClass>
@@ -1668,17 +1705,9 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
+    <ECRelationshipClass typeName="ElementsUseGeometryParts" strength="referencing">
+        <BaseClass>ElementsReferToElements</BaseClass>
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>GeometryPartId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>
         </Source>

@@ -1620,7 +1620,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
     LogPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
 
-    // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
+    // *** WIP_IMPORT *** ElementsHaveLinks -- should we deep-copy links?
 
     return DgnDbStatus::Success;
     }

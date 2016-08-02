@@ -386,7 +386,7 @@ protected:
     //! <p>
     //! A subclass implementation of _ImportECRelationshipsFrom should copy only the relationship subclasses that are defined by the 
     //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
-    //! base Dgn schema, including ElementDrivesElement, ElementUsesGeometryParts, ElementGroupsMembers, and ElementUsesStyles.
+    //! base Dgn schema, including ElementDrivesElement, ElementsUseGeometryParts, ElementGroupsMembers, and ElementUsesStyles.
     //! <p>
     //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
     //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
