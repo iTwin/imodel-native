@@ -23,6 +23,7 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
         EXPECT_STREQ("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", request.GetUrl().c_str());
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
+        ASSERT_TRUE(httpFileBody.IsValid());
         EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
 
         return StubHttpResponse(HttpStatus::OK);
