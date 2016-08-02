@@ -89,3 +89,97 @@ Utf8String s_untexturedFragShader =
 "gl_FragColor = vec4(u_color.rgb * n.z, u_color.a);\n"
 "}\n";
 
+// printf(s_viewHtml, dataDirectoryName, tilesetName)
+Utf8CP s_viewerHtml =
+R"HTML(<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Use correct character set. -->
+<meta charset="utf-8">
+<!-- Tell IE to use the latest, best version. -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+<title>Cesium 3D Tiles generated from Bentley MicroStation</title>
+<script src="Cesium/Cesium.js"></script>
+<style>
+@import url(Cesium/Widgets/widgets.css);
+
+
+html, body, #cesiumContainer {
+width: 100%;
+height: 100%;
+margin: 0;
+padding: 0;
+overflow: hidden;
+}
+</style>
+</head>
+<body>
+<div id="cesiumContainer"></div>
+<script>
+
+var viewerOptions = {
+    webgl: {
+        alpha: true,
+    },
+};
+
+var viewer = new Cesium.Viewer('cesiumContainer', {
+infoBox:true,
+scene3DOnly:true,
+shadows : false,
+contextOptions: viewerOptions,
+globe: false,
+skyBox: false,
+skyAtmosphere: false
+});
+
+viewer.extend(Cesium.viewerCesiumInspectorMixin);
+
+// They want to disallow scripts, but need to be able to load .json tilesets...
+var iframe = document.getElementsByClassName('cesium-infoBox-iframe')[0];
+iframe.removeAttribute('sandbox');
+
+var tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
+url: '%ls/%ls.json',
+maximumScreenSpaceError: 2,
+maximumNumberOfLoadedTiles: 1000,
+debugShowBoundingVolume:false
+}));
+
+var highlightColor = new Cesium.Color(0.5, 0.5, 0.5, 1);
+var curPickedObjects = null;
+var curPickedColor = null;
+
+Cesium.when(tileset.readyPromise).then(function(tileset) {       
+   var boundingSphere = tileset.boundingSphere;
+   viewer.camera.viewBoundingSphere(boundingSphere); 
+   viewer.camera.setView({$initialView});
+
+   var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+   handler.setInputAction(function(movement) {
+       var pickedObjects = viewer.scene.pick(movement.endPosition);
+       if (pickedObjects !== curPickedObjects) {
+           if (Cesium.defined(curPickedObjects)) {
+               curPickedObjects.color = curPickedColor;
+           }
+
+           curPickedObjects = pickedObjects;
+           if (Cesium.defined(curPickedObjects)) {
+               curPickedColor = curPickedObjects.color;
+               curPickedObjects.color = highlightColor;
+           } else {
+               curPickedColor = null;
+           }
+       }
+   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+});
+
+</script>
+</body>
+</html>)HTML";
+
+
+
+

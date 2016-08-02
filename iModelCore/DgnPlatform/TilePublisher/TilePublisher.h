@@ -112,6 +112,7 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
+    Status WriteWebApp();
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16

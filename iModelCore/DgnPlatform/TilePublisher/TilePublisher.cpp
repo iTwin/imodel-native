@@ -791,7 +791,8 @@ TilesetPublisher::TilesetPublisher(ViewControllerR view, BeFileNameCR outputDir,
     {
     // m_outputDir holds the .html file + shared scripts
     // m_dataDir = m_outputDir/m_rootName/ - holds the json + b3dm files
-    m_dataDir.AppendToPath(m_rootName.c_str()).AppendSeparator();
+    m_outputDir.AppendSeparator();
+    m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -844,6 +845,25 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+TilesetPublisher::Status TilesetPublisher::WriteWebApp()
+    {
+    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str());
+    BeFileName htmlFileName = m_outputDir;
+    htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
+
+    std::ofstream htmlFile;
+    htmlFile.open(Utf8String(htmlFileName.c_str()).c_str(), std::ios_base::trunc);
+    htmlFile.write(html.data(), html.size());
+    htmlFile.close();
+
+    // ###TODO: Symlink Cesium scripts, if not present
+
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetPublisher::Publish()
     {
     auto status = Setup();
@@ -875,7 +895,6 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     if (Status::Success != status)
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
-    // ###TODO: Produce the html/js
-    return Status::Success;
+    return WriteWebApp();
     }
 
