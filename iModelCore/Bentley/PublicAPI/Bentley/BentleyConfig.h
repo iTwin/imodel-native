@@ -35,7 +35,7 @@
         #define BENTLEYCONFIG_GRAPHICS_OPENGL
         #define BENTLEYCONFIG_VIRTUAL_MEMORY   //  Assume the OS swapping is better than anything we would do
         // WIP_PORT #define BENTLEYCONFIG_OPENCASCADE
-        // WIP_PORT #define BENTLEYCONFIG_FOLLY
+        #define BENTLEYCONFIG_FOLLY
     #endif
 
 #elif defined (ANDROID)
