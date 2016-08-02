@@ -54,11 +54,9 @@
     <ECRelationshipClass typeName="ElementRefersToElement" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                    <Options>SharedColumns</Options>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="bis:Element"/>
