@@ -74,6 +74,25 @@ public:
             m_size += size;
             }
         }
+
+    bool empty() const { return !HasData(); }
+    size_t size() const { return GetSize(); }
+    size_t capacity() const { return GetAllocSize(); }
+    void reserve(size_t size) { Reserve(static_cast<uint32_t>(size)); }
+    void resize(size_t newSize) { Resize(static_cast<uint32_t>(newSize)); }
+    void clear() { Clear(); }
+    uint8_t const* data() const { return GetData(); }
+    uint8_t* data() { return GetDataP(); }
+
+    typedef uint8_t* iterator;
+    typedef uint8_t const* const_iterator;
+
+    iterator begin() { return data(); }
+    iterator end() { return data() + size(); }
+    const_iterator begin() const { return data(); }
+    const_iterator end() const { return data() + size(); }
+    uint8_t const& operator[](size_t i) const { return data()[i]; }
+    uint8_t& operator[](size_t i) { return data()[i]; }
 };
 
 END_BENTLEY_NAMESPACE
