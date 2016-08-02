@@ -397,17 +397,17 @@ public:
     DGNPLATFORM_EXPORT Status LoadGeometry(ViewControllerR view, double toleranceInMeters);
     //! Generates the HLOD tree from the contents of the TileGeometryCache within the specified range
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR rootTile, DRange3dCR range, double leafTolerance, size_t maxPointsPerTile=30000);
+    Status GenerateTiles(TileNodeR rootTile, double leafTolerance, size_t maxPointsPerTile=30000) { return GenerateTiles(rootTile, m_geometryCache.GetRange(), leafTolerance, maxPointsPerTile); }
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);
     DGNPLATFORM_EXPORT static void SplitMeshToMaximumSize(TileMeshList& meshes, TileMeshR mesh, size_t maxPoints);
 
     Statistics const& GetStatistics() const { return m_statistics; }
+    TileGeometryCacheR GetGeometryCache() { return m_geometryCache; }
 };
 
 //=======================================================================================
-// FacetCountUtil is a wrapper structure that contains helper methods to approximate
-// the amount of facets a solid, curve vector or BRep will contain after processing 
-// when using specific facet options
-//
+// Provides helper methods to approximate the number of facets a geometric primitive
+// will contain after facetting with specific facet options.
 // @bsistruct                                                   Diego.Pinate    07/16
 //=======================================================================================
 struct FacetCountUtil

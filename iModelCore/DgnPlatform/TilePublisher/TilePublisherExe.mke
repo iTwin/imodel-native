@@ -20,7 +20,7 @@ always:
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)TilePublisher.h ${MultiCompileDepends}
+$(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
 
 $(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)TilePublisher.h ${MultiCompileDepends}
 

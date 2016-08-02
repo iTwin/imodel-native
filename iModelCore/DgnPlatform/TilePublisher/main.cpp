@@ -243,7 +243,7 @@ static void printUsage(WCharCP exePath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void printStatus(Publisher::Status status)
+static void printStatus(TilesetPublisher::Status status)
     {
     static const Utf8CP s_msg[] =
         {
@@ -307,7 +307,7 @@ int wmain(int ac, wchar_t const** av)
     if (viewController.IsNull())
         return 1;
 
-    Publisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName());
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName());
     auto status = publisher.Publish();
 
     printStatus(status);
