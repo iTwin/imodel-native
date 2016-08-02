@@ -1578,27 +1578,36 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         {
         istmt.Reset();
         istmt.ClearBindings();
+
+        DgnElementId remappedSrcId;
+        DgnElementId remappedDstId;
+
         int icol = 0;
-        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol))); // [0] sourcecol
+        istmt.BindId(icol+1, (remappedSrcId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [0] sourcecol
         ++icol;
-        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol))); // [1] targetcol
+        istmt.BindId(icol+1, (remappedDstId = importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)))); // [1] targetcol
         ++icol;
-        if (nullptr != classcol)
+
+        if (remappedSrcId.IsValid() && remappedDstId.IsValid())
             {
-            istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol))); // [2] classcol (optional)
-            ++icol;
+            if (nullptr != classcol)
+                {
+                istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol))); // [2] classcol (optional)
+                ++icol;
+                }
+
+            for (size_t iothercol=0; iothercol < (int)othercols.size(); ++iothercol)
+                {
+                istmt.BindText(icol+1, sstmt.GetValueText(icol), Statement::MakeCopy::No);
+                ++icol;
+                }
+
+            if (BE_SQLITE_DONE != istmt.Step())
+                {
+                // *** TBD: Report error somehow
+                }
             }
 
-        for (size_t iothercol=0; iothercol < (int)othercols.size(); ++iothercol)
-            {
-            istmt.BindText(icol+1, sstmt.GetValueText(icol), Statement::MakeCopy::No);
-            ++icol;
-            }
-
-        if (BE_SQLITE_DONE != istmt.Step())
-            {
-            // *** TBD: Report error somehow
-            }
         timer.Start();
         stepResult = sstmt.Step();
         LogPerformance(timer, "Statement.Step for %s", sstmt.GetSql());

@@ -43,10 +43,10 @@ static RefCountedCPtr<DgnElement> insertElement(DgnModelR model)
     else
         gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
 
-    GeometryBuilderPtr builder = GeometryBuilder::CreateWorld(*gelem->ToGeometrySource());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));
 
-    if (BSISUCCESS != builder->SetGeometryStreamAndPlacement(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in SetGeometryStreamAndPlacement
+    if (BSISUCCESS != builder->Finish(*gelem->ToGeometrySourceP()))  // We actually catch 2d3d mismatch in Finish
         return nullptr;
 
     return db.Elements().Insert(*gelem);
@@ -138,9 +138,9 @@ TEST_F(DgnScriptTest, TestEga)
     function testEga(element, origin, angles, params) { \
         var boxSize = new Bentley.Dgn.DPoint3d(params.X, params.Y, params.Z); \
         var box = Bentley.Dgn.DgnBox.CreateCenteredBox (new Bentley.Dgn.DPoint3d(0,0,0), boxSize, true); \
-        var builder = new Bentley.Dgn.GeometryBuilder(element, origin, angles); \
+        var builder = Bentley.Dgn.GeometryBuilder.CreateFor3dModel(element.Model, element.CategoryId, origin, angles); \
         builder.AppendGeometry(box); \
-        builder.SetGeometryStreamAndPlacement(element); \
+        builder.Finish(element); \
         return 0;\
     } \
     function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\

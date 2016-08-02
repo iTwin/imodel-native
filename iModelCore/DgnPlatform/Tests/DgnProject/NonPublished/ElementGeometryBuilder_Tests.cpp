@@ -97,7 +97,7 @@ TEST_F(GeometryBuilderTests, CreateElement3d)
     TextStringPtr text = GeomHelper::CreateTextString();
     EXPECT_TRUE(builder->Append(*text));
 
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
     }
 
@@ -106,7 +106,7 @@ TEST_F(GeometryBuilderTests, CreateElement3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryBuilderTests, CreateElement2d)
     {
-    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeometryBuilderTests_CreateElement2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeometryBuilderTests_CreateElement2d.ibim", BeSQLite::Db::OpenMode::ReadWrite, false, true);
 
     DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode(),100);
 
@@ -127,7 +127,7 @@ TEST_F(GeometryBuilderTests, CreateElement2d)
     EXPECT_FALSE(builder->Append(*cylinder));
     BeTest::SetFailOnAssert(true);
 
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
     }

@@ -36,12 +36,12 @@ typedef DbPropSpec::Mode DbPropTxnMode;
 struct DgnProjectProperty
 {
     struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_DgnProject, setting) {}
-        };
+    {
+        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnProject, setting) {}
+    };
 
-    struct ProjectProperty : Spec {ProjectProperty (Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting (Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
+    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
+    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
     static ProjectProperty SchemaVersion()   {return ProjectProperty("SchemaVersion");}
     static ProjectProperty Name()            {return ProjectProperty("Name");}
@@ -62,12 +62,12 @@ struct DgnProjectProperty
 struct DgnMarkupProjectProperty
 {
     struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_DgnMarkupProject, setting) {}
-        };
+    {
+        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnMarkupProject, setting) {}
+    };
 
-    struct ProjectProperty : Spec {ProjectProperty (Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting (Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
+    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
+    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
     static ProjectProperty DgnProjectAssociationData() {return ProjectProperty("DgnProjectAssociationData");}
 };
@@ -78,22 +78,21 @@ struct DgnMarkupProjectProperty
 struct RedlineModelProperty
 {
     struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting, DbPropSpec::Compress compress) : DbPropSpec (name, PROPERTY_APPNAME_RedlineModel, setting, compress) {}
-        };
+    {
+        Spec(Utf8CP name, DbPropTxnMode setting, DbPropSpec::Compress compress) : DbPropSpec(name, PROPERTY_APPNAME_RedlineModel, setting, compress) {}
+    };
 
-    struct ProjectProperty : Spec {ProjectProperty (Utf8CP name, bool compressed=true) : Spec(name, DbPropSpec::Mode::Normal, compressed? DbPropSpec::Compress::Yes: DbPropSpec::Compress::No){}};
-    struct ProjectSetting  : Spec {ProjectSetting (Utf8CP name) : Spec(name, DbPropSpec::Mode::Setting, DbPropSpec::Compress::Yes){}};
+    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name, bool compressed=true) : Spec(name, DbPropSpec::Mode::Normal, compressed? DbPropSpec::Compress::Yes: DbPropSpec::Compress::No){}};
+    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name) : Spec(name, DbPropSpec::Mode::Setting, DbPropSpec::Compress::Yes){}};
 
     static ProjectProperty RedlineECInstanceId() {return ProjectProperty("RedlineECInstanceId");}
     static ProjectProperty ViewId() {return ProjectProperty("ViewId");}
-    static ProjectProperty ImageData2 () {return ProjectProperty("ImageData2",/*compressed*/false);}
-    static ProjectProperty ImageData () {return ProjectProperty("ImageData",/*compressed*/true);}
+    static ProjectProperty ImageData2() {return ProjectProperty("ImageData2",/*compressed*/false);}
+    static ProjectProperty ImageData() {return ProjectProperty("ImageData",/*compressed*/true);}
     static ProjectProperty ImageDef() {return ProjectProperty("ImageDef");}
     static ProjectProperty RDLSheetDef(){return ProjectProperty("RDLSheetDef");}
     static ProjectProperty DgnProjectAssociationData() {return ProjectProperty("DgnProjectAssociationData");}
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    03/13
@@ -101,12 +100,12 @@ struct RedlineModelProperty
 struct DgnEmbeddedProjectProperty
 {
     struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting) : DbPropSpec (name, PROPERTY_APPNAME_DgnEmbeddedProject, setting, DbPropSpec::Compress::No) {}
-        };
+    {
+        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnEmbeddedProject, setting, DbPropSpec::Compress::No) {}
+    };
 
-    struct ProjectProperty : Spec {ProjectProperty (Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
-    struct ProjectSetting  : Spec {ProjectSetting (Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
+    struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
+    struct ProjectSetting  : Spec {ProjectSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
     static ProjectProperty SchemaVersion()   {return ProjectProperty("SchemaVersion");}
     static ProjectProperty Name()            {return ProjectProperty("Name");}
@@ -128,12 +127,12 @@ struct DgnEmbeddedProjectProperty
 struct DgnViewProperty
 {
     struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting, Compress compress=Compress::Yes) : DbPropSpec (name, PROPERTY_APPNAME_DgnView, setting, compress) {}
-        };
+    {
+        Spec(Utf8CP name, DbPropTxnMode setting, Compress compress=Compress::Yes) : DbPropSpec(name, PROPERTY_APPNAME_DgnView, setting, compress) {}
+    };
 
-    struct ViewProperty : Spec {ViewProperty (Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
-    struct ViewSetting  : Spec {ViewSetting (Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
+    struct ViewProperty : Spec {ViewProperty(Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
+    struct ViewSetting  : Spec {ViewSetting(Utf8CP name)  : Spec(name, DbPropSpec::Mode::Setting){}};
 
     static ViewSetting Settings()     {return ViewSetting("Settings");}
     static ViewSetting DefaultView()  {return ViewSetting("DefaultView");}
@@ -146,11 +145,11 @@ struct DgnViewProperty
 struct LineStyleProperty
 {
     struct Spec : DbPropSpec
-        {
-        Spec (Utf8CP name, DbPropTxnMode setting, Compress compress=Compress::Yes) : DbPropSpec (name, PROPERTY_APPNAME_LineStyle, setting, compress) {}
-        };
+    {
+        Spec(Utf8CP name, DbPropTxnMode setting, Compress compress=Compress::Yes) : DbPropSpec(name, PROPERTY_APPNAME_LineStyle, setting, compress) {}
+    };
 
-    struct ComponentProperty : Spec {ComponentProperty (Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
+    struct ComponentProperty : Spec {ComponentProperty(Utf8CP name, Compress compress=Compress::Yes) : Spec(name, DbPropSpec::Mode::Normal, compress){}};
 
     static ComponentProperty Compound()         {return ComponentProperty("CompoundV1");}
     static ComponentProperty LineCode()         {return ComponentProperty("LineCodeV1");}

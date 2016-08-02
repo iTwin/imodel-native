@@ -124,7 +124,7 @@ SpatialModelPtr PerformanceElementTestFixture::CreateSpatialModel() const
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     {
-    SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", L"ElementInsertPerformanceSingleInsertNumberedParams.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
     SpatialModelPtr model = CreateSpatialModel();
@@ -189,7 +189,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     {
-    SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", L"ElementInsertPerformanceInsertUpdateApproach.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
     SpatialModelPtr model = CreateSpatialModel();
@@ -261,7 +261,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachNamedParameters)
     {
-    SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", L"ElementInsertPerformanceSingleInsertNamedParams.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
     SpatialModelPtr model = CreateSpatialModel();

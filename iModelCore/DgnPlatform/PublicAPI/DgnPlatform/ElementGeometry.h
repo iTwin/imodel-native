@@ -52,6 +52,18 @@ protected:
 public:
     DGNPLATFORM_EXPORT GeometryType GetGeometryType() const;
 
+    //! Return true if the geometry is or would be represented by a solid body. Accepted geometry includes BRep solids, capped SolidPrimitves, and closed Polyfaces. 
+    DGNPLATFORM_EXPORT bool IsSolid() const;
+
+    //! Return true if the geometry is or would be represented by a sheet body. Accepted geometry includes BRep sheets, un-capped SolidPrimitives, region CurveVectors, Bspline Surfaces, and unclosed Polyfaces.
+    DGNPLATFORM_EXPORT bool IsSheet() const;
+
+    //! Return true if the geometry is or would be represented by a wire body. Accepted geometry includes BRep wires and CurveVectors.
+    DGNPLATFORM_EXPORT bool IsWire() const;
+
+    // Return the type of solid kernel entity that would be used to represent this geometry.
+    DGNPLATFORM_EXPORT ISolidKernelEntity::KernelEntityType GetKernelEntityType() const;
+
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetAsICurvePrimitive() const;
     DGNPLATFORM_EXPORT CurveVectorPtr GetAsCurveVector() const;
     DGNPLATFORM_EXPORT ISolidPrimitivePtr GetAsISolidPrimitive() const;
@@ -396,10 +408,12 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 //!
 //! Example: To create a 10m line defined by its start point and located at 5,5,0 you could call Create and specify a 
 //!          placement origin of 5,5,0 and append a line curve primitive with start point 0,0,0 and endpoint 10,0,0.
-//!          This result could also be achieve more simply by using CreateWorld and supplying a line from 5,5,0 to 15,5,0.
+//!          This result could also be achieved by creating a builder without specifying a placement and supplying the
+//!          line in world coordinates, 5,5,0 to 15,5,0.
 //!
-//!          A reason to use Create instead of CreateWorld is to specify a placement that is more meaningful to 
-//!          the application. The application might want to set things up so that the element origin was the line’s 
+//!          Regardless of whether the geometry is appended in local coordinates or world coordinates, it's better to
+//!          set up the builder with a known placement that is more meaningful to the applicattion. 
+//!          The application might want to set things up so that the element origin was the line’s 
 //!          midpoint instead of the start point. In this case the line curve primitive would be created with start 
 //!          point -5,0,0 and end point 5,0,0. To create a line parallel to the y axis instead of x, specify a yaw angle of 90, etc.
 //!
@@ -408,16 +422,22 @@ typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 //! orientation. It’s not expected for the placement to remain identity unless the element is really at the origin.
 //!
 //! For repeated geometry that can be shared in a single GeometryStream or by multiple GeometryStreams, a DgnGeometryPart should be
-//! created. When appending a DgnGeometryPartId you specify the part geometry to element transform in order to position the 
-//! part's geometry relative to the other geometry/parts display by the element.
+//! created. When appending a DgnGeometryPartId you specify the part's relative position/orientation to the element.
 //! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometryBuilder : RefCountedBase
 {
+public:
+    
+    enum class CoordSystem
+    {
+        Local = 0, //!< GeometricPrimitive being supplied in local coordinates. NOTE: Builder must be created with a known placement for local coordinates to be meaningful.
+        World = 1, //!< GeometricPrimitive being supplied in world coordinates. NOTE: Builder requires world coordinate geometry if placement isn't specified.
+    };
+
 private:
 
     bool                     m_appearanceChanged;
-    bool                     m_haveLocalGeom;
     bool                     m_havePlacement;
     bool                     m_isPartCreate;
     bool                     m_is3d;
@@ -448,37 +468,52 @@ public:
     DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId() const; //! Return the primitive id of the geometry last added to the builder.
     DGNPLATFORM_EXPORT bool MatchesGeometryPart (DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private assume change already checked...
 
-    DGNPLATFORM_EXPORT BentleyStatus SetGeometryStream (DgnGeometryPartR);
-    DGNPLATFORM_EXPORT BentleyStatus SetGeometryStreamAndPlacement (GeometrySourceR);
-    void SetAppendAsSubGraphics() {m_appendAsSubGraphics = !m_isPartCreate;} //! Subsequent Append calls will produce sub-graphics with local ranges for picking. Not valid when creating a GeometryPart.
+    //! Saves contents of builder to geometry stream of supplied part and updates the part bounding box.
+    DGNPLATFORM_EXPORT BentleyStatus Finish (DgnGeometryPartR);
 
+    //! Saves contents of builder to geometry stream of supplied source and updates the element aligned bounding box.
+    //! @note For a builder using CreateWithAutoPlacement this also updates the placement origin/angles(s) using the local coordinate system computed from the first appended geometric primitive.
+    DGNPLATFORM_EXPORT BentleyStatus Finish (GeometrySourceR);
+
+    void SetAppendAsSubGraphics() {m_appendAsSubGraphics = !m_isPartCreate;} //! Subsequent Append calls will produce sub-graphics with local ranges for picking. Not valid when creating a GeometryPart.
     DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
     DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Relative placement, not valid for CreateWorld.
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles()); //! Relative placement, not valid for CreateWorld.
-    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees()); //! Relative placement, not valid for CreateWorld.
-    DGNPLATFORM_EXPORT bool Append (GeometricPrimitiveCR);
-    DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR);
-    DGNPLATFORM_EXPORT bool Append (CurveVectorCR);
-    DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR); //! 3d only
-    DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR); //! 3d only
-    DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR); //! 3d only
-    DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR); //! 3d only
-    DGNPLATFORM_EXPORT bool Append (IGeometryCR); //! 3d only
-    DGNPLATFORM_EXPORT bool Append (TextStringCR);
-    DGNPLATFORM_EXPORT bool Append (TextAnnotationCR);
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, TransformCR geomToElement); //! Relative placement. NOTE: Builder must be created with a known placement for relative location to be meaningful.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles()); //! Relative placement. NOTE: Builder must be created with a known placement for relative location to be meaningful.
+    DGNPLATFORM_EXPORT bool Append (DgnGeometryPartId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees()); //! Relative placement. NOTE: Builder must be created with a known placement for relative location to be meaningful.
+    DGNPLATFORM_EXPORT bool Append (GeometricPrimitiveCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append (ICurvePrimitiveCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append (CurveVectorCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append (ISolidPrimitiveCR, CoordSystem coord = CoordSystem::Local); //! 3d only
+    DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR, CoordSystem coord = CoordSystem::Local); //! 3d only
+    DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR, CoordSystem coord = CoordSystem::Local); //! 3d only
+    DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR, CoordSystem coord = CoordSystem::Local); //! 3d only
+    DGNPLATFORM_EXPORT bool Append (IGeometryCR, CoordSystem coord = CoordSystem::Local); //! 3d only
+    DGNPLATFORM_EXPORT bool Append (TextStringCR, CoordSystem coord = CoordSystem::Local);
+    DGNPLATFORM_EXPORT bool Append (TextAnnotationCR, CoordSystem coord = CoordSystem::Local);
 
     DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (DgnDbR db, bool is3d);
     DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateGeometryPart (GeometryStreamCR, DgnDbR db, bool ignoreSymbology = false, Render::GeometryParamsP params = nullptr); //!< @private
 
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWorld (DgnModelR model, DgnCategoryId categoryId);
+    //! Create builder from model and category. A placement will be computed from the first appended geometric primitive.
+    //! @note Only CoordSystem::World is supported for append and it's not possible to append geometry parts as they must be positioned relative to a known coordinate system.
+    //!       Generally it's best if the application specifies a more meaningful placement than just using a geometric primitive's local coordinate frame.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWithAutoPlacement (DgnModelR model, DgnCategoryId categoryId);
 
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySource3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySource2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR); //! Create builder from GeometrySource using current placement.
-    DGNPLATFORM_EXPORT static GeometryBuilderPtr CreateWorld (GeometrySourceCR);
+    //! Create builder from model, category, and placement represented by a transform.
+    //! @note Transform must satisfy requirements of YawPitchRollAngles::TryFromTransform, scale is not supported.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, TransformCR transform);
+
+    //! Create 3d builder from model, category, origin, and optional yaw/pitch/roll angles.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
+
+    //! Create 2d builder from model, category, origin, and optional rotation angle.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+
+    //! Create builder from category and placement origin/angle(s) of the supplied geometry source.
+    //! @note DO NOT construct a builder using an identity placement and then proceed to append world coordinate geometry; this does not result in a meaningful placement!
+    //!       It is however perfectly valid to initially create an element at the origin, append local coordinate geometry, and afterwards update the placement to position it in the world.
+    DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR);
 
 }; // GeometryBuilder
 

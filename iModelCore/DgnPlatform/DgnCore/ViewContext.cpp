@@ -794,14 +794,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicParams::GraphicParams()
-    {
-    Init();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Init()
@@ -844,7 +836,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
 
-            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientFlags::Outline)))
+            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientSymb::Flags::Outline)))
                 {
                 m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
                 netElemTransparency = 0.0;  // Don't override the fully transparent outline below...
@@ -1266,8 +1258,8 @@ enum
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp)
     {
-    DRange3d range = vp.GetViewController().GetViewedExtents(); // Limit grid to project extents...
-
+    // Limit grid to project extents in 3d views, but ask the viewcontroller for its extents for 2d views.
+    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().Units().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
     if (range.IsEmpty())
         return 0;
 

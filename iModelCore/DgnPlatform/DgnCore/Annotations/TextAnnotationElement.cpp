@@ -107,7 +107,7 @@ void TextAnnotationData::GenerateGeometricPrimitive(GeometrySourceR source, Gene
     GeometryBuilderPtr builder = GeometryBuilder::Create(source);
     
     builder->Append(*m_annotation);
-    builder->SetGeometryStreamAndPlacement(source);
+    builder->Finish(source);
     }
 
 //---------------------------------------------------------------------------------------

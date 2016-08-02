@@ -73,12 +73,6 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    if (BeSQLite::Db::OpenMode::ReadWrite == mode )
-        {
-        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
-        ASSERT_TRUE(DgnDbStatus::Success == status);
-        }
-
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(m_defaultModelP.IsValid());
@@ -171,7 +165,7 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase, bool needTestDomain)
     {
     //** Force to copy the file in Sub-Directory of TestCase
     BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
@@ -188,7 +182,7 @@ void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP t
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    if (BeSQLite::Db::OpenMode::ReadWrite == mode )
+    if (BeSQLite::Db::OpenMode::ReadWrite == mode && needTestDomain)
         {
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
         ASSERT_TRUE(DgnDbStatus::Success == status);
@@ -242,7 +236,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart2d(DgnCodeCR gpCode
     if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->Finish(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();
@@ -269,7 +263,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
     if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
         return DgnElementId();
 
-    if (SUCCESS != builder->SetGeometryStreamAndPlacement(*geomElem))
+    if (SUCCESS != builder->Finish(*geomElem))
         return DgnElementId();
 
     return m_db->Elements().Insert(*el)->GetElementId();

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
 
 static WCharCP s_dgndbExt   = L".bim";
@@ -234,6 +235,9 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
 DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const& params)
     {
     BeFileName projectFile(inFileName);
+
+    if (BeTest::IsInitialized())                                        // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
+        wprintf(L"!!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb %s\n", inFileName.c_str());     // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 
     if (inFileName.IsEmpty())
         {

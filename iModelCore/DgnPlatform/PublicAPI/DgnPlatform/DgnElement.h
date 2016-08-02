@@ -273,6 +273,7 @@ struct AutoHandledPropertiesCollection
     const_iterator end() const { return Iterator(m_props.end(), *this); }
     };
 
+//__PUBLISH_SECTION_START__
 /* temporary helper class to work around missing CAs in dgn schema. */
 struct CustomPropertyRegistry
     {
@@ -283,8 +284,6 @@ struct CustomPropertyRegistry
     DGNPLATFORM_EXPORT void Register(Utf8CP propName, ECSqlClassParams::StatementType = ECSqlClassParams::StatementType::All);
     DGNPLATFORM_EXPORT static bool HasOldDgnSchema(DgnDbR db);
     };
-
-//__PUBLISH_SECTION_START__
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
@@ -309,15 +308,22 @@ struct CustomPropertyRegistry
 */
 
 /**
-* @addtogroup ElementCopying DgnElement Copying and Importing.
+* @addtogroup ElementCopying DgnElement Copying and Importing
 * 
 * There are 3 basic reasons why you would want to make a copy of an element, and there is a function for each one:
 *   1. DgnElement::Clone makes a copy of an element, suitable for inserting into the Db.
-*   2. DgnElement::Import makes a copy of an element in a source Db, suitable for inserting into a different Db. It remap any IDs stored in the element or its aspects.
+*   2. DgnElement::Import makes a copy of an element in a source Db, suitable for inserting into a different Db. It remaps any IDs stored in the element or its aspects.
 *   3. DgnElement::CopyForEdit and DgnElement::MakeCopy make make a quick copy of an element, suitable for editing and then replacing in the Db.
 *
 * When making a copy of an element within the same DgnDb but a different model, set up an instance of DgnElement::CreateParams that specifies the target model
 * and pass that when you call Clone.
+*
+*/
+
+/** 
+* @addtogroup ElementCopyVirtualFunctions DgnElement Copy and Importing - Virtual Functions
+*
+* A DgnElement subclass will normally override a few virtual functions in order to support @ref ElementCopying.
 *
 * <h2>Virtual Member Functions</h2>
 * DgnElement defines several virtual functions that control copying and importing.
@@ -334,7 +340,8 @@ struct CustomPropertyRegistry
 * Defines new properties that are IDs of any kind|DgnElement::_RemapIds to relocate them to the destination DgnDb.
 * Stores some of its data in Aspects|DgnElement::_Clone and DgnElement::_CloneForImport, as described below.
 * 
-* Normally, there is no need to override _Clone, as the base class implementation (which calls _CopyFrom) of will work for subclasses.
+* Normally, there is no need to override _Clone, as the base class implementation will work for subclasses, as it calls _CopyFrom.
+*
 * If you don't use Aspects, then normally, you won't need to override _Clone and _CloneForImport.
 *
 * <h2>The Central role of _CopyFrom</h2>
@@ -354,33 +361,79 @@ struct CustomPropertyRegistry
 *   * Its _Clone method should call super and then copy its aspects. 
 *   * Its _CloneForImport method should call super, then copy over its aspects, and then tell the copied Aspects to remap their IDs.
 *
+* @note If you override any of the virtual methods mentioned above, you probably also need to set @ref ElementRestrictions
+*
+* @see ElementRestrictions
+* @see @ref PAGE_ElementOverview
+*/
+
+/**
+* @addtogroup ElementRestrictions DgnElement Restrictions
+*
+* Element restrictions specify what operations may be applied to an element when its handler is not present. 
+* Restrictions are specified in the ECSchema definition of an Element subclass.
+*
+* <b><em>If your DgnElement subclasss needs to do validation, then your dgn.Element should be restricted.</em></b>
+*
+* As a rule of thumb, if you write a subclass of dgn_ElementHandler::Element, then you should probably restrict all actions in your Element's schema definition.
+*
+* See DgnElement::RestrictedAction for the permissions that may be granted.
+*/
+
+/**
+* @addtogroup ElementProperties DgnElement Properties
+*
+* A DgnElement may have two kinds of properties: Class-defined properties and user-defined properties.
+*
+* <h2>User-Defined Properties</h2>
+* The user or application may add properties that are not defined by the ECClass to a particular instance. 
+* User-defined properties are stored together in JSON format in a single column called "UserProperties" on an instance. ECSQL select statements may
+* query UserProperties using ECSQL's JSON functions.
+* See DgnElement::GetUserProperty for how to add, update, and query individual user properties in C++.
+* 
+* <h2>Class-Defined Properties</h2>
+* Properties that are defined by the ECClass are defined for every instance. 
+*
+* Class-defined properties may be queried by name in ECSQL select statements.
+* See DgnElement::_GetProperty and DgnElement::_SetProperty for how to get and set class-defined property values in C++.
+* Note that, while all class-defined properties are defined for every instance, the actual value of a property on a particular element may be NULL, 
+* if the property definition permits NULLs.
+*
+* When a subclass of dgn.Element defines a property, it specifies whether the handling of that property is to be done autmatically by the 
+* platform or must be done using custom logic supplied by a DgnElement subclass.
+*
+* <h3>Auto-Handled Properties</h3>
+* When you define a subclass of dgn.Element in your domain's schema and you define properties for it, you don't have to write
+* any code to enable applications to work with those properties. The base class implementation of the functions that load, store, and copy properties
+* will automatically detect and handle all properties defined in the schema. This is called "auto-handling" of properties, and it is the default.
+* The base class implementation of DgnElement::_GetProperty and DgnElement::_SetProperty will provide access to all custom-handled properties.
+* New or updated auto-handled properties are automatically written to the Db when the element is inserted or updated.
+*
+* @note A domain must define a handler for an element subclass in order to <em>validate</em> property values or to generate side-effects when properties are modified.
+* In this case, the schema should also specify @ref ElementRestrictions.
+*
+* <h3>Custom Properties</h3>
+* If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
+* That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
+* This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the @a CustomHandledProperty
+* CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams in order to load and store
+* the custom-handled properties. The subclass must also override DgnElement::_GetProperty and DgnElement::_SetProperty to provide name-based get/set support for its custom-handled properties.
+* Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods in order to support copying and importing of its custom-handled properties.
+* An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
+* @note You must override DgnElement::_GetProperty and DgnElement::_SetProperty to provide access to your custom-handled properties, even if you also define special custom access methods for them.
+* 
+* @see @ref ElementRestrictions
 * @see @ref PAGE_ElementOverview
 */
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. 
 //!
-//!  <h2>Properties</h2>
-//!  On any given element, there may be the following kinds of properties:
-//!  * Properties that are defined by the ECClass - use #_GetProperty and #_SetProperty. Various subclasses may also have their own strongly typed property access functions.
-//!  * Properties that are not defined by the ECClass but are added by the user use #GetUserProperty
-//!
-//!  <h2>Auto-Handled Properties</h2>
-//! When you define a subclass of dgn.Element in your domain's schema and you define properties for it, you don't have to write
-//! any code to enable applications to work with those properties. The base class implementation of the functions that load, store, and copy properties
-//! will automatically detect and handle all properties defined in the schema. This is called "auto-handling" of properties, and it is the default.
-//! To access the value of an auto-handled property, all #_GetProperty. To set an auto-handled property's value, call #_SetProperty. The new or updated
-//! property will be written to the Db when the element is inserted or updated.
-//!
-//!  <h2>Custom Properties</h2>
-//! If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
-//! That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
-//! This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the CustomHandledProperty
-//! CustomAttribute. The subclass of DgnElement must then override #_BindInsertParams, #_BindUpdateParams, and #_ReadSelectParams in order to load and store
-//! the custom-handled properties. The subclass must also override #_GetProperty and #_SetProperty to provide name-based get/set support for its custom-handled properties. 
-//! Finally, the subclass must override #_CopyFrom and possibly other virtual methods in order to support copying and importing of its custom-handled properties.
-//!
-//! @see ElementCopying
+//! For details on writing an element handler and a DgnElement subclass, see
+//! - @ref PAGE_CustomElement
+//! - @ref ElementProperties
+//! - @ref ElementRestrictions
+//! - @ref ElementCopyVirtualFunctions
 //!
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                     KeithBentley    10/13
@@ -418,6 +471,7 @@ public:
         void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
+        bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
@@ -712,6 +766,7 @@ private:
     void CopyUserProperties(DgnElementCR other);
 
     bool IsCustomHandledProperty(Utf8CP) const;
+    bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
 
 protected:
     //! @private
@@ -753,6 +808,8 @@ protected:
     BeSQLite::EC::ECInstanceUpdater* GetAutoHandledPropertiesUpdater() const;
     DgnDbStatus UpdateAutoHandledProperties();
 
+    static CreateParams InitCreateParamsFromECInstance(DgnDbStatus*, DgnDbR db, ECN::IECInstanceCR);
+
     //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
     void CopyForCloneFrom(DgnElementCR src);
 
@@ -766,7 +823,7 @@ protected:
     //! @note If you override this method, you @em must first call T_Super::_ReadSelectParams, forwarding its status.
     //! You should then extract your subclass custom-handled properties from the supplied ECSqlStatement, using
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
-    //! @note Don't forget to override #_GetProperty and #_SetProperty to provide access to your custom-handled properties. This must be done even if you define special methods for them.
+    //! @see ElementProperties
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
@@ -784,7 +841,7 @@ protected:
     //! @note If you override this method, you should bind your subclass custom-handled properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with each custom-handled property's name.
     //! Then you @em must call T_Super::_BindInsertParams, forwarding its status.
-    //! @note Don't forget to override #_GetProperty and #_SetProperty to provide access to your custom-handled properties. This must be done even if you define special methods for them.
+    //! @see ElementProperties
     DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement);
 
     //! Override this method if your element needs to do additional Inserts into the database (for example,
@@ -1015,7 +1072,8 @@ protected:
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
-    DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
+    void ClearAllAppData(){m_appData.clear();}//< @private
+    
 
     //! Generate the CreateParams to use for Import
     //! @param destModel Specifies the model into which the element is being cloned
@@ -1078,39 +1136,31 @@ public:
     //! @note If this flag is true, this element must be readonly. To modify an element, call CopyForEdit.
     bool IsPersistent() const {return m_flags.m_persistent;}
 
-    //! Create a new, non-persistent element from the supplied ECInstance.
-    //! The supplied instance must specify the element's ModelId and Code. It does not have to specify the ElementId/ECInstaceId. Typically, it will not.
-    //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
-    //! @param db       The DgnDb that will store the new element (if it is ever inserted)
-    //! @param properties The instance that contains all of the element's business properties
-    //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
-    DGNPLATFORM_EXPORT static DgnElementPtr CreateElement(DgnDbStatus* stat, DgnDbR db, ECN::IECInstanceCR properties);
-
-    //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
+    //! Create a writeable deep copy of a DgnElement for insert into the same or new model. Also see @ref ElementCopying.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
     //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.
     DGNPLATFORM_EXPORT DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
-    //! Copy the content of another DgnElement into this DgnElement.
+    //! Copy the content of another DgnElement into this DgnElement. Also see @ref ElementCopying.
     //! @param[in] source The other element whose content is copied into this element.
     //! @note This method @b does @b not change the DgnClassId, DgnModel or DgnElementId of this DgnElement. If the type of @a source is different
     //! than this element, then all of the data from subclasses in common are copied and the remaining data on this DgnElement are unchanged.
     void CopyFrom(DgnElementCR source) {_CopyFrom(source);}
 
-    //! Make a writable copy of this DgnElement so that the copy may be edited.
+    //! Make a writable copy of this DgnElement so that the copy may be edited. Also see @ref ElementCopying.
     //! @return a DgnElementPtr that holds the editable copy of this element.
     //! @note This method may only be used on a DgnElement this is the readonly persistent element returned by DgnElements::GetElement, and then
     //! only one editing copy of this element at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
     //! @see MakeCopy, IsPersistent
     DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
-    //! Make a writable copy of this DgnElement so that the copy may be edited.
+    //! Make a writable copy of this DgnElement so that the copy may be edited. Also see @ref ElementCopying.
     //! This is merely a templated shortcut to dynamic_cast the return of CopyForEdit to a subclass of DgnElement.
     template<class T> RefCountedPtr<T> MakeCopy() const {return dynamic_cast<T*>(CopyForEdit().get());}
 
     //! Create a copy of this DgnElement and all of its extended content in a destination model.
-    //! The copied element will be persistent in the destination DgnDb.
+    //! The copied element will be persistent in the destination DgnDb. Also see @ref ElementCopying.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] destModel The destination model (which must be in the importer's destination Db).
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
@@ -1220,35 +1270,39 @@ public:
     //! @name Properties 
     //! @{
 
-    //! Get the user property on this DgnElement to get or set it's value
+    //! Get the user property on this DgnElement to get or set its value. Also see @ref ElementProperties.
     //! @param[in] name Name of the user property
     //! @remarks The element needs to be held in memory to access the returned property value. 
     DGNPLATFORM_EXPORT ECN::AdHocJsonPropertyValue GetUserProperty(Utf8CP name) const;
 
-    //! Returns true if the Element contains the user property
+    //! Returns true if the Element contains the user property. Also see @ref ElementProperties.
     //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT bool ContainsUserProperty(Utf8CP name) const;
 
-    //! Get a user property on this DgnElement
+    //! Get a user property on this DgnElement. Also see @ref ElementProperties.
     //! @param[in] name Name of the user property
     DGNPLATFORM_EXPORT void RemoveUserProperty(Utf8CP name);
 
-    //! Clear all the user properties on this DgnElement
+    //! Clear all the user properties on this DgnElement. Also see @ref ElementProperties.
     DGNPLATFORM_EXPORT void ClearUserProperties();
 
-    //! Get the value of a property
+    //! Get the value of a property. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
-    //! @return DgnDbStatus::NotFound if this element has no such property or if the subclass has chosen not to expose it via this function
+    //! @return non-zero error status if this element has no such property or if the subclass has chosen not to expose it via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const;
     DgnDbStatus GetProperty(ECN::ECValueR value, Utf8CP name) const {return _GetProperty(value, name);}
 
-    //! Set the value of a property. @note you must call Update in order to write the modified property to the DgnDb.
+    //! Set the value of a property. @note you must call Update in order to write the modified property to the DgnDb.  Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
     DgnDbStatus SetProperty(Utf8CP name, ECN::ECValueCR value) {return _SetProperty(name, value);}
+
+    //! Set the properties of this element from the specified instance. Calls _SetProperty for each non-NULL property in the input instance.
+    //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperties(ECN::IECInstanceCR);
 
     //! @}
 };
@@ -1284,7 +1338,7 @@ protected:
 
 public:
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
-    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
+    Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box = ElementAlignedBox3d()): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
     Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
     Placement3d(Placement3d&& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
     Placement3d& operator=(Placement3d&& rhs) {m_origin=rhs.m_origin; m_angles=rhs.m_angles; m_boundingBox=rhs.m_boundingBox; return *this;}
@@ -1346,7 +1400,7 @@ protected:
 
 public:
     Placement2d() : m_origin(DPoint2d::FromZero()) {}
-    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
+    Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box = ElementAlignedBox2d()) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d(Placement2d&& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
     Placement2d& operator=(Placement2d&& rhs) {m_origin=rhs.m_origin; m_angle=rhs.m_angle; m_boundingBox=rhs.m_boundingBox; return *this;}
@@ -2142,6 +2196,14 @@ public:
 
     //! Reset the statistics for the element pool.
     DGNPLATFORM_EXPORT void ResetStatistics();
+
+    //! Create a new, non-persistent element from the supplied ECInstance.
+    //! The supplied instance must specify the element's ModelId and Code. It does not have to specify the ElementId/ECInstaceId. Typically, it will not.
+    //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
+    //! @param properties The instance that contains all of the element's business properties
+    //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
+    //! @note The returned element, if any, is non-persistent. You must call its Insert method to add it to the bim.
+    DGNPLATFORM_EXPORT DgnElementPtr CreateElement(DgnDbStatus* stat, ECN::IECInstanceCR properties);
 
     //! Get a DgnElement from this DgnDb by its DgnElementId.
     //! @remarks The element is loaded from the database if necessary.

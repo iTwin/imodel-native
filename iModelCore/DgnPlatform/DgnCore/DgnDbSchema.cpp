@@ -139,18 +139,26 @@ bool AutoHandledPropertiesCollection::HasCustomHandledProperty(ECN::ECPropertyCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::IsCustomHandledProperty(ECN::ECPropertyCR prop) const
+    {
+    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, "CustomHandledProperty");
+    if (nullptr != customHandledProperty)
+        return prop.IsDefined(*customHandledProperty);
+
+    return getFakeCA(prop, *s_fakeCustomClass).IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::IsCustomHandledProperty(Utf8CP propName) const
     {
     auto eclass = GetElementClass();
     auto prop = eclass->GetPropertyP(propName, true);
     if (nullptr == prop)
         return false;
-        
-    auto customHandledProperty = GetDgnDb().Schemas().GetECClass("dgn", "CustomHandledProperty");
-    if (nullptr != customHandledProperty)
-        return prop->IsDefined(*customHandledProperty);
 
-    return getFakeCA(*prop, *s_fakeCustomClass).IsValid();
+    return IsCustomHandledProperty(*prop);
     }
 
 /*---------------------------------------------------------------------------------**//**
