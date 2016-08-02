@@ -32,9 +32,7 @@ SeedFile ExtendedDataAdapterTests::s_seedECDb("ecdbAdapterTest.ecdb",
             <ECClass typeName="TestClass" isDomainClass="True">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>
-                            <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>

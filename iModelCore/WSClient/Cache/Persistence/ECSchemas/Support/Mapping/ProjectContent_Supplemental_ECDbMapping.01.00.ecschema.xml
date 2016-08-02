@@ -16,9 +16,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>

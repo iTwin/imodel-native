@@ -26,9 +26,7 @@ ECSchemaPtr BaseCacheTest::GetTestSchema()
             <ECClass typeName="TestClass" >
                 <ECCustomAttributes>
                             <ClassMap xmlns="ECDbMap.02.00">
-                                <MapStrategy>
-                                    <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>"
+                                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     </ClassMap>"
                 </ECCustomAttributes>"
                 <ECProperty propertyName="TestProperty" typeName="string" />

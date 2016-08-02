@@ -16,9 +16,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -26,9 +24,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -36,9 +32,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -46,9 +40,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -56,9 +48,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -66,9 +56,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -76,9 +64,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
@@ -86,9 +72,7 @@
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb cannot map multiple class tables to relationship end -->
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
     </ECRelationshipClass>
