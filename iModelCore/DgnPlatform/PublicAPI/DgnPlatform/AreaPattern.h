@@ -263,7 +263,7 @@ public:
 
     //! Set annotation scale. Sets modifier bit for PatternParamsModifierFlags::AnnotationScale.
     //! @note This is optional. Setting it makes the pattern an 'annotative' element, which typically synchronizes its scale with model's annotation scale.
-    void SetAnnotationScale(double scale) {annotationscale = scale; modifiers = modifiers |PatternParamsModifierFlags::AnnotationScale;}
+    void SetAnnotationScale(double value) {annotationscale = value; modifiers = modifiers |PatternParamsModifierFlags::AnnotationScale;}
 }; // PatternParams
 
 enum PatternPlacementFlags

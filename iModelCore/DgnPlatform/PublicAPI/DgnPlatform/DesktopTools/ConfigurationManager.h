@@ -28,7 +28,7 @@ Configuration variable names are not case sensitive.
 /*=================================================================================**//**
 The IVariableMonitor interface is implemented by classes that need to be informed when a Configuration Variable is changed.
 +===============+===============+===============+===============+===============+======*/
-struct IVariableMonitor
+struct EXPORT_VTABLE_ATTRIBUTE IVariableMonitor
 {
 public:
     virtual ~IVariableMonitor(){}
@@ -63,7 +63,7 @@ public:
 /*=================================================================================**//**
 The SimpleConfiguraionVariableMonitor class implements IVariableMonitor and provides only one callback for any change to a ConfigurationVariable.
 +===============+===============+===============+===============+===============+======*/
-struct SimpleConfigurationVariableMonitor : public IVariableMonitor
+struct EXPORT_VTABLE_ATTRIBUTE SimpleConfigurationVariableMonitor : public IVariableMonitor
     {
     DGNPLATFORM_EXPORT SimpleConfigurationVariableMonitor ();
 

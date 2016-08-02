@@ -766,6 +766,7 @@ private:
     void CopyUserProperties(DgnElementCR other);
 
     bool IsCustomHandledProperty(Utf8CP) const;
+    bool IsCustomHandledProperty(ECN::ECPropertyCR) const;
 
 protected:
     //! @private

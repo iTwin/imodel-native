@@ -1027,7 +1027,7 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
         ASSERT_EQ(SUCCESS, dateTimeProperty.SetValueEC(ECN::ECValue(dateTime)));
         ASSERT_EQ(SUCCESS, dateTimeUtcProperty.SetValueEC(ECN::ECValue(dateTimeUtc)));
         ASSERT_EQ(SUCCESS, intProperty.SetValueEC(ECN::ECValue(1)));
-        ASSERT_EQ(SUCCESS, longProperty.SetValueEC(ECN::ECValue(1000000000001)));
+        ASSERT_EQ(SUCCESS, longProperty.SetValueEC(ECN::ECValue(1000000000001ULL)));
         ASSERT_EQ(SUCCESS, stringProperty.SetValueEC(ECN::ECValue("StringVal")));
         ASSERT_EQ(SUCCESS, point2dProperty.SetValueEC(ECN::ECValue(point2d)));
         ASSERT_EQ(SUCCESS, point3dProperty.SetValueEC(ECN::ECValue(point3d)));
