@@ -11,9 +11,7 @@
     <ECEntityClass typeName="AAA" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="i" typeName="int" readOnly="false"/>
@@ -32,9 +30,7 @@
     <ECEntityClass typeName="AAFoo" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="FooTag" typeName="string" readOnly="false"/>
@@ -72,9 +68,7 @@
     <ECEntityClass typeName="AClassThatDoesNotGetMappedToDb" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="stringFoo" typeName="string" readOnly="false"/>
@@ -96,9 +90,7 @@
     <ECEntityClass typeName="Asset" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" readOnly="false"/>
@@ -829,9 +821,7 @@
     <ECEntityClass typeName="Foo" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="intFoo" typeName="int" readOnly="false">
@@ -1018,9 +1008,7 @@
     <ECEntityClass typeName="LikesToShare2" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                </MapStrategy>
+                <MapStrategy>SharedTable</MapStrategy>
                 <TableName>SharedTable</TableName>
             </ClassMap>
         </ECCustomAttributes>

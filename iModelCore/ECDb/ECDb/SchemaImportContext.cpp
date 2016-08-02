@@ -26,51 +26,27 @@ BentleyStatus SchemaImportContext::Initialize(DbSchema& dbSchema, ECDbCR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-UserECDbMapStrategy const* SchemaImportContext::GetUserStrategy(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
+ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
     {
-    return GetUserStrategyP(ecclass, classMapCA);
+    return GetClassMappingCACacheP(ecclass);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass) const
+ClassMappingCACache* SchemaImportContext::GetClassMappingCACacheP(ECClassCR ecclass) const
     {
-    return GetUserStrategyP(ecclass, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
-    {
-    auto it = m_userStrategyCache.find(&ecclass);
-    if (it != m_userStrategyCache.end())
+    auto it = m_classMappingCACache.find(&ecclass);
+    if (it != m_classMappingCACache.end())
         return it->second.get();
 
-    bool hasClassMapCA = true;
-    ECDbClassMap classMap;
-    if (classMapCA == nullptr)
-        {
-        hasClassMapCA = ECDbMapCustomAttributeHelper::TryGetClassMap(classMap, ecclass);
-        classMapCA = &classMap;
-        }
+    std::unique_ptr<ClassMappingCACache> cache = std::unique_ptr<ClassMappingCACache>(new ClassMappingCACache());
+    if (SUCCESS != cache->Initialize(ecclass))
+        return nullptr; // error
 
-    std::unique_ptr<UserECDbMapStrategy> userStrategy = std::unique_ptr<UserECDbMapStrategy>(new UserECDbMapStrategy());
-
-    if (hasClassMapCA)
-        {
-        ECDbClassMap::MapStrategy strategy;
-        if (ECObjectsStatus::Success != classMapCA->TryGetMapStrategy(strategy))
-            return nullptr; // error
-
-        if (SUCCESS != UserECDbMapStrategy::TryParse(*userStrategy, strategy) || !userStrategy->IsValid())
-            return nullptr; // error
-        }
-
-    UserECDbMapStrategy* userStrategyP = userStrategy.get();
-    m_userStrategyCache[&ecclass] = std::move(userStrategy);
-    return userStrategyP;
+    ClassMappingCACache* cacheP = cache.get();
+    m_classMappingCACache[&ecclass] = std::move(cache);
+    return cacheP;
     }
 
 //---------------------------------------------------------------------------------------

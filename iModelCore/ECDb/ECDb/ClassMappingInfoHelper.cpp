@@ -60,7 +60,7 @@ void ClassMapToString(Json::Value& classMapJson, ClassMap const& classMap)
     classMapJson["Id"] = classMap.GetId().ToString().c_str();
     classMapJson["Type"] = ClassMap::TypeToString(classMap.GetType());
     classMapJson["ECClassId"] = classMap.GetClass().GetId().ToString().c_str();
-    classMapJson["MapStrategy"] = classMap.GetMapStrategy().ToString().c_str();
+    classMapJson["MapStrategy"] = ECDbMapStrategyHelper::ToString(classMap.GetMapStrategy());
 
     Json::Value& tablesJson = classMapJson["Tables"];
     for (DbTable const* table : classMap.GetTables())
@@ -92,7 +92,7 @@ void SchemaToJson(Json::Value& schemaJson, ECDbMap const& ecdbMap, ECSchemaCR sc
         if (classMap == nullptr)
             continue;
 
-        if (classMap->GetMapStrategy().IsNotMapped() && skipUnmappedClasses)
+        if (classMap->GetMapStrategy() == ECDbMapStrategy::NotMapped && skipUnmappedClasses)
             continue;
 
         Json::Value& classMapJson = classMapsJson.append(Json::Value(Json::objectValue));

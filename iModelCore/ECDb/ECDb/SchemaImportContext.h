@@ -62,24 +62,19 @@ public:
         };
 
 private:
-    mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
+    mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
     bset<ECN::ECRelationshipClassCP> m_relationshipClassesWithSingleNavigationProperty;
     ClassMapLoadContext m_loadContext;
     ClassMapSaveContext m_saveContext;
     ECSchemaCompareContext m_compareContext;
 
-    UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
-
 public:
     SchemaImportContext() {}
     BentleyStatus Initialize(DbSchema& dbSchema, ECDbCR ecdb);
 
-    //! Gets the user map strategy for the specified ECClass.
-    //! @return User map strategy. If the class doesn't have one a default strategy is returned. Only in 
-    //! case of error, nullptr is returned
-    UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
-    UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
+    ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
+    ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;
 
     void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
     std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }

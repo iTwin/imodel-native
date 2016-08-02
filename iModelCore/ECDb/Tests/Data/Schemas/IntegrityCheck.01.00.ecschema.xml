@@ -5,9 +5,7 @@
     <ECEntityClass typeName="SourceBase">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="S" typeName="string" readOnly="false"/>
@@ -24,9 +22,7 @@
     <ECEntityClass typeName="TargetBase">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="I" typeName="int" readOnly="false"/>

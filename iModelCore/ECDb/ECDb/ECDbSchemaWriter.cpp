@@ -1718,7 +1718,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
         return ERROR;
         }
 
-    if (deletedClassMap->GetMapStrategy().IsForeignKeyMapping())
+    if (ECDbMapStrategyHelper::IsForeignKeyMapping(deletedClassMap->GetMapStrategy()))
         {
         Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Deleting ECClass '%s' failed. Deleting ECRelationshipClass with ForeignKey mapping is not supported.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -1726,7 +1726,7 @@ BentleyStatus ECDbSchemaWriter::DeleteECClass(ECClassChange& classChange, ECClas
         }
 
     //Delete all instances
-    bool purgeECInstances = deletedClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy;
+    bool purgeECInstances = deletedClassMap->GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy;
     if (purgeECInstances)
         {
         if (DeleteECInstances(deletedClass) != SUCCESS)

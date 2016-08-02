@@ -284,7 +284,7 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, ClassMappingInfo const& classMapInfo)
     {   
     //Don't call base class method as end table map requires its own handling
-    BeAssert(GetClass().GetRelationshipClassCP() != nullptr && classMapInfo.GetMapStrategy().IsForeignKeyMapping());
+    BeAssert(GetClass().GetRelationshipClassCP() != nullptr && ECDbMapStrategyHelper::IsForeignKeyMapping(classMapInfo.GetMapStrategy()));
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&classMapInfo) != nullptr);
     RelationshipMappingInfo const& relClassMappingInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
 
@@ -1056,7 +1056,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         // name of the index
         Utf8String name(isUniqueIndex ? "uix_" : "ix_");
         name.append(persistenceEndTable.GetName()).append("_fk_").append(GetClass().GetSchema().GetNamespacePrefix() + "_" + GetClass().GetName());
-        if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
+        if (GetMapStrategy() == ECDbMapStrategy::ForeignKeyRelationshipInSourceTable)
             name.append("_source");
         else
             name.append("_target");
@@ -1094,7 +1094,7 @@ RelConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetRefere
 //+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetForeignEnd() const
     {
-    return GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
+    return GetMapStrategy() == ECDbMapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1351,7 +1351,7 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClass
 //---------------------------------------------------------------------------------------
 MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, ClassMappingInfo const& classMapInfo)
     {
-    BeAssert(!GetMapStrategy().IsForeignKeyMapping() &&
+    BeAssert(!ECDbMapStrategyHelper::IsForeignKeyMapping(GetMapStrategy()) &&
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
     BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
@@ -1682,7 +1682,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName(Utf8Stri
     if (table.FindColumn(columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy || GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+    if (GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy || GetMapStrategy() == ECDbMapStrategy::ExistingTable)
         return true;
 
     //Following error occure in Upgrading ECSchema but is not fatal.
@@ -1702,7 +1702,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName(Utf8StringR
     if (table.FindColumn(columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy || GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable)
+    if (GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy || GetMapStrategy() == ECDbMapStrategy::ExistingTable)
         return true;
 
     //Following error occurs in Upgrading ECSchema but is not fatal.
@@ -1716,7 +1716,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName(Utf8StringR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelationshipClassLinkTableMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* baseClassMap)
     {
-    if (ClassMap::_Load(loadGraph, ctx, mapInfo, baseClassMap) != BentleyStatus::SUCCESS)
+    if (ClassMap::_Load(loadGraph, ctx, mapInfo, baseClassMap) != SUCCESS)
         return ERROR;
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();

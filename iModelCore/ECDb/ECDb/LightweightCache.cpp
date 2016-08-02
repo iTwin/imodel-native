@@ -29,8 +29,8 @@ void LightweightCache::LoadClassIdsPerTable() const
                 "c.Id=cm.ClassId AND t.Id=col.TableId AND "
                 "cm.MapStrategy<>%d AND cm.MapStrategy<>%d "
                 "GROUP BY t.Id, c.Id", Enum::ToInt(DbColumn::Kind::ECClassId),
-                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
-                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable));
+                Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInSourceTable),
+                Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInTargetTable));
 
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     DbTableId currentTableId;
@@ -117,8 +117,8 @@ void LightweightCache::LoadHorizontalPartitions()  const
         "    GROUP BY ec_Class.Id, ec_Table.Name) "
         "SELECT  DCL.BaseClassId, DCL.ClassId, TMI.TableName FROM ec_ClassHierarchy DCL "
         "    INNER JOIN TableMapInfo TMI ON TMI.ClassId=DCL.ClassId GROUP BY DCL.BaseClassId, TMI.TableName, DCL.ClassId",
-        Enum::ToInt(DbColumn::Kind::ECClassId), Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
-        Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable), Enum::ToInt(DbTable::Type::Joined));
+        Enum::ToInt(DbColumn::Kind::ECClassId), Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInSourceTable),
+        Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInTargetTable), Enum::ToInt(DbTable::Type::Joined));
 
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     while (stmt->Step() == BE_SQLITE_ROW)

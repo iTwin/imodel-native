@@ -372,7 +372,7 @@ private:
 public:
     DbTable(DbTableId id, Utf8CP name, DbSchema& dbSchema, PersistenceType type, Type tableType, ECN::ECClassId const& exclusiveRootClass, DbTable const* parentOfJoinedTable)
         : m_id(id), m_name(name), m_dbSchema(dbSchema), m_columnNameGenerator("sc%02x"), m_persistenceType(type), m_type(tableType), m_exclusiveRootECClassId(exclusiveRootClass),
-        m_pkConstraint(nullptr), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isClassIdColumnCached(false),
+        m_pkConstraint(nullptr), m_minimumSharedColumnCount(-1), m_isClassIdColumnCached(false),
         m_classIdColumn(nullptr), m_parentOfJoinedTable(parentOfJoinedTable)
         {
         BeAssert((tableType == Type::Joined && parentOfJoinedTable != nullptr) ||
@@ -531,17 +531,19 @@ private:
     ClassMapId m_id;
     ECN::ECClassId m_ecClassId;
     ECDbMapStrategy m_mapStrategy;
+    TablePerHierarchyInfo m_tphInfo;
     std::vector<std::unique_ptr<PropertyDbMapping>> m_localPropertyMaps;
     ClassMapId m_baseClassMappingId;
 
 public:
-    ClassDbMapping(DbMappings& dbMappings, ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, ClassMapId baseClassMappingId)
-        :m_dbMappings(dbMappings), m_id(id), m_ecClassId(classId), m_mapStrategy(mapStrategy), m_baseClassMappingId(baseClassMappingId)
+    ClassDbMapping(DbMappings& dbMappings, ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, TablePerHierarchyInfo tphInfo, ClassMapId baseClassMappingId)
+        :m_dbMappings(dbMappings), m_id(id), m_ecClassId(classId), m_mapStrategy(mapStrategy), m_tphInfo(tphInfo), m_baseClassMappingId(baseClassMappingId)
         {}
 
     ClassMapId GetId() const { return m_id; }
     ECN::ECClassId GetClassId() const { return m_ecClassId; }
-    ECDbMapStrategy const& GetMapStrategy() const { return m_mapStrategy; }
+    ECDbMapStrategy GetMapStrategy() const { return m_mapStrategy; }
+    TablePerHierarchyInfo const& GetTablePerHierarchyInfo() const { return m_tphInfo; }
 
     ClassMapId GetBaseClassMappingId() const { return m_baseClassMappingId; }
     ClassDbMapping const* GetBaseClassMapping() const;
@@ -582,8 +584,8 @@ public:
     PropertyDbMapping::Path const * FindPropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
     PropertyDbMapping::Path const* FindPropertyPath(PropertyPathId) const;
         
-    ClassDbMapping* AddClassMapping(ClassMapId, ECN::ECClassId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId);
-    ClassDbMapping* CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId);
+    ClassDbMapping* AddClassMapping(ClassMapId, ECN::ECClassId, ECDbMapStrategy, TablePerHierarchyInfo const&, ClassMapId baseClassMapId);
+    ClassDbMapping* CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy, TablePerHierarchyInfo const&, ClassMapId baseClassMapId);
     PropertyDbMapping::Path* AddPropertyPath(PropertyPathId, ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
     PropertyDbMapping::Path* CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
     };

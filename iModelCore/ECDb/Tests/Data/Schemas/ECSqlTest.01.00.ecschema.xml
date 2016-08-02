@@ -52,9 +52,7 @@
     <ECEntityClass typeName="AbstractTablePerHierarchy" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="I" typeName="int"/>
@@ -330,9 +328,7 @@
     <ECEntityClass typeName="THBase">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="S" typeName="string"/>
@@ -408,9 +404,7 @@
     <ECEntityClass typeName="PUnmapped" modifier="Sealed" description="Class not mapped to a DB table">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>NotMapped</Strategy>
-                </MapStrategy>
+                <MapStrategy>NotMapped</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="B" typeName="boolean"/>

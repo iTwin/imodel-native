@@ -7,9 +7,7 @@
     <ECEntityClass typeName="DataSetModel">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="MSMId" typeName="string"/>

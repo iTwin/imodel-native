@@ -567,7 +567,7 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbTable::EnsureMinimumNumberOfSharedColumns()
     {
-    if (m_minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+    if (m_minimumSharedColumnCount < 0)
         return SUCCESS; // no min count specified -> nothing to do
 
     int existingSharedColCount = 0;
@@ -596,8 +596,8 @@ BentleyStatus DbTable::EnsureMinimumNumberOfSharedColumns()
 BentleyStatus DbTable::SetMinimumSharedColumnCount(int minimumSharedColumnCount)
     {
     //can only by one ECClass of this table
-    if (minimumSharedColumnCount == ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT ||
-        (m_minimumSharedColumnCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT && minimumSharedColumnCount != m_minimumSharedColumnCount))
+    if (minimumSharedColumnCount < 0  ||
+        (m_minimumSharedColumnCount >= 0 && minimumSharedColumnCount != m_minimumSharedColumnCount))
         {
         BeAssert(false && "Cannot modify MinimumSharedColumnCount on an DbTable if it has been set already.");
         return ERROR;
@@ -1500,7 +1500,7 @@ PropertyDbMapping::Path* DbMappings::CreatePropertyPath(ECN::ECPropertyId rootPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
+ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, TablePerHierarchyInfo const& tphInfo, ClassMapId baseClassMapId)
     {
     if (m_classMappings.find(id) != m_classMappings.end())
         {
@@ -1508,7 +1508,7 @@ ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classI
         return nullptr;
         }
 
-    std::unique_ptr<ClassDbMapping> cm(new ClassDbMapping(*this, id, classId, mapStrategy, baseClassMapId));
+    std::unique_ptr<ClassDbMapping> cm(new ClassDbMapping(*this, id, classId, mapStrategy, tphInfo, baseClassMapId));
     ClassDbMapping* cmP = cm.get();
 
     std::vector<ClassDbMapping const*>& vect = m_classMappingsByClassId[classId];
@@ -1524,7 +1524,7 @@ ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
+ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy mapStrategy, TablePerHierarchyInfo const& tphInfo, ClassMapId baseClassMapId)
     {
     BeAssert(!baseClassMapId.IsValid()|| FindClassMapping(baseClassMapId) != nullptr);
 
@@ -1535,7 +1535,7 @@ ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, ECDbMapSt
         return nullptr;
         }
 
-    return AddClassMapping(ClassMapId(id.GetValue()), classId, mapStrategy, baseClassMapId);
+    return AddClassMapping(ClassMapId(id.GetValue()), classId, mapStrategy, tphInfo, baseClassMapId);
     }
 
 //---------------------------------------------------------------------------------------

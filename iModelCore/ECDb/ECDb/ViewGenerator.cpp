@@ -39,7 +39,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     Utf8String sql;
     sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = %d AND cm.MapStrategy<> %d GROUP BY c.Id",
                 Enum::ToInt(ECClassType::Entity),
-                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+                Enum::ToInt(ECDbMapStrategy::NotMapped));
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
@@ -109,7 +109,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d",
                 Enum::ToInt(ECClassType::Entity),
                 Enum::ToInt(ECClassType::Relationship),
-                Enum::ToInt(ECDbMapStrategy::Strategy::NotMapped));
+                Enum::ToInt(ECDbMapStrategy::NotMapped));
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
@@ -261,7 +261,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap)
     {
-    if (classMap.GetMapStrategy().IsNotMapped() || classMap.IsRelationshipClassMap())
+    if (classMap.GetMapStrategy() == ECDbMapStrategy::NotMapped || classMap.IsRelationshipClassMap())
         return ERROR;
 
     ECDbMap const& ecdbMap = classMap.GetECDbMap();
@@ -362,7 +362,7 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap
     m_isPolymorphic = isPolymorphicQuery;
     m_prepareContext = prepareContext;
     m_captureViewAccessStringList = true;
-    if (classMap.GetMapStrategy().IsNotMapped())
+    if (classMap.GetMapStrategy() == ECDbMapStrategy::NotMapped)
         {
         BeAssert(false && "ViewGenerator::CreateView must not be called on unmapped class");
         return ERROR;
@@ -507,7 +507,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
     if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
         return SUCCESS;
 
-    if (!classMap->GetMapStrategy().IsNotMapped())
+    if (classMap->GetMapStrategy() != ECDbMapStrategy::NotMapped)
         {
         if (classMap->GetJoinedTable().GetColumns().empty())
             return SUCCESS;
@@ -967,7 +967,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationship(NativeSqlBuilder& vie
 BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql, ClassMap const& relationMap)
     {
     BeAssert(relationMap.IsRelationshipClassMap());
-    if (relationMap.GetMapStrategy().IsNotMapped())
+    if (relationMap.GetMapStrategy() == ECDbMapStrategy::NotMapped)
         return ERROR;
 
     ViewMemberByTable vmt;

@@ -442,12 +442,12 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -495,11 +495,11 @@ TEST_F(ECSchemaUpdateTests, ClassModifier)
         "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -551,12 +551,12 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
         "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -586,12 +586,12 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassModifierToAbstract)
         "   <ECEntityClass typeName='Koo' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -675,12 +675,12 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -726,12 +726,12 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -797,12 +797,13 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -848,12 +849,13 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -975,12 +977,12 @@ TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
         "   <ECEntityClass typeName='Foo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -1041,12 +1043,12 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable_ClientBriefCase)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -1072,12 +1074,12 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_SharedTable_ClientBriefCase)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -1108,12 +1110,13 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable_ClientBriefCase)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -1139,12 +1142,13 @@ TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable_ClientBriefCase)
         "   <ECEntityClass typeName='Koo' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='L1' typeName='long' />"
         "       <ECProperty propertyName='S1' typeName='string' />"
@@ -1372,9 +1376,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassMappedToSharedTable)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
@@ -1394,9 +1396,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassMappedToSharedTable)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
@@ -1417,9 +1417,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassMappedToSharedTable)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
@@ -1447,12 +1445,12 @@ TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_MappedTo_SharedTable_SharedC
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -1475,12 +1473,12 @@ TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_MappedTo_SharedTable_SharedC
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -1641,9 +1639,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECDbMapCANotSupported)
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "               </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='S' typeName='string' />"
@@ -1842,12 +1838,11 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_SharedColumns)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumns</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "       <ECProperty propertyName='P2' typeName='int' />"
@@ -1874,12 +1869,11 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_SharedColumns)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumns</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "       <ECProperty propertyName='P3' typeName='int' />"
@@ -2148,11 +2142,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddMinimumSharedColumnsCount)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2172,12 +2166,12 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddMinimumSharedColumnsCount)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2221,12 +2215,12 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2255,12 +2249,12 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountForSubClasses_AddProperty)
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2312,12 +2306,14 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "         <ClassMap xmlns='ECDbMap.02.00'>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2347,12 +2343,13 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>5</MinimumSharedColumnCount>"
-        "                 </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>5</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2677,9 +2674,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "               </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='S' typeName='string' />"
@@ -2829,9 +2824,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "               </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -2874,9 +2867,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "               </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -2927,9 +2918,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "               </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -2965,9 +2954,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable)
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "               </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
@@ -3018,11 +3005,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3067,11 +3052,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3123,11 +3106,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3164,11 +3145,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3219,12 +3198,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "                  <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3269,12 +3247,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "                  <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3326,12 +3303,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3368,12 +3344,11 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
         "   <ECEntityClass typeName='Goo' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "         </ShareColumns>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='GS' typeName='string' />"
         "       <ECProperty propertyName='GD' typeName='double' />"
@@ -3412,246 +3387,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_Shared
     ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI,FI1) VALUES ('test2', 23.3, 234, 2, 22)");
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_SharedTable_SharedColumns_DisableSharedColumns)
-    {
-    //Setup Db ===================================================================================================
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <BaseClass>Goo</BaseClass>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>"
-        "                  <Options>DisableSharedColumns</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='FS' typeName='string' />"
-        "       <ECProperty propertyName='FD' typeName='double' />"
-        "       <ECProperty propertyName='FL' typeName='long' />"
-        "       <ECProperty propertyName='FI' typeName='int' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //following table should exist.
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    //Following table should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-
-    //verify No of Columns in BaseClass
-    int expectedColCount = 9;
-    Statement statement;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03FSFDFLFI";
-    Utf8String actualColumnNames;
-    for (int i = 0; i < expectedColCount; i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
-
-    //Delete Foo ===================================================================================================
-    GetECDb().SaveChanges();
-    SchemaItem deleteFoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Delete derived class should be successfull");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
-    ASSERT_FALSE(asserted);
-
-    //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-
-    //Following should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    //verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "SharedTable_SharedColumns_DisableSharedColumns");
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
-
-    //Delete Goo ===================================================================================================
-    //Deleting Class with SharedTable_SharedColumns_minimumSharedColumn is expected to be supported
-    GetECDb().SaveChanges();
-    SchemaItem deleteGoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "</ECSchema>", true, "Delete class containing ECDbMap CA should be successful");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
-    ASSERT_FALSE(asserted);
-
-    //Following should not exist
-    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
-
-    //Add Goo Again===================================================================================================
-    //Add Class with SharedTable_SharedColumns_DisableSharedColumns is expected to be supported
-    GetECDb().SaveChanges();
-    SchemaItem addGoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Add New Class with ECDbMap CA (SharedTable_SharedColumns_DisableSharedColumns) is expected to be successful");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), addGoo);
-    ASSERT_FALSE(asserted);
-
-    //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-
-    //Following should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    //verify No of Columns in BaseClass
-    expectedColCount = 5;
-    statement.Finalize();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03";
-    actualColumnNames = "";
-    for (int i = 0; i < statement.GetColumnCount(); i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
-
-    //Add Foo Again===============================================================================================
-    //Adding new derived entity class is expected to be supported
-    GetECDb().SaveChanges();
-    SchemaItem addFoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                  <Options>SharedColumns</Options>"
-        "               </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <BaseClass>Goo</BaseClass>"
-        "       <ECProperty propertyName='FS' typeName='string' />"
-        "       <ECProperty propertyName='FD' typeName='double' />"
-        "       <ECProperty propertyName='FL' typeName='long' />"
-        "       <ECProperty propertyName='FI' typeName='int' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "New derived entity class is expected to be supported");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), addFoo);
-    ASSERT_FALSE(asserted);
-
-    //Table should not exist
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-
-    //Table should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    //verify No of Columns in BaseClass
-    expectedColCount = 9;
-    statement.Finalize();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    expectedColumnNames = "ECInstanceIdECClassIdsc01sc02sc03sc04sc05sc06sc07";
-    actualColumnNames = "";
-    for (int i = 0; i < expectedColCount; i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
@@ -3666,11 +3401,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3723,11 +3456,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3768,11 +3499,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3817,11 +3546,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3849,11 +3576,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3891,11 +3616,9 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass</Options>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -3954,11 +3677,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4011,11 +3735,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4056,11 +3781,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4105,11 +3831,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4137,11 +3864,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4179,11 +3907,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Shared
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4242,12 +3971,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4300,12 +4030,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4346,12 +4077,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4396,12 +4128,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4429,12 +4162,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4472,12 +4206,13 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
         "   <ECEntityClass typeName='Parent' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>7</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
+        "             <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "         </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>7</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P' typeName='long' />"
         "   </ECEntityClass>"
@@ -4527,341 +4262,6 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_Minimu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_SharedColumns_DisableSharedColumns)
-    {
-    //Setup Db ===================================================================================================
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "       <BaseClass>Parent</BaseClass>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <BaseClass>Goo</BaseClass>"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>"
-        "                  <Options>DisableSharedColumns</Options>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='FS' typeName='string' />"
-        "       <ECProperty propertyName='FD' typeName='double' />"
-        "       <ECProperty propertyName='FL' typeName='long' />"
-        "       <ECProperty propertyName='FI' typeName='int' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    //Following Table should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
-
-    //Following should not exist
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-
-    //verify No of Columns in BaseClass
-    int expectedColCount = 9;
-    Statement statement;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ParentECInstanceIdECClassIdsc01sc02sc03FSFDFLFI";
-    Utf8String actualColumnNames;
-    for (int i = 0; i < expectedColCount; i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
-
-    //Delete Foo ===================================================================================================
-    GetECDb().SaveChanges();
-    SchemaItem deleteFoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "       <BaseClass>Parent</BaseClass>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Delete a class should be successful");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), deleteFoo);
-    ASSERT_FALSE(asserted);
-
-    //Following should not exist
-    ASSERT_EQ(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-
-    //Following should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
-
-    //verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
-
-    //Delete Goo ===================================================================================================
-    GetECDb().SaveChanges();
-    SchemaItem deleteGoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Delete Derived ECClass is supported");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), deleteGoo);
-    ASSERT_FALSE(asserted);
-
-    //Following should not exist
-    ASSERT_FALSE(GetECDb().TableExists("ts_Goo"));
-
-    //Parent should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
-
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
-
-    //Delete Parent ===================================================================================================
-    //Deleting Class with CA  JoinedTable_MinimumSharedColumnCount is expected to be supported
-    GetECDb().SaveChanges();
-    SchemaItem deleteParent(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "</ECSchema>", true, "Deleting Class with CA  JoinedTable_MinimumSharedColumnCount is expected to be supported");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), deleteParent);
-    ASSERT_FALSE(asserted);
-
-    //Parent should not exist
-    ASSERT_FALSE(GetECDb().TableExists("ts_Parent"));
-
-    //Add Parent ===================================================================================================
-    GetECDb().SaveChanges();
-    SchemaItem AddParent(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Adding New class containing ECDbMap CA JoinedTable_MinimumSharedColumnCount should be successful");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), AddParent);
-    ASSERT_FALSE(asserted);
-
-    //Parent should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
-
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(GetECDb(), testItems, "JoinedTable_SharedColumns_DisableSharedColumns");
-
-    //Add Goo Again===================================================================================================
-    //Adding Derived class with CA JoinedTable_MinimumSharedColumnCount on base class is expected to be supported
-    GetECDb().SaveChanges();
-    SchemaItem addGoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='6.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "       <BaseClass>Parent</BaseClass>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Add New Class with JoinedTable_MinimumSharedColumnCount on Parent is expected to be successful");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), addGoo);
-    ASSERT_FALSE(asserted);
-
-    //Following should exist
-    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
-
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    //verify No of Columns in BaseClass
-    expectedColCount = 5;
-    statement.Finalize();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    expectedColumnNames = "ParentECInstanceIdECClassIdsc01sc02sc03";
-    actualColumnNames = "";
-    for (int i = 0; i < expectedColCount; i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
-
-    //Add Foo Again===============================================================================================
-    GetECDb().SaveChanges();
-    SchemaItem addFoo(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='7.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                   <Options>JoinedTablePerDirectSubclass,SharedColumnsForSubclasses</Options>"
-        "                   <MinimumSharedColumnCount>3</MinimumSharedColumnCount>"
-        "                </MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='P' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
-        "       <BaseClass>Parent</BaseClass>"
-        "       <ECProperty propertyName='GS' typeName='string' />"
-        "       <ECProperty propertyName='GD' typeName='double' />"
-        "       <ECProperty propertyName='GL' typeName='long' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <BaseClass>Goo</BaseClass>"
-        "       <ECProperty propertyName='FS' typeName='string' />"
-        "       <ECProperty propertyName='FD' typeName='double' />"
-        "       <ECProperty propertyName='FL' typeName='long' />"
-        "       <ECProperty propertyName='FI' typeName='int' />"
-        "   </ECEntityClass>"
-        "</ECSchema>", true, "Adding new derived Entity class is supported now");
-    asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), addFoo);
-    ASSERT_FALSE(asserted);
-
-    //Table should not exist
-    ASSERT_FALSE(GetECDb().TableExists("ts_Foo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Foo"), nullptr);
-
-    //following tables should exist.
-    ASSERT_TRUE(GetECDb().TableExists("ts_Goo"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Goo"), nullptr);
-
-    ASSERT_TRUE(GetECDb().TableExists("ts_Parent"));
-    ASSERT_NE(GetECDb().Schemas().GetECClass("TestSchema", "Parent"), nullptr);
-
-    //verify No of Columns in BaseClass
-    expectedColCount = 9;
-    statement.Finalize();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, statement.Prepare(GetECDb(), "SELECT * FROM ts_Goo"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(expectedColCount, statement.GetColumnCount());
-
-    //verify that the columns generated are same as expected
-    expectedColumnNames = "ParentECInstanceIdECClassIdsc01sc02sc03sc04sc05sc06sc07";
-    actualColumnNames = "";
-    for (int i = 0; i < expectedColCount; i++)
-        {
-        actualColumnNames.append(statement.GetColumnName(i));
-        }
-    ASSERT_STREQ(expectedColumnNames.c_str(), actualColumnNames.c_str());
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI FROM ts.Foo");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
-
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    ASSERT_ECSQL(GetECDb(), ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad Hassan                     05/16
-//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
     {
     SchemaItem schemaItem(
@@ -4871,9 +4271,7 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -4907,9 +4305,7 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -4950,9 +4346,7 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "   <ECEntityClass typeName='A' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -4964,9 +4358,7 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "   <ECEntityClass typeName='C' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propC' typeName='int' />"
@@ -5013,9 +4405,7 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "   <ECEntityClass typeName='A' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -5023,9 +4413,7 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "   <ECEntityClass typeName='C' modifier='Abstract' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propC' typeName='int' />"
@@ -5837,9 +5225,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -5870,9 +5256,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -5904,9 +5288,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -5938,9 +5320,7 @@ TEST_F(ECSchemaUpdateTests, ModifyRelationshipConstrainsRoleLabel)
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                 </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='propA' typeName='int' />"
@@ -6704,9 +6084,7 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "   <ECEntityClass typeName='Employee' modifier='None' >"
         "       <ECCustomAttributes>"
         "           <ClassMap xmlns='ECDbMap.02.00'>"
-        "               <MapStrategy>"
-        "                   <Strategy>ExistingTable</Strategy>"
-        "               </MapStrategy>"
+        "               <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>test_Employee</TableName>"
         "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
         "           </ClassMap>"
@@ -6739,9 +6117,7 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "   <ECEntityClass typeName='Employee' modifier='None' >"
         "       <ECCustomAttributes>"
         "           <ClassMap xmlns='ECDbMap.02.00'>"
-        "               <MapStrategy>"
-        "                   <Strategy>ExistingTable</Strategy>"
-        "               </MapStrategy>"
+        "               <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>test_Employee</TableName>"
         "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
         "           </ClassMap>"
@@ -6753,9 +6129,7 @@ TEST_F(ECSchemaUpdateTests, ChangesToExisitingTable)
         "   <ECEntityClass typeName='Title' modifier='None' >"
         "       <ECCustomAttributes>"
         "           <ClassMap xmlns='ECDbMap.02.00'>"
-        "               <MapStrategy>"
-        "                   <Strategy>ExistingTable</Strategy>"
-        "               </MapStrategy>"
+        "               <MapStrategy>ExistingTable</MapStrategy>"
         "               <TableName>test_Title</TableName>"
         "               <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
         "           </ClassMap>"
@@ -7454,9 +6828,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         "  <ECEntityClass typeName='Element' modifier='Abstract' >"
         "    <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
@@ -7496,9 +6868,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
         "  <ECEntityClass typeName='Element' modifier='Abstract' >"
         "    <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
@@ -7610,9 +6980,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "  <ECEntityClass typeName='Element' modifier='Abstract' >"
         "    <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
@@ -7621,22 +6989,16 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
         "     <BaseClass>Element</BaseClass>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>JoinedTablePerDirectSubclass</Options>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "     </ECCustomAttributes>"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
         "     <BaseClass>InformationElement</BaseClass>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>SharedColumnsForSubclasses</Options>"
-        "            <MinimumSharedColumnCount>8</MinimumSharedColumnCount>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "     </ECCustomAttributes>"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
@@ -7649,22 +7011,16 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>JoinedTablePerDirectSubclass</Options>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "     </ECCustomAttributes>"
         "    <BaseClass>Element</BaseClass>"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>SharedColumnsForSubclasses</Options>"
-        "            <MinimumSharedColumnCount>16</MinimumSharedColumnCount>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>16</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "     </ECCustomAttributes>"
         "    <BaseClass>GeometricElement</BaseClass>"
         "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
@@ -7720,9 +7076,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "  <ECEntityClass typeName='Element' modifier='Abstract' >"
         "    <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "             <MapStrategy>"
-        "                 <Strategy>TablePerHierarchy</Strategy>"
-        "                </MapStrategy>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "        </ClassMap>"
         "    </ECCustomAttributes>"
         "    <ECProperty propertyName='Code' typeName='string' />"
@@ -7731,22 +7085,16 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "  <ECEntityClass typeName='InformationElement' modifier='Abstract'>"
         "     <BaseClass>Element</BaseClass>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>JoinedTablePerDirectSubclass</Options>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "     </ECCustomAttributes>"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='LinkElement' modifier='Abstract'>"
         "     <BaseClass>InformationElement</BaseClass>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>SharedColumnsForSubclasses</Options>"
-        "            <MinimumSharedColumnCount>8</MinimumSharedColumnCount>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "     </ECCustomAttributes>"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='UrlLink' modifier='Sealed'>"
@@ -7759,22 +7107,16 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='GeometricElement' modifier='Abstract'>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>JoinedTablePerDirectSubclass</Options>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "     </ECCustomAttributes>"
         "    <BaseClass>Element</BaseClass>"
         "  </ECEntityClass>"
         "  <ECEntityClass typeName='Geometric3dElement' modifier='Abstract'>"
         "     <ECCustomAttributes>"
-        "      <ClassMap xmlns='ECDbMap.02.00'>"
-        "        <MapStrategy>"
-        "            <Options>SharedColumnsForSubclasses</Options>"
-        "            <MinimumSharedColumnCount>16</MinimumSharedColumnCount>"
-        "        </MapStrategy>"
-        "       </ClassMap>"
+        "         <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>16</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "         </ShareColumns>"
         "     </ECCustomAttributes>"
         "    <BaseClass>GeometricElement</BaseClass>"
         "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"

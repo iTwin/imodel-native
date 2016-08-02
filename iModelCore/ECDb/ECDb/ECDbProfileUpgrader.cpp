@@ -302,7 +302,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
-    schemaKey = SchemaKey("MetaSchema", 3, 0, 1);
+    schemaKey = SchemaKey("MetaSchema", 3, 0, 2);
     if (SUCCESS != ReadSchemaFromDisk(*context, schemaKey, ecdb.GetDbFileName()))
         return BE_SQLITE_ERROR;
 
@@ -381,9 +381,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
         "            <ClassMap xmlns='ECDbMap.02.00.00'> "
-        "                <MapStrategy>"
-        "                   <Strategy>NotMapped</Strategy>"
-        "                </MapStrategy>"
+        "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap> "
         "        </ECCustomAttributes> "
         "    </ECEntityClass> "
@@ -430,9 +428,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "    <ECEntityClass typeName='ECSqlSystemProperties' modifier='Abstract' >"
         "       <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00.00'>"
-        "                <MapStrategy>"
-        "                   <Strategy>NotMapped</Strategy>"
-        "                </MapStrategy>"
+        "                <MapStrategy>NotMapped</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='ECInstanceId' typeName='long' description='Represents the ECInstanceId system property used by the EC->DB Mapping.' />"

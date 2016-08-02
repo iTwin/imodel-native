@@ -247,7 +247,7 @@
     - @b ECProperties
         - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
         - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
-            - mapped to a shared column (see MapStrategy::Options @em SharedColumns, @em SharedColumnsForSubclasses in @ref CustomClassMapDescription)
+            - mapped to a shared column (see ShareColumns custom attribute in @ref CustomClassMapDescription)
             - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
             - not used as @em Key property in an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
             - not overridden
@@ -495,27 +495,15 @@
     Description of the ClassMap properties:
 
     - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
-        - Property @b Strategy (optional):
-            - @c NotMapped : The class is not mapped to any database table. If the class has subclasses, the MapStrategy
-            applies to the subclasses, too 
-            - @c OwnTable (default): This class is mapped to its own table.
-            - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table.
-            - @c SharedTable : This class is mapped to @em table shared by other classes as well. The @b TableName ECProperty 
-            must also be specified.
-            - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
-            The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
-            <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
-        - Property @b Options (optional): The above values can be combined with these options:
-            - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
-            This can reduce the number of columns (and cells with NULL values) in the table significantly.
-            This can only be applied to MapStrategy @b TablePerHierarchy.
-            - @c SharedColumnsForSubclasses : Like @em SharedColumns, except that the ECProperties of the class holding the ClassMap
-            custom attribute do not share columns.
-            - @c DisableSharedColumns: This option disables the column sharing for the class and all its subclasses, if
-            column sharing was enabled on a base class. The property @em Strategy must not be set.
-            - @c JoinedTablePerDirectSubclasses : This options tells ECDb that the properties of the subclasses are mapped to an extra table joined
-            to the table of the root class. Each direct subclass of this class is mapped to its own joined table. Can only be used with
-            MapStrategy @b TablePerHierarchy.
+        - @c NotMapped : The class is not mapped to any database table. If the class has subclasses, the MapStrategy
+        applies to the subclasses, too 
+        - @c OwnTable (default): This class is mapped to its own table.
+        - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table. See also section <i>Additional customization for MapStrategy TablePerHierarchy</i>
+        - @c SharedTable : This class is mapped to @em table shared by other classes as well. The @b TableName ECProperty 
+        must also be specified.
+        - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
+        The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
+        <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
     - @b TableName (optional, required for MapStrategies @em ExistingTable and @em SharedTable):
     Specify a table name for this class for the MapStrategy.
     - @b Indexes (optional) : List of indexes to be created for properties of this class.
@@ -527,6 +515,14 @@
         - @b Where (optional): Creates a partial index. Right now only the special value <b>IndexedColumnsAreNotNull</b> is supported which
         creates a partial index ignoring any NULL values in the indexed columns.
 
+    #### Additional customization for MapStrategy TablePerHierarchy
+
+    The custom attribute @b ShareColumns can be applied to any node (but only once) in a class hierarchy using the MapStrategy TablePerHierarchy.
+    This tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column. This can reduce the number of columns (and cells with NULL values) in the table significantly.
+
+    The custom attribute @b JoinedTablePerDirectSubclass can be applied to any node (but only once) in a class hierarchy using the MapStrategy TablePerHierarchy.
+    This tells ECDb that the properties of the subclasses are mapped to an extra table joined to the table of the 
+    root class. Each direct subclass of this class is mapped to its own joined table.
 
     ####Examples
 
@@ -535,9 +531,7 @@
         <ECEntityClass typeName="Foo" modifier="Sealed">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
-                    <MapStrategy>
-                      <Strategy>NotMapped</Strategy>
-                    </MapStrategy>
+                    <MapStrategy>NotMapped</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="Name" typeName="string" />
@@ -548,9 +542,7 @@
         <ECEntityClass typeName="Foo">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
-                    <MapStrategy>
-                       <Strategy>TablePerHierarchy</Strategy>
-                    </MapStrategy>
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
         ...
@@ -604,7 +596,7 @@
         - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
 
     @note Property constraints like @em IsNullable, @em IsUnique, and @em Collation are ignored if the ECProperty maps to a column shared with other ECProperties
-    (see MapStrategy::Options @b SharedColumns or @b SharedColumnsForSubclasses in section @ref CustomClassMapDescription). ECDb will log a warning in these cases.
+    (see ShareColumns custom attribute in section @ref CustomClassMapDescription). ECDb will log a warning in these cases.
 
     ###Examples
 

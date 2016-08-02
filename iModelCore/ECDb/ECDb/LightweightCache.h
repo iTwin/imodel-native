@@ -24,8 +24,8 @@ struct LightweightCache final: NonCopyableClass
         enum class RelationshipType : int
             {
             Link = 0,
-            Source = (int) ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
-            Target = (int) ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable,
+            Source = (int) ECDbMapStrategy::ForeignKeyRelationshipInSourceTable,
+            Target = (int) ECDbMapStrategy::ForeignKeyRelationshipInTargetTable,
             };
 
 

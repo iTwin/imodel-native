@@ -433,16 +433,16 @@ MappingStatus ECDbMap::DoMapSchemas()
         }
 
     bool setIsDirty = false;
-    ECDbMapStrategy const& mapStrategy = classMapInfo.GetMapStrategy();
+    ECDbMapStrategy mapStrategy = classMapInfo.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
-    if (mapStrategy.IsNotMapped())
+    if (mapStrategy == ECDbMapStrategy::NotMapped)
         classMapTmp = NotMappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
-            if (mapStrategy.IsForeignKeyMapping())
+            if (ECDbMapStrategyHelper::IsForeignKeyMapping(mapStrategy))
                 classMapTmp = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
             else
                 classMapTmp = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, setIsDirty);
@@ -511,17 +511,17 @@ MappingStatus ECDbMap::MapClass(ECClassCR ecClass)
 
         BeAssert(classMapInfo != nullptr);
 
-        ECDbMapStrategy const& mapStrategy = classMapInfo->GetMapStrategy();
+        ECDbMapStrategy mapStrategy = classMapInfo->GetMapStrategy();
 
         ClassMapPtr classMap = nullptr;
-        if (mapStrategy.IsNotMapped())
+        if (mapStrategy == ECDbMapStrategy::NotMapped)
             classMap = NotMappedClassMap::Create(ecClass, *this, mapStrategy, true);
         else
             {
             auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
             if (ecRelationshipClass != nullptr)
                 {
-                if (mapStrategy.IsForeignKeyMapping())
+                if (ECDbMapStrategyHelper::IsForeignKeyMapping(mapStrategy))
                     classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
                 else
                     classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, *this, mapStrategy, true);
@@ -939,7 +939,7 @@ DbColumn const* ECDbMap::CreateClassIdColumn(DbTable& table, bset<ClassMap*> con
     ClassMap const* firstClassMap = *classMaps.begin();
     bool addClassIdCol = false;
     if (classMaps.size() == 1)
-        addClassIdCol = firstClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::TablePerHierarchy;
+        addClassIdCol = firstClassMap->GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy;
     else
         addClassIdCol = classMaps.size() > 1;
 
@@ -1077,7 +1077,7 @@ std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshi
             return classMaps;
             }
 
-        const bool recursive = classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::TablePerHierarchy && constraint.GetIsPolymorphic();
+        const bool recursive = classMap->GetMapStrategy() != ECDbMapStrategy::TablePerHierarchy && constraint.GetIsPolymorphic();
         if (SUCCESS != GetClassMapsFromRelationshipEnd(classMaps, *ecClass, recursive))
             {
             BeAssert(false);
@@ -1101,7 +1101,7 @@ BentleyStatus ECDbMap::GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>
         return ERROR;
         }
 
-    if (classMap->GetMapStrategy().IsNotMapped())
+    if (classMap->GetMapStrategy() == ECDbMapStrategy::NotMapped)
         return SUCCESS;
 
     classMaps.insert(classMap);

@@ -61,22 +61,24 @@ private:
 protected:
     ECDbMap const& m_ecdbMap;
     ECN::ECClassCR m_ecClass;
-    ECDbMapStrategy m_resolvedStrategy;
+    ECDbMapStrategy m_mapStrategy;
+    TablePerHierarchyInfo m_tablePerHierarchyInfo;
+
     ClassMap const* m_baseClassMap;
 
 private:
-    BentleyStatus DoEvaluateMapStrategy(UserECDbMapStrategy&, ClassMap const* baseClassMap);
+    MappingStatus EvaluateMapStrategy();
+    virtual MappingStatus _EvaluateMapStrategy();
 
     MappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
-    MappingStatus EvaluateMapStrategy();
-    virtual MappingStatus _EvaluateMapStrategy();
-
 protected:
-    BentleyStatus EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, UserECDbMapStrategy const&);
-    bool ValidateTablePerHierarchyChildStrategy(ECDbMapStrategy const& baseStrategy, UserECDbMapStrategy const&) const;
     virtual BentleyStatus _InitializeFromSchema();
+
+    BentleyStatus EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, ClassMappingCACache const&);
+    bool ValidateTablePerHierarchyChildStrategy(ECDbMapStrategy baseStrategy, ClassMappingCACache const&) const;
+    BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
 
     IssueReporter const& Issues() const;
     static void LogClassNotMapped (NativeLogging::SEVERITY, ECN::ECClassCR, Utf8CP explanation);
@@ -87,7 +89,9 @@ public:
 
     MappingStatus Initialize();
 
-    ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
+    ECDbMapStrategy GetMapStrategy () const { return m_mapStrategy; }
+    TablePerHierarchyInfo const& GetTablePerHierarchyInfo() const { BeAssert(m_mapStrategy == ECDbMapStrategy::TablePerHierarchy); return m_tablePerHierarchyInfo; }
+
     ECDbMap const& GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
@@ -151,14 +155,14 @@ private:
     ForeignKeyDbConstraint::ActionType m_onDeleteAction;
     ForeignKeyDbConstraint::ActionType m_onUpdateAction;
     bool m_createIndexOnForeignKey;
-    std::set<DbTable const*>  m_sourceTables;
-    std::set<DbTable const*>  m_targetTables;
+    std::set<DbTable const*> m_sourceTables;
+    std::set<DbTable const*> m_targetTables;
 
     virtual BentleyStatus _InitializeFromSchema() override;
     virtual MappingStatus _EvaluateMapStrategy();
 
-    BentleyStatus EvaluateLinkTableStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
-    BentleyStatus EvaluateForeignKeyStrategy(UserECDbMapStrategy const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
 
     void DetermineCardinality();
 
@@ -179,10 +183,10 @@ public:
     Cardinality GetCardinality() const { return m_cardinality; }
 
     CustomMapType GetCustomMapType() const { return m_customMapType; }
-    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
-    ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping());  return m_onDeleteAction; }
-    ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_onUpdateAction; }
-    bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_createIndexOnForeignKey; }
+    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy)); return m_allowDuplicateRelationships; }
+    ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy));  return m_onDeleteAction; }
+    ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy)); return m_onUpdateAction; }
+    bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy)); return m_createIndexOnForeignKey; }
 
     RelationshipEndColumns const& GetColumnsMapping(ECN::ECRelationshipEnd end) const;
     std::set<DbTable const*> const& GetSourceTables() const {return m_sourceTables;}

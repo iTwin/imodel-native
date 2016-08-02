@@ -9,139 +9,101 @@
 //_BENTLEY_INTERNAL_ONLY_
 #include "ECDbInternalTypes.h"
 
-#define USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNS "SharedColumns"
-#define USERMAPSTRATEGY_OPTIONS_SHAREDCOLUMNSFORSUBCLASSES "SharedColumnsForSubclasses"
-#define USERMAPSTRATEGY_OPTIONS_DISABLESHAREDCOLUMNS "DisableSharedColumns"
-#define USERMAPSTRATEGY_OPTIONS_JOINEDTABLEPERDIRECTSUBCLASS "JoinedTablePerDirectSubclass"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
-// @bsiclass                                 Krischan.Eberle               07/2015
+// @bsienum                                Krischan.Eberle                08/2016
 //+===============+===============+===============+===============+===============+=====
-struct UserECDbMapStrategy
+enum class ECDbMapStrategy
     {
-public:
-    //---------------------------------------------------------------------------------
-    // @bsienum                                 Krischan.Eberle                06/2015
-    //+---------------+---------------+---------------+---------------+---------------+------
-    enum class Strategy
-        {
-        None,
-        NotMapped,
-        OwnTable,
-        TablePerHierarchy,
-        ExistingTable,
-        SharedTable
-        };
+    NotMapped = 0,
+    OwnTable = 1,
+    TablePerHierarchy = 2,
+    ExistingTable = 3,
+    SharedTable = 4,
 
-    //---------------------------------------------------------------------------------
-    // @bsienum                                 Krischan.Eberle                06/2015
-    //+---------------+---------------+---------------+---------------+---------------+------
-    enum class Options
-        {
-        None = 0,
-        SharedColumns = 1,
-        SharedColumnsForSubclasses = 2,
-        DisableSharedColumns = 4,
-        JoinedTablePerDirectSubclass = 8
-        };
-
-private:
-    Strategy m_strategy;
-    Options m_options;
-    int m_minimumSharedColumnCount;
-
-    BentleyStatus Assign(Strategy strategy, Options, int minimumSharedColumnCount);
-    static BentleyStatus TryParse(Strategy&, Utf8CP str);
-    static BentleyStatus TryParse(Options& option, Utf8CP str);
-
-public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_options(Options::None), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT) {}
-    ~UserECDbMapStrategy() {}
-
-    bool IsValid() const;
-
-    Strategy GetStrategy() const { return m_strategy; }
-    Options GetOptions() const { return m_options; }
-    int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
-
-    //! Indicates whether this strategy represents the 'unset' strategy
-    bool IsUnset() const { return m_strategy == Strategy::None && m_options == Options::None && m_minimumSharedColumnCount == ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT; }
-
-    Utf8String ToString() const;
-    static Utf8String ToString(Options);
-    static BentleyStatus TryParse(UserECDbMapStrategy&, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute);
+    ForeignKeyRelationshipInSourceTable = 100,
+    ForeignKeyRelationshipInTargetTable = 101
     };
-
-ENUM_IS_FLAGS(UserECDbMapStrategy::Options);
 
 //======================================================================================
-// @bsiclass                                 Affan.Khan                02/2015
+// @bsiclass                                Krischan.Eberle                08/2016
 //+===============+===============+===============+===============+===============+=====
-struct ECDbMapStrategy
+struct ECDbMapStrategyHelper
     {
-public:
-    //---------------------------------------------------------------------------------
-    // @bsienum                                 Krischan.Eberle                06/2015
-    //+---------------+---------------+---------------+---------------+---------------+------
-    enum class Strategy
-        {
-        NotMapped = 0,
-        OwnTable = 1,
-        TablePerHierarchy = 2,
-        ExistingTable = 3,
-        SharedTable = 4,
+    public:
+        static const ECDbMapStrategy DEFAULT = ECDbMapStrategy::OwnTable;
 
-        ForeignKeyRelationshipInTargetTable = 100,
-        ForeignKeyRelationshipInSourceTable = 101
-        };
+    private:
+        ECDbMapStrategyHelper();
+        ~ECDbMapStrategyHelper();
 
-    //---------------------------------------------------------------------------------
-    // @bsienum                                 Krischan.Eberle                06/2015
-    //+---------------+---------------+---------------+---------------+---------------+------
-    enum class Options
-        {
-        None = 0,
-        SharedColumns = 1,
-        ParentOfJoinedTable = 2,
-        JoinedTable = 4,
-        };
-
-private:
-    Strategy m_strategy;
-    Options m_options;
-    int m_minimumSharedColumnCount;
-    bool m_isResolved;
-
-public:
-    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_options(Options::None), m_minimumSharedColumnCount(ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT), m_isResolved(false) {}
-
-    //operators
-    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_options == rhs.m_options && m_isResolved == rhs.m_isResolved; }
-    bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
-
-    BentleyStatus Assign(UserECDbMapStrategy const&);
-    BentleyStatus Assign(Strategy, Options, int minimumSharedColumnCount);
-    BentleyStatus Assign(Strategy strategy) { return Assign(strategy, Options::None, ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT); }
-
-    bool IsValid() const;
-
-    //Getters
-    Strategy GetStrategy() const { return m_strategy; }
-    Options GetOptions() const { return m_options; }
-    //!@returns Minimum shared column count or ECN::ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT if unset
-    int GetMinimumSharedColumnCount() const { return m_minimumSharedColumnCount; }
-
-    bool IsResolved() const { return m_isResolved; }
-    //Helper
-    bool IsNotMapped() const { return m_strategy == Strategy::NotMapped; }
-    bool IsForeignKeyMapping() const { return m_strategy == Strategy::ForeignKeyRelationshipInSourceTable || m_strategy == Strategy::ForeignKeyRelationshipInTargetTable; }
- 
-    Utf8String ToString() const;
-    static Utf8CP ToString(Strategy);
+    public:
+        static bool IsForeignKeyMapping(ECDbMapStrategy strat) { return strat == ECDbMapStrategy::ForeignKeyRelationshipInSourceTable || strat == ECDbMapStrategy::ForeignKeyRelationshipInTargetTable; }
+        static Utf8CP ToString(ECDbMapStrategy);
     };
 
-ENUM_IS_FLAGS(ECDbMapStrategy::Options);
+//======================================================================================
+// @bsiclass                                 Krischan.Eberle               08/2016
+//+===============+===============+===============+===============+===============+=====
+struct ClassMappingCACache
+    {
+private:
+    ECN::ECDbClassMap m_classMapCA;
+    ECDbMapStrategy m_mapStrategy;
+    ECN::ShareColumns m_shareColumnsCA;
+    bool m_hasJoinedTablePerDirectSubclassOption;
+
+    static BentleyStatus TryParse(ECDbMapStrategy&, Utf8CP str, ECN::ECClassCR);
+
+public:
+    ClassMappingCACache() : m_mapStrategy(ECDbMapStrategy::NotMapped), m_hasJoinedTablePerDirectSubclassOption(false) {}
+    BentleyStatus Initialize(ECN::ECClassCR);
+
+    ~ClassMappingCACache() {}
+
+    bool HasClassMapCA() const { return m_classMapCA.IsValid(); }
+    ECN::ECDbClassMap const& GetClassMap() const { return m_classMapCA; }
+    ECDbMapStrategy GetMapStrategy() const { return m_mapStrategy; }
+    ECN::ShareColumns const& GetShareColumnsCA() const { return m_shareColumnsCA; }
+    bool HasJoinedTablePerDirectSubclassOption() const { return m_hasJoinedTablePerDirectSubclassOption; }
+    };
+
+
+//======================================================================================
+// @bsiclass                                Krischan.Eberle                08/2016
+//+===============+===============+===============+===============+===============+=====
+struct TablePerHierarchyInfo
+    {
+    public:
+        enum class JoinedTableInfo
+            {
+            None = 0,
+            JoinedTable = 1,
+            ParentOfJoinedTable = 2
+            };
+
+    private:
+        bool m_isSharedColumns;
+        int m_sharedColumnCount;
+        Utf8String m_excessColumnName;
+        JoinedTableInfo m_joinedTableInfo;
+
+        BentleyStatus DetermineSharedColumnsInfo(ECN::ShareColumns const&, ECN::ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, JoinedTableInfo const* baseClassJoinedTableInfo, ECN::ECClassCR, IssueReporter const&);
+
+    public:
+        TablePerHierarchyInfo() : m_isSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
+        TablePerHierarchyInfo(bool isSharedColumns, int sharedColumnCount, Utf8CP excessColName, JoinedTableInfo joinedTableInfo) 
+            : m_isSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_excessColumnName(excessColName), m_joinedTableInfo(joinedTableInfo) 
+            {}
+
+        BentleyStatus Initialize(ECN::ShareColumns const&, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, JoinedTableInfo const* baseClassJoinedTableInfo, ECN::ECClassCR, IssueReporter const&);
+
+        bool IsSharedColumns() const { return m_isSharedColumns; }
+        int GetSharedColumnCount() const { return m_sharedColumnCount; }
+        Utf8StringCR GetExcessColumnName() const { return m_excessColumnName; }
+        JoinedTableInfo GetJoinedTableInfo() const { return m_joinedTableInfo; }
+    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -17,9 +17,7 @@
     <ECEntityClass typeName="Employee" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Property>EmployeeId</Property>

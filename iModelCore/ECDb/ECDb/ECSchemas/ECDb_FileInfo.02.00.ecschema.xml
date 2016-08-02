@@ -19,9 +19,7 @@
         <BaseClass>FileInfo</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>ExistingTable</Strategy>
-                </MapStrategy>
+                <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>be_EmbedFile</TableName>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -61,7 +59,6 @@
     <ECEntityClass typeName="FileInfoOwnership">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy/>
                   <Indexes>
                     <DbIndex>
                         <Name>uix_ecdbf_fileinfoownership_fileinfoid_fileinfoecclassid</Name>

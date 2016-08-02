@@ -96,6 +96,7 @@ struct ClassMap : RefCountedBase
         ClassMapId m_id;
         Type m_type;
         ECDbMapStrategy m_mapStrategy;
+        TablePerHierarchyInfo m_tphInfo;
         PropertyMapCollection m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
         bool m_isDirty;
@@ -113,7 +114,7 @@ struct ClassMap : RefCountedBase
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
 
     protected:
-        ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
+        ClassMap(Type, ECN::ECClassCR, ECDbMap const&, ECDbMapStrategy, bool setIsDirty);
 
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&);
         MappingStatus DoMapPart1(SchemaImportContext&, ClassMappingInfo const&);
@@ -171,17 +172,19 @@ struct ClassMap : RefCountedBase
         ECN::ECClassCR GetClass() const { return m_ecClass; }
         ECN::ECClassId GetBaseClassId() const { return m_baseClassId; }
 
-        ECDbMapStrategy const& GetMapStrategy() const { return m_mapStrategy; }
-        ECDbMap const& GetECDbMap() const { return m_ecDbMap; }
+        ECDbMapStrategy GetMapStrategy() const { return m_mapStrategy; }
+        TablePerHierarchyInfo const& GetTablePerHierarchyInfo() const { return m_tphInfo; }
         bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
 
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
-        bool HasJoinedTable() const;
-        bool IsParentOfJoinedTable() const;
+        bool HasJoinedTable() const { return m_tphInfo.GetJoinedTableInfo() == TablePerHierarchyInfo::JoinedTableInfo::JoinedTable; }
+        bool IsParentOfJoinedTable() const { return m_tphInfo.GetJoinedTableInfo() == TablePerHierarchyInfo::JoinedTableInfo::ParentOfJoinedTable; }
+
+        ECDbMap const& GetECDbMap() const { return m_ecDbMap; }
 
         Utf8String GetUpdatableViewName() const;
-        BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const;
+        BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const&) const;
         DbTable const* ExpectingSingleTable() const 
             {
             BeAssert(GetTables().size() == 1);
@@ -190,6 +193,7 @@ struct ClassMap : RefCountedBase
 
             return &GetJoinedTable();
             }
+
         static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
         static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
 
