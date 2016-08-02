@@ -42,9 +42,6 @@
 
 #if defined (BENTLEY_CHANGE)
 #include <boost/operators.hpp>
-#ifdef __APPLE__
-#include <malloc_np.h>
-#endif
 #endif
 
 //=============================================================================
