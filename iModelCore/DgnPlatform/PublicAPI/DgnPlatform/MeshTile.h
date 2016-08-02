@@ -393,8 +393,8 @@ private:
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, IProgressMeter* progressMeter=nullptr);
 
-    //! Populates the TileGeometryCache from the contents of the specified viewport
-    DGNPLATFORM_EXPORT Status LoadGeometry(DgnViewportR viewport, double toleranceInMeters);
+    //! Populates the TileGeometryCache from the contents of the specified view
+    DGNPLATFORM_EXPORT Status LoadGeometry(ViewControllerR view, double toleranceInMeters);
     //! Generates the HLOD tree from the contents of the TileGeometryCache within the specified range
     DGNPLATFORM_EXPORT Status GenerateTiles(TileNodeR rootTile, DRange3dCR range, double leafTolerance, size_t maxPointsPerTile=30000);
     DGNPLATFORM_EXPORT Status CollectTiles(TileNodeR rootTile, ITileCollector& collector);

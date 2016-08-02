@@ -885,16 +885,15 @@ struct TileGeometryProcessor : IGeometryProcessor
 {
     Transform                       m_dgnToTarget;
     XYZRangeTreeRootP               m_rangeTree;
-    DgnViewportR                    m_viewport;
+    ViewControllerR                 m_view;
     DRange3d                        m_range;
     IFacetOptionsR                  m_facetOptions;
-    ViewContextP                    m_viewContext;
     TileGenerator::IProgressMeter&  m_progressMeter;
     TileGeometryCacheR              m_geometryCache;
     IFacetOptionsPtr                m_targetFacetOptions;
 
-    TileGeometryProcessor(DgnViewportR viewport, TileGeometryCacheR geometryCache, XYZRangeTreeRootP rangeTree, TransformCR dgnToTarget, IFacetOptionsR facetOptions, TileGenerator::IProgressMeter& progressMeter)
-        : m_dgnToTarget(dgnToTarget), m_rangeTree(rangeTree), m_viewport(viewport), m_range(DRange3d::NullRange()), m_facetOptions(facetOptions), m_viewContext(nullptr),
+    TileGeometryProcessor(ViewControllerR view, TileGeometryCacheR geometryCache, XYZRangeTreeRootP rangeTree, TransformCR dgnToTarget, IFacetOptionsR facetOptions, TileGenerator::IProgressMeter& progressMeter)
+        : m_dgnToTarget(dgnToTarget), m_rangeTree(rangeTree), m_view(view), m_range(DRange3d::NullRange()), m_facetOptions(facetOptions),
           m_progressMeter(progressMeter), m_geometryCache(geometryCache), m_targetFacetOptions(facetOptions.Clone())
         {
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * dgnToTarget.ColumnXMagnitude());
@@ -1043,8 +1042,7 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     {
-    m_viewContext = &context;
-    // ###TODO: and stuff...
+    m_view.DrawView(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1059,15 +1057,15 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, TileGenerator::IProgr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TileGenerator::LoadGeometry(DgnViewportR vp, double toleranceInMeters)
+TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double toleranceInMeters)
     {
     m_progressMeter._SetTaskName(TaskName::CollectingGeometry);
 
     IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
-    TileGeometryProcessor processor(vp, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformToDgn(), *facetOptions, m_progressMeter);
+    TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformToDgn(), *facetOptions, m_progressMeter);
     
     BEGIN_DELTA_TIMER(m_statistics.m_collectionTime);
-    GeometryProcessor::Process(processor, vp.GetViewController().GetDgnDb());
+    GeometryProcessor::Process(processor, view.GetDgnDb());
     END_DELTA_TIMER(m_statistics.m_collectionTime);
 
     if (m_progressMeter._WasAborted())
