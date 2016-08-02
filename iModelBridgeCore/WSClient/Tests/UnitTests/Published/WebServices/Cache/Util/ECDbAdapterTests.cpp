@@ -232,9 +232,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingRel
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                            <ClassMap xmlns="ECDbMap.02.00">
-                                <MapStrategy>
-                                    <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -303,9 +301,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                            <ClassMap xmlns="ECDbMap.02.00">
-                                <MapStrategy>
-                                    <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -347,9 +343,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                       <MapStrategy>
-                          <Strategy>TablePerHierarchy</Strategy>
-                       </MapStrategy>
+                       <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -391,9 +385,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                      <ClassMap xmlns="ECDbMap.02.00">
-                       <MapStrategy>
-                           <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                       <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -435,9 +427,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatch
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>
-                            <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -501,9 +491,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingR
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>
-                            <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -544,9 +532,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRel
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>
-                            <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
@@ -597,9 +583,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsip
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
-                        <MapStrategy>
-                            <Strategy>TablePerHierarchy</Strategy>
-                        </MapStrategy>
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
