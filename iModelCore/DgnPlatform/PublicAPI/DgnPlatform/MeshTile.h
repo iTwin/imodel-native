@@ -433,7 +433,6 @@ struct FacetCountUtil
     //! Returns an approximation of the facet counts of an IGeometry the facet options
     //! @param [in] geometry Geometry to be inspected
     //! @param [in] facetOptions The facet options: this takes into account chord tolerance and angle tolerance
-    //! @param [in] useMax if true, the algorithm calculates the approximation using the max amount of possible facets instead of the average
     //! @return An approximation of the number of strokes/facets that will be generated from the surface
     static DGNPLATFORM_EXPORT size_t GetFacetCount (IGeometryCR geometry, IFacetOptionsR facetOptions);
 
