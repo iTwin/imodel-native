@@ -13,7 +13,8 @@ AzureMkiSourceDir = $(ClientSourceDirectory)Azure/
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
 AzureMkiHeaders =  $(AzureMkiPublicApiDir)AzureBlobStorageClient.h \
-                   $(AzureMkiPublicApiDir)EventServiceClient.h
+                   $(AzureMkiPublicApiDir)EventServiceClient.h \
+				   $(AzureMkiPublicApiDir)AzureServiceBusSASDTO.h
 
 #--------------------------------------------------------------------------------------
 #   Compile
@@ -21,3 +22,5 @@ AzureMkiHeaders =  $(AzureMkiPublicApiDir)AzureBlobStorageClient.h \
 $(o)AzureBlobStorageClient$(oext)           : $(AzureMkiSourceDir)AzureBlobStorageClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
 
 $(o)EventServiceClient$(oext)           : $(AzureMkiSourceDir)EventServiceClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+
+$(o)AzureServiceBusSASDTO(oext)           : $(AzureMkiSourceDir)AzureServiceBusSASDTO.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
