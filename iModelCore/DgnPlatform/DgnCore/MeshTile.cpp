@@ -918,7 +918,6 @@ struct TileGeometryProcessor : IGeometryProcessor
     // virtual bool _ProcessAsBody(bool isCurved) const override { return isCurved; }
     // virtual bool _ProcessAsFacets(bool isPolyface) const override { return true; }
 
-    void OnNewGeometry();
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
 
     virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
@@ -927,26 +926,23 @@ struct TileGeometryProcessor : IGeometryProcessor
     virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
     virtual bool _ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) override;
 
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override
+        {
+        return UnhandledPreference::Facet; // ###TODO: Solids...
+        }
+    virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override
+        {
+        return UnhandledPreference::Facet; // Brien checks this BEFORE invoking _ProcessBody(), and the default returns Ignore, so he doesn't apply our facet options...
+        }
+
     virtual void _OutputGraphics(ViewContextR context) override;
 };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::OnNewGeometry()
-    {
-    // ###TODO: Abort...
-    // if (m_progressMeter._WasAborted())
-    //    m_viewContext->SetAborted();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
     {
-    OnNewGeometry();
-
     DRange3d range;
     if (!geom.TryGetRange(range))
         return true;    // ignore and continue
@@ -1009,8 +1005,6 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
-    OnNewGeometry();
-
     PolyfaceHeaderPtr clone = polyface.Clone();
     if (!clone->IsTriangulated())
         clone->Triangulate();
@@ -1034,6 +1028,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
+#ifdef TODO_SOLIDS
     ISolidKernelEntityPtr clone = solid.Clone();
     DRange3d range = clone->GetEntityRange();
 
@@ -1048,6 +1043,9 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
 
     return true;
+#else
+    return false;
+#endif
     }
 
 //=======================================================================================
@@ -1097,6 +1095,9 @@ void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
     stmt->BindVirtualSet(1, vset);
     while (BE_SQLITE_ROW == stmt->Step())
         {
+        if (m_progressMeter._WasAborted())
+            break;
+
         m_curElemId = stmt->GetValueId<DgnElementId>(0);
         context.VisitElement(m_curElemId, true);
         }
