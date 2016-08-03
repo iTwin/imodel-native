@@ -295,7 +295,7 @@ DgnDbServerEventTaskPtr  DgnDbBriefcase::GetEvent(bool longPolling, ICancellatio
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));      
     if (!m_repositoryConnection)    
         return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-        
+
     return m_repositoryConnection->GetEvent(longPolling, cancellationToken)->Then<DgnDbServerEventResult>([=](DgnDbServerEventResult result)
         {
         if (!result.IsSuccess())
