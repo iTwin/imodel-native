@@ -9,6 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "Render.h"
+#include "DgnTexture.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -59,6 +60,7 @@ public:
 
     DgnMaterialId GetMaterialId() const { return m_materialId; }
     uint32_t GetFillColor() const { return m_fillColor; }
+    DgnTextureCPtr QueryTexture(DgnDbR db) const;
 };
 
 //=======================================================================================
@@ -274,11 +276,12 @@ private:
     DgnElementId            m_elementId;
     size_t                  m_facetCount;
     double                  m_facetCountDensity;
+    DgnDbR                  m_dgndb;
     Type                    m_type;
     bool                    m_isCurved;
     bool                    m_isInstanced; // ###TODO: unused...?
 
-    TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved);
+    TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db);
 
     void Init(IGeometryR geometry, IFacetOptionsR facetOptions);
     void Init(ISolidKernelEntityR solid, IFacetOptionsR facetOptions);
@@ -288,9 +291,9 @@ public:
     ~TileGeometry();
 
     //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved);
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions);
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db);
 
     Type GetType() const { return m_type; } //!< The type of geometry contained within
     ISolidKernelEntityP GetSolidEntity() const { return Type::Solid == GetType() ? m_solidEntity : nullptr; } //!< The contained ISolidKernelEntity, if any

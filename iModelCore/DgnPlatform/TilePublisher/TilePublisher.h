@@ -38,14 +38,14 @@ public:
     struct Texture
     {
     private:
-        bvector<uint8_t>    m_data;
+        ByteStream          m_data;
         uint32_t            m_width;
         uint32_t            m_height;
     public:
         Texture() { }
-        Texture(bvector<uint8_t>&& data, uint32_t width, uint32_t height) : m_data(std::move(data)), m_width(width), m_height(height) { }
+        Texture(ByteStream&& data, uint32_t width, uint32_t height) : m_data(std::move(data)), m_width(width), m_height(height) { }
 
-        bvector<uint8_t> const& GetData() const { return m_data; }
+        ByteStream const& GetData() const { return m_data; }
         uint32_t GetWidth() const { return m_width; }
         uint32_t GetHeight() const { return m_height; }
     };

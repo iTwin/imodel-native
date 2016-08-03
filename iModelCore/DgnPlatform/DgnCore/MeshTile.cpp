@@ -33,10 +33,10 @@ struct RangeTreeNode
 {
     TileGeometryPtr m_geometry;
 
-    RangeTreeNode(IGeometryR geom, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR opts, bool isCurved)
-        : m_geometry(TileGeometry::Create(geom, tf, range, elemId, params, opts, isCurved)) { }
-    RangeTreeNode(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR opts)
-        : m_geometry(TileGeometry::Create(solid, tf, range, elemId, params, opts)) { }
+    RangeTreeNode(IGeometryR geom, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR opts, bool isCurved, DgnDbR db)
+        : m_geometry(TileGeometry::Create(geom, tf, range, elemId, params, opts, isCurved, db)) { }
+    RangeTreeNode(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR opts, DgnDbR db)
+        : m_geometry(TileGeometry::Create(solid, tf, range, elemId, params, opts, db)) { }
 };
 
 /*=================================================================================**//**
@@ -81,20 +81,27 @@ DRange3d TileGeometryCache::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
+    {
+    JsonRenderMaterial mat;
+    if (!m_materialId.IsValid() || SUCCESS != mat.Load(m_materialId, db))
+        return nullptr;
+
+    auto texMap = mat.GetPatternMap();
+    DgnTextureId texId;
+    if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
+        return nullptr;
+
+    return DgnTexture::QueryTexture(texId, db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Image TileGeometryCache::TextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
     {
-    Image image;
-    DgnMaterialId matId = params.GetMaterialId();
-    JsonRenderMaterial mat;
-    if (!matId.IsValid() || SUCCESS != mat.Load(matId, db))
-        return image;
-
-    JsonRenderMaterial::TextureMap texMap = mat.GetPatternMap();
-    if (!texMap.IsValid() || !texMap.GetTextureId().IsValid())
-        return image;
-
-    DgnTextureCPtr tex = DgnTexture::QueryTexture(texMap.GetTextureId(), db);
-    return tex.IsValid() ? Image(tex->GetImageSource()) : image;
+    DgnTextureCPtr tex = params.QueryTexture(db);
+    return tex.IsValid() ? Image(tex->GetImageSource()) : Image();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +301,7 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId,
     Triangle newTriangle(!visitor.GetTwoSided());
     bvector<DPoint2d> params;
 
-    // ###TODO: Materials...
+    // ###TODO: If have material: Material::ComputeUVParams()
 
     params = visitor.Param();
     bool haveNormals = !visitor.Normal().empty();
@@ -726,8 +733,8 @@ TileNodePList TileNode::GetTiles()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved)
-    : m_params(params), m_transform(tf), m_range(range), m_elementId(elemId), m_type(Type::Empty), m_isCurved(isCurved), m_isInstanced(false), m_solidEntity(nullptr)
+TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db)
+    : m_params(params), m_transform(tf), m_range(range), m_elementId(elemId), m_type(Type::Empty), m_isCurved(isCurved), m_isInstanced(false), m_solidEntity(nullptr), m_dgndb(db)
     {
     //
     }
@@ -778,9 +785,9 @@ TileGeometry::~TileGeometry()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved)
+TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
     {
-    TileGeometryPtr tileGeom = new TileGeometry(tf, range, elemId, params, isCurved);
+    TileGeometryPtr tileGeom = new TileGeometry(tf, range, elemId, params, isCurved, db);
     tileGeom->Init(geometry, facetOptions);
     return tileGeom;
     }
@@ -788,9 +795,9 @@ TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions)
+TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db)
     {
-    TileGeometryPtr tileGeom = new TileGeometry(tf, range, elemId, params, false);
+    TileGeometryPtr tileGeom = new TileGeometry(tf, range, elemId, params, false, db);
     tileGeom->Init(solid, facetOptions);
     return tileGeom;
     }
@@ -800,7 +807,7 @@ TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometry::HasTexture() const
     {
-    return false; // ###TODO: Materials...
+    return m_params.QueryTexture(m_dgndb).IsValid();    // ###TODO: Avoid looking up the texture repeatedly...without introducing race condition...
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -950,7 +957,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
     m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
-    m_rangeTree->Add(new RangeTreeNode(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved), range);
+    m_rangeTree->Add(new RangeTreeNode(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved, m_view.GetDgnDb()), range);
 
     return true;
     }
@@ -1017,7 +1024,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
 
     IGeometryPtr geom = IGeometry::Create(clone);
-    m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false), range);
+    m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false, m_view.GetDgnDb()), range);
 
     return true;
     }
@@ -1038,7 +1045,7 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
     m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
-    m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions), range);
+    m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
 
     return true;
     }
