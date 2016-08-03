@@ -209,7 +209,7 @@ void TilePublisher::AddShader(Json::Value& shaders, Utf8CP name, int type, Utf8C
     {
     auto& shader = (shaders[name] = Json::objectValue);
     shader["type"] = type;
-    shader["extensions"]["khr_binary_gltf"]["bufferview"] = buffer;
+    shader["extensions"]["KHR_binary_glTF"]["bufferView"] = buffer;
     }
 
 /*---------------------------------------------------------------------------------**//**
