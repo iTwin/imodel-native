@@ -15,59 +15,59 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-JsonInserter::JsonInserter (ECDbCR ecdb, ECClassCR ecClass) : m_ecClass (ecClass), m_ecinstanceInserter (ecdb, ecClass) {}
+JsonInserter::JsonInserter(ECDbCR ecdb, ECClassCR ecClass) : m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool JsonInserter::IsValid () const
+bool JsonInserter::IsValid() const
     {
-    return m_ecinstanceInserter.IsValid ();
+    return m_ecinstanceInserter.IsValid();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonInserter::Insert (ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const
+BentleyStatus JsonInserter::Insert(ECInstanceKey& newInstanceKey, JsonValueCR jsonValue) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
-    BeAssert (ecInstance.IsValid ());
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
+    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
+    BeAssert(ecInstance.IsValid());
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
-    return m_ecinstanceInserter.Insert (newInstanceKey, *ecInstance);
+    return m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonInserter::Insert (JsonValueR jsonValue) const
+BentleyStatus JsonInserter::Insert(JsonValueR jsonValue) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
-    BeAssert (ecInstance.IsValid ());
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
+    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
+    BeAssert(ecInstance.IsValid());
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
     ECInstanceKey newInstanceKey;
-    auto stat = m_ecinstanceInserter.Insert (newInstanceKey, *ecInstance);
+    auto stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
     if (stat != SUCCESS)
         return ERROR;
 
-    jsonValue["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64 (newInstanceKey.GetECInstanceId ().GetValue ());
+    jsonValue["$ECInstanceId"] = BeJsonUtilities::StringValueFromInt64(newInstanceKey.GetECInstanceId().GetValue());
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Shaun.Sewall                    01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonInserter::Insert (ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const
+BentleyStatus JsonInserter::Insert(ECInstanceKey& newInstanceKey, RapidJsonValueCR jsonValue) const
     {
-    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler ()->CreateInstance (0);
-    BeAssert (ecInstance.IsValid ());
-    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJsonValue (*ecInstance, jsonValue))
+    IECInstancePtr ecInstance = m_ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
+    BeAssert(ecInstance.IsValid());
+    if (SUCCESS != ECRapidJsonUtilities::ECInstanceFromJson(*ecInstance, jsonValue))
         return ERROR;
 
-    auto stat = m_ecinstanceInserter.Insert (newInstanceKey, *ecInstance);
+    auto stat = m_ecinstanceInserter.Insert(newInstanceKey, *ecInstance);
     if (stat != SUCCESS)
         return ERROR;
 

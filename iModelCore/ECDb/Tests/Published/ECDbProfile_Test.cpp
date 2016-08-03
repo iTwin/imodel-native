@@ -24,47 +24,47 @@ static Utf8CP const ECINSTANCEIDSEQUENCE_KEY = "ec_ecinstanceidsequence";
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, ECDbProfile)
     {
-    BeFileName dbPath = ECDbTestUtility::BuildECDbPath ("ecdbprofiletest.db");
-    if (dbPath.DoesPathExist ())
+    BeFileName dbPath = ECDbTestUtility::BuildECDbPath("ecdbprofiletest.db");
+    if (dbPath.DoesPathExist())
         {
         // Delete any previously created file
-        ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeDeleteFile(dbPath));
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(dbPath));
         }
 
 
     //first create an SQLite file with basic profile only (no ECDb)
-        {
-        Db db;
-        DbResult stat = db.CreateNewDb (dbPath);
-        EXPECT_EQ (BE_SQLITE_OK, stat) << L"Creating BeSQLite file failed";
+    {
+    Db db;
+    DbResult stat = db.CreateNewDb(dbPath);
+    EXPECT_EQ(BE_SQLITE_OK, stat) << L"Creating BeSQLite file failed";
 
-        EXPECT_FALSE (db.TableExists (PROFILE_TABLE)) << "BeSQLite file is not expected to contain tables of the EC profile";
+    EXPECT_FALSE(db.TableExists(PROFILE_TABLE)) << "BeSQLite file is not expected to contain tables of the EC profile";
 
-        Utf8String profileVersion;
-        EXPECT_EQ  (BE_SQLITE_ERROR, db.QueryProperty (profileVersion, PROFILEVERSION_PROPSPEC)) << L"BeSQLite file is not expected to contain the ECDb profile version.";
+    Utf8String profileVersion;
+    EXPECT_EQ(BE_SQLITE_ERROR, db.QueryProperty(profileVersion, PROFILEVERSION_PROPSPEC)) << L"BeSQLite file is not expected to contain the ECDb profile version.";
 
-        size_t sequenceIndex = 0;
-        ASSERT_FALSE (db.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
-        db.CloseDb ();
-        }
+    size_t sequenceIndex = 0;
+    ASSERT_FALSE(db.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
+    db.CloseDb();
+    }
 
     //now create an ECDb file
-        {
-        ECDbR ecdb = SetupECDb("ecdbprofiletest.ecdb");
+    {
+    ECDbR ecdb = SetupECDb("ecdbprofiletest.ecdb");
 
-        EXPECT_TRUE (ecdb.TableExists (PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
+    EXPECT_TRUE(ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
-        Utf8String actualProfileVersionStr;
-        EXPECT_EQ  (BE_SQLITE_ROW, ecdb.QueryProperty (actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
-        SchemaVersion actualProfileVersion (actualProfileVersionStr.c_str ());
-        EXPECT_TRUE (EXPECTED_PROFILEVERSION == actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
+    Utf8String actualProfileVersionStr;
+    EXPECT_EQ(BE_SQLITE_ROW, ecdb.QueryProperty(actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
+    SchemaVersion actualProfileVersion(actualProfileVersionStr.c_str());
+    EXPECT_TRUE(EXPECTED_PROFILEVERSION == actualProfileVersion) << "Unexpected ECDb profile version of new ECDb file. Actual version: " << actualProfileVersionStr.c_str();
 
-        size_t sequenceIndex = 0;
-        ASSERT_TRUE (ecdb.GetBLVCache().TryGetIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
+    size_t sequenceIndex = 0;
+    ASSERT_TRUE(ecdb.GetBLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_KEY));
 
-        uint64_t lastECInstanceId = -1LL;
-        EXPECT_EQ (BE_SQLITE_OK, ecdb.GetBLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
-        }
+    uint64_t lastECInstanceId = -1LL;
+    EXPECT_EQ(BE_SQLITE_OK, ecdb.GetBLVCache().QueryValue(lastECInstanceId, sequenceIndex)) << L"ECInstanceId sequence not found in ECDb file which was newly created";
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ TEST_F(ECDbTestFixture, ECDbProfileSchemas)
 
     ECSchemaCP systemSchema = ecdb.Schemas().GetECSchema("ECDb_System");
     ASSERT_TRUE(systemSchema != nullptr);
-    
+
     //Terminology of system/standard schemas is not clear yet for the EC3 world. Right now, the profile schemas are neither of that.
     ASSERT_FALSE(systemSchema->IsSystemSchema());
     ASSERT_FALSE(StandardCustomAttributeHelper::IsSystemSchema(*systemSchema));
@@ -93,7 +93,7 @@ TEST_F(ECDbTestFixture, ECDbProfileSchemas)
 // @bsimethod                                     Majd.Uddin                  07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CreateECDbProfileFailsIfAlreadyCreated)
-{
+    {
     ECDbR ecdb = SetupECDb("ecdbprofiletest2.ecdb");
 
     EXPECT_TRUE(ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
@@ -118,7 +118,7 @@ TEST_F(ECDbTestFixture, CreateECDbProfileFailsIfAlreadyCreated)
     params.SetFailIfDbExist(false);
     stat = ecdb.CreateNewDb(ecdbFilePathUtf8.c_str(), BeSQLite::BeGuid(), params);
     EXPECT_EQ(BE_SQLITE_ERROR, stat);
-}
+    }
 
 
 END_ECDBUNITTESTS_NAMESPACE
