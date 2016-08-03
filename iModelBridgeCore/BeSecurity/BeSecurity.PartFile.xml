@@ -90,8 +90,11 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BeSecurity-Gtest/BeSecurityTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/BeSecurity" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BeSecurity-Gtest/BeSecurityTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="BeSecurity-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeSecurityTest.log</Files>
+        </Bindings>
     </Part>
 </BuildContext>
