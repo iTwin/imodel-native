@@ -1472,7 +1472,7 @@ void DgnQueryView::DrawGroundPlane(DecorateContextR context)
     pts[3].y = ground.m_extents.low.y;
 
     double keyValues[] = {0.0, 0.25, 0.5}; // gradient goes from edge of rectangle (0.0) to center (1.0)...
-    ColorDef colors[] = {GetBackgroundColor(), ground.m_color, ground.m_color};
+    ColorDef colors[] = {ground.m_color, ground.m_color, ground.m_color};
 
     colors[0].SetAlpha(ground.m_edgeAlpha);
     colors[1].SetAlpha(ground.m_centerAlpha);
