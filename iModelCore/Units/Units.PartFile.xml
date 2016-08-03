@@ -109,9 +109,12 @@
   <!-- Only/ExcludePlatforms attributes should be used only in this section -->
 
   <!-- *** GTEST - runs on Windows, Linux, MaxOS *** -->
-  <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Units-Gtest/UnitsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Units" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+  <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Units-Gtest/UnitsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
     <SubProduct ProductName="Units-Gtest" />
     <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    <Bindings>
+      <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/UnitsTest.log</Files>
+    </Bindings>
   </Part>
 
   <Product Name="Units-Gtest" >
@@ -144,7 +147,9 @@
 
   <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Units-AndroidJUnit" OnlyPlatforms="Android*">
     <SubProduct ProductName="Units-AndroidJUnit"/>
-    <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
+    <Bindings>
+      <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Units-AndroidJUnit.log</Files>
+    </Bindings>
   </Part>
 
   <!-- *** iOSXCTest *** -->
