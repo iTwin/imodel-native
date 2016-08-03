@@ -289,7 +289,8 @@ struct GeometryStreamIO
 }; // GeometryStreamIO
 
 //=======================================================================================
-//! GeometryCollection provides an iterator for a Geometric Element's GeometryStream.
+//! GeometryCollection provides an iterator for a GeometricElement's GeometrySource or
+//! a DgnGeometryPart's GeometryStream.
 //! @ingroup GROUP_Geometry
 //=======================================================================================
 struct GeometryCollection
@@ -300,7 +301,7 @@ struct GeometryCollection
     //=======================================================================================
     struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
-    private:
+    public:
 
         enum class EntryType
         {
@@ -314,6 +315,8 @@ struct GeometryCollection
             SolidKernelEntity   = 7,  //!< SolidKernelEntity
             TextString          = 8,  //!< TextString
         };
+
+    private:
 
         struct CurrentState
         {
@@ -353,9 +356,9 @@ struct GeometryCollection
         bool operator!=(Iterator const& rhs) const {return !(*this == rhs);}
         Iterator const& operator*() const {return *this;}
 
-        Render::GeometryParamsCR GetGeometryParams() const {return m_state->m_geomParams;} //!< Returns GeometryParams for current geometry...
-        DgnGeometryPartId GetGeometryPartId() const {return m_state->m_geomStreamEntryId.GetGeometryPartId();} //!< Returns invalid id if not a GeometryPart... 
-        GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_state->m_geomStreamEntryId;} //!< Returns primitive id for current geometry...
+        Render::GeometryParamsCR GetGeometryParams() const {return m_state->m_geomParams;} //!< Returns GeometryParams for current GeometricPrimitive...
+        DgnGeometryPartId GetGeometryPartId() const {return m_state->m_geomStreamEntryId.GetGeometryPartId();} //!< Returns invalid id if not a DgnGeometryPart reference... 
+        GeometryStreamEntryId GetGeometryStreamEntryId() const {return m_state->m_geomStreamEntryId;} //!< Returns primitive id for current GeometricPrimitive...
         
         DGNPLATFORM_EXPORT EntryType GetEntryType() const;  //!< check geometry type to avoid creating GeometricPrimitivePtr for un-desired types.
         DGNPLATFORM_EXPORT bool IsCurve() const;            //!< open and unstructured curves check that avoids creating GeometricPrimitivePtr when possible.
@@ -385,8 +388,10 @@ public:
     const_iterator begin() const {return const_iterator(m_data, m_dataSize, m_state);}
     const_iterator end() const {return const_iterator();}
 
-    //! Iterate a GeometryStream for a DgnGeometryPart using the current GeometryParams and geometry to world transform
-    //! for of part instance as found when iterating a GeometrySource with a part reference.
+    //! Iterate a GeometryStream for a DgnGeometryPart in the context of a parent GeometrySource iterator.
+    //! When iterating a GeometrySource for a GeometricElement that has DgnGeometryPartId references, this
+    //! allows iteration of the DgnGeometryPart's GeometryStream using the instance specific GeometryParams
+    //! and part geometry to world transform as established by the parent GeometrySource.
     DGNPLATFORM_EXPORT void SetNestedIteratorContext(Iterator const& iter);
     
     //! Iterate a GeometryStream.
@@ -402,7 +407,7 @@ public:
 typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
 
 //=======================================================================================
-//! GeometryBuilder provides methods for setting up an element's GeometryStream and Placement2d/Placement3d.
+//! GeometryBuilder provides methods for setting up an element's GeometryStream and Placement2d or Placement3d.
 //! The GeometryStream stores one or more GeometricPrimitive and optional GeometryParam for a GeometricElement.
 //! An element's geometry should always be stored relative to its placement. As the placement defines the
 //! element to world transform, an element can be moved/rotated by just updating it's placement.
@@ -606,11 +611,11 @@ public:
     //! Create 2d builder from DgnModel, DgnCategoryId, origin, and optional rotation AngleInDegrees.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
 
-    //! Create builder using the DgnModel, DgnCategoryId, and Placement2d/Placement3d of an existing GeometrySource.
+    //! Create builder using the DgnModel, DgnCategoryId, and Placement2d or Placement3d of an existing GeometrySource.
     //! @note It is expected that either the GeometrySource has a valid non-identity placement already set, or that the caller will update the placement after 
     //!       adding GeometricPrimitive in local coordinates. World coordinate geometry should never be added to a builder with an identity placement unless
     //!       the element is really located at the origin.
-    //!       The supplied GeometrySource is soley used to query information, it does not need to be the GeometrySource that is supplied to Finish.
+    //!       The supplied GeometrySource is soley used to query information, it does not need to be the same GeometrySource that is modified by Finish.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create (GeometrySourceCR);
 
 }; // GeometryBuilder
