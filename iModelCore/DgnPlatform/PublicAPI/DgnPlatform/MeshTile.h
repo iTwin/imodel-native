@@ -76,7 +76,7 @@ struct TileGeometryCache
         Image       m_image;
         size_t      m_id;
 
-        static Image Load(TileDisplayParamsCR params);
+        static Image Load(TileDisplayParamsCR params, DgnDbR db);
 
         TextureImage(Image&& image, size_t id) : m_image(std::move(image)), m_id(id) { BeAssert(m_image.IsValid()); }
     public:
@@ -102,7 +102,7 @@ public:
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     TransformCR GetTransformToDgn() const { return m_transformToDgn; }
 
-    void ResolveTexture(TileDisplayParamsCR params);
+    void ResolveTexture(TileDisplayParamsCR params, DgnDbR db);
     DGNPLATFORM_EXPORT TextureImage const* GetTextureImage(TileDisplayParamsCR params) const;
 };
 

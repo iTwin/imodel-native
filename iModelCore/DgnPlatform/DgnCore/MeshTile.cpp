@@ -81,23 +81,32 @@ DRange3d TileGeometryCache::GetRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Image TileGeometryCache::TextureImage::Load(TileDisplayParamsCR params)
+Image TileGeometryCache::TextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
     {
     Image image;
-    // ###TODO: MaterialManager::GetSimpleTextureImage()...
-    return image;
+    DgnMaterialId matId = params.GetMaterialId();
+    JsonRenderMaterial mat;
+    if (!matId.IsValid() || SUCCESS != mat.Load(matId, db))
+        return image;
+
+    JsonRenderMaterial::TextureMap texMap = mat.GetPatternMap();
+    if (!texMap.IsValid() || !texMap.GetTextureId().IsValid())
+        return image;
+
+    DgnTextureCPtr tex = DgnTexture::QueryTexture(texMap.GetTextureId(), db);
+    return tex.IsValid() ? Image(tex->GetImageSource()) : image;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryCache::ResolveTexture(TileDisplayParamsCR params)
+void TileGeometryCache::ResolveTexture(TileDisplayParamsCR params, DgnDbR db)
     {
     if (m_textures.end() != m_textures.find(params))
         return;
 
     TextureImagePtr image;
-    Image renderImage = TextureImage::Load(params);
+    Image renderImage = TextureImage::Load(params, db);
     if (renderImage.IsValid())
         image = new TextureImage(std::move(renderImage), m_nextTextureId++);
 
@@ -940,7 +949,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     m_range.Extend(range);
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams);
+    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
     m_rangeTree->Add(new RangeTreeNode(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved), range);
 
     return true;
@@ -1005,7 +1014,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     m_range.Extend(range);
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams);
+    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
 
     IGeometryPtr geom = IGeometry::Create(clone);
     m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false), range);
@@ -1028,7 +1037,7 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     m_range.Extend(range);
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams);
+    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
     m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions), range);
 
     return true;
