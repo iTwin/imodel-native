@@ -144,10 +144,13 @@
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp" />
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaGen.cpp" />
     <ClCompile Include="ConnectC\CWSCC.cpp" />
+    <ClCompile Include="ConnectC\CWSCCBuffer.cpp" />
     <ClCompile Include="ConnectC\CWSCCBufferGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGen.cpp" />
     <ClCompile Include="ConnectC\CWSCCGenBuffer.cpp" />
     <ClCompile Include="ConnectC\CWSCCInternal.cpp" />
+    <ClCompile Include="ConnectC\IMSSearch\IMSSearch.cpp" />
+    <ClCompile Include="ConnectC\IMSSearch\IMSSearchBuffer.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
     <ClCompile Include="Connect\ImsClient.cpp" />
@@ -248,7 +251,9 @@
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.h" />
     <ClInclude Include="Cache\Schemas.h" />
     <ClInclude Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.h" />
+    <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
+    <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
@@ -269,10 +274,12 @@
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenBufferPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchBufferPublic.h" />
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h" />
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrClient.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcase.h" />

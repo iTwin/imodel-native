@@ -609,6 +609,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     status = ConnectWebServicesClientC_ReadProject_V2 (api, wInstanceId.c_str(), &project);
     EXPECT_TRUE (status == SUCCESS);
 
+    CWSCCDATABUFHANDLE projects;
+    status = ConnectWebServicesClientC_ReadProject_V2List(api, &projects);
+    EXPECT_TRUE(status == SUCCESS);
+
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
     EXPECT_TRUE (status == SUCCESS);
 
@@ -665,9 +669,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
     * \param[in] OrganizationName
     * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
     ****************************************************************************************/
-    //WPrintfString Name (L"CWSCCTest%s", to_wstring (random_generator ()()).c_str ());
-    //WString OrganizationGuid (to_wstring (random_generator()()).c_str ());
-    //NOTE: Creation works fine, but deletion doesn't, so I don't want to create endless organizations
+    //BeGuid newGuid(true);
+    //WPrintfString Name(L"CWSCCTest%s", newGuid.ToString().c_str());
+    //WString OrganizationGuid;
+    //OrganizationGuid.AssignUtf8(newGuid.ToString().c_str());
+    ////NOTE: Creation works fine, but deletion doesn't, so I don't want to create endless organizations
     //CallStatus status = ConnectWebServicesClientC_CreateOrganization(api, 
     //                                                                 OrganizationGuid.c_str (),
     //                                                                 Name.c_str ());
@@ -677,7 +683,6 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
     //ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
 
     WString wInstanceId = L"1001389117";
-    //wInstanceId.AssignUtf8 (instanceId);
     CWSCCDATABUFHANDLE organization;
     CallStatus status = ConnectWebServicesClientC_ReadOrganization (api, wInstanceId.c_str (), &organization);
     ASSERT_TRUE (status == SUCCESS);
@@ -775,6 +780,101 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteFunctions_CRUDsSucces
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProjectFavorite (api, wInstanceId.c_str ());
+    EXPECT_TRUE(status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
+    ASSERT_TRUE (status == SUCCESS);
+
+    status = ConnectWebServicesClientC_FreeApi (api);
+    ASSERT_TRUE (status == SUCCESS);
+    }
+
+TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
+    {
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
+        m_applicationName.c_str (),
+        m_applicationVersion.c_str (),
+        m_applicationGuid.c_str (),
+        m_ccProductId.c_str (),
+        m_fiddlerProxyUrl.c_str (),
+        m_fiddlerProxyUsername.c_str (),
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
+        );
+    ASSERT_TRUE (api != nullptr);
+
+    /************************************************************************************//**
+    * \brief Create a new project
+    * \param[in] apiHandle API object
+    * \param[in] Name
+    * \param[in] Number
+    * \param[in] OrganizationId
+    * \param[in] Active
+    * \param[in] Industry
+    * \param[in] AssetType
+    * \param[in] LastModified
+    * \param[in] Location
+    * \param[in] Latitude
+    * \param[in] Longitude
+    * \param[in] LocationIsUsingLatLong
+    * \param[in] RegisteredDate
+    * \param[in] TimeZoneLocation
+    * \param[in] Status
+    * \param[in] PWDMInvitationId
+    * \return Success or error code. See \ref clientErrorCodes
+    ****************************************************************************************/
+    BeGuid guid(true);
+    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
+    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString OrgId = L"1001389117";
+    bool Active = true;
+    WString Industry = L"8";
+    WString AssetType = L"11";
+    WString Location = L"Huntsville";
+    double lat = 48.1231232;
+    double lon = -25.12315411;
+    bool LocationIsUsingLatLong = false;
+    CallStatus status = ConnectWebServicesClientC_CreateProject(api, 
+                                            Name.c_str(),
+                                            Number.c_str (),
+                                            OrgId.c_str (),
+                                            &Active,
+                                            Industry.c_str (),
+                                            AssetType.c_str (),
+                                            nullptr,
+                                            Location.c_str (),
+                                            &lat,
+                                            &lon,
+                                            &LocationIsUsingLatLong,
+                                            nullptr,
+                                            nullptr,
+                                            0,
+                                            nullptr);
+
+    ASSERT_TRUE (status == SUCCESS);
+
+    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
+    ASSERT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+
+    WString wInstanceId;
+    wInstanceId.AssignUtf8 (instanceId);
+    
+    status = ConnectWebServicesClientC_CreateProjectFavorite_V2(api, 
+                                            wInstanceId.c_str());
+    ASSERT_TRUE(status == SUCCESS);
+
+    CWSCCDATABUFHANDLE projectFavorite;
+    status = ConnectWebServicesClientC_ReadProjectFavorite_V2(api, wInstanceId.c_str(), &projectFavorite);
+    EXPECT_TRUE (status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DataBufferFree (api, projectFavorite);
+    EXPECT_TRUE(status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DeleteProjectFavorite_V2(api, wInstanceId.c_str());
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
@@ -886,6 +986,107 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
 
     CWSCCDATABUFHANDLE projectMRUDetail;
     status = ConnectWebServicesClientC_ReadProjectMRUDetail (api, wProjectInstanceId.c_str (), &projectMRUDetail);
+    EXPECT_TRUE(status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DataBufferFree (api, projectMRUDetail);
+    EXPECT_TRUE(status == SUCCESS);
+
+    status = ConnectWebServicesClientC_DeleteProject (api, wProjectInstanceId.c_str ());
+    ASSERT_TRUE (status == SUCCESS);
+
+    status = ConnectWebServicesClientC_FreeApi (api);
+    ASSERT_TRUE (status == SUCCESS);
+    }
+
+TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessful_SuccessfulCodesReturned)
+    {
+    auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
+        (m_pmUsername.c_str (),
+        m_pmPassword.c_str (),
+        s_temporaryDirectory.c_str (),
+        s_assetsRootDirectory.c_str (),
+        m_applicationName.c_str (),
+        m_applicationVersion.c_str (),
+        m_applicationGuid.c_str (),
+        m_ccProductId.c_str (),
+        m_fiddlerProxyUrl.c_str (),
+        m_fiddlerProxyUsername.c_str (),
+        m_fiddlerProxyPassword.c_str(),
+        nullptr
+        );
+    ASSERT_TRUE (api != nullptr);
+
+    /************************************************************************************//**
+    * \brief Create a new project
+    * \param[in] apiHandle API object
+    * \param[in] Name
+    * \param[in] Number
+    * \param[in] OrganizationId
+    * \param[in] Active
+    * \param[in] Industry
+    * \param[in] AssetType
+    * \param[in] LastModified
+    * \param[in] Location
+    * \param[in] Latitude
+    * \param[in] Longitude
+    * \param[in] LocationIsUsingLatLong
+    * \param[in] RegisteredDate
+    * \param[in] TimeZoneLocation
+    * \param[in] Status
+    * \param[in] PWDMInvitationId
+    * \return Success or error code. See \ref clientErrorCodes
+    ****************************************************************************************/
+    BeGuid guid(true);
+    WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
+    WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
+    WString OrgId = L"1001389117";
+    bool Active = true;
+    WString Industry = L"8";
+    WString AssetType = L"11";
+    WString Location = L"Huntsville";
+    double lat = 48.1231232;
+    double lon = -25.12315411;
+    bool LocationIsUsingLatLong = false;
+    CallStatus status = ConnectWebServicesClientC_CreateProject(api, 
+                                            Name.c_str(),
+                                            Number.c_str (),
+                                            OrgId.c_str (),
+                                            &Active,
+                                            Industry.c_str (),
+                                            AssetType.c_str (),
+                                            nullptr,
+                                            Location.c_str (),
+                                            &lat,
+                                            &lon,
+                                            &LocationIsUsingLatLong,
+                                            nullptr,
+                                            nullptr,
+                                            0,
+                                            nullptr);
+    ASSERT_TRUE (status == SUCCESS);
+
+    auto instanceId = ConnectWebServicesClientC_GetLastCreatedObjectInstanceId (api);
+    EXPECT_FALSE (Utf8String::IsNullOrEmpty (instanceId));
+
+    WString wProjectInstanceId;
+    wProjectInstanceId.AssignUtf8 (instanceId);
+
+    /************************************************************************************//**
+    * \brief Create a new projectmru
+    * \param[in] apiHandle API object
+    * \param[in] ProjectGuid
+    * \param[in] ProjectName
+    * \param[in] LastModified
+    * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
+    ****************************************************************************************/
+    status = ConnectWebServicesClientC_CreateProjectMRU(api, 
+                                                        wProjectInstanceId.c_str (),
+                                                        Name.c_str (),
+                                                        nullptr);
+    ASSERT_TRUE(status == SUCCESS);
+
+    CWSCCDATABUFHANDLE projectMRUDetail;
+    status = ConnectWebServicesClientC_ReadProjectMRUDetail_V2 (api, wProjectInstanceId.c_str (), &projectMRUDetail);
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, projectMRUDetail);

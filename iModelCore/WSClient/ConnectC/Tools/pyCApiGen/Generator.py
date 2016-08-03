@@ -10,7 +10,6 @@ from SchemaWriter.HeaderWriters.SchemaBufferHeaderWriter import SchemaBufferHead
 from SchemaWriter.HeaderWriters.SchemaBufferPublicHeaderWriter import SchemaBufferPublicHeaderWriter
 from SchemaWriter.SourceWriters.SchemaBufferSourceWriter import SchemaBufferSourceWriter
 from BufferHeaderWriter import BufferHeaderWriter
-from BufferPublicHeaderWriter import BufferPublicHeaderWriter
 from BufferSourceWriter import BufferSourceWriter
 
 ###########################################################################################################
@@ -136,12 +135,6 @@ bufferHeaderWriter = BufferHeaderWriter(unique_ecschemas.values(),
                                         api,
                                         status_codes)
 bufferHeaderWriter.write_header()
-
-bufferPublicHeaderWriter = BufferPublicHeaderWriter(unique_ecschemas.values(),
-                                                    publicApiDir + '{0}BufferGenPublic.h'.format(api.get_upper_api_acronym()),
-                                                    api,
-                                                    status_codes)
-bufferPublicHeaderWriter.write_header()
 
 bufferSourceWriter = BufferSourceWriter(unique_ecschemas.values(),
                                         srcDir + '{0}BufferGen.cpp'.format(api.get_upper_api_acronym()),

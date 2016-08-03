@@ -438,6 +438,15 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConnectC\CWSCCBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\IMSSearch\IMSSearch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConnectC\IMSSearch\IMSSearchBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -962,9 +971,6 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -993,6 +999,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\CWSCCBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchBufferPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchPublic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

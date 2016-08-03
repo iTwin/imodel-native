@@ -27,7 +27,7 @@ void SolrClientTests::SetUp()
     m_credentials = Credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
 
     UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_DGNCLIENTFX_UTILS_HTTP, NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
     }
 
 

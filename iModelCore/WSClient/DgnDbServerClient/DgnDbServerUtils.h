@@ -57,6 +57,8 @@ namespace ServerSchema
         static Utf8CP Description = "Description";
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP CreatedDate = "CreatedDate";
+        static Utf8CP UserUploaded = "UserUploaded";
+        static Utf8CP UploadedDate = "UploadedDate";
         static Utf8CP FileSize = "FileSize";
         static Utf8CP BriefcaseId = "BriefcaseId";
         static Utf8CP ParentId = "ParentId";
