@@ -7,6 +7,16 @@
 #--------------------------------------------------------------------------------------
 import os, glob, sys, string, stat, re, subprocess
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson              04/2016
 #-------------------------------------------------------------------------------------------
@@ -31,10 +41,11 @@ def main():
     totalcount = 0
     currentcount = 0
 
-    with open (logfilename, 'w+') as logfile:
+    with open (logfilename, 'a+') as logfile:
         try:
             while True:
                 line = raw_input ('')
+
 
                 if totalcount == 0:
                     if line.startswith('[==========] Running'):
@@ -44,9 +55,11 @@ def main():
                         currentcount = currentcount + 1;
 
                 logfile.write (line + "\n" )
+
                 if not quiet:
-                    print line
-                    print '{0}/{1}\r'.format(currentcount, totalcount),
+                    progress = '{0}/{1}'.format(currentcount, totalcount)
+                    print bcolors.BOLD + progress.ljust(10) + bcolors.ENDC + line
+
         except EOFError:
             exit (0)
 

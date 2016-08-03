@@ -1,0 +1,18 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: gtest/CheckLogfilesForFailures.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+
+%ifndef LogFilesDir
+    %error Define LogFilesDir as the directory that contaings the logfiles to analyze
+%endif
+
+always:
+    python $(_makeFilePath)CheckLogfilesForFailures.py $(LogFilesDir) 1
+    

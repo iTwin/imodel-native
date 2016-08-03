@@ -12,7 +12,11 @@
 %endif
 
 %ifndef GTEST_OUTPUT_DIR
-    %error Define GTEST_OUTPUT_DIR to the directory where logs, etc. should go
+    GTEST_OUTPUT_DIR=$(OutputRootDir)build/RunGtest/$[@basename $(GTEST_EXE)]/
+%endif
+
+%ifndef GTEST_LOGFILE_NAME
+    GTEST_LOGFILE_NAME=$[@basename $(GTEST_EXE)].log
 %endif
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
@@ -26,7 +30,7 @@ always:
 %endif
 
 LogDir=$(runDir)logs/
-ResultsCapture=$(LogDir)ResultsCapture.txt
+ResultsCapture=$(LogDir)test.log
 
 always:
     !~@mkdir ${GTEST_OUTPUT_DIR}
@@ -35,10 +39,10 @@ always:
     !~@mkdir ${runDir}/Temp
     !~@mkdir ${LogDir}
 
-%if $(TARGET_PLATFORM)=="Windows"
+%if defined (winNT) 
     
-    exeName = $[@realpath $(GTEST_EXE)]
     testName = $[@basename $(exeName)]
+    exeName = $[@realpath $(GTEST_EXE)]
 
     %if defined(RUN_GTEST_MINIMIZED)
         RunPrefix=start "$(testName)" \/WAIT \/MIN
@@ -47,20 +51,17 @@ always:
     %endif
 
 
-    always:
+    $(ResultsCapture): $(_makefilespec)
+        >$@
+        $(exeName)
+        <
         >$(LogDir)run.bat
-        $(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
+        $(exeName) | $(_makeFilePath)TeeGtest.py $@
         exit
         <
         -$(RunPrefix) $(LogDir)run.bat
-        %message See $(ResultsCapture)
-        python $(_makeFilePath)CheckResultsForFailures.py $(ResultsCapture) $(exeName)
-        
-    %return
 
-%endif
-
-%if $(TARGET_PLATFORM) == "Linux" || $(TARGET_PLATFORM) == "MacOS"
+%else
     
     # This is a hack because symlinks wreck havoc when running on Linux... some shells and apps resolve, some resolve partially, some don't... sucks, but this is the most reliable way.
     # See associated code in RunTests.py:GetExeLocation
@@ -80,13 +81,23 @@ always:
 
     exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
 
-    always:
-        -$(exeName) | tee $(ResultsCapture)
-        %message See $(ResultsCapture)
-        python $(_makeFilePath)CheckResultsForFailures.py $(ResultsCapture) $(exeName)
-
-    %return
+    $(ResultsCapture): $(_makefilespec)
+        >$@
+        $(exeName)
+        <
+        -$(exeName) | tee -a $@
 
 %endif
 
-%error Unsupported platform for running gtest
+%message See $(ResultsCapture)
+
+%if defined (BEGTEST_BREAK_ON_FAILURE)
+    %if $(BEGTEST_BREAK_ON_FAILURE) > 1
+        always:
+            python $(_makeFilePath)CheckResultsForFailures.py $[@dir $(ResultsCapture)] 1
+    %endif
+%endif
+
+always:
+    !~@mkdir $(BuildContext)Delivery/Gtest/Logs
+    ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"

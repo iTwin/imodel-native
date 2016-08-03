@@ -22,6 +22,10 @@ baseDir             = $(_MakeFilePath)
     %error Define ANDROIDJUNIT_PRODUCT as the name of the Product in the output directory that contains the specified test suite.
 %endif
 
+%ifndef ANDROIDJUNIT_LOGFILE_NAME
+    ANDROIDJUNIT_LOGFILE_NAME=$(ANDROIDJUNIT_PRODUCT).log
+%endif
+
 ANDROIDJUNITPROJ=$(OutputRootDir)Product/$(ANDROIDJUNIT_PRODUCT)/project/
 
 %ifndef ANDROIDJUNIT_OUTPUT_DIR
@@ -31,7 +35,6 @@ ANDROIDJUNITPROJ=$(OutputRootDir)Product/$(ANDROIDJUNIT_PRODUCT)/project/
 %if defined (BMAKE_DELETE_ALL_TARGETS)
 always:
     $(rmdirRecursiveCmd) ${ANDROIDJUNIT_OUTPUT_DIR}
-    $(rmdirRecursiveCmd) $(OutputRootDir)build/RunAndroidJUnitTest
     %return
 %endif
 
@@ -49,7 +52,7 @@ always:
     %return
 %endif
 
-logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/RunAndroidJUnitTest.log
+logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/test.log
 
 ADB_FILTERS=TestRunner:I
 ADB_FILTERS+ UnitsNative:* ComponentModelTest:* BeTestX:* ICU_DATA_FILE:*
@@ -68,12 +71,37 @@ adb logcat $(ADB_FILTERS)
 
 teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 
-always:
-    $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
-    -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
-    %if defined (BEGTEST_BREAK_ON_FAILURE)
-        if $(BEGTEST_BREAK_ON_FAILURE) > 1
-            python $(baseDIr)CheckResultsForFailures.py $(logFile)
-        %endif
+%if defined (winNT) 
+    %if defined(RUN_GTEST_MINIMIZED)
+        RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT \/MIN
+    %else
+        RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT
     %endif
+
+    $(logFile): $(_makefileSpec)
+        >${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
+        call $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
+        adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
+        exit
+        <
+        -$(RunPrefix) ${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
+
+%else
+    always:
+        $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
+        -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | tee $(logFile)
+
+%endif
+
+%message See $(logFile)
+
+%if defined (BEGTEST_BREAK_ON_FAILURE)
+    %if $(BEGTEST_BREAK_ON_FAILURE) > 1
+        python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
+    %endif
+%endif
+
+always:
+    !~@mkdir $(BuildContext)Delivery/ANJU/Logs
+    ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"
 
