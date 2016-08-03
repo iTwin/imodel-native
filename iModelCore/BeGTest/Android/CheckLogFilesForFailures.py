@@ -11,15 +11,16 @@ import os, sys, re
 # bsimethod                                     Sam.Wilson      05/2016
 #-------------------------------------------------------------------------------------------
 def checkLogFileForFailures(file):
+    print file
     failureCount = 0
     with open(file, 'r') as logfile:
         for line in logfile.readlines():
             lline = line.lower()
-            if lline.startswith("failure in test") or lline.startswith('instrumentation_result:'):
+            if lline.startswith("failure in test"):
                 failureCount = failureCount + 1
                 print line,
             else:
-                if lline.find('process crashed') != -1:
+                if lline.find('process crashed') != -1 or lline.find('instrumentation_result: shortmsg=native crash') != -1:
                     failureCount = failureCount + 1
                     print line,
                 else:
@@ -45,8 +46,6 @@ if __name__ == '__main__':
         for file in files:
             if not file.endswith('.log'):
                 continue;
-
-            print root
 
             checkedCount = checkedCount + 1
             path = os.path.join(root, file)
