@@ -14,10 +14,14 @@ ConnectCMkiSourceDir = $(CWSClientCSourceDirectory)ConnectC/
 #--------------------------------------------------------------------------------------
 ConnectCMkiHeaders = $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h   \
                      $(ConnectCMkiPublicApiDir)ConnectWsgGlobal/GlobalSchemaGenPublic.h         \
+                     $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchPublic.h                      \
+                     $(ConnectCMkiPublicApiDir)IMSSearch/IMSSearchBufferPublic.h                \
                      $(ConnectCMkiPublicApiDir)CWSCC.h                                          \
-                     $(ConnectCMkiPublicApiDir)CWSCCBufferGenPublic.h                           \
+                     $(ConnectCMkiPublicApiDir)CWSCCBufferPublic.h                              \
                      $(ConnectCMkiPublicApiDir)CWSCCPublic.h                                    \
                      $(ConnectCMkiSourceDir)ConnectWsgGlobal/GlobalSchemaBufferGen.h            \
+                     $(ConnectCMkiSourceDir)IMSSearch/IMSSearchBuffer.h                         \
+                     $(ConnectCMkiSourceDir)CWSCCBuffer.h                                       \
                      $(ConnectCMkiSourceDir)CWSCCBufferGen.h                                    \
                      $(ConnectCMkiSourceDir)CWSCCInternal.h                                     \
                      $(ConnectCMkiSourceDir)CWSCCPrivate.h                                      \
@@ -52,8 +56,14 @@ MultiCompileDepends=$(_MakeFileSpec)
 #---------------------------------------------------------------------------------------+
 $(o)CWSCC$(oext)                                    : $(ConnectCMkiSourceDir)CWSCC.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
 
+$(o)CWSCCBuffer$(oext)                              : $(ConnectCMkiSourceDir)CWSCCBuffer.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
 $(o)CWSCCBufferGen$(oext)                           : $(ConnectCMkiSourceDir)CWSCCBufferGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
 
 $(o)GlobalSchemaBufferGen$(oext)                    : $(ConnectCMkiSourceDir)ConnectWsgGlobal/GlobalSchemaBufferGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
 
 $(o)GlobalSchemaGen$(oext)                          : $(ConnectCMkiSourceDir)ConnectWsgGlobal/GlobalSchemaGen.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)IMSSearch$(oext)                                : $(ConnectCMkiSourceDir)IMSSearch/IMSSearch.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}
+
+$(o)IMSSearchBuffer$(oext)                          : $(ConnectCMkiSourceDir)IMSSearch/IMSSearchBuffer.cpp $(ConnectCMkiHeaders) ${MultiCompileDepends}

@@ -165,6 +165,7 @@ class ECClass(object):
         get_request_str += "    buf->lCount = buf->lItems.size();\n"
         get_request_str += "    buf->lClassType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    buf->lSchemaType = SCHEMA_TYPE_{0};\n".format(self.get_schema_name().upper())
+        get_request_str += "    buf->isWSGBuffer = true;\n"
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self.__api.get_upper_api_acronym())
         get_request_str += '    api->SetObjectsResponse(result.GetValue());\n'
         get_request_str += '    api->SetStatusMessage("{1}");\n    api->SetStatusDescription("{2}");\n' \
@@ -284,6 +285,7 @@ class ECClass(object):
         get_request_str += "    buf->lCount = 1;\n"
         get_request_str += "    buf->lClassType = BUFF_TYPE_{0};\n".format(self.get_upper_name())
         get_request_str += "    buf->lSchemaType = SCHEMA_TYPE_{0};\n".format(self.get_schema_name().upper())
+        get_request_str += "    buf->isWSGBuffer = true;\n"
         get_request_str += "    buf->lItems = {{{0}Buf}};\n".format(self.get_lower_name())
         get_request_str += "    *{0}Buffer = ({1}DATABUFHANDLE) buf;\n\n".format(self.get_lower_name(), self.__api.get_upper_api_acronym())
         get_request_str += '    api->SetObjectsResponse(result.GetValue());\n'

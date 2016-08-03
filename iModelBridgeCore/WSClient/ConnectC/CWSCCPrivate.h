@@ -9,7 +9,7 @@
 
 #include <Bentley/Bentley.h>
 #include <DgnClientFx/DgnClientFxL10N.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectAuthenticationHandler.h>
@@ -132,3 +132,9 @@ typedef ConnectWebServicesClientC_internal* LPCWSCC;
 * NOTE: Used in pyApiGen tool for error message conversion.
 */
 CallStatus wsresultToConnectWebServicesClientCStatus (LPCWSCC api, WSError::Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
+
+/*
+* Convert Httperror to CallStatus messages.
+* NOTE: Used for IMSSearchAPI response.
+*/
+CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description);

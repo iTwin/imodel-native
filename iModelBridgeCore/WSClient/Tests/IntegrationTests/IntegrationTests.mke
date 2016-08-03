@@ -90,6 +90,7 @@ LIB_DIR =  $(BuildContext)SubParts/Libs/
 
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)DgnClientFx$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)Bentley$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeHttp$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLite$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLiteEC$(libext)
 GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)

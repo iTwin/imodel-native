@@ -104,8 +104,14 @@ IHTTPHANDLERPTR customHandler
         );
 
     if (api->AttemptLoginUsingToken(make_shared<SamlToken>(authenticatedToken)))
+        {
         return (CWSCCHANDLE) api;
-    return nullptr;
+        }
+    else
+        {
+        ConnectWebServicesClientC_FreeApi((CWSCCHANDLE) api);
+        return nullptr;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,8 +155,14 @@ IHTTPHANDLERPTR customHandler
         );
 
     if (api->AttemptLoginUsingCredentials(Credentials(username, password)))
+        {
         return (CWSCCHANDLE) api;
-    return nullptr;
+        }
+    else
+        {
+        ConnectWebServicesClientC_FreeApi((CWSCCHANDLE) api);
+        return nullptr;
+        }
     }
 
 
@@ -166,27 +178,6 @@ CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle)
     delete api;
     return SUCCESS;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                    04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description)
-    {
-    api->SetStatusMessage(message);
-    api->SetStatusDescription(description);
-    switch (status)
-        {
-        case HttpStatus::InternalServerError:
-            return ERROR500;
-        case HttpStatus::BadRequest:
-            return ERROR400;
-        case HttpStatus::NotFound:
-            return ERROR404;
-        default:
-            return ERROR500;
-        }
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    05/2016
@@ -215,58 +206,73 @@ WCharCP ProjectGuid
     objectCreationJson["instance"] = instance;
     ObjectId objectId("GlobalSchema", "ProjectFavorite", "");
 
-    if (api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
         {
         api->CreateWSRepositoryClient
             (
-            UrlProvider::Urls::ConnectWsgGlobal.Get(),
+            connectwsgglobalUrl,
             "BentleyCONNECT.Global--CONNECT.GLOBAL"
             );
         }
 
-    auto client = api->m_repositoryClients.find(UrlProvider::Urls::ConnectWsgGlobal.Get() + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
     auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
     if (!result.IsSuccess())
         return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
 
     api->SetCreatedObjectResponse(result.GetValue());
     api->SetStatusMessage("Successful operation");
-    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectMRU completed successfully.");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite completed successfully.");
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
+* @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus ConnectWebServicesClientC_GetIMSUserInfo(CWSCCHANDLE apiHandle, CWSCCDATABUFHANDLE* userBuffer)
+CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V2
+(
+CWSCCHANDLE apiHandle,
+WCharCP ProjectGuid
+)
     {
     VERIFY_API
 
-    if (userBuffer == NULL)
+    Json::Value instance;
+
+    if (ProjectGuid == nullptr)
         {
-        api->SetStatusMessage("The userBuffer parameter is NULL.");
-        api->SetStatusDescription("The userBuffer parameter passed into ConnectWebServicesClientC_GetIMSUserInfo is invalid.");
+        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite_V2.");
+        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite_V2 instance.");
         return INVALID_PARAMETER;
         }
+    instance["instanceId"] = Utf8String(ProjectGuid);
+    instance["schemaName"] = "GlobalSchema";
+    instance["className"] = "ProjectFavorite_V2";
 
-    Utf8String searchApiUrl = "https://qa-waz-search.bentley.com/token"; //UrlProvider::Urls::ImsSearch.Get()
-    Utf8String collection = "IMS/User";
-    if (api->m_solrClients.find(searchApiUrl + collection) == api->m_solrClients.end())
+    Json::Value objectCreationJson;
+    objectCreationJson["instance"] = instance;
+    ObjectId objectId("GlobalSchema", "ProjectFavorite_V2", "");
+
+    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
+    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
         {
-        api->CreateSolrClient
+        api->CreateWSRepositoryClient
             (
-            searchApiUrl,
-            collection
+            connectwsgglobalUrl,
+            "BentleyCONNECT.Global--CONNECT.GLOBAL"
             );
         }
 
-    auto client = api->m_solrClients.find(searchApiUrl + collection)->second;
-    auto result = client->SendGetRequest()->GetResult();
+    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
+    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
     if (!result.IsSuccess())
-        return httperrorToConnectWebServicesClientStatus(api, result.GetError().GetHttpStatus(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
-    
-    api->SetStatusMessage("Success!");
-    api->SetStatusDescription("The IMS user info was successfully retreived.");
+        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
+
+    api->SetCreatedObjectResponse(result.GetValue());
+    api->SetStatusMessage("Successful operation");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite_V2 completed successfully.");
     return SUCCESS;
     }
 
@@ -380,6 +386,26 @@ CallStatus wsresultToConnectWebServicesClientCStatus(LPCWSCC api, WSError::Id er
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                                    04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CallStatus httperrorToConnectWebServicesClientStatus(LPCWSCC api, HttpStatus status, Utf8StringCR message, Utf8StringCR description)
+    {
+    api->SetStatusMessage(message);
+    api->SetStatusDescription(description);
+    switch (status)
+        {
+        case HttpStatus::InternalServerError:
+            return ERROR500;
+        case HttpStatus::BadRequest:
+            return ERROR400;
+        case HttpStatus::NotFound:
+            return ERROR404;
+        default:
+            return ERROR500;
+        }
+    }
+
 WSLocalState ConnectWebServicesClientC_internal::s_localState = WSLocalState();
 
 /*---------------------------------------------------------------------------------**//**
@@ -472,7 +498,13 @@ ConnectWebServicesClientC_internal::~ConnectWebServicesClientC_internal()
 bool ConnectWebServicesClientC_internal::AttemptLoginUsingCredentials(Credentials credentials)
     {
     auto result = m_connectSignInManager->SignInWithCredentials(credentials)->GetResult();
-    return result.IsSuccess();
+    bool isSuccess = result.IsSuccess();
+    if (isSuccess)
+        {
+        SetStatusMessage("Login successful.");
+        SetStatusDescription("Login using credentials performed successfully.");
+        }
+    return isSuccess;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,7 +513,13 @@ bool ConnectWebServicesClientC_internal::AttemptLoginUsingCredentials(Credential
 bool ConnectWebServicesClientC_internal::AttemptLoginUsingToken(SamlTokenPtr token)
     {
     auto result = m_connectSignInManager->SignInWithToken(token)->GetResult();
-    return result.IsSuccess();
+    bool isSuccess = result.IsSuccess();
+    if (isSuccess)
+        {
+        SetStatusMessage("Login successful.");
+        SetStatusDescription("Login using credentials performed successfully.");
+        }
+    return isSuccess;
     }
 
 /*---------------------------------------------------------------------------------**//**

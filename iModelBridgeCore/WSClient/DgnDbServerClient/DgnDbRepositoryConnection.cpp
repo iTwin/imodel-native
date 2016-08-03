@@ -83,16 +83,18 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
     {
     DateTime createdDate = DateTime();
-    DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::CreatedDate].asCString()));
-    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(), value[ServerSchema::Property::FileId].asString(), 
-                                    value[ServerSchema::Property::URL].asString(), value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
-                                    value[ServerSchema::Property::MergedRevisionId].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
+    DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::UploadedDate].asCString()));
+    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(),
+                                    value[ServerSchema::Property::FileId].asString(), value[ServerSchema::Property::URL].asString(),
+                                    value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
+                                    value[ServerSchema::Property::MergedRevisionId].asString(), value[ServerSchema::Property::UserUploaded].asString(),
+                                    createdDate);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo (ICancellationTokenPtr cancellationToken)
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo (Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken)
     {
     ObjectId repositoryObject(ServerSchema::Schema::Repository, ServerSchema::Class::File, "");
     return m_wsRepositoryClient->SendGetObjectRequest(repositoryObject, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>([=] (const WSObjectsResult& response)
@@ -100,7 +102,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo (ICance
         if (response.IsSuccess())
             {
             JsonValueCR instance = response.GetValue().GetJsonValue()[ServerSchema::Instances][0];
-            RepositoryInfoParser(m_repositoryInfo, m_repositoryInfo.GetServerURL(), instance[ServerSchema::InstanceId].asString(), instance[ServerSchema::Properties]);
+            RepositoryInfoParser(m_repositoryInfo, m_repositoryInfo.GetServerURL(), repositoryId, instance[ServerSchema::Properties]);
             return DgnDbServerStatusResult::Success();
             }
         return DgnDbServerStatusResult::Error(response.GetError());
@@ -142,7 +144,7 @@ AuthenticationHandlerPtr authenticationHandler
         return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
         }
 
-    return repositoryConnection->UpdateRepositoryInfo(cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerStatusResultCR result)
+    return repositoryConnection->UpdateRepositoryInfo(repository.GetId(), cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerStatusResultCR result)
         {
         if (!result.IsSuccess())
             return DgnDbRepositoryConnectionResult::Error(result.GetError());
