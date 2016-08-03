@@ -18,8 +18,6 @@ using namespace DgnSqlTestNamespace;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SqlFunctionsTest : public ::testing::Test
 {   
-    static void SetUpTestCase();
-public:
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
     ScopedDgnHost m_host;
     DgnDbPtr      m_db;
@@ -27,16 +25,26 @@ public:
     DgnCategoryId m_defaultCategoryId;
     BeSQLite::Db::OpenMode m_openMode;
 
-    virtual void TearDown();
+    static void SetUpTestCase();
+    void SetUp() override;
+    void TearDown() override;
     
-    void SetupProject(WCharCP inFileName, BeSQLite::Db::OpenMode);
+    void SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode);
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
     DgnCode CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
     };
 
-DgnDbTestUtils::SeedDbInfo SqlFunctionsTest::s_seedFileInfo;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SqlFunctionsTest::SetUp()
+    {
+    // Must register my domain whenever I initialize a host
+    DgnDomains::RegisterDomain(DgnSqlTestDomain::GetDomain());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat    07/16
@@ -46,46 +54,50 @@ void SqlFunctionsTest::TearDown()
     if (m_db.IsValid() && BeSQLite::Db::OpenMode::ReadWrite == m_openMode)
         m_db->SaveChanges();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat    07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SqlFunctionsTest::SetUpTestCase()
     {
     ScopedDgnHost tempHost;
-
     //  Request a root seed file.
-    DgnDbTestUtils::SeedDbInfo rootSeedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnDbTestUtils::SeedDbInfo seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
 
-    SqlFunctionsTest::s_seedFileInfo = rootSeedInfo;
-    SqlFunctionsTest::s_seedFileInfo.fileName.SetName(L"SqlFunctionsTest/SqlFunctionsTest.bim");
-
-    //// Make a copy of the root seed which will be customized as a seed for tests in this group
-    DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(rootSeedInfo.fileName, SqlFunctionsTest::s_seedFileInfo.fileName); // our seed starts as a copy of the root seed
+    // Customize for my tests
+    auto db = DgnDbTestUtils::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.bim");
     ASSERT_TRUE(db.IsValid());
+
+    DgnSqlTestDomain::ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+
+    auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
+    DgnAuthority::CreateParams params(*db, db->Domains().GetClassId(hdlr), "SqlFunctionsTest");
+    DgnAuthorityPtr auth = hdlr.Create(params);
+    if (auth.IsValid())
+        auth->Insert();
+
     db->SaveChanges();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SqlFunctionsTest::SetupProject(WCharCP inFileName, BeSQLite::Db::OpenMode mode)
+void SqlFunctionsTest::SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode mode)
     {
     m_openMode = mode;
-    m_db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, inFileName);
+    if (BeSQLite::Db::OpenMode::Readonly == mode)
+        m_db = DgnDbTestUtils::OpenSeedDb(L"SqlFunctionsTest/seed.bim");
+    else
+        m_db = DgnDbTestUtils::OpenSeedDbCopy(L"SqlFunctionsTest/seed.bim", newFileName);
+    ASSERT_TRUE (m_db.IsValid());
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
+
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
     
     m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
-
-    DgnSqlTestDomain::RegisterDomainAndImportSchema(*m_db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-
-    auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
-    DgnAuthority::CreateParams params(*m_db, m_db->Domains().GetClassId(hdlr), "SqlFunctionsTest");
-    DgnAuthorityPtr auth = hdlr.Create(params);
-    if (auth.IsValid())
-        auth->Insert();
     }
 
 /*---------------------------------------------------------------------------------**//**

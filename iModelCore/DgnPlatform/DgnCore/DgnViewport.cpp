@@ -394,7 +394,7 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
     Transform viewTransform;
     viewTransform.InitFrom(m_rotMatrix);
 
-    DRange3d extents = m_viewController->GetViewedExtents();
+    DRange3d extents = m_viewController->GetViewedExtents(*this);
     if (!extents.IsEmpty())
         {
         Frustum extFrust(extents);
@@ -470,7 +470,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
             AlignWithRootZ(); // make sure we're in a z Up view
 
-            DRange3d  extents = m_viewController->GetViewedExtents();
+            DRange3d  extents = m_viewController->GetViewedExtents(*this);
             if (extents.IsEmpty())
                 {
                 extents.low.z = -DgnUnits::OneMillimeter();

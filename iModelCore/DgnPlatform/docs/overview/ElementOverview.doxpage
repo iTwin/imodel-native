@@ -52,6 +52,12 @@ And copied or imported.
 
 Don't forget to call DgnElement::Insert on the copy, in order to write it to the destination.
 
+To access an element's properties you may use ECSQL to query property values. You may also read and write individual property values on an element using
+ 
+- DgnElement::_GetProperty
+- DgnElement::_SetProperty
+- DgnElement::GetUserProperty
+
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
 @section SECTION_ElementClasses Element Classes

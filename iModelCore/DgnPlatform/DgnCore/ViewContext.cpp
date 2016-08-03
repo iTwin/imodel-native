@@ -74,6 +74,7 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_InitContextForView()
     {
+    BeAssert(nullptr != m_viewport);
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
     m_scanRangeValid = false;
@@ -161,6 +162,7 @@ StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::IsCameraOn() const
     {
+    BeAssert(nullptr != m_viewport);
     return m_viewport->IsCameraOn();
     }
 
@@ -347,6 +349,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
             return nullptr; // Part range doesn't overlap pick...
         }
 
+    BeAssert(!isForDisplay || nullptr != m_viewport);
     Render::GraphicPtr partGraphic = (isForDisplay ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
 
     if (!partGraphic.IsValid())
@@ -646,6 +649,7 @@ bool ViewContext::_VisitAllModelElements()
     SetScanReturn();
 
     // The ViewController must orchestrate the display of all of the elements in the view.
+    BeAssert(nullptr != m_viewport);
     m_viewport->GetViewControllerR().DrawView(*this);
 
     return WasAborted();
@@ -790,14 +794,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicParams::GraphicParams()
-    {
-    Init();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Init()
@@ -840,7 +836,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
 
-            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientFlags::Outline)))
+            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientSymb::Flags::Outline)))
                 {
                 m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
                 netElemTransparency = 0.0;  // Don't override the fully transparent outline below...
@@ -1262,8 +1258,8 @@ enum
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP planePoint, DPoint3dCP planeNormal, DgnViewportCR vp)
     {
-    DRange3d range = vp.GetViewController().GetViewedExtents(); // Limit grid to project extents...
-
+    // Limit grid to project extents in 3d views, but ask the viewcontroller for its extents for 2d views.
+    DRange3d range = vp.Is3dView() ? vp.GetViewController().GetDgnDb().Units().GetProjectExtents() : vp.GetViewController().GetViewedExtents(vp); 
     if (range.IsEmpty())
         return 0;
 

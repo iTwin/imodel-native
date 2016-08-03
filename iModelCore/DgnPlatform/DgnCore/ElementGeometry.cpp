@@ -1564,7 +1564,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             if (FillDisplay::Never != fillDisplay)
                 {
                 double        transparency = ppfb->transparency();
-                GradientMode  mode = (GradientMode) ppfb->mode();
+                GradientSymb::Mode  mode = (GradientSymb::Mode) ppfb->mode();
 
                 if (transparency != elParams.GetFillTransparency())
                     {
@@ -1572,7 +1572,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     changed = true;
                     }
 
-                if (GradientMode::None == mode)
+                if (GradientSymb::Mode::None == mode)
                     {
                     if (ppfb->useColor())
                         {
@@ -4427,6 +4427,39 @@ GeometryBuilderPtr GeometryBuilder::CreateWithAutoPlacement(DgnModelR model, Dgn
         return nullptr;
 
     return new GeometryBuilder(model.GetDgnDb(), categoryId, geomModel->Is3d());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, TransformCR transform)
+    {
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel)
+        return nullptr;
+
+    DPoint3d origin;
+    YawPitchRollAngles angles;
+
+    if (!YawPitchRollAngles::TryFromTransform(origin, angles, transform))
+        return nullptr;
+
+    if (geomModel->Is3d())
+        {
+        Placement3d placement(origin, angles);
+
+        return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
+        }
+
+    if (0 != BeNumerical::Compare(origin.z, 0.0) || 0 != BeNumerical::Compare(angles.GetPitch().Degrees(), 0.0) || 0 != BeNumerical::Compare(angles.GetRoll().Degrees(), 0.0))
+        return nullptr; // Invalid transform for Placement2d...
+
+    Placement2d placement(DPoint2d::From(origin), angles.GetYaw());
+
+    return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**

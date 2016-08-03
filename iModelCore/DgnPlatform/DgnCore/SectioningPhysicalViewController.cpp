@@ -107,6 +107,7 @@ ClipVectorPtr SectioningViewController::GetClipVectorInternal(ClipVolumePass pas
     if (!m_clip.IsValid())
         return NULL;
 
+#if defined (NEEDS_WORK_GROUND_PLANE)
     DRange3d range(_GetViewedExtents());
 
     ClipVectorPtr insideForward;
@@ -119,6 +120,8 @@ ClipVectorPtr SectioningViewController::GetClipVectorInternal(ClipVolumePass pas
         insideForward->TransformInPlace(auxTransform);
 
     return insideForward;
+#endif
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------

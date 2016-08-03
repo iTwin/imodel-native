@@ -894,7 +894,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("IntegerProperty1", ECN::ECValue(199)));
 
         DgnDbStatus status;
-        auto ele = DgnElement::CreateElement(&status, *m_db, *testClassInstance);
+        auto ele = m_db->Elements().CreateElement(&status, *testClassInstance);
         ASSERT_TRUE(ele.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, status);
 
@@ -944,6 +944,172 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
     ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void compareDateTimes(DateTimeCR dateTime1, DateTimeCR dateTime2)
+    {
+    EXPECT_TRUE(dateTime1.Equals(dateTime2, false));
+    EXPECT_EQ(dateTime1.GetYear(), dateTime2.GetYear());
+    EXPECT_EQ(dateTime1.GetMonth(), dateTime2.GetMonth());
+    EXPECT_EQ(dateTime1.GetDay(), dateTime2.GetDay());
+    EXPECT_EQ(dateTime1.GetHour(), dateTime2.GetHour());
+    EXPECT_EQ(dateTime1.GetMinute(), dateTime2.GetMinute());
+    EXPECT_EQ(dateTime1.GetSecond(), dateTime2.GetSecond());
+    EXPECT_EQ(dateTime1.GetMillisecond(), dateTime2.GetMillisecond());
+    EXPECT_EQ(dateTime1.GetHectoNanosecond(), dateTime2.GetHectoNanosecond());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DgnElementTests, GetSetPropertyValues)
+    {
+    SetupSeedProject();
+
+
+    DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 4560000);
+    DateTime dateTimeUtc = DateTime::GetCurrentTimeUtc();
+    DPoint2d point2d = {123.456, 456.789};
+    DPoint3d point3d = {1.2, -3.4, 5.6};
+
+    DgnElementId persistentId;
+    if (true)
+        {
+        DgnElementCPtr persistentEl;
+
+        DgnClassId classId(m_db->Schemas().GetECClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
+        TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
+        TestElement el(params);
+
+        ECN::AdHocJsonPropertyValue boolProperty = el.GetUserProperty("b");
+        //  No user properties yet
+        ECN::ECValue checkValue = boolProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue doubleProperty = el.GetUserProperty("d");
+        checkValue = doubleProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue dateTimeProperty = el.GetUserProperty("dt");
+        checkValue = dateTimeProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue dateTimeUtcProperty = el.GetUserProperty("dtUtc");
+        checkValue = dateTimeUtcProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue intProperty = el.GetUserProperty("i");
+        checkValue = intProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue longProperty = el.GetUserProperty("l");
+        checkValue = longProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue stringProperty = el.GetUserProperty("s");
+        checkValue = longProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue point2dProperty = el.GetUserProperty("p2d");
+        checkValue = point2dProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        ECN::AdHocJsonPropertyValue point3dProperty = el.GetUserProperty("p3d");
+        checkValue = point3dProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+
+        // set user properties
+        ASSERT_EQ(SUCCESS, boolProperty.SetValueEC(ECN::ECValue(false)));
+        ASSERT_EQ(SUCCESS, doubleProperty.SetValueEC(ECN::ECValue(1.0001)));
+        ASSERT_EQ(SUCCESS, dateTimeProperty.SetValueEC(ECN::ECValue(dateTime)));
+        ASSERT_EQ(SUCCESS, dateTimeUtcProperty.SetValueEC(ECN::ECValue(dateTimeUtc)));
+        ASSERT_EQ(SUCCESS, intProperty.SetValueEC(ECN::ECValue(1)));
+        ASSERT_EQ(SUCCESS, longProperty.SetValueEC(ECN::ECValue(1000000000001ULL)));
+        ASSERT_EQ(SUCCESS, stringProperty.SetValueEC(ECN::ECValue("StringVal")));
+        ASSERT_EQ(SUCCESS, point2dProperty.SetValueEC(ECN::ECValue(point2d)));
+        ASSERT_EQ(SUCCESS, point3dProperty.SetValueEC(ECN::ECValue(point3d)));
+
+        //get property values
+        checkValue = boolProperty.GetValueEC();
+        EXPECT_FALSE(checkValue.GetBoolean());
+
+        checkValue = doubleProperty.GetValueEC();
+        EXPECT_EQ(1.0001, checkValue.GetDouble());
+
+        checkValue = dateTimeProperty.GetValueEC();
+        EXPECT_FALSE(checkValue.IsNull());
+        compareDateTimes(dateTime, checkValue.GetDateTime());
+
+        checkValue = dateTimeUtcProperty.GetValueEC();
+        EXPECT_FALSE(checkValue.IsNull());
+        compareDateTimes(dateTimeUtc, checkValue.GetDateTime());
+
+        checkValue = intProperty.GetValueEC();
+        EXPECT_EQ(1, checkValue.GetInteger());
+
+        checkValue = longProperty.GetValueEC();
+        EXPECT_EQ(1000000000001, checkValue.GetLong());
+
+        checkValue = stringProperty.GetValueEC();
+        EXPECT_STREQ("StringVal", checkValue.GetUtf8CP());
+
+        checkValue = point2dProperty.GetValueEC();
+        EXPECT_EQ(point2d.x, checkValue.GetPoint2D().x);
+        EXPECT_EQ(point2d.y, checkValue.GetPoint2D().y);
+
+        checkValue = point3dProperty.GetValueEC();
+        EXPECT_EQ(point3d.x, checkValue.GetPoint3D().x);
+        EXPECT_EQ(point3d.y, checkValue.GetPoint3D().y);
+        EXPECT_EQ(point3d.z, checkValue.GetPoint3D().z);
+
+        //  Insert the element
+        persistentEl = el.Insert();
+        persistentId = persistentEl->GetElementId();
+        }
+
+    m_db->SaveChanges("");
+
+    m_defaultModelP->EmptyModel();
+    m_db->Memory().PurgeUntil(0);
+
+    ASSERT_TRUE(persistentId.IsValid());
+
+    if (true)
+        {
+        DgnElementCPtr persistentEl = m_db->Elements().Get<DgnElement>(persistentId);
+
+        // verify property value is persisted
+        ECN::AdHocJsonPropertyValue persistedStringProperty = persistentEl->GetUserProperty("s");
+        ECN::ECValue checkValue = persistedStringProperty.GetValueEC();
+        EXPECT_STREQ("StringVal", checkValue.GetUtf8CP());
+
+        // get priority
+        int priority = 0;
+        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetPriority(priority));
+        EXPECT_EQ(0, priority);
+
+        // get is hidden
+        bool isHidden = false;
+        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetHidden(isHidden));
+        EXPECT_FALSE(isHidden);
+
+        // get extended type
+        Utf8String extendedType = "";
+        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetExtendedType(extendedType));
+        EXPECT_STREQ("", extendedType.c_str());
+
+        // get category
+        Utf8String category = "";
+        EXPECT_EQ(ECN::AdHocJsonPropertyValue::GetStatus::NotFound, persistedStringProperty.GetCategory(category));
+        EXPECT_STREQ("", category.c_str());
+
+        persistedStringProperty.SetValueNull();
+        checkValue = persistedStringProperty.GetValueEC();
+        EXPECT_TRUE(checkValue.IsNull());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -65,6 +65,12 @@ __PUBLISH_INSERT_FILE__ ToyTileElement_StaticCreate.sampleCode
 @section SECTION_CustomElementSeeAlso See Also
 
 @see GROUP_DgnElement
+
+For details on writing an element handler and a DgnElement subclass, see
+- @ref ElementProperties
+- @ref ElementRestrictions
+- @ref ElementCopyVirtualFunctions
+
 */
 
 END_BENTLEY_DGN_NAMESPACE
