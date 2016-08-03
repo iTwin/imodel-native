@@ -26,7 +26,7 @@ DgnSqlTestDomain::DgnSqlTestDomain() : DgnDomain(DGN_SQL_TEST_SCHEMA_NAME, "Sql 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSqlTestDomain::ImportSchema(DgnDbR db, BeFileNameCR schemasDir)
+void DgnSqlTestDomain::ImportSchemaFromPath(DgnDbR db, BeFileNameCR schemasDir)
     {
     BeFileName schemaFile = schemasDir;
     schemaFile.AppendToPath(L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".01.00.ecschema.xml");

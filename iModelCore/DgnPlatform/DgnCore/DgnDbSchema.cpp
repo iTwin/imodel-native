@@ -25,11 +25,11 @@ bool AutoHandledPropertiesCollection::HasCustomHandledProperty(ECN::ECPropertyCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::IsCustomHandledProperty(ECN::ECPropertyCR prop) const
     {
-    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, "CustomHandledProperty");
-    if (nullptr != customHandledProperty)
-        return prop.IsDefined(*customHandledProperty);
+    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    if (nullptr == customHandledProperty)
+        return false;
 
-    return getFakeCA(prop, *s_fakeCustomClass).IsValid();
+    return prop.IsDefined(*customHandledProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -102,7 +102,7 @@ struct DgnSqlTestDomain : DgnDomain
 public:
     DgnSqlTestDomain();
 
-    static void ImportSchema(DgnDbR, BeFileNameCR schemasDir);
+    static void ImportSchemaFromPath(DgnDbR, BeFileNameCR schemasDir);
     };
 
 }; // namespace DgnSqlTestNamespace

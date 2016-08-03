@@ -86,3 +86,5 @@ ImportTest.ImportElementsWithAuthorities
 
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad # Fails when run by itself - notifed Umar
 DgnScriptTest.TestEga
+
+BackwardsCompatibilityTests.OpenDgndbInCurrent # bim0100 is not backwards compatible with dgndb0601-16q2

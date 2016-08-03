@@ -68,7 +68,7 @@ void SqlFunctionsTest::SetUpTestCase()
     auto db = DgnDbTestUtils::OpenSeedDbCopy(seedFileInfo.fileName, L"SqlFunctionsTest/seed.bim");
     ASSERT_TRUE(db.IsValid());
 
-    DgnSqlTestDomain::ImportSchema(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    DgnSqlTestDomain::ImportSchemaFromPath(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
 
     auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
     DgnAuthority::CreateParams params(*db, db->Domains().GetClassId(hdlr), "SqlFunctionsTest");
