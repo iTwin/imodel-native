@@ -396,11 +396,14 @@
 
     <Part Name="RunGtest" 
         BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" 
-        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/WSClient" 
+        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest" 
         OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- Part for Visual Studio based builds on G0505 -->
@@ -427,7 +430,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=WSClient-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="WSClient-AndroidJUnit"/>
-        <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/WSClient-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
