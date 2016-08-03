@@ -188,7 +188,7 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
             }
         }
 
-    if (isPolymorphic && !classMap->IsParentOfJoinedTable())
+    if (isPolymorphic && !classMap->IsParentOfJoinedTable() && classMap->GetMapStrategy().GetStrategy() != ECDbMapStrategy::Strategy::SharedTable)
         {
         ECDerivedClassesList const& derivedClasses = ensureDerivedClassesAreLoaded ? map.GetECDb().Schemas().GetDerivedECClasses(ecClass) : ecClass.GetDerivedClasses();
         for (ECClassCP derivedClass : derivedClasses)
