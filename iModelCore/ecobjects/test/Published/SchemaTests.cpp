@@ -2410,4 +2410,39 @@ TEST_F(SchemaTest, SetGetMaxLength)
     ASSERT_EQ(primp->GetMaximumLength(), 0);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Robert.Schili                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, MaxMinValueLengthDeserialization)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='Foo'>"
+        "       <ECProperty propertyName='DoubleProp' typeName='double' MaximumValue='3.0' MinimumValue='42'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    ECPropertyP pp = cp->GetPropertyP("DoubleProp");
+    ASSERT_NE(pp, nullptr);
+
+    ECValue minVal;
+    ECValue maxVal;
+    ASSERT_EQ(pp->GetMinimumValue(minVal), ECObjectsStatus::Success);
+    ASSERT_EQ(pp->GetMaximumValue(maxVal), ECObjectsStatus::Success);
+
+    ASSERT_EQ(minVal.IsNull(), false);
+    ASSERT_EQ(maxVal.IsNull(), false);
+
+    ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
