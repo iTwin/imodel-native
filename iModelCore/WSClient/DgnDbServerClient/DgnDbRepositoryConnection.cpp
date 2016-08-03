@@ -8,7 +8,6 @@
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <DgnPlatform/RevisionManager.h>
-#include <WebServices/Cache/Util/JsonUtil.h>
 #include <WebServices/Client/WSChangeset.h>
 
 #include "DgnDbServerUtils.h"
@@ -1094,36 +1093,57 @@ Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::D
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
     {
-    rapidjson::Document responseJson;
-    responseJson.Parse(response.c_str());
+    /*rapidjson::Document responseJson;
+    responseJson.Parse(response.c_str());*/
 
-    if (!responseJson.IsObject())
-        return nullptr;
+	Json::Reader reader;
+	Json::Value responseJson(Json::objectValue);
+	if (!reader.parse(response, responseJson) && !responseJson.isArray())
+		return nullptr;
 
-    if (!responseJson.HasMember(ServerSchema::ChangedInstances) ||
+    /*if (!responseJson.IsObject())
+        return nullptr;*/
+	if(responseJson.isNull() || responseJson.empty())
+		return nullptr;
+
+    /*if (!responseJson.HasMember(ServerSchema::ChangedInstances) ||
         responseJson[ServerSchema::ChangedInstances].Empty() ||
         !responseJson[ServerSchema::ChangedInstances][0].HasMember(ServerSchema::InstanceAfterChange))
-        return nullptr;
+        return nullptr;*/
+	if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
+		responseJson[ServerSchema::ChangedInstances].empty() ||
+		!responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
+		return nullptr;
 
-    rapidjson::Document instance;
-    JsonUtil::DeepCopy(responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange], instance);
+    //rapidjson::Document instance;
+	Json::Value instance(Json::objectValue);
+    //JsonUtil::DeepCopy(responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange], instance);
+	instance = responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange];
 
-    if (!instance.HasMember(ServerSchema::InstanceId))
-        return nullptr;
+    /*if (!instance.HasMember(ServerSchema::InstanceId))
+        return nullptr;*/
+	if (!instance.isMember(ServerSchema::InstanceId))
+		return nullptr;
 
-    Utf8String eventSubscriptionId = instance[ServerSchema::InstanceId].GetString();
+    Utf8String eventSubscriptionId = instance[ServerSchema::InstanceId].asString();
 
     if (
-        !instance[ServerSchema::Properties].HasMember(ServerSchema::Property::EventTypes) ||
-        !instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].IsArray()
+        !instance[ServerSchema::Properties].isMember(ServerSchema::Property::EventTypes) ||
+        !instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].isArray()
         )
         return nullptr;
 
+	Json::ValueConstIterator itr;
+
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
-    rapidjson::Value::ConstValueIterator itr;
-    for (itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].Begin();
+    //rapidjson::Value::ConstValueIterator itr;
+    /*for (itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].Begin();
          itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].End(); ++itr)
-         eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName(itr->GetString()));
+         eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName(itr->GetString()));*/
+
+	for (itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
+		itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
+		eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
 
     return DgnDbServerEventSubscription::Create(eventSubscriptionId, eventTypes);
     }
@@ -1148,23 +1168,32 @@ Json::Value GenerateEventSASJson()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR response)
+AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR responseJson)
     {
-    rapidjson::Document responseJson;
-    JsonUtil::ToRapidJson(response, responseJson);
+    /*rapidjson::Document responseJson;
+    JsonUtil::ToRapidJson(response, responseJson);*/
 
-    if (!responseJson.IsObject())
-        return nullptr;
+   /* if (!responseJson.IsObject())
+        return nullptr;*/
 
-    if (!responseJson.HasMember(ServerSchema::ChangedInstance) ||
+	if(responseJson.isNull() || responseJson.empty())
+		return nullptr;
+
+    /*if (!responseJson.HasMember(ServerSchema::ChangedInstance) ||
         !responseJson[ServerSchema::ChangedInstance].HasMember(ServerSchema::InstanceAfterChange))
-        return nullptr;
+        return nullptr;*/
 
-    rapidjson::Document instance;
-    JsonUtil::DeepCopy(responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange], instance);
+	if (!responseJson.isMember(ServerSchema::ChangedInstance) ||
+		!responseJson[ServerSchema::ChangedInstance].isMember(ServerSchema::InstanceAfterChange))
+		return nullptr;
 
-    Utf8String sasToken = instance[ServerSchema::Properties][ServerSchema::Property::EventServiceSASToken].GetString();
-    Utf8String baseAddress = instance[ServerSchema::Properties][ServerSchema::Property::BaseAddress].GetString();
+    /*rapidjson::Document instance;
+    JsonUtil::DeepCopy(responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange], instance);*/
+	Json::Value instance(Json::objectValue);
+	instance = responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+
+    Utf8String sasToken = instance[ServerSchema::Properties][ServerSchema::Property::EventServiceSASToken].asString();
+    Utf8String baseAddress = instance[ServerSchema::Properties][ServerSchema::Property::BaseAddress].asString();
     if (Utf8String::IsNullOrEmpty(sasToken.c_str()) || Utf8String::IsNullOrEmpty(baseAddress.c_str()))
         return nullptr;
 
