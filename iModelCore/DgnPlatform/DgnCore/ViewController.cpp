@@ -853,6 +853,7 @@ SpatialViewController::SpatialViewController(DgnDbR dgndb, DgnViewId viewId) : V
     m_delta.Zero();
     m_rotation.InitIdentity();
     m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
+    m_auxCoordSys->SetOrigin(dgndb.Units().GetGlobalOrigin());
     }
 
 /*---------------------------------------------------------------------------------**//**

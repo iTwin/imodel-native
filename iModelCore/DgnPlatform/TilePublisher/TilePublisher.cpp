@@ -12,17 +12,6 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-#ifdef TODO_TEXTURES
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void convertToJpeg(bvector<uint8_t>& image, int width, int height)
-    {
-    // ###TODO: Image => ImageSource...
-    // ###TODO: Use ByteStream, not bvector...
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -32,7 +21,7 @@ void TextureCache::PrepareMeshTextures(TileMeshList& meshes, bvector<uint32_t>& 
 
     for (auto& mesh : meshes)
         {
-        auto matSymb = mesh->GetGraphicParams();
+        auto matSymb = mesh->GetDisplayParams();
         TextureKey key(matSymb);
 
         uint32_t textureId = -1;
@@ -43,17 +32,18 @@ void TextureCache::PrepareMeshTextures(TileMeshList& meshes, bvector<uint32_t>& 
             }
         else
             {
-#ifdef TODO_TEXTURES
-            bvector<uint8_t>   image;
-            Point2d         imageSize;
-
-            if (NULL != matSymb && SUCCESS == geometryCache.GetTextureImage (image, imageSize, *matSymb))
+            auto textureImage = nullptr != matSymb ? geometryCache.GetTextureImage(*matSymb) : nullptr;
+            if (nullptr != textureImage)
                 {
-                convertToJpeg(image, imageSize.x, imageSize.y);
-                textureId = static_cast<uint32_t>(m_textures.size());
-                m_textures.push_back(Texture(std::move(image), static_cast<uint32_t>(imageSize.x), static_cast<uint32_t>(imageSize.y)));
+                static const int s_jpegQuality = 50;
+                ImageSource jpeg(textureImage->GetImage(), ImageSource::Format::Jpeg, s_jpegQuality);
+                if (jpeg.IsValid())
+                    {
+                    textureId = static_cast<uint32_t>(m_textures.size());
+                    ByteStream& jpegBytes = jpeg.GetByteStreamR();
+                    m_textures.push_back(Texture(std::move(jpegBytes), textureImage->GetWidth(), textureImage->GetHeight()));
+                    }
                 }
-#endif
 
             m_textureMap[key] = textureId;
             }
@@ -219,7 +209,7 @@ void TilePublisher::AddShader(Json::Value& shaders, Utf8CP name, int type, Utf8C
     {
     auto& shader = (shaders[name] = Json::objectValue);
     shader["type"] = type;
-    shader["extensions"]["khr_binary_gltf"]["bufferview"] = buffer;
+    shader["extensions"]["KHR_binary_glTF"]["bufferView"] = buffer;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,7 +225,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 
     size_t binaryDataSize = m_binaryData.size();
     m_binaryData.resize(binaryDataSize + bufferDataSize);
-    memcpy(m_binaryData.data(), bufferData.data(), bufferDataSize);
+    memcpy(m_binaryData.data() + binaryDataSize, bufferData.data(), bufferDataSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,7 +400,7 @@ void TilePublisher::AddTextures(Json::Value& rootNode, TextureIdToNameMap& texNa
             rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = pTex->GetHeight();
             rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = pTex->GetWidth();
 
-            auto const& texData = pTex->GetData();
+            ByteStream const& texData = pTex->GetData();
 
             rootNode["bufferViews"][bvImageId] = Json::objectValue;
             rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
@@ -612,7 +602,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         rootNode["materials"][matName.c_str()] = Json::objectValue;
         rootNode["materials"][matName.c_str()]["technique"] = "tech_0";
         rootNode["materials"][matName.c_str()]["values"]["color"] = Json::arrayValue;
-        uint32_t rgb = (NULL == mesh.GetGraphicParams()) ? 0 : mesh.GetGraphicParams()->GetFillColor().GetValue();
+        uint32_t rgb = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
         rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[0]/255.0);
         rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[1]/255.0);
         rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[2]/255.0);

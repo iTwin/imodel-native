@@ -9,6 +9,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include "Render.h"
+#include "DgnTexture.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -21,6 +22,7 @@ BENTLEY_RENDER_TYPEDEFS(TileMeshBuilder);
 BENTLEY_RENDER_TYPEDEFS(TileNode);
 BENTLEY_RENDER_TYPEDEFS(TileGenerator);
 BENTLEY_RENDER_TYPEDEFS(TileGeometry);
+BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
@@ -34,6 +36,34 @@ typedef bvector<TileNodeP> TileNodePList;
 typedef bvector<TileGeometryPtr> TileGeometryList;
 
 //=======================================================================================
+//! Display params associated with TileGeometry. Based on GraphicParams and GeometryParams.
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct TileDisplayParams
+{
+private:
+    uint32_t        m_fillColor;
+    DgnMaterialId   m_materialId;
+public:
+    TileDisplayParams() : TileDisplayParams(nullptr, nullptr) { }
+    TileDisplayParams(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) : TileDisplayParams(&graphicParams, &geometryParams) { }
+    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0)
+        {
+        if (nullptr != geometryParams)
+            m_materialId = geometryParams->GetMaterialId();
+        }
+
+    bool operator<(TileDisplayParams const& rhs) const
+        {
+        return (m_fillColor != rhs.m_fillColor) ? (m_fillColor < rhs.m_fillColor) : (m_materialId.GetValueUnchecked() < rhs.m_materialId.GetValueUnchecked());
+        }
+
+    DgnMaterialId GetMaterialId() const { return m_materialId; }
+    uint32_t GetFillColor() const { return m_fillColor; }
+    DgnTextureCPtr QueryTexture(DgnDbR db) const;
+};
+
+//=======================================================================================
 //! Holds geometry processed during tile generation. Objects produced during this process
 //! may holds pointers into the cache; they become invalid once the cache itself is
 //! destroyed.
@@ -43,39 +73,23 @@ struct TileGeometryCache
 {
     struct TextureImage : RefCountedBase
     {
+    friend struct TileGeometryCache;
     private:
-        ByteStream  m_image;
-        Point2d     m_size;
+        Image       m_image;
         size_t      m_id;
 
-        static RefCountedPtr<TextureImage> Create(Point2dCR size, ByteStream&& image, size_t id) { return new TextureImage(size, std::move(image), id); }
-    private:
-        TextureImage(Point2dCR size, ByteStream&& image, size_t id) : m_size(size), m_id(id), m_image(std::move(image)) { }
+        static Image Load(TileDisplayParamsCR params, DgnDbR db);
 
-        ByteStream const& GetImage() const { return m_image; }
-        Point2d GetSize() const { return m_size; }
+        TextureImage(Image&& image, size_t id) : m_image(std::move(image)), m_id(id) { BeAssert(m_image.IsValid()); }
+    public:
         size_t GetId() const { return m_id; }
+        ImageCR GetImage() const { return m_image; }
+        uint32_t GetWidth() const { return GetImage().GetWidth(); }
+        uint32_t GetHeight() const { return GetImage().GetHeight(); }
     };
 private:
-    struct TextureImageKey
-    {
-        ColorDef        m_color;
-        MaterialCP      m_material;
-
-        TextureImageKey() : m_material(nullptr) { }
-        TextureImageKey(GraphicParamsCR params) : m_color(params.GetFillColor()), m_material(params.GetMaterial()) { }
-
-        bool operator<(TextureImageKey const& rhs) const
-            {
-            if (rhs.m_material != m_material)
-                return m_material < rhs.m_material; // ###TODO: Only if texture - and texture may blend color....
-            else
-                return m_color.GetValue() < rhs.m_color.GetValue();
-            }
-    };
-
     typedef RefCountedPtr<TextureImage> TextureImagePtr;
-    typedef bmap<TextureImageKey, TextureImagePtr> TextureImageMap;
+    typedef bmap<TileDisplayParams, TextureImagePtr> TextureImageMap;
 
     XYZRangeTreeRoot*       m_tree;
     TextureImageMap         m_textures;
@@ -90,8 +104,8 @@ public:
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     TransformCR GetTransformToDgn() const { return m_transformToDgn; }
 
-    void ResolveTexture(GraphicParamsCR params);
-    DGNPLATFORM_EXPORT TextureImage const* GetTextureImage(GraphicParamsCR params) const;
+    void ResolveTexture(TileDisplayParamsCR params, DgnDbR db);
+    DGNPLATFORM_EXPORT TextureImage const* GetTextureImage(TileDisplayParamsCR params) const;
 };
 
 //=======================================================================================
@@ -123,24 +137,24 @@ struct Triangle
 struct TileMesh : RefCountedBase
 {
 private:
-    GraphicParamsCP         m_graphicParams;   // pointer into TileGeometryCache
+    TileDisplayParamsCP     m_displayParams;   // pointer into TileGeometryCache
     bvector<Triangle>       m_triangles;
     bvector<DPoint3d>       m_points;
     bvector<DVec3d>         m_normals;
     bvector<DPoint2d>       m_uvParams;
     bvector<DgnElementId>   m_elementIds;   // invalid IDs for clutter geometry
 
-    explicit TileMesh(GraphicParamsCP params) : m_graphicParams(params) { }
+    explicit TileMesh(TileDisplayParamsCP params) : m_displayParams(params) { }
 
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 public:
-    static TileMeshPtr Create(GraphicParamsCP params) { return new TileMesh(params); }
+    static TileMeshPtr Create(TileDisplayParamsCP params) { return new TileMesh(params); }
 
     DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT bool HasNonPlanarNormals() const;
 
-    GraphicParamsCP GetGraphicParams() const { return m_graphicParams; } //!< The mesh symbology
+    TileDisplayParamsCP GetDisplayParams() const { return m_displayParams; } //!< The mesh symbology
     bvector<Triangle> const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
     bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
@@ -213,10 +227,10 @@ private:
     double              m_tolerance;
     size_t              m_triangleIndex;
 
-    TileMeshBuilder(GraphicParamsCP params, TransformCP transformToDgn, double tolerance) : m_mesh(TileMesh::Create(params)), m_vertexMap(VertexKey::Comparator(tolerance)),
+    TileMeshBuilder(TileDisplayParamsCP params, TransformCP transformToDgn, double tolerance) : m_mesh(TileMesh::Create(params)), m_vertexMap(VertexKey::Comparator(tolerance)),
             m_transformToDgn(nullptr != transformToDgn ? *transformToDgn : Transform::FromIdentity()), m_tolerance(tolerance), m_triangleIndex(0) { }
 public:
-    static TileMeshBuilderPtr Create(GraphicParamsCP params, TransformCP transformToDgn, double tolerance) { return new TileMeshBuilder(params, transformToDgn, tolerance); }
+    static TileMeshBuilderPtr Create(TileDisplayParamsCP params, TransformCP transformToDgn, double tolerance) { return new TileMeshBuilder(params, transformToDgn, tolerance); }
 
     void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
@@ -255,18 +269,19 @@ private:
         ISolidKernelEntityP m_solidEntity;
         IGeometryP          m_geometry;
         };
-    GraphicParams           m_params;
+    TileDisplayParams       m_params;
     Transform               m_transform;
     Tesselations            m_tesselations;
     DRange3d                m_range;
     DgnElementId            m_elementId;
     size_t                  m_facetCount;
     double                  m_facetCountDensity;
+    DgnDbR                  m_dgndb;
     Type                    m_type;
     bool                    m_isCurved;
     bool                    m_isInstanced; // ###TODO: unused...?
 
-    TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, GraphicParamsCR params, bool isCurved);
+    TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db);
 
     void Init(IGeometryR geometry, IFacetOptionsR facetOptions);
     void Init(ISolidKernelEntityR solid, IFacetOptionsR facetOptions);
@@ -276,15 +291,15 @@ public:
     ~TileGeometry();
 
     //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, GraphicParamsCR params, IFacetOptionsR facetOptions, bool isCurved);
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, GraphicParamsCR params, IFacetOptionsR facetOptions);
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db);
 
     Type GetType() const { return m_type; } //!< The type of geometry contained within
     ISolidKernelEntityP GetSolidEntity() const { return Type::Solid == GetType() ? m_solidEntity : nullptr; } //!< The contained ISolidKernelEntity, if any
     IGeometryP GetGeometry() const { return Type::Geometry == GetType() ? m_geometry : nullptr; } //!< The contained IGeometry, if any
 
-    GraphicParamsCR GetGraphicParams() const { return m_params; }
+    TileDisplayParamsCR GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetRange() const { return m_range; }
     DgnElementId GetElementId() const { return m_elementId; } //!< The ID of the element from which this geometry was produced
