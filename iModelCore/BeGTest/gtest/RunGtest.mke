@@ -89,10 +89,8 @@ always:
 %message See $(ResultsCapture)
 
 %if defined (BEGTEST_BREAK_ON_FAILURE)
-    %if $(BEGTEST_BREAK_ON_FAILURE) > 1
-        always:
-            python $(_makeFilePath)CheckResultsForFailures.py $[@dir $(ResultsCapture)] 1
-    %endif
+    always:
+        python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] 1
 %endif
 
 always:
