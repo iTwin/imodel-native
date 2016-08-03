@@ -54,31 +54,16 @@ always:
 
 logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/test.log
 
-ADB_FILTERS=TestRunner:I
-ADB_FILTERS+ UnitsNative:* ComponentModelTest:* BeTestX:* ICU_DATA_FILE:*
-ADB_FILTERS+ BeSQLiteDb:* BeSQLite:F ECDb:F ECDbMap:F ECObjectsNative:F
-ADB_FILTERS+ test:F wpa_supplicant:F msm8660.gralloc:F libEGL:F com.samsung.app:F TODmobile:F TelephonyManager:F EmailWidget:F APNews:F PowerManagerService:F doOpenChoice:*
-ADB_FILTERS+ *:E
-
-${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt): $(_makefilespec)
-    >$@
-adb logcat $(ADB_FILTERS)
-    <
-
-%message Run 
-%message ${ANDROIDJUNIT_OUTPUT_DIR}/logcat$(scriptExt)
-%message in another shell to monitor progress
-
 teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 
 %if defined (winNT) 
-    %if defined(RUN_GTEST_MINIMIZED)
+    %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
         RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT \/MIN
     %else
         RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT
     %endif
 
-    $(logFile): $(_makefileSpec)
+    always:
         >${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
         call $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
         adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
@@ -96,9 +81,7 @@ teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 %message See $(logFile)
 
 %if defined (BEGTEST_BREAK_ON_FAILURE)
-    %if $(BEGTEST_BREAK_ON_FAILURE) > 1
-        python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
-    %endif
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
 %endif
 
 always:
