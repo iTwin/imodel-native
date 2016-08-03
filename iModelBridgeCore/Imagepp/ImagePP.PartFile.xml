@@ -298,7 +298,8 @@
     </Product>
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=AndroidJUnit-ImagePP-TestCollection"   OnlyPlatforms="Android*">
-      <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
+        <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
+        <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
     </Part>
     
     <!--                ********************** -->
