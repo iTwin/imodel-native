@@ -22,7 +22,7 @@ struct GeometricPrimitiveTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometricPrimitiveTests, Create)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"GeometricPrimitiveTests_CreateElement3d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
 

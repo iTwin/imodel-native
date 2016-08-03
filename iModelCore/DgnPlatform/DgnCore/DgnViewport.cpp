@@ -382,7 +382,7 @@ static void validateCamera(CameraViewControllerR controller)
 * Adjust the front and back clip planes to include the project extents.
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR viewController) const
+void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
     {
     if (!m_is3dView)
         return;
@@ -394,17 +394,25 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     Transform viewTransform;
     viewTransform.InitFrom(m_rotMatrix);
 
-    DRange3d extents = viewController.GetViewedExtents();
-    if (extents.IsEmpty())
-        return;
+    DRange3d extents = m_viewController->GetViewedExtents(*this);
+    if (!extents.IsEmpty())
+        {
+        Frustum extFrust(extents);
+        extFrust.Multiply(viewTransform);
+        extents = extFrust.ToRange();
 
-    Frustum extFrust(extents);
-    extFrust.Multiply(viewTransform);
-    extents = extFrust.ToRange();
+        origin.z = extents.low.z;
+        delta.z = extents.high.z - origin.z;
+        }
 
-    origin.z = extents.low.z;
-    delta.z = extents.high.z - origin.z;
     delta.z = std::max(delta.z, DgnUnits::OneMeter());
+    double maxDelta = std::max(delta.x, delta.y);
+    if (maxDelta > delta.z)
+        {
+        double offset = maxDelta - delta.z;
+        origin.z -= offset;
+        delta.z += offset*2.0;
+        }
 
     m_rotMatrix.MultiplyTranspose(origin);
 
@@ -462,7 +470,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             // we're in a "2d" view of a physical model. That means that we must have our orientation with z out of the screen with z=0 at the center.
             AlignWithRootZ(); // make sure we're in a z Up view
 
-            DRange3d  extents = m_viewController->GetViewedExtents();
+            DRange3d  extents = m_viewController->GetViewedExtents(*this);
             if (extents.IsEmpty())
                 {
                 extents.low.z = -DgnUnits::OneMillimeter();
@@ -484,12 +492,10 @@ ViewportStatus DgnViewport::SetupFromViewController()
                 m_camera = cameraView->GetControllerCamera();
 
                 if (m_isCameraOn)
-                    {
                     validateCamera(*cameraView);
-                    }
                 }
 
-            _AdjustZPlanesToModel(origin, delta, *viewController);
+            _AdjustZPlanes(origin, delta);
 
             // if we moved the z planes, set the "zClipAdjusted" flag.
             if (!origin.IsEqual(m_viewOrgUnexpanded) || !delta.IsEqual(m_viewDeltaUnexpanded))
@@ -1139,9 +1145,8 @@ void DgnViewport::SaveViewUndo()
     if (!m_undoActive)
         return;
 
-    Json::Value json;
-    m_viewController->SaveToSettings(json);
-    Utf8String curr = Json::FastWriter::ToString(json);
+    m_viewController->SaveToSettings();
+    Utf8String curr = Json::FastWriter::ToString(m_viewController->GetSettings());
 
     if (m_currentBaseline.empty())
         {

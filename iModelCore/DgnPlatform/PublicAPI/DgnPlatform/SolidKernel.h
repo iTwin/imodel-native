@@ -82,10 +82,11 @@ public:
 
 enum KernelEntityType
     {
-    EntityType_Solid   = 0, //!< Body consisting of at least one solid region.
-    EntityType_Sheet   = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
-    EntityType_Wire    = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
-    EntityType_Minimal = 3, //!< Body consisting of a single vertex.
+    EntityType_Solid    = 0, //!< Body consisting of at least one solid region.
+    EntityType_Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
+    EntityType_Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
+    EntityType_Minimal  = 3, //!< Body consisting of a single vertex.
+    EntityType_Compound = 4, //!< Body consisting of a non-homogeneous group of solids, sheets, and wires.
     };
 
 protected:
@@ -194,95 +195,6 @@ bool IsEqual (ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
 SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
 
 }; // ISubEntity
-
-//=======================================================================================
-//! @private
-//! Wrapper class around facets that at least act like Parasold fin tables.
-//=======================================================================================
-struct IFacetTopologyTable : BentleyApi::IRefCounted
-{
-public:
-
-virtual bool        _IsTableValid () = 0;
-virtual int         _GetFacetCount () = 0;
-virtual int         _GetFinCount () = 0;
-
-virtual DPoint3dCP  _GetPoint () = 0;
-virtual int         _GetPointCount () = 0;
-
-virtual int const*  _GetPointIndex () = 0;
-virtual int         _GetPointIndexCount () = 0;
-
-virtual DVec3dCP    _GetNormal () = 0;
-virtual int         _GetNormalCount () = 0;
-
-virtual int const*  _GetNormalIndex () = 0;
-virtual int         _GetNormalIndexCount () = 0;
-
-virtual DPoint2dCP  _GetParamUV () = 0;
-virtual int         _GetParamUVCount () = 0;
-
-virtual int const*  _GetParamUVIndex () = 0;
-virtual int         _GetParamUVIndexCount () = 0;
-
-virtual int const*  _GetFinData () = 0;
-virtual int         _GetFinDataCount () = 0;
-
-virtual int const*  _GetFinFin () = 0;
-virtual int         _GetFinFinCount () = 0;
-
-virtual Point2dCP   _GetFacetFin () = 0;
-virtual int         _GetFacetFinCount () = 0;
-
-virtual Point2dCP   _GetStripFin () = 0;
-virtual int         _GetStripFinCount () = 0;
-
-virtual int const*  _GetStripFaceId () = 0;         // Array of face subElemId (body face index)
-virtual int         _GetStripFaceIdCount () = 0;
-
-virtual Point2dCP   _GetFinEdge () = 0;             // NOTE: Parasolid only hidden edge support (fin index, edge tag pair)
-virtual int         _GetFinEdgeCount () = 0;
-
-virtual int const*  _GetFacetFace () = 0;           // NOTE: Parasolid only hidden face support (array of face tags)
-virtual int         _GetFacetFaceCount () = 0;
-
-virtual bool        _GetEdgeCurveId (CurveTopologyId& edgeId, int32_t edge, bool useHighestId) = 0; 
-
-virtual bool        _IsHiddenFace (int32_t entityTag) = 0;
-virtual bool        _IsHiddenEdge (int32_t entityTag) = 0;
-
-virtual T_FaceAttachmentsVec const* _GetFaceAttachmentsVec () = 0;
-virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap () = 0;
-
-public:
-
-//! Translate from IFacetTopologyTable to PolyfaceHeader.
-//! @param [in,out] polyface polyface data.  Prior contents are cleared.
-//! @param [in] ftt Facet topology table
-//! @param [in] facetOptions Facet options
-DGNPLATFORM_EXPORT static StatusInt ConvertToPolyface
-(
-PolyfaceHeaderR         polyface,
-IFacetTopologyTable&    ftt,
-IFacetOptionsCR         facetOptions
-);
-
-//! Translate from IFacetTopologyTable to multi symbology polyfaces with face ids.
-//! @param [in,out] polyfaces Map from face index to the polyfaces.
-//! @param [in] facePolyfaces Face color/material attachments nap.
-//! @param [in] ftt Facet topology table
-//! @param [in] facetOptions Facet options
-DGNPLATFORM_EXPORT static StatusInt ConvertToPolyfaces
-(
-bvector<PolyfaceHeaderPtr>&     polyfaces,
-bmap<int, PolyfaceHeaderCP>&    facePolyfaces,
-IFacetTopologyTable&            ftt,
-IFacetOptionsCR                 facetOptions
-);
-
-}; // IFacetTopologyTable
-
-typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
 
 //=======================================================================================
 //! SolidKernelUtil is intended as a bridge between DgnPlatform and Open CASCADE so

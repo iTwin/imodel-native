@@ -9,10 +9,8 @@
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
-#endif
 
 #define COMPARE_VALUES(val0, val1)  if (val0 < val1) return true; if (val0 > val1) return false;
 
@@ -526,7 +524,8 @@ bool WebMercatorDisplay::ComputeZoomLevel(DgnViewportR vp)
         }
 
     double worldDiag = xyRange.low.Distance(xyRange.high);
-    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, true);
+
+    Frustum  viewFrust = vp.GetFrustum(DgnCoordSystem::View, false);
     double viewDiag = viewFrust.m_pts[NPC_LeftBottomRear].Distance(viewFrust.m_pts[NPC_RightTopRear]);
 
     // Get the number of meters / pixel that we are showing in the view
@@ -1246,7 +1245,6 @@ void WebMercatorModel::CreateCache() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) const
     {
-#if defined(BENTLEYCONFIG_OS_WINDOWS) || defined(BENTLEYCONFIG_OS_APPLE_IOS)
     DgnDb::VerifyClientThread();
 
     tile.SetQueued();
@@ -1260,7 +1258,6 @@ void WebMercatorModel::RequestTile(TileId id, TileR tile, Render::SystemR sys) c
 
     TileData data(m_cache.get(), tile, sys, color, url.c_str());
     folly::via(&BeFolly::IOThreadPool::GetPool(), [=](){return data.LoadFromHttp();});
-#endif
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

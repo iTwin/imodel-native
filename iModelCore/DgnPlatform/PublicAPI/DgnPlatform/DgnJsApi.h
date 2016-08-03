@@ -903,45 +903,32 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
     GeometryBuilderPtr m_builder;
 
     JsGeometryBuilder(GeometryBuilderR gb) : m_builder(&gb) {}
-    JsGeometryBuilder(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles);
-    JsGeometryBuilder(JsGeometrySourceP el, DPoint3dCR o, YawPitchRollAnglesCR angles);
     ~JsGeometryBuilder() {}
     bool IsValid() const {return m_builder.IsValid();}
 
-    static JsGeometryBuilderP CreateForElement(JsGeometrySourceP el, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+    static JsGeometryBuilderP CreateForElement(JsGeometrySourceP jgs)
         {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(el) && o && angles);
-        return new JsGeometryBuilder(el, o, angles);
-        }
-
-    static JsGeometryBuilderP CreateForModel(JsDgnModelP model, JsDgnObjectIdP catid, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && o && angles);
-        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angles->GetYawPitchRollAngles()));
-        }
-
-
-    static JsGeometryBuilderP CreateForElementWithTransform(JsGeometrySourceP el, JsTransformP transform)
-        {
-        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(el) && transform);
-        DPoint3d origin;
-        YawPitchRollAngles angles;
-        if (!YawPitchRollAngles::TryFromTransform (origin, angles, transform->Get ()))
-            return nullptr;
-        return new JsGeometryBuilder(el, origin, angles);
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jgs));
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*jgs->m_el->ToGeometrySource()));
         }
 
     static JsGeometryBuilderP CreateForModelWithTransform(JsDgnModelP model, JsDgnObjectIdP catid, JsTransformP transform)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && transform);
-        DPoint3d origin;
-        YawPitchRollAngles angles;
-        if (!YawPitchRollAngles::TryFromTransform (origin, angles, transform->Get ()))
-            return nullptr;
-        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), origin, angles));
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), transform->Get()));
         }
 
+    static JsGeometryBuilderP CreateFor3dModel(JsDgnModelP model, JsDgnObjectIdP catid, JsDPoint3dP o, JsYawPitchRollAnglesP angles)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && o && angles);
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angles->GetYawPitchRollAngles()));
+        }
 
+    static JsGeometryBuilderP CreateFor2dModel(JsDgnModelP model, JsDgnObjectIdP catid, JsDPoint2dP o, JsAngleP angle)
+        {
+        DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(model) && o && angle);
+        return new JsGeometryBuilder(*GeometryBuilder::Create(*model->m_model, DgnCategoryId(catid->m_id), o->Get(), angle->Get()));
+        }
 
     static JsGeometryBuilderP CreateGeometryPart(JsDgnDbP db, bool is3d)
         {
@@ -961,21 +948,12 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         m_builder->Append(params->m_value);
         }
 
-
     void AppendSubCategoryId(JsDgnObjectIdP subcategoryId) 
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && DGNJSAPI_IS_VALID_JSOBJ(subcategoryId));
         m_builder->Append(DgnSubCategoryId(subcategoryId->m_id));
         }
 
-    /*
-    void AppendSolidPrimitive(JsSolidPrimitiveP solid) 
-        {
-        if (solid && solid->GetISolidPrimitivePtr().IsValid())
-            m_builder->Append(*solid->GetISolidPrimitivePtr());
-        }
-    */
-    
     void AppendGeometry(JsGeometryP geometry)
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && geometry);
@@ -986,7 +964,8 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
         else if (geometry->GetISolidPrimitivePtr().IsValid())
             m_builder->Append(*geometry->GetISolidPrimitivePtr());
         }
-    void AppendGeometryNode (JsGeometryNodeP node)
+
+    void AppendGeometryNode(JsGeometryNodeP node)
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && node);
         auto nativeNode = node->GetGeometryNodePtr ();
@@ -1001,13 +980,13 @@ struct JsGeometryBuilder : RefCountedBaseWithCreate
             }
         }
 
-    BentleyStatus SetGeometryStreamAndPlacement (JsGeometrySourceP jgs)
+    BentleyStatus Finish(JsGeometrySourceP jgs)
         {
         DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid() && DGNJSAPI_IS_VALID_JSELEMENT_PLACEHOLDER(jgs))
-        return m_builder->SetGeometryStreamAndPlacement(*jgs->m_el->ToGeometrySourceP());
+        return m_builder->Finish(*jgs->m_el->ToGeometrySourceP());
         }
 
-    BentleyStatus SetGeometryStream (JsDgnGeometryPartP part) {return m_builder->SetGeometryStream(*part->m_value);}
+    BentleyStatus FinishPart(JsDgnGeometryPartP part) {return m_builder->Finish(*part->m_value);}
 
     void AppendCopyOfGeometry(JsGeometryBuilderP builder, JsPlacement3dP relativePlacement);
     void AppendGeometryPart(JsDgnGeometryPartP part, JsPlacement3dP relativePlacement);

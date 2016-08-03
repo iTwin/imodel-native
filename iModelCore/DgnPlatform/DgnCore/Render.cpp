@@ -157,7 +157,6 @@ bool Render::Queue::HasActiveOrPending(Task::Operation op) const
     return false;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -239,6 +238,7 @@ THREAD_MAIN_IMPL Render::Queue::Main(void* arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::StartRenderThread()
     {
+    DgnDb::VerifyClientThread();
     if (nullptr != s_renderQueue)
         {
         BeAssert(false);

@@ -515,9 +515,9 @@ GeometricModelP HypermodelingViewController::_GetTargetModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d HypermodelingViewController::_GetViewedExtents() const
+AxisAlignedBox3d HypermodelingViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
-    return m_currentViewController->GetViewedExtents(); // *** NEEDS WORK: I guess the drawing could stick out the sides. Also, should we returned clipped range?
+    return m_currentViewController->GetViewedExtents(vp); // *** NEEDS WORK: I guess the drawing could stick out the sides. Also, should we returned clipped range?
     }
 
 /*---------------------------------------------------------------------------------**//**

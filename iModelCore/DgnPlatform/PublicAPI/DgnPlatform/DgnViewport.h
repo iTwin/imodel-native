@@ -145,7 +145,7 @@ protected:
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
-    DGNPLATFORM_EXPORT virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const;
+    DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}
@@ -309,6 +309,9 @@ public:
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
     RotMatrixCR GetRotMatrix() const {return m_rotMatrix;}
+    DVec3d GetXVector() const {DVec3d v; GetRotMatrix().GetRow(v,0); return v;}
+    DVec3d GetYVector() const {DVec3d v; GetRotMatrix().GetRow(v,1); return v;}
+    DVec3d GetZVector() const {DVec3d v; GetRotMatrix().GetRow(v,2); return v;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
     BSIRect GetViewRect() const {return m_renderTarget->GetViewRect();}
@@ -561,7 +564,6 @@ public:
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
     virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:

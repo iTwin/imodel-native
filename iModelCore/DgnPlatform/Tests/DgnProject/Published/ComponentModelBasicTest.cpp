@@ -47,9 +47,9 @@ struct FakeScriptLibrary : ScopedDgnHost::FetchScriptCallback
 /*=================================================================================**//**
 * @bsiclass                                                     Umar.Hayat     01/16
 +===============+===============+===============+===============+===============+======*/
-struct ComponentModelBasicTest : public testing::Test
+struct ComponentModelBasicTest : public DgnDbTestFixture
 {
-    Dgn::ScopedDgnHost m_host;
+    //Dgn::ScopedDgnHost m_host;
     FakeScriptLibrary  m_library;
     DgnDbPtr initDb(WCharCP fileName, Db::OpenMode mode = Db::OpenMode::ReadWrite);
     DgnCategoryId CreateCategory(DgnDbPtr& db, Utf8CP code, ColorDef const& color);
@@ -76,7 +76,11 @@ struct ComponentModelBasicTest : public testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr ComponentModelBasicTest::initDb(WCharCP fileName, Db::OpenMode mode)
     {
-    BeFileName dbName = DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", fileName);
+    //** Force to copy the file in Sub-Directory of TestCase
+    BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
+    testFileName.AppendToPath(fileName);
+
+    BeFileName dbName = DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", testFileName.c_str());
     DgnDbPtr db;
     DgnDbTestFixture::OpenDb(db, dbName, Db::OpenMode::ReadWrite);
     return db;
@@ -185,31 +189,31 @@ void ComponentModelBasicTest::CreateAndImportComponentSchema(DgnDbPtr& db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromECClass)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromECClass.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
     
-    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
+    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
-    ComponentDefCreator creator(*db, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
+    ComponentDefCreator creator(*m_db, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
     ECN::ECClassCP ecClass = creator.GenerateECClass();
     EXPECT_TRUE(nullptr != ecClass);
 
-    ASSERT_TRUE(nullptr != ComponentDefCreator::ImportSchema(*db, *testSchema, false));
+    ASSERT_TRUE(nullptr != ComponentDefCreator::ImportSchema(*m_db, *testSchema, false));
 
     DgnDbStatus status;
-    ComponentDefPtr def1 = ComponentDef::FromECClass(&status, *db, *ecClass);
+    ComponentDefPtr def1 = ComponentDef::FromECClass(&status, *m_db, *ecClass);
     EXPECT_FALSE(def1.IsValid());
     // Doesn't return status right now, uncomment once fixed
     EXPECT_TRUE(status == DgnDbStatus::InvalidCategory);
 
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
 
-    ComponentDefPtr cdef = ComponentDef::FromECClass(&status, *db, *ecClass);
+    ComponentDefPtr cdef = ComponentDef::FromECClass(&status, *m_db, *ecClass);
     EXPECT_TRUE(cdef.IsValid());
 
     }
@@ -218,31 +222,31 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClass)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromECClassId)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromECClassId.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
     
-    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
+    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
-    ComponentDefCreator creator(*db, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
+    ComponentDefCreator creator(*m_db, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
     ECN::ECClassCP ecClass = creator.GenerateECClass();
     EXPECT_TRUE(nullptr != ecClass);
 
-    ASSERT_TRUE(nullptr != ComponentDefCreator::ImportSchema(*db, *testSchema, false));
+    ASSERT_TRUE(nullptr != ComponentDefCreator::ImportSchema(*m_db, *testSchema, false));
 
     DgnDbStatus status;
-    ComponentDefPtr def1 = ComponentDef::FromECClassId(&status, *db, DgnClassId(ecClass->GetId()));
+    ComponentDefPtr def1 = ComponentDef::FromECClassId(&status, *m_db, DgnClassId(ecClass->GetId()));
     EXPECT_FALSE(def1.IsValid());
     // Doesn't return status right now, uncomment once fixed
     EXPECT_TRUE(status == DgnDbStatus::InvalidCategory);
 
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
 
-    ComponentDefPtr def2 = ComponentDef::FromECClassId(&status, *db, DgnClassId(ecClass->GetId()));
+    ComponentDefPtr def2 = ComponentDef::FromECClassId(&status, *m_db, DgnClassId(ecClass->GetId()));
     EXPECT_TRUE(def2.IsValid());
 
     }
@@ -252,29 +256,29 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECClassId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromECSqlName)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromECSqlName.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     DgnDbStatus status;
-    ComponentDefPtr def0 = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr def0 = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_FALSE(def0.IsValid());
     // Doesn't return status right now, uncomment once fixed
     EXPECT_TRUE(status == DgnDbStatus::NotFound);
 
     // With outstatus Status Nullptr
-    def0 = ComponentDef::FromECSqlName(nullptr, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    def0 = ComponentDef::FromECSqlName(nullptr, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_FALSE(def0.IsValid());
 
-    CreateAndImportComponentSchema(db);
+    CreateAndImportComponentSchema(m_db);
 
-    ComponentDefPtr def1 = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr def1 = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_FALSE(def1.IsValid());
 
     // Doesn't return status right now, uncomment once fixed
     EXPECT_TRUE(status == DgnDbStatus::InvalidCategory);
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
 
-    ComponentDefPtr def2 = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr def2 = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(def2.IsValid());
 
     }
@@ -284,12 +288,12 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromECSqlName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, CreateComponentModel)
     {
-    DgnDbPtr db = initDb(L"CreateComponentModel.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
-    CreateAndImportComponentSchema(db);
+    CreateAndImportComponentSchema(m_db);
 
-    ComponentModelPtr CM2 = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentModelPtr CM2 = ComponentModel::Create(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(CM2.IsValid());
 
     ASSERT_TRUE(DgnDbStatus::Success == CM2->Insert());
@@ -299,10 +303,10 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, CreateComponentModel_NoSchema)
     {
-    DgnDbPtr db = initDb(L"CreateComponentModel_NoSchema.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
-    ComponentModelPtr CM = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentModelPtr CM = ComponentModel::Create(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(CM.IsValid());
 
     ASSERT_TRUE(DgnDbStatus::Success == CM->Insert());
@@ -313,15 +317,15 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel_NoSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, CreateComponentModel_Redundant)
     {
-    DgnDbPtr db = initDb(L"CreateComponentModel_Redundant.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
-    ComponentModelPtr CM = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentModelPtr CM = ComponentModel::Create(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(CM.IsValid());
 
     ASSERT_TRUE(DgnDbStatus::Success == CM->Insert());
 
-    ComponentModelPtr CM2 = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentModelPtr CM2 = ComponentModel::Create(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(CM2.IsValid());
 
     ASSERT_TRUE(DgnDbStatus::Success == CM2->Insert());
@@ -332,10 +336,10 @@ TEST_F(ComponentModelBasicTest, CreateComponentModel_Redundant)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromComponentModel.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
-    ComponentModelPtr CM = ComponentModel::Create(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentModelPtr CM = ComponentModel::Create(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(CM.IsValid());
 
     ASSERT_TRUE(DgnDbStatus::Success == CM->Insert());
@@ -346,7 +350,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
     EXPECT_FALSE(def.IsValid());
     // TODO: Check status
 
-    CreateAndImportComponentSchema(db);
+    CreateAndImportComponentSchema(m_db);
 
     // Still category does not exist
     ComponentDefPtr def2 = ComponentDef::FromComponentModel(&status, *CM);
@@ -354,7 +358,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
     // Doesn't return status right now, uncomment once fixed
     //EXPECT_TRUE(status == DgnDbStatus::InvalidCategory);
 
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
     ComponentDefPtr def3 = ComponentDef::FromComponentModel(&status, *CM);
     EXPECT_TRUE(def3.IsValid());
 
@@ -364,20 +368,20 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromComponentModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, DeleteComponentDef)
     {
-    DgnDbPtr db = initDb(L"DeleteComponentDef.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     // Create Category
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    DgnDbStatus status = ComponentDef::DeleteComponentDef(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    DgnDbStatus status = ComponentDef::DeleteComponentDef(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(DgnDbStatus::Success != status);
 
-    CreateAndImportComponentSchema(db);
+    CreateAndImportComponentSchema(m_db);
 
-    ComponentDefPtr def2 = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr def2 = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(def2.IsValid());
 
-    status = ComponentDef::DeleteComponentDef(*db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    status = ComponentDef::DeleteComponentDef(*m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     ASSERT_TRUE(DgnDbStatus::Success == status);
 
     }
@@ -386,22 +390,22 @@ TEST_F(ComponentModelBasicTest, DeleteComponentDef)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_Export)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_Export_Source.ibim");
-    ASSERT_TRUE(db.IsValid());
-    DgnDbPtr clientDb = initDb(L"ComponentDef_Export_Destination.ibim");
+    SetupSeedProject(L"ComponentDef_Export_Source.bim");
+    ASSERT_TRUE(m_db.IsValid());
+    DgnDbPtr clientDb = initDb(L"ComponentDef_Export_Destination.bim");
     ASSERT_TRUE(clientDb.IsValid());
 
     // Create Category and Component Schema
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    CreateAndImportComponentSchema(db);
-    db->SaveChanges();
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    CreateAndImportComponentSchema(m_db);
+    m_db->SaveChanges();
 
     DgnDbStatus status;
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(cdef.IsValid());
 
     // Exporting in second DgnDb
-    DgnImportContext context(*db, *clientDb);
+    DgnImportContext context(*m_db, *clientDb);
     status = cdef->Export(context);
     ASSERT_TRUE(DgnDbStatus::Success == status);
     clientDb->SaveChanges();
@@ -416,20 +420,20 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_Export_SameDb)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_Export_SameDb.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     // Create Category and Component Schema
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    CreateAndImportComponentSchema(db);
-    db->SaveChanges();
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    CreateAndImportComponentSchema(m_db);
+    m_db->SaveChanges();
 
     DgnDbStatus status;
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(cdef.IsValid());
     
     // Exporting in Same DgnDb
-    DgnImportContext context(*db,*db);
+    DgnImportContext context(*m_db,*m_db);
     status = cdef->Export(context);
     ASSERT_TRUE(DgnDbStatus::Success == status);
 
@@ -440,37 +444,37 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export_SameDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, QueryComponentDefs)
     {
-    DgnDbPtr db = initDb(L"QueryComponentDefs.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     DgnDbStatus status;
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*db, TEST_JS_NAMESPACE);
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    ECN::ECSchemaPtr testSchema = ComponentDefCreator::GenerateSchema(*m_db, TEST_JS_NAMESPACE);
     ASSERT_TRUE(testSchema.IsValid());
 
-    ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+    ECN::ECClassCP baseClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
     MakeBoxTsComponentParameterSet();
 
-    ComponentDefCreator creator(*db, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
+    ComponentDefCreator creator(*m_db, *testSchema, TEST_BOXES_COMPONENT_NAME, *baseClass, TEST_JS_NAMESPACE "." TEST_BOXES_COMPONENT_NAME, "Boxes", "", params);
     ECN::ECClassCP ecClass = creator.GenerateECClass();
     EXPECT_TRUE(nullptr != ecClass);
 
-    ASSERT_TRUE(nullptr != ComponentDefCreator::ImportSchema(*db, *testSchema, false));
+    ASSERT_TRUE(nullptr != ComponentDefCreator::ImportSchema(*m_db, *testSchema, false));
 
-    db->SaveChanges();
+    m_db->SaveChanges();
 
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(cdef.IsValid());
 
-    DgnImportContext context(*db, *db);
+    DgnImportContext context(*m_db, *m_db);
     //DgnDbStatus Export(DgnImportContext& context, bool exportSchema = true, bool exportCategory = false);
     status = cdef->Export(context);
     ASSERT_TRUE(DgnDbStatus::Success == status);
-    db->SaveChanges();
+    m_db->SaveChanges();
 
     bvector<DgnClassId> componentDefs;
-    ComponentDef::QueryComponentDefs(componentDefs, *db, *baseClass);  // The last argument is the base class, not the component class
+    ComponentDef::QueryComponentDefs(componentDefs, *m_db, *baseClass);  // The last argument is the base class, not the component class
     ASSERT_EQ(1 , componentDefs.size());
 
     }
@@ -479,21 +483,21 @@ TEST_F(ComponentModelBasicTest, QueryComponentDefs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
     {
-    DgnDbPtr db = initDb(L"ComponentDef_FromInstance.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     DgnDbStatus status;
     // Create Category and Component Schema
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    CreateAndImportComponentSchema(db);
-    db->SaveChanges();
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    CreateAndImportComponentSchema(m_db);
+    m_db->SaveChanges();
 
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(cdef.IsValid());
 
     //  Create the target model in the client.
     SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *db, DgnModel::CreateModelCode("Instances")));
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
 
     // When Script library is not enabled
     DgnElementCPtr uniqueInstance = ComponentDef::MakeUniqueInstance(&status, *targetModel, *cdef->MakeVariationSpec());
@@ -507,7 +511,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
     ComponentDefPtr def3 = ComponentDef::FromInstance(&status, *uniqueInstance);
     EXPECT_TRUE(def3.IsValid());
 
-    db->SaveChanges();
+    m_db->SaveChanges();
 
     }
 
@@ -516,21 +520,21 @@ TEST_F(ComponentModelBasicTest, ComponentDef_FromInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
     {
-    DgnDbPtr db = initDb(L"MakeUniqueInstance.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     DgnDbStatus status;
     // Create Category and Component Schema
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    CreateAndImportComponentSchema(db);
-    db->SaveChanges();
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    CreateAndImportComponentSchema(m_db);
+    m_db->SaveChanges();
 
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     EXPECT_TRUE(cdef.IsValid());
 
     //  Create the target model in the client.
     SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *db, DgnModel::CreateModelCode("Instances")));
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
 
     // When Script library is not enabled
     DgnElementCPtr uniqueInstance = ComponentDef::MakeUniqueInstance(&status, *targetModel, *cdef->MakeVariationSpec());
@@ -541,7 +545,7 @@ TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
     uniqueInstance = ComponentDef::MakeUniqueInstance(&status, *targetModel, *cdef->MakeVariationSpec());
     EXPECT_TRUE(DgnDbStatus::Success == status);
 
-    db->SaveChanges();
+    m_db->SaveChanges();
 
     }
 /*---------------------------------------------------------------------------------**//**
@@ -549,27 +553,27 @@ TEST_F(ComponentModelBasicTest, MakeUniqueInstance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, Variations)
     {
-    DgnDbPtr db = initDb(L"Variations.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     DgnDbStatus status;
     //---------------------------------------------------------------------------------------------------------------
     // Create Category and Component Schema
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    CreateAndImportComponentSchema(db);
-    db->SaveChanges();
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    CreateAndImportComponentSchema(m_db);
+    m_db->SaveChanges();
 
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     ASSERT_TRUE(cdef.IsValid());
 
     //---------------------------------------------------------------------------------------------------------------
     //  Create the catalog model in the client.
     SpatialModelPtr catalogModel1;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(catalogModel1, *db, DgnModel::CreateModelCode("CatelogModel")));
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(catalogModel1, *m_db, DgnModel::CreateModelCode("CatelogModel")));
     SpatialModelPtr catalogModel2;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(catalogModel2, *db, DgnModel::CreateModelCode("OtherCatelogModel")));
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(catalogModel2, *m_db, DgnModel::CreateModelCode("OtherCatelogModel")));
     SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *db, DgnModel::CreateModelCode("Instances")));
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
     
     // Register Script
     RegisterBoxModelResolverScript();
@@ -621,29 +625,29 @@ TEST_F(ComponentModelBasicTest, Variations)
     cdef->QueryVariations(variationList3, catalogModel1->GetModelId());
     EXPECT_EQ(2, variationList3.size());
 
-    db->SaveChanges();
+    m_db->SaveChanges();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ComponentModelBasicTest, MakeVariationInstance)
     {
-    DgnDbPtr db = initDb(L"MakeVariationInstance.ibim");
-    ASSERT_TRUE(db.IsValid());
+    SetupSeedProject();
+    ASSERT_TRUE(m_db.IsValid());
 
     DgnDbStatus status;
     //---------------------------------------------------------------------------------------------------------------
     // Create Category and Component Schema
-    ASSERT_TRUE(CreateCategory(db, "Boxes", ColorDef(255, 0, 0)).IsValid());
-    CreateAndImportComponentSchema(db);
-    db->SaveChanges();
+    ASSERT_TRUE(CreateCategory(m_db, "Boxes", ColorDef(255, 0, 0)).IsValid());
+    CreateAndImportComponentSchema(m_db);
+    m_db->SaveChanges();
 
-    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
+    ComponentDefPtr cdef = ComponentDef::FromECSqlName(&status, *m_db, TEST_BOXES_COMPONENT_ECSQLCLASS_NAME);
     ASSERT_TRUE(cdef.IsValid());
 
     //  Create the target model in the client.
     SpatialModelPtr targetModel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *db, DgnModel::CreateModelCode("Instances")));
+    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(targetModel, *m_db, DgnModel::CreateModelCode("Instances")));
 
     //---------------------------------------------------------------------------------------------------------------
     // Register Scripts
@@ -668,7 +672,7 @@ TEST_F(ComponentModelBasicTest, MakeVariationInstance)
     DgnElementCPtr inst2 = ComponentDef::MakeInstanceOfVariation(&status, *targetModel, *variation1, params.get());
     EXPECT_TRUE(inst2.IsValid());
 
-    db->SaveChanges();
+    m_db->SaveChanges();
     }
 
 

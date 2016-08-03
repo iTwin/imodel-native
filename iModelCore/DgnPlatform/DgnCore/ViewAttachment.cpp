@@ -161,7 +161,7 @@ public:
         len *= s_lenFactor;
         m_builder->Append(*ICurvePrimitive::CreateRectangle(0, 0, len, len, 0));
 #endif
-        return IsValid() && SUCCESS == m_builder->SetGeometryStreamAndPlacement(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
+        return IsValid() && SUCCESS == m_builder->Finish(m_attachment) ? DgnDbStatus::Success : DgnDbStatus::BadElement;
         }
 };
 

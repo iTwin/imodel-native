@@ -47,10 +47,16 @@ An element can also be deleted.
 
 And copied or imported.
 
-- DgnElements::Clone
+- DgnElement::Clone
 - DgnElement::Import
 
 Don't forget to call DgnElement::Insert on the copy, in order to write it to the destination.
+
+To access an element's properties you may use ECSQL to query property values. You may also read and write individual property values on an element using
+ 
+- DgnElement::_GetProperty
+- DgnElement::_SetProperty
+- DgnElement::GetUserProperty
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->

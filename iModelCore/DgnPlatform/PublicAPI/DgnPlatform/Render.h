@@ -61,7 +61,7 @@ public:
     uint32_t    fill:1;             //!< Controls whether the fills on filled elements are displayed.
     uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
     uint32_t    acs:1;              //!< Shows or hides the ACS triad.
-    uint32_t    bgImage:1;          //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
+    uint32_t    bgImage:1;          //!< Shows or hides the background image. 
     uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
     uint32_t    sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
@@ -71,7 +71,7 @@ public:
     uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
     uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
 
-    void SetRenderMode (RenderMode value) {m_renderMode = value;}
+    void SetRenderMode(RenderMode value) {m_renderMode = value;}
     RenderMode GetRenderMode() const {return m_renderMode;}
 
     DGNPLATFORM_EXPORT void InitDefaults();
@@ -466,9 +466,9 @@ public:
     bool IsCenterPhase() const{return m_options.centerPhase;}
     bool IsCosmetic() const {return m_options.cosmetic;}
     bool IsTreatAsSingleSegment() const {return m_options.treatAsSingleSegment;}
-    bool IsElementClosed() const{return m_options.elementIsClosed; }
-    bool IsCurve() const {return m_options.isCurve; }
-    bool IsContinuous() const {return m_options.isContinuous; }
+    bool IsElementClosed() const {return m_options.elementIsClosed;}
+    bool IsCurve() const {return m_options.isCurve;}
+    bool IsContinuous() const {return m_options.isContinuous;}
 
     bool HasDashScale() const {return m_options.dashScale;}
     bool HasGapScale() const {return m_options.gapScale;}
@@ -586,34 +586,58 @@ enum class LineCap
 //=======================================================================================
 struct GradientSymb : RefCountedBase
 {
+    enum
+    {
+        MAX_GRADIENT_KEYS = 8,
+    };
+
+    enum class Flags
+    {
+        None         = 0,
+        Invert       = (1 << 0),
+        Outline      = (1 << 1),
+        AlwaysFilled = (1 << 2),
+    };
+
+    enum class Mode
+    {
+        None          = 0,
+        Linear        = 1,
+        Curved        = 2,
+        Cylindrical   = 3,
+        Spherical     = 4,
+        Hemispherical = 5,
+    };
+
 protected:
-    GradientMode    m_mode;
-    uint16_t        m_flags;
-    uint16_t        m_nKeys;
-    double          m_angle;
-    double          m_tint;
-    double          m_shift;
-    ColorDef        m_colors[MAX_GRADIENT_KEYS];
-    double          m_values[MAX_GRADIENT_KEYS];
-    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
+    Mode m_mode;
+    uint16_t m_flags;
+    uint16_t m_nKeys;
+    double m_angle;
+    double m_tint;
+    double m_shift;
+    ColorDef m_colors[MAX_GRADIENT_KEYS];
+    double   m_values[MAX_GRADIENT_KEYS];
 
 public:
+    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
+    
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
     //! Create an instance of a GradientSymb.
-    DGNPLATFORM_EXPORT static GradientSymbPtr Create();
+    static GradientSymbPtr Create() {return new GradientSymb();}
 
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
 
     int GetNKeys() const {return m_nKeys;}
-    GradientMode GetMode() const {return m_mode;}
+    Mode GetMode() const {return m_mode;}
     uint16_t GetFlags() const {return m_flags;}
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
     void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
-    void SetMode(GradientMode mode) {m_mode = mode;}
+    void SetMode(Mode mode) {m_mode = mode;}
     void SetFlags(uint16_t flags) {m_flags = flags;}
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
@@ -741,7 +765,7 @@ public:
     double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId; }
+    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -785,7 +809,7 @@ public:
 
     void Cook(GeometryParamsCR, ViewContextR);
 
-    DGNPLATFORM_EXPORT GraphicParams();
+    GraphicParams() {Init();}
     DGNPLATFORM_EXPORT explicit GraphicParams(GraphicParamsCR rhs);
     DGNPLATFORM_EXPORT void Init();
 
@@ -1068,28 +1092,28 @@ private:
     GraphicPtr          m_graphic;
     IGraphicBuilderP    m_builder;
 
-    GraphicBuilder() : m_builder(nullptr) { }
-    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) { }
-    template<typename T> GraphicBuilder(T* t) : m_graphic(t), m_builder(t) { }
+    GraphicBuilder() : m_builder(nullptr) {}
+    GraphicBuilder(GraphicR graphic, IGraphicBuilderR builder) : m_graphic(&graphic), m_builder(&builder) {}
+    template<typename T> GraphicBuilder(T* t) : m_graphic(t), m_builder(t) {}
 
-    bool IsValid() const { return m_graphic.IsValid(); }
+    bool IsValid() const {return m_graphic.IsValid();}
 public:
-    GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) { }
-    template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) { }
+    GraphicBuilder(GraphicBuilderP p) : m_graphic(nullptr != p ? p->m_graphic : nullptr), m_builder(nullptr != p ? p->m_builder : nullptr) {}
+    template<typename T> GraphicBuilder(T& t) : m_graphic(&t), m_builder(&t) {}
 
     DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic) const; // NOTE: subToGraphic is provided to allow stroking in world coords...
 
-    operator Graphic&() { BeAssert(m_graphic.IsValid()); return *m_graphic; }
-    DgnViewportCP GetViewport() const { return m_graphic->GetViewport(); }
-    TransformCR GetLocalToWorldTransform() const { return m_graphic->GetLocalToWorldTransform(); }
-    double GetPixelSize() const { return m_graphic->GetPixelSize(); }
-    void GetPixelSizeRange(double& min, double& max) const { m_graphic->GetPixelSizeRange(min, max); }
-    void SetPixelSizeRange(double min, double max) { m_graphic->SetPixelSizeRange(min, max); }
-    void UpdatePixelSizeRange(double newMin, double newMax) { m_graphic->UpdatePixelSizeRange(newMin, newMax); }
-    bool IsForDisplay() const { return m_graphic->IsForDisplay(); }
+    operator Graphic&() {BeAssert(m_graphic.IsValid()); return *m_graphic;}
+    DgnViewportCP GetViewport() const {return m_graphic->GetViewport();}
+    TransformCR GetLocalToWorldTransform() const {return m_graphic->GetLocalToWorldTransform();}
+    double GetPixelSize() const {return m_graphic->GetPixelSize();}
+    void GetPixelSizeRange(double& min, double& max) const {m_graphic->GetPixelSizeRange(min, max);}
+    void SetPixelSizeRange(double min, double max) {m_graphic->SetPixelSizeRange(min, max);}
+    void UpdatePixelSizeRange(double newMin, double newMax) {m_graphic->UpdatePixelSizeRange(newMin, newMax);}
+    bool IsForDisplay() const {return m_graphic->IsForDisplay();}
 
     StatusInt Close() {return IsOpen() ? m_builder->_Close() : SUCCESS;}
-    bool IsOpen() const { return m_builder->_IsOpen(); }
+    bool IsOpen() const {return m_builder->_IsOpen();}
 
     //! Get the current GeometryStreamEntryId.
     //! @return A GeometryStream entry identifier for the graphics that are currently being drawn.
@@ -1288,18 +1312,18 @@ struct GraphicBuilderPtr
 private:
     GraphicBuilder  m_builder;
 public:
-    GraphicBuilderPtr() { }
-    GraphicBuilderPtr(GraphicBuilderP builder) : m_builder(builder) { }
+    GraphicBuilderPtr() {}
+    GraphicBuilderPtr(GraphicBuilderP builder) : m_builder(builder) {}
 
-    template<typename T> GraphicBuilderPtr(T* impl) : m_builder(impl) { }
-    operator GraphicPtr() { return m_builder.m_graphic; }
+    template<typename T> GraphicBuilderPtr(T* impl) : m_builder(impl) {}
+    operator GraphicPtr() {return m_builder.m_graphic;}
 
-    bool IsValid() const { return m_builder.IsValid(); }
-    bool IsNull() const { return !IsValid(); }
-    GraphicBuilderP get() { return IsValid() ? &m_builder : nullptr; }
-    GraphicBuilderP operator->() { return get(); }
-    GraphicBuilderR operator*() { BeAssert(IsValid()); return *get(); }
-    GraphicP GetGraphic() { return m_builder.m_graphic.get(); }
+    bool IsValid() const {return m_builder.IsValid();}
+    bool IsNull() const {return !IsValid();}
+    GraphicBuilderP get() {return IsValid() ? &m_builder : nullptr;}
+    GraphicBuilderP operator->() {return get();}
+    GraphicBuilderR operator*() {BeAssert(IsValid()); return *get();}
+    GraphicP GetGraphic() {return m_builder.m_graphic.get();}
 };
 
 //=======================================================================================
@@ -1495,9 +1519,9 @@ public:
     //! @return The adjusted frame rate goal
     DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double saesNpcSq);
 
-    void Reset() { m_drawCount = m_abortCount = 0; }    //!< Reset abort/draw counts
-    void IncrementDrawCount() { ++m_drawCount; }        //!< Increment the number of frames drawn
-    void IncrementAbortCount() { ++m_abortCount; }      //!< Increment the number of drawn frames aborted
+    void Reset() {m_drawCount = m_abortCount = 0;}    //!< Reset abort/draw counts
+    void IncrementDrawCount() {++m_drawCount;}        //!< Increment the number of frames drawn
+    void IncrementAbortCount() {++m_abortCount;}      //!< Increment the number of drawn frames aborted
 };
 
 //=======================================================================================
@@ -1599,7 +1623,7 @@ public:
     uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) { RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay); }
+    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
     DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     //! Make the specified rectangle have the specified aspect ratio 

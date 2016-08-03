@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 +===============+===============+===============+===============+===============+======*/
 struct CategoryTests : public DgnDbTestFixture
     {
+
     void CompareCategories(DgnCategoryId catId, Utf8CP name, DgnCategory::Scope scope, DgnCategory::Rank rank, Utf8CP descr)
         {
         DgnCategoryCPtr cat = DgnCategory::QueryCategory(catId, *m_db);
@@ -65,7 +66,7 @@ struct CategoryTests : public DgnDbTestFixture
 //=======================================================================================
 TEST_F (CategoryTests, InsertCategory)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ASSERT_TRUE(m_db.IsValid());
         
     //Category properties.
@@ -191,7 +192,7 @@ TEST_F (CategoryTests, InsertCategory)
 //=======================================================================================
 TEST_F (CategoryTests, DeleteCategory)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -229,7 +230,7 @@ TEST_F (CategoryTests, DeleteCategory)
 //=======================================================================================
 TEST_F (CategoryTests, UpdateCategory)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Category properties.
     Utf8CP name = "TestCategory";
@@ -279,7 +280,7 @@ TEST_F (CategoryTests, UpdateCategory)
 //=======================================================================================
 TEST_F (CategoryTests, InsertSubCategory)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -389,7 +390,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     EXPECT_EQ(3, nCompared);
     EXPECT_EQ(1, nNotCompared); // default sub-category
-
+    SaveDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -397,7 +398,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CategoryTests, SubCategoryInvariants)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"SubCategoryInvaraints.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnDbR db = *m_db;
 
     DgnSubCategory::Appearance app;
@@ -451,6 +452,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 
     db.SaveChanges();
     DgnSubCategoryPtr pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
+    printf("\n%s, %s\n", pSubcat2B->GetCode().GetValue().c_str(), DgnSubCategory::CreateSubCategoryCode(cat2Id, "2A").GetValue().c_str());
     pSubcat2B->SetCode(DgnSubCategory::CreateSubCategoryCode(cat2Id, "2A"));
     EXPECT_TRUE(pSubcat2B->Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
@@ -467,7 +469,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // Can rename non-default sub-category if no name collisions
     cpSubcat2B = pSubcat2B->Update(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    EXPECT_EQ(cpSubcat2B->GetCode().GetValue(), "NewName");
+    EXPECT_EQ(cpSubcat2B->GetCode().GetValue().c_str(), "NewName");
 
     // Illegal characters in names
     pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
@@ -491,7 +493,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 //=======================================================================================
 TEST_F (CategoryTests, DeleteSubCategory)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -527,7 +529,7 @@ TEST_F (CategoryTests, DeleteSubCategory)
 //=======================================================================================
 TEST_F (CategoryTests, UpdateSubCategory)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
@@ -576,7 +578,7 @@ TEST_F (CategoryTests, UpdateSubCategory)
 //=======================================================================================
 TEST_F (CategoryTests, QueryByElementId)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"CategoryTests.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Category properties.
     Utf8CP name = "TestCategory";
@@ -600,7 +602,7 @@ TEST_F (CategoryTests, QueryByElementId)
     ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
     EXPECT_TRUE(builder->Append(*ellipse));
 
-    EXPECT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
     auto elem = m_db->Elements().Insert(*el);
     EXPECT_TRUE(elem.IsValid());
     }
