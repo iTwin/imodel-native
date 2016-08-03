@@ -27,19 +27,12 @@ struct TextureCache
 public:
     struct TextureKey
     {
-        uint32_t    m_color;
-        MaterialCP  m_material;
+        TileDisplayParams   m_params;
 
+        explicit TextureKey(TileDisplayParamsCP params) { if (nullptr != params) m_params = *params; }
         TextureKey() { }
-        TextureKey(GraphicParamsCP matSymb) : m_color(matSymb ? matSymb->GetFillColor().GetValue() : 0), m_material(matSymb ? matSymb->GetMaterial() : NULL) { }
 
-        bool operator<(TextureKey const& rhs) const
-            {
-            if (rhs.m_material != m_material)        // Needs work -- Only if texture - and texture may blend color....
-                return m_material < rhs.m_material;
-
-            return m_color < rhs.m_color;
-            }
+        bool operator<(TextureKey const& rhs) const { return m_params < rhs.m_params; }
     };
 
     struct Texture

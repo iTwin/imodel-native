@@ -32,7 +32,7 @@ void TextureCache::PrepareMeshTextures(TileMeshList& meshes, bvector<uint32_t>& 
 
     for (auto& mesh : meshes)
         {
-        auto matSymb = mesh->GetGraphicParams();
+        auto matSymb = mesh->GetDisplayParams();
         TextureKey key(matSymb);
 
         uint32_t textureId = -1;
@@ -612,7 +612,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         rootNode["materials"][matName.c_str()] = Json::objectValue;
         rootNode["materials"][matName.c_str()]["technique"] = "tech_0";
         rootNode["materials"][matName.c_str()]["values"]["color"] = Json::arrayValue;
-        uint32_t rgb = (NULL == mesh.GetGraphicParams()) ? 0 : mesh.GetGraphicParams()->GetFillColor().GetValue();
+        uint32_t rgb = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
         rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[0]/255.0);
         rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[1]/255.0);
         rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[2]/255.0);
