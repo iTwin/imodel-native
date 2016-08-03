@@ -74,6 +74,7 @@ void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewContext::_InitContextForView()
     {
+    BeAssert(nullptr != m_viewport);
     m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
     m_worldToView = *m_viewport->GetWorldToViewMap();
     m_scanRangeValid = false;
@@ -161,6 +162,7 @@ StatusInt ViewContext::Attach(DgnViewportP viewport, DrawPurpose purpose)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::IsCameraOn() const
     {
+    BeAssert(nullptr != m_viewport);
     return m_viewport->IsCameraOn();
     }
 
@@ -347,6 +349,7 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
             return nullptr; // Part range doesn't overlap pick...
         }
 
+    BeAssert(!isForDisplay || nullptr != m_viewport);
     Render::GraphicPtr partGraphic = (isForDisplay ? partGeometry->Graphics().Find(*m_viewport, graphic.GetPixelSize()) : nullptr);
 
     if (!partGraphic.IsValid())
@@ -646,6 +649,7 @@ bool ViewContext::_VisitAllModelElements()
     SetScanReturn();
 
     // The ViewController must orchestrate the display of all of the elements in the view.
+    BeAssert(nullptr != m_viewport);
     m_viewport->GetViewControllerR().DrawView(*this);
 
     return WasAborted();
