@@ -136,6 +136,7 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Bentley-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="Bentley-AndroidJUnit"/>
+        <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
     </Part>
     
     <!--                ********************** -->
