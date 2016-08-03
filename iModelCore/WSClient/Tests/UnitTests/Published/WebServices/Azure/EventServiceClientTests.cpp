@@ -17,10 +17,9 @@ unsigned __stdcall workThreadHandler(void* arg)
     EventServiceClient** clPtr = (EventServiceClient**)arg;
     printf("Entering thread\n");
     printf("receiving msgs..\n");
-    Utf8String msg = "";
-    while ((*clPtr)->Receive(msg))
+    while ((*clPtr)->MakeReceiveDeleteRequest()->GetResult().IsSuccess())
         {
-        printf("msg: %s\n", msg.c_str());
+        //printf("msg: %s\n", msg.c_str());
         }
     printf("Exiting thread\n");
     return 0;
