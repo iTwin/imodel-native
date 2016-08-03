@@ -93,7 +93,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     box[4] = box[0];
     builder->Append(*ICurvePrimitive::CreateLineString(box, 5));
 
-    builder->SetGeometryStreamAndPlacement(*this);
+    builder->Finish(*this);
     }
 
 //----------------------------------------------------------------------------------------
@@ -151,12 +151,12 @@ void RasterModel::_OnFitView(Dgn::FitContextR context)
         }    
     }
 
+#if 0 // This is how we pick a raster. We do not require this feature for now so disable it.
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
 //----------------------------------------------------------------------------------------
 void RasterModel::_DrawModel(Dgn::ViewContextR context)
     {
-#if 0 // This is how we pick a raster. We do not require this feature for now so disable it.
     if (context.GetDrawPurpose() == DrawPurpose::Pick)
         {
         RasterQuadTreeP pTree = GetTree();
@@ -170,8 +170,8 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
             context.SetElemTopology(nullptr);
             }
         }
-#endif
     }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2016
