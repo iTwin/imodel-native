@@ -409,8 +409,10 @@ struct CustomPropertyRegistry
 * The base class implementation of DgnElement::_GetProperty and DgnElement::_SetProperty will provide access to all custom-handled properties.
 * New or updated auto-handled properties are automatically written to the Db when the element is inserted or updated.
 *
-* @note A domain must define a handler for an element subclass in order to <em>validate</em> property values or to generate side-effects when properties are modified.
-* In this case, the schema should also specify @ref ElementRestrictions.
+* <h4>Validating Auto-Handled Properties</h4>
+* The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
+* Beyond that, in order to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
+* the DgnElement::_SetProperty method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
 * If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
