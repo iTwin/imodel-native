@@ -235,7 +235,7 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 
     size_t binaryDataSize = m_binaryData.size();
     m_binaryData.resize(binaryDataSize + bufferDataSize);
-    memcpy(m_binaryData.data(), bufferData.data(), bufferDataSize);
+    memcpy(m_binaryData.data() + binaryDataSize, bufferData.data(), bufferDataSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

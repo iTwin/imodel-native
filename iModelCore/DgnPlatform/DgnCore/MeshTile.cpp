@@ -518,7 +518,7 @@ struct MeshBuilderKey
 +===============+===============+===============+===============+===============+======*/
 struct GatherGeometryCacheHandler : XYZRangeTreeHandler
 {
-    TileGeometryList    m_geometry;
+    TileGeometryList&   m_geometry;
     DRange3d            m_range;
 
     GatherGeometryCacheHandler(TileGeometryList& geom, DRange3dCR range) : m_geometry(geom), m_range(range) { }
@@ -1257,7 +1257,7 @@ struct TileWorker
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static unsigned __stdcall tileThreadRunner(void* arg)
+static THREAD_MAIN_IMPL tileThreadRunner(void* arg)
     {
     auto& worker = *reinterpret_cast<TileWorker*>(arg);
     worker.Begin();
