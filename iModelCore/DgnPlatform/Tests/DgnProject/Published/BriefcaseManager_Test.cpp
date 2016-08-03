@@ -2022,7 +2022,7 @@ struct FastQueryTest : DoubleBriefcaseTest
         for (auto const& bInfo : b)
             {
             auto paInfo = std::find_if(a.begin(), a.end(), [&](decltype(bInfo) arg) { return AreSameEntity(bInfo, arg); });
-            EXPECT_FALSE(a.end() == paInfo) << "Present in b only: " << ToString(bInfo).c_str();
+            EXPECT_FALSE(a.end() == paInfo);
             }
         }
 
