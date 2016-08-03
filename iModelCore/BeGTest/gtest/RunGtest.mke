@@ -51,12 +51,12 @@ always:
     %endif
 
 
-    $(ResultsCapture): $(_makefilespec)
-        >$@
+    always:
+        >$(ResultsCapture)
         $(exeName)
         <
         >$(LogDir)run.bat
-        $(exeName) | $(_makeFilePath)TeeGtest.py $@
+        $(exeName) | $(_makeFilePath)TeeGtest.py $(ResultsCapture)
         exit
         <
         -$(RunPrefix) $(LogDir)run.bat
@@ -81,11 +81,8 @@ always:
 
     exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
 
-    $(ResultsCapture): $(_makefilespec)
-        >$@
-        $(exeName)
-        <
-        -$(exeName) | tee -a $@
+    always:
+        -$(exeName) | tee -a $(ResultsCapture)
 
 %endif
 
