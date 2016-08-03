@@ -1471,11 +1471,12 @@ void DgnQueryView::DrawGroundPlane(DecorateContextR context)
     pts[2] = pts[3] = ground.m_extents.high;
     pts[3].y = ground.m_extents.low.y;
 
-    double  keyValues[] = {0.0, 0.5};   // gradient goes from edge of rectangle (0.0) to halfway inside rectangle (though as far as I can tell these don't do anything???)
-    ColorDef colors[] = {GetBackgroundColor(), ground.m_color};
+    double keyValues[] = {0.0, 0.25, 0.5}; // gradient goes from edge of rectangle (0.0) to center (1.0)...
+    ColorDef colors[] = {ground.m_color, ground.m_color, ground.m_color};
 
     colors[0].SetAlpha(ground.m_edgeAlpha);
     colors[1].SetAlpha(ground.m_centerAlpha);
+    colors[2].SetAlpha(ground.m_centerAlpha);
 
     GradientSymbPtr gradient = GradientSymb::Create();
     gradient->SetMode(ground.m_mode);
@@ -1483,6 +1484,7 @@ void DgnQueryView::DrawGroundPlane(DecorateContextR context)
 
     GraphicParams params;
     params.SetLineColor(colors[0]);
+    params.SetFillColor(ColorDef::White()); // Fill should be set to opaque white for gradient texture...
     params.SetGradient(gradient.get());
 
     Render::GraphicBuilderPtr graphic = context.CreateGraphic();
