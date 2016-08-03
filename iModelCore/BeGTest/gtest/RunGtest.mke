@@ -44,7 +44,7 @@ always:
     testName = $[@basename $(exeName)]
     exeName = $[@realpath $(GTEST_EXE)]
 
-    %if defined(RUN_GTEST_MINIMIZED)
+    %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
         RunPrefix=start "$(testName)" \/WAIT \/MIN
     %else
         RunPrefix=start "$(testName)" \/WAIT
