@@ -20,7 +20,6 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h                  \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h                        \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSubscription.h               \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSAS.h				           \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h                          \
 								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                           \
 								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEvent.h         \
@@ -43,8 +42,6 @@ $(o)DgnDbServerError$(oext)                : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerRevision$(oext)             : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevision.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerEventSubscription$(oext)    : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventSubscription.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
-
-$(o)DgnDbServerEventSAS$(oext)             : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventSAS.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

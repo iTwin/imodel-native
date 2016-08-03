@@ -1148,7 +1148,7 @@ Json::Value GenerateEventSASJson()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventSASPtr CreateEventSAS(JsonValueCR response)
+AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR response)
     {
     rapidjson::Document responseJson;
     JsonUtil::ToRapidJson(response, responseJson);
@@ -1168,7 +1168,7 @@ DgnDbServerEventSASPtr CreateEventSAS(JsonValueCR response)
     if (Utf8String::IsNullOrEmpty(sasToken.c_str()) || Utf8String::IsNullOrEmpty(baseAddress.c_str()))
         return nullptr;
 
-    return DgnDbServerEventSAS::Create(sasToken, baseAddress);
+    return AzureServiceBusSASDTO::Create(sasToken, baseAddress);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1270,16 +1270,16 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventSASTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(ICancellationTokenPtr cancellationToken) const
+AzureServiceBusSASDTOTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(ICancellationTokenPtr cancellationToken) const
     {
     //POST to https://{server}/{version}/Repositories/DgnDbServer--{repoId}/DgnDbServer/EventSAS
-    std::shared_ptr<DgnDbServerEventSASResult> finalResult = std::make_shared<DgnDbServerEventSASResult>();
+    std::shared_ptr<AzureServiceBusSASDTOResult> finalResult = std::make_shared<AzureServiceBusSASDTOResult>();
     return m_wsRepositoryClient->SendCreateObjectRequest(GenerateEventSASJson(), BeFileName(), nullptr, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& result)
         {
         if (result.IsSuccess())
             {
-            DgnDbServerEventSASPtr ptr = CreateEventSAS(result.GetValue().GetObject());
+			AzureServiceBusSASDTOPtr ptr = CreateEventSAS(result.GetValue().GetObject());
             if (ptr == nullptr)
                 {
                 finalResult->SetError(DgnDbServerError::Id::NoSASFound);
@@ -1292,7 +1292,7 @@ DgnDbServerEventSASTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(IC
             {
             finalResult->SetError(result.GetError());
             }
-        })->Then<DgnDbServerEventSASResult>([=]
+        })->Then<AzureServiceBusSASDTOResult>([=]
             {
             return *finalResult;
             });

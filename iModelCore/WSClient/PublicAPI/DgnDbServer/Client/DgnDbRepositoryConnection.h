@@ -15,8 +15,8 @@
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
+#include <WebServices/Azure/AzureServiceBusSASDTO.h>
 #include <DgnDbServer/Client/DgnDbServerEventSubscription.h>
-#include <DgnDbServer/Client/DgnDbServerEventSAS.h>
 #include <DgnDbServer/Client/Events/DgnDbServerEventParser.h>
 #include <BeHttp/AuthenticationHandler.h>
 
@@ -33,6 +33,7 @@ typedef struct DgnDbRepositoryConnection const&                         DgnDbRep
 struct DgnDbCodeLockSetResultInfo;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
+DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
@@ -84,7 +85,7 @@ private:
     // TODO: Make non static
     static EventServiceClient*         m_eventServiceClient;
     DgnDbServerEventSubscriptionPtr m_eventSubscription;
-    DgnDbServerEventSASPtr m_eventSAS;
+	AzureServiceBusSASDTOPtr m_eventSAS;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -135,7 +136,7 @@ private:
     DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Gets the Event SAS Token from EventServiceClient
-    DgnDbServerEventSASTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
+	AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get EventSubscription with the given Event Types
     DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
