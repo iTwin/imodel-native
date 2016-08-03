@@ -79,6 +79,16 @@ DRange3d TileGeometryCache::GetRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Image TileGeometryCache::TextureImage::Load(TileDisplayParamsCR params)
+    {
+    Image image;
+    // ###TODO: MaterialManager::GetSimpleTextureImage()...
+    return image;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryCache::ResolveTexture(TileDisplayParamsCR params)
@@ -87,8 +97,9 @@ void TileGeometryCache::ResolveTexture(TileDisplayParamsCR params)
         return;
 
     TextureImagePtr image;
-
-    // ###TODO: MaterialManager::GetSimpleTextureImage()...
+    Image renderImage = TextureImage::Load(params);
+    if (renderImage.IsValid())
+        image = new TextureImage(std::move(renderImage), m_nextTextureId++);
 
     m_textures.Insert(params, image);
     }

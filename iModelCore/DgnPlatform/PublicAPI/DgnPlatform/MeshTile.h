@@ -71,18 +71,19 @@ struct TileGeometryCache
 {
     struct TextureImage : RefCountedBase
     {
+    friend struct TileGeometryCache;
     private:
-        ByteStream  m_image;
-        Point2d     m_size;
+        Image       m_image;
         size_t      m_id;
 
-        static RefCountedPtr<TextureImage> Create(Point2dCR size, ByteStream&& image, size_t id) { return new TextureImage(size, std::move(image), id); }
-    private:
-        TextureImage(Point2dCR size, ByteStream&& image, size_t id) : m_size(size), m_id(id), m_image(std::move(image)) { }
+        static Image Load(TileDisplayParamsCR params);
 
-        ByteStream const& GetImage() const { return m_image; }
-        Point2d GetSize() const { return m_size; }
+        TextureImage(Image&& image, size_t id) : m_image(std::move(image)), m_id(id) { BeAssert(m_image.IsValid()); }
+    public:
         size_t GetId() const { return m_id; }
+        ImageCR GetImage() const { return m_image; }
+        uint32_t GetWidth() const { return GetImage().GetWidth(); }
+        uint32_t GetHeight() const { return GetImage().GetHeight(); }
     };
 private:
     typedef RefCountedPtr<TextureImage> TextureImagePtr;
