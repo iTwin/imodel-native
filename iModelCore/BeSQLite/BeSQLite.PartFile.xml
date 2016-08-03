@@ -87,9 +87,12 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BeSQLite-Gtest/BeSQLiteTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/BeSQLite" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/BeSQLite-Gtest/BeSQLiteTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="BeSQLite-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BeSQLiteTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
@@ -110,7 +113,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=BeSQLite-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="BeSQLite-AndroidJUnit"/>
-        <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/BeSQLite-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
