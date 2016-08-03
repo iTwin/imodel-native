@@ -144,6 +144,7 @@
 
   <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Units-AndroidJUnit" OnlyPlatforms="Android*">
     <SubProduct ProductName="Units-AndroidJUnit"/>
+    <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
   </Part>
 
   <!-- *** iOSXCTest *** -->
