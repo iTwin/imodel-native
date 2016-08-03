@@ -28,7 +28,7 @@ const std::function<void(ECSqlStatement& statement, int firstArgIndex)>& bindArg
     auto ecClassP = txn.GetCache().GetAdapter().GetECClass(from->first);
 
     auto sql = Utf8PrintfString(
-        "SELECT ECInstanceId FROM %s "
+        "SELECT GetECClassId(), ECInstanceId FROM %s "
         "WHERE InVirtualSet(?, ECInstanceId) AND %s",
         ECSqlBuilder::ToECSqlSnippet(*ecClassP).c_str(),
         whereClause.c_str());
@@ -49,7 +49,13 @@ const std::function<void(ECSqlStatement& statement, int firstArgIndex)>& bindArg
 
     bindArgs(statement, 2);
 
-    return txn.GetCache().GetAdapter().ExtractECInstanceKeyMultiMapFromStatement(statement, 0, ecClassP->GetId(), result);
+    ECSqlStepStatus status;
+    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+        {
+        result.Insert(statement.GetValueId<ECClassId>(0), statement.GetValueId<ECInstanceId>(1));
+        }
+
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
