@@ -95,9 +95,12 @@
         <Directories DirectoryListName="GeoCoordGTestsDir"/>
     </Product>
     
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeoCoord-GTest/GeoCoordTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/GeoCoord -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/GeoCoord-GTest/GeoCoordTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="GeoCoord-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/GeoCoordTests.log</Files>
+        </Bindings>
     </Part>
     
 
