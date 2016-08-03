@@ -1257,7 +1257,7 @@ struct TileWorker
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static unsigned __stdcall tileThreadRunner(void* arg)
+static THREAD_MAIN_IMPL tileThreadRunner(void* arg)
     {
     auto& worker = *reinterpret_cast<TileWorker*>(arg);
     worker.Begin();
