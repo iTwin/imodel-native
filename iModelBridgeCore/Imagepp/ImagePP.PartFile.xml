@@ -245,9 +245,12 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>    
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests$(exeext) -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ImagePP -dBEGTEST_VERBOSE" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ImagePP-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ImagePPTests.log</Files>
+        </Bindings>
     </Part>
 
     <!--&&MM need to deliver file formats binaries.-->
@@ -299,7 +302,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=AndroidJUnit-ImagePP-TestCollection"   OnlyPlatforms="Android*">
         <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
-        <Bindings><Files Required="false" SubPartDirectory="ANJULogs">Delivery/RunAndroidJUnitTest.log</Files></Bindings>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/AndroidJUnit-ImagePP-TestCollection.log</Files>
+        </Bindings>
     </Part>
     
     <!--                ********************** -->
