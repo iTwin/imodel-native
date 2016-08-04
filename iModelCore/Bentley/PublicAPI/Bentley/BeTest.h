@@ -314,31 +314,37 @@ BENTLEYDLL_EXPORT static void TearDownTestCase(Utf8CP);
 
 
     // NB: the macros expand to 
-    //  if(!test) ExpectedResult(...) 
-    // in order to mimic the gtest behavior that whatever comes after the test macro will be evaluated only if the expression is false. For example,
+    //  if(test) ; else ExpectedResult(...) 
+    // to mimic the gtest implementation. Note that the error handling is the in else clause and has no trailing ;
+    // The main reason for doing it this way is that whatever comes after the test macro must be evaluated only if the expression is false. For example,
     // In the test
     //  ASSERT_TRUE(expression) << generateErrorMessage()
     // The call to generateErrorMessage() should only be made if expression is false.
-    // When evaluating a test macro, don't assume that in checking for failure we can invert the sense of the original test.
+    // We have the error handling in the else clause because tests do things like this:
+    // if (entry.GetId() == mat3->GetMaterialId())
+    //      EXPECT_STREQ(mat3->GetMaterialName().c_str(), entry.GetName());
+    // else
+    //      FAIL() << "This material should not exisit";
+    // We don't want the test's own else to become attached to the EXPECT_STREQ's internal if-test.
+    // Also, note that, when evaluating a test macro, don't assume that in checking for failure we can invert the sense of the original test.
     // For example, TEST_EQ(expr1, expr2)
-    // must be evaluated as : if (!((expr1) == (expr2))
-    // We must NOT simplify to : if ((expr1) != (expr2))
+    // must NOT be simplified to : if ((expr1) != (expr2))
     // That is because expr1 and expr2 might be objects, and we don't know that their class defines the != operator as well as the == operator.
     // Note that the ExpectedResult's destructor is where the error is reported. That gives it time to accumulate the << messages that follow the macro.
-    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       if (!((expected) == (actual)))       BeTest::ExpectedResult (false, #expected, #actual,      __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NE(val1,val2,fatal)             if (!((val1) != (val2)))             BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,fatal)          if (!BeTest::EqStr(val1,val2,false)) BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,fatal)      if (!BeTest::EqStr(val1,val2,true))  BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)          if (BeTest::EqStr(val1,val2,false))  BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_TRUE(expression,fatal)          if (!(expression))                   BeTest::ExpectedResult (false, "TRUE",    #expression,  __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)         if (expression)                      BeTest::ExpectedResult (false, "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_LE(val1,val2,fatal)             if (!((val1) <= (val2)))             BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_LT(val1,val2,fatal)             if (!((val1) <  (val2)))             BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_GE(val1,val2,fatal)             if (!((val1) >= (val2)))             BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_GT(val1,val2,fatal)             if (!((val1) >  (val2)))             BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,fatal)     if (!BeTest::EqTol(val1,val2,tol))   BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_NEAR_(val1, val2, fatal)        if (!BeTest::EqNear(val1,val2))      BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
-    #define BE_TEST_EXPECTED_RESULT_FAIL()                                                               BeTest::ExpectedResult (false, "SUCCESS", "FAIL",       __FILE__ , __LINE__,true)
+    #define BE_TEST_EXPECTED_RESULT_EQ(expected,actual,fatal)       if ((expected) == (actual))          {} else BeTest::ExpectedResult (false, #expected, #actual,      __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NE(val1,val2,fatal)             if ((val1) != (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STREQ(val1,val2,fatal)          if (BeTest::EqStr(val1,val2,false))  {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STRCASEEQ(val1,val2,fatal)      if (BeTest::EqStr(val1,val2,true))   {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_STRNE(val1,val2,fatal)          if (!BeTest::EqStr(val1,val2,false)) {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_TRUE(expression,fatal)          if (expression)                      {} else BeTest::ExpectedResult (false, "TRUE",    #expression,  __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_FALSE(expression,fatal)         if (!(expression))                   {} else BeTest::ExpectedResult (false, "FALSE",   #expression,  __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_LE(val1,val2,fatal)             if ((val1) <= (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_LT(val1,val2,fatal)             if ((val1) <  (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_GE(val1,val2,fatal)             if ((val1) >= (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_GT(val1,val2,fatal)             if ((val1) >  (val2))                {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NEAR(val1, val2, tol,fatal)     if (BeTest::EqTol(val1,val2,tol))    {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_NEAR_(val1, val2, fatal)        if (BeTest::EqNear(val1,val2))       {} else BeTest::ExpectedResult (false, #val1,     #val2,        __FILE__ , __LINE__,fatal)
+    #define BE_TEST_EXPECTED_RESULT_FAIL()                                                                  BeTest::ExpectedResult (false, "SUCCESS", "FAIL",       __FILE__ , __LINE__,true)
 
     // These macro names match those defined in <gtest.h>
     #define ASSERT_EQ(expected,actual)   BE_TEST_EXPECTED_RESULT_EQ(expected,actual,true)
