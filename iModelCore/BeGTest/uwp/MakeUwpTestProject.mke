@@ -22,7 +22,7 @@
 %endif
 
 baseDir             = $(_MakeFilePath)
-o                   = $(OutputRootDir)build/BeTestWinRT/
+o                   = $(OutputRootDir)build/$(TEST_NAME)UwpTest/
 tmp                 = $(o)tmp/
 projectDir          = $(o)Project/
 
@@ -102,19 +102,6 @@ always:
     $[@wildcard $(gensrc)*.cpp]
     <
     $(baseDir)AddSourceFileReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)sourceFiles.list
-
-#--------------------------------------------------------------------------------------
-# Update the .vcxproj file to reference all assets and put them to project dir
-#--------------------------------------------------------------------------------------
-always:
-    >$(tmp)deliverables.list
-    $[@subst $(collectionAssetsDir) "" $[@wildcard $(collectionAssetsDir)*]]
-    $[@subst $(collectionAssembliesDir) "" $[@wildcard $(collectionAssembliesDir)*]]
-    C:/VisualStudio/14/Common7/IDE/CommonExtensions/Microsoft/TestWindow/Microsoft.VisualStudio.TestPlatform.Client.dll
-    <
-    $(baseDir)AddAssetReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)deliverables.list
-    CopyWithSymlinks.py $(collectionAssetsDir) $(projectDir)
-    CopyWithSymlinks.py $(collectionAssembliesDir) $(projectDir)
     
 #--------------------------------------------------------------------------------------
 # Deliver a single DLL that contains the unit tests themselves
@@ -160,6 +147,30 @@ $(projectDir)VendorApi : $(BuildContext)VendorApi
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 #--------------------------------------------------------------------------------------
+# Update the .vcxproj file to reference all assets and put them to project dir
+# N.B. Also need to add the actual unit tests DLL created above
+# N.B. Also always need BeSQLite for our test setup, however it cannot be duplicated...
+#--------------------------------------------------------------------------------------
+
+ForcedBeSQLiteDll =
+%ifnofile $(collectionAssembliesDir)BeSQLite$(DLM_API_NUMBER).dll
+    ForcedBeSQLiteDll = BeSQLite$(DLM_API_NUMBER).dll
+    always:
+        ~linkfile "$(projectDir)BeSQLite$(DLM_API_NUMBER).dll=$(BuildContext)SubParts/Assemblies/BeSQLite$(DLM_API_NUMBER).dll"
+%endif
+
+always:
+    >$(tmp)deliverables.list
+    $[@subst $(collectionAssetsDir) "" $[@wildcard $(collectionAssetsDir)*]]
+    $[@subst $(collectionAssembliesDir) "" $[@wildcard $(collectionAssembliesDir)*]]
+    $(ForcedBeSQLiteDll)
+    $(DLM_NAME)$(DLM_API_NUMBER).dll
+    <
+    $(baseDir)AddAssetReferencesToVSProject.py $(projectDir)BeTestTest1.vcxproj $(tmp)deliverables.list
+    CopyWithSymlinks.py $(collectionAssetsDir) $(projectDir)
+    CopyWithSymlinks.py $(collectionAssembliesDir) $(projectDir)
+
+#--------------------------------------------------------------------------------------
 # Build
 #--------------------------------------------------------------------------------------
 MSBuildExe = msbuild.exe
@@ -167,7 +178,11 @@ MSBuildArgs = \
     \/verbosity:Normal \
     \/target:Build \
     $[@addprefix \/property:, $(MSBuildProperties)]
+
 MSBuildProperties = Platform=x86
+%if "WinRTx64" == $(TARGET_PROCESSOR_ARCHITECTURE)
+    MSBuildProperties = Platform=x64
+%endif
 
 %if !defined (NDEBUG)
     MSBuildProperties + Configuration=Debug
