@@ -555,7 +555,7 @@ static void grabStackTrace()
     symbol->MaxNameLen = 255;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-    s_stackTrace << "***********************\n";
+    s_stackTrace << "*********************** STACK TRACE ************************\n";
 
     for (i = nSkip; i < frames; i++)
         {
@@ -2383,7 +2383,7 @@ static std::string* FormatSehExceptionMessage(DWORD exception_code,
   message << "SEH exception with code 0x" << std::setbase(16) <<
     exception_code << std::setbase(10) << " thrown in " << location << ".\n" << internal::s_stackTrace.str();
   // *** BENTLEY CHANGE ***                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  internal::s_stackTrace.clear();
+  internal::s_stackTrace.str("");   // NB: the "clear" method does not empty the stringstream (it clears the error flags). The "str" method resets the string.
   // *** BENTLEY CHANGE ***
 
   return new std::string(message.GetString());
