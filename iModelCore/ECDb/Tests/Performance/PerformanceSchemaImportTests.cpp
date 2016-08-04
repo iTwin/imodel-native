@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceSchemaImportTests : public ::testing::Test
+struct PerformanceSchemaImportTests : public ECDbTestFixture
     {
     static ECN::ECSchemaPtr CreateTestSchema(size_t noOfClass, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes);
     static void SetStruct1Val(StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal);
@@ -342,4 +342,20 @@ TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Simple Schema Import Test with NO CustomAttribute and Reference Schemas");
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       07/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceSchemaImportTests, CreateEmptyECDb)
+    {
+    const int opCount = 1000;
+    StopWatch timer(true);
+    for (int i = 0; i < opCount; i++)
+        {
+        ECDbR ecdb = SetupECDb("empty.ecdb");
+        ASSERT_TRUE(ecdb.IsDbOpen());
+        ecdb.CloseDb();
+        }
+    timer.Stop();
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Creating empty ECDb files", opCount);
+    }
 END_ECDBUNITTESTS_NAMESPACE

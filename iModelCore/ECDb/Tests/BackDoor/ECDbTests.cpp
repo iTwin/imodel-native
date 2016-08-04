@@ -456,7 +456,7 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonVal
             if (jsonValueType != Json::objectValue)
                 return false;
             DPoint2d referenceNativeValue = referenceValue.GetPoint2D();
-            DPoint2d jsonNativeValue = DPoint2d::From(jsonValue["X"].asDouble(), jsonValue["Y"].asDouble());
+            DPoint2d jsonNativeValue = DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble());
             if (!referenceNativeValue.IsEqual(jsonNativeValue))
                 return false;
             break;
@@ -466,7 +466,7 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonVal
             if (jsonValueType != Json::objectValue)
                 return false;
             DPoint3d referenceNativeValue = referenceValue.GetPoint3D();
-            DPoint3d jsonNativeValue = DPoint3d::From(jsonValue["X"].asDouble(), jsonValue["Y"].asDouble(), jsonValue["Z"].asDouble());
+            DPoint3d jsonNativeValue = DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble());
             if (!referenceNativeValue.IsEqual(jsonNativeValue))
                 return false;
             break;

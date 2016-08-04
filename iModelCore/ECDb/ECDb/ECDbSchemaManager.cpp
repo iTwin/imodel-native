@@ -9,6 +9,7 @@
 #include <ECUnits/Units.h>
 #include "SchemaImportContext.h"
 #include "ECDbExpressionSymbolProvider.h"
+#include <Bentley/BeTest.h>     // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -302,6 +303,9 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
         {
+        if (BeTest::IsInitialized())                                    // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
+            printf("!!!!!!!!!!!! Import schema %s\n", schema->GetName().c_str());    // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
+
         if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
         }
