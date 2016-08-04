@@ -5,11 +5,6 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if !defined (BENTLEY_RUN_ANDROIDJUNITTEST)
-    %warn To run Android JUnit tests, define BENTLEY_RUN_ANDROIDJUNITTEST
-    %return
-%endif
-
 %include mdl.mki
 
 baseDir             = $(_MakeFilePath)
@@ -38,8 +33,21 @@ always:
     %return
 %endif
 
+logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/test.log
+
 always:
     !~@mkdir ${ANDROIDJUNIT_OUTPUT_DIR}
+
+%if !defined (BENTLEY_RUN_ANDROIDJUNITTEST)
+    %warn To run Android JUnit tests, define BENTLEY_RUN_ANDROIDJUNITTEST
+    always:
+        >$(logFile)
+        Android JUnit tests were not run
+        <
+        ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"
+    
+    %return
+%endif
 
 # Check to see if a device is attached
 adbCmd = ${ANDROID_SDK_ROOT}/platform-tools/adb
@@ -49,10 +57,7 @@ always:
 
 %if $[@readfile ${ANDROIDJUNIT_OUTPUT_DIR}/devices]=="List of devices attached  "
     %error No Android device attached. Cannot run unit tests.
-    %return
 %endif
-
-logFile = ${ANDROIDJUNIT_OUTPUT_DIR}/test.log
 
 teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 
@@ -85,6 +90,5 @@ teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 %endif
 
 always:
-    !~@mkdir $(BuildContext)Delivery/ANJU/Logs
     ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"
 
