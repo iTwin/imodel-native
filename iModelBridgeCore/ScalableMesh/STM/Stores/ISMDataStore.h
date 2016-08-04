@@ -37,7 +37,8 @@ enum class SMStoreDataType
 
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
-
+    MeshParts,
+    Metadata,
     Unknown, 
     };
 
@@ -116,6 +117,7 @@ typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>> ISMUVCoordsDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
 
 
+
 //typedef RefCountedPtr<ISMNodeDataStore<int32_t>>  ISMInt32DataStorePtr;
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
@@ -166,7 +168,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
         
-        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) = 0;
         
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;               
 

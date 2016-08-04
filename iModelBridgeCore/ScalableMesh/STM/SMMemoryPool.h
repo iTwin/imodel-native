@@ -316,6 +316,21 @@ template <typename DataType> class SMMemoryPoolBlobItem : public SMMemoryPoolIte
             {
             return (const DataType*)m_data;
             }
+
+        void SetData(DataType* data, size_t sizeInBytes)
+            {
+            if (m_data != nullptr && m_size > 0)
+                delete[] (DataType*)m_data;
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(sizeInBytes - m_size, sizeInBytes - m_size);
+            m_size = sizeInBytes;
+            if (m_size > 0)
+                {
+                m_data = (Byte*)new Byte[m_size];
+                memcpy(m_data, data, sizeInBytes);
+                }
+            else
+                m_data = 0;
+            }
     };
 
 
@@ -359,6 +374,15 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
             if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(GetSizeInMemory(data) - m_size, GetSizeInMemory(data) - m_size);
             m_size = GetSizeInMemory(data);
             }
+
+        void SetData(DataType* data, size_t sizeInBytes)
+            {
+            if (m_data != nullptr && m_size > 0)
+                delete (DataType*)m_data;
+            m_data = (Byte*)data;
+            if (GetPoolItemId() != SMMemoryPool::s_UndefinedPoolItemId) NotifySizeChangePoolItem(sizeInBytes - m_size, sizeInBytes - m_size);
+            m_size = sizeInBytes;
+            }
     };
 
 
@@ -396,6 +420,30 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
                 HPMBlockID blockID(m_nodeId);
                 size_t nbBytesLoaded = m_dataStore->LoadBlock((DataType*)m_data, m_size, blockID);
                 m_size = nbBytesLoaded;
+                }
+            }
+
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, IHPMDataStore<DataType>* store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
+            : SMMemoryPoolGenericBlobItem((DataType*)new Byte[dataSize],dataSize, nodeId, dataType, smId)
+            {
+            m_store = store;
+
+            if (m_size > 0)
+                {
+                memcpy((DataType*)m_data, data, dataSize);
+                m_dirty = true;
+                }
+            }
+
+        SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
+            : SMMemoryPoolGenericBlobItem((DataType*)new Byte[dataSize], dataSize, nodeId, dataType, smId)
+            {
+            m_dataStore = store;
+
+            if (m_size > 0)
+                {
+                memcpy((DataType*)m_data, data, dataSize);
+                m_dirty = true;
                 }
             }
 

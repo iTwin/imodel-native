@@ -211,6 +211,18 @@ bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::Utf8CP filename)
     result = m_database->CreateTable("SMDiffSets", "DiffsetId INTEGER PRIMARY KEY,"
                                      "Data BLOB,"
                                      "Size INTEGER");
+
+#ifdef WIP_MESH_IMPORT
+
+    result = m_database->CreateTable("SMMeshParts", "NodeId INTEGER PRIMARY KEY,"
+                                     "Data BLOB,"
+                                     "Size INTEGER");
+
+    result = m_database->CreateTable("SMMeshMetadata", "NodeId INTEGER PRIMARY KEY,"
+                                     "Data BLOB,"
+                                     "Size INTEGER");
+#endif
+
     assert(result == BE_SQLITE_OK);
 
 
@@ -662,6 +674,44 @@ void SMSQLiteFile::GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, 
     uncompressedSize = stmt->GetValueInt64(2);
     memcpy(&diffsetData[0], stmt->GetValueBlob(0), diffsetData.size());
     }
+
+#ifdef WIP_MESH_IMPORT
+void SMSQLiteFile::GetMeshParts(int64_t nodeID, bvector<uint8_t>& data, size_t& uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Data, length(Data), Size FROM SMMeshParts WHERE NodeId=?");
+    stmt->BindInt64(1, nodeID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE)
+        {
+        uncompressedSize = 0;
+        return;
+        }
+    data.resize(stmt->GetValueInt64(1));
+    uncompressedSize = stmt->GetValueInt64(2);
+    memcpy(&data[0], stmt->GetValueBlob(0), data.size());
+    }
+
+void SMSQLiteFile::GetMetadata(int64_t nodeID, bvector<uint8_t>& metadata, size_t& uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Data, length(Data), Size FROM SMMeshMetadata WHERE NodeId=?");
+    stmt->BindInt64(1, nodeID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE)
+        {
+        uncompressedSize = 0;
+        return;
+        }
+    metadata.resize(stmt->GetValueInt64(1));
+    uncompressedSize = stmt->GetValueInt64(2);
+    memcpy(&metadata[0], stmt->GetValueBlob(0), metadata.size());
+}
+#endif
 
 uint64_t SMSQLiteFile::GetLastNodeId()
     {
@@ -1137,6 +1187,110 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
         }
     }
 
+#ifdef WIP_MESH_IMPORT
+void SMSQLiteFile::StoreMeshParts(int64_t& nodeID, const bvector<uint8_t>& data, size_t uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt; 
+    size_t nRows = 0;
+    if (nodeID != SQLiteNodeHeader::NO_NODEID)
+        {
+        CachedStatementPtr stmt3;
+        m_database->GetCachedStatement(stmt3, "SELECT COUNT(NodeId) FROM SMMeshParts WHERE NodeId=?");
+        stmt3->BindInt64(1, nodeID);
+        stmt3->Step();
+        nRows = stmt3->GetValueInt64(0);
+        }
+    if (nodeID == SQLiteNodeHeader::NO_NODEID)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMeshParts (Data,Size) VALUES(?,?)");
+        stmt->BindBlob(1, &data[0], (int)data.size(), MAKE_COPY_NO);
+        stmt->BindInt64(2, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        CachedStatementPtr stmt2;
+        m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
+        status = stmt2->Step();
+        nodeID = stmt2->GetValueInt64(0);
+        }
+    else if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMeshParts (NodeId, Data,Size) VALUES(?, ?,?)");
+        stmt->BindInt64(1, nodeID);
+        stmt->BindBlob(2, &data[0], (int)data.size(), MAKE_COPY_NO);
+        stmt->BindInt64(3, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        m_database->SaveChanges();
+        }
+    else
+        {
+        m_database->GetCachedStatement(stmt, "UPDATE SMMeshParts SET Data=?, Size=? WHERE NodeId=?");
+        stmt->BindBlob(1, &data[0], (int)data.size(), MAKE_COPY_NO);
+        stmt->BindInt64(2, uncompressedSize);
+        stmt->BindInt64(3, nodeID);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        }
+    }
+
+void SMSQLiteFile::StoreMetadata(int64_t& nodeID, const bvector<uint8_t>& metadata, size_t uncompressedSize)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    size_t nRows = 0;
+    if (nodeID != SQLiteNodeHeader::NO_NODEID)
+        {
+        CachedStatementPtr stmt3;
+        m_database->GetCachedStatement(stmt3, "SELECT COUNT(NodeId) FROM SMMeshMetadata WHERE NodeId=?");
+        stmt3->BindInt64(1, nodeID);
+        stmt3->Step();
+        nRows = stmt3->GetValueInt64(0);
+        }
+    if (nodeID == SQLiteNodeHeader::NO_NODEID)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMeshMetadata (Data,Size) VALUES(?,?)");
+        stmt->BindBlob(1, &metadata[0], (int)metadata.size(), MAKE_COPY_NO);
+        stmt->BindInt64(2, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        CachedStatementPtr stmt2;
+        m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
+        status = stmt2->Step();
+        nodeID = stmt2->GetValueInt64(0);
+        }
+    else if (nRows == 0)
+        {
+        Savepoint insertTransaction(*m_database, "insert");
+        m_database->GetCachedStatement(stmt, "INSERT INTO SMMeshMetadata (NodeId, Data,Size) VALUES(?, ?,?)");
+        stmt->BindInt64(1, nodeID);
+        stmt->BindBlob(2, &metadata[0], (int)metadata.size(), MAKE_COPY_NO);
+        stmt->BindInt64(3, uncompressedSize);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        m_database->SaveChanges();
+        }
+    else
+        {
+        m_database->GetCachedStatement(stmt, "UPDATE SMMeshMetadata SET Data=?, Size=? WHERE NodeId=?");
+        stmt->BindBlob(1, &metadata[0], (int)metadata.size(), MAKE_COPY_NO);
+        stmt->BindInt64(2, uncompressedSize);
+        stmt->BindInt64(3, nodeID);
+        DbResult status = stmt->Step();
+        assert(status == BE_SQLITE_DONE);
+        stmt->ClearBindings();
+        }
+}
+#endif
+
 size_t SMSQLiteFile::GetNumberOfPoints(int64_t nodeID)
     {
     std::lock_guard<std::mutex> lock(dbLock);
@@ -1243,6 +1397,30 @@ size_t SMSQLiteFile::GetSkirtPolygonByteCount(int64_t clipID)
     if (status != BE_SQLITE_ROW) return 0;
     return stmt->GetValueInt64(0);
     }
+
+#ifdef WIP_MESH_IMPORT
+size_t SMSQLiteFile::GetNumberOfMeshParts(int64_t nodeId)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Size FROM SMMeshParts WHERE NodeId=?");
+    stmt->BindInt64(1, nodeId);
+    DbResult status = stmt->Step();
+    if (status != BE_SQLITE_ROW) return 0;
+    return stmt->GetValueInt64(0);
+}
+
+size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Size FROM SMMeshMetadata WHERE NodeId=?");
+    stmt->BindInt64(1, nodeId);
+    DbResult status = stmt->Step();
+    if (status != BE_SQLITE_ROW) return 0;
+    return stmt->GetValueInt64(0);
+    }
+#endif
 
 
 void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)

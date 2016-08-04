@@ -136,6 +136,11 @@ public:
     void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
     void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
     void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
+#ifdef WIP_MESH_IMPORT
+    void GetMeshParts(int64_t nodeID, bvector<uint8_t>& data, size_t& uncompressedSize);
+    void GetMetadata(int64_t nodeID, bvector<uint8_t>& metadata, size_t& uncompressedSize);
+#endif
+
 
     void StorePoints(int64_t& nodeID, const bvector<uint8_t>& pts, size_t uncompressedSize);
     void StoreIndices(int64_t& nodeID, const bvector<uint8_t>& indices, size_t uncompressedSize);
@@ -149,6 +154,11 @@ public:
     void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions);
     void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
     void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
+#ifdef WIP_MESH_IMPORT
+    void StoreMeshParts(int64_t& nodeID, const bvector<uint8_t>& data, size_t uncompressedSize);
+    void StoreMetadata(int64_t& nodeID, const bvector<uint8_t>& metadata, size_t uncompressedSize);
+#endif
+
 
     size_t GetNumberOfPoints(int64_t nodeID);
     size_t GetNumberOfIndices(int64_t nodeID);
@@ -158,6 +168,10 @@ public:
     size_t GetNumberOfFeaturePoints(int64_t featureID);
     size_t GetClipPolygonByteCount(int64_t clipID);
     size_t GetSkirtPolygonByteCount(int64_t skirtID);
+#ifdef WIP_MESH_IMPORT
+    size_t GetNumberOfMeshParts(int64_t nodeId);
+    size_t GetNumberOfMetadataChars(int64_t nodeId);
+#endif
 
     void GetAllClipIDs(bvector<uint64_t>& allIds); 
 

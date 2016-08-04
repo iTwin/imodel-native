@@ -14,6 +14,16 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 //=======================================================================================
 template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP)
     {
+    bvector<DPoint2d> uvs;
+    return ClipMeshToNodeRange(faceIndexes, nodePts, pts, uvs, contentExtent, nodeRange, meshP);
+    }
+
+
+//=======================================================================================
+// @bsimethod                                                   Elenie.Godzaridis 07/16
+//=======================================================================================
+template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, bvector<DPoint2d>& uvs, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP)
+    {
     if (meshP->GetNbFaceIndexes() == 0) return;
     DPoint3d origins[6];
     DVec3d normals[6];
@@ -53,7 +63,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
         if (nodeRange.IsContained(triangle[0]) && nodeRange.IsContained(triangle[1]) && nodeRange.IsContained(triangle[2]))
             {
 #if DEBUG && SM_TRACE_CLIP_MESH 
-            s+="ADDED TRIANGLE\n";
+            s += "ADDED TRIANGLE\n";
 #endif
             faceIndexes.push_back(meshP->GetFaceIndexes()[i]);
             faceIndexes.push_back(meshP->GetFaceIndexes()[i + 1]);
@@ -114,6 +124,18 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
             if (polygonArray[nPts].x < DBL_MAX && !nodeRange.IsContained(polygonArray[nPts])) break;
             }
         if (nPts != polySize) continue;
+        bvector<DPoint2d> polygonUvs(polySize);
+        if (uvs.size() > 0)
+            {
+            DPoint2d triUvs[3] = { uvs[meshP->GetFaceIndexes()[i] - 1], uvs[meshP->GetFaceIndexes()[i + 1] - 1], uvs[meshP->GetFaceIndexes()[i + 2] - 1] };
+            //interpolate the uvs
+            for (size_t ptI = 0; ptI < polySize; ++ptI)
+                {
+                DPoint3d barycentric;
+                bsiDPoint3d_barycentricFromDPoint3dTriangle(&barycentric, &polygonArray[ptI], &triangle[0], &triangle[1], &triangle[2]);
+                bsiDPoint2d_fromBarycentricAndDPoint2dTriangle(&polygonUvs[ptI], &barycentric, &triUvs[0], &triUvs[1], &triUvs[2]);
+                }
+            }
 #if DEBUG && SM_TRACE_CLIP_MESH 
         print_polygonarray(s, "INSERTING ARRAY", polygonArray, polySize);
 #endif
@@ -129,6 +151,7 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
                 {
                 nodePts.push_back(PointOp<POINT>::Create(polygonArray[j].x, polygonArray[j].y, polygonArray[j].z));
                 pts.push_back(polygonArray[j]);
+                if (uvs.size() > 0) uvs.push_back(polygonUvs[j]);
                 idx = (int)nodePts.size();
                 contentExtent = ExtentOp<EXTENT>::MergeExtents(contentExtent, SpatialOp<POINT, POINT, EXTENT>::GetExtent(nodePts[idx - 1]));
                 }
@@ -163,12 +186,12 @@ template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIn
             }
         }
 #if DEBUG && SM_TRACE_CLIP_MESH 
-        s += "END CLIP\n";
-        std::ofstream f;
-        f.open("d:\\stitching\\meshes\\logclip_" + std::to_string(nodeRange.low.x) + "_" + std::to_string(nodeRange.low.y) + "_" + std::to_string(nodeRange.high.x) + "_" + std::to_string(nodeRange.high.y),ios_base::app);
-        f << s << endl;
-        f.close();
-#endif     
+    s += "END CLIP\n";
+    std::ofstream f;
+    f.open("d:\\stitching\\meshes\\logclip_" + std::to_string(nodeRange.low.x) + "_" + std::to_string(nodeRange.low.y) + "_" + std::to_string(nodeRange.high.x) + "_" + std::to_string(nodeRange.high.y), ios_base::app);
+    f << s << endl;
+    f.close();
+#endif 
     }
-#undef DEBUG
+//#undef DEBUG
 END_BENTLEY_SCALABLEMESH_NAMESPACE

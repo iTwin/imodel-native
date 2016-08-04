@@ -1730,7 +1730,7 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
     : m_texturePtr(pPoolBlobItem)
     {
     
-    if (m_texturePtr.IsValid())
+    if (m_texturePtr.IsValid() && m_texturePtr->GetSize() > 0)
         {        
         int dimensionX;
         memcpy_s(&dimensionX, sizeof(int), m_texturePtr->GetData(), sizeof(int));
@@ -1742,7 +1742,12 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
         m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
 
         m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
-        }                    
+        } 
+    else
+        {
+        m_dimension.x = m_dimension.y = 0;
+        m_dataSize = 0;
+        }
     }
 
 ScalableMeshTexture::~ScalableMeshTexture()

@@ -23,7 +23,7 @@ typedef RefCountedPtr<IScalableMeshSourceCreator>            IScalableMeshSource
 //Used to provide a callback to the filter function to get user-created LODs. Callback should return true if LOD creation succeeded.
 //Callback should set shouldCreateGraph to true if a stitching is needed or the filter function requires the use of the graph. 
 //
-typedef std::function<bool(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshPts, bvector<bvector<int32_t>>& newMeshIndexes, bvector<Utf8String>& newMeshMetadata, const bvector<IScalableMeshMeshPtr>& submeshes, const bvector<Utf8String>& meshMetadata, DRange3d nodeExt)> MeshUserFilterCallback;
+typedef std::function<bool(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshPts, bvector<bvector<int32_t>>& newMeshIndexes, bvector<Utf8String>& newMeshMetadata, bvector<bvector<DPoint2d>>& newMeshUvs, bvector<bvector<uint8_t>>& newMeshTex, const bvector<IScalableMeshMeshPtr>& submeshes, const bvector<Utf8String>& meshMetadata, DRange3d nodeExt)> MeshUserFilterCallback;
 
 //This is the creator interface to use when providing a series of source files to import data to the Scalable Mesh. All details of indexing, etc are handled
 //automatically. At the moment, it is not possible to import data from source files and also manually create nodes in the index.

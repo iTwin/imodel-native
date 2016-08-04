@@ -632,9 +632,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 #endif
 
-//    auto& store = pDataIndex->GetClipStore();
+
     pDataIndex = 0;
-    //store->Close();
+
     if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
             
     return BSISUCCESS;

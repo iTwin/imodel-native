@@ -795,7 +795,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMInt32
     return true;    
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {    
     dataStore = new StreamingNodeTextureStore<Byte, EXTENT>(m_dataSourceAccount, m_rootDirectory, nodeHeader);
     

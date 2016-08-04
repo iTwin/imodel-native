@@ -1111,14 +1111,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
                     {
                     DifferenceSet d = m_meshNode->GetClipSet(i);
-#ifdef USE_DIFFSET
-                    if (allClips)
-                        {
-                        if (d.clientID == ((uint64_t)-1)) diffs.ApplySet(d, 0);
-                        }
-                    else
-                        {
-#endif
+
                         uint64_t lowerId = (d.clientID << 32) >> 32;
                         
                         //uint64_t upperId = (d.clientID >> 32);
@@ -1127,19 +1120,15 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                             //meshPtr->ApplyDifferenceSet(d);
                             diffs.ApplySet(d, 0);
                             //break;
-#ifdef USE_DIFFSET
-                            }
-#endif
+
                         }
                     }
-#ifdef USE_DIFFSET
-                meshPtr->ApplyDifferenceSet(diffs);
-#else
+
                 if (m_meshNode->m_nbClips > 0)
                     {                    
                     meshPtr->ApplyClipMesh(diffs);                    
                     }
-#endif
+
                 }
             assert(status == SUCCESS || m_node->GetNbPoints() ==0);        
 
@@ -1199,10 +1188,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
 
     template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, bool applyAllClips) const
     {    
-#ifdef USE_DIFFSET
-    bool allClips = true;
-    for (bool val : clipsToShow) if (!val) allClips = false;
-#endif
+
     
     auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
     
@@ -1212,14 +1198,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
-#ifdef USE_DIFFSET
-        if (allClips)
-            {
-            if (d.clientID == ((uint64_t)-1)) diffs.ApplySet(d, 0);
-            }
-        else
-            {
-#endif
+
             //NEEDS_WORK_SM_ELENIE : Remove shift, use full 64 bits
             uint64_t lowerId = (d.clientID << 32) >> 32;
                         
@@ -1231,9 +1210,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
                 //meshPtr->ApplyDifferenceSet(d);
                 diffs.ApplySet(d, 0);
                 //break;
-#ifdef USE_DIFFSET
-                }
-#endif
+
             }
         }
     }
@@ -1252,23 +1229,14 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
-#ifdef USE_DIFFSET
-        if (allClips)
-            {
-            if (d.clientID == ((uint64_t)-1)) diffs.ApplySet(d, 0);
-            }
-        else
-            {
-#endif
+
 
             if (d.toggledForID && (d.clientID == 0 || (d.clientID < ((uint64_t)-1) && clipsToShow.count(d.clientID) == 0) && d.upToDate))
                 {
                 //meshPtr->ApplyDifferenceSet(d);
                 diffs.ApplySet(d, 0);
                 //break;
-#ifdef USE_DIFFSET
-                }
-#endif
+
             }
         }
     }
@@ -1319,14 +1287,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
             
             ComputeDiffSet(diffs, clipsToShow);
 
-#ifdef USE_DIFFSET
-            meshPtr->ApplyDifferenceSet(diffs);
-#else
+
             if (m_meshNode->m_nbClips > 0)
                 {                
                 meshPtr->ApplyClipMesh(diffs);                
                 }
-#endif
+
             }
         assert(status == SUCCESS || m_node->GetNbPoints() == 0);
 
@@ -1385,14 +1351,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
 
             ComputeDiffSet(diffs, clipsToShow);
 
-#ifdef USE_DIFFSET
-            meshPtr->ApplyDifferenceSet(diffs);
-#else
+
             if (m_meshNode->m_nbClips > 0)
                 {                
                 meshPtr->ApplyClipMesh(diffs);                
                 }
-#endif
+
             }
         assert(status == SUCCESS || m_node->GetNbPoints() == 0);
 
@@ -1861,17 +1825,20 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                 //NEEDS_WORK_SM : Don't keep texture in memory.
                 IScalableMeshTexturePtr smTexturePtr(GetTexture());
 
-                BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
-                                                                                    smTexturePtr->GetDimension().x,
-                                                                                    smTexturePtr->GetDimension().y,
-                                                                                    false,
-                                                                                    QV_RGB_FORMAT,
-                                                                                    smTexturePtr->GetData());
-                
-                //Estimate which seems to give good result. 
-                qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
+                if (smTexturePtr.IsValid())
+                    {
+                    BentleyStatus status = displayCacheManagerPtr->_CreateCachedTexture(cachedDisplayTexture,
+                                                                                        smTexturePtr->GetDimension().x,
+                                                                                        smTexturePtr->GetDimension().y,
+                                                                                        false,
+                                                                                        QV_RGB_FORMAT,
+                                                                                        smTexturePtr->GetData());
 
-                assert(status == SUCCESS);
+                    //Estimate which seems to give good result. 
+                    qvMemorySizeEstimate += smTexturePtr->GetDimension().x * smTexturePtr->GetDimension().y * 6;
+
+                    assert(status == SUCCESS);
+                    }
                 }
 
             const DPoint2d* uvPtr = 0;

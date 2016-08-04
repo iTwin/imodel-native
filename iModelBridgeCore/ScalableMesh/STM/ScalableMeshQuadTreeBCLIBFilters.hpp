@@ -559,7 +559,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
     size_t numSubNodes) const
     {
     HFCPtr<SMMeshIndexNode<POINT, EXTENT> > pParentMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(parentNode);    
-
     DRange3d extent = DRange3d::NullRange();
     bvector<IScalableMeshMeshPtr> subMeshes;
     bvector<Utf8String> subMetadata;
@@ -575,7 +574,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
                 HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);                
                 bvector<IScalableMeshMeshPtr> meshParts;
                 bvector<Utf8String> meshMetadata;
-                subMeshNode->GetMeshParts(meshParts, meshMetadata);
+                bvector<bvector<uint8_t>> texData;
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(subMeshNode->GetPointsPtr());
+                if (pointsPtr->size() > 65000)
+                    std::cout << " TOO MANY POINTS BEFORE FILTER :" << pointsPtr->size() << std::endl;
+                subMeshNode->GetMeshParts(meshParts, meshMetadata, texData);
                 if (meshParts.size() > 0)
                     {
                     subMeshes.insert(subMeshes.end(), meshParts.begin(), meshParts.end());
@@ -591,12 +594,14 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
         bvector<bvector<DPoint3d>> parentMeshPts;
         bvector<bvector<int32_t>> parentMeshIdx;
         bvector<Utf8String> parentMetadata;
-        bool filterSuccess = m_callback(shouldCreateGraph, parentMeshPts, parentMeshIdx, parentMetadata, subMeshes, subMetadata, pParentMeshNode->m_nodeHeader.m_nodeExtent);
+        bvector<bvector<DPoint2d>> parentMeshUvs;
+        bvector<bvector<uint8_t>> parentMeshTex;
+        bool filterSuccess = m_callback(shouldCreateGraph, parentMeshPts, parentMeshIdx, parentMetadata,parentMeshUvs, parentMeshTex, subMeshes, subMetadata, pParentMeshNode->m_nodeHeader.m_nodeExtent);
         if (filterSuccess)
             {
             //user function needs to provide info for all mesh parts
             assert(parentMeshPts.size() == parentMeshIdx.size() && parentMeshPts.size() == parentMetadata.size());
-            pParentMeshNode->AppendMeshParts(parentMeshPts, parentMeshIdx, parentMetadata, shouldCreateGraph);
+            pParentMeshNode->AppendMeshParts(parentMeshPts, parentMeshIdx, parentMetadata, parentMeshUvs, parentMeshTex,shouldCreateGraph);
             }
         return filterSuccess;
         }

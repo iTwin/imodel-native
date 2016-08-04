@@ -3589,7 +3589,11 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
         s += (m_DelayedSplitRequested ? "TRUE " : "FALSE ") + std::to_string(ptsPtr->size());
 #endif
     // As a result of previous operations it is possible that delayed split be invoked for the present node ...
-    if (m_DelayedSplitRequested || ptsPtr->size() > m_nodeHeader.m_SplitTreshold)
+    if (m_DelayedSplitRequested || (ptsPtr->size() > m_nodeHeader.m_SplitTreshold 
+#ifdef WIP_MESH_IMPORT
+    //    && m_nodeHeader.m_level < 10
+#endif
+        ))
         SplitNode(GetDefaultSplitPosition());
 
     if (HasRealChildren()  && propagateRecursively)
@@ -7882,7 +7886,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
     {    
 
     m_pRootNode->PropagateDataDownImmediately (true);
-    
+#ifndef WIP_MESH_IMPORT    
     //size_t depth = m_pRootNode->GetDepth();    
 
     //NEEDS_WORK_SM - Not good when removing points, probably only good when adding points. 
@@ -7910,6 +7914,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
         }
 
     assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());    
+#endif
     //assert(depth == m_pRootNode->GetDepth());
     }
 
