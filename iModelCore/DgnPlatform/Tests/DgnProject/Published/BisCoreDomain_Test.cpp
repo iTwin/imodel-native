@@ -189,3 +189,23 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                      Shaun.Sewall                    03/2016
+//---------------------------------------------------------------------------------------
+TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
+    {
+    SetupProject(L"3dMetricGeneral.ibim", L"ValidateAutoCreatedModels.bim", Db::OpenMode::ReadWrite);
+
+    DgnModelPtr repositoryModel = m_db->Models().GetModel(DgnModel::RepositoryModelId());
+    DgnModelPtr dictionaryModel = m_db->Models().GetModel(DgnModel::DictionaryId());
+    DgnModelPtr groupInformationModel = m_db->Models().GetModel(DgnModel::GroupInformationId());
+    
+    ASSERT_TRUE(repositoryModel.IsValid());
+    ASSERT_TRUE(dictionaryModel.IsValid());
+    ASSERT_TRUE(groupInformationModel.IsValid());
+
+    ASSERT_STREQ(BIS_ECSCHEMA_NAME, repositoryModel->GetCode().GetNamespace().c_str());
+    ASSERT_STREQ(BIS_ECSCHEMA_NAME, dictionaryModel->GetCode().GetNamespace().c_str());
+    ASSERT_STREQ(BIS_ECSCHEMA_NAME, groupInformationModel->GetCode().GetNamespace().c_str());
+    }

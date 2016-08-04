@@ -1929,6 +1929,25 @@ protected:
 };
 
 //=======================================================================================
+//! A Subject resides in (and only in) a RepositoryModel.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Subject : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Subject, DefinitionElement);
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+
+public:
+    //! @private
+    explicit Subject(CreateParams const& params) : T_Super(params) {}
+
+    //! Creates a new Subject element in the RepositoryModel
+    DGNPLATFORM_EXPORT static SubjectPtr Create(DgnDbR db, Utf8CP label, Utf8CP description=nullptr);
+};
+
+//=======================================================================================
 //! Abstract base class for group-related information elements.
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    04/16

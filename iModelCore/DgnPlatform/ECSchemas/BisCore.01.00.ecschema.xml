@@ -328,6 +328,12 @@
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="RepositoryModel" modifier="Sealed" displayLabel="Repository Model">
+        <BaseClass>DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="LinkModel" displayLabel="Link Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -556,6 +562,14 @@
                 </MapStrategy>
             </ClassMap>
         </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Subject" modifier="Sealed">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">

@@ -392,6 +392,14 @@ GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const&
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
+    {
+    return element.IsInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Read(DgnModelId modelId)
@@ -1141,7 +1149,7 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
 DgnModelId DgnModels::QueryFirstModelId() const
     {
     for (auto const& model : MakeIterator())
-        if ((model.GetModelId() != DgnModel::DictionaryId()) && (model.GetModelId() != DgnModel::GroupInformationId()))
+        if ((model.GetModelId() != DgnModel::RepositoryModelId()) && (model.GetModelId() != DgnModel::DictionaryId()) && (model.GetModelId() != DgnModel::GroupInformationId()))
             return model.GetModelId();
 
     return DgnModelId();

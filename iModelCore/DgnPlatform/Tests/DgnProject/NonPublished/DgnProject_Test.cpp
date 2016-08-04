@@ -184,6 +184,7 @@ static DgnSubCategoryId facetId1, facetId2;
 TEST_F(DgnDbTest, ProjectWithDuplicateName)
     {
     CreateDgnDbParams params;
+    params.SetProjectName("DgnDbTest.ProjectWithDuplicateName");
     params.SetOverwriteExisting(false);
     DbResult status, status2;
     DgnDbPtr project, project2;
@@ -248,19 +249,22 @@ TEST_F(DgnDbTest, InvalidFileFormat)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateDgnDb)
     {
-    DgnDbPtr      dgnProj;
+    DgnDbPtr dgnProj;
     BeFileName dgndbFileName;
     BeTest::GetHost().GetOutputRoot(dgndbFileName);
     dgndbFileName.AppendToPath(L"MyFile.ibim");
 
      if (BeFileName::DoesPathExist(dgndbFileName))
         BeFileName::BeDeleteFile(dgndbFileName);
+
     DbResult status;
-    CreateDgnDbParams Obj;
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()),Obj);
-    EXPECT_EQ (BE_SQLITE_OK, status) << status;
+    CreateDgnDbParams params;
+    params.SetProjectName("DgnDbTest.CreateDgnDb");
+    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
+    EXPECT_EQ(BE_SQLITE_OK, status) << status;
     ASSERT_TRUE( dgnProj != NULL);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -275,11 +279,12 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
         BeFileName::BeDeleteFile(dgndbFileName);
 
     DbResult status;
-    CreateDgnDbParams Obj;
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()),Obj);
+    CreateDgnDbParams params;
+    params.SetProjectName("DgnDbTest.CreateWithInvalidName");
+    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ (BE_SQLITE_OK, status) << status;
     ASSERT_TRUE( dgnProj != NULL);
-    /////////It creates a DgnDbfile with .txt extension haveing success status needs to figure out is this right behave
+    /////////It creates a DgnDbfile with .txt extension having success status needs to figure out is this right behavior
     }
 
 /*---------------------------------------------------------------------------------**//**

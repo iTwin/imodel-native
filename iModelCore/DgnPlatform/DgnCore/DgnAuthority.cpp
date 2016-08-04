@@ -348,7 +348,11 @@ struct SystemAuthority
         TrueColor = 5LL,
         Model = 6LL,
         Component = 7LL,    // Component instances. Code value is combination of component name, component parameter set, and unique integer ID
-        GeometryPart = 8LL,
+
+        // ............     Introduce new BuiltinIds here
+        
+        GeometryPart = 64LL,
+        // NOTE: Don't introduce BuiltinIds > 64 as this will cause DgnDb file format upgrade/remapping issues
     };
 
     struct Info

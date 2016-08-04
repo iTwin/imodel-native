@@ -319,7 +319,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = m_db->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(4, iter.QueryCount()); // including DictionaryModel and GroupInformationModel...
+    ASSERT_EQ(5, iter.QueryCount()); // including RepositoryModel, DictionaryModel, and GroupInformationModel...
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
@@ -329,18 +329,18 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;
     for (DgnModels::Iterator::Entry const& entry : iter)
-    {
+        {
         ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        if ((DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
+        if ((DgnModel::RepositoryModelId() == entry.GetModelId()) || (DgnModel::DictionaryId() == entry.GetModelId()) || (DgnModel::GroupInformationId() == entry.GetModelId()))
             continue;
 
-        WString entryNameW(entry.GetCodeValue(), true);               // string conversion
+        WString entryNameW(entry.GetCodeValue(), true); // string conversion
         WString entryDescriptionW(entry.GetLabel(), true); // string conversion
         testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
         testModel.IsEqual(models[i]);
         i++;
+        }
     }
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -417,7 +417,7 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     DgnModels& models = db.Models ();
     DgnModels::Iterator iter = models.MakeIterator ();
-    EXPECT_EQ (6, iter.QueryCount ()); // including the DictionaryModel and GroupInformationModel...
+    EXPECT_EQ (7, iter.QueryCount ()); // including the RepositoryModel, DictionaryModel, and GroupInformationModel...
     DgnModels::Iterator::Entry entry = iter.begin ();
     int i = 0;
     for (auto const& entry : iter)

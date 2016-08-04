@@ -228,6 +228,17 @@ DbResult DgnDb::CreateGroupInformationModel()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRepositoryModel()
+    {
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Repository::GetHandler());
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_RepositoryModel, BIS_ECSCHEMA_NAME);
+    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDgnDbTables()
@@ -258,7 +269,8 @@ DbResult DgnDb::CreateDgnDbTables()
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
 
-    // Every DgnDb has a DictionaryModel and a default GroupInformationModel
+    // Every DgnDb has a RepositoryModel, a DictionaryModel, and a default GroupInformationModel
+    CreateRepositoryModel();
     CreateDictionaryModel();
     CreateGroupInformationModel();
 
@@ -318,6 +330,13 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 
     SaveDgnDbSchemaVersion();
     SaveCreationDate();
+
+    SubjectPtr subject = Subject::Create(*this, params.m_name.c_str(), params.m_description.c_str());
+    if (!subject.IsValid() || !subject->Insert().IsValid())
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
 
     Domains().OnDbOpened();
 

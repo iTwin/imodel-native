@@ -279,6 +279,39 @@ DgnDbStatus DefinitionElement::_OnInsert()
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Subject::_OnInsert()
+    {
+    // Subjects can only reside in the RepositoryModel
+    return DgnModel::RepositoryModelId() == GetModel()->GetModelId() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectPtr Subject::Create(DgnDbR db, Utf8CP label, Utf8CP description)
+    {
+    DgnClassId classId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Subject);
+
+    if (!classId.IsValid() || !label || !*label)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    SubjectPtr subject = new Subject(CreateParams(db, DgnModel::RepositoryModelId(), classId, DgnCode(), label));
+
+    if (description && *description)
+        {
+        if (DgnDbStatus::Success != subject->SetProperty("Descr", ECValue(description)))
+            return nullptr;
+        }
+
+    return subject;
+    }
+
 struct OnInsertedCaller
     {
     DgnElementCR m_newEl;

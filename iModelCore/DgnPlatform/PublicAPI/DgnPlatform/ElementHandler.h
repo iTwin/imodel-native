@@ -115,6 +115,12 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
+
+    //! The ElementHandler for Subject
+    struct EXPORT_VTABLE_ATTRIBUTE Subject : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Subject, Dgn::Subject, Subject, Element, DGNPLATFORM_EXPORT)
+    };
 };
 
 //=======================================================================================

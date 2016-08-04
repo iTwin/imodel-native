@@ -146,6 +146,7 @@ protected:
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDgnDbTables();
     BeSQLite::DbResult CreateAuthorities();
+    BeSQLite::DbResult CreateRepositoryModel();
     BeSQLite::DbResult CreateDictionaryModel();
     BeSQLite::DbResult CreateGroupInformationModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
