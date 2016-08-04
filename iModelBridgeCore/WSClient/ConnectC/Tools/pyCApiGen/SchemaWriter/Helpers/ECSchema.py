@@ -144,7 +144,7 @@ class ECSchema(object):
     def get_buffer_free_function_implementation(self):
         free_str = self.__get_buffer_free_function_def() + '\n'
         free_str += "    {\n"
-        free_str += "    for (int index = 0; index < buf->lItems.size(); index++)\n"
+        free_str += "    for (uint64_t index = 0; index < buf->lItems.size(); index++)\n"
         free_str += "        {\n"
         free_str += "        if (buf->lItems[index] != nullptr)\n"
         free_str += "            {\n"

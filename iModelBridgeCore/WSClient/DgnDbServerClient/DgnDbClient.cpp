@@ -577,6 +577,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
     Utf8String project;
     project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
+    client->SetCredentials(m_credentials);
     ObjectId repositoryId = ObjectId("BIMCSProject", "BIMRepository", repositoryInfo.GetId());
     return client->SendDeleteObjectRequest(repositoryId, cancellationToken)->Then<DgnDbServerStatusResult>([=] (WSDeleteObjectResult const& result)
         {
