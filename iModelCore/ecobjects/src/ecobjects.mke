@@ -22,7 +22,7 @@ CompileOptionsMki   = $(baseDir)ECObjectsCompileOpts.mki
 #----------------------------------------------------------------------
 PchCompiland        = $(baseDir)ECObjectsPch.cpp
 PchOutputDir        = $(o)
-%if defined (winNT) && $(BUILD_TOOLSET) == "GCC"
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
@@ -55,7 +55,6 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECEvent.h \
                                 $(ecobjectsPublicAPISrc)ECObjectsAPIOverview.h \
                                 $(baseDir)ecxml.h \
-                                $(baseDir)FileUtilities.h \
                                 $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                                 $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                                 $(baseDir)DateTimeInfoAccessor.h \
@@ -66,15 +65,6 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
                                 $(ecobjectsPublicAPISrc)ECRelationshipPath.h
 
-
-ECPresentationHeaders =         $(ecpresentationPublicAPISrc)auicommand.h \
-                                $(ecpresentationPublicAPISrc)auiitem.h \
-                                $(ecpresentationPublicAPISrc)auijournal.h \
-                                $(ecpresentationPublicAPISrc)auipresentationmgr.h \
-                                $(ecpresentationPublicAPISrc)auiprovider.h \
-                                $(ECObjectsHeaders) \
-                                $(ecpresentationPublicAPISrc)auipresentationapi.h \
-                                $(ecpresentationPublicAPISrc)auievent.h
                         
 ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
                                 $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
@@ -157,8 +147,6 @@ $(o)SupplementalSchema$(oext)                              : $(baseDir)Supplemen
 
 $(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
 
-$(o)ecprovider$(oext)                                      : $(baseDir)ecprovider.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
-
 $(o)ecinstanceiterable$(oext)                              : $(baseDir)ecinstanceiterable.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
 
 $(o)CalculatedProperty$(oext)                              : $(baseDir)CalculatedProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
@@ -180,28 +168,6 @@ $(o)AdHocJsonContainer$(oext)                              : $(baseDir)AdHocJson
 $(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelationshipPath.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-# ECPresentation
-
-$(o)auipresentationmgr$(oext)                              : $(baseDir)presentation/auipresentationmgr.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)auicommand$(oext)                                      : $(baseDir)presentation/auicommand.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)auiitem$(oext)                                         : $(baseDir)presentation/auiitem.cpp $(ECPresentationHeaders) ${MultiCompileDepends}
-
-$(o)auiprovider$(oext)                                     : $(baseDir)presentation/auiprovider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)ecviewdefinition$(oext)                                : $(baseDir)presentation/ecviewdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)eccontentdefinition$(oext)                             : $(baseDir)presentation/eccontentdefinition.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)auijournal$(oext)                                      : $(baseDir)presentation/auijournal.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)ECImageProvider$(oext)                                 : $(baseDir)presentation/ECImageProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)ECLocalizationProvider$(oext)                          : $(baseDir)presentation/ECLocalizationProvider.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
-
-$(o)auievent$(oext)                                        : $(baseDir)presentation/auievent.cpp $(ECPresentationHeaders) ${MultiCompileDepends} 
 
 # ECPresentationRules
 
@@ -272,13 +238,6 @@ $(o)ECUnitsClassLocater$(oext)                                           : $(bas
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
 CPchOpts =
-
-#----------------------------------------------------------------------
-#   Non-portable code - cannot use PCH
-#----------------------------------------------------------------------
-$(o)FileUtilities$(oext)   : $(baseDir)nonport/FileUtilities.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
-
-cppObjects +$(o)FileUtilities$(oext)
 
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
