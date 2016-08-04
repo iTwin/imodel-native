@@ -1,52 +1,51 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnDbServerClient/DgnDbServerEventSAS.cpp $
+|     $Source: Azure/AzureServiceBusSASDTO.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <DgnDbServer/Client/DgnDbServerEventSAS.h>
-#include "DgnDbServerUtils.h"
-
-USING_NAMESPACE_BENTLEY_DGNDBSERVER
+#include "ClientInternal.h"
+#include <WebServices/Azure/AzureServiceBusSASDTO.h>
+#include <iomanip>
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventSAS::DgnDbServerEventSAS
+AzureServiceBusSASDTO::AzureServiceBusSASDTO
 (
-Utf8String sasToken, 
-Utf8String baseAddress
+	Utf8String sasToken,
+	Utf8String baseAddress
 )
-    {
-    m_sasToken = sasToken;
-    m_baseAddress = baseAddress;
-    }
+{
+	m_sasToken = sasToken;
+	m_baseAddress = baseAddress;
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventSASPtr DgnDbServerEventSAS::Create
+AzureServiceBusSASDTOPtr AzureServiceBusSASDTO::Create
 (
-Utf8String sasToken,
-Utf8String baseAddress
+	Utf8String sasToken,
+	Utf8String baseAddress
 )
-    {
-    return DgnDbServerEventSASPtr(new DgnDbServerEventSAS(sasToken, baseAddress));
-    }
+{
+	return AzureServiceBusSASDTOPtr(new AzureServiceBusSASDTO(sasToken, baseAddress));
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerEventSAS::GetSASToken()
-    {
-    return m_sasToken;
-    }
+Utf8String AzureServiceBusSASDTO::GetSASToken()
+{
+	return m_sasToken;
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerEventSAS::GetBaseAddress()
-    {
-    return m_baseAddress;
-    }
+Utf8String AzureServiceBusSASDTO::GetBaseAddress()
+{
+	return m_baseAddress;
+}

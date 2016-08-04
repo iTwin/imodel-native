@@ -58,6 +58,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
     <ClCompile Include="Azure\EventServiceClient.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
@@ -172,7 +173,6 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerDeletedEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEventParser.cpp" />
-    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSAS.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerLockEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
@@ -263,10 +263,10 @@
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h" />
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSAS.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\SessionInfo.h" />
