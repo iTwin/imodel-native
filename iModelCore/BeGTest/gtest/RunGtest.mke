@@ -94,5 +94,4 @@ always:
 %endif
 
 always:
-    !~@mkdir $(BuildContext)Delivery/Gtest/Logs
     ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
