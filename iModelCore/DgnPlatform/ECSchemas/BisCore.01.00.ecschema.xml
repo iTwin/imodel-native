@@ -188,7 +188,7 @@
             </ClassHasHandler>
             <ClassMap xmlns="ECDbMap.02.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <MapStrategyTablePerHierarchy</MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
                 <Indexes>
                     <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
