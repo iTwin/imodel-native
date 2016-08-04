@@ -555,7 +555,7 @@ static void grabStackTrace()
     symbol->MaxNameLen = 255;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
-    s_stackTrace << "Mine\n";
+    s_stackTrace << "***********************\n";
 
     for (i = nSkip; i < frames; i++)
         {
