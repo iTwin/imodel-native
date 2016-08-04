@@ -3549,7 +3549,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
         "    </ECEntityClass>"
         "    <ECEntityClass typeName='Sub1'>"
         "        <ECCustomAttributes>"
-        "         <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "           <ShareColumns xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "        <BaseClass>Base</BaseClass>"
         "        <ECProperty propertyName='Prop2' typeName='double' />"

@@ -16,10 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
 //---------------------------------------------------------------------------------------
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   06/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
+RelationshipClassMap::RelationshipClassMap(Type type, ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : ClassMap(type, ecRelClass, ecDbMap, mapStrategy, setIsDirty),
     m_sourceConstraintMap(ecDbMap, ecRelClass.GetId(), ECRelationshipEnd_Source, ecRelClass.GetSource()),
     m_targetConstraintMap(ecDbMap, ecRelClass.GetId(), ECRelationshipEnd_Target, ecRelClass.GetTarget())
@@ -228,7 +225,7 @@ bool RelationshipConstraintMap::TryGetSingleClassIdFromConstraint(ECClassId& con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
+RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : RelationshipClassMap(Type::RelationshipEndTable, ecRelClass, ecDbMap, mapStrategy, setIsDirty), m_hasKeyPropertyFk(false)
     {}
 
@@ -284,7 +281,7 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 MappingStatus RelationshipClassEndTableMap::_Map(SchemaImportContext& ctx, ClassMappingInfo const& classMapInfo)
     {   
     //Don't call base class method as end table map requires its own handling
-    BeAssert(GetClass().GetRelationshipClassCP() != nullptr && ECDbMapStrategyHelper::IsForeignKeyMapping(classMapInfo.GetMapStrategy()));
+    BeAssert(GetClass().GetRelationshipClassCP() != nullptr && MapStrategyExtendedInfo::IsForeignKeyMapping(classMapInfo.GetMapStrategy()));
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&classMapInfo) != nullptr);
     RelationshipMappingInfo const& relClassMappingInfo = static_cast<RelationshipMappingInfo const&> (classMapInfo);
 
@@ -1056,7 +1053,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
         // name of the index
         Utf8String name(isUniqueIndex ? "uix_" : "ix_");
         name.append(persistenceEndTable.GetName()).append("_fk_").append(GetClass().GetSchema().GetNamespacePrefix() + "_" + GetClass().GetName());
-        if (GetMapStrategy() == ECDbMapStrategy::ForeignKeyRelationshipInSourceTable)
+        if (GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
             name.append("_source");
         else
             name.append("_target");
@@ -1094,7 +1091,7 @@ RelConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetRefere
 //+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetForeignEnd() const
     {
-    return GetMapStrategy() == ECDbMapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
+    return GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1342,7 +1339,7 @@ BentleyStatus RelationshipClassEndTableMap::TryDetermineForeignKeyColumnPosition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty)
+RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : RelationshipClassMap(Type::RelationshipLinkTable, ecRelClass, ecDbMap, mapStrategy, setIsDirty)
     {}
 
@@ -1351,7 +1348,7 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECRelationshipClass
 //---------------------------------------------------------------------------------------
 MappingStatus RelationshipClassLinkTableMap::_Map(SchemaImportContext& context, ClassMappingInfo const& classMapInfo)
     {
-    BeAssert(!ECDbMapStrategyHelper::IsForeignKeyMapping(GetMapStrategy()) &&
+    BeAssert(!MapStrategyExtendedInfo::IsForeignKeyMapping(GetMapStrategy()) &&
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
     BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
@@ -1682,7 +1679,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName(Utf8Stri
     if (table.FindColumn(columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy || GetMapStrategy() == ECDbMapStrategy::ExistingTable)
+    if (GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy || GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
         return true;
 
     //Following error occure in Upgrading ECSchema but is not fatal.
@@ -1702,7 +1699,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName(Utf8StringR
     if (table.FindColumn(columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy || GetMapStrategy() == ECDbMapStrategy::ExistingTable)
+    if (GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy || GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
         return true;
 
     //Following error occurs in Upgrading ECSchema but is not fatal.

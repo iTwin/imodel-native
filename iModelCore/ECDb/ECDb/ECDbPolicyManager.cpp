@@ -102,7 +102,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
         return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
         }
 
-    if (classMap.GetMapStrategy() == ECDbMapStrategy::NotMapped)
+    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
@@ -120,7 +120,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy(ClassMap const& classMap, IsValid
         const ECSqlType ecsqlType = assertion.GetECSqlType();
         if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Insert || ecsqlType == ECSqlType::Update)
             {
-            if (classMap.GetMapStrategy() == ECDbMapStrategy::ExistingTable)
+            if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
                 {
                 Utf8String notSupportedMessage;
                 notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",

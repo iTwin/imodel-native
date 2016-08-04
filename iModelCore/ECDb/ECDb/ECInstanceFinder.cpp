@@ -363,7 +363,7 @@ BentleyStatus ECInstanceFinder::FindRelatedInstances
             POSTCONDITION(classP != nullptr, ERROR)
                 auto classMapP = m_ecDb.GetECDbImplR().GetECDbMap().GetClassMap(*classP);
             POSTCONDITION(classMapP != nullptr, ERROR)
-                if (classMapP->GetMapStrategy() == ECDbMapStrategy::NotMapped)
+                if (classMapP->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
                     {
                     continue;
                     }

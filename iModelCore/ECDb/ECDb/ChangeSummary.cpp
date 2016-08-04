@@ -533,8 +533,8 @@ ECClassId TableMapDetail::QueryClassId() const
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName.c_str(), Statement::MakeCopy::No);
-    stmt->BindInt(stmt->GetParameterIndex(":sourceTableStrategy"), Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInSourceTable));
-    stmt->BindInt(stmt->GetParameterIndex(":targetTableStrategy"), Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInTargetTable));
+    stmt->BindInt(stmt->GetParameterIndex(":sourceTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable));
+    stmt->BindInt(stmt->GetParameterIndex(":targetTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable));
 
     DbResult result = stmt->Step();
     if (result != BE_SQLITE_ROW)
@@ -573,8 +573,8 @@ void TableMapDetail::InitForeignKeyRelClassMaps()
     BeAssert(stmt.IsValid());
 
     stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName, Statement::MakeCopy::No);
-    stmt->BindInt(stmt->GetParameterIndex(":sourceTableStrategy"), Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInSourceTable));
-    stmt->BindInt(stmt->GetParameterIndex(":targetTableStrategy"), Enum::ToInt(ECDbMapStrategy::ForeignKeyRelationshipInTargetTable));
+    stmt->BindInt(stmt->GetParameterIndex(":sourceTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable));
+    stmt->BindInt(stmt->GetParameterIndex(":targetTableStrategy"), Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable));
 
     DbResult result;
     while ((result = stmt->Step()) == BE_SQLITE_ROW)

@@ -61,7 +61,7 @@ struct RelationshipClassMap : ClassMap
         RelationshipConstraintMap m_sourceConstraintMap;
         RelationshipConstraintMap m_targetConstraintMap;
 
-        RelationshipClassMap(Type, ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
+        RelationshipClassMap(Type, ECN::ECRelationshipClassCR, ECDbMap const&, MapStrategyExtendedInfo const&, bool setIsDirty);
         DbColumn* CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
         void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
 
@@ -150,7 +150,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 
         bool m_hasKeyPropertyFk;
 
-        RelationshipClassEndTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
+        RelationshipClassEndTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, MapStrategyExtendedInfo const&, bool setIsDirty);
 
         void AddIndexToRelationshipEnd(SchemaImportContext&, ClassMappingInfo const&);
 
@@ -187,7 +187,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         PropertyMapCP GetReferencedEndECInstanceIdPropMap() const;
         RelConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
 
-        static ClassMapPtr Create(ECN::ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
+        static ClassMapPtr Create(ECN::ECRelationshipClassCR ecRelClass, ECDbMap const& ecDbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecRelClass, ecDbMap, mapStrategy, setIsDirty); }
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
     };
@@ -206,7 +206,7 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
             };
 
     private:
-        RelationshipClassLinkTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, ECDbMapStrategy const&, bool setIsDirty);
+        RelationshipClassLinkTableMap(ECN::ECRelationshipClassCR, ECDbMap const&, MapStrategyExtendedInfo const&, bool setIsDirty);
 
         virtual MappingStatus _Map(SchemaImportContext&, ClassMappingInfo const&) override;
 
@@ -222,7 +222,7 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
     public:
         ~RelationshipClassLinkTableMap() {}
-        static ClassMapPtr Create(ECN::ECRelationshipClassCR relClass, ECDbMap const& ecdbMap, ECDbMapStrategy const& mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(relClass, ecdbMap, mapStrategy, setIsDirty); }
+        static ClassMapPtr Create(ECN::ECRelationshipClassCR relClass, ECDbMap const& ecdbMap, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassLinkTableMap(relClass, ecdbMap, mapStrategy, setIsDirty); }
 
         bool GetConstraintECClassIdColumnName(Utf8StringR columnName, ECN::ECRelationshipEnd, DbTable const&) const;
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;

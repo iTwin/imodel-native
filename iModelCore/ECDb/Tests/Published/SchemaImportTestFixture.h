@@ -52,35 +52,51 @@ struct ECDbMappingTestFixture : SchemaImportTestFixture
 protected:
     //This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
     //The values can change, so in that case this struct needs to be updated accordingly.
-    struct PersistedMapStrategy
+    struct MapStrategyInfo
         {
         enum class Strategy
             {
             NotMapped,
             OwnTable,
-            TablePerHierarachy,
+            TablePerHierarchy,
             ExistingTable,
             SharedTable,
-            ForeignKeyRelationshipInTargetTable = 100,
-            ForeignKeyRelationshipInSourceTable = 101
+            ForeignKeyRelationshipInSourceTable = 100,
+            ForeignKeyRelationshipInTargetTable = 101
             };
 
-        enum class Options
+        enum class JoinedTableInfo
             {
             None = 0,
-            SharedColumns = 1,
-            ParentOfJoinedTable = 2,
-            JoinedTable = 4
+            JoinedTable = 1,
+            ParentOfJoinedTable = 2
+            };
+
+        struct TablePerHierarchyInfo
+            {
+            bool m_useSharedColumns;
+            int m_sharedColumnCount;
+            Utf8String m_excessColumnName;
+            JoinedTableInfo m_joinedTableInfo;
+
+            TablePerHierarchyInfo() : m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(JoinedTableInfo::None) {}
+            TablePerHierarchyInfo(bool useSharedColumns, int sharedColumnCount, JoinedTableInfo jti) : m_useSharedColumns(useSharedColumns), m_sharedColumnCount(sharedColumnCount), m_joinedTableInfo(jti) {}
+            TablePerHierarchyInfo(bool useSharedColumns, int sharedColumnCount, Utf8CP excessColumnName, JoinedTableInfo jti) : m_useSharedColumns(useSharedColumns), m_sharedColumnCount(sharedColumnCount), m_excessColumnName(excessColumnName), m_joinedTableInfo(jti) {}
+            explicit TablePerHierarchyInfo(JoinedTableInfo jti) : m_useSharedColumns(false), m_sharedColumnCount(-1), m_joinedTableInfo(jti) {}
+
+            bool IsUnset() const { return !m_useSharedColumns && m_joinedTableInfo == JoinedTableInfo::None; }
+            bool operator==(TablePerHierarchyInfo const& rhs) const { return m_useSharedColumns == rhs.m_useSharedColumns && m_sharedColumnCount == rhs.m_sharedColumnCount && m_joinedTableInfo == rhs.m_joinedTableInfo && m_excessColumnName.Equals(rhs.m_excessColumnName); }
             };
 
         Strategy m_strategy;
-        Options m_options;
+        TablePerHierarchyInfo m_tphInfo;
 
-        PersistedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None) {}
-        PersistedMapStrategy(Strategy strategy, Options options) : m_strategy(strategy), m_options(options) {}
+        MapStrategyInfo() : m_strategy(Strategy::NotMapped) {}
+        MapStrategyInfo(Strategy strat, JoinedTableInfo joinedTableInfo) : m_strategy(strat), m_tphInfo(joinedTableInfo) {}
+        MapStrategyInfo(Strategy strat, TablePerHierarchyInfo const& tphInfo) : m_strategy(strat), m_tphInfo(tphInfo) {}
         };
 
-    bool TryGetPersistedMapStrategy(PersistedMapStrategy& strategy, ECDbCR ecdb, ECN::ECClassId classId) const;
+    bool TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const;
 
 public:
     ECDbMappingTestFixture () : SchemaImportTestFixture() {}

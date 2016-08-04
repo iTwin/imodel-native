@@ -39,7 +39,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViews(ECDbCR ecdb)
     Utf8String sql;
     sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm, ec_ClassHasBaseClasses cc WHERE c.Id = cm.ClassId AND c.Id = cc.BaseClassId AND c.Type = %d AND cm.MapStrategy<> %d GROUP BY c.Id",
                 Enum::ToInt(ECClassType::Entity),
-                Enum::ToInt(ECDbMapStrategy::NotMapped));
+                Enum::ToInt(MapStrategy::NotMapped));
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
@@ -109,7 +109,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     sql.Sprintf("SELECT c.Id FROM ec_Class c, ec_ClassMap cm WHERE c.Id = cm.ClassId AND c.Type IN (%d,%d) AND cm.MapStrategy<>%d",
                 Enum::ToInt(ECClassType::Entity),
                 Enum::ToInt(ECClassType::Relationship),
-                Enum::ToInt(ECDbMapStrategy::NotMapped));
+                Enum::ToInt(MapStrategy::NotMapped));
 
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
@@ -261,7 +261,7 @@ BentleyStatus ViewGenerator::GenerateUpdateTriggerSetClause(NativeSqlBuilder& sq
 //+---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap const& classMap)
     {
-    if (classMap.GetMapStrategy() == ECDbMapStrategy::NotMapped || classMap.IsRelationshipClassMap())
+    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped || classMap.IsRelationshipClassMap())
         return ERROR;
 
     ECDbMap const& ecdbMap = classMap.GetECDbMap();
@@ -362,7 +362,7 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap
     m_isPolymorphic = isPolymorphicQuery;
     m_prepareContext = prepareContext;
     m_captureViewAccessStringList = true;
-    if (classMap.GetMapStrategy() == ECDbMapStrategy::NotMapped)
+    if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
         BeAssert(false && "ViewGenerator::CreateView must not be called on unmapped class");
         return ERROR;
@@ -507,34 +507,31 @@ BentleyStatus ViewGenerator::ComputeViewMembers(ViewMemberByTable& viewMembers, 
     if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
         return SUCCESS;
 
-    if (classMap->GetMapStrategy() != ECDbMapStrategy::NotMapped)
+    if (classMap->GetJoinedTable().GetColumns().empty())
+        return SUCCESS;
+
+    auto itor = viewMembers.find(&classMap->GetJoinedTable());
+    if (itor == viewMembers.end())
         {
-        if (classMap->GetJoinedTable().GetColumns().empty())
-            return SUCCESS;
-
-        auto itor = viewMembers.find(&classMap->GetJoinedTable());
-        if (itor == viewMembers.end())
+        DbSchema::EntityType storageType = DbSchema::EntityType::Table;
+        if (m_optimizeByIncludingOnlyRealTables)
             {
-            DbSchema::EntityType storageType = DbSchema::EntityType::Table;
-            if (m_optimizeByIncludingOnlyRealTables)
-                {
-                //This is a db query so optimization comes at a cost
-                storageType = DbSchema::GetEntityType(m_map.GetECDb(), classMap->GetJoinedTable().GetName().c_str());
-                }
-
-            if (storageType == DbSchema::EntityType::Table)
-                viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetJoinedTable(), ViewMember(storageType, *classMap)));
+            //This is a db query so optimization comes at a cost
+            storageType = DbSchema::GetEntityType(m_map.GetECDb(), classMap->GetJoinedTable().GetName().c_str());
             }
-        else
+
+        if (storageType == DbSchema::EntityType::Table)
+            viewMembers.insert(ViewMemberByTable::value_type(&classMap->GetJoinedTable(), ViewMember(storageType, *classMap)));
+        }
+    else
+        {
+        if (m_optimizeByIncludingOnlyRealTables)
             {
-            if (m_optimizeByIncludingOnlyRealTables)
-                {
-                if (itor->second.GetStorageType() == DbSchema::EntityType::Table)
-                    itor->second.AddClassMap(*classMap);
-                }
-            else
+            if (itor->second.GetStorageType() == DbSchema::EntityType::Table)
                 itor->second.AddClassMap(*classMap);
             }
+        else
+            itor->second.AddClassMap(*classMap);
         }
 
     if (m_isPolymorphic && !classMap->IsParentOfJoinedTable())
@@ -967,7 +964,7 @@ BentleyStatus ViewGenerator::CreateNullViewForRelationship(NativeSqlBuilder& vie
 BentleyStatus ViewGenerator::CreateViewForRelationship(NativeSqlBuilder& viewSql, ClassMap const& relationMap)
     {
     BeAssert(relationMap.IsRelationshipClassMap());
-    if (relationMap.GetMapStrategy() == ECDbMapStrategy::NotMapped)
+    if (relationMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         return ERROR;
 
     ViewMemberByTable vmt;

@@ -303,7 +303,7 @@ DbResult DbSchemaPersistenceManager::ReadPropertyMappings(ClassDbMapping& classM
 //static
 DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, BaseId, ClassId, MapStrategy, ShareColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo FROM ec_ClassMap ORDER BY Id");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id, BaseId, ClassId, MapStrategy, UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo FROM ec_ClassMap ORDER BY Id");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -314,17 +314,27 @@ DbResult DbSchemaPersistenceManager::ReadClassMappings(DbSchema& dbSchema, ECDbC
         {
         ClassMapId id = stmt->GetValueId<ClassMapId>(0);
         ClassMapId baseId = stmt->IsColumnNull(1) ? ClassMapId() : stmt->GetValueId<ClassMapId>(1);
-        ECN::ECClassId classId = stmt->GetValueId<ECClassId>(2);
-        const ECDbMapStrategy mapStrategy = Enum::FromInt<ECDbMapStrategy>(stmt->GetValueInt(3));
-        const bool isSharedColumns = stmt->IsColumnNull(4) ? false : DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(4));
-        const int sharedColumnCount = stmt->IsColumnNull(5) ? -1 : stmt->GetValueInt(5);
-        Utf8CP excessColumnName = stmt->IsColumnNull(6) ? nullptr : stmt->GetValueText(6);
-        const TablePerHierarchyInfo::JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(7) ? TablePerHierarchyInfo::JoinedTableInfo::None :
-            Enum::FromInt<TablePerHierarchyInfo::JoinedTableInfo>(stmt->GetValueInt(7));
+        ECN::ECClassId classId = stmt->GetValueId<ECClassId>(2);      
+        const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(3));
+        MapStrategyExtendedInfo mapStrategyExtInfo;
+        if (mapStrategy == MapStrategy::TablePerHierarchy)
+            {
+            const bool useSharedColumns = stmt->IsColumnNull(4) ? false : DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(4));
+            const int sharedColumnCount = stmt->IsColumnNull(5) ? -1 : stmt->GetValueInt(5);
+            Utf8CP excessColumnName = stmt->IsColumnNull(6) ? nullptr : stmt->GetValueText(6);
+            const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(7) ? JoinedTableInfo::None :
+                Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(7));
 
-        TablePerHierarchyInfo tphInfo(isSharedColumns, sharedColumnCount, excessColumnName, joinedTableInfo);
+            mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(useSharedColumns, sharedColumnCount, excessColumnName, joinedTableInfo));
+            }
+        else
+            {
+            BeAssert(stmt->IsColumnNull(4) && stmt->IsColumnNull(5) && stmt->IsColumnNull(6) && stmt->IsColumnNull(7) &&
+                     "UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
+            mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
+            }
 
-        ClassDbMapping* classMapping = dbSchema.GetDbMappingsR().AddClassMapping(id, classId, mapStrategy, tphInfo, baseId);
+        ClassDbMapping* classMapping = dbSchema.GetDbMappingsR().AddClassMapping(id, classId, mapStrategyExtInfo, baseId);
         if (classMapping == nullptr)
             {
             BeAssert(false && "Failed to create classMap");
@@ -644,7 +654,7 @@ DbResult DbSchemaPersistenceManager::InsertPropertyMapping(ECDbCR ecdb, Property
 //static
 DbResult DbSchemaPersistenceManager::InsertClassMapping(ECDbCR ecdb, ClassDbMapping const& cm)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, BaseId, ClassId, MapStrategy, ShareColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo) VALUES (?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, BaseId, ClassId, MapStrategy, UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo) VALUES (?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -658,11 +668,11 @@ DbResult DbSchemaPersistenceManager::InsertClassMapping(ECDbCR ecdb, ClassDbMapp
         stmt->BindId(2, cm.GetBaseClassMappingId());
 
     stmt->BindId(3, cm.GetClassId());
-    stmt->BindInt(4, Enum::ToInt(cm.GetMapStrategy()));
-    if (cm.GetMapStrategy() == ECDbMapStrategy::TablePerHierarchy)
+    stmt->BindInt(4, Enum::ToInt(cm.GetMapStrategy().GetStrategy()));
+    if (cm.GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
         {
-        TablePerHierarchyInfo const& tphInfo = cm.GetTablePerHierarchyInfo();
-        if (tphInfo.IsSharedColumns())
+        TablePerHierarchyInfo const& tphInfo = cm.GetMapStrategy().GetTphInfo();
+        if (tphInfo.UseSharedColumns())
             stmt->BindInt(5, BoolToSqlInt(true));
 
         if (tphInfo.GetSharedColumnCount() >= 0)
@@ -671,7 +681,7 @@ DbResult DbSchemaPersistenceManager::InsertClassMapping(ECDbCR ecdb, ClassDbMapp
         if (!tphInfo.GetExcessColumnName().empty())
             stmt->BindText(7, tphInfo.GetExcessColumnName(), Statement::MakeCopy::No);
 
-        if (tphInfo.GetJoinedTableInfo() != TablePerHierarchyInfo::JoinedTableInfo::None)
+        if (tphInfo.GetJoinedTableInfo() != JoinedTableInfo::None)
             stmt->BindInt(8, Enum::ToInt(tphInfo.GetJoinedTableInfo()));
         }
 
@@ -1487,17 +1497,17 @@ void AssertPersistedEnumsAreUnchanged()
                   (int) ECClassType::Relationship == 1 &&
                   (int) ECClassType::Struct == 2, "Persisted Enum has changed: ECN::ECClassType.");
 
-    static_assert((int) TablePerHierarchyInfo::JoinedTableInfo::JoinedTable == 1 &&
-                  (int) TablePerHierarchyInfo::JoinedTableInfo::None == 0 &&
-                  (int) TablePerHierarchyInfo::JoinedTableInfo::ParentOfJoinedTable == 2, "Persisted Enum has changed: TablePerHierarchyInfo::JoinedTableInfo.");
+    static_assert((int) JoinedTableInfo::JoinedTable == 1 &&
+                  (int) JoinedTableInfo::None == 0 &&
+                  (int) JoinedTableInfo::ParentOfJoinedTable == 2, "Persisted Enum has changed: JoinedTableInfo.");
 
-    static_assert((int) ECDbMapStrategy::ExistingTable == 3 &&
-                  (int) ECDbMapStrategy::ForeignKeyRelationshipInSourceTable == 100 &&
-                  (int) ECDbMapStrategy::ForeignKeyRelationshipInTargetTable == 101 &&
-                  (int) ECDbMapStrategy::NotMapped == 0 &&
-                  (int) ECDbMapStrategy::OwnTable == 1 &&
-                  (int) ECDbMapStrategy::SharedTable == 4 &&
-                  (int) ECDbMapStrategy::TablePerHierarchy == 2, "Persisted Enum has changed: ECDbMapStrategy.");
+    static_assert((int) MapStrategy::ExistingTable == 3 &&
+                  (int) MapStrategy::ForeignKeyRelationshipInSourceTable == 100 &&
+                  (int) MapStrategy::ForeignKeyRelationshipInTargetTable == 101 &&
+                  (int) MapStrategy::NotMapped == 0 &&
+                  (int) MapStrategy::OwnTable == 1 &&
+                  (int) MapStrategy::SharedTable == 4 &&
+                  (int) MapStrategy::TablePerHierarchy == 2, "Persisted Enum has changed: ECDbMapStrategy.");
 
     static_assert((int) ECPropertyKind::Navigation == 4 &&
                   (int) ECPropertyKind::Primitive == 0 &&

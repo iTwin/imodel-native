@@ -530,20 +530,18 @@ private:
     DbMappings& m_dbMappings;
     ClassMapId m_id;
     ECN::ECClassId m_ecClassId;
-    ECDbMapStrategy m_mapStrategy;
-    TablePerHierarchyInfo m_tphInfo;
+    MapStrategyExtendedInfo m_mapStrategyExtInfo;
     std::vector<std::unique_ptr<PropertyDbMapping>> m_localPropertyMaps;
     ClassMapId m_baseClassMappingId;
 
 public:
-    ClassDbMapping(DbMappings& dbMappings, ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, TablePerHierarchyInfo tphInfo, ClassMapId baseClassMappingId)
-        :m_dbMappings(dbMappings), m_id(id), m_ecClassId(classId), m_mapStrategy(mapStrategy), m_tphInfo(tphInfo), m_baseClassMappingId(baseClassMappingId)
+    ClassDbMapping(DbMappings& dbMappings, ClassMapId id, ECN::ECClassId classId, MapStrategyExtendedInfo const& mapStrategy, ClassMapId baseClassMappingId)
+        :m_dbMappings(dbMappings), m_id(id), m_ecClassId(classId), m_mapStrategyExtInfo(mapStrategy), m_baseClassMappingId(baseClassMappingId)
         {}
 
     ClassMapId GetId() const { return m_id; }
     ECN::ECClassId GetClassId() const { return m_ecClassId; }
-    ECDbMapStrategy GetMapStrategy() const { return m_mapStrategy; }
-    TablePerHierarchyInfo const& GetTablePerHierarchyInfo() const { return m_tphInfo; }
+    MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
 
     ClassMapId GetBaseClassMappingId() const { return m_baseClassMappingId; }
     ClassDbMapping const* GetBaseClassMapping() const;
@@ -584,8 +582,8 @@ public:
     PropertyDbMapping::Path const * FindPropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
     PropertyDbMapping::Path const* FindPropertyPath(PropertyPathId) const;
         
-    ClassDbMapping* AddClassMapping(ClassMapId, ECN::ECClassId, ECDbMapStrategy, TablePerHierarchyInfo const&, ClassMapId baseClassMapId);
-    ClassDbMapping* CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy, TablePerHierarchyInfo const&, ClassMapId baseClassMapId);
+    ClassDbMapping* AddClassMapping(ClassMapId, ECN::ECClassId, MapStrategyExtendedInfo const&, ClassMapId baseClassMapId);
+    ClassDbMapping* CreateClassMapping(ECN::ECClassId classId, MapStrategyExtendedInfo const&, ClassMapId baseClassMapId);
     PropertyDbMapping::Path* AddPropertyPath(PropertyPathId, ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
     PropertyDbMapping::Path* CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString);
     };

@@ -424,7 +424,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                            "BaseId INTEGER REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
                            //resolved map strategy:
                            "MapStrategy INTEGER NOT NULL,"
-                           "ShareColumns BOOLEAN CHECK (ShareColumns IN (0,1)),"
+                           "UseSharedColumns BOOLEAN CHECK (UseSharedColumns IN (0,1)),"
                            "SharedColumnCount INTEGER,"
                            "ExcessColumnName TEXT,"
                            "JoinedTableInfo INTEGER)");

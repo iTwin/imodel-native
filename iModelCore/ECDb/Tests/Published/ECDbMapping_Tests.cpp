@@ -807,15 +807,15 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
         "</ECSchema>", true, "NotMapped on subclass"), "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
 
-    PersistedMapStrategy mapStrategy;
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+    MapStrategyInfo mapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSub")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSub")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSubSub")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSubSub")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
     }
 
@@ -977,18 +977,18 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
 
-    PersistedMapStrategy mapStrategy;
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    MapStrategyInfo mapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSub")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSub")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSubSub")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "SubSubSub")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
     }
 
@@ -1051,12 +1051,12 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
 
-    PersistedMapStrategy mapStrategy;
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::TablePerHierarachy, mapStrategy.m_strategy);
+    MapStrategyInfo mapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::TablePerHierarachy, mapStrategy.m_strategy);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
-    ASSERT_EQ((int) PersistedMapStrategy::Strategy::NotMapped, (int) mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
+    ASSERT_EQ((int) MapStrategyInfo::Strategy::NotMapped, (int) mapStrategy.m_strategy);
     }
 
     {
@@ -1088,9 +1088,9 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
 
-    PersistedMapStrategy mapStrategy;
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Rel")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    MapStrategyInfo mapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Rel")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
     }
 
     {
@@ -1121,9 +1121,9 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
                                                   "</ECSchema>", true, "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped"),
                        "notmappedcatests.ecdb");
     ASSERT_FALSE(asserted);
-    PersistedMapStrategy mapStrategy;
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Rel")->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+    MapStrategyInfo mapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Rel")->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
     }
 
     }
@@ -6911,9 +6911,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 ASSERT_FALSE(asserted);
 
                 ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
-                PersistedMapStrategy mapStrategy;
-                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
-                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+                MapStrategyInfo mapStrategy;
+                ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
             {
@@ -6953,9 +6953,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 ASSERT_FALSE(asserted);
 
                 ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
-                PersistedMapStrategy mapStrategy;
-                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
-                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+                MapStrategyInfo mapStrategy;
+                ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
             {
@@ -7003,9 +7003,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 ASSERT_FALSE(asserted);
 
                 ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
-                PersistedMapStrategy mapStrategy;
-                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
-                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+                MapStrategyInfo mapStrategy;
+                ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
             {
@@ -7048,9 +7048,9 @@ TEST_F(ECDbMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
                 ASSERT_FALSE(asserted);
 
                 ECRelationshipClassCP relClass = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("ElementHasGeometry")->GetRelationshipClassCP();
-                PersistedMapStrategy mapStrategy;
-                ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, relClass->GetId()));
-                ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+                MapStrategyInfo mapStrategy;
+                ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, relClass->GetId()));
+                ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
     }
 
@@ -8673,17 +8673,17 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, oneFooHasOneGooResult, count_OneFooHasOneGoo);
     VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, reinsertResultError, count_OneFooHasOneGoo);
 
-    PersistedMapStrategy mapStrategy;
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, oneFooHasOneGoo->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    MapStrategyInfo mapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, oneFooHasOneGoo->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
     ASSERT_EQ(count_OneFooHasOneGoo, GetRelationshipInstanceCount(ecdb, "ts.OneFooHasOneGoo"));
 
     //1:N--------------------------------
     size_t count_OneFooHasManyGoo = 0;
     VerifyRelationshipInsertionIntegrity(ecdb, "ts.OneFooHasManyGoo", fooKeys, gooKeys, oneFooHasManyGooResult, count_OneFooHasManyGoo);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, oneFooHasManyGoo->GetId()));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, oneFooHasManyGoo->GetId()));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
     ASSERT_EQ(count_OneFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.OneFooHasManyGoo"));
 
     //N:N--------------------------------
@@ -8694,10 +8694,10 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     else
         VerifyRelationshipInsertionIntegrity(ecdb, "ts.ManyFooHasManyGoo", fooKeys, gooKeys, reinsertResultError, count_ManyFooHasManyGoo);
 
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, manyFooHasManyGoo->GetId()));
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, manyFooHasManyGoo->GetId()));
 
-    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
-    ASSERT_EQ(PersistedMapStrategy::Options::None, mapStrategy.m_options);
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(mapStrategy.m_tphInfo.IsUnset());
     ASSERT_EQ(count_ManyFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.ManyFooHasManyGoo"));
     }
 

@@ -197,17 +197,26 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 //---------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMappingTestFixture::TryGetPersistedMapStrategy(PersistedMapStrategy& strategy, ECDbCR ecdb, ECN::ECClassId classId) const
+bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, ECDbCR ecdb, ECN::ECClassId classId) const
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, MapStrategyOptions FROM ec_ClassMap WHERE ClassId = ?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy, UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     EXPECT_TRUE(stmt != nullptr);
 
     stmt->BindId(1, classId);
     if (BE_SQLITE_ROW == stmt->Step())
         {
-        const PersistedMapStrategy::Strategy strat = (PersistedMapStrategy::Strategy) stmt->GetValueInt(0);
-        const PersistedMapStrategy::Options options = (PersistedMapStrategy::Options) stmt->GetValueInt(1);
-        strategy = PersistedMapStrategy(strat, options);
+        int parameterIx = 0;
+        stratInfo.m_strategy = (MapStrategyInfo::Strategy) stmt->GetValueInt(parameterIx);
+        parameterIx++;
+        stratInfo.m_tphInfo.m_useSharedColumns = stmt->IsColumnNull(parameterIx) ? false : stmt->GetValueInt(parameterIx) != 0;
+        parameterIx++;
+        stratInfo.m_tphInfo.m_sharedColumnCount = stmt->IsColumnNull(parameterIx) ? -1 : stmt->GetValueInt(parameterIx);
+        parameterIx++;
+        if (!stmt->IsColumnNull(parameterIx))
+            stratInfo.m_tphInfo.m_excessColumnName.assign(stmt->GetValueText(parameterIx));
+
+        parameterIx++;
+        stratInfo.m_tphInfo.m_joinedTableInfo = stmt->IsColumnNull(parameterIx) ? MapStrategyInfo::JoinedTableInfo::None : (MapStrategyInfo::JoinedTableInfo) stmt->GetValueInt(parameterIx);
         return true;
         }
 

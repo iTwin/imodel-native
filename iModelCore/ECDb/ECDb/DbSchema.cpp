@@ -1500,7 +1500,7 @@ PropertyDbMapping::Path* DbMappings::CreatePropertyPath(ECN::ECPropertyId rootPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy mapStrategy, TablePerHierarchyInfo const& tphInfo, ClassMapId baseClassMapId)
+ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classId, MapStrategyExtendedInfo const& mapStrategy, ClassMapId baseClassMapId)
     {
     if (m_classMappings.find(id) != m_classMappings.end())
         {
@@ -1508,7 +1508,7 @@ ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classI
         return nullptr;
         }
 
-    std::unique_ptr<ClassDbMapping> cm(new ClassDbMapping(*this, id, classId, mapStrategy, tphInfo, baseClassMapId));
+    std::unique_ptr<ClassDbMapping> cm(new ClassDbMapping(*this, id, classId, mapStrategy, baseClassMapId));
     ClassDbMapping* cmP = cm.get();
 
     std::vector<ClassDbMapping const*>& vect = m_classMappingsByClassId[classId];
@@ -1524,7 +1524,7 @@ ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy mapStrategy, TablePerHierarchyInfo const& tphInfo, ClassMapId baseClassMapId)
+ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, MapStrategyExtendedInfo const& mapStrategy, ClassMapId baseClassMapId)
     {
     BeAssert(!baseClassMapId.IsValid()|| FindClassMapping(baseClassMapId) != nullptr);
 
@@ -1535,7 +1535,7 @@ ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, ECDbMapSt
         return nullptr;
         }
 
-    return AddClassMapping(ClassMapId(id.GetValue()), classId, mapStrategy, tphInfo, baseClassMapId);
+    return AddClassMapping(ClassMapId(id.GetValue()), classId, mapStrategy, baseClassMapId);
     }
 
 //---------------------------------------------------------------------------------------

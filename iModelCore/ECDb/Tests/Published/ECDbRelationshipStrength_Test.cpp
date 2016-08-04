@@ -632,11 +632,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
         }
 
     //1-1............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooOwnsGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnsGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnsGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooOwnsGoo", fooKeys, gooKeys, FooOwnsGooResult, count_FooOwnsGoo);
     }
@@ -645,8 +645,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     //1-N............................
     size_t count_FooOwnsManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnsManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnsManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooOwnsManyGoo", fooKeys, gooKeys, FooOwnsManyGooResult, count_FooOwnsManyGoo);
     }
@@ -728,11 +728,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
         }
 
     //1-1...........................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooOwnedByGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnedByGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnedByGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooOwnedByGoo", fooKeys, gooKeys, FooOwnedByGooResult, count_FooOwnedByGoo);
     }
@@ -741,8 +741,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     //1-N..........................
     size_t count_FooOwnedByManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnedByManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooOwnedByManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooOwnedByManyGoo", fooKeys, gooKeys, FooOwnedByManyGooResult, count_FooOwnedByManyGoo);
     }
@@ -829,11 +829,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
         }
 
     //1-1............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooHasGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHasGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHasGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHasGoo", fooKeys, gooKeys, FooOwnsGooResult, count_FooHasGoo);
     }
@@ -842,8 +842,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
     //1-N...........................
     size_t count_FooHasManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHasManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHasManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHasManyGoo", fooKeys, gooKeys, FooOwnsManyGooResult, count_FooHasManyGoo);
     }
@@ -852,8 +852,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
     //N-N...........................
     size_t count_ManyFoohaveManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFoohaveManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFoohaveManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.ManyFoohaveManyGoo", fooKeys, gooKeys, ManyFooOwnManyGooResult, count_ManyFoohaveManyGoo);
     }
@@ -967,11 +967,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
         }
 
     //1-1............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_GooHasFoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("GooHasFoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("GooHasFoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.GooHasFoo", fooKeys, gooKeys, GooOwnsFooResult, count_GooHasFoo);
     }
@@ -980,8 +980,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     //1-N...........................
     size_t count_GooHasManyFoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("GooHasManyFoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("GooHasManyFoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.GooHasManyFoo", fooKeys, gooKeys, GooOwnsManyFooResult, count_GooHasManyFoo);
     }
@@ -990,8 +990,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     //N-N...........................
     size_t count_ManyGooHaveManyFoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("ManyGooHaveManyFoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("ManyGooHaveManyFoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.ManyGooHaveManyFoo", fooKeys, gooKeys, ManyGooOwnManyFooResult, count_ManyGooHaveManyFoo);
     }
@@ -1092,11 +1092,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
         }
 
     //1-1............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooHoldsGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldsGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldsGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHoldsGoo", fooKeys, gooKeys, FooHoldsGooResult, count_FooHoldsGoo);
     }
@@ -1185,11 +1185,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
         }
 
     //1-N............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooHoldManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHoldManyGoo", fooKeys, gooKeys, FooHoldsManyGooResult, count_FooHoldManyGoo);
     }
@@ -1290,11 +1290,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
         }
 
     //1-1............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooHoldsGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldsGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldsGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHoldsGoo", fooKeys, gooKeys, FooHoldsGooResult, count_FooHoldsGoo);
     }
@@ -1303,8 +1303,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     //1-N............................
     size_t count_FooHoldManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHoldManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHoldManyGoo", fooKeys, gooKeys, FooHoldsManyGooResult, count_FooHoldManyGoo);
     }
@@ -1313,8 +1313,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     //N-N...........................
     size_t count_ManyFooHoldManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFooHoldManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFooHoldManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.ManyFooHoldManyGoo", fooKeys, gooKeys, ManyFooHoldManyGooResult, count_ManyFooHoldManyGoo);
     }
@@ -1425,11 +1425,11 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
         }
 
     //1-1............................
-    PersistedMapStrategy mapStrategy;
+    MapStrategyInfo mapStrategy;
     size_t count_FooHeldByGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHeldByGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHeldByGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHeldByGoo", fooKeys, gooKeys, fooHeldByGooResult, count_FooHeldByGoo);
     }
@@ -1438,8 +1438,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     //1-N...........................
     size_t count_FooHeldByManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("FooHeldByManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("FooHeldByManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInSourceTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.FooHeldByManyGoo", fooKeys, gooKeys, fooHeldByManyGooResult, count_FooHeldByManyGoo);
     }
@@ -1448,8 +1448,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     //N-N...........................
     size_t count_ManyFooHeldByManyGoo = 0;
     {
-    ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFooHeldByManyGoo")));
-    ASSERT_EQ(PersistedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, GetRelationShipClassId("ManyFooHeldByManyGoo")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, mapStrategy.m_strategy);
 
     InsertRelationshipInstances("ts.ManyFooHeldByManyGoo", fooKeys, gooKeys, manyFooHeldByManyGoo, count_ManyFooHeldByManyGoo);
     }

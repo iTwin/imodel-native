@@ -12,55 +12,31 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                08/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
-    {
-    if (ECDbMapCustomAttributeHelper::TryGetClassMap(m_classMapCA, ecClass))
-        {
-        Utf8String mapStrategyStr;
-        if (ECObjectsStatus::Success != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
-            return ERROR;
-
-        if (mapStrategyStr.empty())
-            m_mapStrategy = ECDbMapStrategyHelper::DEFAULT;
-        else
-            {
-            if (SUCCESS != TryParse(m_mapStrategy, mapStrategyStr.c_str(), ecClass))
-                return ERROR;
-            }
-        }
-
-    ECDbMapCustomAttributeHelper::TryGetShareColumns(m_shareColumnsCA, ecClass);
-
-    m_hasJoinedTablePerDirectSubclassOption = ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ecClass);
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                06/2015
+// @bsimethod                                 Krischan.Eberle              06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ClassMappingCACache::TryParse(ECDbMapStrategy& mapStrategy, Utf8CP mapStrategyStr, ECClassCR ecClass)
+Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
     {
-    if (BeStringUtilities::StricmpAscii(mapStrategyStr, "OwnTable") == 0)
-        mapStrategy = ECDbMapStrategy::OwnTable;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "NotMapped") == 0)
-        mapStrategy = ECDbMapStrategy::NotMapped;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "TablePerHierarchy") == 0)
-        mapStrategy = ECDbMapStrategy::TablePerHierarchy;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "SharedTable") == 0)
-        mapStrategy = ECDbMapStrategy::SharedTable;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "ExistingTable") == 0)
-        mapStrategy = ECDbMapStrategy::ExistingTable;
-    else
+    switch (strategy)
         {
-        LOG.errorv("ECClass '%s' has a ClassMap custom attribute with an invalid value for MapStrategy: %s.", ecClass.GetFullName(), mapStrategyStr);
-        return ERROR;
+            case MapStrategy::ExistingTable:
+                return "ExistingTable";
+            case MapStrategy::ForeignKeyRelationshipInSourceTable:
+                return "ForeignKeyRelationshipInSourceTable";
+            case MapStrategy::ForeignKeyRelationshipInTargetTable:
+                return "ForeignKeyRelationshipInTargetTable";
+            case MapStrategy::NotMapped:
+                return "NotMapped";
+            case MapStrategy::OwnTable:
+                return "OwnTable";
+            case MapStrategy::SharedTable:
+                return "SharedTable";
+            case MapStrategy::TablePerHierarchy:
+                return "TablePerHierarchy";
+            default:
+                BeAssert(false && "Unhandled value for ECDbMapStrategy in ToString");
+                return nullptr;
         }
-
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------
@@ -71,7 +47,11 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
     if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseClassShareColumnsCA, ecClass, issues))
         return ERROR;
 
-    return DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseClassJoinedTableInfo, ecClass, issues);
+    if (SUCCESS != DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseClassJoinedTableInfo, ecClass, issues))
+        return ERROR;
+
+    m_isValid = true;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------
@@ -80,8 +60,8 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
 BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns const& shareColumnsCA, ShareColumns const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
     {
     //first check whether column sharing is inherited from base class.
-    m_isSharedColumns = baseClassShareColumnsCA != nullptr && baseClassShareColumnsCA->IsValid();
-    if (m_isSharedColumns)
+    m_useSharedColumns = baseClassShareColumnsCA != nullptr && baseClassShareColumnsCA->IsValid();
+    if (m_useSharedColumns)
         {
         if (shareColumnsCA.IsValid())
             {
@@ -108,7 +88,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         if (ECObjectsStatus::Success != shareColumnsCA.TryGetApplyToSubclassesOnly(applyToSubclassesOnly))
             return ERROR;
 
-        m_isSharedColumns = !applyToSubclassesOnly;
+        m_useSharedColumns = !applyToSubclassesOnly;
         }
 
     return SUCCESS;
@@ -141,32 +121,57 @@ BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTabl
     return SUCCESS;
     }
 
+
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle              06/2015
+// @bsimethod                                 Krischan.Eberle                08/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
+    {
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(m_classMapCA, ecClass))
+        {
+        Utf8String mapStrategyStr;
+        if (ECObjectsStatus::Success != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
+            return ERROR;
+
+        if (mapStrategyStr.empty())
+            m_mapStrategyExtInfo = MapStrategyExtendedInfo::DEFAULT;
+        else
+            {
+            if (SUCCESS != TryParse(m_mapStrategyExtInfo, mapStrategyStr.c_str(), ecClass))
+                return ERROR;
+            }
+        }
+
+    ECDbMapCustomAttributeHelper::TryGetShareColumns(m_shareColumnsCA, ecClass);
+
+    m_hasJoinedTablePerDirectSubclassOption = ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ecClass);
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP ECDbMapStrategyHelper::ToString(ECDbMapStrategy strategy)
+BentleyStatus ClassMappingCACache::TryParse(MapStrategy& mapStrategy, Utf8CP mapStrategyStr, ECClassCR ecClass)
     {
-    switch (strategy)
+    if (BeStringUtilities::StricmpAscii(mapStrategyStr, "OwnTable") == 0)
+        mapStrategy = MapStrategy::OwnTable;
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "NotMapped") == 0)
+        mapStrategy = MapStrategy::NotMapped;
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "TablePerHierarchy") == 0)
+        mapStrategy = MapStrategy::TablePerHierarchy;
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "SharedTable") == 0)
+        mapStrategy = MapStrategy::SharedTable;
+    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "ExistingTable") == 0)
+        mapStrategy = MapStrategy::ExistingTable;
+    else
         {
-            case ECDbMapStrategy::ExistingTable:
-                return "ExistingTable";
-            case ECDbMapStrategy::ForeignKeyRelationshipInSourceTable:
-                return "ForeignKeyRelationshipInSourceTable";
-            case ECDbMapStrategy::ForeignKeyRelationshipInTargetTable:
-                return "ForeignKeyRelationshipInTargetTable";
-            case ECDbMapStrategy::NotMapped:
-                return "NotMapped";
-            case ECDbMapStrategy::OwnTable:
-                return "OwnTable";
-            case ECDbMapStrategy::SharedTable:
-                return "SharedTable";
-            case ECDbMapStrategy::TablePerHierarchy:
-                return "TablePerHierarchy";
-            default:
-                BeAssert(false && "Unhandled value for ECDbMapStrategy in ToString");
-                return nullptr;
+        LOG.errorv("ECClass '%s' has a ClassMap custom attribute with an invalid value for MapStrategy: %s.", ecClass.GetFullName(), mapStrategyStr);
+        return ERROR;
         }
+
+    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

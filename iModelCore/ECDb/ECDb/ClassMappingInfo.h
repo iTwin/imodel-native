@@ -55,14 +55,13 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    bool m_isMapToVirtualTable;
+    bool m_mapsToVirtualTable;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
 
 protected:
     ECDbMap const& m_ecdbMap;
     ECN::ECClassCR m_ecClass;
-    ECDbMapStrategy m_mapStrategy;
-    TablePerHierarchyInfo m_tablePerHierarchyInfo;
+    MapStrategyExtendedInfo m_mapStrategyExtInfo;
 
     ClassMap const* m_baseClassMap;
 
@@ -77,7 +76,7 @@ protected:
     virtual BentleyStatus _InitializeFromSchema();
 
     BentleyStatus EvaluateTablePerHierarchyMapStrategy(ClassMap const& baseClassMap, ClassMappingCACache const&);
-    bool ValidateTablePerHierarchyChildStrategy(ECDbMapStrategy baseStrategy, ClassMappingCACache const&) const;
+    bool ValidateTablePerHierarchyChildStrategy(MapStrategyExtendedInfo const& baseStrategy, ClassMappingCACache const&) const;
     BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
 
     IssueReporter const& Issues() const;
@@ -89,8 +88,7 @@ public:
 
     MappingStatus Initialize();
 
-    ECDbMapStrategy GetMapStrategy () const { return m_mapStrategy; }
-    TablePerHierarchyInfo const& GetTablePerHierarchyInfo() const { BeAssert(m_mapStrategy == ECDbMapStrategy::TablePerHierarchy); return m_tablePerHierarchyInfo; }
+    MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
 
     ECDbMap const& GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
@@ -100,7 +98,7 @@ public:
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     ClassMap const* GetBaseClassMap () const { return m_baseClassMap; }
     //! Virtual tables are not persisted   
-    bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
+    bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }
     };
 
 
@@ -183,10 +181,10 @@ public:
     Cardinality GetCardinality() const { return m_cardinality; }
 
     CustomMapType GetCustomMapType() const { return m_customMapType; }
-    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy)); return m_allowDuplicateRelationships; }
-    ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy));  return m_onDeleteAction; }
-    ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy)); return m_onUpdateAction; }
-    bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && ECDbMapStrategyHelper::IsForeignKeyMapping(m_mapStrategy)); return m_createIndexOnForeignKey; }
+    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_allowDuplicateRelationships; }
+    ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo));  return m_onDeleteAction; }
+    ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_onUpdateAction; }
+    bool CreateIndexOnForeignKey() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_createIndexOnForeignKey; }
 
     RelationshipEndColumns const& GetColumnsMapping(ECN::ECRelationshipEnd end) const;
     std::set<DbTable const*> const& GetSourceTables() const {return m_sourceTables;}

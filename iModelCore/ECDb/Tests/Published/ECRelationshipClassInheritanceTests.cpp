@@ -435,15 +435,15 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "</ECSchema>", true, "Subclass can have ClassMap CA for FK mapping if MapStrategy is set to NotMapped"),
                                "validrelinheritance.ecdb");
 
-            PersistedMapStrategy mapStrategy;
-            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
-            ASSERT_EQ(PersistedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
+            MapStrategyInfo mapStrategy;
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
-            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
-            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
             {
@@ -493,15 +493,15 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "</ECSchema>"),
                                "validrelinheritance.ecdb");
 
-            PersistedMapStrategy mapStrategy;
-            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
-            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            MapStrategyInfo mapStrategy;
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasElements")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
-            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
 
-            ASSERT_TRUE(TryGetPersistedMapStrategy(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
-            ASSERT_EQ(PersistedMapStrategy::Strategy::NotMapped, mapStrategy.m_strategy);
+            ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "ModelHasPhysicalElements2")->GetId()));
+            ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
             }
 
     }

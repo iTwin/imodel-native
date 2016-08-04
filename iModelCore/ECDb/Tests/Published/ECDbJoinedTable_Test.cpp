@@ -598,22 +598,22 @@ TEST_F(JoinedTableECDbMapStrategyTests, AcrossMultipleSchemaImports)
     AssertTableLayouts(ecdb, expectedTableLayouts, "JoinedTablePerDirectSubclass in base schema imported in separate session");
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
-    std::map<ECClassId, PersistedMapStrategy> expectedResults {
-            {ecdb.Schemas().GetECClassId("ReferredSchema","Base"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::ParentOfJoinedTable)},
-            {ecdb.Schemas().GetECClassId("ReferredSchema","Sub1"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::JoinedTable)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::JoinedTable)},
-            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), PersistedMapStrategy(PersistedMapStrategy::Strategy::TablePerHierarachy, PersistedMapStrategy::Options::JoinedTable)}
+    std::map<ECClassId, MapStrategyInfo> expectedResults {
+            {ecdb.Schemas().GetECClassId("ReferredSchema","Base"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::ParentOfJoinedTable)},
+            {ecdb.Schemas().GetECClassId("ReferredSchema","Sub1"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub2"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
+            {ecdb.Schemas().GetECClassId("TestSchema","Sub11"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)}
         };
 
-    for (std::pair<ECClassId, PersistedMapStrategy> const& kvPair : expectedResults)
+    for (std::pair<ECClassId, MapStrategyInfo> const& kvPair : expectedResults)
         {
         ECClassId classId = kvPair.first;
-        PersistedMapStrategy expectedMapStrategy = kvPair.second;
-        PersistedMapStrategy actualMapStrategy;
+        MapStrategyInfo const& expectedMapStrategy = kvPair.second;
+        MapStrategyInfo actualMapStrategy;
 
-        ASSERT_TRUE(TryGetPersistedMapStrategy(actualMapStrategy, ecdb, classId));
+        ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, ecdb, classId));
         ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
-        ASSERT_EQ(expectedMapStrategy.m_options, actualMapStrategy.m_options);
+        ASSERT_EQ(expectedMapStrategy.m_tphInfo, actualMapStrategy.m_tphInfo);
         }
     }
 
