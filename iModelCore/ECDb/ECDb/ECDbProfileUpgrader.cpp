@@ -601,8 +601,7 @@ DbResult ECDbProfileUpgrader_3711::_Upgrade(ECDbCR ecdb) const
     if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
                                         "Id INTEGER PRIMARY KEY,"
                                         "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                                        "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                                        "Level INTEGER NOT NULL)"))
+                                        "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)"))
         {
         LOG.errorv("ECDb profile upgrade failed: Creating table ec_ClassHierarchy failed: %s", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;

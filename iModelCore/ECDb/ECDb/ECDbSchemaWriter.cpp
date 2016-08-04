@@ -2213,13 +2213,13 @@ DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
         return r;
 
     r = ecdb.ExecuteSql("WITH RECURSIVE "
-                        "BaseClassList(ClassId, BaseClassId, Level) AS "
-                        "(SELECT Id, Id, 1 FROM ec_Class"
+                        "BaseClassList(ClassId, BaseClassId) AS "
+                        "(SELECT Id, Id FROM ec_Class"
                         " UNION"
-                        " SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1 FROM BaseClassList DCL"
+                        " SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
                         " INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
                         " ORDER BY 2)"
-                        " INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId, Level FROM BaseClassList");
+                        " INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
 
     if (r != BE_SQLITE_OK)
         return r;

@@ -546,8 +546,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "Level INTEGER NOT NULL)");
+                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
