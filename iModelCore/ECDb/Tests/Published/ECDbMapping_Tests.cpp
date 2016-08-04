@@ -1053,7 +1053,7 @@ TEST_F(ECDbMappingTestFixture, NotMappedCATests)
 
     MapStrategyInfo mapStrategy;
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Base")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::TablePerHierarachy, mapStrategy.m_strategy);
+    ASSERT_EQ((int) MapStrategyInfo::Strategy::TablePerHierarchy, (int) mapStrategy.m_strategy);
 
     ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, ecdb, ecdb.Schemas().GetECClass("Test", "Sub")->GetId()));
     ASSERT_EQ((int) MapStrategyInfo::Strategy::NotMapped, (int) mapStrategy.m_strategy);
