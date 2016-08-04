@@ -63,7 +63,6 @@ capture this information.
 #include <ECObjects/ECDBuffer.h>
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/StandaloneECRelationshipInstance.h>
-#include <ECObjects/ecprovider.h>
 #include <ECObjects/PresentationMetadataHelper.h>
 #include <ECObjects/StandardCustomAttributeHelper.h>
 #include <ECObjects/ECDiff.h>
