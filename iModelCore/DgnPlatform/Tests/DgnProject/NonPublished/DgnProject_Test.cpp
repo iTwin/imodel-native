@@ -454,7 +454,9 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     getPropertiesInTable(m_db, propertiesInTable);
     m_db->CloseDb();
     //Create package and open it for verification
-    BeFileName packageFile = DgnDbTestDgnManager::GetOutputFilePath(L"package.db");
+    BeFileName packageFile(testFile.GetDirectoryName());
+    packageFile.AppendToPath(L"package.db");
+
     CreateIModelParams createParams;
     createParams.SetOverwriteExisting(true);
     status =  DgnIModel::Create(packageFile, testFile, createParams);
