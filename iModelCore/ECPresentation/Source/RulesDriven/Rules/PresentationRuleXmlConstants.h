@@ -171,4 +171,4 @@
 
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                   "HiddenProperties"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                         "ClassName"
-#define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAME                      "PropertyName"
+#define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES                     "PropertyNames"

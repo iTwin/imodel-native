@@ -3,20 +3,20 @@
 
     <xs:element name="PresentationRuleSet">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="LocalizationResourceKeyDefinition"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="UserSettings"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="ImageIdOverride"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="LabelOverride"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="StyleOverride"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="GroupingRule"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="RenameNodeRule"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="CheckBoxRule"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="SortingRule"/>
-                <xs:element maxOccurs="unbounded" minOccurs="1" ref="RootNodeRule"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="ChildNodeRule"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="ContentRule"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="LocalizationResourceKeyDefinition"/>
+                <xs:element ref="UserSettings"/>
+                <xs:element ref="ImageIdOverride"/>
+                <xs:element ref="LabelOverride"/>
+                <xs:element ref="StyleOverride"/>
+                <xs:element ref="GroupingRule"/>
+                <xs:element ref="RenameNodeRule"/>
+                <xs:element ref="CheckBoxRule"/>
+                <xs:element ref="SortingRule"/>
+                <xs:element ref="RootNodeRule"/>
+                <xs:element ref="ChildNodeRule"/>
+                <xs:element ref="ContentRule"/>
+            </xs:choice>
             <xs:attribute name="RuleSetId" type="xs:string" use="required"/>
             <xs:attribute name="SupportedSchemas" type="xs:string"/>
             <xs:attribute default="false" name="IsSupplemental" type="xs:boolean"/>
@@ -60,10 +60,10 @@
     </xs:element>
     <xs:element name="UserSettings">
         <xs:complexType mixed="true">
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="UserSettingsItem" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="UserSettings" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="UserSettingsItem"/>
+                <xs:element ref="UserSettings"/>
+            </xs:choice>
             <xs:attribute name="CategoryLabel" type="xs:string"/>
         </xs:complexType>
     </xs:element>
@@ -86,42 +86,42 @@
     </xs:element>
     <xs:element name="SubCondition">
         <xs:complexType mixed="true">
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="SubCondition" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="AllInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="AllRelatedInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="CustomNode" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="InstancesOfSpecificClasses" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="SearchResultInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="RelatedInstances" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="SubCondition"/>
+                <xs:element ref="AllInstances"/>
+                <xs:element ref="AllRelatedInstances"/>
+                <xs:element ref="CustomNode"/>
+                <xs:element ref="InstancesOfSpecificClasses"/>
+                <xs:element ref="SearchResultInstances"/>
+                <xs:element ref="RelatedInstances"/>
+            </xs:choice>
             <xs:attribute name="Condition" type="xs:string" use="required"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="RootNodeRule">
         <xs:complexType mixed="true">
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="SubCondition" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="AllInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="CustomNode" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="InstancesOfSpecificClasses" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="SearchResultInstances" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="SubCondition"/>
+                <xs:element ref="AllInstances"/>
+                <xs:element ref="CustomNode"/>
+                <xs:element ref="InstancesOfSpecificClasses"/>
+                <xs:element ref="SearchResultInstances"/>
+            </xs:choice>
             <xs:attributeGroup ref="CommonRuleAttributes"/>
             <xs:attribute name="AutoExpand" type="xs:boolean" default="false"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="ChildNodeRule">
         <xs:complexType mixed="true">
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="SubCondition" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="AllInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="AllRelatedInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="CustomNode" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="InstancesOfSpecificClasses" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="SearchResultInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="RelatedInstances" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="SubCondition"/>
+                <xs:element ref="AllInstances"/>
+                <xs:element ref="AllRelatedInstances"/>
+                <xs:element ref="CustomNode"/>
+                <xs:element ref="InstancesOfSpecificClasses"/>
+                <xs:element ref="SearchResultInstances"/>
+                <xs:element ref="RelatedInstances"/>
+            </xs:choice>
             <xs:attributeGroup ref="CommonRuleAttributes"/>
             <xs:attribute default="MainTree" name="TargetTree">
                 <xs:simpleType>
@@ -137,26 +137,26 @@
     </xs:element>
     <xs:element name="GroupingRule">
         <xs:complexType mixed="true">
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="ClassGroup"    maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="PropertyGroup" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="SameLabelInstanceGroup" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="ClassGroup"/>
+                <xs:element ref="PropertyGroup"/>
+                <xs:element ref="SameLabelInstanceGroup"/>
+            </xs:choice>
             <xs:attributeGroup ref="CommonRuleAttributes"/>
             <xs:attribute name="SchemaName" type="xs:string" use="required"/>
             <xs:attribute name="ClassName" type="xs:string" use="required"/>
             <xs:attribute name="ContextMenuCondition" type="xs:string"/>
             <xs:attribute name="ContextMenuLabel" type="xs:string"/>
             <xs:attribute name="SettingsId" type="xs:string"/>
-        </xs:complexType>
+    </xs:complexType>
     </xs:element>
     <xs:element name="ContentRule">
         <xs:complexType mixed="true">
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="SelectedNodeInstances" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="ContentInstancesOfSpecificClasses" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="ContentRelatedInstances" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="SelectedNodeInstances"/>
+                <xs:element ref="ContentInstancesOfSpecificClasses"/>
+                <xs:element ref="ContentRelatedInstances"/>
+            </xs:choice>
             <xs:attributeGroup ref="CommonRuleAttributes"/>
             <xs:attribute name ="CustomControl" type="xs:string"/>
         </xs:complexType>
@@ -274,10 +274,10 @@
     </xs:element>
     <xs:element name="SearchResultInstances">
         <xs:complexType>
-            <xs:sequence maxOccurs="unbounded">
-                <xs:element ref="Query" maxOccurs="unbounded" minOccurs="0"/>
-                <xs:element ref="ChildNodeRule" maxOccurs="unbounded" minOccurs="0"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="Query"/>
+                <xs:element ref="ChildNodeRule"/>
+            </xs:choice>
             <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
             <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
             <xs:attribute default="false" name="DoNotSort" type="xs:boolean"/>
@@ -359,11 +359,11 @@
     </xs:element>
     <xs:element name="SelectedNodeInstances">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="DisplayRelatedItems"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="RelatedProperties"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="HiddenProperties"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="DisplayRelatedItems"/>
+                <xs:element ref="RelatedProperties"/>
+                <xs:element ref="HiddenProperties"/>
+            </xs:choice>
             <xs:attribute name="AcceptableSchemaName" type="xs:string"/>
             <xs:attribute name="AcceptableClassNames" type="xs:string"/>
             <xs:attribute name="AcceptablePolymorphically" type="xs:boolean" default="false"/>
@@ -374,11 +374,11 @@
     </xs:element>
     <xs:element name="ContentInstancesOfSpecificClasses">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="DisplayRelatedItems"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="RelatedProperties"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="HiddenProperties"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="DisplayRelatedItems"/>
+                <xs:element ref="RelatedProperties"/>
+                <xs:element ref="HiddenProperties"/>
+            </xs:choice>
             <xs:attribute default="false" name="ArePolymorphic" type="xs:boolean"/>
             <xs:attribute name="InstanceFilter" type="xs:string"/>
             <xs:attribute name="ClassNames" type="xs:string" use="required"/>
@@ -388,11 +388,11 @@
     </xs:element>
     <xs:element name="ContentRelatedInstances">
         <xs:complexType>
-            <xs:sequence>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="DisplayRelatedItems"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="RelatedProperties"/>
-                <xs:element maxOccurs="unbounded" minOccurs="0" ref="HiddenProperties"/>
-            </xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="DisplayRelatedItems"/>
+                <xs:element ref="RelatedProperties"/>
+                <xs:element ref="HiddenProperties"/>
+            </xs:choice>
             <xs:attribute name="InstanceFilter" type="xs:string"/>
             <xs:attribute name="RelationshipClassNames" type="xs:string"/>
             <xs:attribute name="RelatedClassNames" type="xs:string"/>
