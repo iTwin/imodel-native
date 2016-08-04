@@ -37,3 +37,7 @@ ECSchemaUpdateTests.Add_Delete_ECProperty_SharedColumns
 ECRelationshipInheritanceTestFixture.BasicCRUD
 ECSchemaUpdateTests.AddNewDerivedEndTableRelationship
 
+
+ECDbSchemaManagerTests.ImportSchemaWithReferenceToECDbMap10
+ECSchemaUpdateTests.ClassModifier
+

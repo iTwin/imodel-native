@@ -188,7 +188,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;
 
-    if (MappingStatus::Error == m_map.MapSchemas(context))
+   if (MappingStatus::Error == m_map.MapSchemas(context))
         return ERROR;
 
     //Drop all updatable/system  view which included trigger
@@ -303,9 +303,6 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
         {
-        if (BeTest::IsInitialized())                                    // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-            printf("!!!!!!!!!!!! Import schema %s\n", schema->GetName().c_str());    // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-
         if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
         }

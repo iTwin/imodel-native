@@ -70,7 +70,7 @@ public:
     explicit ECDbSchemaWriter(ECDbCR ecdb) : m_ecdb (ecdb)
         {
         m_customAttributeValidator.Accept("ECDbMap:ClassMap.Indexes.Name");
-        m_customAttributeValidator.Accept("ECDbMap:ClassMap.MapStrategy.MinimumSharedColumnCount");
+        m_customAttributeValidator.Accept("ECDbMap:ShareColumns.SharedColumnCount");
         m_customAttributeValidator.Reject("ECDbMap:*");
         }
 

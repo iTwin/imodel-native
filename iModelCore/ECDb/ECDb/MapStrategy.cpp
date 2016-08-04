@@ -42,12 +42,12 @@ Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumnsCA, ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, JoinedTableInfo const* baseClassJoinedTableInfo, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IssueReporter const& issues)
     {
-    if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseClassShareColumnsCA, ecClass, issues))
+    if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseMapStrategy, baseClassShareColumnsCA, ecClass, issues))
         return ERROR;
 
-    if (SUCCESS != DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseClassJoinedTableInfo, ecClass, issues))
+    if (SUCCESS != DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseMapStrategy, ecClass, issues))
         return ERROR;
 
     m_isValid = true;
@@ -57,11 +57,27 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns const& shareColumnsCA, ShareColumns const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
     {
     //first check whether column sharing is inherited from base class.
-    m_useSharedColumns = baseClassShareColumnsCA != nullptr && baseClassShareColumnsCA->IsValid();
-    if (m_useSharedColumns)
+    if (baseMapStrategy != nullptr && baseMapStrategy->GetTphInfo().UseSharedColumns())
+        {
+        if (shareColumnsCA.IsValid())
+            {
+            issues.Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. It defines the ShareColumns custom attribute, although one of its base classes has defined it already.",
+                          ecClass.GetFullName());
+
+            return ERROR;
+            }
+
+        m_useSharedColumns = true;
+        m_sharedColumnCount = baseMapStrategy->GetTphInfo().GetSharedColumnCount();
+        m_excessColumnName.assign(baseMapStrategy->GetTphInfo().GetExcessColumnName());
+        return SUCCESS;
+        }
+
+    //then check whether the base class CA indicates column sharing (if AppliesToSubclassesOnly the base class map strategy doesn't have column sharing yet)
+    if (baseClassShareColumnsCA != nullptr && baseClassShareColumnsCA->IsValid())
         {
         if (shareColumnsCA.IsValid())
             {
@@ -71,6 +87,7 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             return ERROR;
             }
 
+        m_useSharedColumns = true;
         if (ECObjectsStatus::Success != baseClassShareColumnsCA->TryGetSharedColumnCount(m_sharedColumnCount))
             return ERROR;
 
@@ -89,6 +106,15 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
             return ERROR;
 
         m_useSharedColumns = !applyToSubclassesOnly;
+
+        if (m_useSharedColumns)
+            {
+            if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCount(m_sharedColumnCount))
+                return ERROR;
+
+            if (ECObjectsStatus::Success != shareColumnsCA.TryGetExcessColumnName(m_excessColumnName))
+                return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -97,9 +123,9 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, JoinedTableInfo const* baseClassJoinedTableInfo, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECClassCR ecClass, IssueReporter const& issues)
     {
-    if (baseClassJoinedTableInfo != nullptr && *baseClassJoinedTableInfo != JoinedTableInfo::None)
+    if (baseMapStrategy != nullptr && baseMapStrategy->GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
         {
         if (hasJoinedTablePerDirectSubclassOption)
             {
@@ -134,11 +160,18 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
             return ERROR;
 
         if (mapStrategyStr.empty())
-            m_mapStrategyExtInfo = MapStrategyExtendedInfo::DEFAULT;
+            {
+            m_hasMapStrategy = false;
+            //only set this to default in case using code calls GetStrategy without
+            //checking for m_hasMapStrategy
+            m_mapStrategy = MapStrategyExtendedInfo::DEFAULT; 
+            }
         else
             {
-            if (SUCCESS != TryParse(m_mapStrategyExtInfo, mapStrategyStr.c_str(), ecClass))
+            if (SUCCESS != TryParse(m_mapStrategy, mapStrategyStr.c_str(), ecClass))
                 return ERROR;
+
+            m_hasMapStrategy = true;
             }
         }
 

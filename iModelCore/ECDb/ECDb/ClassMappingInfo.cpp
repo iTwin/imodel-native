@@ -121,9 +121,9 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
         {
         if (m_mapsToVirtualTable) // abstract class
             {
-            if (caCache.GetStrategy() == MapStrategy::ExistingTable ||
+            if (caCache.HasMapStrategy() && (caCache.GetStrategy() == MapStrategy::ExistingTable ||
                 caCache.GetStrategy() == MapStrategy::OwnTable ||
-                caCache.GetStrategy() == MapStrategy::SharedTable)
+                caCache.GetStrategy() == MapStrategy::SharedTable))
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "Invalid MapStrategy '%s' on abstract ECClass '%s'. Only MapStrategies 'TablePerHierarchy' or 'NotMapped' are allowed on abstract classes.", MapStrategyExtendedInfo::ToString(caCache.GetStrategy()), m_ecClass.GetFullName());
                 return MappingStatus::Error;
@@ -146,7 +146,7 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
 
             case MapStrategy::NotMapped:
             {
-            if (caCache.HasClassMapCA())
+            if (caCache.HasMapStrategy())
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class's MapStrategy 'NotMapped'. "
                                 "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
@@ -180,7 +180,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
         return ERROR;
         }
 
-    if (caCache.HasClassMapCA() && caCache.GetStrategy() == MapStrategy::NotMapped)
+    if (caCache.HasMapStrategy() && caCache.GetStrategy() == MapStrategy::NotMapped)
         {
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
         return SUCCESS;
@@ -204,8 +204,8 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(ClassMap co
 
     JoinedTableInfo baseClassJoinedTableInfo = baseClassMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo();
     TablePerHierarchyInfo tphInfo;
-    if (SUCCESS != tphInfo.Initialize(caCache.GetShareColumnsCA(), &baseClassCACache->GetShareColumnsCA(),
-                                                  caCache.HasJoinedTablePerDirectSubclassOption(), &baseClassJoinedTableInfo, m_ecClass, Issues()))
+    if (SUCCESS != tphInfo.Initialize(caCache.GetShareColumnsCA(), &baseClassMap.GetMapStrategy(), &baseClassCACache->GetShareColumnsCA(),
+                                                  caCache.HasJoinedTablePerDirectSubclassOption(), m_ecClass, Issues()))
         return ERROR;
 
     if (tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable)
@@ -265,7 +265,7 @@ bool ClassMappingInfo::ValidateTablePerHierarchyChildStrategy(MapStrategyExtende
     {
     BeAssert(baseStrategy.GetStrategy() == MapStrategy::TablePerHierarchy && baseStrategy.GetTphInfo().IsValid());
 
-    if (caCache.HasClassMapCA())
+    if (caCache.HasMapStrategy())
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class MapStrategy 'TablePerHierarchy'. "
                         "For subclasses of a class with MapStrategy 'TablePerHierarchy': MapStrategy must be 'NotMapped' or unset.",
@@ -288,7 +288,7 @@ bool ClassMappingInfo::ValidateTablePerHierarchyChildStrategy(MapStrategyExtende
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassMappingInfo::AssignMapStrategy(ClassMappingCACache const& caCache)
     {
-    if (!caCache.GetClassMap().IsValid())
+    if (!caCache.HasMapStrategy())
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategyExtendedInfo::DEFAULT);
     else
         {
@@ -298,7 +298,7 @@ BentleyStatus ClassMappingInfo::AssignMapStrategy(ClassMappingCACache const& caC
         else
             {
             TablePerHierarchyInfo tphInfo;
-            if (SUCCESS != tphInfo.Initialize(caCache.GetShareColumnsCA(), nullptr, caCache.HasJoinedTablePerDirectSubclassOption(), nullptr,
+            if (SUCCESS != tphInfo.Initialize(caCache.GetShareColumnsCA(), nullptr, nullptr, caCache.HasJoinedTablePerDirectSubclassOption(),
                                               m_ecClass, Issues()))
                 return ERROR;
 
@@ -693,7 +693,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 
         if (baseStrategy == MapStrategy::NotMapped)
             {
-            if (caCache->HasClassMapCA())
+            if (caCache->HasMapStrategy())
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class's MapStrategy 'NotMapped'. "
                                 "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
@@ -712,7 +712,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return MappingStatus::Error;
             }
 
-        if (caCache->HasClassMapCA() && caCache->GetStrategy() == MapStrategy::NotMapped)
+        if (caCache->HasMapStrategy() && caCache->GetStrategy() == MapStrategy::NotMapped)
             {
             m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
             return MappingStatus::Success;
@@ -743,7 +743,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         }
 
     //no base class
-    if (caCache->HasClassMapCA() && caCache->GetStrategy() == MapStrategy::NotMapped)
+    if (caCache->HasMapStrategy() && caCache->GetStrategy() == MapStrategy::NotMapped)
         {
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
         return MappingStatus::Success;
@@ -801,7 +801,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
             return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache);
 
-        if (caCache.HasClassMapCA())
+        if (caCache.GetClassMap().IsValid())
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. ECRelationship subclasses may not define the ClassMap custom attribute.",
                             m_ecClass.GetFullName());
@@ -850,7 +850,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         }
 
 
-    if (caCache.HasClassMapCA())
+    if (caCache.GetClassMap().IsValid())
         return AssignMapStrategy(caCache);
 
     //sealed rel classes without base class get own table
@@ -875,7 +875,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
         return ERROR;
         }
 
-    if (caCache.HasClassMapCA())
+    if (caCache.GetClassMap().IsValid())
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It implies the ForeignKey type mapping, but also has the ClassMap custom attribute. ForeignKey type mappings can only have the ClassMap custom attribute when the MapStrategy is set to 'NotMapped'.",
                         m_ecClass.GetFullName());

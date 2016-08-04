@@ -191,7 +191,7 @@ TEST_F(JoinedTableECDbMapStrategyTests, TableLayout)
         Utf8String ecdbName;
         ecdbName.Sprintf("joinedtablemapstrategy_%s.ecdb", testItem.m_testSchema.m_name.c_str());
         ECDbR ecdb = SetupECDb(ecdbName.c_str(), testItem.m_testSchema);
-        ASSERT_TRUE(ecdb.IsDbOpen());
+        ASSERT_TRUE(ecdb.IsDbOpen()) << testItem.m_testSchema.m_name;
 
         AssertTableLayouts(ecdb, testItem.m_expectedTableLayout, testItem.m_testSchema.m_name.c_str());
         ecdb.CloseDb();

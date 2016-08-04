@@ -2306,7 +2306,6 @@ TEST_F(ECSchemaUpdateTests, MinimumSharedColumnsCountWithJoinedTable_AddProperty
         "   <ECEntityClass typeName='Parent' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
         "         </ClassMap>"
         "         <ShareColumns xmlns='ECDbMap.02.00'>"

@@ -36,6 +36,8 @@ enum class JoinedTableInfo
     ParentOfJoinedTable = 2
     };
 
+struct MapStrategyExtendedInfo;
+
 //======================================================================================
 // @bsiclass                                Krischan.Eberle                08/2016
 //+===============+===============+===============+===============+===============+=====
@@ -48,8 +50,8 @@ struct TablePerHierarchyInfo
         Utf8String m_excessColumnName;
         JoinedTableInfo m_joinedTableInfo;
 
-        BentleyStatus DetermineSharedColumnsInfo(ECN::ShareColumns const&, ECN::ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
-        BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, JoinedTableInfo const* baseClassJoinedTableInfo, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus DetermineSharedColumnsInfo(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
 
     public:
         TablePerHierarchyInfo() : TablePerHierarchyInfo(false) {}
@@ -58,7 +60,7 @@ struct TablePerHierarchyInfo
             : m_isValid(true), m_useSharedColumns(isSharedColumns), m_sharedColumnCount(sharedColumnCount), m_excessColumnName(excessColName), m_joinedTableInfo(joinedTableInfo)
             {}
 
-        BentleyStatus Initialize(ECN::ShareColumns const&, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, JoinedTableInfo const* baseClassJoinedTableInfo, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus Initialize(ECN::ShareColumns const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
 
         //!@return true if the respective MapStrategy is TablePerHierarchy. false if MapStrategy is not TablePerHierarchy
         bool IsValid() const { return m_isValid; }
@@ -106,21 +108,22 @@ struct ClassMappingCACache
     {
 private:
     ECN::ECDbClassMap m_classMapCA;
-    MapStrategy m_mapStrategyExtInfo;
+    bool m_hasMapStrategy;
+    MapStrategy m_mapStrategy;
     ECN::ShareColumns m_shareColumnsCA;
     bool m_hasJoinedTablePerDirectSubclassOption;
 
     static BentleyStatus TryParse(MapStrategy&, Utf8CP str, ECN::ECClassCR);
 
 public:
-    ClassMappingCACache() : m_mapStrategyExtInfo(MapStrategy::NotMapped), m_hasJoinedTablePerDirectSubclassOption(false) {}
+    ClassMappingCACache() : m_hasMapStrategy(false), m_mapStrategy(MapStrategy::NotMapped), m_hasJoinedTablePerDirectSubclassOption(false) {}
     BentleyStatus Initialize(ECN::ECClassCR);
 
     ~ClassMappingCACache() {}
 
-    bool HasClassMapCA() const { return m_classMapCA.IsValid(); }
+    bool HasMapStrategy() const { return m_hasMapStrategy; }
     ECN::ECDbClassMap const& GetClassMap() const { return m_classMapCA; }
-    MapStrategy GetStrategy() const { return m_mapStrategyExtInfo; }
+    MapStrategy GetStrategy() const { return m_mapStrategy; }
     ECN::ShareColumns const& GetShareColumnsCA() const { return m_shareColumnsCA; }
     bool HasJoinedTablePerDirectSubclassOption() const { return m_hasJoinedTablePerDirectSubclassOption; }
     };

@@ -555,8 +555,8 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)
             SchemaItem testSchema(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "            <SchemaMap xmlns='ECDbMap.02.00'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "            <SchemaMap xmlns='ECDbMap.01.00'>"
                 "                <TablePrefix>mytables_</TablePrefix>"
                 "            </SchemaMap>"
                 "</ECSchema>");
@@ -580,6 +580,10 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)
                     ASSERT_EQ(CustomAttributeContainerType::Schema, actualType);
                 else if (BeStringUtilities::StricmpAscii(caClassName, "ClassMap") == 0)
                     ASSERT_EQ(CustomAttributeContainerType::EntityClass | CustomAttributeContainerType::RelationshipClass, actualType);
+                else if (BeStringUtilities::StricmpAscii(caClassName, "ShareColumns") == 0)
+                    ASSERT_EQ(CustomAttributeContainerType::EntityClass | CustomAttributeContainerType::RelationshipClass, actualType);
+                else if (BeStringUtilities::StricmpAscii(caClassName, "JoinedTablePerDirectSubclass") == 0)
+                    ASSERT_EQ(CustomAttributeContainerType::EntityClass, actualType);
                 else if (BeStringUtilities::StricmpAscii(caClassName, "PropertyMap") == 0)
                     ASSERT_EQ(CustomAttributeContainerType::PrimitiveProperty, actualType);
                 else if (BeStringUtilities::StricmpAscii(caClassName, "LinkTableRelationshipMap") == 0 ||
@@ -596,10 +600,10 @@ TEST_F(ECDbSchemaManagerTests, ImportSchemaWithReferenceToECDbMap10)
             SchemaItem testSchema(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='ClassA'>"
                 "        <ECCustomAttributes>"
-                "            <SchemaMap xmlns='ECDbMap.02.00'>"
+                "            <SchemaMap xmlns='ECDbMap.01.00'>"
                 "                <TablePrefix>mytables_</TablePrefix>"
                 "            </SchemaMap>"
                 "        </ECCustomAttributes>"

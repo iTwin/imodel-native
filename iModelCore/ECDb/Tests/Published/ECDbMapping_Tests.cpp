@@ -1431,7 +1431,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Defining SharedColumns in subclass is expected to work"));
+        "</ECSchema>", false, "Defining ShareColumns in subclass is expected to fail"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1462,7 +1462,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Option SharedColumnsForSubclasses is only allowed on subclass if base classes haven't defined shared columns yet."));
+        "</ECSchema>", false, "Defining ShareColumns in subclass is expected to fail"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1492,7 +1492,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "Option SharedColumnsForSubclasses is allowed on subclass as base classes haven't defined shared columns yet."));
+        "</ECSchema>", false, "Defining ShareColumns in subclass is expected to fail"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1518,7 +1518,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
         "        <BaseClass>Sub1</BaseClass>"
         "        <ECProperty propertyName='Diameter' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true, "MinimumSharedColumnCount can be defined for SharedColumnsForSubclasses"));
+        "</ECSchema>", true, "MSharedColumnCount can be defined for ShareColumns"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
