@@ -81,6 +81,9 @@ always:
     exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
 
     always:
+        >$(ResultsCapture)
+        $(exeName)
+        <
         -$(exeName) | tee -a $(ResultsCapture)
 
 %endif
