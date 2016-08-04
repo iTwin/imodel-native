@@ -1133,15 +1133,13 @@ DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
         )
         return nullptr;
 
-	Json::ValueConstIterator itr;
-
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
     //rapidjson::Value::ConstValueIterator itr;
     /*for (itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].Begin();
          itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].End(); ++itr)
          eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName(itr->GetString()));*/
 
-	for (itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
+	for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
 		itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
 		eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
 

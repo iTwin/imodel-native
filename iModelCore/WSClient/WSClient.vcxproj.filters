@@ -432,12 +432,6 @@
     <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerLockEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -453,13 +447,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerEventParser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSAS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp">
@@ -468,10 +456,22 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerCodeEvent.cpp">
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerCodeEvent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DgnDbServerClient\DgnDbServerDeletedEvent.cpp">
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerDeletedEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEventParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerLockEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerRevisionEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1061,13 +1061,13 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSAS.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1121,5 +1121,6 @@
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
     <None Include=".hgignore" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

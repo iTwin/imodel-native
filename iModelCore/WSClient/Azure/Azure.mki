@@ -23,4 +23,4 @@ $(o)AzureBlobStorageClient$(oext)           : $(AzureMkiSourceDir)AzureBlobStora
 
 $(o)EventServiceClient$(oext)           : $(AzureMkiSourceDir)EventServiceClient.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
 
-$(o)AzureServiceBusSASDTO(oext)           : $(AzureMkiSourceDir)AzureServiceBusSASDTO.cpp $(AzureMkiHeaders) ${MultiCompileDepends}
+$(o)AzureServiceBusSASDTO$(oext)           : $(AzureMkiSourceDir)AzureServiceBusSASDTO.cpp $(AzureMkiHeaders) ${MultiCompileDepends}

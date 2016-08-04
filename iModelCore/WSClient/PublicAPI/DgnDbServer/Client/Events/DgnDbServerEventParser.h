@@ -9,8 +9,6 @@
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/Events/DgnDbServerEvent.h>
-#include <DgnDbServer/Client/DgnDbServerEventSubscription.h>
-#include <DgnDbServer/Client/DgnDbServerEventSAS.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
