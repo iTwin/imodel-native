@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMSideSlopeInput.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -13,7 +13,10 @@
 #include ".\Bentley.Civil.DTM.h"
 #include ".\dtm.h"
 #include ".\dtmexception.h"
+#include "TerrainModel\TerrainModel.h"
 #include "TerrainModel\Core\bcdtmSideSlope.h"
+#include "TerrainModel\Core\TMTransformHelper.h"
+
 BEGIN_BENTLEY_TERRAINMODELNET_NAMESPACE
 
 
@@ -36,7 +39,7 @@ BC_DTM_OBJ* **dtmSideSlopesPP,
 long *numberOfDtmSideSlopesP
 )
     {
-    int status = bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject (sideSlopeTablePP, sideSlopeTableSizeP, sideSlopeDirection, slopeTableP, slopeTableSize, cornerOption, strokeCornerOption, cornerStrokeTolerance, p2pTol, (DPoint3d *)parallelEdgePtsP, numParallelEdgePts, userRadialTag, userElementTag, dtmSideSlopesPP, numberOfDtmSideSlopesP);
+    int status = bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject(sideSlopeTablePP, sideSlopeTableSizeP, sideSlopeDirection, slopeTableP, slopeTableSize, cornerOption, strokeCornerOption, cornerStrokeTolerance, p2pTol, (DPoint3d *)parallelEdgePtsP, numParallelEdgePts, userRadialTag, userElementTag, dtmSideSlopesPP, numberOfDtmSideSlopesP);
     if (status) return DTM_ERROR;
     else         return DTM_SUCCESS;
     return DTM_ERROR;
@@ -314,6 +317,16 @@ void DTMSideSlopeInput::RemovePoint (DTMSideSlopeInputPoint^ sideSlopePoint)
     }
 
 //=======================================================================================
+// @bsimethod                                            Vince.Unrau      08/2016
+//+===============+===============+===============+===============+===============+======
+TMTransformHelper* DTMSideSlopeInput::GetTMTransformHelper()
+    {
+    DTMSideSlopeInputPoint^ pt = dynamic_cast<DTMSideSlopeInputPoint^>(InnerList[0]);
+    TMTransformHelper *transformHelperP = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer())->GetTransformHelper();
+    return transformHelperP;
+    }
+
+//=======================================================================================
 // @bsimethod                                            Sylvain.Pucci      10/2005
 //+===============+===============+===============+===============+===============+======
 DTM_SIDE_SLOPE_TABLE* DTMSideSlopeInput::CreateSideSlopeInputTable ()
@@ -327,28 +340,46 @@ DTM_SIDE_SLOPE_TABLE* DTMSideSlopeInput::CreateSideSlopeInputTable ()
     // Load all the values
     for (int i = 0; i < numPnts; i++)
         {
+        DPoint3d nativePoint;
         DTMSideSlopeInputPoint^ pt = dynamic_cast<DTMSideSlopeInputPoint^>(InnerList[i]);
-        sideSlopeInputTableP[i].useSlopeTable = 0;
-        sideSlopeInputTableP[i].radialStartPoint.x = pt->StartPoint.X;
-        sideSlopeInputTableP[i].radialStartPoint.y = pt->StartPoint.Y;
-        sideSlopeInputTableP[i].radialStartPoint.z = pt->StartPoint.Z;
+        TMTransformHelper *transformHelperP = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer())->GetTransformHelper();
+        // Set the native point
+        nativePoint.x = pt->StartPoint.X;
+        nativePoint.y = pt->StartPoint.Y;
+        nativePoint.z = pt->StartPoint.Z;
+        if (transformHelperP != NULL)
+            transformHelperP->convertPointToDTM(nativePoint);
 
+        sideSlopeInputTableP[i].radialStartPoint = nativePoint;
+
+        sideSlopeInputTableP[i].useSlopeTable = 0;
         sideSlopeInputTableP[i].radialOption = (int)pt->RadialOption;
         sideSlopeInputTableP[i].sideSlopeOption = (int)pt->SideSlopeOption;
         if (pt->SlopeToDTM) sideSlopeInputTableP[i].slopeToTin = ((BcDTM*)pt->SlopeToDTM->ExternalHandle.ToPointer ())->GetTinHandle ();
 
-        sideSlopeInputTableP[i].toElev = pt->ToElevation;
-        sideSlopeInputTableP[i].toDeltaElev = pt->ToDeltaElevation;
-        sideSlopeInputTableP[i].toHorizOffset = pt->ToHorizontalDistance;
-
-        sideSlopeInputTableP[i].cutSlope = pt->CutSlope;
-        sideSlopeInputTableP[i].fillSlope = pt->FillSlope;
+        if (transformHelperP != NULL)
+            {
+            sideSlopeInputTableP[i].toElev = transformHelperP->convertElevationToDTM(pt->ToElevation);
+            sideSlopeInputTableP[i].toDeltaElev = transformHelperP->convertElevationToDTM(pt->ToDeltaElevation);
+            sideSlopeInputTableP[i].toHorizOffset = transformHelperP->convertDistanceToDTM(pt->ToHorizontalDistance);
+            sideSlopeInputTableP[i].cutSlope = transformHelperP->convertSlopeToDTM(pt->CutSlope);
+            sideSlopeInputTableP[i].fillSlope = transformHelperP->convertSlopeToDTM(pt->FillSlope);
+            sideSlopeInputTableP[i].forcedSlope = transformHelperP->convertSlopeToDTM(pt->ForcedSlope);
+            }
+        else
+            {
+            sideSlopeInputTableP[i].toElev = pt->ToElevation;
+            sideSlopeInputTableP[i].toDeltaElev = pt->ToDeltaElevation;
+            sideSlopeInputTableP[i].toHorizOffset = pt->ToHorizontalDistance;
+            sideSlopeInputTableP[i].cutSlope = pt->CutSlope;
+            sideSlopeInputTableP[i].fillSlope = pt->FillSlope;
+            sideSlopeInputTableP[i].forcedSlope = pt->ForcedSlope;
+            }
 
         sideSlopeInputTableP[i].cutFillOption = (int)pt->CutFillSlopeOption;
         if (pt->CutFillDTM) sideSlopeInputTableP[i].cutFillTin = ((BcDTM*)pt->CutFillDTM->ExternalHandle.ToPointer ())->GetTinHandle ();
-        //              sideSlopeInputTableP[i].useSlopeTable = 0; // Not used yet
+        sideSlopeInputTableP[i].useSlopeTable = 0; // Not used yet
         sideSlopeInputTableP[i].isForceSlope = pt->IsSlopeForced;
-        sideSlopeInputTableP[i].forcedSlope = pt->ForcedSlope;
 
         sideSlopeInputTableP[i].isRadialDir = 0; // Not used yet
         sideSlopeInputTableP[i].radialDir = 0.0; // Not used yet
@@ -375,15 +406,12 @@ DTM_SIDE_SLOPE_TABLE* DTMSideSlopeInput::CreateSideSlopeInputTable ()
 //+===============+===============+===============+===============+===============+======
 array<DTM^>^ DTMSideSlopeInput::CalculateSideSlopes ()
     {
-
     // Create Side Slope Table
-
-
     DTM_SIDE_SLOPE_TABLE* dtmSideSlopeInputTableP = CreateSideSlopeInputTable ();
     long sideSlopeTableSize = this->InnerList->Count;
-
+    // Get the target DTM
+    TMTransformHelper *transformHelperP = GetTMTransformHelper();
     // Get Slope Table For Assigning Side Slope Values
-
     DTM_SLOPE_TABLE* slopeTableP = NULL;
     long slopeTableSize = 0;
     if (m_slopeTable != nullptr)
@@ -395,14 +423,29 @@ array<DTM^>^ DTMSideSlopeInput::CalculateSideSlopes ()
             }
         }
 
-    // Initialise Other Side Slope Parameters
+    // Initialize Other Side Slope Parameters
 
     DPoint3d* parallelEdgePtsP = NULL;          // ==> Parallel Edge Points For Truncating Side Slope Radials
     long numParallelEdgePts = 0;                 // ==> Number Of Parallel Edge Points
     BC_DTM_OBJ* *dtmSideSlopesPP = NULL;         // <== Array Of Pointers To The Created Side Slope DTM Objects
     long numberOfDtmSideSlopes = 0;              // <== Size Of Array Of DTM Object Pointers
 
-    //  Call Core DTM Code
+     //  Call Core DTM Code
+    // Convert tolerances to DTM transform
+    double cornerStrokeTolearance = 1.0, pointToPointTolerance = 0.001;
+
+    if (transformHelperP != NULL)
+        {
+        double native_cornerStrokeTolearance = m_cornerStrokeTolearance;
+        double native_pointToPointTolerance = m_pointToPointTolerance;
+        cornerStrokeTolearance = transformHelperP->convertDistanceToDTM(native_cornerStrokeTolearance);
+        pointToPointTolerance = transformHelperP->convertDistanceToDTM(native_pointToPointTolerance);
+        }
+    else
+        {
+        cornerStrokeTolearance = m_cornerStrokeTolearance;
+        pointToPointTolerance = m_pointToPointTolerance;
+        }
 
     DTMException::CheckForErrorStatus (bcCalculateSideSlopes
                                        (
@@ -413,8 +456,8 @@ array<DTM^>^ DTMSideSlopeInput::CalculateSideSlopes ()
                                               slopeTableSize,
                                               (long)m_cornerOption,
                                               (long)(m_strokeCornerOption)-1,
-                                              m_cornerStrokeTolearance,
-                                              m_pointToPointTolerance,
+                                              cornerStrokeTolearance,
+                                              pointToPointTolerance,
                                               parallelEdgePtsP,
                                               numParallelEdgePts,
                                               m_breakLineUserTag,
@@ -425,7 +468,6 @@ array<DTM^>^ DTMSideSlopeInput::CalculateSideSlopes ()
                                               );
 
     //  Free Memory
-
     free (dtmSideSlopeInputTableP);
     dtmSideSlopeInputTableP = NULL;
 
@@ -434,7 +476,17 @@ array<DTM^>^ DTMSideSlopeInput::CalculateSideSlopes ()
         array<DTM^>^ dtmArray = gcnew array<DTM ^> (numberOfDtmSideSlopes);
         for (int n = 0; n < numberOfDtmSideSlopes; ++n)
             {
-            dtmArray[n] = DTM::FromNativeDtmHandle (System::IntPtr (dtmSideSlopesPP[n]));
+            BcDTMPtr bcDtmP = BcDTM::CreateFromDtmHandle(*dtmSideSlopesPP[n]);
+            if (transformHelperP != NULL)
+                {
+                Bentley::Transform transFormNative;
+                transformHelperP->GetTransformationFromDTM(transFormNative);
+                DTMPtr dtm = nullptr;
+                bcDtmP->GetTransformDTM(dtm, transFormNative);
+                dtmArray[n] = gcnew DTM(dtm->GetBcDTM());
+                }
+            else
+                dtmArray[n] = gcnew DTM(bcDtmP.get());
             }
         if (dtmSideSlopesPP != NULL)  free (dtmSideSlopesPP);
         return(dtmArray);
@@ -444,7 +496,6 @@ array<DTM^>^ DTMSideSlopeInput::CalculateSideSlopes ()
         if (dtmSideSlopesPP != NULL)  free (dtmSideSlopesPP);
         return(nullptr);
         }
-
     }
 
 //==================================================th=====================================
