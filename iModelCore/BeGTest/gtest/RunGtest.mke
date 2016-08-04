@@ -23,9 +23,8 @@ BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
 runDir=$[@realpath ${GTEST_OUTPUT_DIR}]/run/
 
 %if defined (BMAKE_DELETE_ALL_TARGETS)
-always:
-    $(rmdirRecursiveCmd) $(runDir)
-
+    always:
+        -$(rmdirRecursiveCmd) $(runDir)
     %return
 %endif
 
@@ -88,10 +87,13 @@ always:
 
 %message See $(ResultsCapture)
 
+BreakOnFailure = 0
 %if defined (BEGTEST_BREAK_ON_FAILURE)
-    always:
-        python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] 1
+    BreakOnFailure = 1
 %endif
+
+always:
+    python $(_makeFilePath)CheckLogfilesForFailures.py $[@dir $(ResultsCapture)] $(BreakOnFailure)
 
 always:
     ~linkfile "$(BuildContext)Delivery/Gtest/Logs/$(GTEST_LOGFILE_NAME)=$(ResultsCapture)"
