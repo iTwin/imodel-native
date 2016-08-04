@@ -2,27 +2,39 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f1ad9c49-4961-4de6-8ee7-546b79e6a4b7" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../CWSCCBuffer.cpp" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../CWSCCBuffer.h" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../IMSSearch/IMSSearch.cpp" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../IMSSearch/IMSSearchBuffer.cpp" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../IMSSearch/IMSSearchBuffer.h" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/IMSSearch/IMSSearchBufferPublic.h" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/IMSSearch/IMSSearchPublic.h" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/Published/WebServices/ConnectC/ConnectWebServicesClientCTests.cpp" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/Published/WebServices/ConnectC/ConnectWebServicesClientCTests.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/autoGenClasses.xlsx" afterPath="$PROJECT_DIR$/autoGenClasses.xlsx" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/BufferPublicHeaderWriter.py" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCC.cpp" afterPath="$PROJECT_DIR$/../../CWSCC.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCBufferGen.cpp" afterPath="$PROJECT_DIR$/../../CWSCCBufferGen.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCBufferGen.h" afterPath="$PROJECT_DIR$/../../CWSCCBufferGen.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCInternal.h" afterPath="$PROJECT_DIR$/../../CWSCCInternal.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../CWSCCPrivate.h" afterPath="$PROJECT_DIR$/../../CWSCCPrivate.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../ConnectC.mki" afterPath="$PROJECT_DIR$/../../ConnectC.mki" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../ConnectWsgGlobal/GlobalSchemaBufferGen.cpp" afterPath="$PROJECT_DIR$/../../ConnectWsgGlobal/GlobalSchemaBufferGen.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../ConnectWsgGlobal/GlobalSchemaBufferGen.h" afterPath="$PROJECT_DIR$/../../ConnectWsgGlobal/GlobalSchemaBufferGen.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../ConnectWsgGlobal/GlobalSchemaGen.cpp" afterPath="$PROJECT_DIR$/../../ConnectWsgGlobal/GlobalSchemaGen.cpp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml" afterPath="$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/BufferHeaderWriter.py" afterPath="$PROJECT_DIR$/BufferHeaderWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/BufferSourceWriter.py" afterPath="$PROJECT_DIR$/BufferSourceWriter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Generator.py" afterPath="$PROJECT_DIR$/Generator.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py" afterPath="$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py" afterPath="$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py" afterPath="$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py" afterPath="$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Writer.py" afterPath="$PROJECT_DIR$/Writer.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCBufferGenPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCBufferGenPublic.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCPublic.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaGenPublic.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj.filters" afterPath="$PROJECT_DIR$/../../../Tests/UnitTests/WSClientTests.vcxproj.filters" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../WSClient.PartFile.xml" afterPath="$PROJECT_DIR$/../../../WSClient.PartFile.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../WSClient.vcxproj" afterPath="$PROJECT_DIR$/../../../WSClient.vcxproj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../../WSClient.vcxproj.filters" afterPath="$PROJECT_DIR$/../../../WSClient.vcxproj.filters" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCBufferGenPublic.h" afterPath="$PROJECT_DIR$/../../../PublicAPI/WebServices/ConnectC/CWSCCBufferPublic.h" />
     </list>
     <ignored path="pyApiGen.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -43,39 +55,33 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file leaf-file-name="Generator.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Generator.py">
+      <file leaf-file-name="Api.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/Api.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="63" column="85" selection-start-line="63" selection-start-column="85" selection-end-line="63" selection-end-column="85" />
-              <folding>
-                <element signature="e#0#27#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="N~3AGlobalSchema.01.00.xml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="418">
-              <caret line="73" column="52" selection-start-line="73" selection-start-column="34" selection-end-line="73" selection-end-column="52" />
+            <state relative-caret-position="0">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ECClass.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py">
+      <file leaf-file-name="SchemaBufferPublicHeaderWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferPublicHeaderWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="273">
-              <caret line="484" column="51" selection-start-line="484" selection-start-column="8" selection-end-line="484" selection-end-column="51" />
+            <state relative-caret-position="0">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Generator.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Generator.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="309">
+              <caret line="133" column="53" selection-start-line="133" selection-start-column="53" selection-end-line="133" selection-end-column="53" />
               <folding>
-                <element signature="e#20750#21130#0" expanded="false" />
-                <element signature="e#21183#21295#0" expanded="false" />
-                <element signature="e#21352#24096#0" expanded="false" />
-                <element signature="e#37630#38160#0" expanded="false" />
-                <element signature="e#38219#38554#0" expanded="false" />
+                <element signature="e#0#27#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -84,28 +90,28 @@
       <file leaf-file-name="SchemaBufferHeaderWriter.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="462">
-              <caret line="130" column="80" selection-start-line="130" selection-start-column="41" selection-end-line="130" selection-end-column="80" />
+            <state relative-caret-position="220">
+              <caret line="33" column="48" selection-start-line="33" selection-start-column="48" selection-end-line="33" selection-end-column="48" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ECSchema.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py">
+      <file leaf-file-name="BufferSourceWriter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/BufferSourceWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="154">
-              <caret line="95" column="8" selection-start-line="95" selection-start-column="8" selection-end-line="95" selection-end-column="8" />
+            <state relative-caret-position="220">
+              <caret line="29" column="42" selection-start-line="29" selection-start-column="42" selection-end-line="29" selection-end-column="42" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="SchemaBufferSourceWriter.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py">
+      <file leaf-file-name="BufferHeaderWriter.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/BufferHeaderWriter.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="242">
-              <caret line="72" column="52" selection-start-line="72" selection-start-column="48" selection-end-line="72" selection-end-column="52" />
+            <state relative-caret-position="264">
+              <caret line="12" column="30" selection-start-line="12" selection-start-column="30" selection-end-line="12" selection-end-column="30" />
               <folding />
             </state>
           </provider>
@@ -114,18 +120,18 @@
       <file leaf-file-name="Writer.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Writer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="180" column="86" selection-start-line="180" selection-start-column="86" selection-end-line="180" selection-end-column="86" />
+            <state relative-caret-position="220">
+              <caret line="132" column="42" selection-start-line="132" selection-start-column="42" selection-end-line="132" selection-end-column="42" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="__init__.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/__init__.py">
+      <file leaf-file-name="ECClass.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="418">
+              <caret line="166" column="37" selection-start-line="166" selection-start-column="37" selection-end-line="166" selection-end-column="37" />
               <folding />
             </state>
           </provider>
@@ -139,12 +145,16 @@
         <option value="$PROJECT_DIR$/../pyApiGen/Helpers/CApiStruct.py" />
         <option value="$PROJECT_DIR$/../pyApiGen/Generator.py" />
         <option value="$PROJECT_DIR$/../pyApiGen/Writer.py" />
-        <option value="$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml" />
-        <option value="$PROJECT_DIR$/Writer.py" />
+        <option value="$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py" />
         <option value="$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py" />
+        <option value="$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml" />
+        <option value="$PROJECT_DIR$/BufferPublicHeaderWriter.py" />
+        <option value="$PROJECT_DIR$/Generator.py" />
+        <option value="$PROJECT_DIR$/BufferSourceWriter.py" />
+        <option value="$PROJECT_DIR$/Writer.py" />
         <option value="$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py" />
         <option value="$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py" />
-        <option value="$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py" />
+        <option value="$PROJECT_DIR$/BufferHeaderWriter.py" />
       </list>
     </option>
   </component>
@@ -179,7 +189,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
@@ -199,12 +208,45 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pyCApiGen" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pyCApiGen" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="SchemaWriter" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pyCApiGen" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pyCApiGen" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="SchemaWriter" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="HeaderWriters" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../pyApiGen" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="preferences.externalResources" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
   </component>
@@ -386,16 +428,16 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-9" y="-9" width="1938" height="1168" extended-state="6" />
+    <frame x="-9" y="-9" width="1938" height="1168" extended-state="7" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1265625" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20052083" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32978722" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3288201" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32978722" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3288201" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -426,13 +468,202 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1606">
+          <caret line="73" column="52" selection-start-line="73" selection-start-column="34" selection-end-line="73" selection-end-column="52" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferPublicHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="968">
+          <caret line="44" column="44" selection-start-line="44" selection-start-column="44" selection-end-line="44" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1870">
+          <caret line="85" column="41" selection-start-line="85" selection-start-column="41" selection-end-line="85" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3586">
+          <caret line="164" column="51" selection-start-line="164" selection-start-column="51" selection-end-line="164" selection-end-column="51" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2860">
+          <caret line="130" column="80" selection-start-line="130" selection-start-column="41" selection-end-line="130" selection-end-column="80" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1562">
+          <caret line="72" column="52" selection-start-line="72" selection-start-column="48" selection-end-line="72" selection-end-column="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Writer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2134">
+          <caret line="100" column="50" selection-start-line="100" selection-start-column="50" selection-end-line="100" selection-end-column="50" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Generator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1100">
+          <caret line="63" column="85" selection-start-line="63" selection-start-column="85" selection-end-line="63" selection-end-column="85" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferPublicHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="968">
+          <caret line="44" column="44" selection-start-line="44" selection-start-column="44" selection-end-line="44" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1870">
+          <caret line="85" column="41" selection-start-line="85" selection-start-column="41" selection-end-line="85" selection-end-column="41" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9658">
+          <caret line="484" column="51" selection-start-line="484" selection-start-column="8" selection-end-line="484" selection-end-column="51" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2860">
+          <caret line="130" column="80" selection-start-line="130" selection-start-column="41" selection-end-line="130" selection-end-column="80" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2068">
+          <caret line="95" column="8" selection-start-line="95" selection-start-column="8" selection-end-line="95" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1562">
+          <caret line="72" column="52" selection-start-line="72" selection-start-column="48" selection-end-line="72" selection-end-column="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Writer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3894">
+          <caret line="180" column="86" selection-start-line="180" selection-start-column="86" selection-end-line="180" selection-end-column="86" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Generator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1100">
+          <caret line="63" column="85" selection-start-line="63" selection-start-column="85" selection-end-line="63" selection-end-column="85" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9658">
+          <caret line="484" column="51" selection-start-line="484" selection-start-column="8" selection-end-line="484" selection-end-column="51" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2860">
+          <caret line="130" column="80" selection-start-line="130" selection-start-column="41" selection-end-line="130" selection-end-column="80" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2068">
+          <caret line="95" column="8" selection-start-line="95" selection-start-column="8" selection-end-line="95" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1562">
+          <caret line="72" column="52" selection-start-line="72" selection-start-column="48" selection-end-line="72" selection-end-column="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Writer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3894">
+          <caret line="180" column="86" selection-start-line="180" selection-start-column="86" selection-end-line="180" selection-end-column="86" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Generator.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1980">
           <caret line="103" column="27" selection-start-line="103" selection-start-column="27" selection-end-line="103" selection-end-column="27" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -448,7 +679,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="440">
           <caret line="23" column="33" selection-start-line="23" selection-start-column="33" selection-end-line="23" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -456,7 +686,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -464,9 +693,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -474,7 +700,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="440">
           <caret line="23" column="33" selection-start-line="23" selection-start-column="33" selection-end-line="23" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -482,7 +707,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -490,9 +714,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="44">
           <caret line="2" column="0" selection-start-line="2" selection-start-column="0" selection-end-line="2" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -501,9 +722,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -512,70 +730,101 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Writer.py">
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="180" column="86" selection-start-line="180" selection-start-column="86" selection-end-line="180" selection-end-column="86" />
-          <folding />
+        <state relative-caret-position="837">
+          <caret line="146" column="38" selection-start-line="146" selection-start-column="38" selection-end-line="146" selection-end-column="38" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Generator.py">
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="63" column="85" selection-start-line="63" selection-start-column="85" selection-end-line="63" selection-end-column="85" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="837">
+          <caret line="72" column="52" selection-start-line="72" selection-start-column="48" selection-end-line="72" selection-end-column="52" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/N~3AGlobalSchema.01.00.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="418">
-          <caret line="73" column="52" selection-start-line="73" selection-start-column="34" selection-end-line="73" selection-end-column="52" />
+        <state relative-caret-position="264">
+          <caret line="12" column="14" selection-start-line="12" selection-start-column="14" selection-end-line="12" selection-end-column="14" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py">
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/Api.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="462">
-          <caret line="130" column="80" selection-start-line="130" selection-start-column="41" selection-end-line="130" selection-end-column="80" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferPublicHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferPublicHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="396">
+          <caret line="55" column="33" selection-start-line="55" selection-start-column="33" selection-end-line="55" selection-end-column="33" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="273">
-          <caret line="484" column="51" selection-start-line="484" selection-start-column="8" selection-end-line="484" selection-end-column="51" />
-          <folding>
-            <element signature="e#20750#21130#0" expanded="false" />
-            <element signature="e#21183#21295#0" expanded="false" />
-            <element signature="e#21352#24096#0" expanded="false" />
-            <element signature="e#37630#38160#0" expanded="false" />
-            <element signature="e#38219#38554#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/SchemaWriter/Helpers/ECSchema.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="154">
-          <caret line="95" column="8" selection-start-line="95" selection-start-column="8" selection-end-line="95" selection-end-column="8" />
+        <state relative-caret-position="418">
+          <caret line="166" column="37" selection-start-line="166" selection-start-column="37" selection-end-line="166" selection-end-column="37" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/SchemaWriter/SourceWriters/SchemaBufferSourceWriter.py">
+    <entry file="file://$PROJECT_DIR$/Writer.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="242">
-          <caret line="72" column="52" selection-start-line="72" selection-start-column="48" selection-end-line="72" selection-end-column="52" />
+        <state relative-caret-position="220">
+          <caret line="132" column="42" selection-start-line="132" selection-start-column="42" selection-end-line="132" selection-end-column="42" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferSourceWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="220">
+          <caret line="29" column="42" selection-start-line="29" selection-start-column="42" selection-end-line="29" selection-end-column="42" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Generator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="309">
+          <caret line="133" column="53" selection-start-line="133" selection-start-column="53" selection-end-line="133" selection-end-column="53" />
+          <folding>
+            <element signature="e#0#27#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/SchemaWriter/HeaderWriters/SchemaBufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="220">
+          <caret line="33" column="48" selection-start-line="33" selection-start-column="48" selection-end-line="33" selection-end-column="48" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/BufferHeaderWriter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="264">
+          <caret line="12" column="30" selection-start-line="12" selection-start-column="30" selection-end-line="12" selection-end-column="30" />
           <folding />
         </state>
       </provider>

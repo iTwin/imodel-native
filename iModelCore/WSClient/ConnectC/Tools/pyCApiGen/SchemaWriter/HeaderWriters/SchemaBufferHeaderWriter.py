@@ -31,7 +31,7 @@ class SchemaBufferHeaderWriter(SchemaHeaderWriter):
         self._write_header_comments(True)
 
     def __write_includes(self):
-        self._file.write('#include "../{0}BufferGen.h"\n'.format(self._api.get_upper_api_acronym()))
+        self._file.write('#include "../{0}Buffer.h"\n'.format(self._api.get_upper_api_acronym()))
         self._file.write('#include "../{0}Private.h"\n'.format(self._api.get_upper_api_acronym()))
 
     def __write_defines(self):

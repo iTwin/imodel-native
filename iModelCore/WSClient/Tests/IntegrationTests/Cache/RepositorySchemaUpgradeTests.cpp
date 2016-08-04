@@ -9,7 +9,7 @@
 #include "RepositorySchemaUpgradeTests.h"
 
 #include <WebServices/Cache/CachingDataSource.h>
-#include <DgnClientFx/Utils/Http/ProxyHttpHandler.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <Bentley/BeFileListIterator.h>
 
 #include <prg.h>
