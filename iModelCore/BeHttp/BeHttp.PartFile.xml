@@ -282,5 +282,9 @@
         <SubPart PartName="iOSXCTest" LibType="Static"/>
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
-
+    
+    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=BeHttp-iOSXCTest" OnlyPlatforms="iOS*">
+        <SubProduct ProductName="BeHttp-iOSXCTest"/>
+    </Part>
+    
 </BuildContext>
