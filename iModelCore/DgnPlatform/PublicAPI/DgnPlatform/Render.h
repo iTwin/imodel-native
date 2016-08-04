@@ -336,6 +336,13 @@ public:
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
+    struct CreateParams
+    {
+        bool m_isTileSection = false;
+        int m_pitch = 0;
+        void SetIsTileSection() {m_isTileSection=true;}
+        void SetPitch(int val) {m_pitch=val;}
+    };
 };
 
 //=======================================================================================
@@ -343,8 +350,73 @@ struct Texture : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Material : RefCounted<NonCopyableClass>
 {
-    bvector<TexturePtr> m_mappedTextures;
-    void AddMappedTexture(TextureR texture) {m_mappedTextures.push_back(&texture);}
+    enum class MapMode : int
+    {
+        None              = -1,
+        Parametric        = 0,
+        ElevationDrape    = 1,
+        Planar            = 2,
+        DirectionalDrape  = 3,
+        Cubic             = 4,
+        Spherical         = 5,
+        Cylindrical       = 6,
+        Solid             = 7,
+        FrontProject      = 8, //<! Only valid for lights.
+    };
+
+    struct CreateParams
+    {
+        struct MatColor
+        {
+            bool m_valid = false;
+            ColorDef m_value;
+            MatColor(){}
+            MatColor(ColorDef val) {m_valid=true; m_value=val;}
+            bool IsValid() const {return m_valid;}
+        };
+        MatColor m_diffuseColor;
+        MatColor m_specularColor;
+        MatColor m_emissiveColor;
+        double m_diffuse = 0.5;
+        double m_ambient = 0.5; 
+        double m_specularExponent = 0.0;
+        double m_reflect = 0.0;
+        double m_transparency = 0.0;
+        double m_specular = 0.05;
+        double m_refract = 1.0;
+        bool m_shadows = true;
+
+        void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
+        void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
+        void SetEmissiveColor(ColorDef val) {m_emissiveColor = val;} //<!  Set the surface emissive color
+        void SetDiffuse(double val) {m_diffuse = val;} //<! Set surface diffuse reflectivity
+        void SetAmbient(double val) {m_ambient = val;} //<! Set surface ambient reflectivity
+        void SetSpecularExponent(double val) {m_specularExponent = val;} //<! Set surface shininess (range 0 to 128)
+        void SetReflect(double val) {m_reflect = val;} //<! Set surface environmental reflectivity
+        void SetTransparency(double val) {m_transparency = val;} //<! Set surface transparency
+        void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
+        void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
+        void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
+    };
+
+protected:
+    bvector<TextureCPtr> m_mappedTextures;
+    void AddMappedTexture(TextureCR texture) {m_mappedTextures.push_back(&texture);}
+
+public:
+    //! Map a texture to this material
+    //! @param[in] texture Texture to map to this material
+    //! @param[in] textureWeight Weight for combining diffuse image and color
+    //! @param[in] textureMat2x3  Texture transform, nullptr if undefined
+    //! @param[in] mappingMode
+    //! @param[in] worldMapping if true world mapping, false for surface
+    //! @param[in] basisX texture basis x axis (normalized)
+    //! @param[in] basisY texture basis y axis (normalized)
+    //! @param[in] basisZ texture basis z axis (normalized)
+    //! @param[in] basisOrg texture basis origin
+    //! @param[in] basisScale texture basis scale (x,y,z independent)
+    virtual void _MapTexture(Texture const& texture, double textureWeight, double* textureMat2x3, MapMode mappingMode, bool worldMapping, 
+                             DPoint3dCP basisX=nullptr, DPoint3dCP basisY=nullptr, DPoint3dCP basisZ=nullptr, DPoint3dCP basisOrg=nullptr, DPoint3dCP basisScale=nullptr) = 0;
 };
 
 //=======================================================================================
@@ -591,7 +663,7 @@ struct GradientSymb : RefCountedBase
         MAX_GRADIENT_KEYS = 8,
     };
 
-    enum class Flags
+    enum Flags : Byte
     {
         None         = 0,
         Invert       = (1 << 0),
@@ -599,7 +671,7 @@ struct GradientSymb : RefCountedBase
         AlwaysFilled = (1 << 2),
     };
 
-    enum class Mode
+    enum class Mode : Byte
     {
         None          = 0,
         Linear        = 1,
@@ -610,17 +682,17 @@ struct GradientSymb : RefCountedBase
     };
 
 protected:
-    Mode m_mode;
-    uint16_t m_flags;
-    uint16_t m_nKeys;
-    double m_angle;
-    double m_tint;
-    double m_shift;
+    Mode m_mode = Mode::None;
+    Flags m_flags = Flags::None;
+    uint32_t m_nKeys = 0;
+    double m_angle = 0.0;
+    double m_tint = 0.0;
+    double m_shift = 0.0;
     ColorDef m_colors[MAX_GRADIENT_KEYS];
     double   m_values[MAX_GRADIENT_KEYS];
 
 public:
-    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
+    GradientSymb() {}
     
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
@@ -630,19 +702,19 @@ public:
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
 
-    int GetNKeys() const {return m_nKeys;}
+    uint32_t GetNKeys() const {return m_nKeys;}
     Mode GetMode() const {return m_mode;}
-    uint16_t GetFlags() const {return m_flags;}
+    Flags GetFlags() const {return m_flags;}
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
-    void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
+    void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index]; value = m_values[index];}
     void SetMode(Mode mode) {m_mode = mode;}
-    void SetFlags(uint16_t flags) {m_flags = flags;}
+    void SetFlags(Flags flags) {m_flags = flags;}
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
-    DGNPLATFORM_EXPORT void SetKeys(uint16_t nKeys, ColorDef const* colors, double const* values);
+    DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
 };
 
 //=======================================================================================
@@ -971,7 +1043,7 @@ struct Graphic : RefCounted<NonCopyableClass>
     struct CreateParams
     {
         DgnViewportCP m_vp;
-        Transform     m_placement;
+Transform     m_placement;
         double        m_pixelSize;
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
@@ -1478,7 +1550,12 @@ struct GraphicArray
 //=======================================================================================
 struct System
 {
+    //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
+
+    //! Create a Material from parameters
+    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
+
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
@@ -1489,10 +1566,10 @@ struct System
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
 
     //! Create a new Texture from an Image.
-    virtual TexturePtr _CreateTexture(ImageCR image) const = 0;
+    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a new Texture from an ImageSource.
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const = 0;
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;

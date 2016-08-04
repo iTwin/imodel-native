@@ -87,16 +87,16 @@ double JsonRenderMaterial::TextureMap::GetUnitScale(Units units) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonRenderMaterial::TextureMap::Mode JsonRenderMaterial::TextureMap::GetMode() const 
+Render::Material::MapMode JsonRenderMaterial::TextureMap::GetMode() const 
     {
     Json::Value const& value = m_value[RENDER_MATERIAL_PatternMapping];
     if (!value.isInt())
         {
         BeAssert(false);
-        return Mode::Parametric;
+        return Render::Material::MapMode::Parametric;
         }
 
-    return (Mode) value.asInt();
+    return (Render::Material::MapMode) value.asInt();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,7 +147,7 @@ JsonRenderMaterial::TextureMap::Trans JsonRenderMaterial::TextureMap::GetTransfo
     if (yFlip)
         scale.y = -scale.y;
 
-    if (Mode::ElevationDrape == GetMode())
+    if (Render::Material::MapMode::ElevationDrape == GetMode())
         {
         trans.m_val[0][0] = cosAngle / scale.x;
         trans.m_val[0][1] = sinAngle / scale.x;

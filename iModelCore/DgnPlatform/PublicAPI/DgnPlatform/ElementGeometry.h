@@ -433,7 +433,7 @@ public:
     {
         Local = 0, //!< GeometricPrimitive being supplied in local coordinates. NOTE: Builder must be created with a known placement for local coordinates to be meaningful.
         World = 1, //!< GeometricPrimitive being supplied in world coordinates. NOTE: Builder requires world coordinate geometry if placement isn't specified.
-    };
+};
 
 private:
 

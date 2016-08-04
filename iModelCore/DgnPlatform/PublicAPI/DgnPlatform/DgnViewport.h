@@ -555,7 +555,6 @@ public:
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
-    static double GetCameraPlaneRatio() {return 300.0;}
 };
 
 //=======================================================================================

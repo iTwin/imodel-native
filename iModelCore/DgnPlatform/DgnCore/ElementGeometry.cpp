@@ -1151,7 +1151,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             bvector<uint32_t> keyColors;
             bvector<double>   keyValues;
 
-            for (int i=0; i < gradient.GetNKeys(); i++)
+            for (uint32_t i=0; i < gradient.GetNKeys(); ++i)
                 {
                 double   keyValue;
                 ColorDef keyColor;
@@ -1598,7 +1598,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     GradientSymbPtr gradientPtr = GradientSymb::Create();
 
                     gradientPtr->SetMode(mode);
-                    gradientPtr->SetFlags(ppfb->flags());
+                    gradientPtr->SetFlags((GradientSymb::Flags)ppfb->flags());
                     gradientPtr->SetShift(ppfb->shift());
                     gradientPtr->SetTint(ppfb->tint());
                     gradientPtr->SetAngle(ppfb->angle());
@@ -1607,10 +1607,10 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
                     bvector<ColorDef> keyColors;
 
-                    for (uint32_t iColor=0; iColor < nColors; iColor++)
+                    for (uint32_t iColor=0; iColor < nColors; ++iColor)
                         keyColors.push_back(ColorDef(colors[iColor]));
 
-                    gradientPtr->SetKeys((uint16_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                    gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
                     elParams.SetGradient(gradientPtr.get());
                     }
                 }

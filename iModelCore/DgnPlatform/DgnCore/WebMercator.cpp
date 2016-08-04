@@ -1100,7 +1100,9 @@ BentleyStatus TileData::LoadTile() const
     auto graphic = m_renderSys._CreateGraphic(Graphic::CreateParams(nullptr));
 
     ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data));
-    auto texture = m_renderSys._CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No);
+    Texture::CreateParams textureParams;
+    textureParams.SetIsTileSection();
+    auto texture = m_renderSys._CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
     m_data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the TileCache.
 
     graphic->SetSymbology(m_color, m_color, 0);

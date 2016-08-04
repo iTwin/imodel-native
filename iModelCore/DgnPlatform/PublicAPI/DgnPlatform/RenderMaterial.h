@@ -81,20 +81,6 @@ public:
             Geometry                = 30,
         };
 
-        enum class Mode : int
-        {
-            None                    = -1,
-            Parametric              = 0,
-            ElevationDrape          = 1,
-            Planar                  = 2,
-            DirectionalDrape        = 3,
-            Cubic                   = 4,
-            Spherical               = 5,
-            Cylindrical             = 6,
-            Solid                   = 7,
-            //! Only valid for lights.
-            FrontProject            = 8,
-        };
 
         enum class Units
         {
@@ -113,7 +99,7 @@ public:
         DGNPLATFORM_EXPORT DPoint2d GetScale() const;
         DGNPLATFORM_EXPORT DPoint2d GetOffset() const;
         DGNPLATFORM_EXPORT Units GetUnits() const;
-        DGNPLATFORM_EXPORT Mode GetMode() const;
+        DGNPLATFORM_EXPORT Render::Material::MapMode GetMode() const;
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
         Type GetType() const {return m_type;}
         DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;

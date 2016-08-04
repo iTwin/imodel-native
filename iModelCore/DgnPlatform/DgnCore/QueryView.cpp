@@ -406,6 +406,7 @@ void DgnQueryView::_CreateTerrain(TerrainContextR context)
     {
     DgnDb::VerifyClientThread();
 
+    T_Super::_CreateTerrain(context);
 
     m_copyrightMsgs.clear();
     auto& models = m_dgndb.Models();
@@ -433,6 +434,8 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
+    T_Super::_CreateScene(context);
+
 #if defined (DEBUG_LOGGING)
     StopWatch watch(true);
 #endif
@@ -445,7 +448,6 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     DgnViewportR vp = *context.GetViewport();
     if (!results.IsValid())
         return;
-
 
     if (!results->m_scores.empty())
         context.SetSAESNpcSq(results->m_scores.begin()->first);
@@ -1371,144 +1373,5 @@ DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
-    }
-
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/16
-//=======================================================================================
-namespace EnvironmentJson
-{
-    static Utf8CP Display()     {return "display";}
-    static Utf8CP Environment() {return "environment";}
-    static Utf8CP Elevation()   {return "elevation";}
-    static Utf8CP AboveColor()  {return "aboveColor";}
-    static Utf8CP BelowColor()  {return "belowColor";}
-    static Utf8CP GroundPlane() {return "groundPlane";}
-    static Utf8CP Type()        {return "type";}
-    static Utf8CP Rectangle()   {return "rectangle";}
-
-    static bool IsDisplayed(JsonValueCR in) {JsonValueCR displayJson = in[Display()]; return displayJson.isNull() || displayJson.asBool();}
-    static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isNull() ? defaultVal : ColorDef(json.asInt());}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::GroundPlane DgnQueryView::GetGroundPlane(DgnViewportCR vp) const
-    {
-    GroundPlane ground;
-    JsonValueCP setting = GetEnvironmentSetting(EnvironmentJson::GroundPlane());
-    Json::Value nullval;
-    if (nullptr == setting)
-        {
-#if defined (NEEDS_WORK_GROUND_PLANE)
-        return ground;
-#endif
-        setting = &nullval;
-        }
-
-    JsonValueCR json = *setting;
-
-    // determine the height of the ground plane. By default, draw it one centimeter below 0.0
-    JsonValueCR elevationJson = json[EnvironmentJson::Elevation()];
-    double elevation = elevationJson.isNull() ? -DgnUnits::OneCentimeter() : elevationJson.asDouble();
-
-    DRay3d viewRay = {DPoint3d(), vp.GetZVector()};
-    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal(DPoint3d::From(0,0,elevation), DVec3d::From(0, 0, 1.0));
-
-    // first determine whether the ground plane is displayed in the view
-    Frustum worldFrust = vp.GetFrustum();
-    for (DPoint3dCR pt : worldFrust.m_pts)
-        {
-        DPoint3d xyzPt;
-        viewRay.origin = pt;
-        double param;
-        if (!viewRay.Intersect(xyzPt, param, xyPlane))
-            return ground; // view does not show ground plane
-        }
-
-    ground.m_extents = m_dgndb.Units().GetProjectExtents();
-    ground.m_extents.low.z = ground.m_extents.high.z = elevation;
-
-    DPoint3d center = DPoint3d::FromInterpolate(ground.m_extents.low, 0.5, ground.m_extents.high);
-
-//    static bool s_rectangle = false;
-//    if (s_rectangle)
-    if (json[EnvironmentJson::Type()].asString() == EnvironmentJson::Rectangle())
-        {
-        ground.m_extents.ScaleAboutCenter(ground.m_extents, 2.0);
-        ground.m_edgeAlpha = 0xf0;
-        ground.m_mode =  GradientSymb::Mode::Hemispherical;
-        }
-    else
-        {
-        double radius = ground.m_extents.low.Distance(ground.m_extents.high); // we need a square, not a rectangle
-        ground.m_extents.InitFrom(center);
-        ground.m_extents.Extend(radius);
-        ground.m_extents.low.z = ground.m_extents.high.z = elevation;
-        }
-
-    bool above = IsCameraAbove(elevation);
-    if (!above)
-        ground.m_centerAlpha = 0x85;
-
-    ground.m_color = EnvironmentJson::GetColor(json, above ? EnvironmentJson::AboveColor() : EnvironmentJson::BelowColor(), above ? ColorDef::DarkGreen() : ColorDef::DarkBrown());
-    return ground;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::DrawGroundPlane(DecorateContextR context)
-    {
-    GroundPlane ground = GetGroundPlane(*context.GetViewport());
-    if (!ground.IsValid())
-        return;
-
-    DPoint3d pts[5];
-    pts[0] = pts[1] = pts[4] = ground.m_extents.low;
-    pts[1].y = ground.m_extents.high.y;
-    pts[2] = pts[3] = ground.m_extents.high;
-    pts[3].y = ground.m_extents.low.y;
-
-    double  keyValues[] = {0.0, 0.5};   // gradient goes from edge of rectangle (0.0) to halfway inside rectangle (though as far as I can tell these don't do anything???)
-    ColorDef colors[] = {GetBackgroundColor(), ground.m_color};
-
-    colors[0].SetAlpha(ground.m_edgeAlpha);
-    colors[1].SetAlpha(ground.m_centerAlpha);
-
-    GradientSymbPtr gradient = GradientSymb::Create();
-    gradient->SetMode(ground.m_mode);
-    gradient->SetKeys(_countof(colors), colors, keyValues);
-
-    GraphicParams params;
-    params.SetLineColor(colors[0]);
-    params.SetGradient(gradient.get());
-
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic();
-    graphic->ActivateGraphicParams(params);
-    graphic->AddShape(5, pts, true);
-    context.AddWorldDecoration(*graphic);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueCP DgnQueryView::GetEnvironmentSetting(Utf8CP name) const
-    {
-    JsonValueCR environment = m_settings[EnvironmentJson::Environment()];
-    if (environment.isNull() || !EnvironmentJson::IsDisplayed(environment))
-        return nullptr;
-
-    JsonValueCR val = environment[name];
-    return (!val.isNull() && EnvironmentJson::IsDisplayed(val)) ? &val : nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::DrawEnvironment(DecorateContextR context)
-    {
-    DrawGroundPlane(context);
     }
 
