@@ -6,31 +6,23 @@
 #
 #--------------------------------------------------------------------------------------
 import os, sys, re
-from sets import Set
 
 # Failure patterns to match
 # [  FAILED  ] RleEditorTester.MaxRleRunSetPixels    
 # [  FAILED  ] FileFormatTests/ExportTester.ToBestiTiff/21, where GetParam() = L"D:\\ATP\\Dataset\\Images_Files\\_forATPs\\Images\\jpeg\\Mosaic_Jpeg_WF\\TC06L0\\15.jpg"
 failedpat = re.compile (r"FAILED\s*]\s*(\w+\.\w+|\w+/\w+\.\w+/\d+)", re.I)
 summarypat = re.compile (r"\[==========\].*ran", re.I)
-runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
-stackTraceSignature = '*********************** STACK TRACE ************************'
-
-class FailedTestEntry:
-    def __init__(self, test, sawStackTrace):
-        self.m_test = test
-        self.m_sawStackTrace = sawStackTrace
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson      05/2016
 #-------------------------------------------------------------------------------------------
 def checkLogFileForFailures(logfilename):
     exename = ''
-    failedtests = Set()
     foundSummary = False
-    lastTestSeen = ""
+    failedTestsList = ""
+    comma = ''
+    anyFailures = False
     lineNo = 0
-    sawStackTrace = False
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
 
@@ -40,61 +32,42 @@ def checkLogFileForFailures(logfilename):
             if lineNo == 1:
                 exename = line.strip('\n')
                 continue
-
-            # The most common line is [ RUN ....
-            run = runpat.search(line)
-            if run != None:
-                lastTestSeen = run.group(1)
+            
+            if not foundSummary:
+                # Ignore everything until we hit the summary
+                if summarypat.search(line) != None:
+                    foundSummary = True
                 continue
 
-            # After a run, we may encounter a failure
-            if line == stackTraceSignature:
-                sawStackTrace = True
-                continue
+            else:
+                if line.find('FAILED TESTS') != -1:
+                    anyFailures = True
 
-            failed = failedpat.search(line)
-            if failed != None:
-                failedtests.add(FailedTestEntry(failed.group(1), sawStackTrace))
-                continue
+                # Get the list of failures
+                failed = failedpat.search(line)
+                if failed != None:
+                    failedTestsList = failedTestsList + comma + failed.group(1)
+                    continue
 
-            # Near the end of the log, we should see the summary line. 
-            # Stop at the summary. We don't want to get confused by the repeated [ ERROR  ] log entries below it.
-            if summarypat.search(line) != None:
-                foundSummary = True
-                break       
+    if not anyFailures and foundSummary:
+        return ''
 
-    advicestr = ''
+    advicestr = '************ Failures from: ' + logfilename + ' ******************'
 
     # If we never got to the summary, that means that the last test to run was interrupted by a crash
     if not foundSummary:
         advicestr = advicestr + "\n"
-        advicestr = advicestr + "\n*** TEST CRASHED ***"
-        advicestr = advicestr + "\n"
-        advicestr = advicestr + "\n" + lastTestSeen
-        advicestr = advicestr + "\n"
-        advicestr = advicestr + "\nTo run just the crashing test, run the following command in your debugger:"
-        advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + lastTestSeen
+        advicestr = advicestr + "\n*** CRASH ***"
         advicestr = advicestr + "\n"
 
     # Report all failures that we saw in the log
-    if len(failedtests) != 0:
-        advicestr = advicestr + "\n"
-        advicestr = advicestr + "\n*** TESTS FAILED ***"
-        comma = ""
-        failedTestsStr = ""
-        for t in failedtests:
-            advicestr = advicestr + "\n" + t.m_log
-            failedTestsStr = failedTestsStr + comma + t.m_test
-            comma = ","
-        advicestr = advicestr + "\n********************"
+    if len(failedTestsList) != 0:
         advicestr = advicestr + "\n"
         advicestr = advicestr + "\nTo re-run failing tests, run the following command in your debugger:"
-        advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + failedTestsStr
+        advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + failedTestsList
         advicestr = advicestr + "\n"
 
-    if 0 != len(advicestr):
-        advicestr = advicestr + "\nSee " + logfilename + " for failure details"
-
+    if anyFailures or not foundSummary:
         # When we detect failing or crashing tests, print the whole log. That will then go into bb's build log.
         # The user will want to scroll up to see complete details.
         with open(logfilename, 'r') as logfile:
@@ -107,9 +80,7 @@ def checkLogFileForFailures(logfilename):
 # bsimethod                                     Sam.Wilson      05/2016
 #-------------------------------------------------------------------------------------------
 if __name__ == '__main__':
-    failureCount = 0
     checkedCount = 0
-    failedProductCount = 0
 
     if len(sys.argv) < 2:
         print 'Syntax: ' + sys.argv[0] + ' logfilesdir [breakonfailureflag]'
