@@ -387,7 +387,7 @@ bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumns& shareColumns
 //static
 bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECClassCR ecClass)
     {
-    return ecClass.IsDefined(ECDBMAP_SCHEMA_NAME, "JoinedTablePerDirectSubclass");
+    return ecClass.GetCustomAttributeLocal(ECDBMAP_SCHEMA_NAME, "JoinedTablePerDirectSubclass") != nullptr;
     }
 
 //---------------------------------------------------------------------------------------
