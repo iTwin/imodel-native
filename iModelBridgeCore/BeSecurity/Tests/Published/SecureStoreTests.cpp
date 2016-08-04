@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_SECURITY
 
 void SecureStoreTests::SetUpTestCase()
     {
-#if defined(__APPLE__)
+#if defined(BENTLEYCONFIG_OS_APPLE_IOS)
     // TODO: sign test project to use predefined keychain access group
     SecureStore::Initialize((void*)"Test");
 #endif
@@ -219,7 +219,7 @@ TEST_F (SecureStoreTests, LegacyClearValue_NonLegacyValueExists_RemovesNonLegacy
     EXPECT_EQ ("", store.LoadValue ("Test", "Key"));
     }
 
-#elif defined(__APPLE__)
+#elif defined(BENTLEYCONFIG_OS_APPLE_IOS)
 //---------------------------------------------------------------------------------------
 // @betest                                      Vincas.Razma
 //---------------------------------------------------------------------------------------

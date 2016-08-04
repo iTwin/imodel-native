@@ -211,7 +211,7 @@ SecureStore::~SecureStore()
     {
     }
 
-#if !defined(ANDROID) && !defined(__APPLE__)
+#if !defined(ANDROID) && !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -220,7 +220,7 @@ void SecureStore::Initialize(void* arg)
     }
 #endif
 
-#if !defined(__APPLE__)
+#if !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 
 #if defined(ANDROID)
 //---------------------------------------------------------------------------------------
@@ -604,4 +604,4 @@ Utf8String SecureStore::Decrypt(Utf8CP encrypted)
 #endif
     }
 
-#endif // !defined (__APPLE__)
+#endif // !defined (BENTLEYCONFIG_OS_APPLE_IOS)
