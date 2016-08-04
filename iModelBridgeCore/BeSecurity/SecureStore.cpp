@@ -471,7 +471,7 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
 
 #else
 
-    #pragma message Unsupported platform
+    #pragma message("Unsupported platform")
     BeAssert(false && "Not implemented.");
     return nullptr;
 
@@ -564,7 +564,7 @@ Utf8String SecureStore::Encrypt(Utf8CP value)
 
 #else
 
-    #pragma message Unsupported platform
+    #pragma message("Unsupported platform")
     BeAssert(false && "Not implemented.");
     return nullptr;
 
@@ -616,7 +616,7 @@ Utf8String SecureStore::Decrypt(Utf8CP encrypted)
 
 #else
 
-    #pragma message Unsupported platform
+    #pragma message("Unsupported platform")
     BeAssert(false && "Not implemented.");
     return nullptr;
 
