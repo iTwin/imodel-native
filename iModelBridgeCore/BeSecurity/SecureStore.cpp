@@ -468,6 +468,13 @@ Utf8String SecureStore::LoadValue (Utf8CP nameSpace, Utf8CP key)
 
     // Decrypt
     return DecryptWinRT (s_key, s_iv, strAlgName, buffEncrypted, ivWinRT, encoding, keyWinRT);
+
+#else
+
+    #pragma message Unsupported platform
+    BeAssert(false && "Not implemented.");
+    return nullptr;
+
 #endif
     }
 
@@ -555,6 +562,12 @@ Utf8String SecureStore::Encrypt(Utf8CP value)
     LocalFree(ciphertextBlob.pbData);
     return encrypted;
 
+#else
+
+    #pragma message Unsupported platform
+    BeAssert(false && "Not implemented.");
+    return nullptr;
+
 #endif
     }
 
@@ -600,6 +613,12 @@ Utf8String SecureStore::Decrypt(Utf8CP encrypted)
     Utf8String decrypted((CharCP) plaintextBlob.pbData, (size_t) plaintextBlob.cbData);
     LocalFree(plaintextBlob.pbData);
     return decrypted;
+
+#else
+
+    #pragma message Unsupported platform
+    BeAssert(false && "Not implemented.");
+    return nullptr;
 
 #endif
     }
