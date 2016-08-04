@@ -8636,7 +8636,7 @@ void AnnotationTable::UpdateGeometryRepresentation()
     AnnotationTableStroker stroker (*this, *builder);
     stroker.AppendTableGeometry();
 
-    builder->SetGeometryStreamAndPlacement(*this);
+    builder->Finish(*this);
     }
 
 //---------------------------------------------------------------------------------------

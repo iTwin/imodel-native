@@ -42,7 +42,7 @@ struct MemoryManagerTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MemoryManagerTests, CalculateAndPurge)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"MemoryManager_Test.ibim", BeSQLite::Db::OpenMode::ReadWrite); // because ImportSchemas() fails our test if Readonly...
+    SetupSeedProject();
 
     DgnDb& db = *m_db;
     MemoryManager& mgr = db.Memory();

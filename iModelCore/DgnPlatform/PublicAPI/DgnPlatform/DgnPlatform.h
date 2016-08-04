@@ -39,7 +39,7 @@
     BEGIN_BENTLEY_DGN_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGN_NAMESPACE
 
 #define GEOCOORD_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
+    BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates {DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
 #define TO_BOOL(x) (0 != (x))
 
@@ -434,14 +434,14 @@ struct ElementAlignedBox2d : BoundingBox2d
 //=======================================================================================
 enum NpcCorners
 {
-    NPC_000           = 0,  //!< Left bottom rear
-    NPC_100           = 1,  //!< Right bottom rear
-    NPC_010           = 2,  //!< Left top rear
-    NPC_110           = 3,  //!< Right top rear
-    NPC_001           = 4,  //!< Left bottom front
-    NPC_101           = 5,  //!< Right bottom front
-    NPC_011           = 6,  //!< Left top front
-    NPC_111           = 7,  //!< Right top front
+    NPC_000 = 0,  //!< Left bottom rear
+    NPC_100 = 1,  //!< Right bottom rear
+    NPC_010 = 2,  //!< Left top rear
+    NPC_110 = 3,  //!< Right top rear
+    NPC_001 = 4,  //!< Left bottom front
+    NPC_101 = 5,  //!< Right bottom front
+    NPC_011 = 6,  //!< Left top front
+    NPC_111 = 7,  //!< Right top front
 
     NPC_LeftBottomRear    = 0,
     NPC_RightBottomRear   = 1,
@@ -529,7 +529,6 @@ enum class ConfigurationVariableLevel
     User          = 6,         //!< user defined
 };
 
-
 //! @private
 enum DgnPlatformConstants
 {
@@ -541,7 +540,7 @@ enum DgnPlatformConstants
 enum class DgnScriptType{JavaScript=0, TypeScript=1};
 
 //! @private
-enum class DgnFontType {TrueType = 1, Rsc = 2, Shx = 3,};
+enum class DgnFontType {TrueType=1, Rsc=2, Shx=3,};
 
 //! @private
 enum class DgnFontStyle {Regular, Bold, Italic, BoldItalic,};
@@ -552,30 +551,20 @@ enum class DgnCoordSystem
     Screen    = 0,     //!< Coordinates are relative to the origin of the screen
     View      = 1,     //!< Coordinates are relative to the origin of the view
     Npc       = 2,     //!< Coordinates are relative to normalized plane coordinates.
-    World     = 3,     //!< Coordinates are relative to the <i>world</i> coordinate system for the physical elements in the DgnDb
+    World     = 3,     //!< Coordinates are relative to the world coordinate system for the physical elements in the DgnDb
 };
-
-enum class GradientFlags
-{
-    None         = 0,
-    Invert       = (1 << 0),
-    Outline      = (1 << 1),
-    AlwaysFilled = (1 << 2),
-};
-
-ENUM_IS_FLAGS(GradientFlags)
 
 enum class ClipMask
 {
-    None       = 0,
-    XLow       = (0x0001 << 0),
-    XHigh      = (0x0001 << 1),
-    YLow       = (0x0001 << 2),
-    YHigh      = (0x0001 << 3),
-    ZLow       = (0x0001 << 4),
-    ZHigh      = (0x0001 << 5),
-    XAndY      = (0x000f),         // (XLow | XHigh | YLow | YHigh)
-    All        = (0x003f),         // (XAndY | ZLow | ZHigh),
+    None  = 0,
+    XLow  = (0x0001 << 0),
+    XHigh = (0x0001 << 1),
+    YLow  = (0x0001 << 2),
+    YHigh = (0x0001 << 3),
+    ZLow  = (0x0001 << 4),
+    ZHigh = (0x0001 << 5),
+    XAndY = (0x000f),         // (XLow | XHigh | YLow | YHigh)
+    All   = (0x003f),         // (XAndY | ZLow | ZHigh),
 };
 
 ENUM_IS_FLAGS(ClipMask)
@@ -602,27 +591,22 @@ private:
     uint32_t            m_number;              // Component property ID
     LsComponentType     m_type;
 public:
-    uint32_t GetValue() const { return m_number; }
-    LsComponentType GetType() const { return m_type; }
-    LsComponentId() { m_type = LsComponentType::Unknown; m_number = 0xFFFFFFFF; }
-    bool IsValid() const { return m_number != 0xFFFFFFFF; }
+    uint32_t GetValue() const {return m_number;}
+    LsComponentType GetType() const {return m_type;}
+    LsComponentId() {m_type = LsComponentType::Unknown; m_number = 0xFFFFFFFF;}
+    bool IsValid() const {return m_number != 0xFFFFFFFF;}
     explicit LsComponentId(LsComponentType type, uint32_t value) : m_type(type), m_number(value) {}
 
     bool operator<(LsComponentId const&r) const
         {
-        if (this->m_type < r.m_type)
+        if (m_type < r.m_type)
             return true;
 
-        if (this->m_type > r.m_type)
+        if (m_type > r.m_type)
             return false;
 
-        return this->m_number < r.m_number;
+        return m_number < r.m_number;
         }
-};
-
-enum
-{
-    MAX_GRADIENT_KEYS =  8,
 };
 
 enum class SnapStatus
@@ -702,17 +686,6 @@ enum class AnnotationScaleAction
     Add     = 1,
     Remove  = 2,
 };
-
-//! Influences how handler should apply fence stretch.
-enum class FenceStretchFlags
-{
-    /*! no special options */
-    None      = (0),
-    /*! stretch user defined cell components */
-    Cells     = (1<<0),
-};
-
-ENUM_IS_FLAGS (FenceStretchFlags)
 
 //! Influences how handler should apply fence clip.
 enum class FenceClipFlags
@@ -794,15 +767,11 @@ typedef T_DoubleVector* T_DoubleVectorP, &T_DoubleVectorR;
 typedef T_DoubleVector const* T_DoubleVectorCP;
 typedef T_DoubleVector const& T_DoubleVectorCR;
 
-#define   IMAXI8      INT64_MAX
-#define   IMINI8      INT64_MIN
-#define   IMAXUI8     UINT64_MAX
-
 //=======================================================================================
 //! @ingroup GROUP_DgnView
 //=======================================================================================
 enum class StandardView
-    {
+{
     NotStandard = -1,
     Top         = 1,
     Bottom      = 2,
@@ -812,7 +781,7 @@ enum class StandardView
     Back        = 6,
     Iso         = 7,
     RightIso    = 8,
-    };
+};
 
 //=======================================================================================
 //! RGBA values for a color
@@ -821,16 +790,15 @@ enum class StandardView
 struct ColorDef
 {
 private:
-
-union
+    union
     {
-    uint32_t m_intVal;
-    struct
+        uint32_t m_intVal;
+        struct
         {
-        Byte m_red;
-        Byte m_green;
-        Byte m_blue;
-        Byte m_alpha;
+            Byte m_red;
+            Byte m_green;
+            Byte m_blue;
+            Byte m_alpha;
         };
     };
 
@@ -846,8 +814,8 @@ public:
     Byte GetBlue() const {return m_blue;}
     Byte GetAlpha() const {return m_alpha;}
 
-    uint32_t GetValue() const {return m_intVal;} //! for use with Render primitives
-    uint32_t GetValueRgba() const {return ColorDef(m_alpha, m_blue, m_green, m_red).GetValue();} //! for use with UI controls
+    uint32_t GetValue() const {return m_intVal;} //<! for use with Render primitives
+    uint32_t GetValueRgba() const {return ColorDef(m_alpha, m_blue, m_green, m_red).GetValue();} //<! for use with UI controls
     uint32_t GetValueNoAlpha() const {return 0xffffff & GetValue();}
 
     bool operator==(ColorDef const& rhs) const {return GetValue() == rhs.GetValue();}
@@ -860,23 +828,25 @@ public:
     static ColorDef Black()       {return ColorDef(0,0,0);}
     static ColorDef White()       {return ColorDef(0xff,0xff,0xff);}
     static ColorDef Red()         {return ColorDef(0xff,0,0);}
-    static ColorDef Green()       {return ColorDef(0,0xff,0);}       //! Lime
+    static ColorDef Green()       {return ColorDef(0,0xff,0);}       //<! Lime
     static ColorDef Blue()        {return ColorDef(0,0,0xff);}
     static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
     static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
     static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
+    static ColorDef Brown()       {return ColorDef(0xa5,0x2a,0x2a);}
     static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
     static ColorDef MediumGrey()  {return ColorDef(0x88,0x88,0x88);}
     static ColorDef DarkGrey()    {return ColorDef(0x55,0x55,0x55);}
-    static ColorDef DarkRed()     {return ColorDef(0x80,0,0);}       //! Maroon
-    static ColorDef DarkGreen()   {return ColorDef(0,0x80,0);}       //! Green
-    static ColorDef DarkBlue()    {return ColorDef(0,0,0x80);}       //! Navy
-    static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //! Olive
-    static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //! Teal
-    static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //! Purple
+    static ColorDef DarkRed()     {return ColorDef(0x80,0,0);}       //<! Maroon
+    static ColorDef DarkGreen()   {return ColorDef(0,0x80,0);}       //<! Green
+    static ColorDef DarkBlue()    {return ColorDef(0,0,0x80);}       //<! Navy
+    static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //<! Olive
+    static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //<! Teal
+    static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //<! Purple
+    static ColorDef DarkBrown()   {return ColorDef(0x8b,0x45,0x13);}
 
-    static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //! Bluish color used to denote unselected state
-    static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //! Orangish color used to denote selected state
+    static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //<! Bluish color used to denote unselected state
+    static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //<! Orangish color used to denote selected state
 };
 
 //__PUBLISH_SECTION_END__

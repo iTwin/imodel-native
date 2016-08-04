@@ -11,9 +11,11 @@
 declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     /*** BEGIN_FORWARD_DECLARATIONS ***/
     class Transform { /*** NATIVE_TYPE_NAME = JsTransform ***/ }
+    class DPoint2d { /*** NATIVE_TYPE_NAME = JsDPoint2d ***/ }
     class DPoint3d { /*** NATIVE_TYPE_NAME = JsDPoint3d ***/ }
     class DRange3d { /*** NATIVE_TYPE_NAME = JsDRange3d ***/ }
     class YawPitchRollAngles { /*** NATIVE_TYPE_NAME = JsYawPitchRollAngles ***/ }
+    class Angle { /*** NATIVE_TYPE_NAME = JsAngle ***/ }
     class SolidPrimitive extends Geometry { /*** NATIVE_TYPE_NAME = JsSolidPrimitive ***/ }
     class DgnSphere extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnSphere ***/ }
     class DgnBox extends SolidPrimitive {/*** NATIVE_TYPE_NAME = JsDgnBpx ***/ }
@@ -22,9 +24,11 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
     /*** END_FORWARD_DECLARATIONS ***/
 
     type TransformP = cxx_pointer<Transform>;
+    type DPoint2dP = cxx_pointer<DPoint2d>;
     type DPoint3dP = cxx_pointer<DPoint3d>;
     type DRange3dP = cxx_pointer<DRange3d>;
     type YawPitchRollAnglesP = cxx_pointer<YawPitchRollAngles>;
+    type AngleP = cxx_pointer<Angle>;
     type SolidPrimitiveP = cxx_pointer<SolidPrimitive>;
     type DgnSphereP = cxx_pointer<DgnSphere>;
     type DgnBoxP = cxx_pointer<DgnBox>;
@@ -1071,53 +1075,42 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         /*** NATIVE_TYPE_NAME = JsGeometryBuilder ***/ 
 
         /**
-         * Construct a new GeometryBuilder with the intention of using it to set up the geometry of the specified element.
-         * @param el    The element to which this geometry will be attached
-         * @param o     The placement origin
-         * @param angles The placement angles
-         * @see SetGeometryStreamAndPlacement for how to copy the geometry in this builder to an element.
-        */
-        constructor(el: GeometrySourceP, o: DPoint3dP, angles: YawPitchRollAnglesP);
-
-        /**
-         * Construct a new GeometryBuilder to prepare geometry for the specified element. 
+         * Construct a new GeometryBuilder to prepare geometry using the category and placement of an existing element. 
          * @note This is just a short cut for calling CreateForModel.
-         * @param el    The element to which this geometry will be attached
-         * @param o     The placement origin
-         * @param angles The placement angles
+         * @param el The element to get the category and placement origin/angle(s) from.
          * @return a GeometryBuilder object
          * @see CreateForModel
          */
-        static CreateForElement(el: GeometrySourceP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+        static CreateForElement(el: GeometrySourceP): GeometryBuilderP;
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
-         * @param model The model where the geometry will ultimatley be stored
-         * @param catid The category of the element that will will ultimatley contain the geometry
-         * @param o     The placement origin
-         * @param angles The placement angles
-         * @return a GeometryBuilder object
-         */
-        static CreateForModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
-
-        /**
-         * Construct a new GeometryBuilder to prepare geometry for the specified element. 
-         * @note This is just a short cut for calling CreateForModel.
-         * @param el    The element to which this geometry will be attached
-         * @param transform     The placement transform (origin and axes)
-         * @return a GeometryBuilder object
-         * @see CreateForModel
-         */
-        static CreateForElementWithTransform(el: GeometrySourceP, transform: TransformP): GeometryBuilderP;
-
-        /**
-         * Construct a new GeometryBuilder to prepare geometry for elements in the specified model and category
-         * @param model The model where the geometry will ultimatley be stored
-         * @param catid The category of the element that will will ultimatley contain the geometry
-         * @param transform The placement transform (origin and axes)
+         * @param model The model where the geometry will ultimately be stored
+         * @param catid The category of the element that will ultimatley contain the geometry
+         * @param transform The placement represented by a transform
          * @return a GeometryBuilder object
          */
         static CreateForModelWithTransform(model: DgnModelP, catid: DgnObjectIdP, transform: TransformP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare 3d geometry for elements in the specified model and category
+         * @param model The model where the geometry will ultimately be stored
+         * @param catid The category of the element that will ultimatley contain the geometry
+         * @param o     The placement origin
+         * @param angles The placement angles
+         * @return a GeometryBuilder object
+         */
+        static CreateFor3dModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint3dP, angles: YawPitchRollAnglesP): GeometryBuilderP;
+
+        /**
+         * Construct a new GeometryBuilder to prepare 2d geometry for elements in the specified model and category
+         * @param model The model where the geometry will ultimately be stored
+         * @param catid The category of the element that will ultimatley contain the geometry
+         * @param o     The placement origin
+         * @param angle The placement angle
+         * @return a GeometryBuilder object
+         */
+        static CreateFor2dModel(model: DgnModelP, catid: DgnObjectIdP, o: DPoint2dP, angle: AngleP): GeometryBuilderP;
 
         /**
          * Construct a new GeometryBuilder to prepare geometry for a DgnGeometryPart
@@ -1174,14 +1167,14 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
          * @param element   The element
          * @return non-zero error status if \a element is invalid or if this geometry stream is invalid
          */
-        SetGeometryStreamAndPlacement(element: GeometrySourceP): cxx_int32_t;
+        Finish(element: GeometrySourceP): cxx_int32_t;
 
         /**
          * Copy the geometry in this builder to a DgnGeometryPart.
          * @param part  The DgnGeometryPart
          * @return non-zero error status if \a part is invalid or if this geometry stream is invalid
          */
-        SetGeometryStream(part: DgnGeometryPartP): cxx_int32_t;
+        FinishPart(part: DgnGeometryPartP): cxx_int32_t;
 
         OnDispose(): void;
         Dispose(): void;

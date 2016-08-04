@@ -14,6 +14,86 @@
 
 using namespace flatbuffers;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+FaceAttachment::FaceAttachment ()
+    {
+    m_useColor = m_useMaterial = false;
+    m_color = ColorDef::Black();
+    m_transparency = 0.0;
+    m_uv.Init(0.0, 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+FaceAttachment::FaceAttachment (GeometryParamsCR sourceParams)
+    {
+    m_categoryId    = sourceParams.GetCategoryId();
+    m_subCategoryId = sourceParams.GetSubCategoryId();
+    m_transparency  = sourceParams.GetTransparency();
+
+    m_useColor = !sourceParams.IsLineColorFromSubCategoryAppearance();
+    m_color = m_useColor ? sourceParams.GetLineColor() : ColorDef::Black();
+
+    if (m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance())
+        m_material = sourceParams.GetMaterialId();
+
+    m_uv.Init(0.0, 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void FaceAttachment::ToGeometryParams (GeometryParamsR elParams) const
+    {
+    elParams.SetCategoryId(m_categoryId);
+    elParams.SetSubCategoryId(m_subCategoryId);
+    elParams.SetTransparency(m_transparency);
+
+    if (m_useColor)
+        elParams.SetLineColor(m_color);
+
+    if (m_useMaterial)
+        elParams.SetMaterialId(m_material);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FaceAttachment::operator==(struct FaceAttachment const& rhs) const
+    {
+    if (m_useColor      != rhs.m_useColor ||
+        m_useMaterial   != rhs.m_useMaterial ||
+        m_categoryId    != rhs.m_categoryId ||
+        m_subCategoryId != rhs.m_subCategoryId ||
+        m_color         != rhs.m_color ||
+        m_transparency  != rhs.m_transparency ||
+        m_material      != rhs.m_material ||
+        m_uv.x          != rhs.m_uv.x || 
+        m_uv.y          != rhs.m_uv.y)
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool FaceAttachment::operator< (struct FaceAttachment const& rhs) const
+    {
+    return (m_useColor         < rhs.m_useColor ||
+            m_useMaterial      < rhs.m_useMaterial ||
+            m_categoryId       < rhs.m_categoryId ||
+            m_subCategoryId    < rhs.m_subCategoryId ||
+            m_color.GetValue() < rhs.m_color.GetValue() ||
+            m_transparency     < rhs.m_transparency ||
+            m_material         < rhs.m_material ||
+            m_uv.x             < rhs.m_uv.x || 
+            m_uv.y             < rhs.m_uv.y);
+    }
+
 #if defined (BENTLEYCONFIG_OPENCASCADE)
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  03/16
@@ -103,7 +183,7 @@ KernelEntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
     switch (shapeType)
         {
         case TopAbs_COMPOUND:
-            return ISolidKernelEntity::EntityType_Solid; // NEEDSWORK: Add enum value...
+            return ISolidKernelEntity::EntityType_Compound;
 
         case TopAbs_COMPSOLID:
         case TopAbs_SOLID:

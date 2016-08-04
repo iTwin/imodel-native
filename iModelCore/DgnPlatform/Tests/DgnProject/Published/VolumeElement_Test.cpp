@@ -55,7 +55,7 @@ GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR cente
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
     builder->Append(*geomPtr);
-    BentleyStatus status = builder->SetGeometryStreamAndPlacement(*physicalElementPtr);
+    BentleyStatus status = builder->Finish(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
     GenericPhysicalObjectCPtr insertedElement = m_testDb->Elements().Insert<GenericPhysicalObject>(*physicalElementPtr);

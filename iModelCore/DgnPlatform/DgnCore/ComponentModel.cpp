@@ -285,7 +285,7 @@ DgnDbStatus ComponentGeometryHarvester::HarvestModel(bvector<bpair<DgnSubCategor
         // Note: Don't assign a Code. If we did that, then we would have trouble with change-merging.
         DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(db);
         builder->CreateGeometryPart(db, true);
-        builder->SetGeometryStream(*geomPart);
+        builder->Finish(*geomPart);
         if (!db.Elements().Insert(*geomPart).IsValid())
             {
             BeAssert(false && "cannot create geompart for solution geometry -- what could have gone wrong?");
@@ -324,7 +324,7 @@ DgnElementPtr ComponentGeometryHarvester::CreateInstance(DgnDbStatus& status, Dg
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    builder->SetGeometryStreamAndPlacement(*geom);
+    builder->Finish(*geom);
 
     // *** TBD: Other Aspects??
 

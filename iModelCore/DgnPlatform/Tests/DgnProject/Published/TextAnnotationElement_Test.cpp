@@ -7,7 +7,14 @@
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
-
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                            Umar.Hayat      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TextAnnotationTest : public ::testing::Test
+{
+private:
+    ScopedDgnHost host;
+};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
@@ -33,12 +40,11 @@ static DgnElementId ensureAnnotationTextStyle1(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST(TextAnnotation2dTest, BasicCrud)
+TEST_F (TextAnnotationTest, BasicCrud2d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
     
-    ScopedDgnHost host;
 
     BeFileName dbPath;
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", L"TextAnnotation2dTest-BasicCrud.bim", __FILE__));
@@ -224,13 +230,11 @@ TEST(TextAnnotation2dTest, BasicCrud)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
-TEST(TextAnnotation3dTest, BasicCrud)
+TEST_F (TextAnnotationTest, BasicCrud3d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
     
-    ScopedDgnHost host;
-
     BeFileName dbPath;
     ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"TextAnnotation3dTest-BasicCrud.bim", __FILE__));
 

@@ -33,7 +33,7 @@ Utf8String BisCoreDomainTests::GetDDL(Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ValidateDomainSchemaDDL.bim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     // dgn_Element
         {

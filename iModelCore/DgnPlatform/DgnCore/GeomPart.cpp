@@ -210,6 +210,8 @@ DgnGeometryPartId DgnImportContext::RemapGeometryPartId(DgnGeometryPartId source
         DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(GetDestinationDb());
         GeometryStreamIO::Import(destGeometryPart->GetGeometryStreamR(), sourceGeometryPart->GetGeometryStream(), *this);
 
+        destGeometryPart->SetBoundingBox(sourceGeometryPart->GetBoundingBox());
+
         if (!GetDestinationDb().Elements().Insert<DgnGeometryPart>(*destGeometryPart).IsValid())
             {
             BeAssert(false);

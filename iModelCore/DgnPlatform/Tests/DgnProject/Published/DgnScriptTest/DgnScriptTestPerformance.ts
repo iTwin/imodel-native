@@ -66,7 +66,7 @@ module DgnScriptPerformanceTests {
 
                 for (var k = 0; k < 10000; ++k) {
                     var ele = be.GeometricElement3d.CreateGeometricElement3d(model, catid, 'DgnPlatformTest.TestElementWithNoHandler');
-                    var builder = new be.GeometryBuilder(ele, new be.DPoint3d(i, j, k), new be.YawPitchRollAngles(0, 0, 0));
+                    var builder = be.GeometryBuilder.CreateFor3dModel(model, catid, new be.DPoint3d(i, j, k), new be.YawPitchRollAngles(0, 0, 0));
                     var geom: be.SolidPrimitive;
                     if (k % 3 == 0)
                         geom = be.DgnSphere.CreateSphere(new be.DPoint3d(0, 0, 0), 1.0);
@@ -75,8 +75,8 @@ module DgnScriptPerformanceTests {
                     else
                         geom = be.DgnCone.CreateCircularCone(new be.DPoint3d(0, 0, 0), new be.DPoint3d(0, 0, 1), 1, 1, true);
                     builder.AppendGeometry(geom);
-                    if (0 != builder.SetGeometryStreamAndPlacement(ele)) {
-                        be.Script.ReportError('SetGeometryStreamAndPlacement failed');
+                    if (0 != builder.Finish(ele)) {
+                        be.Script.ReportError('Finish failed');
                         return -1;
                     }
                     //PopulateProperties(ele);

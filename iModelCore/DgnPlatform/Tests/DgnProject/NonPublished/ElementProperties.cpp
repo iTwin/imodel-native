@@ -26,7 +26,7 @@ struct ElementDisplayProperties : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetGradient)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ElementDisplayProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     auto seedModelId3 = m_defaultModelId;
 
@@ -49,7 +49,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     keyColors[0] = ColorDef::Yellow();
     keyColors[1] = ColorDef::Red();
 
-    gradient->SetMode(GradientMode::Spherical);
+    gradient->SetMode(Render::GradientSymb::Mode::Spherical);
     gradient->SetFlags(0);
     gradient->SetAngle(8.0);
     gradient->SetTint(1.0);
@@ -72,13 +72,13 @@ TEST_F (ElementDisplayProperties, SetGradient)
 
         Render::GeometryParamsCR params = iter.GetGeometryParams();
         Render::GradientSymbCP gradient = params.GetGradient();
-        EXPECT_NE (nullptr, params.GetGradient());
-        EXPECT_EQ (GradientMode::Spherical, gradient->GetMode());
-        EXPECT_EQ (0, gradient->GetFlags());
-        EXPECT_EQ (8.0, gradient->GetAngle());
-        EXPECT_EQ (1.0, gradient->GetTint());
-        EXPECT_EQ (1.0, gradient->GetShift());
-        EXPECT_EQ (2, gradient->GetNKeys());
+        EXPECT_NE(nullptr, params.GetGradient());
+        EXPECT_EQ(Render::GradientSymb::Mode::Spherical, gradient->GetMode());
+        EXPECT_EQ(0, gradient->GetFlags());
+        EXPECT_EQ(8.0, gradient->GetAngle());
+        EXPECT_EQ(1.0, gradient->GetTint());
+        EXPECT_EQ(1.0, gradient->GetShift());
+        EXPECT_EQ(2, gradient->GetNKeys());
         }
     }
 
@@ -88,7 +88,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDisplayProperties, SetDisplayPattern)
     {
-    SetupProject (L"3dMetricGeneral.ibim", L"ElementDisplayProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     auto seedModelId3 = m_defaultModelId;
 
@@ -99,21 +99,21 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     DgnModelId m3id = m_db->Models().QueryModelId(DgnModel::CreateModelCode("model3"));
 
     Render::GeometryParams ep;
-    ep.SetCategoryId (m_defaultCategoryId);
+    ep.SetCategoryId(m_defaultCategoryId);
 
-    PatternParamsPtr pattern = PatternParams::Create (); 
-    pattern->SetColor (ColorDef::Cyan ());
-    pattern->SetWeight (6);
-    pattern->SetStyle (1);
-    ep.SetPatternParams (pattern.get());
+    PatternParamsPtr pattern = PatternParams::Create(); 
+    pattern->SetColor(ColorDef::Cyan());
+    pattern->SetWeight(6);
+    pattern->SetStyle(1);
+    ep.SetPatternParams(pattern.get());
     EXPECT_TRUE(NULL != ep.GetPatternParams());
 
     auto keyE1 = InsertElement(ep, m3id);
-    DgnElementId E1id = keyE1->GetElementId ();
-    DgnElementCP pE1 = m_db->Elements ().FindElement (E1id);
+    DgnElementId E1id = keyE1->GetElementId();
+    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
 
     GeometrySourceCP geomElem = pE1->ToGeometrySource();
-    GeometryCollection collection (*geomElem);
+    GeometryCollection collection(*geomElem);
 
     for (auto iter : collection)
         {
@@ -122,12 +122,12 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
         if (!geom.IsValid())
             continue;
 
-        Render::GeometryParamsCR params = iter.GetGeometryParams ();
-        PatternParamsCP pattern = params.GetPatternParams ();
+        Render::GeometryParamsCR params = iter.GetGeometryParams();
+        PatternParamsCP pattern = params.GetPatternParams();
         ASSERT_NE(nullptr, pattern );
         EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());
-        EXPECT_EQ (6, pattern->GetWeight ()); 
-        EXPECT_EQ (1, pattern->GetStyle ());
+        EXPECT_EQ(6, pattern->GetWeight()); 
+        EXPECT_EQ(1, pattern->GetStyle());
         } 
     }
 
@@ -137,7 +137,7 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetTransparency)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ElementDisplayProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
@@ -164,8 +164,8 @@ TEST_F (ElementDisplayProperties, SetTransparency)
             continue;
 
         Render::GeometryParamsCR params = iter.GetGeometryParams();
-        EXPECT_EQ (0.5, params.GetTransparency());
-        EXPECT_EQ (0.5, params.GetNetTransparency());
+        EXPECT_EQ(0.5, params.GetTransparency());
+        EXPECT_EQ(0.5, params.GetNetTransparency());
         }
     }
 
@@ -175,7 +175,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetCategory)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ElementDisplayProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
@@ -215,7 +215,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetDisplayParams)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ElementDisplayProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
@@ -243,10 +243,10 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
             continue;
 
         Render::GeometryParamsCR params = iter.GetGeometryParams();
-        EXPECT_EQ (21, params.GetWeight());
+        EXPECT_EQ(21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
-        EXPECT_FALSE (weight);
-        EXPECT_EQ (2, params.GetDisplayPriority());
+        EXPECT_FALSE(weight);
+        EXPECT_EQ(2, params.GetDisplayPriority());
         }
     }
 
@@ -256,7 +256,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, FillProperties)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ElementDisplayProperties.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
@@ -285,11 +285,11 @@ TEST_F (ElementDisplayProperties, FillProperties)
             continue;
 
         Render::GeometryParamsCR params = iter.GetGeometryParams();
-        EXPECT_EQ (Render::FillDisplay::Always, params.GetFillDisplay());
-        EXPECT_EQ (ColorDef::Red(), params.GetFillColor());
+        EXPECT_EQ(Render::FillDisplay::Always, params.GetFillDisplay());
+        EXPECT_EQ(ColorDef::Red(), params.GetFillColor());
         bool FillColor = params.IsFillColorFromSubCategoryAppearance();
-        EXPECT_FALSE (FillColor);
-        EXPECT_EQ (0.8, params.GetFillTransparency());
-        EXPECT_EQ (0.8, params.GetNetFillTransparency());
+        EXPECT_FALSE(FillColor);
+        EXPECT_EQ(0.8, params.GetFillTransparency());
+        EXPECT_EQ(0.8, params.GetNetFillTransparency());
         }
     }

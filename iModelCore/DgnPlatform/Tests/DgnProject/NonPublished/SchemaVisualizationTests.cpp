@@ -1864,7 +1864,7 @@ public:
         textspanText->SetOrigin(DPoint3d::From(0.0, 0.0, 0.0));
 
         builder->Append(*textspanText);
-        builder->SetGeometryStreamAndPlacement(*textspanElement);
+        builder->Finish(*textspanElement);
         ASSERT_TRUE(db->Elements().Insert(*textspanElement).IsValid());
         }
 
@@ -1897,7 +1897,7 @@ public:
         CurveVectorPtr polygonCurveVector = CurveVector::Create(polygonCurvePrimitive, CurveVector::BOUNDARY_TYPE_Open);
 
         builder->Append(*polygonCurveVector);
-        builder->SetGeometryStreamAndPlacement(*polygonElement);
+        builder->Finish(*polygonElement);
         ASSERT_TRUE(db->Elements().Insert(*polygonElement).IsValid());
         }
 
@@ -1930,7 +1930,7 @@ public:
         CurveVectorPtr bezierCurveVector = CurveVector::Create(bezierCurvePrimitive, CurveVector::BOUNDARY_TYPE_Open);
 
         builder->Append(*bezierCurveVector);
-        builder->SetGeometryStreamAndPlacement(*bezierElement);
+        builder->Finish(*bezierElement);
         ASSERT_TRUE(db->Elements().Insert(*bezierElement).IsValid());
         }
 
@@ -1952,7 +1952,7 @@ public:
         CurveVectorPtr polylineCurveVector = CurveVector::Create(polylineCurvePrimitive, CurveVector::BOUNDARY_TYPE_Open);
 
         builder->Append(*polylineCurveVector);
-        builder->SetGeometryStreamAndPlacement(*polylineElement);
+        builder->Finish(*polylineElement);
         ASSERT_TRUE(db->Elements().Insert(*polylineElement).IsValid());
         }
 

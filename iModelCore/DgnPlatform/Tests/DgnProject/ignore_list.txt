@@ -16,7 +16,7 @@ UnitManagerTest.GetStandardLabel                        # fails randomonly on 06
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
-ConfigurationManager_Test.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
+ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
 ComponentModelBasicTest.MakeVariationInstance           # UmarH Failing Only on 0601Dev Firebug ( not locally), need to investigate
 
@@ -27,11 +27,10 @@ DgnProjectPackageTest.VerifyViewsForDgndbFilesConvertedDuringBuild
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
-ElementAspectTests.ImportElementsWithAspect             # Does not element import aspects
-FontTests.QueryFonts                                    # Defect 386022 - Does not find font
+ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does not element import aspects
 TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
-DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Unable to query line style unless we reload the file ( which will reload the cache )
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
 
@@ -78,3 +77,14 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
 ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction # notified Raman
 ChangeSummaryTestFixture.ElementChangesFromSavedTransactions # notified Raman
 ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
+
+#WIP: Umar - Test Refactoring to remove pre-published data dependency
+CategoryTests.SubCategoryInvariants
+ElementGeomPartTests.ElementUsesGeometryParts
+TransactionManagerTests.UndoRedo
+ImportTest.ImportElementsWithAuthorities
+
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad # Fails when run by itself - notifed Umar
+DgnScriptTest.TestEga
+
+BackwardsCompatibilityTests.OpenDgndbInCurrent # bim0100 is not backwards compatible with dgndb0601-16q2

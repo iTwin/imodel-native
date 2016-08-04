@@ -12,7 +12,6 @@
 #include "IAuxCoordSys.h"
 #include "ViewContext.h"
 #include "SectionClip.h"
-#include "PointCloudSettings.h"
 
 DGNPLATFORM_TYPEDEFS(CameraInfo)
 DGNPLATFORM_TYPEDEFS(CameraViewController)
@@ -108,6 +107,15 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
+    struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
+    {
+        //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
+        struct Key : NonCopyableClass {};
+
+        virtual void _SaveToSettings(JsonValueR) const  {}
+        virtual void _RestoreFromSettings(JsonValueCR) {}
+    };
+
 protected:
     friend struct ViewContext;
     friend struct DgnViewport;
@@ -126,17 +134,19 @@ protected:
     DgnModelId     m_targetModelId;
     DgnModelIdSet  m_viewedModels;
     DgnCategoryIdSet  m_viewedCategories;
+    mutable Json::Value m_settings;
     ColorDef       m_backgroundColor;      // used only if bit set in flags
     RotMatrix      m_defaultDeviceOrientation;
     bool           m_defaultDeviceOrientationValid;
     bool           m_sceneReady = false;
 
+    mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Appearance> m_subCategories;
     mutable bmap<DgnSubCategoryId,DgnSubCategory::Override> m_subCategoryOverrides;
 
 protected:
     DGNPLATFORM_EXPORT ViewController(DgnDbR, DgnViewId viewId);
-    void LoadCategories(JsonValueCR);
+    void LoadCategories();
     void ReloadSubCategory(DgnSubCategoryId);
 
     virtual ~ViewController(){}
@@ -174,11 +184,11 @@ protected:
 
     //!< Store settings in the supplied Json object. These values will be persisted in the database and in the undo stack
     //!< Note that if you override _SaveToSettings, you must call T_Super::_SaveToSettings!
-    DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const;
+    DGNPLATFORM_EXPORT virtual void _SaveToSettings() const;
 
     //!< Restore settings from the supplied Json object. These values were persisted in the database and in the undo stack
     //!< Note that if you override _RestoreFromSettings, you must call T_Super::_RestoreFromSettings!
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR);
+    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings();
 
     //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
     DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DecorateContextR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
@@ -265,7 +275,7 @@ protected:
     virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
     //! Get the extent of the model(s) viewed by this view
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const;
 
     enum class CloseMe {No=0, Yes=1};
     //! called when one or more models are deleted
@@ -319,10 +329,9 @@ public:
     bool IsModelViewed(DgnModelId modelId) const {return m_viewedModels.Contains(modelId);}
     bool HasSubCategoryOverride() const {return !m_subCategoryOverrides.empty();}
     DGNPLATFORM_EXPORT void LookAtViewAlignedVolume(DRange3dCR volume, double const* aspectRatio=nullptr, MarginPercent const* margin=nullptr, bool expandClippingPlanes=true);
-    void SaveToSettings(JsonValueR val) const {_SaveToSettings(val);}
-    void RestoreFromSettings(JsonValueCR val) {_RestoreFromSettings(val);}
+    DGNPLATFORM_EXPORT void SaveToSettings() const;
+    DGNPLATFORM_EXPORT void RestoreFromSettings();
     void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
-
 
     DgnClassId GetClassId() const {return m_classId;}
 
@@ -330,7 +339,7 @@ public:
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the axis-aliged extent of all of the possible elements visible in this view. For physical views, this is the "project extents".
-    AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
+    AxisAlignedBox3d GetViewedExtents(DgnViewportCR vp) const {return _GetViewedExtents(vp);}
 
     //! Load the settings of this view from persistent settings in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Load();
@@ -538,8 +547,12 @@ public:
 
     //! Get the unit vector that points in the view Z (front-to-back) direction.
     DVec3d GetZVector() const {DVec3d v; GetRotation().GetRow(v,2); return v;}
-};
 
+    AppData* FindAppData(AppData::Key const& key) const {auto entry = m_appData.find(&key); return entry==m_appData.end() ? nullptr : entry->second.get();}
+    void AddAppData(AppData::Key const& key, AppData* obj) const {auto entry = m_appData.Insert(&key, obj); if (entry.second) return; entry.first->second = obj;}
+    StatusInt DropAppData(AppData::Key const& key) const {return 0==m_appData.erase(&key) ? ERROR : SUCCESS;}
+    JsonValueCR GetSettings() const {return m_settings;}
+};
 
 //=======================================================================================
 //! A SpatialViewControllerBase controls views of SpatialModels.
@@ -553,13 +566,10 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController
     friend struct  SpatialRedlineViewController;
 
 protected:
-    DPoint3d                                m_origin;                           //!< The lower left back corner of the view frustum.
-    DVec3d                                  m_delta;                            //!< The extent of the view frustum.
-    RotMatrix                               m_rotation;                         //!< Rotation of the view frustum.
-    DgnStyleId                              m_displayStyleId;                   //!< The display style id of the view
-    IAuxCoordSysPtr                         m_auxCoordSys;                      //!< The auxiliary coordinate system in use.
-    PointCloudViewSettings                  m_pointCloudViewSettings;           //!< Point Cloud view settings (display style, ramps, ...)
-    PointCloudClassificationSettings        m_pointCloudClassificationSettings; //!< Class colors, class visibility, ...
+    DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
+    DVec3d m_delta;                    //!< The extent of the view frustum.
+    RotMatrix m_rotation;              //!< Rotation of the view frustum.
+    IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
 
     virtual SpatialViewControllerCP _ToSpatialView() const override {return this;}
 
@@ -575,8 +585,8 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR);
-    DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
+    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
     DGNPLATFORM_EXPORT virtual BentleyStatus _SetTargetModel(GeometricModelP target) override;
 
 public:
@@ -597,18 +607,6 @@ public:
     //! Sets the Auxiliary Coordinate System to use for this view.
     //! @param[in] acs The new Auxiliary Coordinate System.
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
-
-    //! Get the PointCloudViewSettings.
-    PointCloudViewSettings const& GetPointCloudViewSettings() const {return m_pointCloudViewSettings;}
-
-    //! Get a reference to the PointCloudViewSettings.
-    PointCloudViewSettings& GetPointCloudViewSettingsR() {return m_pointCloudViewSettings;}
-
-    //! Get the PointCloudClassificationSettings.
-    PointCloudClassificationSettings const& GetPointCloudClassificationSettings() const {return m_pointCloudClassificationSettings;}
-
-    //! Get a reference to the PointCloudClassificationSettings.
-    PointCloudClassificationSettings& GetPointCloudClassificationSettingsR() {return m_pointCloudClassificationSettings;}
 };
 
 /** @addtogroup GROUP_DgnView DgnView Module
@@ -690,8 +688,8 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
-    DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
+    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
 
 public:
     void VerifyFocusPlane();
@@ -801,6 +799,11 @@ public:
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
 
+    //! Determine whether the camera is above or below an elevation (postion along world-z axis).
+    //! @param[in] elevation The elevation to test
+    //! @return true if the camera is above the elevation. If the camera is not turned on, return true if the view is pointed "down" (the front is higher than the back).
+    bool IsCameraAbove(double elevation) const {return IsCameraOn() ? (GetEyePoint().z > elevation) : (GetZVector().z > 0);}
+
     //! Get the distance from the eyePoint to the front plane for this view.
     double GetFrontDistance() const {return GetBackDistance() - GetDelta().z;}
 
@@ -830,6 +833,7 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
+
 /** @} */
 
 };
@@ -853,8 +857,8 @@ protected:
 
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(ViewContextR, GeometrySourceCR, double) override;
-    DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
+    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
 
     void SetOverrideGraphicParams(ViewContextR) const;
     void DrawViewInternal(ViewContextR);
@@ -901,8 +905,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetOrigin(DPoint3dCR org) override;
     DGNPLATFORM_EXPORT virtual void _SetDelta(DVec3dCR delta) override;
     DGNPLATFORM_EXPORT virtual void _SetRotation(RotMatrixCR rot) override;
-    DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
+    DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
+    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
 
 public:
     ViewController2d(DgnDbR project, DgnViewId viewId) : ViewController(project, viewId) {}
@@ -1011,7 +1015,7 @@ private:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
-    virtual AxisAlignedBox3d _GetViewedExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 
     void PushClipsForSpatialView(ViewContextR) const;
     void PopClipsForSpatialView(ViewContextR) const;
