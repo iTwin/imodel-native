@@ -1957,12 +1957,13 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
+    // Common case: auto-handled properties
     if (!IsCustomHandledProperty(name))
         {
-        // Common case: auto-handled properties
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
             return DgnDbStatus::Success;
+        return DgnDbStatus::BadRequest;
         }
 
     // Rare: custom-handled properties
@@ -2005,19 +2006,44 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
+    {
+    if (value.IsNull())
+        {
+        ECN::ECDbPropertyMap propertyMap;
+        if (ECN::ECDbMapCustomAttributeHelper::TryGetPropertyMap(propertyMap, prop))
+            {
+            bool isNullable;
+            if (ECN::ECObjectsStatus::Success == propertyMap.TryGetIsNullable(isNullable) && !isNullable)
+                return false;
+            }
+        }
+
+    // *** TBD: do range validation
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
-    if (!IsCustomHandledProperty(name))
+    // Common case: auto-handled properties
+    ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
+    if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
         {
-        // Common case: auto-handled properties
+        if (!isValidValue(*ecprop, value))
+            return DgnDbStatus::BadArg;
+
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
             {
             m_flags.m_autoHandledPropsDirty = true;
             return DgnDbStatus::Success;
             }
+        return DgnDbStatus::BadArg;
         }
 
     if (0 == strcmp(DGN_ELEMENT_PROPNAME_Code, name))

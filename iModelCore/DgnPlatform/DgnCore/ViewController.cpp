@@ -851,6 +851,7 @@ SpatialViewController::SpatialViewController(DgnDbR dgndb, DgnViewId viewId) : V
     m_delta.Zero();
     m_rotation.InitIdentity();
     m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
+    m_auxCoordSys->SetOrigin(dgndb.Units().GetGlobalOrigin());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2336,18 +2337,20 @@ void CameraViewController::Environment::GroundPlane::Draw(DecorateContextR conte
     pts[2] = pts[3] = m_extents.high;
     pts[3].y = m_extents.low.y;
 
-    double  keyValues[] = {0.0, 0.5};   // gradient goes from edge of rectangle (0.0) to halfway inside rectangle (though as far as I can tell these don't do anything???)
-    ColorDef colors[] = {context.GetViewport()->GetBackgroundColor(), m_color};
+    double keyValues[] = {0.0, 0.25, 0.5}; // gradient goes from edge of rectangle (0.0) to center (1.0)...
+    ColorDef colors[] = {ground.m_color, ground.m_color, ground.m_color};
 
-    colors[0].SetAlpha(m_edgeAlpha);
-    colors[1].SetAlpha(m_centerAlpha);
+    colors[0].SetAlpha(ground.m_edgeAlpha);
+    colors[1].SetAlpha(ground.m_centerAlpha);
+    colors[2].SetAlpha(ground.m_centerAlpha);
 
     GradientSymbPtr gradient = GradientSymb::Create();
-    gradient->SetMode(m_mode);
+    gradient->SetMode(ground.m_mode);
     gradient->SetKeys(_countof(colors), colors, keyValues);
 
     GraphicParams params;
     params.SetLineColor(colors[0]);
+    params.SetFillColor(ColorDef::White()); // Fill should be set to opaque white for gradient texture...
     params.SetGradient(gradient.get());
 
     Render::GraphicBuilderPtr graphic = context.CreateGraphic();
@@ -2388,7 +2391,7 @@ CameraViewController::Environment::SkyBox::SkyBox(JsonValueCR json, Render::Syst
         double skyExponent = GetDouble(json, SkyBoxJson::SkyExponent(), 4.0);
         ColorDef groundColor = GetColor(json, SkyBoxJson::GroundColor(), ColorDef(120,143,125));
         ColorDef zenithColor = GetColor(json, SkyBoxJson::ZenithColor(), ColorDef(54,117,255));
-        ColorDef nadirColor  = GetColor(json, SkyBoxJson::NadirColor(), ColorDef::DarkBrown()); //(38,26,9));
+        ColorDef nadirColor  = GetColor(json, SkyBoxJson::NadirColor(), ColorDef::DarkBrown()); 
         ColorDef skyColor    = GetColor(json, SkyBoxJson::SkyColor(), ColorDef(143,205,255));
 
         enum {GRADIENT_PIXEL_COUNT=1024};
@@ -2425,6 +2428,10 @@ CameraViewController::Environment::SkyBox::SkyBox(JsonValueCR json, Render::Syst
         texture = system._CreateTexture(image);
         }
 
+    Material::CreateParams matParams;
+    matParams.SetShadows(false);
+    m_material = system._CreateMaterial(matParams);
+
     double transform[2][3];
     transform[0][0] = 0.0;
     transform[0][1] = 1.0;
@@ -2433,8 +2440,6 @@ CameraViewController::Environment::SkyBox::SkyBox(JsonValueCR json, Render::Syst
     transform[1][1] = 0.0;
     transform[1][2] = 0.0;
 
-    Material::CreateParams matParams;
-    m_material = system._CreateMaterial(matParams);
     m_material->_MapTexture(*texture, 1.0, &transform[0][0], Render::Material::MapMode::Parametric, false);
     }
 
@@ -2565,10 +2570,10 @@ void EnvironmentJson::AddDrawBackgroundMesh(Render::GraphicBuilderP builder, Dgn
         }
 
     PolyfaceQueryCarrier polyface(4, false, indices.size(),                                 // NumPerFace, twosided, nIndices,
-                                            meshPoints.size(), &meshPoints[0], &indices[0],          // Points.
-                                            0, nullptr, nullptr,                                          // Normals.
-                                            meshParams.size(), &meshParams[0], &indices[0],         // Params.
-                                            0,  nullptr, nullptr);                                        // Colors
+                                            meshPoints.size(), &meshPoints[0], &indices[0], // Points.
+                                            0, nullptr, nullptr,                            // Normals.
+                                            meshParams.size(), &meshParams[0], &indices[0], // Params.
+                                            0,  nullptr, nullptr);                          // Colors
 
     builder->AddPolyface(polyface, true);
     }

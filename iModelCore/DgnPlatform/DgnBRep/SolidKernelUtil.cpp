@@ -183,7 +183,7 @@ KernelEntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
     switch (shapeType)
         {
         case TopAbs_COMPOUND:
-            return ISolidKernelEntity::EntityType_Solid; // NEEDSWORK: Add enum value...
+            return ISolidKernelEntity::EntityType_Compound;
 
         case TopAbs_COMPSOLID:
         case TopAbs_SOLID:

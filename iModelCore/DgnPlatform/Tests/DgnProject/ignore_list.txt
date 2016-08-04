@@ -84,5 +84,5 @@ ElementGeomPartTests.ElementUsesGeometryParts
 TransactionManagerTests.UndoRedo
 ImportTest.ImportElementsWithAuthorities
 
-DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad # Fails when run by itself - notifed Umar
 DgnScriptTest.TestEga
+ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main
