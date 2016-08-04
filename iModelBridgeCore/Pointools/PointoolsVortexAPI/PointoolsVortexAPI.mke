@@ -565,7 +565,7 @@ LINKER_LIBRARIES + Comdlg32.lib Ws2_32.lib
 %if defined(HAVE_WILDMAGIC)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)wildmagic$(stlibext)
 %else
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BentleyGeom$(libext)
 %endif
 
 %include $(sharedMki)linkLibrary.mki
