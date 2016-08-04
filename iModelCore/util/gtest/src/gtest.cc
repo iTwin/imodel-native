@@ -106,6 +106,11 @@
 // cpplint thinks that the header is already included, so we want to
 // silence it.
 # include <windows.h>  // NOLINT
+
+// *** BENTLEY CHANGE ***
+# include <DbgHelp.h>
+// *** BENTLEY CHANGE ***
+
 # undef min
 
 #else
@@ -528,6 +533,40 @@ bool UnitTestOptions::FilterMatchesTest(const std::string &test_case_name,
 }
 
 #if GTEST_HAS_SEH
+
+// *** BENTLEY CHANGE ***
+static std::stringstream s_stackTrace;
+
+static void grabStackTrace()
+    {
+    unsigned int const nSkip = 3;   // Don't report grabStackTrace itself or its callers GTestShouldProcessSEH and HandleExceptionsInMethodIfSupported.
+
+                                    // see https://msdn.microsoft.com/en-us/library/windows/desktop/bb204633(v=vs.85).aspx
+    unsigned int   i;
+    void         * stack[100];
+    unsigned short frames;
+    SYMBOL_INFO  * symbol;
+    HANDLE         process;
+
+    process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE);
+    frames = CaptureStackBackTrace(0, 100, stack, NULL);
+    symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+    s_stackTrace << "Mine\n";
+
+    for (i = nSkip; i < frames; i++)
+        {
+        SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+        s_stackTrace << "[" << std::setbase(10) << (frames - i - 1) << "] " << symbol->Name << " (0x" << std::setbase(16) << symbol->Address << ")\n";
+        }
+
+    free(symbol);
+    }
+// *** BENTLEY CHANGE ***
+
 // Returns EXCEPTION_EXECUTE_HANDLER if Google Test should handle the
 // given SEH exception, or EXCEPTION_CONTINUE_SEARCH otherwise.
 // This function is useful as an __except condition.
@@ -550,6 +589,11 @@ int UnitTestOptions::GTestShouldProcessSEH(DWORD exception_code) {
     should_handle = false;
   else if (exception_code == kCxxExceptionCode)
     should_handle = false;
+
+  // *** BENTLEY CHANGE ***
+  if (should_handle)
+      grabStackTrace();
+  // *** BENTLEY CHANGE ***
 
   return should_handle ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH;
 }
@@ -2337,7 +2381,10 @@ static std::string* FormatSehExceptionMessage(DWORD exception_code,
                                               const char* location) {
   Message message;
   message << "SEH exception with code 0x" << std::setbase(16) <<
-    exception_code << std::setbase(10) << " thrown in " << location << ".";
+    exception_code << std::setbase(10) << " thrown in " << location << ".\n" << internal::s_stackTrace.str();
+  // *** BENTLEY CHANGE ***                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  internal::s_stackTrace.clear();
+  // *** BENTLEY CHANGE ***
 
   return new std::string(message.GetString());
 }
