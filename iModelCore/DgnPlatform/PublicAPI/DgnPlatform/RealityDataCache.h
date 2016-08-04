@@ -23,7 +23,7 @@ DEFINE_REF_COUNTED_PTR(Cache)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
-struct Cache : RefCountedBase
+struct EXPORT_VTABLE_EXPORT Cache : RefCountedBase
 {
     typedef std::chrono::steady_clock::time_point TimePoint;
     struct Worker : RefCountedBase
