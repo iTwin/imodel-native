@@ -275,14 +275,14 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeToEvents(bvector<DgnDbServerEv
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr  DgnDbBriefcase::UnsubscribeToEvents(ICancellationTokenPtr cancellationToken)
+DgnDbServerStatusTaskPtr  DgnDbBriefcase::UnsubscribeToEvents()
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));    
     if (!m_repositoryConnection)
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-    return m_repositoryConnection->UnsubscribeToEvents(cancellationToken);
+    return m_repositoryConnection->UnsubscribeToEvents();
     }
 
 //---------------------------------------------------------------------------------------

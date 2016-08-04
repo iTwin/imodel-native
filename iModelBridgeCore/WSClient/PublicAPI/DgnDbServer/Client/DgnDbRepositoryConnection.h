@@ -275,7 +275,7 @@ public:
 
     //! Cancel Events from EventService
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents(ICancellationTokenPtr cancellationToken = nullptr);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents();
 
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

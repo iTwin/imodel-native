@@ -1469,10 +1469,7 @@ ICancellationTokenPtr cancellationToken
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //Todo: Add another method to only cancel GetEvent Operation and not the entire connection
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents
-(
-ICancellationTokenPtr cancellationToken
-)
+DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
     {
     if (m_eventServiceClient != nullptr)
         m_eventServiceClient->CancelRequest();
