@@ -2,7 +2,7 @@
 <ECSchema schemaName="Generic" nameSpacePrefix="generic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Graphic3d">
         <!-- A generic Graphic3d is used by a conversion process when: -->

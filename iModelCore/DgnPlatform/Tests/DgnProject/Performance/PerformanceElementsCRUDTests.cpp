@@ -42,7 +42,7 @@ void PerformanceElementsCRUDTestFixture::SetUpTestDgnDb(WCharCP destFileName, Ut
 
     if (!seedFilePath.DoesPathExist())
         {
-        SetupProject(L"3dMetricGeneral.ibim", seedFileName.c_str(), BeSQLite::Db::OpenMode::ReadWrite);
+        SetupSeedProject(seedFileName.c_str());
         ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
         BeFileName searchDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
@@ -85,7 +85,7 @@ uint64_t PerformanceElementsCRUDTestFixture::s_elementId = UINT64_C(2000000);
 Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
     "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'BisCore' version = '01.00' prefix = 'bis' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '02.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Element1' >"
         "    <ECCustomAttributes>"
         "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
@@ -135,7 +135,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  <ECClass typeName='TestMultiAspect' isDomainClass='True'>"
         "    <BaseClass>bis:ElementMultiAspect</BaseClass>"
         "    <ECCustomAttributes>"
-        "       <ClassMap xmlns = 'ECDbMap.01.00'>"
+        "       <ClassMap xmlns = 'ECDbMap.02.00'>"
         "           <Indexes>"
         "               <DbIndex>"
         "                   <Name>IDX_TMAspect</Name>"
@@ -151,7 +151,7 @@ Utf8CP const PerformanceElementsCRUDTestFixture::s_testSchemaXml =
         "  </ECClass>"
         "  <ECRelationshipClass typeName = 'ElementOwnsTestMultiAspect' strength = 'embedding'>"
         "    <ECCustomAttributes>"
-        "      <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "      <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
         "        <OnDeleteAction>Cascade</OnDeleteAction>"
         "      </ForeignKeyRelationshipMap>"
         "    </ECCustomAttributes>"
@@ -303,7 +303,7 @@ void PerformanceElement1::AddGeomtry()
         ASSERT_TRUE(appendEllipse3d(*builder, 1, 2, 3));
     else
         ASSERT_TRUE(appendSolidPrimitive(*builder, 3.0, 1.5));
-    ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    ASSERT_EQ(SUCCESS, builder->Finish(*geomElem));
 
     ASSERT_TRUE(HasGeometry());
 }
@@ -320,7 +320,7 @@ void PerformanceElement1::ExtendGeometry()
     else
         ASSERT_TRUE(appendSolidPrimitive(*builder, 6.0, 3.0));
 
-    ASSERT_EQ(SUCCESS, builder->SetGeometryStreamAndPlacement(*geomElem));
+    ASSERT_EQ(SUCCESS, builder->Finish(*geomElem));
     ASSERT_TRUE(HasGeometry());
     }
 

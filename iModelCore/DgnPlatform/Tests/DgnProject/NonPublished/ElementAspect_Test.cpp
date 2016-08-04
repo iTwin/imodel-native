@@ -38,7 +38,7 @@ struct ElementAspectTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementAspectTests, UniqueAspect_CRUD)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"UniqueAspectCRUD.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
     TestElementCPtr el;
     if (true)
@@ -117,7 +117,7 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"UniqueAspectUniqueness.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
     TestElementCPtr el;
 
@@ -150,7 +150,7 @@ TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementAspectTests, MultiAspect_CRUD)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"MultiAspectCRUD.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass(*m_db);
     TestElementCPtr el;
     EC::ECInstanceId a1id, a2id;
@@ -260,7 +260,7 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
 // @bsimethod                                   Majd.Uddin            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, ExternalKeyAspect_DiffAuthority)
-{
+    {
     SetupSeedProject();
 
     TestElementCPtr el;
@@ -293,12 +293,12 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_DiffAuthority)
     EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey2, *el, auth2Id));
     EXPECT_STREQ("TestExtKey2", insertedExternalKey2.c_str());
 
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Majd.Uddin            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, ExternalKeyAspect_MultipleElements)
-{
+    {
     SetupSeedProject();
 
     TestElementCPtr el1, el2;
@@ -331,13 +331,13 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_MultipleElements)
     EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el2, auth1Id));
     EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
 
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Majd.Uddin            01/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, ExternalKeyAspect_WrongAuthorityId)
-{
+    {
     SetupSeedProject();
 
     TestElementCPtr el;
@@ -362,7 +362,7 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_WrongAuthorityId)
     EXPECT_EQ(DgnDbStatus::Success, DgnElement::ExternalKeyAspect::Query(insertedExternalKey, *el, authId));
     EXPECT_STREQ("TestExtKey", insertedExternalKey.c_str());
 
-}
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Umar.Hayat                            02/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -411,7 +411,7 @@ TEST_F(ElementAspectTests, ExternalKeyAspect_Delete)
 TEST_F(ElementAspectTests, ImportElementsWithAspect)
     {
     // Open Source Db
-    SetupProject(L"3dMetricGeneral.ibim", L"SourceDb.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     DgnAuthorityId auth1Id;
     TestElementCPtr el1;
     if (true)
@@ -441,10 +441,10 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
     if (true)
         {        
         // Open Destination DB
-        //SetupProject(L"3dMetricGeneral.ibim", L"DestinationDb.ibim", Db::OpenMode::ReadWrite);
-       // DgnDbPtr db2 = m_db;
+        BeFileName destinationFile;
+        ASSERT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(destinationFile, L"DestinationDb.bim"));
         DgnDbPtr db2;
-        DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", L"DestinationDb.ibim"), DgnDb::OpenMode::ReadWrite, true);
+        DgnDbTestFixture::OpenDb(db2, destinationFile, DgnDb::OpenMode::ReadWrite, true);
         ASSERT_TRUE(db2.IsValid());
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*db2);
         ASSERT_TRUE(DgnDbStatus::Success == status);

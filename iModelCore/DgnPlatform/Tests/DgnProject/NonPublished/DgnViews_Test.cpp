@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ColorUtil.h>
 #include <Bentley/bset.h>
@@ -18,40 +19,20 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
-* Test fixture for testing DgnViews
-* @bsimethod                                    Algirdas.Mikoliunas            03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnViewsTest : public ::testing::Test
-    {
-public:
-    ScopedDgnHost   m_host;
-    DgnDbPtr        project;
-
-    void SetupProject (WCharCP projFile, Db::OpenMode mode);
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* Set up method that opens an existing .bim project file
-* @bsimethod                                    Algirdas.Mikoliunas            03/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
-    {
-    DgnDbTestDgnManager tdm (projFile, __FILE__, mode, false);
-    project = tdm.GetDgnProjectP();
-    ASSERT_TRUE( project != NULL);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnViewElemTest : DgnViewsTest
+struct DgnViewElemTest : public DgnDbTestFixture
 {
     typedef ViewDefinition::Iterator Iter;
     typedef Iter::Options IterOpts;
+    DgnDbPtr        project;
 
-    void SetupProject()
+    void SetupTestProject()
         {
-        DgnViewsTest::SetupProject(L"ElementsSymbologyByLevel.ibim", Db::OpenMode::ReadWrite);
+        WString testName(TEST_NAME, true);
+        testName.AppendUtf8(".ibim");
+        DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
+        project = m_db;
         }
 
     DgnModelPtr AddModel(Utf8StringCR name)
@@ -102,7 +83,7 @@ struct DgnViewElemTest : DgnViewsTest
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, WorkWithViewTable)
     {
-    SetupProject();
+    SetupTestProject();
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*project);
@@ -127,7 +108,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, DeleteView)
     {
-    SetupProject();
+    SetupTestProject();
 
     //Get views
     auto viewId = (*ViewDefinition::MakeIterator(*project).begin()).GetId();
@@ -146,7 +127,7 @@ TEST_F(DgnViewElemTest, DeleteView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, SetViewName)
     {
-    SetupProject();
+    SetupTestProject();
 
     //Get views
     auto viewId = (*ViewDefinition::MakeIterator(*project).begin()).GetId();
@@ -168,11 +149,11 @@ TEST_F(DgnViewElemTest, SetViewName)
 
 /*---------------------------------------------------------------------------------**//**
 * CRUD
-* @bsimethod                               Umar Hayagt                    10/15
+* @bsimethod                               Umar Hayat                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, CRUD)
     {
-    SetupProject();
+    SetupTestProject();
 
     // Create a new view
     CameraViewDefinition tempView(CameraViewDefinition::CreateParams(*project, "TestView",
@@ -233,7 +214,7 @@ TEST_F(DgnViewElemTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewElemTest, Iterate)
     {
-    SetupProject();
+    SetupTestProject();
 
     DgnModelPtr models[] = { AddModel("A"), AddModel("B") };
     static const DgnViewSource s_viewSources[] = { DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private };

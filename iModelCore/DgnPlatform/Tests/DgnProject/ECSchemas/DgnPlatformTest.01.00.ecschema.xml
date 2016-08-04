@@ -3,7 +3,7 @@
 
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
 
     <ECClass typeName="TestElement" isDomainClass="True">
@@ -26,6 +26,22 @@
         <ECProperty propertyName="PointProperty3"   typeName="Point3d" />
         <ECProperty propertyName="PointProperty4"   typeName="Point3d" />
 
+		<ECProperty propertyName="b" typeName="boolean"/>
+        <ECProperty propertyName="d" typeName="double"/>
+        <ECProperty propertyName="dt" typeName="dateTime"/>
+        <ECProperty propertyName="dtUtc" typeName="dateTime">
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="i" typeName="int"/>
+        <ECProperty propertyName="l" typeName="long"/>
+        <ECProperty propertyName="s" typeName="string"/>
+        <ECProperty propertyName="p2d" typeName="point2d"/>
+        <ECProperty propertyName="p3d" typeName="point3d"/>
+		
         <!-- The rest of the properties are custom-handled -->
         <ECProperty propertyName="TestElementProperty" typeName="string">
           <ECCustomAttributes>

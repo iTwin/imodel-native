@@ -2,7 +2,6 @@
 <ECSchema schemaName="Markup" nameSpacePrefix="markup" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="MarkupExternalLink">
         <ECCustomAttributes>

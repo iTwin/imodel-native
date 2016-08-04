@@ -402,7 +402,7 @@ void LinearDimension::UpdateGeometryRepresentation()
     LinearDimensionStroker stroker (*this, *builder);
     stroker.AppendDimensionGeometry();
 
-    builder->SetGeometryStreamAndPlacement(*geomSource);
+    builder->Finish(*geomSource);
     }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

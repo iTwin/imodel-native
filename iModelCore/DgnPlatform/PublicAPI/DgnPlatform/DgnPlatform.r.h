@@ -48,16 +48,6 @@ enum class CoordinateSpace
     World   = 1,    // the model is in the physical (world) coordinate system.
     };
 
-enum class GradientMode
-    {
-    None                = 0,
-    Linear              = 1,
-    Curved              = 2,
-    Cylindrical         = 3,
-    Spherical           = 4,
-    Hemispherical       = 5,
-    };
-
 enum class AngleFormatVals
     {
     None        = -2,

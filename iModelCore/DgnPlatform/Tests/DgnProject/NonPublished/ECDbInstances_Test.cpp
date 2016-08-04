@@ -10,6 +10,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ColorUtil.h>
 #include <Logging/bentleylogging.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnECDb"))
 
@@ -948,11 +949,8 @@ TEST(ECDbInstances3, BGRJoinedTable)
         "</ECSchema>";
     ScopedDgnHost host;
 
-    BeFileName projectPath;
-    BeTest::GetHost().GetOutputRoot(projectPath);
-    projectPath.AppendToPath(L"bgr.ibim");
-
-    DgnDbPtr dgnDb = CreateEmptyProject(dgnDb, projectPath);
+    auto seedInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, false));
+    DgnDbPtr dgnDb = DgnDbTestUtils::OpenSeedDbCopy(seedInfo.fileName, L"ECDbInstances3/bgr.ibim");
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();

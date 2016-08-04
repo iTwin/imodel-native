@@ -2,12 +2,12 @@
 <ECSchema schemaName="Documentation" nameSpacePrefix="doc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Document">
         <BaseClass>bis:InformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
                     <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
@@ -19,7 +19,7 @@
     <ECEntityClass typeName="DocumentCopy" modifier="Abstract">
         <BaseClass>bis:InformationCarrierElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>
                     <Options>SharedColumnsForSubclasses</Options>
                     <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
