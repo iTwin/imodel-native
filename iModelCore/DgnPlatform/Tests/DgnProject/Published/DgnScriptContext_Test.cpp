@@ -356,5 +356,21 @@ TEST_F(DgnScriptTest, CRUD)
     // EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime)); // *** NEEDS WORK - fails in DgnDb06, VC12, Optimized, WinX86. 
     }
 
+#ifdef WIP_SCRIPT_ELEMENT
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnScriptTest, ScriptElementCRUD)
+    {
+    SetupSeedProject();
+
+    Utf8CP text = "function foo(db, viewport) {return true;}";
+
+    DgnClassId classElementFilterFunction(m_db->Schemas().GetECClassId("Script", "ElementFilterFunction").GetValue());
+    ASSERT_TRUE(classElementFilterFunction.IsValid());
+    InformationElement script(InformationElement::CreateParams(*m_db, m_defaultModelId, classElementFilterFunction));
+    script.SetProperty("Text", ECN::ECValue(text));
+    }
+#endif
 
 #endif
