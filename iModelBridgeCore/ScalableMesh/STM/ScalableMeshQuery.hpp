@@ -93,7 +93,7 @@ template <class POINT> int ScalableMeshPointQuery::AddPoints(bvector<DPoint3d>& 
 /*----------------------------------------------------------------------------+
 |ScalableMeshFullResolutionPointQuery::ScalableMeshFullResolutionPointQuery
 +----------------------------------------------------------------------------*/
-template <class POINT> ScalableMeshFullResolutionPointQuery<POINT>::ScalableMeshFullResolutionPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr, 
+template <class POINT> ScalableMeshFullResolutionPointQuery<POINT>::ScalableMeshFullResolutionPointQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr, 
                                                                                            int                                              resolutionIndex)
     {        
     m_scmIndexPtr = pointIndexPtr;    
@@ -120,20 +120,20 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
 
     int         status;
 
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());        
-    YProtPtExtentType queryExtent;
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());        
+    Extent3dType queryExtent;
     
     HFCPtr<HVEShape> clipShapePtr;
-    HAutoPtr<ISMPointIndexQuery<POINT, YProtPtExtentType>> pointQueryP;
+    HAutoPtr<ISMPointIndexQuery<POINT, Extent3dType>> pointQueryP;
 
     assert(dynamic_cast<IScalableMeshFullResolutionQueryParams*>(scmQueryParamsPtr.get()) != 0);
     IScalableMeshFullResolutionQueryParams* queryParams(dynamic_cast<IScalableMeshFullResolutionQueryParams*>(scmQueryParamsPtr.get()));        
 
     if (pQueryShapePts != 0)
         {    
-        queryExtent = GetExtentFromClipShape<YProtPtExtentType>(pQueryShapePts, nbQueryShapePts, 
-                                                                ExtentOp<YProtPtExtentType>::GetZMin(contentExtent),
-                                                                ExtentOp<YProtPtExtentType>::GetZMax(contentExtent));
+        queryExtent = GetExtentFromClipShape<Extent3dType>(pQueryShapePts, nbQueryShapePts, 
+                                                                ExtentOp<Extent3dType>::GetZMin(contentExtent),
+                                                                ExtentOp<Extent3dType>::GetZMax(contentExtent));
                     
         int nPts(nbQueryShapePts);
 
@@ -161,8 +161,8 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
         HFCPtr<HGF2DCoordSys> pCoordSys(new HGF2DCoordSys());                                            
         HFCPtr<HVE2DPolygonOfSegments> pPolygon(new HVE2DPolygonOfSegments(nPts * 2, tmpPts, pCoordSys));
 
-        HFCPtr<HVE2DShape> pContentShape(new HVE2DRectangle(ExtentOp<YProtPtExtentType>::GetXMin(contentExtent), ExtentOp<YProtPtExtentType>::GetYMin(contentExtent), 
-                                                            ExtentOp<YProtPtExtentType>::GetXMax(contentExtent), ExtentOp<YProtPtExtentType>::GetYMax(contentExtent), pCoordSys));
+        HFCPtr<HVE2DShape> pContentShape(new HVE2DRectangle(ExtentOp<Extent3dType>::GetXMin(contentExtent), ExtentOp<Extent3dType>::GetYMin(contentExtent), 
+                                                            ExtentOp<Extent3dType>::GetXMax(contentExtent), ExtentOp<Extent3dType>::GetYMax(contentExtent), pCoordSys));
 
         HFCPtr<HVEShape> pQueryShape = new HVEShape(*(pPolygon->IntersectShape(*pContentShape)));
         clipShapePtr = CreateClipShape(pQueryShape);  
@@ -172,19 +172,19 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
         }
     else
         {             
-        /*queryExtent.xMin = ExtentOp<YProtPtExtentType>::GetXMin(contentExtent);
-        queryExtent.xMax = ExtentOp<YProtPtExtentType>::GetXMax(contentExtent);
-        queryExtent.yMin = ExtentOp<YProtPtExtentType>::GetYMin(contentExtent);
-        queryExtent.yMax = ExtentOp<YProtPtExtentType>::GetYMax(contentExtent);
-        queryExtent.zMin = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-        queryExtent.zMax = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);*/
+        /*queryExtent.xMin = ExtentOp<Extent3dType>::GetXMin(contentExtent);
+        queryExtent.xMax = ExtentOp<Extent3dType>::GetXMax(contentExtent);
+        queryExtent.yMin = ExtentOp<Extent3dType>::GetYMin(contentExtent);
+        queryExtent.yMax = ExtentOp<Extent3dType>::GetYMax(contentExtent);
+        queryExtent.zMin = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+        queryExtent.zMax = ExtentOp<Extent3dType>::GetZMax(contentExtent);*/
         queryExtent = contentExtent;
         
         DRange3d spatialIndexRange;
-        spatialIndexRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(queryExtent);
-        spatialIndexRange.high.x = ExtentOp<YProtPtExtentType>::GetXMax(queryExtent);
-        spatialIndexRange.low.y = ExtentOp<YProtPtExtentType>::GetYMin(queryExtent);
-        spatialIndexRange.high.y = ExtentOp<YProtPtExtentType>::GetYMax(queryExtent);              
+        spatialIndexRange.low.x = ExtentOp<Extent3dType>::GetXMin(queryExtent);
+        spatialIndexRange.high.x = ExtentOp<Extent3dType>::GetXMax(queryExtent);
+        spatialIndexRange.low.y = ExtentOp<Extent3dType>::GetYMin(queryExtent);
+        spatialIndexRange.high.y = ExtentOp<Extent3dType>::GetYMax(queryExtent);              
 
         clipShapePtr = CreateClipShape(spatialIndexRange);                             
         }             
@@ -192,11 +192,11 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
     if ((clipShapePtr != 0) && (clipShapePtr->IsEmpty() == false) && !clipShapePtr->IsRectangle())
         {         
         HFCPtr<HVE2DShape> clipShape = static_cast<HVE2DShape*>(clipShapePtr->GetShapePtr()->Clone());
-        pointQueryP = new HGFLevelPointIndexByShapeQuery<POINT, YProtPtExtentType>(clipShape, m_resolutionIndex, queryParams->GetReturnAllPtsForLowestLevel(), queryParams->GetMaximumNumberOfPoints());
+        pointQueryP = new HGFLevelPointIndexByShapeQuery<POINT, Extent3dType>(clipShape, m_resolutionIndex, queryParams->GetReturnAllPtsForLowestLevel(), queryParams->GetMaximumNumberOfPoints());
         }
     else
         {                       
-        pointQueryP = new HGFLevelPointIndexQuery<POINT, YProtPtExtentType>(queryExtent, m_resolutionIndex, queryParams->GetReturnAllPtsForLowestLevel(), queryParams->GetMaximumNumberOfPoints());
+        pointQueryP = new HGFLevelPointIndexQuery<POINT, Extent3dType>(queryExtent, m_resolutionIndex, queryParams->GetReturnAllPtsForLowestLevel(), queryParams->GetMaximumNumberOfPoints());
         }      
         
     try   
@@ -238,7 +238,7 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
 /*----------------------------------------------------------------------------+
 |ScalableMeshViewDependentPointQuery::ScalableMeshViewDependentPointQuery
 +----------------------------------------------------------------------------*/
-template <class POINT> ScalableMeshViewDependentPointQuery<POINT>::ScalableMeshViewDependentPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr)
+template <class POINT> ScalableMeshViewDependentPointQuery<POINT>::ScalableMeshViewDependentPointQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
     {        
     m_scmIndexPtr = pointIndexPtr;
     m_resolutionIndex    = INT_MAX;          
@@ -274,17 +274,17 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
 
     int            status;
 
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());    
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());    
 
-    double minZ = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
     
-    YProtPtExtentType queryExtent(GetExtentFromClipShape<YProtPtExtentType>(pQueryShapePts, 
+    Extent3dType queryExtent(GetExtentFromClipShape<Extent3dType>(pQueryShapePts, 
                                                                             nbQueryShapePts, 
                                                                             minZ,
                                                                             maxZ));
 
-    HAutoPtr<ISMPointIndexQuery<POINT, YProtPtExtentType>> pointQueryP;
+    HAutoPtr<ISMPointIndexQuery<POINT, Extent3dType>> pointQueryP;
 
     if (m_resolutionIndex != INT_MAX)
         {
@@ -293,7 +293,7 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
 
         ISrDTMViewDependentQueryParams* queryParams(dynamic_cast<ISrDTMViewDependentQueryParams*>(scmQueryParamsPtr.get()));        
 
-        pointQueryP = new ScalableMeshQuadTreeLevelPointIndexQuery<POINT, YProtPtExtentType>(queryExtent, 
+        pointQueryP = new ScalableMeshQuadTreeLevelPointIndexQuery<POINT, Extent3dType>(queryExtent, 
                                                                                       m_resolutionIndex,
                                                                                       queryParams->GetViewBox());
         }
@@ -309,7 +309,7 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
 
         memcpy(rootToViewMatrix, queryParams->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
                         
-        ScalableMeshQuadTreeViewDependentPointQuery<POINT, YProtPtExtentType>* viewDependentQueryP(new ScalableMeshQuadTreeViewDependentPointQuery<POINT, YProtPtExtentType>
+        ScalableMeshQuadTreeViewDependentPointQuery<POINT, Extent3dType>* viewDependentQueryP(new ScalableMeshQuadTreeViewDependentPointQuery<POINT, Extent3dType>
                                                                                                     (queryExtent, 
                                                                                                      rootToViewMatrix,                   
                                                                                                      viewportRotMatrix,             
@@ -333,19 +333,19 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
 
     DRange3d spatialIndexRange;
 
-    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
-    spatialIndexRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
-    spatialIndexRange.high.x = ExtentOp<YProtPtExtentType>::GetXMax(ExtentPoints);
-    spatialIndexRange.low.y = ExtentOp<YProtPtExtentType>::GetYMin(ExtentPoints);
-    spatialIndexRange.high.y = ExtentOp<YProtPtExtentType>::GetYMax(ExtentPoints);               
+    Extent3dType ExtentPoints = m_scmIndexPtr->GetContentExtent();
+    spatialIndexRange.low.x = ExtentOp<Extent3dType>::GetXMin(ExtentPoints);
+    spatialIndexRange.high.x = ExtentOp<Extent3dType>::GetXMax(ExtentPoints);
+    spatialIndexRange.low.y = ExtentOp<Extent3dType>::GetYMin(ExtentPoints);
+    spatialIndexRange.high.y = ExtentOp<Extent3dType>::GetYMax(ExtentPoints);               
 
     HFCPtr<HVEShape> clipShapePtr = CreateClipShape(spatialIndexRange);
 
     if ((clipShapePtr != 0) && (clipShapePtr->IsEmpty() == false))
         {
-        ISMPointIndexSpatialLimitWrapQuery<POINT, YProtPtExtentType>* wrappedShapedQuery;
+        ISMPointIndexSpatialLimitWrapQuery<POINT, Extent3dType>* wrappedShapedQuery;
         HFCPtr<HVE2DShape> clipShape = static_cast<HVE2DShape*>(clipShapePtr->GetShapePtr()->Clone());
-        wrappedShapedQuery = new ISMPointIndexSpatialLimitWrapQuery<POINT, YProtPtExtentType>(clipShape, pointQueryP.release());
+        wrappedShapedQuery = new ISMPointIndexSpatialLimitWrapQuery<POINT, Extent3dType>(clipShape, pointQueryP.release());
 
         pointQueryP = wrappedShapedQuery;
         }  
@@ -380,7 +380,7 @@ template <class POINT> int ScalableMeshViewDependentPointQuery<POINT>::_Query(bv
 /*----------------------------------------------------------------------------+
 |ScalableMeshFixResolutionViewPointQuery Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
-template <class POINT> ScalableMeshFixResolutionViewPointQuery<POINT>::ScalableMeshFixResolutionViewPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr, 
+template <class POINT> ScalableMeshFixResolutionViewPointQuery<POINT>::ScalableMeshFixResolutionViewPointQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr, 
                                                                                                  const GeoCoords::GCS&                                        pointIndexGCS)
 : m_pointIndexGCS(pointIndexGCS)
     {    
@@ -461,7 +461,7 @@ template <class POINT> int ScalableMeshFixResolutionViewPointQuery<POINT>::_Quer
 /*----------------------------------------------------------------------------+
 |ScalableMeshViewDependentMeshQuery::ScalableMeshViewDependentMeshQuery
 +----------------------------------------------------------------------------*/
-template <class POINT> ScalableMeshViewDependentMeshQuery<POINT>::ScalableMeshViewDependentMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr)
+template <class POINT> ScalableMeshViewDependentMeshQuery<POINT>::ScalableMeshViewDependentMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
     {        
     m_scmIndexPtr = pointIndexPtr;    
     }       
@@ -488,17 +488,17 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
 
     int            status;
 
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());    
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());    
 
-    double minZ = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
         
-    YProtPtExtentType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<YProtPtExtentType>(pQueryExtentPts,
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
                                                                                         nbQueryExtentPts,
                                                                                         minZ,
                                                                                         maxZ));
 
-    HAutoPtr<ISMPointIndexQuery<POINT, YProtPtExtentType>> pointQueryP;
+    HAutoPtr<ISMPointIndexQuery<POINT, Extent3dType>> pointQueryP;
              
     //MS Need to be removed
     double viewportRotMatrix[3][3];        
@@ -509,7 +509,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
 
     memcpy(rootToViewMatrix, scmViewDependentParamsPtr->GetRootToViewMatrix(), sizeof(double) * 4 * 4);    
                     
-    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>* viewDependentQueryP(new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>
+    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP(new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>
                                                                                                 (queryExtent, 
                                                                                                  rootToViewMatrix,                   
                                                                                                  viewportRotMatrix,             
@@ -535,11 +535,11 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
 
     DRange3d spatialIndexRange;
 
-    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
-    spatialIndexRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
-    spatialIndexRange.high.x = ExtentOp<YProtPtExtentType>::GetXMax(ExtentPoints);
-    spatialIndexRange.low.y = ExtentOp<YProtPtExtentType>::GetYMin(ExtentPoints);
-    spatialIndexRange.high.y = ExtentOp<YProtPtExtentType>::GetYMax(ExtentPoints);               
+    Extent3dType ExtentPoints = m_scmIndexPtr->GetContentExtent();
+    spatialIndexRange.low.x = ExtentOp<Extent3dType>::GetXMin(ExtentPoints);
+    spatialIndexRange.high.x = ExtentOp<Extent3dType>::GetXMax(ExtentPoints);
+    spatialIndexRange.low.y = ExtentOp<Extent3dType>::GetYMin(ExtentPoints);
+    spatialIndexRange.high.y = ExtentOp<Extent3dType>::GetYMax(ExtentPoints);               
 
     IScalableMeshClipContainerPtr clips;
 
@@ -550,9 +550,9 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(ISc
         //NEEDS_WORK_SM 
         assert(!"Not implemented yet");
     /*
-        ISMPointIndexSpatialLimitWrapQuery<POINT, YProtPtExtentType>* wrappedShapedQuery;
+        ISMPointIndexSpatialLimitWrapQuery<POINT, Extent3dType>* wrappedShapedQuery;
         HFCPtr<HVE2DShape> clipShape = static_cast<HVE2DShape*>(clipShapePtr->GetShapePtr()->Clone());
-        wrappedShapedQuery = new ISMPointIndexSpatialLimitWrapQuery<POINT, YProtPtExtentType>(clipShape, pointQueryP.release());
+        wrappedShapedQuery = new ISMPointIndexSpatialLimitWrapQuery<POINT, Extent3dType>(clipShape, pointQueryP.release());
 
         pointQueryP = wrappedShapedQuery;
         */
@@ -616,17 +616,17 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
 
     int            status;
 
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());    
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());    
 
-    double minZ = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
         
-    YProtPtExtentType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<YProtPtExtentType>(pQueryExtentPts,
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
                                                                                                nbQueryExtentPts,
                                                                                                minZ,
                                                                                                maxZ));
 
-    HAutoPtr<ISMPointIndexQuery<POINT, YProtPtExtentType>> pointQueryP;
+    HAutoPtr<ISMPointIndexQuery<POINT, Extent3dType>> pointQueryP;
              
     //MS Need to be removed
     double viewportRotMatrix[3][3];        
@@ -639,7 +639,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
     //NEEDS_WORK_SM : To be removed all!
     static size_t maxNbPoints = 150000000000;
                     
-    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>* viewDependentQueryP(new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, YProtPtExtentType>
+    ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP(new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>
                                                                                                 (queryExtent, 
                                                                                                  rootToViewMatrix,                   
                                                                                                  viewportRotMatrix,             
@@ -665,11 +665,11 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
 
     DRange3d spatialIndexRange;
 
-    YProtPtExtentType ExtentPoints = m_scmIndexPtr->GetContentExtent();
-    spatialIndexRange.low.x = ExtentOp<YProtPtExtentType>::GetXMin(ExtentPoints);
-    spatialIndexRange.high.x = ExtentOp<YProtPtExtentType>::GetXMax(ExtentPoints);
-    spatialIndexRange.low.y = ExtentOp<YProtPtExtentType>::GetYMin(ExtentPoints);
-    spatialIndexRange.high.y = ExtentOp<YProtPtExtentType>::GetYMax(ExtentPoints);               
+    Extent3dType ExtentPoints = m_scmIndexPtr->GetContentExtent();
+    spatialIndexRange.low.x = ExtentOp<Extent3dType>::GetXMin(ExtentPoints);
+    spatialIndexRange.high.x = ExtentOp<Extent3dType>::GetXMax(ExtentPoints);
+    spatialIndexRange.low.y = ExtentOp<Extent3dType>::GetYMin(ExtentPoints);
+    spatialIndexRange.high.y = ExtentOp<Extent3dType>::GetYMax(ExtentPoints);               
 
     IScalableMeshClipContainerPtr clips;
 
@@ -680,9 +680,9 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
         //NEEDS_WORK_SM 
         assert(!"Not implemented yet");
     /*
-        ISMPointIndexSpatialLimitWrapQuery<POINT, YProtPtExtentType>* wrappedShapedQuery;
+        ISMPointIndexSpatialLimitWrapQuery<POINT, Extent3dType>* wrappedShapedQuery;
         HFCPtr<HVE2DShape> clipShape = static_cast<HVE2DShape*>(clipShapePtr->GetShapePtr()->Clone());
-        wrappedShapedQuery = new ISMPointIndexSpatialLimitWrapQuery<POINT, YProtPtExtentType>(clipShape, pointQueryP.release());
+        wrappedShapedQuery = new ISMPointIndexSpatialLimitWrapQuery<POINT, Extent3dType>(clipShape, pointQueryP.release());
 
         pointQueryP = wrappedShapedQuery;
         */
@@ -696,7 +696,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
                 
         //ScalableMeshMeshPtr returnMeshPtr (ScalableMeshMesh::Create (DVec3d::From (rootToViewMatrix[2][0], rootToViewMatrix[2][1], rootToViewMatrix[2][2])));
                     
-        vector<typename SMPointIndexNode<POINT, YProtPtExtentType>::QueriedNode> returnedMeshNodes;
+        vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
         bool isComplete = true;
         
         if (m_scmIndexPtr->Query(pointQueryP.get(), returnedMeshNodes, &isComplete,
@@ -766,7 +766,7 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
     return status;    
     }
 
-template <class POINT> ScalableMeshFullResolutionMeshQuery<POINT>::ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr)
+template <class POINT> ScalableMeshFullResolutionMeshQuery<POINT>::ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
     {
     m_scmIndexPtr = pointIndexPtr;
     }
@@ -781,26 +781,26 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(IS
                                                                        int                                           nbQueryExtentPts,
                                                                        const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const
     {
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
 
-    double minZ = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
 
-    YProtPtExtentType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<YProtPtExtentType>(pQueryExtentPts,
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
         nbQueryExtentPts,
         minZ,
         maxZ));
     int status = SUCCESS;
     static size_t maxNbPoints = 150000000000;
-    DPoint3d box[8] = { DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMin(queryExtent), ExtentOp<YProtPtExtentType>::GetYMin(queryExtent), ExtentOp<YProtPtExtentType>::GetZMin(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMax(queryExtent), ExtentOp<YProtPtExtentType>::GetYMin(queryExtent), ExtentOp<YProtPtExtentType>::GetZMin(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMin(queryExtent), ExtentOp<YProtPtExtentType>::GetYMax(queryExtent), ExtentOp<YProtPtExtentType>::GetZMin(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMin(queryExtent), ExtentOp<YProtPtExtentType>::GetYMin(queryExtent), ExtentOp<YProtPtExtentType>::GetZMax(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMax(queryExtent), ExtentOp<YProtPtExtentType>::GetYMax(queryExtent), ExtentOp<YProtPtExtentType>::GetZMin(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMax(queryExtent), ExtentOp<YProtPtExtentType>::GetYMin(queryExtent), ExtentOp<YProtPtExtentType>::GetZMax(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMin(queryExtent), ExtentOp<YProtPtExtentType>::GetYMax(queryExtent), ExtentOp<YProtPtExtentType>::GetZMax(queryExtent)),
-        DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMax(queryExtent), ExtentOp<YProtPtExtentType>::GetYMax(queryExtent), ExtentOp<YProtPtExtentType>::GetZMax(queryExtent)) };
-    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>(queryExtent, m_scmIndexPtr->GetDepth(), box));
+    DPoint3d box[8] = { DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(queryExtent), ExtentOp<Extent3dType>::GetYMin(queryExtent), ExtentOp<Extent3dType>::GetZMin(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(queryExtent), ExtentOp<Extent3dType>::GetYMin(queryExtent), ExtentOp<Extent3dType>::GetZMin(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(queryExtent), ExtentOp<Extent3dType>::GetYMax(queryExtent), ExtentOp<Extent3dType>::GetZMin(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(queryExtent), ExtentOp<Extent3dType>::GetYMin(queryExtent), ExtentOp<Extent3dType>::GetZMax(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(queryExtent), ExtentOp<Extent3dType>::GetYMax(queryExtent), ExtentOp<Extent3dType>::GetZMin(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(queryExtent), ExtentOp<Extent3dType>::GetYMin(queryExtent), ExtentOp<Extent3dType>::GetZMax(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(queryExtent), ExtentOp<Extent3dType>::GetYMax(queryExtent), ExtentOp<Extent3dType>::GetZMax(queryExtent)),
+        DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(queryExtent), ExtentOp<Extent3dType>::GetYMax(queryExtent), ExtentOp<Extent3dType>::GetZMax(queryExtent)) };
+    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(queryExtent, m_scmIndexPtr->GetDepth(), box));
 
     try
         {
@@ -831,12 +831,12 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
                                                                         int                                           nbQueryExtentPts,
                                                                         const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const
     {
-    YProtPtExtentType contentExtent(m_scmIndexPtr->GetContentExtent());
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
 
-    double minZ = ExtentOp<YProtPtExtentType>::GetZMin(contentExtent);
-    double maxZ = ExtentOp<YProtPtExtentType>::GetZMax(contentExtent);
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
 
-    YProtPtExtentType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<YProtPtExtentType>(pQueryExtentPts,
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
         nbQueryExtentPts,
         minZ,
         maxZ));
@@ -846,20 +846,20 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
     DRange3d range; 
     DPoint3d box[8];
 
-    range.low.x = ExtentOp<YProtPtExtentType>::GetXMin(queryExtent);
-    range.low.y = ExtentOp<YProtPtExtentType>::GetYMin(queryExtent);
-    range.low.z = ExtentOp<YProtPtExtentType>::GetZMin(queryExtent);
-    range.high.x = ExtentOp<YProtPtExtentType>::GetXMax(queryExtent);
-    range.high.y = ExtentOp<YProtPtExtentType>::GetYMax(queryExtent);
-    range.high.z = ExtentOp<YProtPtExtentType>::GetZMax(queryExtent);
+    range.low.x = ExtentOp<Extent3dType>::GetXMin(queryExtent);
+    range.low.y = ExtentOp<Extent3dType>::GetYMin(queryExtent);
+    range.low.z = ExtentOp<Extent3dType>::GetZMin(queryExtent);
+    range.high.x = ExtentOp<Extent3dType>::GetXMax(queryExtent);
+    range.high.y = ExtentOp<Extent3dType>::GetYMax(queryExtent);
+    range.high.z = ExtentOp<Extent3dType>::GetZMax(queryExtent);
 
     range.Get8Corners (box);
 
-    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, YProtPtExtentType>(queryExtent, scmQueryParamsPtr->GetLevel() < (size_t)-1 ? scmQueryParamsPtr->GetLevel() : m_scmIndexPtr->GetDepth(), box));
+    ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(queryExtent, scmQueryParamsPtr->GetLevel() < (size_t)-1 ? scmQueryParamsPtr->GetLevel() : m_scmIndexPtr->GetDepth(), box));
     try
         {
 
-        vector<typename SMPointIndexNode<POINT, YProtPtExtentType>::QueriedNode> returnedMeshNodes;
+        vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
 
         if (m_scmIndexPtr->Query(meshQueryP, returnedMeshNodes))
             {
@@ -886,7 +886,7 @@ template <class POINT> int ScalableMeshFullResolutionMeshQuery<POINT>::_Query(bv
     }
 
 template <class POINT> ScalableMeshReprojectionMeshQuery<POINT>::ScalableMeshReprojectionMeshQuery(IScalableMeshMeshQueryPtr         originalQueryPtr,
-                                                                                     const HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>>& indexPtr,
+                                                                                     const HFCPtr<SMMeshIndex<POINT, Extent3dType>>& indexPtr,
                                                                               const  GeoCoords::GCS& sourceGCS,
                                                                               const  GeoCoords::GCS& targetGCS,
                                                const DRange3d&        extentInTargetGCS)
@@ -991,7 +991,7 @@ template <class POINT> int ScalableMeshReprojectionMeshQuery<POINT>::_Query(bvec
     return status;
     }
 
-template <class POINT> ScalableMeshNodeRayQuery<POINT>::ScalableMeshNodeRayQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr)
+template <class POINT> ScalableMeshNodeRayQuery<POINT>::ScalableMeshNodeRayQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
     {
     m_scmIndexPtr = pointIndexPtr;
     }
@@ -1000,7 +1000,7 @@ template <class POINT> ScalableMeshNodeRayQuery<POINT>::~ScalableMeshNodeRayQuer
     {
     }
 
-template <class POINT> ScalableMeshNodePlaneQuery<POINT>::ScalableMeshNodePlaneQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr)
+template <class POINT> ScalableMeshNodePlaneQuery<POINT>::ScalableMeshNodePlaneQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
     {
     m_scmIndexPtr = pointIndexPtr;
     }
@@ -1013,7 +1013,7 @@ template <class POINT> ScalableMeshNodePlaneQuery<POINT>::~ScalableMeshNodePlane
         m_node->Load(); \
 
 
-template <class POINT> ScalableMeshNode<POINT>::ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+template <class POINT> ScalableMeshNode<POINT>::ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     {        
     m_node = nodePtr;
     }
@@ -1036,7 +1036,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
         {
         LOAD_NODE
 
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
     IScalableMeshMeshPtr meshP;
     if (flags->ShouldLoadGraph())
@@ -1106,7 +1106,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
                 for (bool val : clipsToShow) if (!val) allClips = false;
                 DifferenceSet diffs;
                 diffs.firstIndex = (int) meshPtr->GetNbPoints()+1;
-                //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+                //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
                 
                 for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
                     {
@@ -1149,7 +1149,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
     
     IScalableMeshMeshPtr meshP;
     ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
     bvector<DPoint3d> allPts(pointsPtr->size());
@@ -1190,10 +1190,10 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
     {    
 
     
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     
     diffs.firstIndex = (int)m_meshNode->GetNbPoints() + 1;
-    //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
@@ -1222,10 +1222,10 @@ template <class POINT> void ScalableMeshNode<POINT>::ComputeDiffSet(DifferenceSe
     for (bool val : clipsToShow) if (!val) allClips = false;
 #endif
 
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     //std::cout << "ComputeDiffset for node " << m_meshNode->GetBlockID().m_integerID << std::endl;
     diffs.firstIndex = (int)m_meshNode->GetNbPoints() + 1;
-    //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);    
+    //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
@@ -1245,12 +1245,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
     {
     LOAD_NODE
         
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);    
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     IScalableMeshMeshPtr meshP;
     //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
     if (m_node->GetNbPoints() > 0)
         {
-        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);        
+        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);        
         ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
@@ -1308,12 +1308,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshByP
     {
     LOAD_NODE
         
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);    
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     IScalableMeshMeshPtr meshP;
     //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
     if (m_node->GetNbPoints() > 0)
         {
-        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);        
+        //auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);        
         ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
@@ -1376,7 +1376,7 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
     
     if (m_node->GetNbPoints() > 0)
         {
-        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
         RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texPtr(meshNode->GetTexturePtr());
 
@@ -1394,7 +1394,7 @@ template <class POINT> IScalableMeshTexturePtr ScalableMeshNode<POINT>::_GetText
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsTextured() const
     {
-    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     return meshNode->IsTextured();
     }
 
@@ -1693,10 +1693,10 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
 
 
-template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     : ScalableMeshNode(nodePtr)
     {    
-    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
     m_cachedDisplayData = meshNode->GetDisplayData();                
     }
 
@@ -1714,7 +1714,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
     assert(IsLoaded() == true);
 
     const bvector<uint64_t>& appliedClips(const_cast<SmCachedDisplayData*>(m_cachedDisplayData->GetData())->GetAppliedClips());
-    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
     bvector<bool> appliedClipsVisible;
     appliedClipsVisible.resize(appliedClips.size(), false);        
     
@@ -1755,7 +1755,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::RemoveDisplayD
     {
     if (IsLoaded())
         {
-        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);                
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
             
        // assert(m_cachedDisplayData->GetRefCount() == 2);
         m_cachedDisplayData = 0;
@@ -1782,7 +1782,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             //NEEDS_WORK_SM : Load texture here
             //m_cachedDisplayTexture
 
-            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);            
+            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);            
             
             DRange3d range3D(_GetContentExtent());
 
@@ -2111,9 +2111,9 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetNodeExtent() const
     LOAD_NODE
 
     DRange3d range;
-    YProtPtExtentType ext = m_node->m_nodeHeader.m_nodeExtent;
-    range = DRange3d::From(DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMin(ext), ExtentOp<YProtPtExtentType>::GetYMin(ext), ExtentOp<YProtPtExtentType>::GetZMin(ext)),
-                           DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMax(ext), ExtentOp<YProtPtExtentType>::GetYMax(ext), ExtentOp<YProtPtExtentType>::GetZMax(ext)));
+    Extent3dType ext = m_node->m_nodeHeader.m_nodeExtent;
+    range = DRange3d::From(DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(ext), ExtentOp<Extent3dType>::GetYMin(ext), ExtentOp<Extent3dType>::GetZMin(ext)),
+                           DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(ext), ExtentOp<Extent3dType>::GetYMax(ext), ExtentOp<Extent3dType>::GetZMax(ext)));
     return range;
     }
 
@@ -2122,9 +2122,9 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() con
     LOAD_NODE
 
     DRange3d range;
-    YProtPtExtentType ext = m_node->m_nodeHeader.m_contentExtent;
-    range = DRange3d::From(DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMin(ext), ExtentOp<YProtPtExtentType>::GetYMin(ext), ExtentOp<YProtPtExtentType>::GetZMin(ext)),
-                           DPoint3d::From(ExtentOp<YProtPtExtentType>::GetXMax(ext), ExtentOp<YProtPtExtentType>::GetYMax(ext), ExtentOp<YProtPtExtentType>::GetZMax(ext)));
+    Extent3dType ext = m_node->m_nodeHeader.m_contentExtent;
+    range = DRange3d::From(DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(ext), ExtentOp<Extent3dType>::GetYMin(ext), ExtentOp<Extent3dType>::GetZMin(ext)),
+                           DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(ext), ExtentOp<Extent3dType>::GetYMax(ext), ExtentOp<Extent3dType>::GetZMax(ext)));
     return range;
     }
 
@@ -2168,7 +2168,7 @@ extern size_t s_nMissedDTMs;
 template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     {
     s_nGetDTMs++;
-    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
 
     if (m_meshNode->GetTileDTM().get() == nullptr || m_meshNode->GetTileDTM()->GetData() == nullptr) return nullptr;
     return *m_meshNode->GetTileDTM()->GetData();
@@ -2176,7 +2176,7 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
 
 template <class POINT> void ScalableMeshNode<POINT>::_GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
     {
-    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     for (size_t i = 0; i < m_meshNode->m_nbClips; ++i)
         {
         DifferenceSet d = m_meshNode->GetClipSet(i);
@@ -2216,7 +2216,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_RunQuery(ISMPointIndexQuer
 
 template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) const
     {
-    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     if (m_meshNode == nullptr) return false;
     if (m_meshNode->m_nbClips == 0) return false;
     else return m_meshNode->HasClip(clip);
@@ -2224,7 +2224,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_HasClip(uint64_t clip) con
 
 template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     {
-    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr());
+    auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
     if (m_meshNode == nullptr) return true;
     if (m_meshNode->m_nbClips == 0) return true;
     else return m_meshNode->IsClippingUpToDate();
@@ -2238,35 +2238,35 @@ template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips() co
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip() const
     {
-    dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->BuildSkirts();
-    dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->ComputeMergedClips();
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->BuildSkirts();
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ComputeMergedClips();
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_AddClip(uint64_t id, bool isVisible) const
     {
-    return dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->AddClip(id, isVisible);
+    return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->AddClip(id, isVisible);
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_AddClipAsync(uint64_t id, bool isVisible) const
     {
-    return dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->AddClipAsync(id, isVisible);
+    return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->AddClipAsync(id, isVisible);
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_ModifyClip(uint64_t id, bool isVisible) const
     {
-    return dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->ModifyClip(id,  isVisible);
+    return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ModifyClip(id,  isVisible);
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_DeleteClip(uint64_t id, bool isVisible) const
     {
-    return dynamic_cast<SMMeshIndexNode<POINT, YProtPtExtentType>*>(m_node.GetPtr())->DeleteClip(id,isVisible);
+    return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->DeleteClip(id,isVisible);
     }
 
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());    
     pointsPtr->clear();
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_meshNode->m_nodeHeader.m_arePoints3d = true;
     vector<POINT> nodePts(nVertices);
     vector<size_t> sorted(nVertices);
@@ -2324,7 +2324,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTexturedMesh(b
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());    
     pointsPtr->clear();
     
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_meshNode->m_nodeHeader.m_arePoints3d = true;    
 
     size_t nIndicesCount = 0;
@@ -2392,7 +2392,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvect
     {
     assert(m_node->m_nodeHeader.m_isTextured == false);
 
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
 
     if (m_node->m_nodeHeader.m_isTextured == false)
         {        
@@ -2407,14 +2407,14 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_AddTextures(bvect
 
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetNodeExtent(DRange3d& extent)
     {
-    m_node->m_nodeHeader.m_nodeExtent = ExtentOp<YProtPtExtentType>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z);
+    m_node->m_nodeHeader.m_nodeExtent = ExtentOp<Extent3dType>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z);
     return BSISUCCESS;
     }
 
 template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetContentExtent(DRange3d& extent)
     {
     m_node->m_nodeHeader.m_contentExtentDefined = true;
-    m_node->m_nodeHeader.m_contentExtent = ExtentOp<YProtPtExtentType>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z);
+    m_node->m_nodeHeader.m_contentExtent = ExtentOp<Extent3dType>::Create(extent.low.x, extent.low.y, extent.low.z, extent.high.x, extent.high.y, extent.high.z);
     return BSISUCCESS;
     }
 
@@ -2424,7 +2424,7 @@ template <class POINT> StatusInt ScalableMeshNodeEdit<POINT>::_SetArePoints3d(bo
     return BSISUCCESS;
     }
 
-template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr)
+template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     {
     if (!nodePtr->IsLoaded())
         nodePtr->Load();
@@ -2451,7 +2451,7 @@ template <class POINT> void ScalableMeshNodeEdit<POINT>::_LoadHeader() const
     }
 
 
-template <class POINT> ScalableMeshNodeWithReprojection<POINT>::ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject)
+template <class POINT> ScalableMeshNodeWithReprojection<POINT>::ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const GeoCoords::Reprojection& reproject)
     :ScalableMeshNode<POINT>(nodePtr), m_reprojectFunction(reproject)
     {
     }
@@ -2469,7 +2469,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
     IScalableMeshMeshPtr meshP;
     if (flags->ShouldLoadGraph())
         {
-        auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+        auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
         if (m_meshNode->GetGraphPtr() == NULL)
             {
             m_meshNode->LoadGraph();
@@ -2491,7 +2491,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
         }
     else
         {
-        auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+        auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
         ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
@@ -2520,7 +2520,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POINT>::_GetMeshByParts(const bvector<bool>& clipsToShow) const
     {
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
@@ -2548,7 +2548,7 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POI
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshNodeWithReprojection<POINT>::_GetMeshByParts(const bset<uint64_t>& clipsToShow) const
     {
-    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(m_node);
+    auto m_meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     ScalableMeshMeshPtr meshPtr = ScalableMeshMesh::Create();
 
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr());
@@ -2582,14 +2582,14 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(IScalableMesh
     ScalableMeshNodeRayQueryParams* params = (ScalableMeshNodeRayQueryParams*)scmQueryParamsPtr.get();
     DRay3d ray = DRay3d::FromOriginAndVector(*pTestPt, params->GetDirection());
  
-    HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> currentNodeP(nullptr);
-    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), 
+    HFCPtr<SMPointIndexNode<POINT, Extent3dType>> currentNodeP(nullptr);
+    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, Extent3dType> query(m_scmIndexPtr->GetContentExtent(), 
                                                                                  scmQueryParamsPtr->GetLevel() == (size_t)-1 ? m_scmIndexPtr->GetDepth() : scmQueryParamsPtr->GetLevel(), 
                                                                                  ray, 
                                                                                  params->Get2d(), 
                                                                                  params->GetDepth(), 
                                                                                  params->GetUseUnboundedRay(),
-                                                                                 params->Get2d() ? ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::FIRST_INTERSECT : ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::LAST_INTERSECT);
+                                                                                 params->Get2d() ? ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, Extent3dType>::RaycastOptions::FIRST_INTERSECT : ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, Extent3dType>::RaycastOptions::LAST_INTERSECT);
     m_scmIndexPtr->Query(&query, currentNodeP);
     if (currentNodeP == nullptr) return ERROR;
     nodePtr = IScalableMeshNodePtr(new ScalableMeshNode<POINT>(currentNodeP));
@@ -2605,14 +2605,14 @@ template <class POINT> int ScalableMeshNodeRayQuery<POINT>::_Query(bvector<IScal
     ScalableMeshNodeRayQueryParams* params = (ScalableMeshNodeRayQueryParams*)scmQueryParamsPtr.get();
     DRay3d ray = DRay3d::FromOriginAndVector(*pTestPt, params->GetDirection());
 
-    std::vector<SMPointIndexNode<POINT, YProtPtExtentType>::QueriedNode> nodesP;
-    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), 
+    std::vector<SMPointIndexNode<POINT, Extent3dType>::QueriedNode> nodesP;
+    ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, Extent3dType> query(m_scmIndexPtr->GetContentExtent(), 
                                                                                  scmQueryParamsPtr->GetLevel() == (size_t)-1 ? m_scmIndexPtr->GetDepth() : scmQueryParamsPtr->GetLevel(),
                                                                                  ray, 
                                                                                  params->Get2d(), 
                                                                                  params->GetDepth(), 
                                                                                  params->GetUseUnboundedRay(),
-                                                                                 ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, YProtPtExtentType>::RaycastOptions::ALL_INTERSECT);
+                                                                                 ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, Extent3dType>::RaycastOptions::ALL_INTERSECT);
     m_scmIndexPtr->Query(&query, nodesP);
 
     if (nodesP.size() == 0) return ERROR;
@@ -2631,8 +2631,8 @@ template <class POINT> int ScalableMeshNodePlaneQuery<POINT>::_Query(bvector<ISc
     {
     ScalableMeshNodePlaneQueryParams* params = (ScalableMeshNodePlaneQueryParams*)scmQueryParamsPtr.get();
 
-    vector<typename SMPointIndexNode<POINT, YProtPtExtentType>::QueriedNode> nodes;
-    ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, YProtPtExtentType> query(m_scmIndexPtr->GetContentExtent(), m_scmIndexPtr->GetDepth(), params->GetPlane(), params->GetDepth());
+    vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> nodes;
+    ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, Extent3dType> query(m_scmIndexPtr->GetContentExtent(), m_scmIndexPtr->GetDepth(), params->GetPlane(), params->GetDepth());
     m_scmIndexPtr->Query(&query, nodes);
     if (0 == nodes.size()) return ERROR;
     for (auto& node : nodes)

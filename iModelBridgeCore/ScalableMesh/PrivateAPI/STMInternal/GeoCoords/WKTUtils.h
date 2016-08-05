@@ -15,6 +15,9 @@
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <deque>
 
+//NEEDS_WORK_SM : Might be better if put in D:\BSI\DgnDb06SM\src\ScalableMesh\PrivateAPI
+#include "../../../STM/Stores/SMStoreUtils.h"
+
 namespace ISMStore
     {
 

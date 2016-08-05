@@ -29,10 +29,11 @@
 
 #include "InputExtractor.h"
 #include "Sink.h"
+#include "../STM/Stores/SMStoreUtils.h"
+
 
 
 #include <ScalableMesh/GeoCoords/GCS.h>
-#include "..\STM\SMPointTileStore.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 

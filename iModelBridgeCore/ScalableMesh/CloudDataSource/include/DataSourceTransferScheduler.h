@@ -21,11 +21,13 @@ protected:
 
     typedef std::vector<std::thread>                TransferThreads;
 
+    typedef std::mutex                              DataSourceBuffersMutex;
+
 protected:
 
     TaskIndex                       maxTasks;
 
-    std::mutex                      dataSourceBuffersMutex;
+    DataSourceBuffersMutex          dataSourceBuffersMutex;
     std::condition_variable         dataSourceBufferReady;
 
     DataSourceBufferSet             dataSourceBuffers;
@@ -59,6 +61,7 @@ public:
     DataSourceStatus                initializeTransferTasks         (unsigned int maxTasks);
 
     DataSourceStatus                addBuffer                       (DataSourceBuffer &buffer);
+    DataSourceStatus                removeBuffer                    (DataSourceBuffer &buffer);
 
     void                            shutDown                        (void);
 

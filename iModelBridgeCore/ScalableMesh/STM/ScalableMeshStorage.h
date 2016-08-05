@@ -52,7 +52,7 @@ class ScalableMeshPointStorageEditor : public Import::BackInserter
     protected:
     Memory::ConstPacketProxy<PtType>        m_pointPacket;
 
-    typedef SMPointIndex<PtType, YProtPtExtentType>
+    typedef SMPointIndex<PtType, Extent3dType>
                                             MeshIndexType;    
     MeshIndexType&                         m_rIndex;
 
@@ -197,7 +197,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
      ArrayType                               m_Features;
 
 
-     typedef SMMeshIndex<PtType, YProtPtExtentType>
+     typedef SMMeshIndex<PtType, Extent3dType>
          MeshIndexType;
 
      MeshIndexType&                              m_rIndex;
@@ -263,7 +263,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
          m_uvPacket;
 
 
-     typedef SMMeshIndex<PtType, YProtPtExtentType>
+     typedef SMMeshIndex<PtType, Extent3dType>
          MeshIndexType;
 
      MeshIndexType&                              m_rIndex;
@@ -367,7 +367,7 @@ class ScalableMeshStorage : public IStorage
     typedef typename MeshTypeCreatorTrait<DPoint3d>::type
         MeshTypeFactory;
 
-    typedef SMMeshIndex<PtType, YProtPtExtentType>
+    typedef SMMeshIndex<PtType, Extent3dType>
                                             MeshIndexType;    
 
     MeshIndexType*                         m_pPointIndex;

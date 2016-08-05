@@ -17,6 +17,8 @@
 #include "ScalableMeshIDTMFileTraits.h"
 
 #include <ScalableMesh/Import/Exceptions.h>
+#include "../Stores/SMStoreUtils.h"
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)

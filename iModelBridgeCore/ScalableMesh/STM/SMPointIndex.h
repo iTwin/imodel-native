@@ -21,13 +21,13 @@
 #include <ImagePP/all/h/HGF2DTemplateExtent.h>
 #include <ImagePP/all/h/HVE2DSegment.h>
 //#include "HGFSpatialIndex.h"
-#include "SMPointTileStore.h"
 #include "SMMemoryPool.h"
 #include <ImagePP/all/h/HVEShape.h>
 
 #include <ScalableMesh\IScalableMeshQuery.h>
 
 #include "Stores\SMSQLiteStore.h"
+#include "Stores\SMStreamingDataStore.h"
 
 class DataSourceAccount;
 
@@ -405,15 +405,7 @@ public:
     @return true if node and sub-nodes are empty
     -----------------------------------------------------------------------------*/
     bool IsEmpty() const;
-    
-    /**----------------------------------------------------------------------------
-     Get the point store
-    -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointTileStore<POINT, EXTENT> > GetPointsStore()
-        {
-        return m_SMIndex->GetPointsStore();
-        }
-
+        
     /**----------------------------------------------------------------------------
      Get the data store
     -----------------------------------------------------------------------------*/
@@ -586,9 +578,8 @@ public:
     virtual void         AddOpenGroup(const size_t&, SMNodeGroup* pi_pNodeGroup) const;
 
     virtual void         SaveAllOpenGroups() const;
-
-    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    
+    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
     virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -1072,7 +1063,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore, HFCPtr<StreamingPointStoreType> pi_pPointStore);
+    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1184,7 +1175,7 @@ template <class POINT, class EXTENT, class NODE> class SMIndexNodeVirtual : publ
     };
 
 
-    template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>//public HGFSpatialIndex <POINT, POINT, EXTENT, SMPointIndexNode<POINT, EXTENT>, SMPointIndexHeader<EXTENT> >
+    template<class POINT, class EXTENT> class SMPointIndex : public HFCShareableObject<SMPointIndex<POINT, EXTENT>>
     {
 
 public:
@@ -1207,7 +1198,7 @@ public:
                                    node after which the node may be split.
 
     -------------------------------------------------------------------------------------------------*/
-    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, HFCPtr<SMPointTileStore<POINT, EXTENT> > store, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
+    SMPointIndex(ISMDataStoreTypePtr<EXTENT>& newDataStore, size_t SplitTreshold, ISMPointIndexFilter<POINT, EXTENT>* filter, bool balanced, bool propagatesDataDown, bool shouldCreateRoot = true);
     /**----------------------------------------------------------------------------
      Destructor
      If the index has unstored nodes then those will be stored.
@@ -1219,13 +1210,7 @@ public:
     -----------------------------------------------------------------------------*/
     HFCPtr<HPMCountLimitedPool<POINT> >
     GetPool() const;
-
-    /**----------------------------------------------------------------------------
-     Returns the point store
-    -----------------------------------------------------------------------------*/
-    HFCPtr<SMPointTileStore<POINT, EXTENT> >
-    GetPointsStore() const;
-
+    
     /**----------------------------------------------------------------------------
      Returns the data store
     -----------------------------------------------------------------------------*/
@@ -1319,8 +1304,7 @@ public:
     StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
     StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
     StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
-    typedef SMStreamingPointTaggedTileStore<POINT, EXTENT>        StreamingPointStoreType;
-
+    
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;
 #endif
@@ -1495,8 +1479,7 @@ protected:
         // Notice that even if we have strong aggregation we do not check invariants of root node
 #endif
         };
-   
-    HFCPtr<SMPointTileStore<POINT, EXTENT> > m_store;
+       
     ISMDataStoreTypePtr<EXTENT>              m_dataStore;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    

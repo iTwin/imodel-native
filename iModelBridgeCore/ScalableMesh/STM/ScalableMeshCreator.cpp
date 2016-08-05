@@ -15,8 +15,6 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMeshCreator.h"
-//#include "DTMGraphTileStore.h"
-//#include "SMTextureTileStore.h"
 #include <ScalableMesh/GeoCoords/GCS.h>
 
 /*----------------------------------------------------------------------+
@@ -63,18 +61,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <STMInternal/GeoCoords/WKTUtils.h>
 
 #include "ScalableMeshMesher.h"
-//#include "Edits\DiffSetTileStore.h"
 #include "Edits\ClipRegistry.h"
 //#include <DgnPlatform\Tools\ConfigurationManager.h>
 #include "Edits/ClipUtilities.hpp"
 
 #include "Stores\SMStreamingDataStore.h"
-#include "SMSQLitePointTileStore.h"
-#include "SMSQLiteIndiceTileStore.h"
-#include "SMSQLiteGraphTileStore.h"
-#include "SMSQLiteUVStore.h"
-#include "SMSQLiteUVIndiceTileStore.h"
-#include "SMSQLiteTextureTileStore.h"
 #include <ImagePP\all\h\HIMMosaic.h>
 #include <DgnPlatform\DesktopTools\ConfigurationManager.h>
 
@@ -103,7 +94,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*                                                                  */
 /*==================================================================*/
 
-ISMPointIndexFilter<DPoint3d, YProtPtExtentType>* s_filter = nullptr;
+ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filter = nullptr;
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
@@ -575,42 +566,12 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
 
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                        bool needBalancing) 
-    {    
-
-    typedef SMSQLitePointTileStore<PointType,
-        PointIndexExtentType>             TileStoreType;
-    
-    typedef SMStreamingPointTaggedTileStore<
-        PointType,
-        PointIndexExtentType >        StreamingStoreType;
-    typedef SMStreamingPointTaggedTileStore<
-        int32_t,
-        PointIndexExtentType >        StreamingIndiceStoreType;
-    typedef SMStreamingPointTaggedTileStore<
-        DPoint2d,
-        PointIndexExtentType >        StreamingUVStoreType;
-
-        
-    HFCPtr<TileStoreType> pFinalTileStore;
+    {                                    
     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
     bool isSingleFile = true;
 
     isSingleFile = m_smSQLitePtr->IsSingleFile();
-
-
-
-    HFCPtr<StreamingStoreType>  pStreamingTileStore;
-    HFCPtr<StreamingIndiceStoreType> pStreamingIndiceTileStore;
-    HFCPtr<StreamingUVStoreType> pStreamingUVTileStore;
-    HFCPtr<StreamingIndiceStoreType> pStreamingUVsIndicesTileStore;
-    HFCPtr<StreamingTextureTileStore> pStreamingTextureTileStore;
-
-    HFCPtr<SMSQLiteIndiceTileStore<YProtPtExtentType >> pIndiceTileStore;
-    HFCPtr<SMSQLiteUVTileStore<YProtPtExtentType >> pUVTileStore;
-    HFCPtr<SMSQLiteUVIndiceTileStore<YProtPtExtentType >> pUVsIndicesTileStore;
-    HFCPtr<SMSQLiteTextureTileStore> pTextureTileStore;
-
-
+            
     // HFC_CREATE_ONLY if all sources are ADD (if one remove or one uptodate => read_write)
     //accessMode = filePtr->GetAccessMode();
     s_inEditing = false;
@@ -626,89 +587,50 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                 Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
         
 
-            // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
+    // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
 
-        if (!isSingleFile)
+    if (!isSingleFile)
+        {
+        auto position = m_scmFileName.find_last_of(L".stm");
+        WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
+        if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
             {
-            auto position = m_scmFileName.find_last_of(L".stm");
-            WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
-            if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
-                {
-                assert(ERROR_PATH_NOT_FOUND != GetLastError());
-                }
-
-            // Pip ToDo: Create account?
-            DataSourceAccount *account = nullptr;
-
-            pStreamingTileStore = new StreamingStoreType(account, streamingFilePath, SMStoreDataType::Points, (SCM_COMPRESSION_DEFLATE == m_compressionType), true);
-            // SM_NEEDS_WORKS : layerID 
-            pStreamingIndiceTileStore = new StreamingIndiceStoreType(account, streamingFilePath, SMStoreDataType::TriPtIndices, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVTileStore = new StreamingUVStoreType(account, streamingFilePath, SMStoreDataType::UvCoords, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingUVsIndicesTileStore = new StreamingIndiceStoreType(account, streamingFilePath, SMStoreDataType::TriUvIndices, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            pStreamingTextureTileStore = new StreamingTextureTileStore(account, streamingFilePath);
-            
-            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMStreamingStore<YProtPtExtentType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
-            
-            pDataIndex = new MeshIndexType(dataStore, 
-                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
-                                           &*pStreamingTileStore,                                       
-                                           &*pStreamingIndiceTileStore,
-                                  //     ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
-                                       pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr),                                       
-                                       &*pStreamingTextureTileStore,                                                                              
-                                       &*pStreamingUVTileStore,                                       
-                                       &*pStreamingUVsIndicesTileStore,
-                                       10000,
-                                       pFilter,
-                                       needBalancing, false, false,
-                                       pMesher2_5d,
-                                       pMesher3d);
-            pDataIndex->SetSingleFile(false);
-            pDataIndex->SetGenerating(true);
-
-            WString clipFileDefPath = m_scmFileName;
-            clipFileDefPath.append(L"_clipDefinitions");
-            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
-            pDataIndex->SetClipRegistry(registry);
+            assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }
-        else {
-//            size_t n =4;
 
-            WString dbFilePath = m_scmFileName;
-            dbFilePath.ReplaceI(L".stm", L".db");
-            pFinalTileStore = new TileStoreType(m_smSQLitePtr);
-            pIndiceTileStore = new SMSQLiteIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
-
-            pUVTileStore = new SMSQLiteUVTileStore<YProtPtExtentType >(m_smSQLitePtr);
-            pUVsIndicesTileStore = new SMSQLiteUVIndiceTileStore<YProtPtExtentType >(m_smSQLitePtr);
-            pTextureTileStore = new SMSQLiteTextureTileStore(m_smSQLitePtr);
-            pGraphTileStore = new SMSQLiteGraphTileStore(m_smSQLitePtr);
-
-            //pIndiceTileStore = new TileStoreType(filePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-            ISMDataStoreTypePtr<YProtPtExtentType> dataStore(new SMSQLiteStore<YProtPtExtentType>(m_smSQLitePtr));
-
-            pDataIndex = new MeshIndexType(dataStore,
-                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                       
-                                       &*pFinalTileStore,                                       
-                                       &*pIndiceTileStore,
-                                      // ScalableMeshMemoryPools<PointType>::Get()->GetGraphPool(),
-                                       pGraphTileStore,                                       
-                                       &*pTextureTileStore,                                       
-                                       &*pUVTileStore,                                       
-                                       &*pUVsIndicesTileStore,
-                                       10000,
-                                       pFilter,
-                                       needBalancing, false, false,
-                                       pMesher2_5d,
-                                       pMesher3d);
-            pDataIndex->SetGenerating(true);
-
-            WString clipFileDefPath = m_scmFileName;
-            clipFileDefPath.append(L"_clipDefinitions");
-            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
-            pDataIndex->SetClipRegistry(registry);
-            }
+        // Pip ToDo: Create account?
+        DataSourceAccount *account = nullptr;                                    
         
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+        
+        pDataIndex = new MeshIndexType(dataStore, 
+                                       ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
+                                       10000,
+                                       pFilter,
+                                       needBalancing, false, false,
+                                       pMesher2_5d,
+                                       pMesher3d);
+
+        pDataIndex->SetSingleFile(false);
+        pDataIndex->SetGenerating(true);
+
+       
+        }
+    else 
+        {
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMSQLiteStore<Extent3dType>(m_smSQLitePtr));
+
+        pDataIndex = new MeshIndexType(dataStore,
+                                       ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
+                                       10000,
+                                       pFilter,
+                                       needBalancing, false, false,
+                                       pMesher2_5d,
+                                       pMesher3d);
+
+        pDataIndex->SetGenerating(true);        
+        }           
+
     return SUCCESS;
     }
 

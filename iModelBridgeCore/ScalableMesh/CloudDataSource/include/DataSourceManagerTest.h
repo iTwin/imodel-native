@@ -20,10 +20,13 @@ protected:
 
 public:
 
-    DataSourceStatus    testDataSources              (void);
+    CLOUD_EXPORT                        DataSourceManagerTest       (void);
+    CLOUD_EXPORT                       ~DataSourceManagerTest       (void);
 
-    DataSourceStatus    testDataSourceFile           (void);
-    DataSourceStatus    testDataSourceAzure          (void);
+    CLOUD_EXPORT    DataSourceStatus    testDataSources              (void);
+
+    CLOUD_EXPORT    DataSourceStatus    testDataSourceFile           (void);
+    CLOUD_EXPORT    DataSourceStatus    testDataSourceAzure          (void);
 
 };
 

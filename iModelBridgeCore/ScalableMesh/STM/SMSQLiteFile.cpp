@@ -18,11 +18,14 @@ SMSQLiteFile::SMSQLiteFile()
 }
 
 SMSQLiteFile::~SMSQLiteFile()
-{
+    {
     if (m_database != nullptr)
+        {    
         delete m_database;
+        }
+
     m_database = nullptr;
-}
+    }
 
 void SMSQLiteFile::CommitAll()
     {
@@ -1162,6 +1165,7 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
         m_database->GetCachedStatement(stmt2, "SELECT last_insert_rowid()");
         status = stmt2->Step();
         diffsetID = stmt2->GetValueInt64(0);
+        if (m_autocommit) m_database->SaveChanges();
         }
     else if (nRows == 0)
         {
@@ -1173,7 +1177,7 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
-        m_database->SaveChanges();
+        if (m_autocommit) m_database->SaveChanges();        
         }
     else
         {
@@ -1184,7 +1188,8 @@ void SMSQLiteFile::StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diff
         DbResult status = stmt->Step();
         assert(status == BE_SQLITE_DONE);
         stmt->ClearBindings();
-        }
+        if (m_autocommit) m_database->SaveChanges();        
+        }    
     }
 
 #ifdef WIP_MESH_IMPORT

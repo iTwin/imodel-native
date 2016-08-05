@@ -632,7 +632,6 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 #endif
 
-
     pDataIndex = 0;
 
     if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
