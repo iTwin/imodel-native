@@ -1386,38 +1386,44 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//Need to test if retry actually works
+//@bsimethod                                    Arvind.Venkateswaran            08/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceResponse
 (
-bool longpolling,
-int numOfRetries
+    bool longpolling,
+    int numOfRetries
 )
-    {
+{
     return m_eventServiceClient->MakeReceiveDeleteRequest(longpolling)
-        ->Then<DgnDbServerEventReponseResult>([=, &numOfRetries] (const EventServiceResult& result)
-        {
+        ->Then<DgnDbServerEventReponseResult>([=, &numOfRetries](const EventServiceResult& result)
+    {
         if (result.IsSuccess())
-            {
+        {
             Http::Response response = result.GetValue();
-            HttpStatus status = response.GetHttpStatus();
-            if (status == HttpStatus::OK)
-                return DgnDbServerEventReponseResult::Success(response);
-            else if (status == HttpStatus::NoContent)
+            if (response.GetHttpStatus() != HttpStatus::OK)
+                return DgnDbServerEventReponseResult::Error(DgnDbServerError(result.GetError()));
+            return DgnDbServerEventReponseResult::Success(response);
+        }
+        else
+        {
+            HttpStatus status = result.GetError().GetHttpStatus();
+            if (status == HttpStatus::NoContent || status == HttpStatus::None)
+            {
                 return DgnDbServerEventReponseResult::Error(DgnDbServerError::Id::NoEventsFound);
+            }
             else if (status == HttpStatus::Unauthorized && numOfRetries > 0)
-                {
+            {
                 if (SetEventSASToken())
                     m_eventServiceClient->UpdateSASToken(m_eventSAS->GetSASToken());
                 return GetEventServiceResponse(longpolling, numOfRetries--)->GetResult();
-                }
-            else
-                return DgnDbServerEventReponseResult::Error(DgnDbServerError::Id::InternalServerError);
             }
-        return DgnDbServerEventReponseResult::Error(DgnDbServerError(result.GetError()));
-        });
-    }
+            else
+            {
+                return DgnDbServerEventReponseResult::Error(DgnDbServerError(result.GetError()));
+            }
+        }
+    });
+}
 
 /* Private methods end */
 
