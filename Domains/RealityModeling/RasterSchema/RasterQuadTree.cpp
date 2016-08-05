@@ -230,7 +230,7 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct DrawArgs
     {
     RenderContextR m_context;
-    Render::GraphicArray m_graphics;
+    Render::GraphicBranch m_graphics;
 
     DrawArgs(RenderContextR context) : m_context(context) {}
     void AddGraphic(Render::GraphicR gra) { m_graphics.Add(gra); }
@@ -1174,6 +1174,6 @@ void DrawArgs::DrawGraphics(double zBias)
     //     That z-bias must be perpendicular to the view plane. Review when we will support raster plane et layerInModel(only for 2d top view?!?).
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, zBias));
-    auto group = m_context.CreateGroupNode(Render::Graphic::CreateParams(nullptr, biasTrans), m_graphics, nullptr);
+    auto group = m_context.CreateBranch(Render::Graphic::CreateParams(nullptr, biasTrans), m_graphics);
     m_context.OutputGraphic(*group, nullptr);
     }

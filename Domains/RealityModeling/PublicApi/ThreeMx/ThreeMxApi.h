@@ -104,13 +104,13 @@ struct DrawArgs
     typedef bmultimap<int, NodePtr> MissingNodes;
     Dgn::RenderContextR m_context;
     SceneR m_scene;
-    Dgn::Render::GraphicArray m_graphics;
+    Dgn::Render::GraphicBranch m_graphics;
     MissingNodes m_missing;
     TimePoint m_now;
     TimePoint m_purgeOlderThan;
 
     DrawArgs(Dgn::RenderContextR context, SceneR scene, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_scene(scene), m_now(now), m_purgeOlderThan(purgeOlderThan) {}
-    void DrawGraphics(); // place all entries in the GraphicArray into a GroupNode and send it to the RenderContext.
+    void DrawGraphics(Dgn::ViewContextR); // place all entries into a GraphicBranch and send it to the RenderContext.
 };
 
 /*=================================================================================**//**
