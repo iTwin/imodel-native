@@ -57,6 +57,7 @@
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
+#define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
 #define BIS_CLASS_SpatialModel              "SpatialModel"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
 #define BIS_CLASS_SheetModel                "SheetModel"

@@ -740,10 +740,16 @@
     <ECEntityClass typeName="PhysicalElement" modifier="Abstract">
         <!-- A SpatialElement that has mass and can be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
         <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="VolumeElement">
         <!-- A SpatialLocationElement that defines a volume -->

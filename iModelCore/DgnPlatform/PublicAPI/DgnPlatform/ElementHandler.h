@@ -99,6 +99,18 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for PhysicalElement
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SpatialLocationElement
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocation : Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationElement, SpatialLocationElement, SpatialLocation, Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for GeometricElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {

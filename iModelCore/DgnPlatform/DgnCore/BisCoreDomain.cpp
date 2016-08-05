@@ -51,6 +51,8 @@ namespace dgn_ElementHandler
 HANDLER_DEFINE_MEMBERS(Element)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Geometric3d)
+HANDLER_DEFINE_MEMBERS(Physical)
+HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(DrawingGraphic)
@@ -110,6 +112,8 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GeometryPart::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingGraphic::GetHandler());
     RegisterHandler(dgn_ElementHandler::UrlLinkHandler::GetHandler());
