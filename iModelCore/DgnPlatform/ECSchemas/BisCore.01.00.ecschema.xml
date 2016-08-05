@@ -65,10 +65,10 @@
         <ECEnumerator value="7" displayLabel="All = Select | Insert | Update"/>
     </ECEnumeration>
 
-    <ECCustomAttributeClass typeName="CustomHandledProperty" description="Applied to an element's property to indicate that the property's value is handled specially by a C++ class." appliesTo="Any">
+    <ECCustomAttributeClass typeName="CustomHandledProperty" description="Applied to an element's property to indicate that the property's value is handled specially by a C++ class." appliesTo="AnyProperty">
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="PropertyStatementType" description="Applied to an element's property to indicate the kinds of statements in which the property should appear." appliesTo="Any">
+    <ECCustomAttributeClass typeName="PropertyStatementType" description="Applied to an element's property to indicate the kinds of statements in which the property should appear." appliesTo="AnyProperty">
       <!-- The kinds of statements in which the property should appear. -->
       <ECProperty propertyName="StatementTypes" typeName="CustomHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
