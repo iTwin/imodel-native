@@ -410,6 +410,7 @@ struct Material : RefCounted<NonCopyableClass>
     };
     struct TextureMapParams
     {
+        TextureMapParams() {}
         double m_textureWeight = 1.0;
         Trans2x3* m_textureMat2x3 = nullptr;
         MapMode m_mapMode = MapMode::Parametric;

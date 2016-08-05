@@ -43,8 +43,8 @@ namespace EnvironmentJson
     static bool IsDisplayed(JsonValueCR in) {JsonValueCR displayJson = in[Display()]; return displayJson.isNull() || displayJson.asBool();}
     static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isInt() ? ColorDef(json.asInt()) : defaultVal;}
     static double GetDouble(JsonValueCR in, Utf8CP name, double defaultVal) {JsonValueCR json = in[name]; return json.isDouble() ? json.asDouble() : defaultVal;}
-    static Utf8String GetString(JsonValueCR in, Utf8CP name, Utf8CP defaultVal) {JsonValueCR json = in[name]; return json.isString() ? json.asString() : defaultVal;}
-    static MaterialPtr CreateGradient(JsonValueCR in);
+// UNUSED:    static Utf8String GetString(JsonValueCR in, Utf8CP name, Utf8CP defaultVal) {JsonValueCR json = in[name]; return json.isString() ? json.asString() : defaultVal;}
+// UNUSED:    static MaterialPtr CreateGradient(JsonValueCR in);
     static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
     static DPoint2d GetUVForDirection(DPoint3dCR direction, CameraViewController::Environment::Projection type, double rotation, double zOffset);
     static void DrawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR, CameraViewController::Environment::Projection type, double rotation, double zOffset);

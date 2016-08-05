@@ -36,7 +36,7 @@
     </Part>
 
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
-    <Part Name="FollyShim" ExcludePlatforms="MacOS*,Linux*">
+    <Part Name="FollyShim" ExcludePlatforms="Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
     </Part>
 
@@ -480,7 +480,6 @@
         <SubPart Repository="Bentley"               PartFile="Bentley"          PartName="RunGtest"/>
         <SubPart Repository="BeHttp"                PartFile="BeHttp"           PartName="RunGtest"/>
         <SubPart Repository="BeSecurity"            PartFile="BeSecurity"       PartName="RunGtest"/>
-        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunGtest"/>
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunGtest"/>
       <!-- Test that are too time-consuming to run every time:
         <SubPart Repository="GeoCoord"              PartFile="GeoCoord"         PartName="RunGtest"/>
@@ -497,7 +496,6 @@
         <SubPart Repository="Units"                 PartFile="Units"            PartName="RunAndroidJUnitTest"/>
         <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RunAndroidJUnitTest"/>
         <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RunAndroidJUnitTest"/>
-        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RunAndroidJUnitTest"/>
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RunAndroidJUnitTest"/>
     </Part>
 
@@ -511,7 +509,6 @@
         <SubPart Repository="DgnPlatform"           PartFile="DgnPlatform"      PartName="RuniOSXCTest"/>
         <SubPart Repository="DgnDisplay"            PartFile="DgnDisplay"       PartName="RuniOSXCTest"/>
         <SubPart Repository="BeSQLite"              PartFile="BeSQLite"         PartName="RuniOSXCTest"/>
-        <SubPart Repository="DgnDomains-Planning"   PartFile="Planning"         PartName="RuniOSXCTest"/>
         <SubPart Repository="ConstructionSchema"  PartFile="ConstructionSchema" PartName="RuniOSXCTest"/>
     </Part>
 
