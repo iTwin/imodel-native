@@ -1437,7 +1437,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_MappedTo_SharedTable_SharedColumns)
+TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_TPH_ShareColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1830,7 +1830,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_SharedColumns)
+TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -2713,7 +2713,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                          05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_MappedTo_OwnTable)
+TEST_F(ECSchemaUpdateTests, Delete_ECEntityClass_OwnTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -2995,7 +2995,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumns)
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3188,7 +3188,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumns_SharedColumnCount)
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumnCount)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3391,7 +3391,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_TPH_SharedColumns_SharedCol
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -3667,7 +3667,7 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_MappedTo_JoinedTable_SharedColumns)
+TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_ShareColumns)
     {
     //Setup Db ===================================================================================================
     SchemaItem schemaItem(
@@ -4555,7 +4555,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnSupported)
+TEST_F(ECSchemaUpdateTests, DeleteECStructClassUnsupported)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"

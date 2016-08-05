@@ -45,7 +45,7 @@ TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "Option SharedColumns cannot be used without a strategy"));
+        "</ECSchema>", false, "ShareColumnsCA cannot be used without a strategy"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -102,7 +102,7 @@ TEST_F(ECDbMappingTestFixture, InvalidMapStrategyCATests)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "sharedColumns not allowed with Strategy NotMapped"));
+        "</ECSchema>", false, "ShareColumnsCA not allowed with Strategy NotMapped"));
 
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -189,7 +189,7 @@ TEST_F(ECDbMappingTestFixture, OwnTableCATests)
                                    "        </ECCustomAttributes>"
                                    "        <ECProperty propertyName='Price' typeName='double' />"
                                    "    </ECEntityClass>"
-                                   "</ECSchema>", false, "Option SharedColumns can only be used with strategy SharedTable"));
+                                   "</ECSchema>", false, "Option ShareColumnsCA can only be used with strategy SharedTable"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1401,9 +1401,10 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnCA)
+TEST_F(ECDbMappingTestFixture, ShareColumnsCA)
     {
     std::vector<SchemaItem> testItems;
+
     testItems.push_back(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1610,9 +1611,92 @@ TEST_F(ECDbMappingTestFixture, SharedColumnCA)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiMethod                                      Krischan.Eberle                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ShareColumnsCAWithoutTPH)
+    {
+    std::vector<SchemaItem> testItems;
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "ShareColumns without MapStrategy is not supported"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>OwnTable</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "ShareColumns with MapStrategy OwnTable is not supported"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>ExistingTable</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "ShareColumns with MapStrategy ExistingTable is not supported"));
+
+    testItems.push_back(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>SharedTable</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub1' modifier='None'>"
+        "        <BaseClass>Parent</BaseClass>"
+        "        <ECProperty propertyName='Cost' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>", false, "ShareColumns with MapStrategy SharedTable is not supported"));
+
+    AssertSchemaImport(testItems, "invalidsharecolumnsca.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                  05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnAndPerColumnConstraints)
+TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
     {
     SchemaItem testSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1683,7 +1767,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnAndPerColumnConstraints)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "sharedcolumnandcolumnconstraints.ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "sharecolumnsandcolumnconstraints.ecdb");
     ASSERT_FALSE(asserted);
 
     Statement stmt;
@@ -2112,7 +2196,7 @@ TEST_F(ECDbMappingTestFixture, TablePrefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedColumnsAcrossMultipleSchemaImports)
+TEST_F(ECDbMappingTestFixture, ShareColumnsCAAcrossMultipleSchemaImports)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='ReferredSchema' nameSpacePrefix='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -2148,7 +2232,7 @@ TEST_F(ECDbMappingTestFixture, SharedColumnsAcrossMultipleSchemaImports)
     {
     ECDb testDb;
     bool asserted = false;
-    AssertSchemaImport(testDb, asserted, testItem, "SharedColumnsForSubclasses.ecdb");
+    AssertSchemaImport(testDb, asserted, testItem, "ShareColumnsCAForSubclasses.ecdb");
     ASSERT_FALSE(asserted);
     testDb.SaveChanges();
     ecdbFilePath = testDb.GetDbFileName();
@@ -3070,10 +3154,10 @@ TEST_F(ECDbMappingTestFixture, SharedTableInstanceInsertionAndDeletion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns)
+TEST_F(ECDbMappingTestFixture, TPH_ShareColumnsCA)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='SchemaWithSharedColumns' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='BaseClass' modifier='None'>"
@@ -3107,7 +3191,7 @@ TEST_F(ECDbMappingTestFixture, SharedTableAppliesToSubclasses_SharedColumns)
 
     ECDb db;
     bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "sharedcolumns.ecdb");
+    AssertSchemaImport(db, asserted, testItem, "ShareColumnsCA.ecdb");
     ASSERT_FALSE(asserted);
 
     //verify tables
