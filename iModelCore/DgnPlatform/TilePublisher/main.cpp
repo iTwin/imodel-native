@@ -161,7 +161,6 @@ ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db) const
         return false;
         }
 
-    // ###TODO: Anything else?
     return controller;
     }
 

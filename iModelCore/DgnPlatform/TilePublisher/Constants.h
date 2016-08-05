@@ -41,21 +41,6 @@ USING_NAMESPACE_BENTLEY
 #define JSON_Children "children"
 #define JSON_Content "content"
 
-Utf8String s_texturedVertexShader =
-"precision highp float;\n"
-"attribute vec3 a_pos;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"attribute vec2 a_texc;\n"
-#if USE_BATCH_TABLE
-"attribute float a_batchId;\n"
-#endif
-"varying vec2 v_texc;\n"
-"void main(void) {\n"
-"v_texc = a_texc;\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
-"}\n";
-
 Utf8String s_texturedFragShader =
 "precision highp float;\n"
 "varying vec2 v_texc;\n"
@@ -64,13 +49,26 @@ Utf8String s_texturedFragShader =
 "gl_FragColor = texture2D(u_tex, v_texc);\n"
 "}\n";
 
+#if USE_BATCH_TABLE
+
+Utf8String s_texturedVertexShader =
+"precision highp float;\n"
+"attribute vec3 a_pos;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"attribute vec2 a_texc;\n"
+"attribute float a_batchId;\n"
+"varying vec2 v_texc;\n"
+"void main(void) {\n"
+"v_texc = a_texc;\n"
+"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
+"}\n";
+
 Utf8String s_untexturedVertexShader =
 "precision highp float;\n"
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_n;\n"
-#if USE_BATCH_TABLE
 "attribute float a_batchId;\n"
-#endif
 "uniform mat4 u_mv;\n"
 "uniform mat4 u_proj;\n"
 "uniform mat3 u_nmx;\n"
@@ -79,6 +77,35 @@ Utf8String s_untexturedVertexShader =
 "v_n = normalize(u_nmx * a_n);\n"
 "gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
 "}\n";
+
+#else
+
+Utf8String s_texturedVertexShader =
+"precision highp float;\n"
+"attribute vec3 a_pos;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"attribute vec2 a_texc;\n"
+"varying vec2 v_texc;\n"
+"void main(void) {\n"
+"v_texc = a_texc;\n"
+"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
+"}\n";
+
+Utf8String s_untexturedVertexShader =
+"precision highp float;\n"
+"attribute vec3 a_pos;\n"
+"attribute vec3 a_n;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"uniform mat3 u_nmx;\n"
+"varying vec3 v_n;\n"
+"void main(void) {\n"
+"v_n = normalize(u_nmx * a_n);\n"
+"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
+"}\n";
+
+#endif
 
 Utf8String s_untexturedFragShader =
 "precision highp float;\n"

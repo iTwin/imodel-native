@@ -450,7 +450,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
+    bool IsGridOn() const {return m_viewController->GetViewFlags().m_grid;}
 
     //! Determine whether this viewport is a 3d view.
     //! @remarks Will be true only for a physical views.
@@ -555,7 +555,6 @@ public:
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
-    static double GetCameraPlaneRatio() {return 300.0;}
 };
 
 //=======================================================================================
