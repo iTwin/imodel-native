@@ -256,11 +256,12 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
-    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices || dataType == SMStoreDataType::LinearFeature
 #ifdef WIP_MESH_IMPORT
-        ||SMStoreDataType::MeshParts
-#endif          
-           );
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices || dataType == SMStoreDataType::LinearFeature || dataType == SMStoreDataType::MeshParts);
+#else
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices || dataType == SMStoreDataType::LinearFeature);
+#endif
+
     SMSQLiteFilePtr sqliteFilePtr;      
 
     if (dataType == SMStoreDataType::LinearFeature)
