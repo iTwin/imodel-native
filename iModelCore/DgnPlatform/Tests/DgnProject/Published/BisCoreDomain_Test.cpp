@@ -195,7 +195,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
 //---------------------------------------------------------------------------------------
 TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
     {
-    SetupProject(L"3dMetricGeneral.ibim", L"ValidateAutoCreatedModels.bim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     DgnModelPtr repositoryModel = m_db->Models().GetModel(DgnModel::RepositoryModelId());
     DgnModelPtr dictionaryModel = m_db->Models().GetModel(DgnModel::DictionaryId());

@@ -176,7 +176,7 @@ TEST_F(ElementGeomPartTests, ElementsUseGeometryParts)
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT SourceECInstanceId,TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts)));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(elementId.GetValue(), statement.GetValueInt64(0));
-    ASSERT_EQ(existingPartId.GetValue(), (int64_t)statement.GetValueInt(1));
+    ASSERT_EQ(existingPartId.GetValue(), statement.GetValueInt64(1));
     }
 
 /*---------------------------------------------------------------------------------**//**
