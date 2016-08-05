@@ -178,9 +178,9 @@ static void importBisCoreSchema(DgnDbR db)
     standardSchemaPath.AppendToPath(L"Standard");
     ecSchemaContext->AddSchemaPath(standardSchemaPath);
 
-    SchemaKey dgnschemaKey("BisCore", 1, 0);
-    ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
-    BeAssert(dgnschema != NULL);
+    SchemaKey bisCoreSchemaKey("BisCore", 1, 0);
+    ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
+    BeAssert(bisCoreSchema != NULL);
 
     BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache());
     BeAssert(status == SUCCESS);

@@ -1230,7 +1230,7 @@
 
     <ECRelationshipClass typeName="ElementsReferToElements" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.01">
+            <ClassMap xmlns="ECDbMap.02.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
