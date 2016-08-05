@@ -2819,6 +2819,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::GetMesh
     ISMInt32DataStorePtr nodeDataStore;
     HPMBlockID blockId = HPMBlockID(m_nodeId);
     bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::MeshParts);
+    assert(result == true);
     if(m_meshParts.size() > 0)
         {
         nodeDataStore->StoreBlock(&m_meshParts[0], m_meshParts.size(), blockId);
@@ -2862,6 +2863,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreMe
     if(m_meshParts.empty()) return;
     ISMTextureDataStorePtr nodeDataStore;
     bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::Metadata);
+    assert(result == true);
 
     HPMBlockID blockId = HPMBlockID(m_nodeId);
     bvector<unsigned char> str;
