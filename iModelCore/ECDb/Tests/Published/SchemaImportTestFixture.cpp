@@ -46,7 +46,6 @@ void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, Sch
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, SchemaItem const& testItem) const
     {
-
     asserted = true;
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());

@@ -25,7 +25,7 @@ ECDbMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationship
 ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
 
 #TFS 485980
-ECSchemaUpdateTests.UpdateECDbMapCA_AddMinimumSharedColumnsCount
+ECSchemaUpdateTests.UpdateECDbMapCA_AddSharedColumnCount
 
 #TFS 485979
 ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
@@ -39,5 +39,4 @@ ECSchemaUpdateTests.AddNewDerivedEndTableRelationship
 
 
 ECDbSchemaManagerTests.ImportSchemaWithReferenceToECDbMap10
-ECSchemaUpdateTests.ClassModifier
 

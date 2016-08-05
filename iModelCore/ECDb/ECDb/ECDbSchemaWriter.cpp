@@ -2187,7 +2187,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
     if (UpdateECClasses(schemaChange.Classes(), oldSchema, newSchema) == ERROR)
         return ERROR;
 
-
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
     }
 
