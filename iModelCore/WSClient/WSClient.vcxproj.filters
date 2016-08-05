@@ -363,7 +363,13 @@
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Azure\EventServiceClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Connect\ConnectSignInManager.cpp">
@@ -423,6 +429,9 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV10ToV11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Cache\Util\ECInstanceKeyFilter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -435,7 +444,34 @@
     <ClCompile Include="ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV11ToV12.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerCodeEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerDeletedEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEventParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerLockEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerRevisionEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ConnectC\CWSCCBuffer.cpp">
@@ -872,7 +908,13 @@
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Azure\EventServiceClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectSignInManager.h">
@@ -971,6 +1013,9 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1014,6 +1059,39 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\ConnectC\IMSSearch\IMSSearchPublic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerLockEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventConnection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1067,5 +1145,6 @@
     <None Include="CWSClientCLib.mke" />
     <None Include="CWSClientCPrewire.mke" />
     <None Include=".hgignore" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>
