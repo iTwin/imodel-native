@@ -601,7 +601,6 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     HCDPacket pi_uncompressedPacket((Byte*)DataTypeArray + sizeof(int) * 3, uncompressedSize, uncompressedSize);    
     HCDPacket pi_compressedPacket;
-    if (ptData.size() == 0) return 0;
     pi_compressedPacket.SetBuffer(texData.data() + 4 * sizeof(int), texData.size() - 4 * sizeof(int));
     pi_compressedPacket.SetDataSize(texData.size() - 4 * sizeof(int));
     
@@ -672,6 +671,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
     //Special case
     if (m_dataType == SMStoreDataType::Texture)
         {        
+        if (nodeData.size() == 0) return 0;
         assert(uncompressedSize + sizeof(int) * 3 == maxCountData);
         return DecompressTextureData(nodeData, DataTypeArray, uncompressedSize);
         }
