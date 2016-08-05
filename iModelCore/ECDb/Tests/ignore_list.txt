@@ -41,5 +41,3 @@ ECSchemaUpdateTests.AddNewDerivedEndTableRelationship
 ECSchemaUpdateTests.AddSharedColumnCount
 ECSchemaUpdateTests.DeleteSharedColumnCount
 
-ECDbSchemaManagerTests.ImportSchemaWithReferenceToECDbMap10
-
