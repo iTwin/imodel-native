@@ -1578,7 +1578,7 @@ static PatternParamsPtr CookPatternParams(PatternParamsCR params, ViewContextR c
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_WantAreaPatterns()
     {
-    return GetViewFlags().patterns;
+    return GetViewFlags().m_patterns;
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

@@ -381,10 +381,10 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    if (!m_viewflags.weights)
+    if (!m_viewflags.m_weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!m_viewflags.transparency)
+    if (!m_viewflags.m_transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);

@@ -44,7 +44,6 @@ public:
     struct TextureMap
     {
 
-        struct Trans {double m_val[2][3];};
 
         enum class Type
         {
@@ -95,7 +94,7 @@ public:
         Type m_type;
 
         bool IsValid() const {return !m_value.isNull();}
-        DGNPLATFORM_EXPORT Trans GetTransform() const;
+        DGNPLATFORM_EXPORT Render::Material::Trans2x3 GetTransform() const;
         DGNPLATFORM_EXPORT DPoint2d GetScale() const;
         DGNPLATFORM_EXPORT DPoint2d GetOffset() const;
         DGNPLATFORM_EXPORT Units GetUnits() const;

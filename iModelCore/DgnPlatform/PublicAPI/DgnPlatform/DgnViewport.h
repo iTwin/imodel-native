@@ -450,7 +450,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
+    bool IsGridOn() const {return m_viewController->GetViewFlags().m_grid;}
 
     //! Determine whether this viewport is a 3d view.
     //! @remarks Will be true only for a physical views.

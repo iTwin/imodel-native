@@ -117,9 +117,9 @@ JsonRenderMaterial::TextureMap::Units JsonRenderMaterial::TextureMap::GetUnits()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
-JsonRenderMaterial::TextureMap::Trans JsonRenderMaterial::TextureMap::GetTransform() const
+Render::Material::Trans2x3 JsonRenderMaterial::TextureMap::GetTransform() const
     {
-    Trans trans;
+    Render::Material::Trans2x3 trans;
 
     for (size_t i=0; i<2; i++)
         for (size_t j=0; j<3; j++)

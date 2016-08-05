@@ -174,7 +174,7 @@ struct WebMercatorProgressive : ProgressiveTask
 struct DrawArgs
 {
     RenderContextR m_context;
-    Render::GraphicArray m_graphics;
+    Render::GraphicBranch m_graphics;
     TileList m_missing;
 
     DrawArgs(RenderContextR context) : m_context(context) {}
@@ -654,7 +654,7 @@ void DrawArgs::DrawGraphics(double bias)
 
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, bias));
-    auto group = m_context.CreateGroupNode(Graphic::CreateParams(nullptr, biasTrans), m_graphics, nullptr);
+    auto group = m_context.CreateBranch(Graphic::CreateParams(nullptr, biasTrans), m_graphics);
     m_context.OutputGraphic(*group, nullptr);
 
     BeAssert(m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them

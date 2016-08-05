@@ -695,6 +695,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
         {
             Render::MaterialPtr m_material;
             SkyBox(JsonValueCR, Render::SystemCR system);
+            Render::TexturePtr LoadSkyBox(Utf8CP fileName, Render::SystemCR system);
             void Draw(TerrainContextR);
         };
 

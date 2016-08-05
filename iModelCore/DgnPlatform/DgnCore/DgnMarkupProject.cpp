@@ -303,9 +303,9 @@ void SpatialRedlineViewController::SynchWithSubjectViewController()
     // There can only be one set of view flags. It will be used to initialize the viewport and qv. 
     // *** EXPERIMENTAL: Here, I force a couple of flags to suit the redline view better. Does this cause too much of a change in the subject view??
     m_viewFlags = m_subjectView.GetViewFlags();
-    m_viewFlags.weights = true;
-    m_viewFlags.acs = true;
-    m_viewFlags.grid = true;
+    m_viewFlags.m_weights = true;
+    m_viewFlags.m_acsTriad = true;
+    m_viewFlags.m_grid = true;
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -1464,7 +1464,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         
         ViewFlags flags;
         memset(&flags, 0, sizeof(flags));
-        flags.weights = true;
+        flags.m_weights = true;
         controller->GetViewFlagsR() = flags;
 
         for (auto const& catId : DgnCategory::QueryCategories(rdlModel.GetDgnDb()))
