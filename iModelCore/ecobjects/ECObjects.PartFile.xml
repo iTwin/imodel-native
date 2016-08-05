@@ -180,9 +180,12 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECObjects-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECObjectsTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
@@ -203,6 +206,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECObjects-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="ECObjects-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECObjects-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
