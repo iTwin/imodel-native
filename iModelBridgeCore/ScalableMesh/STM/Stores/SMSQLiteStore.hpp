@@ -105,6 +105,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
     //Force the opening/creation of project file in main thread to avoid global mutex.
     GetSisterSQLiteFile(SMStoreDataType::DiffSet);        
+    GetSisterSQLiteFile(SMStoreDataType::Skirt);        
 
     return true; 
     }    
@@ -113,7 +114,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
     {                   
     SMSQLiteFilePtr sqlFilePtr;
 
-    if (dataType == SMStoreDataType::Skirt)
+    if (dataType == SMStoreDataType::Skirt || dataType == SMStoreDataType::ClipDefinition)
         {
         sqlFilePtr = GetSisterSQLiteFile(dataType);
         }
@@ -122,6 +123,8 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
         sqlFilePtr = m_smSQLiteFile;
         }
 
+    assert(sqlFilePtr.IsValid());
+
     dataStore = new SMSQLiteNodeDataStore<DPoint3d, EXTENT>(dataType, nodeHeader, sqlFilePtr);
 
     return true;    
@@ -129,6 +132,9 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtData
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
     {   
+    if (m_projectFilesPath.empty())
+        return false; 
+
     SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet);
     assert(sqliteFilePtr.IsValid() == true);    
 
@@ -159,7 +165,8 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterSQLiteFileName(WStr
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clips"); 
             return true;
-
+            break;
+        case SMStoreDataType::ClipDefinition :
         case SMStoreDataType::Skirt :
             sqlFileName = m_projectFilesPath;
             sqlFileName.append(L"_clipDefinitions"); 
@@ -197,8 +204,8 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
             sqlFilePtr = m_smFeatureSQLiteFile;        
             }
             break;
-
-        case SMStoreDataType::DiffSet : 
+        
+        case SMStoreDataType::DiffSet :         
             {
             if (!m_smClipSQLiteFile.IsValid())
                 {
@@ -218,6 +225,7 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
             }
             break;
 
+        case SMStoreDataType::ClipDefinition :
         case SMStoreDataType::Skirt : 
             {
             if (!m_smClipDefinitionSQLiteFile.IsValid())
@@ -232,7 +240,9 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
                     {                    
                     m_smClipDefinitionSQLiteFile->Create(sqlFileName); 
                     }                                                                
-                }           
+                }  
+
+            sqlFilePtr = m_smClipDefinitionSQLiteFile;                   
             }
             break;            
 
@@ -246,7 +256,11 @@ template <class EXTENT> SMSQLiteFilePtr SMSQLiteStore<EXTENT>::GetSisterSQLiteFi
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                
-    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices || dataType == SMStoreDataType::LinearFeature);
+    assert(dataType == SMStoreDataType::TriPtIndices || dataType == SMStoreDataType::TriUvIndices || dataType == SMStoreDataType::LinearFeature
+#ifdef WIP_MESH_IMPORT
+        ||SMStoreDataType::MeshParts
+#endif          
+           );
     SMSQLiteFilePtr sqliteFilePtr;      
 
     if (dataType == SMStoreDataType::LinearFeature)
@@ -271,9 +285,9 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
     return true;    
     }
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                        
-    dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile);
+    dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
                     
     return true;    
     }
@@ -293,6 +307,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMPointTri
     }
 
 
+
 template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>::SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, /*ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile)    
     {       
     m_smSQLiteFile = smSQLiteFile;
@@ -306,6 +321,13 @@ template <class DATATYPE, class EXTENT> SMSQLiteNodeDataStore<DATATYPE, EXTENT>:
 
 template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYPE, EXTENT>::StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID)
     {
+    if (countData == 0)
+        {
+        int64_t id = blockID.IsValid() ? blockID.m_integerID : SQLiteNodeHeader::NO_NODEID;
+        bvector<uint8_t> texData;
+        m_smSQLiteFile->StoreTexture(id, texData, 0); // We store the number of bytes of the uncompressed image, ignoring the bytes used to store width, height, number of channels and format
+        return HPMBlockID(id);
+        }
     HCDPacket pi_uncompressedPacket, pi_compressedPacket;
     pi_uncompressedPacket.SetBuffer(DataTypeArray + 3 * sizeof(int), countData - 3 * sizeof(int)); // The data block starts with 12 bytes of metadata, followed by pixel data
     pi_uncompressedPacket.SetDataSize(countData - 3 * sizeof(int));
@@ -440,8 +462,19 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMSQLiteNodeDataStore<DATATYP
             delete [] dataBuffer;
             break;             
         case SMStoreDataType::Skirt :             
-            m_smSQLiteFile->StoreSkirtPolygon(id, nodeData, dataSize);            
-            break;                         
+            m_smSQLiteFile->StoreSkirtPolygon(id, nodeData, countData*sizeof(DATATYPE));            
+            break;
+        case SMStoreDataType::ClipDefinition :
+            m_smSQLiteFile->StoreClipPolygon(id, nodeData, countData*sizeof(DATATYPE));
+            break;                
+#ifdef WIP_MESH_IMPORT
+        case SMStoreDataType::MeshParts:
+            m_smSQLiteFile->StoreMeshParts(id, nodeData, countData*sizeof(DATATYPE));
+            break;
+        case SMStoreDataType::Metadata:
+            m_smSQLiteFile->StoreMetadata(id, nodeData, countData*sizeof(DATATYPE));
+            break;
+#endif
         default : 
             assert(!"Unsupported type");
             break;
@@ -480,7 +513,8 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);
             break;
         case SMStoreDataType::Texture :
-            blockDataCount = m_smSQLiteFile->GetTextureByteCount(blockID.m_integerID) + 3 * sizeof(int);
+            blockDataCount = m_smSQLiteFile->GetTextureByteCount(blockID.m_integerID);
+            if(blockDataCount > 0) blockDataCount += 3 * sizeof(int);
             break;
         case SMStoreDataType::UvCoords : 
             blockDataCount = m_smSQLiteFile->GetNumberOfUVs(blockID.m_integerID) / sizeof(DATATYPE);
@@ -498,8 +532,19 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             }
             break;
         case SMStoreDataType::Skirt : 
-            blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DPoint3d);
+            blockDataCount = m_smSQLiteFile->GetSkirtPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
             break;
+        case SMStoreDataType::ClipDefinition :
+            blockDataCount = m_smSQLiteFile->GetClipPolygonByteCount(blockID.m_integerID) / sizeof(DATATYPE);
+            break;
+#ifdef WIP_MESH_IMPORT
+        case SMStoreDataType::MeshParts:
+            blockDataCount = m_smSQLiteFile->GetNumberOfMeshParts(blockID.m_integerID) / sizeof(DATATYPE);
+            break;
+        case SMStoreDataType::Metadata:
+            blockDataCount=  m_smSQLiteFile->GetNumberOfMetadataChars(blockID.m_integerID) / sizeof(DATATYPE);
+            break;
+#endif
         default : 
             assert(!"Unsupported type");
             break;
@@ -529,13 +574,18 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
             assert((((int64_t)m_nodeHeader->m_nbFaceIndexes) + countDelta) >= 0);
             m_nodeHeader->m_nbFaceIndexes += countDelta;                
             break;  
+
         //MST_TS
-        case SMStoreDataType::DiffSet : 
+case SMStoreDataType::DiffSet :
+case SMStoreDataType::Skirt :  
         case SMStoreDataType::LinearFeature :
-        case SMStoreDataType::Skirt :        
+        case SMStoreDataType::UvCoords :
         case SMStoreDataType::TriUvIndices :
-        case SMStoreDataType::Texture :   
-        case SMStoreDataType::UvCoords :        
+        case SMStoreDataType::Texture :
+#ifdef WIP_MESH_IMPORT
+        case SMStoreDataType::MeshParts:
+        case SMStoreDataType::Metadata:
+#endif
             break;
         default : 
             assert(!"Unsupported type");
@@ -550,6 +600,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
 
     HCDPacket pi_uncompressedPacket((Byte*)DataTypeArray + sizeof(int) * 3, uncompressedSize, uncompressedSize);    
     HCDPacket pi_compressedPacket;
+    if (ptData.size() == 0) return 0;
     pi_compressedPacket.SetBuffer(texData.data() + 4 * sizeof(int), texData.size() - 4 * sizeof(int));
     pi_compressedPacket.SetDataSize(texData.size() - 4 * sizeof(int));
     
@@ -714,6 +765,17 @@ template <class DATATYPE, class EXTENT> void SMSQLiteNodeDataStore<DATATYPE, EXT
         case SMStoreDataType::TriUvIndices:
             m_smSQLiteFile->GetUVIndices(blockID.m_integerID, nodeData, uncompressedSize);
             break;            
+#ifdef WIP_MESH_IMPORT
+        case SMStoreDataType::MeshParts:
+            m_smSQLiteFile->GetMeshParts(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+        case SMStoreDataType::Metadata:
+            m_smSQLiteFile->GetMetadata(blockID.m_integerID, nodeData, uncompressedSize);
+            break;
+#endif
+        case SMStoreDataType::ClipDefinition :
+            m_smSQLiteFile->GetClipPolygon(blockID.m_integerID, nodeData, uncompressedSize);           
+            break;    
         case SMStoreDataType::Texture:
             m_smSQLiteFile->GetTexture(blockID.m_integerID, nodeData, uncompressedSize);
             break;
@@ -738,3 +800,18 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
     {
     return false;
     }
+
+
+template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXTENT>::GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr)
+    {
+    if (m_dataType != SMStoreDataType::ClipDefinition)
+        {
+        assert(!"Unexpected call");
+        return false;
+        }
+
+    clipDefinitionExOpsPtr = new SMSQLiteClipDefinitionExtOps(m_smSQLiteFile);
+
+    return true;
+    }
+   

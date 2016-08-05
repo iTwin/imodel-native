@@ -156,6 +156,15 @@ void MeshTraversalQueue::CollectAll()
                 step.currentSegment = (int)segment;
                 step.startPoint = m_polylineToDrape[segment];
                 step.linkedNode = node;
+                if (m_nodesToLoad.count(step.linkedNode->GetNodeId()) == 0)
+                    {
+                    m_nodesToLoad.insert(std::make_pair(step.linkedNode->GetNodeId(),std::async([] (MeshTraversalStep& step)
+                        {
+                        if (step.linkedNode->GetBcDTM() != nullptr)
+                            return DTM_SUCCESS;                     
+                        return DTM_ERROR;
+                        }, step)));
+                    }
                 m_nodesRemainingToDrape.push(step);
                 }
             }
@@ -847,6 +856,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
     size_t nOfNodesToSplit = queue.GetNumberOfNodes();
     size_t chunkSize = nOfNodesToSplit < 8 ? 1 : nOfNodesToSplit / 8;
     bvector<bvector<MeshTraversalStep>> stepData;
+
     for (size_t i = 0; i < 8; ++i)
         {
         bvector<MeshTraversalStep> chunks;
@@ -859,6 +869,7 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
         queue.GetNodes(chunks, MeshTraversalQueue::ALL_CHUNKS);
         stepData.push_back(chunks);
         }
+
     drapedPointsTemp.resize(stepData.size());
     std::vector<double> initDistances(stepData.size());
     std::vector<std::future<DTMStatusInt>> drapeResults;

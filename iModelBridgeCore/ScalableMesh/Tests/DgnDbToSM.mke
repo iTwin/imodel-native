@@ -47,6 +47,7 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ConceptDataAccess.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ConceptStationDomain.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ConceptStationBridge.lib
 
 
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib

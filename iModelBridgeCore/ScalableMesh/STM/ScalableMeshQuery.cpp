@@ -39,8 +39,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshQuery.hpp"
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include "DrapeOnGraph.h"
-//NEEDS_WORK_SM_STREAMING: remove these mutexes!
-//std::mutex fileMutex;
+
 
 //NEEDS_WORK_SM : Is there a way to avoid this mutex?
 std::mutex s_createdNodeMutex;
@@ -1664,23 +1663,9 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     assert(status == SUCCESS);
 
-    //int status = bcdtmObject_triangulateStmTrianglesDtmObjectOld(bcdtm->GetTinHandle(), m_points, (int)m_nbPoints, m_faceIndexes, (int)m_nbFaceIndexes);
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
 
-    /*bvector<DTMFeatureId> listIds;
-    DTMFeatureCallback browseVoids = [] (DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg) ->int
-        {
-        if (dtmFeatureType == DTMFeatureType::Void && numPoints <= 4)
-            {
-            ((bvector<DTMFeatureId>*)userArg)->push_back(featureId);
-            }
-        return 0;
-        };
-
-    bcdtm->BrowseFeatures(DTMFeatureType::Void, 20, &listIds, browseVoids);
-    for (auto& id : listIds) bcdtm->DeleteFeatureById(id);*/
-    //bcdtm->DeleteFeaturesByType(DTMFeatureType::Void);
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
     }
 
@@ -1745,7 +1730,7 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
     : m_texturePtr(pPoolBlobItem)
     {
     
-    if (m_texturePtr.IsValid())
+    if (m_texturePtr.IsValid() && m_texturePtr->GetSize() > 0)
         {        
         int dimensionX;
         memcpy_s(&dimensionX, sizeof(int), m_texturePtr->GetData(), sizeof(int));
@@ -1757,7 +1742,12 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
         m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
 
         m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
-        }                    
+        } 
+    else
+        {
+        m_dimension.x = m_dimension.y = 0;
+        m_dataSize = 0;
+        }
     }
 
 ScalableMeshTexture::~ScalableMeshTexture()

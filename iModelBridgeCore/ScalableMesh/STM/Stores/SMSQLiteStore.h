@@ -2,16 +2,12 @@
 
 #include "ISMDataStore.h"
 
-////MST_TS
 #include "..\SMSQLiteFile.h"
 
 #include "SMStoreUtils.h"
 
-//typedef ISMDataStore<SMIndexMasterHeader<DRange3d>, SMIndexNodeHeader<DRange3d>> ISMDataStoreType;
-
-
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
-    {
+    {        
     private : 
 
         SMSQLiteFilePtr m_smSQLiteFile;        
@@ -19,8 +15,11 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         SMSQLiteFilePtr m_smClipSQLiteFile;
         SMSQLiteFilePtr m_smClipDefinitionSQLiteFile;
         BeFileName      m_projectFilesPath;
-
+    
         bool            GetSisterSQLiteFileName(WString& sqlFileName, SMStoreDataType dataType);
+
+    protected : 
+
         SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType);        
 
     public : 
@@ -51,7 +50,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) override;
 
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
@@ -99,6 +98,29 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
         virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta) override;        
 
         virtual void ModifyBlockDataCount(HPMBlockID blockID, int64_t countDelta, SMStoreDataType dataType) override;
+
+        virtual bool GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr) override;            
     };
 
+
+class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
+    {
+    private: 
+
+        SMSQLiteFilePtr            m_smSQLiteFile;
+
+    public :
+
+        SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile);
+
+        virtual ~SMSQLiteClipDefinitionExtOps();
+
+        virtual void GetMetadata(uint64_t id, double& importance, int& nDimensions) override;
+
+        virtual void SetMetadata(uint64_t id, double importance, int nDimensions) override;
+
+        virtual void GetAllIDs(bvector<uint64_t>& allIds) override;
+
+        virtual void SetAutoCommit(bool autoCommit) override;
+    };
 

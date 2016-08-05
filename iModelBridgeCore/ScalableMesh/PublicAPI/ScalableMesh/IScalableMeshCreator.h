@@ -64,7 +64,7 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.

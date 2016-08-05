@@ -101,6 +101,7 @@
   <Part Name="DgnDbToSM" BentleyBuildMakeFile="Tests/DgnDbToSM.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
     <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
     <SubPart PartName="ConceptStationDomain" PartFile="ConceptStation" Repository="ConceptStation"/>
+    <SubPart PartName="ConceptStationBridge" PartFile="ConceptStation" Repository="ConceptStation"/>
     <SubPart PartName="PublicAPI" PartFile="ConceptStation" Repository="ConceptStation"/>
     <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
     <Bindings>
@@ -286,6 +287,7 @@
     <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
     <ProductDirectory Name="RealityAssemblies"     Path="Dlls"         />
     <ProductDirectory Name="ApplicationRoot"      Path="Dlls"        />
+    <ProductDirectory Name="ConceptBridgeSectionLibs"      Path="Dlls/SectionLibs"        />
     <ProductDirectory Name="ConceptAssemblies"      Path="Dlls"        />
     <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>

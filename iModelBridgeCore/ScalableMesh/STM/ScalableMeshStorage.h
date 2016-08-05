@@ -257,6 +257,10 @@ class GenericLinearStorageEditor : public Import::BackInserter
          m_indexPacket;
      Memory::ConstPacketProxy <uint8_t>
          m_metadataPacket;
+     Memory::ConstPacketProxy <uint8_t>
+         m_texPacket;
+     Memory::ConstPacketProxy <DPoint2d>
+         m_uvPacket;
 
 
      typedef SMMeshIndex<PtType, Extent3dType>
@@ -274,6 +278,8 @@ class GenericLinearStorageEditor : public Import::BackInserter
          m_pointPacket.AssignTo(pi_rSrc[0]);
          m_indexPacket.AssignTo(pi_rSrc[1]);
          m_metadataPacket.AssignTo(pi_rSrc[2]);
+         m_texPacket.AssignTo(pi_rSrc[3]);
+         m_uvPacket.AssignTo(pi_rSrc[4]);
          }
 
      virtual void                            _Write() override
@@ -285,7 +291,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
          
          DRange3d meshExtent = DRange3d::From(m_pointPacket.Get(), (int)m_pointPacket.GetSize());
              // Append to index
-         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str());
+         m_rIndex.AddMeshDefinition(m_pointPacket.Get(), m_pointPacket.GetSize(), m_indexPacket.Get(), m_indexPacket.GetSize(), meshExtent, str.c_str(), m_texPacket.Get(), m_texPacket.GetSize(), m_uvPacket.Get());
 #endif
          // TDORAY: Throw on failures?
          }

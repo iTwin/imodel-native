@@ -703,16 +703,13 @@ void RunSelectPointsTest()
 
 void ParseNodeInfo(ScalableMesh::IScalableMeshNodePtr& node, bvector<size_t>& ptsAtLevel, bvector<size_t>& nodesAtLevel)
     {
-    size_t ptCount = node->GetPointCount();
-    nodesAtLevel[node->GetLevel()]++;
-    ptsAtLevel[node->GetLevel()] += ptCount;
 
-    //std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
 
     bvector<bool> clips;
     ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
     flags->SetLoadGraph(false);
     ScalableMesh::IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
+    size_t ptCount = 0;
     if (mesh.get() == nullptr)
         {
         //std::cout << " NO MESH FOR NODE " << node->GetNodeId() << std::endl;
@@ -720,7 +717,14 @@ void ParseNodeInfo(ScalableMesh::IScalableMeshNodePtr& node, bvector<size_t>& pt
     else
         {
        // std::cout << " NODE " << node->GetNodeId() << " HAS " << mesh->GetNbFaces() << " FACES " << std::endl;
+        ptCount = mesh->GetNbPoints();
         }
+    nodesAtLevel[node->GetLevel()]++;
+    ptsAtLevel[node->GetLevel()] += ptCount;
+
+
+    if (ptCount > 65000)
+        std::cout << " NODE " << node->GetNodeId() << " HAS " << ptCount << " POINTS AT LEVEL " << node->GetLevel() << std::endl;
 
     bvector<ScalableMesh::IScalableMeshNodePtr> childrenNodes = node->GetChildrenNodes();
     if (mesh.get() == nullptr && childrenNodes.size() > 0 && childrenNodes.front()->GetPointCount() > 0)

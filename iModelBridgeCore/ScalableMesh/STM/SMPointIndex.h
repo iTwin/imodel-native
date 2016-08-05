@@ -41,9 +41,9 @@ namespace BENTLEY_NAMESPACE_NAME
     namespace ScalableMesh
         {
         class ScalableMeshMesh;
-#ifdef SM_BESQL_FORMAT
+
         extern std::atomic<uint64_t> s_nextNodeID;
-#endif
+
         }
     }
 

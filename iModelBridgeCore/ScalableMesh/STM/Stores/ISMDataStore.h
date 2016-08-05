@@ -38,14 +38,34 @@ enum class SMStoreDataType
     Texture,    
     LinearFeature,    
     Skirt,     
+    ClipDefinition,     
     //Not persisted data type
     Display,
     BcDTM,     
 
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
+    MeshParts,
+    Metadata,
     Unknown, 
     };
+
+
+class IClipDefinitionExtOps : public RefCountedBase
+    {
+    public : 
+
+        virtual void GetMetadata(uint64_t id, double& importance, int& nDimensions) = 0;
+
+        virtual void SetMetadata(uint64_t id, double importance, int nDimensions) = 0;
+
+        virtual void GetAllIDs(bvector<uint64_t>& allIds) = 0;
+
+        virtual void SetAutoCommit(bool autoCommit) = 0;
+        
+    };
+
+typedef RefCountedPtr<IClipDefinitionExtOps> IClipDefinitionExtOpsPtr;
 
 
 template <class DataType> class ISMNodeDataStore : public RefCountedBase
@@ -101,7 +121,13 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
             {
             HASSERT(false); // Not implemented;
             return 0;
-            }              
+            }   
+
+        virtual bool GetClipDefinitionExtOps(IClipDefinitionExtOpsPtr& clipDefinitionExOpsPtr)
+            {
+            HASSERT(!"Unexpected call");
+            return false;
+            }                   
     };
 
 
@@ -121,6 +147,7 @@ typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
+
 
 
 template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : public RefCountedBase
@@ -178,7 +205,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
         
-        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+        virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) = 0;
         
         virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;               
 

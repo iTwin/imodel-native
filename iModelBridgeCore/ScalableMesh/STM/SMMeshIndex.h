@@ -24,6 +24,14 @@
 
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace ScalableMesh
+        {
+        class ScalableMeshTexture;
+        }
+    }
+
 
 extern bool s_useThreadsInStitching;
 extern bool s_useThreadsInMeshing;
@@ -203,9 +211,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual bool IsGraphLoaded() const;
 
-    void CreateGraph(bool shouldPinGraph = false) const;
+    void CreateGraph(bool shouldPinGraph = false) const {}
 
-    virtual void LoadGraph(bool shouldPinGraph=false) const;
+    virtual void LoadGraph(bool shouldPinGraph = false) const {}
 
 
     void ReleaseGraph()
@@ -297,19 +305,25 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void UpdateNodeFromBcDTM();
 
 #ifdef WIP_MESH_IMPORT
-    void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata);
+    void  GetMeshParts(bvector<IScalableMeshMeshPtr>& parts, bvector<Utf8String>& metadata, bvector<bvector<uint8_t>>& texData);
 
-    void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bool shouldCreateGraph);
+    void AppendMeshParts(bvector<bvector<DPoint3d>>& points, bvector<bvector<int32_t>>& indices, bvector<Utf8String>& metadata, bvector<bvector<DPoint2d>>& uvs, bvector<bvector<uint8_t>>& tex, bool shouldCreateGraph);
 
-    size_t             AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata = "");
-    size_t             AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata = "");
+    size_t             AddMeshDefinitionUnconditional(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent,const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+    size_t             AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, bool ExtentFixed, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
+
+    void GetMetadata();
+    void StoreMetadata();
+
+    void GetMeshParts();
+    void StoreMeshParts();
 #endif
 
     //NEEDS_WORK_SM: refactor all meshIndex recursive calls into something more like a visitor pattern
     //NEEDS_WORK_SM: move clip and raster support to point index
 
-    void                TextureFromRaster(HIMMosaic* sourceRasterP);
-    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP);
+    void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+    void                TextureFromRasterRecursive(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
     void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
@@ -649,6 +663,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 #ifdef WIP_MESH_IMPORT
         void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
+
+        void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
 #endif
 
 
@@ -657,7 +673,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         void                RefreshMergedClips();
 
 
-        void                TextureFromRaster(HIMMosaic* sourceRasterP);
+        void                TextureFromRaster(HIMMosaic* sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 #ifdef ACTIVATE_TEXTURE_DUMP
         void                DumpAllNodeTextures()
             {
@@ -755,6 +771,8 @@ template<class POINT, class EXTENT> class ISMPointIndexMesher
 
         virtual bool        Stitch(HFCPtr<SMMeshIndexNode<POINT, EXTENT> > node) const = 0;
 
+        virtual void        AddClip(bvector<DPoint3d>& clip) {};
+
     };
 
 /*
@@ -822,3 +840,8 @@ inline bool IsVoidFeature(ISMStore::FeatureType type)
     }
 
 
+void MergeTextures(bvector<uint8_t>& outTex, DPoint2d& uvBotLeft, DPoint2d&  uvTopRight, const ScalableMeshTexture* textureP, const uint8_t* texData, size_t texSize);
+
+void RemapAllUVs(bvector<DPoint2d>& inoutUvs, DPoint2d uvBotLeft, DPoint2d uvTopRight);
+
+void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bvector<uint8_t>& texDataUnified);

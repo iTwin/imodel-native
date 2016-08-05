@@ -488,12 +488,7 @@ class ScalableMeshPointQuery : public IScalableMeshPointQuery
                                                                    double          zMin, 
                                                                    double          zMax) /*const*/;
         //NEEDS_WORK_SM - TEMP in public END
-#if 0
-        static int AddLinears(const DTMPtr&               dtmPtr,
-                       list<HFCPtr<HVEDTMLinearFeature>>& linearList, 
-                       size_t                             maxNumberOfPoints,
-                       bool                               useDecimation);
-#endif
+
         static IScalableMeshPointQueryPtr GetReprojectionQueryInterface(IScalableMeshPtr        scmToQueryPtr,
                                                                         ScalableMeshQueryType   queryType,                                                             
                                                                         const GeoCoords::GCS&   sourceGCStr,

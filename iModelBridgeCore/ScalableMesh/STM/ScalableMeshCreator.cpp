@@ -118,10 +118,10 @@ inline const GCS& GetDefaultGCS ()
 
 }
 
-#ifdef SM_BESQL_FORMAT
+
 //NEEDS_WORK_SM : Should be part of the index instead to avoid having very big odd values.
 std::atomic<uint64_t> s_nextNodeID = 0;
-#endif
+
 
 
 /*==================================================================*/
@@ -326,9 +326,9 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
     return SUCCESS;
     }
 
-StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP)
+StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
     {
-    return m_implP->SetTextureMosaic(mosaicP);
+    return m_implP->SetTextureMosaic(mosaicP, unitTransform);
     }
 
 
@@ -413,10 +413,10 @@ IScalableMeshCreator::Impl::~Impl()
     m_scmPtr = 0;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
+StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
-    m_scmPtr->TextureFromRaster(mosaicP);
+    m_scmPtr->TextureFromRaster(mosaicP, unitTransform);
     return SUCCESS;
     }
 
@@ -587,57 +587,50 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                 Create3dMesherFromType<PointType, PointIndexExtentType>(Get3dMesherType());
         
 
-            // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
+    // SM_NEEDS_WORK : replace all tilestore by SQLiteTileStore
 
-        if (!isSingleFile)
+    if (!isSingleFile)
+        {
+        auto position = m_scmFileName.find_last_of(L".stm");
+        WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
+        if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
             {
-            auto position = m_scmFileName.find_last_of(L".stm");
-            WString streamingFilePath = m_scmFileName.substr(0, position - 3) + L"_stream\\";
-            if (0 == CreateDirectoryW(streamingFilePath.c_str(), NULL))
-                {
-                assert(ERROR_PATH_NOT_FOUND != GetLastError());
-                }
-
-            // Pip ToDo: Create account?
-            DataSourceAccount *account = nullptr;
-            
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
-            
-            pDataIndex = new MeshIndexType(dataStore, 
-                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
-                                           10000,
-                                           pFilter,
-                                           needBalancing, false, false,
-                                           pMesher2_5d,
-                                           pMesher3d);
-
-            pDataIndex->SetSingleFile(false);
-            pDataIndex->SetGenerating(true);
-
-            WString clipFileDefPath = m_scmFileName;
-            clipFileDefPath.append(L"_clipDefinitions");
-            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
-            pDataIndex->SetClipRegistry(registry);
+            assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }
-        else {
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMSQLiteStore<Extent3dType>(m_smSQLitePtr));
 
-            pDataIndex = new MeshIndexType(dataStore,
-                                           ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
-                                           10000,
-                                           pFilter,
-                                           needBalancing, false, false,
-                                           pMesher2_5d,
-                                           pMesher3d);
-
-            pDataIndex->SetGenerating(true);
-
-            WString clipFileDefPath = m_scmFileName;
-            clipFileDefPath.append(L"_clipDefinitions");
-            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
-            pDataIndex->SetClipRegistry(registry);
-            }
+        // Pip ToDo: Create account?
+            DataSourceAccount *account = nullptr;                                    
         
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+        
+        pDataIndex = new MeshIndexType(dataStore, 
+                                       ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
+                                       10000,
+                                       pFilter,
+                                       needBalancing, false, false,
+                                       pMesher2_5d,
+                                       pMesher3d);
+
+        pDataIndex->SetSingleFile(false);
+        pDataIndex->SetGenerating(true);
+
+       
+        }
+    else 
+        {
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMSQLiteStore<Extent3dType>(m_smSQLitePtr));
+
+        pDataIndex = new MeshIndexType(dataStore,
+                                       ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
+                                       10000,
+                                       pFilter,
+                                       needBalancing, false, false,
+                                       pMesher2_5d,
+                                       pMesher3d);
+
+        pDataIndex->SetGenerating(true);        
+        }           
+
     return SUCCESS;
     }
 

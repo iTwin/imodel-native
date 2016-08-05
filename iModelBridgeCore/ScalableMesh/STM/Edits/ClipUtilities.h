@@ -90,6 +90,7 @@ class Clipper
 
     };
 template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
+template<class POINT, class EXTENT> void ClipMeshToNodeRange(vector<int>& faceIndexes, vector<POINT>& nodePts, bvector<DPoint3d>& pts, bvector<DPoint2d>& uvs, EXTENT& contentExtent, DRange3d& nodeRange, ScalableMeshMesh* meshP);
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize);
 
 

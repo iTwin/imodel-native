@@ -48,11 +48,3 @@ nameToDefine=INDEX_DUMPING_ACTIVATED
 nameToDefine = DHDEBUG
 %include cdefapnd.mki
 %endif
-
-
-#define this to activate besql format
-nameToDefine = SM_BESQL_FORMAT
-%include cdefapnd.mki
-
-#nameToDefine = USE_DIFFSET
-#%include cdefapnd.mki

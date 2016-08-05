@@ -100,11 +100,9 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-#ifdef SM_BESQL_FORMAT
+
 bool s_useSQLFormat = true;
-#else
-bool s_useSQLFormat = false;
-#endif
+
 #define USE_CODE_FOR_ERROR_DETECTION
 
 
@@ -135,9 +133,9 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
 
-void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP)
+void IScalableMesh::TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
     {
-    return _TextureFromRaster(mosaicP);
+    return _TextureFromRaster(mosaicP, unitTransform);
     }
 
 _int64 IScalableMesh::GetPointCount()
@@ -811,10 +809,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
         if (hasPoints || !isSingleFile)
             {    
-         //   HFCPtr<HPMCountLimitedPool<POINT> > pMemoryPool(PoolSingleton<POINT>());
+
 
          //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-         //auto_ptr<ISMPointIndexFilter<POINT, Extent3dType>> filterP(CreatePointIndexFilter(featureDir));
+         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
             ISMDataStoreTypePtr<Extent3dType> dataStore;
@@ -868,15 +866,17 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                                                       0);  
                     }          
                 
-            BeFileName projectFilesPath(m_baseExtraFilesPath);
-            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
-            assert(result == true);
-                                         
-            WString clipFileDefPath = m_baseExtraFilesPath;
-            clipFileDefPath.append(L"_clipDefinitions");
-            
-            ClipRegistry* registry = new ClipRegistry(clipFileDefPath);
-            m_scmIndexPtr->SetClipRegistry(registry);
+            //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
+            if (isSingleFile && m_scmIndexPtr->IsTerrain())
+                {
+                BeFileName projectFilesPath(m_baseExtraFilesPath);
+                bool result = dataStore->SetProjectFilesPath(projectFilesPath);
+                assert(result == true);
+                                                                 
+                ClipRegistry* registry = new ClipRegistry(dataStore);
+                m_scmIndexPtr->SetClipRegistry(registry);
+                }
+
             filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
@@ -1411,8 +1411,9 @@ DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP)
     return val;
     }
 
-bool ScalableMeshDTM::_GetTransformation(TransformR)
+bool ScalableMeshDTM::_GetTransformation(TransformR transformation)
     {
+    transformation = m_transformToUors;
     return true;
     }
 
@@ -1487,12 +1488,12 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     }
 
-template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
     {
     auto nextID = m_scmIndexPtr->GetDataStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(mosaicP);
+    m_scmIndexPtr->TextureFromRaster(mosaicP,unitTransform);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
     m_scmIndexPtr = 0;
@@ -1543,21 +1544,26 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
-            VuPolygonClassifier vu(1e-8, 0);
-            vu.ClassifyAUnionB(bound, current);
-            bvector<DPoint3d> xyz;
-            for (; vu.GetFace(xyz);)
+            if (current.empty()) current = bound;
+            else
                 {
-                DRange3d rangeXYZ = DRange3d::From(xyz);
-                if (rangeXYZ.XLength() * rangeXYZ.YLength() >= rangeCurrent.XLength() * rangeCurrent.YLength())
+                VuPolygonClassifier vu(1e-8, 0);
+                vu.ClassifyAUnionB(bound, current);
+                bvector<DPoint3d> xyz;
+                for (; vu.GetFace(xyz);)
                     {
-                    current = xyz;
-                    rangeCurrent = rangeXYZ;
+                    DRange3d rangeXYZ = DRange3d::From(xyz);
+                    if (rangeXYZ.XLength() * rangeXYZ.YLength() >= rangeCurrent.XLength() * rangeCurrent.YLength())
+                        {
+                        current = xyz;
+                        rangeCurrent = rangeXYZ;
+                        }
                     }
                 }
             }
         }
     if (current.size() == 0) return ERROR;
+
     boundary = current;
     return SUCCESS;
     }
@@ -1916,7 +1922,7 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
 template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
-    m_scmIndexPtr->GetClipRegistry()->GetFile()->m_autocommit = !toggleInsertClips;
+    m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
     if (!toggleInsertClips) m_scmIndexPtr->RefreshMergedClips();
     }
 
@@ -2191,7 +2197,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
     {
     } 
 
-template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP)
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform)
     {}
 
 // Inherited from IDTM   

@@ -16,36 +16,27 @@
 #include <ImagePP/all/h/HFCPtr.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include "..\SMPointTileStore.h"
-#include "..\SMSQLiteClipDefinitionsTileStore.h"
-#include "..\SMSQLiteSkirtDefinitionsTileStore.h"
-//#include "..\PointTypeDPoint3d.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-//typedef ISMStore::Extent3d64f        Extent3dType;
 typedef DRange3d       Extent3dType;
 class ClipRegistry : public HFCShareableObject<ClipRegistry>
-    {        
-    HFCPtr<SMSQLiteClipDefinitionsTileStore<Extent3dType>> m_clipStore;
-    HFCPtr<SMSQLiteSkirtDefinitionsTileStore<Extent3dType>> m_skirtStore;    
+    {            
     WString m_path;
     bmap<uint64_t, bvector<DPoint3d>> m_clipDefs;
     uint64_t m_maxID;
-    
-    //ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
+    bool m_lastClipSet;
+    uint64_t m_lastClipID;
+    bvector<DPoint3d> m_lastClipValue;
+
+    ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
 
     public:
 
-    ClipRegistry(const WString& fileName);
-        
-    SMSQLiteFilePtr GetFile();
+    ClipRegistry(ISMDataStoreTypePtr<Extent3dType>& smDataStore);            
         
     ~ClipRegistry();
-        
-    void OpenStore();
-        
-    void LoadAllClips();
-        
+                    
     void StoreAllClips();        
 
     uint64_t AddClip(const DPoint3d* clip, size_t clipSize);
@@ -74,7 +65,9 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void GetClipMetadata(uint64_t id, double& importance, int& nDimensions);
         
-    void GetAllClipsIds(bvector<uint64_t>& allClipIds);        
+    void GetAllClipsIds(bvector<uint64_t>& allClipIds);  
+
+    void SetAutoCommit(bool autoCommit);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
