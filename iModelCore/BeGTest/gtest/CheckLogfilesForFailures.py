@@ -23,7 +23,7 @@ def checkLogFileForFailures(logfilename):
     comma = ''
     anyFailures = False
     lineNo = 0
-    summarystr = ''
+    summarystr = logfilename + '\n'
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
 
@@ -37,7 +37,7 @@ def checkLogFileForFailures(logfilename):
             if not foundSummary:
                 # Ignore everything until we hit the summary
                 if summarypat.search(line) != None:
-                    summarystr = line
+                    summarystr = summarystr + line
                     foundSummary = True
                 continue
 
