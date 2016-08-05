@@ -2840,23 +2840,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (curvePtr->IsAnyRegionType() && SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, *curvePtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
@@ -2882,23 +2865,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, meshData))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromPolyface(shape, meshData))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
@@ -2917,23 +2883,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromSolidPrimitive(shape, *solidPtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddSolidPrimitive(*solidPtr);
                 break;
@@ -2951,23 +2900,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!reader.Get(egOp, surfacePtr))
                     break;
-
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromBSurface(shape, *surfacePtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);
