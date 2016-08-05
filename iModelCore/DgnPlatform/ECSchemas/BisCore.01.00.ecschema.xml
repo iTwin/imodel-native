@@ -81,9 +81,7 @@
         <!-- Authority for element codes and classifications -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -190,11 +188,7 @@
             </ClassHasHandler>
             <ClassMap xmlns="ECDbMap.02.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
                 <Indexes>
                     <DbIndex>
                         <Name>ix_bis_Model_Code</Name>
@@ -207,6 +201,10 @@
                     </DbIndex>
                 </Indexes>
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward"/>
         <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesModelCode" direction="Backward">
@@ -397,9 +395,7 @@
         <!-- NOTE: Element subclasses should drop the "Element" suffix from their name once the concept becomes "user facing" -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
@@ -529,11 +525,7 @@
     <ECEntityClass typeName="InformationElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>JoinedTablePerDirectSubclass</Options>
-                </MapStrategy>
-            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -541,23 +533,17 @@
         <!-- Proxy for information carriers in the physical world.  For example, printed copies of documents or electronic files -->
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>JoinedTablePerDirectSubclass</Options>
-                </MapStrategy>
-            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -572,12 +558,10 @@
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
     
@@ -640,22 +624,16 @@
     <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>JoinedTablePerDirectSubclass</Options>
-                </MapStrategy>
-            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
@@ -664,12 +642,10 @@
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
             <ECCustomAttributes>
@@ -781,12 +757,10 @@
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
           <ECCustomAttributes>
@@ -1155,13 +1129,13 @@
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <!-- All subclasses of ElementUniqueAspect will share the same table -->
-                    <Strategy>TablePerHierarchy</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                </MapStrategy>
+                <!-- All subclasses of ElementUniqueAspect will share the same table -->
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsUniqueAspect" direction="Backward"/>
     </ECEntityClass>
@@ -1180,13 +1154,13 @@
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <!-- All subclasses of ElementMultiAspect will share the same table -->
-                    <Strategy>TablePerHierarchy</Strategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                </MapStrategy>
+                <!-- All subclasses of ElementUniqueAspect will share the same table -->
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsMultiAspects" direction="Backward"/>
     </ECEntityClass>
@@ -1258,13 +1232,12 @@
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.01">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <Options>SharedColumns</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>
@@ -1282,11 +1255,13 @@
             <ClassMap xmlns="ECDbMap.02.00">
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                    <!-- WIP: MinimumSharedColumnCount? -->
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <!-- WIP: MinimumSharedColumnCount? -->
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
@@ -1657,20 +1632,14 @@
     <ECEntityClass typeName="RoleElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>JoinedTablePerDirectSubclass</Options>
-                </MapStrategy>
-            </ClassMap>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialIndex">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>ExistingTable</Strategy>
-                </MapStrategy>
+                <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>dgn_SpatialIndex</TableName> <!-- Must match DGN_VTABLE_SpatialIndex #define -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -1785,9 +1754,7 @@
         <!-- Relationship that indicates that a Model drives (controls the lifecyle or structure of) a dependent Model -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>TablePerHierarchy</Strategy>
-                </MapStrategy>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <SourceECInstanceIdColumn>RootModelId</SourceECInstanceIdColumn>
