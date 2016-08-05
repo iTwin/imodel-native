@@ -338,7 +338,7 @@
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DictionaryModel" displayLabel="Dictionary Model">
+    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
