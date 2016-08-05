@@ -84,7 +84,7 @@ always:
         >$(ResultsCapture)
         $(exeName)
         <
-        -$(exeName) | tee -a $(ResultsCapture)
+        -$(exeName) | tee -q -a $(ResultsCapture)
 
 %endif
 

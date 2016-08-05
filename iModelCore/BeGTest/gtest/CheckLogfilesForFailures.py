@@ -23,6 +23,7 @@ def checkLogFileForFailures(logfilename):
     comma = ''
     anyFailures = False
     lineNo = 0
+    summarystr = ''
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
 
@@ -36,6 +37,7 @@ def checkLogFileForFailures(logfilename):
             if not foundSummary:
                 # Ignore everything until we hit the summary
                 if summarypat.search(line) != None:
+                    summarystr = line
                     foundSummary = True
                 continue
 
@@ -50,7 +52,7 @@ def checkLogFileForFailures(logfilename):
                     continue
 
     if not anyFailures and foundSummary:
-        return ''
+        return '',summarystr
 
     advicestr = '************ Failures from: ' + logfilename + ' ******************'
 
@@ -74,7 +76,7 @@ def checkLogFileForFailures(logfilename):
             for line in logfile.readlines():
                 print line,
 
-    return advicestr
+    return advicestr,summarystr
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson      05/2016
@@ -92,6 +94,7 @@ if __name__ == '__main__':
         breakonfailure = True
 
     advicestr = ''
+    summarystr = ''
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
         for file in files:
             if not file.endswith('.log'):
@@ -99,7 +102,8 @@ if __name__ == '__main__':
 
             checkedCount = checkedCount + 1
             path = os.path.join(root, file)
-            adviceForThisLog = checkLogFileForFailures(path)
+            adviceForThisLog,summarystrThisLog = checkLogFileForFailures(path)
+            summarystr = summarystr + '\n\n' + summarystrThisLog
             if 0 != len(adviceForThisLog):
                 advicestr = advicestr + '\n\n' + adviceForThisLog
      
@@ -108,6 +112,8 @@ if __name__ == '__main__':
         exit(0)
 
     print '{0} test product logs found'.format(checkedCount)
+
+    print summarystr
 
     if 0 == len(advicestr):
         print "All tests passed."

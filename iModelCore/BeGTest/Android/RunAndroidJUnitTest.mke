@@ -79,15 +79,19 @@ teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
 %else
     always:
         $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
-        -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | tee $(logFile)
+        -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | tee -q $(logFile)
 
 %endif
 
 %message See $(logFile)
 
+BreakOnFailure = 0
 %if defined (BEGTEST_BREAK_ON_FAILURE)
-    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] 1
+    BreakOnFailure = 1
 %endif
+
+always:
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
 
 always:
     ~linkfile "$(BuildContext)Delivery/ANJU/Logs/$(ANDROIDJUNIT_LOGFILE_NAME)=$(logFile)"
