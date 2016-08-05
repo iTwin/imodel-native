@@ -7,24 +7,20 @@
     <ECEntityClass typeName="Document">
         <BaseClass>bis:InformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="DocumentCopy" modifier="Abstract">
         <BaseClass>bis:InformationCarrierElement</BaseClass>
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>16</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PrintedDocumentCopy">
