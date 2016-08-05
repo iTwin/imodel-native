@@ -536,12 +536,18 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
 
     DataSourceURL    dataSourceURL(buffer);
 
-    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+    bool created = false;
+    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
     if (dataSource == nullptr)
         {
         assert(false); // problem creating new datasource
         return 0;
         }
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+    //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+    //}
 
     if (dataSource->open(dataSourceURL, DataSourceMode_Write).isFailed())
         {
@@ -560,6 +566,10 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::StoreNodeHeader(SMIndex
         assert(false); // problem closing a datasource
         return 0;
         }
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+    //}
 
     return 1;
     }
@@ -953,7 +963,13 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         swprintf(buffer, L"%sp_%llu.bin", m_pathToNodeData.c_str(), blockID.m_integerID);
         DataSourceURL    dataSourceURL(buffer);
 
-        DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource());
+        bool created = false;
+        DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
+        //{
+        //std::lock_guard<mutex> clk(s_consoleMutex);
+        //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+        //else std::cout<<"[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+        //}
         //DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
 
@@ -994,6 +1010,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         writeStatus = dataSource->close();
         assert(writeStatus.isOK()); // problem closing a DataSource
 
+        //{
+        //std::lock_guard<mutex> clk(s_consoleMutex);
+        //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+        //}
         delete[] data;
         delete[] dataArrayTmp;
         }
@@ -1170,6 +1190,7 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                     m_pIsLoaded = true;
 
                     uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
+                    //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
                     uint32_t sizeData = (uint32_t)dataSize - sizeof(uint32_t);
                     DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
                 }
@@ -1375,8 +1396,14 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
     swprintf(buffer, L"%st_%llu.bin", m_path.c_str(), blockID.m_integerID);
     DataSourceURL    dataSourceURL(buffer);
 
-    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+    bool created = false;
+    DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
     assert(dataSource != nullptr);
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+    //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+    //}
 
     writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
     assert(writeStatus.isOK());
@@ -1386,6 +1413,10 @@ template <class DATATYPE, class EXTENT> HPMBlockID StreamingNodeTextureStore<DAT
 
     writeStatus = dataSource->close();
     assert(writeStatus.isOK());
+    //{
+    //std::lock_guard<mutex> clk(s_consoleMutex);
+    //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+    //}
 
     return HPMBlockID(blockID.m_integerID);
     }

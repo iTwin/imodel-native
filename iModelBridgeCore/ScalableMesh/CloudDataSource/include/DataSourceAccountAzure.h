@@ -30,6 +30,7 @@ protected:
     AzureBlobClient                         blobClient;
     AzureConnectionString                   connectionString;
     DataSourceBuffer::BufferSize            defaultSegmentSize;
+    DataSourceBuffer::Timeout               defaultTimeout;
 
 protected:
 
@@ -53,6 +54,9 @@ public:
 
         void                                setDefaultSegmentSize               (DataSourceBuffer::BufferSize size);
         DataSourceBuffer::BufferSize        getDefaultSegmentSize               (void);
+
+        void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
+        DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 

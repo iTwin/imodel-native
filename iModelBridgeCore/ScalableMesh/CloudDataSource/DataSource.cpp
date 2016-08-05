@@ -9,7 +9,7 @@ DataSource::DataSource(DataSourceAccount *sourceAccount)
 
     setAccount(sourceAccount);
 
-    setTimeout(DataSource::Timeout(100000));
+    setTimeout(DataSource::Timeout(0));
 
     if (sourceAccount)
     {
@@ -34,6 +34,11 @@ bool DataSource::isValid(void)
 {
     return false;
 }
+
+bool DataSource::isEmpty(void)
+    {
+    return true;
+    }
 
 void DataSource::setTimeout(Timeout timeMilliseconds)
 {

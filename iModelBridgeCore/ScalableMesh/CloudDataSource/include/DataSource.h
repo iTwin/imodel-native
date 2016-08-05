@@ -78,6 +78,7 @@ public:
     virtual            DataSourceStatus             write               (const Buffer *source, DataSize size) = 0;
 
     virtual            bool                         isValid             (void);
+    virtual            bool                         isEmpty             (void);
 
     virtual            void                         setTimeout          (Timeout timeMilliseconds);
     virtual            Timeout                      getTimeout          (void);

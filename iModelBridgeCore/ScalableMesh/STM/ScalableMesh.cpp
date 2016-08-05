@@ -589,6 +589,8 @@ DataSourceStatus ScalableMeshBase::InitializeAzureTest(const WString& directory)
         if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
+        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
+
         this->SetDataSourceAccount(accountLocalFile);
     }
     else
@@ -828,7 +830,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
                     WString azureDatasetName(L"marseille\\");
                     //WString azureDatasetName(L"quebeccity2\\");
-                    //WString azureDatasetName(L"quebectest/");
+                    //WString azureDatasetName(L"quebectest2/");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 

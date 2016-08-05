@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-#include <assert.h>
 #include "DataSourceTransferScheduler.h"
 #include "DataSource.h"
 #include "DataSourceAccount.h"
@@ -37,7 +36,13 @@ void SetThreadName(DWORD dwThreadID, char* threadName)
         {}
     }
 #endif
+
 #include <algorithm>
+#include <assert.h>
+//#include <iostream>
+//#include <mutex>
+
+//std::mutex s_consoleMutex;
 
 
 void DataSourceTransferScheduler::setMaxTasks(TaskIndex numTasks)
@@ -52,7 +57,7 @@ DataSourceTransferScheduler::TaskIndex DataSourceTransferScheduler::getMaxTasks(
 
 DataSourceTransferScheduler::DataSourceTransferScheduler(void)
     {
-    // Initially not shutting down
+                                                            // Initially not shutting down
     setShutDownFlag(false);
     }
 
@@ -65,16 +70,16 @@ DataSourceTransferScheduler::~DataSourceTransferScheduler(void)
 
 void DataSourceTransferScheduler::shutDown(void)
     {
-    // Set shutdown flag for transfer worker threads
+                                                            // Set shutdown flag for transfer worker threads
     setShutDownFlag(true);
-    // Notify all blocked transfer worker threads (get them running again to shut down cleanly
+                                                            // Notify all blocked transfer worker threads (get them running again to shut down cleanly
     dataSourceBufferReady.notify_all();
 
     auto transferThreadJoin = [](std::thread &t)
         {
         t.join();
         };
-    // Wait for all threads to complete
+                                                            // Wait for all threads to complete
     std::for_each(transferThreads.begin(), transferThreads.end(), transferThreadJoin);
     }
 
@@ -145,37 +150,36 @@ DataSourceBuffer *DataSourceTransferScheduler::getNextSegmentJob(DataSourceBuffe
     DataSourceBuffer::BufferData    *   segmentBuffer = nullptr;
     DataSourceBuffer::BufferSize        segmentSize = 0;
     DataSourceBuffer::SegmentIndex      segmentIndex;
-    // For each scheduled DataBuffer to transfer
-    for (auto& dataBuffer : dataSourceBuffers)
-        {
-        if (dataBuffer == nullptr) continue;
-        // Try each buffer until a segment is found that needs processing
-        // Usually this will be in one of the first, but in some cases the first may be pending completion
+                                                            // For each scheduled DataBuffer to transfer
+    for (auto dataBuffer : dataSourceBuffers)
+    {
+                                                            // Try each buffer until a segment is found that needs processing
+                                                            // Usually this will be in one of the first, but in some cases the first may be pending completion
         segmentIndex = dataBuffer->getAndAdvanceCurrentSegment(&segmentBuffer, &segmentSize);
-        // If a job was specified, return it
-        if (segmentSize > 0)
-            {
-            *buffer = segmentBuffer;
-            *bufferSize = segmentSize;
-            *index = segmentIndex;
+                                                            // If a job was specified, return it
+        if(segmentSize > 0)
+        {
+            *buffer         = segmentBuffer;
+            *bufferSize     = segmentSize;
+            *index          = segmentIndex;
 
             return dataBuffer;
-            }
         }
-    // Return no jobs available
+    }
+                                                            // Return no jobs available
     return nullptr;
     }
 
 
 DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned int numTasks)
     {
-    // If not configured to use multi-threaded transfers
+                                                            // If not configured to use multi-threaded transfers
     if (numTasks == 0)
         {
-        // Just return OK
+                                                            // Just return OK
         return DataSourceStatus();
         }
-    // Multi-threaded segment transfer function
+                                                            // Multi-threaded segment transfer function
     auto transferDataSourceBufferSegments = [this](void) -> DataSourceStatus
         {
         while (getShutDownFlag() == false)
@@ -194,11 +198,23 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                                                             // Wait while queue of DataSourceBuffers is empty or no longer need processing
             while (((buffer = getNextSegmentJob(&segmentBuffer, &segmentSize, &segmentIndex)) == nullptr) && getShutDownFlag() == false)
                 {
+                //static std::atomic<int> s_nWorkThreads = 0;
+                //if (s_nWorkThreads > 0) s_nWorkThreads -= 1;
+                //    {
+                //    std::lock_guard<std::mutex> clk(s_consoleMutex);
+                //    //std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
+                //    std::cout << "DataSource number of working threads: " << s_nWorkThreads << std::endl;
+                //    }
                                                             // Wait for buffer data. Note: wait() releases the mutex and blocks
                 dataSourceBufferReady.wait(dataSourceBuffersLock);
+                //s_nWorkThreads += 1;
+                //    //{
+                //    //std::lock_guard<std::mutex> clk(s_consoleMutex);
+                //    //std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
+                //    //}
                 }
             }
-            // If shutting down
+                                                            // If shutting down
             if (getShutDownFlag())
                 {
                 if (buffer)
@@ -234,7 +250,7 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
                     }
                 }
             else
-                if (locator.getMode() == DataSourceMode_Write || locator.getMode() == DataSourceMode_Write_Segmented)
+                if (locator.getMode() == DataSourceMode_Write_Segmented)
                     {
                                                             // Attempt to upload a single segment
                     if ((status = account->uploadBlobSync(segmentName, segmentBuffer, segmentSize)).isFailed())
@@ -246,23 +262,24 @@ DataSourceStatus DataSourceTransferScheduler::initializeTransferTasks(unsigned i
 
                                                             // Segment has been processed, so signal this. Waiting threads are signalled once all are completed.
             if (buffer->signalSegmentProcessed())
-                {
-                                                            // All buffer's segments have been processed and waiting threads have been notified
-
+            {
                                                             // Remove bufer from buffer queue
                 removeBuffer(*buffer);
-                if(locator.getMode() == DataSourceMode_Write || locator.getMode() == DataSourceMode_Write_Segmented)
-                    {
-                                                            // Upload of this buffer is complete, delete it
-                    delete buffer;
-                    }
-                }
+
+                // TODO: if the transfer scheduler has full ownership of the buffer, then it should be deleted. 
+                //       For now, this is not the case and the buffer is deleted by the thread that asked the transfer.
+                //if(locator.getMode() == DataSourceMode_Write_Segmented)
+                //{
+                //                                            // Upload of this buffer is complete, delete it
+                //    delete buffer;
+                //}
             }
+        }
 
         return DataSourceStatus();
         };
 
-    // Set up uploader worker tasks
+                                                            // Set up uploader worker tasks
     setMaxTasks(numTasks);
 
                                                             // Run max number of transfer threads

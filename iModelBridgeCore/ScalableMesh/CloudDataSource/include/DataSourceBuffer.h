@@ -68,7 +68,7 @@ public:
     void                                setLocator                          (const DataSourceLocator &newLocator);
     DataSourceLocator                &  getLocator                          (void);
 
-    BufferSize                          getSize                             (void);
+    CLOUD_EXPORT BufferSize             getSize                             (void);
     SegmentIndex                        getNumSegments                      (void);
 
     DataSourceStatus                    clear                               (void);
@@ -80,7 +80,7 @@ public:
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);
     void                                signalCancelled                     (void);
-    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds);
+    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds, int numRetries = 1);
 
     BufferData                        * getExternalBuffer                   (void);
     BufferSize                          getExternalBufferSize               (void);

@@ -8,6 +8,7 @@
 #include <wtypes.h>
 #include <random>
 #include <queue>
+#include <thread>
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
@@ -61,6 +62,9 @@ using namespace std;
 
 #include <GeoCoord/BaseGeoCoord.h>
 
+#include <CloudDataSource/DataSourceManager.h>
+#include <CloudDataSource/DataSourceAccount.h>
+#include <CloudDataSource/DataSourceBuffered.h>
 
 //#define ABORT(ERROR + 1)
 
@@ -4538,7 +4542,7 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
             printf("ERROR : name attribute not found\r\n");
             return;
             }
-        printf("Saving to Azure... container: %ls  name: %ls", cloudContainer.c_str(), cloudName.c_str());
+        printf("Saving to Azure... container: %ls  name: %ls\n", cloudContainer.c_str(), cloudName.c_str());
         }
     else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
@@ -4577,6 +4581,227 @@ void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
              cloudContainer.c_str(),
              allTestPass ? L"true" : L"false",
              (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+    }
+
+void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString azureId, azureKey, azureContainer, directory, result;
+
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(azureId, "id") != BEXML_Success)
+        {
+        printf("ERROR : id attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(azureKey, "key") != BEXML_Success)
+        {
+        printf("ERROR : key attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(azureContainer, "container") != BEXML_Success)
+        {
+        printf("ERROR : container attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(directory, "directory") != BEXML_Success)
+        {
+        printf("ERROR : directory attribute not found\r\n");
+        return;
+        }
+    printf("Saving to Azure... container: %ls  directory: %ls", azureContainer.c_str(), directory.c_str());
+
+    StatusInt status = SUCCESS;
+    bool allTestPass = true;
+    double t = 0, t_up = 0, t_down = 0;
+
+    // remove trailing slashes if any
+    size_t position;
+    if ((position = azureContainer.find_last_of(L"\\")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
+    if ((position = azureContainer.find_last_of(L"/")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
+
+    DataSourceManager dataSourceManager;
+
+    DataSourceAccount::AccountIdentifier        accountIdentifier(azureId.c_str());
+    DataSourceAccount::AccountKey               accountKey(azureKey.c_str());
+    DataSourceService                       *   serviceAzure = nullptr;
+    DataSourceAccount                       *   accountAzure = nullptr;
+
+    // Get the Azure service
+    if (status == SUCCESS)
+        {
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        if (serviceAzure == nullptr)
+            status = ERROR;
+        }
+
+    // Create an account on Azure
+    if (status == SUCCESS)
+        {
+        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+        if (accountAzure == nullptr)
+            status = ERROR;
+        }
+
+    // Set up default container
+    if (status == SUCCESS)
+        {
+        accountAzure->setPrefixPath(DataSourceURL((azureContainer + L"/" + directory).c_str()));
+        }
+
+    const size_t buffer_size = 152 * 1024;
+
+    // create buffer of data to upload
+    DataSource::Buffer* buffer = nullptr;
+
+    if (status == SUCCESS)
+        {
+        buffer = new DataSource::Buffer[buffer_size]; // should be split into 4 segments of 32 KB + 1 segment of 24 KB
+
+                                                      // fill buffer with data
+        int32_t counter = 0;
+        for (size_t offset = 0; offset < buffer_size; offset += sizeof(counter), counter++)
+            {
+            memcpy(buffer + offset, &counter, sizeof(counter));
+            }
+        }
+
+    auto uploadToAzureTask = [&](size_t threadId, bool segmented)
+        {
+        // upload data to azure
+
+        if (status == SUCCESS)
+            {
+            t = clock();
+
+            DataSource *dataSource = accountAzure->getOrCreateThreadDataSource();
+            if (dataSource == nullptr)
+                {
+                status = ERROR;
+                }
+
+            DataSourceMode writeMode = segmented ? DataSourceMode_Write_Segmented : DataSourceMode_Write;
+            wchar_t name_buffer[10000];
+            swprintf(name_buffer, L"data_%llu.bin", threadId);
+            
+            DataSourceURL    dataSourceURL(name_buffer);
+
+            if (status == SUCCESS && dataSource->open(dataSourceURL, writeMode).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->write(buffer, buffer_size).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->close().isFailed())
+                {
+                status = ERROR;
+                }
+            t_up = clock() - t;
+            }
+        };
+    const int numThreads = 1;
+    thread* threads = new thread[numThreads];
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(uploadToAzureTask, i, true));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(uploadToAzureTask, i, false));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    auto downloadFromAzureTask = [&](size_t threadId, bool segmented)
+        {
+        // download data from azure
+        std::unique_ptr<DataSource::Buffer[]>   dest = nullptr;
+        DataSource::DataSize                    readSize = 0;
+        if (status == SUCCESS)
+            {
+            DataSourceBuffer::BufferSize        destSize = 20 * 1024 * 1024;
+
+            t = clock();
+
+            DataSource* dataSource = accountAzure->getOrCreateThreadDataSource();
+            if (dataSource == nullptr)
+                {
+                status = ERROR;
+                }
+
+            wchar_t name_buffer[10000];
+
+            swprintf(name_buffer, L"data_%llu.bin", threadId);
+            DataSourceURL    dataSourceURL(name_buffer);
+            if (status == SUCCESS && dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                status = ERROR;
+                }
+
+            // reserve enough space to receive data
+            dest.reset(new unsigned char[destSize]);
+
+            // Use segmented download (provide exact buffer size)
+            if (status == SUCCESS && dataSource->read(dest.get(), destSize, readSize, segmented ? buffer_size : 0).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->close().isFailed())
+                {
+                status = ERROR;
+                }
+            t_down = clock() - t;
+
+            // compare result
+            if (status == SUCCESS)
+                {
+                status = (dest != nullptr && buffer_size == readSize && 0 == memcmp(buffer, dest.get(), readSize)) ? SUCCESS : ERROR;
+                }
+            }
+        };
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(downloadFromAzureTask, i, true));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(downloadFromAzureTask, i, false));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    delete[] threads;
+    result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> Azure tests not completed";
+
+    fwprintf(pResultFile, L"%s,%s,%s,%0.5f,%0.5f\n",
+             azureContainer.c_str(),
+             directory.c_str(),
+             allTestPass ? L"true" : L"false",
+             (double)t_up / CLOCKS_PER_SEC,
+             (double)t_down / CLOCKS_PER_SEC
              );
 
     fflush(pResultFile);

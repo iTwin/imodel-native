@@ -237,8 +237,14 @@ struct Texture : public bvector<uint8_t>
             swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), blockID.m_integerID);
             DataSourceURL    dataSourceURL(buffer);
 
-            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+            bool created = false;
+            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
             assert(dataSource != nullptr);
+            //{
+            //std::lock_guard<mutex> clk(s_consoleMutex);
+            //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+            //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+            //}
 
             writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
             assert(writeStatus.isOK()); // problem opening a DataSource
@@ -248,6 +254,10 @@ struct Texture : public bvector<uint8_t>
 
             writeStatus = dataSource->close();
             assert(writeStatus.isOK()); // problem closing a DataSource
+            //{
+            //std::lock_guard<mutex> clk(s_consoleMutex);
+            //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+            //}
             }
 
         DataSource *InitializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const

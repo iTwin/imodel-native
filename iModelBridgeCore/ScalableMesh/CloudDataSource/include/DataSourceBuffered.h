@@ -22,6 +22,7 @@ public:
                                 DataSourceBuffered      (DataSourceAccount *sourceAccount);
 
     bool                        isValid                 (void);
+    bool                        isEmpty                 (void);
 
     DataSourceStatus            open                    (const DataSourceURL & sourceURL, DataSourceMode sourceMode);
     DataSourceStatus            close                   (void);
@@ -31,8 +32,8 @@ public:
 
     DataSourceStatus            flush                   (void);
 
-    void                        setBuffer               (DataSourceBuffer *newBuffer);
-    DataSourceBuffer        *   getBuffer               (void);
+                    void                        setBuffer               (DataSourceBuffer *newBuffer);
+    CLOUD_EXPORT    DataSourceBuffer        *   getBuffer               (void);
 
     DataSourceBuffer        *   transferBuffer          (void);
 

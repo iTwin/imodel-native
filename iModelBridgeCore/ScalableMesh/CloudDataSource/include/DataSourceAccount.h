@@ -61,8 +61,8 @@ CLOUD_EXPORT    const AccountName &     getAccountName                  (void) c
     void                                setAccountKey                   (const AccountKey &key);
     const AccountKey                    getAccountKey                   (void) const;
 
-    virtual DataSource            *     createDataSource                (void) = 0;
-            DataSource            *     createDataSource                (DataSource::Name &name);
+    virtual      DataSource       *     createDataSource                (void) = 0;
+    CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name);
 
     CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSource::Name &name, bool *created = nullptr);
     CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (bool *created = nullptr);

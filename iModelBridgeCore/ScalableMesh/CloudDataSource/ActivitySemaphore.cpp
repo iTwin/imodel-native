@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include <iostream>
 #include "ActivitySemaphore.h"
 
 ActivitySemaphore::ActivitySemaphore(void)
@@ -14,7 +13,7 @@ ActivitySemaphore::ActivitySemaphore(CounterValue value)
 
 ActivitySemaphore::~ActivitySemaphore(void)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
+    std::unique_lock<std::mutex> lock(mutex);
                                                             // Release all waiting threads
     condition.notify_all();
 }
@@ -61,29 +60,41 @@ void ActivitySemaphore::wait(void)
 
 ActivitySemaphore::Status ActivitySemaphore::waitFor(Timeout timeout)
 {
-    std::unique_lock<std::mutex>    lock(mutex);
-                                                            // Wait for counter zero condition with specified timeout
-    std::chrono::time_point<std::chrono::system_clock> start, end;
-    start = std::chrono::system_clock::now();
 
+    std::unique_lock<std::mutex>    lock(mutex);
+
+                                                        // Do not wait if counter zero condition is already met
+    if (counter == 0) return Status_NoTimeout;
+
+    //std::chrono::time_point<std::chrono::system_clock> start, end;
+    //start = std::chrono::system_clock::now();
+
+                                                        // Wait for counter zero condition with specified timeout
     auto cv_wakeup_status = condition.wait_for(lock, timeout);
 
-    end = std::chrono::system_clock::now();
-    std::chrono::duration<double> waiting_time = end - start;
-    std::cout << "Activity semaphore waited: " << waiting_time.count() << std::endl;
-    if (cv_wakeup_status == std::cv_status::no_timeout)
-    {
-                                                            // Successfully waited, with no timeout
-        return Status_NoTimeout;
-    }
+    //end = std::chrono::system_clock::now();
+    //std::chrono::duration<double> waiting_time = end - start;
+    //{
+    //std::lock_guard<std::mutex> clk(s_consoleMutex);
+    //std::cout << "Activity semaphore [" << (cv_wakeup_status == std::cv_status::no_timeout ? "success]" : "timed out]") << " after : " << waiting_time.count() << "s" << std::endl;
+    //}
 
-                                                            // Timeout occured
+    if (cv_wakeup_status == std::cv_status::no_timeout)
+        {
+        //{
+        //std::lock_guard<std::mutex> clk(s_consoleMutex);
+        //std::cout << "finished waiting" << this << std::endl;
+        //}
+                                                        // Successfully waited, with no timeout
+        return Status_NoTimeout;
+        }
+                                                        // Timeout occured
     return Status_Timeout;
 }
 
 void ActivitySemaphore::releaseAll(void)
 {
-    //std::unique_lock<std::mutex> lock(mutex);
+    std::unique_lock<std::mutex> lock(mutex);
                                                             // Set counter back to zero
     setCounter(0);
                                                             // Notify all blocked threads

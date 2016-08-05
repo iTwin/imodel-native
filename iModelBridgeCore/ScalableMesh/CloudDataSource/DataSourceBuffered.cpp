@@ -61,6 +61,10 @@ bool DataSourceBuffered::isValid(void)
     return (getBuffer() != nullptr);
 }
 
+bool DataSourceBuffered::isEmpty(void)
+    {
+    return (0 == getBuffer()->getSize());
+    }
 
 DataSourceStatus DataSourceBuffered::read(Buffer *dest, DataSize destSize, DataSize &readSize, DataSize size)
 {
@@ -146,7 +150,6 @@ DataSourceStatus DataSourceBuffered::open(const DataSourceURL & sourceURL, DataS
 
 DataSourceStatus DataSourceBuffered::flush(void)
 {
-    DataSourceStatus          status;
     DataSourceAccount    *    account;
 
     if ((account = getAccount()) == nullptr)
@@ -163,10 +166,12 @@ DataSourceStatus DataSourceBuffered::flush(void)
         DataSourceURL    url;
         this->getURL(url);
         account->uploadBlobSync(url, buffer->getSegment(0), buffer->getSize());
+                          // Upload of this buffer is complete, delete it
+        delete buffer;
+        setBuffer(nullptr);
         }
 
-
-    return status;
+    return DataSourceStatus();
 }
 
 DataSourceStatus DataSourceBuffered::close(void)

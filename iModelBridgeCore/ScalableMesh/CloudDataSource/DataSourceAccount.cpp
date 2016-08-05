@@ -116,7 +116,7 @@ const DataSourceAccount::AccountKey DataSourceAccount::getAccountKey(void) const
     return accountKey;
     }
 
-DataSource * DataSourceAccount::createDataSource(DataSourceManager::DataSourceName &name)
+DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
     {
     return getDataSourceManager().createDataSource(name, *this);
     }
@@ -166,13 +166,10 @@ DataSourceStatus DataSourceAccount::uploadSegments(DataSource &dataSource)
                                                             // Transfer the buffer to the upload scheduler, where it will eventually be deleted
     getTransferScheduler().addBuffer(*buffer);
                                                             // Wait for all segments to complete
-    auto wait_status = buffer->waitForSegments(DataSourceBuffered::Timeout(1000000));
-    if (buffer->getLocator().getMode() == DataSourceMode_Write || buffer->getLocator().getMode() == DataSourceMode_Write_Segmented)
-        {
+    auto uploadStatus = buffer->waitForSegments(DataSourceBuffered::Timeout(60 * 1000), 10);
         // Upload of this buffer is complete, delete it
-        delete buffer;
-        }
-    return wait_status;
+    delete buffer;
+    return uploadStatus;
     }
 
 DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize)
