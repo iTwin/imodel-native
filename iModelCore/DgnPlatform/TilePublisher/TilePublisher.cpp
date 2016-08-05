@@ -156,11 +156,11 @@ void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tole
     {
     val["asset"]["version"] = "0.0";
     val[JSON_GeometricError] = tile.GetTolerance();
-    val["refine"] = "replace";
 
     static double       s_toleranceRatio = 1.0;
 
     auto& root = val[JSON_Root];
+    root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance() * s_toleranceRatio;
     WriteBoundingVolume(root, tile);
 
