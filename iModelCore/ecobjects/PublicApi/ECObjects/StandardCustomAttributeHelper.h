@@ -341,7 +341,7 @@ private:
     ECClassCP m_class;
     IECInstanceCP m_ca;
 
-    ShareColumns::ShareColumns(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
+    ShareColumns(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecClass), m_ca(ca) {}
 
 public:
     ShareColumns() : m_class(nullptr), m_ca(nullptr) {}
