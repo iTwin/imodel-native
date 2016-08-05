@@ -244,7 +244,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
             indexHeader->m_balanced = masterHeader["balanced"].asBool();
             indexHeader->m_depth = masterHeader["depth"].asUInt();
-            indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+            // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
+            indexHeader->m_isTerrain = false/*masterHeader["isTerrain"].asBool()*/; 
 
             auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
             indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
