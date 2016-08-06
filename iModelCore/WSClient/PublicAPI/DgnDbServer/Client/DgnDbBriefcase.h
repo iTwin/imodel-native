@@ -82,7 +82,6 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr   GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancels the get event request 
-    //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeToEvents();
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.

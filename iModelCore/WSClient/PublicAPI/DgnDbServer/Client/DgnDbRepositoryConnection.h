@@ -274,7 +274,6 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancel Events from EventService
-    //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents();
 
 };
