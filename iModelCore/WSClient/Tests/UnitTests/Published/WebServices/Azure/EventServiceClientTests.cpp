@@ -27,7 +27,7 @@ unsigned __stdcall workThreadHandler(void* arg)
 
 TEST_F(EventServiceClientTests, Test1)
     {
-    Utf8String NAMESPACE1 = "BentleyEventService-579998";
+    /*Utf8String NAMESPACE1 = "BentleyEventService-579998";
     Utf8String REPO_ID = "TEST1";
     Utf8String USER_ID1 = "CONNECTION_ID1";
     Utf8String TOKEN = "SharedAccessSignature sr=https%3A%2F%2FBentleyEventService-579998.servicebus.windows.net%2FTEST1&sig=PvnMXq39FEngP%2Fiu5SYpz7JEMms4e%2BLQsPQFd6xOx5s%3D&se=1465574880&skn=EventReceivePolicy";
@@ -37,5 +37,5 @@ TEST_F(EventServiceClientTests, Test1)
     BeThreadUtilities::BeSleep(5000);
     printf("client->CancelRequest()\n");
     client->CancelRequest();
-    BeThreadUtilities::BeSleep(10000);
+    BeThreadUtilities::BeSleep(10000);*/
     }
