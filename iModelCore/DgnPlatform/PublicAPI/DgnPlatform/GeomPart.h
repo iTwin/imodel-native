@@ -89,18 +89,18 @@ public:
     //! @return SUCCESS if the range was retrieved, or else ERROR if e.g. no DgnGeometryPart exists with the specified ID
     DGNPLATFORM_EXPORT static BentleyStatus QueryGeometryPartRange(DRange3dR range, DgnDbR db, DgnGeometryPartId geomPartId);
 
-    //! Insert the ElementUsesGeometryParts relationship between an element and the geom parts it uses.
+    //! Insert the ElementsUseGeometryParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.
     //! @private
-    DGNPLATFORM_EXPORT static BentleyStatus InsertElementUsesGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId);
+    DGNPLATFORM_EXPORT static BentleyStatus InsertElementsUseGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId);
 };
 
 namespace dgn_ElementHandler
 {
     //! @private
-    struct GeometryPart : Element
+    struct GeometryPart : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Definition, DGNPLATFORM_EXPORT);
     };
 };
 

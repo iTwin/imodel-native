@@ -30,7 +30,6 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
 #define GENERIC_CLASSNAME_SpatialGroup      "SpatialGroup"
 #define GENERIC_CLASSNAME_GraphicGroup2d    "GraphicGroup2d"
 #define GENERIC_CLASSNAME_MultiAspect       "MultiAspect"
-#define GENERIC_RELCLASSNAME_Refers         "ElementRefersToElement"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -154,30 +153,30 @@ namespace generic_ElementHandler
 
     //! The ElementHandler for GenericPhysicalObject
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Geometric3d
+    struct EXPORT_VTABLE_ATTRIBUTE GenericPhysicalObjectHandler : dgn_ElementHandler::Physical
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_PhysicalObject, GenericPhysicalObject, GenericPhysicalObjectHandler, dgn_ElementHandler::Physical, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericSpatialLocation
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::Geometric3d
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialLocationHandler : dgn_ElementHandler::SpatialLocation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialLocation, GenericSpatialLocation, GenericSpatialLocationHandler, dgn_ElementHandler::SpatialLocation, DGNPLATFORM_EXPORT)
     };
     
     //! The ElementHandler for GenericSpatialGroup
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroupHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE GenericSpatialGroupHandler : dgn_ElementHandler::Information
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, GenericSpatialGroup, GenericSpatialGroupHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_SpatialGroup, GenericSpatialGroup, GenericSpatialGroupHandler, dgn_ElementHandler::Information, DGNPLATFORM_EXPORT)
     };
     
     //! The ElementHandler for GenericGraphicGroup2d
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2dHandler : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE GenericGraphicGroup2dHandler : dgn_ElementHandler::Information
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, GenericGraphicGroup2d, GenericGraphicGroup2dHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASSNAME_GraphicGroup2d, GenericGraphicGroup2d, GenericGraphicGroup2dHandler, dgn_ElementHandler::Information, DGNPLATFORM_EXPORT)
     };
 }
 

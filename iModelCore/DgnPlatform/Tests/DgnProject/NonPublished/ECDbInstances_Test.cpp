@@ -407,6 +407,7 @@ DgnDbPtr CreateEmptyProject(DgnDbPtr& project, WCharCP projectPathname)
         }
 
     CreateDgnDbParams params;
+    params.SetProjectName("ECDbInstances_Test");
     return DgnDb::CreateDgnDb(NULL, BeFileName(projectPathname), params);
     }
 

@@ -26,7 +26,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementHasLinks:0:LinkElement</RelationshipPath>
+                    <RelationshipPath>ElementsHaveLinks:0:LinkElement</RelationshipPath>
                     <DerivedClasses>
                         <string>UrlLink</string>
                         <string>EmbeddedFileLink</string>
@@ -34,7 +34,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementHasLinks:0:LinkElement</RelationshipPath>
+                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementsHaveLinks:0:LinkElement</RelationshipPath>
                     <DerivedClasses>
                         <string>UrlLink</string>
                         <string>EmbeddedFileLink</string>
@@ -324,13 +324,19 @@
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="RepositoryModel" modifier="Sealed" displayLabel="Repository Model">
+        <BaseClass>DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="LinkModel" displayLabel="Link Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>InformationModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="DictionaryModel" displayLabel="Dictionary Model">
+    <ECEntityClass typeName="DictionaryModel" modifier="Sealed" displayLabel="Dictionary Model">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -519,6 +525,7 @@
     <ECEntityClass typeName="InformationElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -527,6 +534,7 @@
         <!-- Proxy for information carriers in the physical world.  For example, printed copies of documents or electronic files -->
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -534,11 +542,20 @@
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Subject" modifier="Sealed">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
@@ -726,10 +743,16 @@
     <ECEntityClass typeName="PhysicalElement" modifier="Abstract">
         <!-- A SpatialElement that has mass and can be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
         <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->
         <BaseClass>SpatialElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="VolumeElement">
         <!-- A SpatialLocationElement that defines a volume -->
@@ -1045,17 +1068,38 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
+        <!-- WIP: should be abstract -->
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <!-- The Element API will handle cascading the delete -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(0,1)" roleLabel="is on 1 element" polymorphic="true">
+        <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementEncapsulatesElements" strength="embedding">
+        <!-- Relationship that indicates that child elements are "hidden" -->
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PhysicalElementAssemblesPhysicalElements" strength="embedding">
+        <!-- Relationship that indicates a physical assembly of child PhysicalElements -->
+        <BaseClass>ElementOwnsChildElements</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="true">
+            <Class class="PhysicalElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="PhysicalElement"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1193,7 +1237,27 @@
     </ECRelationshipClass>
     -->
 
+    <ECRelationshipClass typeName="ElementsReferToElements" strength="referencing" modifier="Abstract">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="Element"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
+        <!-- WIP: Rename to ElementsDriveElements? -->
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1201,7 +1265,12 @@
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
+                <!-- WIP: MinimumSharedColumnCount? -->
             </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>8</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
@@ -1557,20 +1626,14 @@
         </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>LinkId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="true">
+    <ECRelationshipClass typeName="ElementsHaveLinks" description="Associates links to an element." strength="referencing">
+        <!-- WIP: Rename to ElementsHaveLinks? -->
+        <BaseClass>ElementsReferToElements</BaseClass>
+        <Source cardinality="(1,N)" polymorphic="true">
+            <!-- WIP: (0,N)? -->
             <Class class="Element"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="is on 1 or more elements" polymorphic="true">
+        <Target cardinality="(0,N)" polymorphic="true">
             <Class class="LinkElement"/>
         </Target>
     </ECRelationshipClass>
@@ -1628,17 +1691,9 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
+    <ECRelationshipClass typeName="ElementsUseGeometryParts" strength="referencing">
+        <BaseClass>ElementsReferToElements</BaseClass>
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-            </ClassMap>
-            <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>GeometryPartId</TargetECInstanceIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>
         </Source>

@@ -178,6 +178,7 @@ DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBr
         }
 
     CreateDgnDbParams createProjectParams;
+    createProjectParams.SetProjectName("DgnDbTestUtils");
     createProjectParams.SetOverwriteExisting(false);
 
     DbResult createStatus;

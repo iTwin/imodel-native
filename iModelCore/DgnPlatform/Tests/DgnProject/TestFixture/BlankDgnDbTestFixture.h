@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/TestFixture/BlankDgnDbTestFixture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,7 @@ protected:
         BeFileName::BeDeleteFile(filename);
 
         CreateDgnDbParams params;
+        params.SetProjectName("BlankDgnDbTestFixture");
         params.SetOverwriteExisting(false);
         DbResult status;
         DgnDbPtr db = DgnDb::CreateDgnDb(&status, filename, params);

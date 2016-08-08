@@ -37,6 +37,7 @@ HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Dictionary)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(GroupInformation)
+HANDLER_DEFINE_MEMBERS(Repository)
 };
 
 namespace WebMercator
@@ -50,9 +51,15 @@ namespace dgn_ElementHandler
 HANDLER_DEFINE_MEMBERS(Element)
 HANDLER_DEFINE_MEMBERS(Geometric2d)
 HANDLER_DEFINE_MEMBERS(Geometric3d)
+HANDLER_DEFINE_MEMBERS(Physical)
+HANDLER_DEFINE_MEMBERS(SpatialLocation)
 HANDLER_DEFINE_MEMBERS(GeometryPart)
 HANDLER_DEFINE_MEMBERS(Annotation2d)
 HANDLER_DEFINE_MEMBERS(DrawingGraphic)
+HANDLER_DEFINE_MEMBERS(Information)
+HANDLER_DEFINE_MEMBERS(InformationCarrier)
+HANDLER_DEFINE_MEMBERS(Definition)
+HANDLER_DEFINE_MEMBERS(Subject)
 };
 
 namespace dgn_AspectHandler
@@ -102,11 +109,17 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ModelHandler::Link::GetHandler());
     RegisterHandler(dgn_ModelHandler::Dictionary::GetHandler());
     RegisterHandler(dgn_ModelHandler::GroupInformation::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Repository::GetHandler());
 
     RegisterHandler(dgn_ElementHandler::Element::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Information::GetHandler());
+    RegisterHandler(dgn_ElementHandler::InformationCarrier::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Definition::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GeometryPart::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SpatialLocation::GetHandler());
     RegisterHandler(dgn_ElementHandler::Annotation2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingGraphic::GetHandler());
     RegisterHandler(dgn_ElementHandler::UrlLinkHandler::GetHandler());
@@ -122,6 +135,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::Category::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::TrueColor::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Subject::GetHandler());
 
 #if defined (NEEDSWORK_DIMENSION)
     RegisterHandler(dgn_ElementHandler::DimensionStyleHandler::GetHandler());

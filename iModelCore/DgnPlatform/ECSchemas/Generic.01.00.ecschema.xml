@@ -50,22 +50,6 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <!-- Base class for all relationships where the domain is unknown in order to avoid that they get persisted as foreign keys in the dgn_Element table-->
-    <ECRelationshipClass typeName="ElementRefersToElement" strength="referencing" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ClassMap>
-            <ShareColumns xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Target>
-    </ECRelationshipClass>
-
     <!-- Generic class to group MultiAspects together in a single shared table.  Originally designed for the converted secondary instances from a v8 file-->
     <ECEntityClass typeName="MultiAspect">
         <BaseClass>bis:ElementMultiAspect</BaseClass>

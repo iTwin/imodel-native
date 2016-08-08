@@ -99,6 +99,18 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricElement3d, GeometricElement3d, Geometric3d, Element, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for PhysicalElement
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, PhysicalElement, Physical, Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for SpatialLocationElement
+    struct EXPORT_VTABLE_ATTRIBUTE SpatialLocation : Geometric3d
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationElement, SpatialLocationElement, SpatialLocation, Geometric3d, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for GeometricElement2d
     struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Element
     {
@@ -115,6 +127,30 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE DrawingGraphic : Geometric2d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationElement
+    struct EXPORT_VTABLE_ATTRIBUTE Information : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationElement, InformationElement, Information, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for InformationCarrierElement
+    struct EXPORT_VTABLE_ATTRIBUTE InformationCarrier : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationCarrierElement, InformationCarrierElement, InformationCarrier, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for DefinitionElement
+    struct EXPORT_VTABLE_ATTRIBUTE Definition : Information
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, Information, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Subject
+    struct EXPORT_VTABLE_ATTRIBUTE Subject : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Subject, Dgn::Subject, Subject, Definition, DGNPLATFORM_EXPORT)
     };
 };
 

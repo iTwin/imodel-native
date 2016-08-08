@@ -459,9 +459,9 @@ namespace dgn_ElementHandler
     //! The handler for SpatialViewDefinition elements
     // @bsiclass                                                      Paul.Connelly   10/15
     //=======================================================================================
-    struct SpatialViewDef : Element
+    struct SpatialViewDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
     //=======================================================================================
@@ -477,18 +477,18 @@ namespace dgn_ElementHandler
     //! The handler for DrawingViewDefinition elements
     // @bsiclass                                                      Paul.Connelly   10/15
     //=======================================================================================
-    struct DrawingViewDef : Element
+    struct DrawingViewDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
     //=======================================================================================
     //! The handler for SheetViewDefinition elements
     // @bsiclass                                                      Paul.Connelly   10/15
     //=======================================================================================
-    struct SheetViewDef : Element
+    struct SheetViewDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
     //=======================================================================================

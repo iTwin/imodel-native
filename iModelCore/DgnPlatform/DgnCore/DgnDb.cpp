@@ -287,6 +287,12 @@ DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDb
     {
     DbResult ALLOW_NULL_OUTPUT(stat, result);
 
+    if (params.m_name.empty())
+        {
+        BeAssert(false); // name is required to create the Subject in the RepositoryModel
+        return nullptr;
+        }
+
     DgnDbPtr dgndb = new DgnDb();
     stat = dgndb->CreateNewDgnDb(fileName, params);
 

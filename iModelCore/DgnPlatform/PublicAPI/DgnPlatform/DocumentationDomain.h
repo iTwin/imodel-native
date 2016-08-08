@@ -66,9 +66,9 @@ namespace doc_ElementHandler
 {
     //! The ElementHandler for Document
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE Document : dgn_ElementHandler::Element
+    struct EXPORT_VTABLE_ATTRIBUTE Document : dgn_ElementHandler::Information
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DOC_CLASSNAME_Document, Dgn::Document, Document, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DOC_CLASSNAME_Document, Dgn::Document, Document, dgn_ElementHandler::Information, DGNPLATFORM_EXPORT)
     };
 }
 

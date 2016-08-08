@@ -139,7 +139,7 @@ public:
     //! such that the entire volume is visible.
     //! @note, for 2d views, only the X and Y values of volume are used.
     //! @see ViewController::LookAtVolume()
-    DGNPLATFORM_EXPORT void Fit (DgnViewport& viewport, double const* aspectRatio=nullptr, ViewController::MarginPercent const* margin=nullptr) const;
+    DGNPLATFORM_EXPORT void Fit(DgnViewport& viewport, double const* aspectRatio=nullptr, ViewController::MarginPercent const* margin=nullptr) const;
 
     /*
      * Query contained elements in the Volume
@@ -150,14 +150,14 @@ public:
     //! @param[in] dgnDb DgnDb containing the elements
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements (DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT void FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool allowPartialOverlaps = true) const;
 
     //! Find all elements in the specified view within the volume
     //! @param[out] elementIds Element ids found. Any existing entries are not cleared. 
     //! @param[in] viewport Viewport that's used to find only the elements displayed. 
     //! @param[in] allowPartialOverlaps Pass false to find only elements that are strictly contained. Pass true 
     //! to include elements that partially overlap the volume (i.e., at the boundary). 
-    DGNPLATFORM_EXPORT void FindElements (DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
+    DGNPLATFORM_EXPORT void FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps = true) const;
 
     //! Determines if the volume contains the element
     //! @param element Element to check
@@ -180,9 +180,9 @@ public:
 namespace dgn_ElementHandler
 {
     //! The ElementHandler for VolumeElement
-    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : Geometric3d
+    struct EXPORT_VTABLE_ATTRIBUTE VolumeElementHandler : SpatialLocation
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_VolumeElement, VolumeElement, VolumeElementHandler, Geometric3d, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_VolumeElement, VolumeElement, VolumeElementHandler, SpatialLocation, DGNPLATFORM_EXPORT)
     };
 }
 

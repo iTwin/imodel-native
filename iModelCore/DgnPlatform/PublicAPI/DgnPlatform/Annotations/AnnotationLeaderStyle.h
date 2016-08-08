@@ -202,9 +202,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The handler for annotation leader styles
     //=======================================================================================
-    struct AnnotationLeaderStyleHandler : Element
+    struct AnnotationLeaderStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationLeaderStyle, AnnotationLeaderStyle, AnnotationLeaderStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationLeaderStyle, AnnotationLeaderStyle, AnnotationLeaderStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

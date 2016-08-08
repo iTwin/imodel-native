@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct Annotation2d; struct DrawingGraphic; struct Group;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct Information; struct InformationCarrier; struct Definition; struct Subject;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -1755,7 +1755,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
-    DEFINE_T_SUPER(SpatialElement)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, SpatialElement)
+    friend struct dgn_ElementHandler::Physical;
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 };
@@ -1768,7 +1769,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialLocationElement : SpatialElement
 {
-    DEFINE_T_SUPER(SpatialElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialLocationElement, SpatialElement)
+    friend struct dgn_ElementHandler::SpatialLocation;
 protected:
     explicit SpatialLocationElement(CreateParams const& params) : T_Super(params) {}
 };
@@ -1946,7 +1948,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationElement, DgnElement);
+    friend struct dgn_ElementHandler::Information;
 
 protected:
     virtual InformationElementCP _ToInformationElement() const override final {return this;}
@@ -1962,7 +1965,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationCarrierElement : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationCarrierElement, DgnElement);
+    friend struct dgn_ElementHandler::InformationCarrier;
 
 protected:
     explicit InformationCarrierElement(CreateParams const& params) : T_Super(params) {}
@@ -1974,12 +1978,32 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
-    DEFINE_T_SUPER(InformationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, InformationElement);
+    friend struct dgn_ElementHandler::Definition;
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A Subject resides in (and only in) a RepositoryModel.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Subject : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Subject, DefinitionElement);
+    friend struct dgn_ElementHandler::Subject;
+
+protected:
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+
+    explicit Subject(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Creates a new Subject element in the RepositoryModel
+    DGNPLATFORM_EXPORT static SubjectPtr Create(DgnDbR db, Utf8CP label, Utf8CP description=nullptr);
 };
 
 //=======================================================================================

@@ -133,13 +133,13 @@ DgnGeometryPartId DgnGeometryPart::QueryGeometryPartId(DgnCode const& code, DgnD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    03/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId)
+BentleyStatus DgnGeometryPart::InsertElementsUseGeometryParts(DgnDbR db, DgnElementId elementId, DgnGeometryPartId geomPartId)
     {
     if (!elementId.IsValid() || !geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
     CachedECSqlStatementPtr statementPtr = db.GetPreparedECSqlStatement(
-        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
 
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;

@@ -119,9 +119,9 @@ namespace dgn_ElementHandler
     //! The handler for light definition elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct LightDef : Element
+    struct LightDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LightDefinition, LightDefinition, LightDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LightDefinition, LightDefinition, LightDef, Definition, DGNPLATFORM_EXPORT);
     };
 }
 
