@@ -11,6 +11,7 @@
 #include <TerrainModel\Core\partitionarray.h>
 #include <thread>
 #include <Bentley\BeTimeUtilities.h>
+
 const int MINIMUM_POINTS_PER_SORT_THREAD = 5000;
 
 /*-------------------------------------------------------------------+
@@ -7478,6 +7479,9 @@ errexit:
     goto cleanup;
     }
 
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
 static int bcdtmObject_addVoidsToInternalDtmObject_AddFeature (BC_DTM_OBJ* dtmP, long startPnt)
     {
     DTMDirection direction = DTMDirection::Unknown;
@@ -7535,6 +7539,9 @@ static int bcdtmObject_addVoidsToInternalDtmObject_AddFeature (BC_DTM_OBJ* dtmP,
     return DTM_SUCCESS;
     }
 
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
 BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
     {
     int ret = DTM_SUCCESS;
@@ -7551,6 +7558,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         {
         // Go through all links.
         long cPtr = nodeAddrP (dtmP, pnt)->cPtr;
+        if (cPtr == dtmP->nullPtr)
+            continue;
         long startPnt = clistAddrP (dtmP, cPtr)->pntNum;
 
         long linePnt = bcdtmList_nextAntDtmObject (dtmP, pnt, startPnt);
@@ -7612,6 +7621,68 @@ errexit:
     goto cleanup;
     }
 
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
+int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
+    {
+    bvector<long> insertedPoints;
+    //Points have been added what to do?
+    for (int pt = 0; pt < dtmP->numPoints; pt++)
+        {
+        auto n = nodeAddrP(dtmP, pt);
+        auto flPtr = n->fPtr;
+        int numberType2 = 0;
+        while (flPtr != dtmP->nullPtr)
+            {
+            auto flist = flistAddrP(dtmP, flPtr);
+            if (flist->pntType == 2)  // None Feature Point
+                numberType2++;
+            flPtr = flist->nextPtr;
+            }
+        if (numberType2 > 2)// This has intersecting triangles, this is okish.
+            continue;
+        if (0 != numberType2)
+            insertedPoints.push_back(pt);
+        }
+
+    bool hasDeletedPoints = false;
+    bool deletedPoint = false;
+    do
+        {
+        bool failedToDeleteAPoint = false;
+        deletedPoint = false;
+        for (auto& pt : insertedPoints)
+            {
+            if (pt == dtmP->nullPtr)
+                continue;
+            if (nodeAddrP(dtmP, pt)->cPtr == dtmP->nullPtr)
+                {
+                pt = dtmP->nullPtr;
+                continue;
+                }
+            if (DTM_SUCCESS == bcdtmEdit_deletePointDtmObject(dtmP, pt, 1))
+                {
+                pt = dtmP->nullPtr;
+                deletedPoint = true;
+                }
+            else
+                failedToDeleteAPoint = true;
+            }
+        if (deletedPoint)
+            hasDeletedPoints = true;
+        else if (failedToDeleteAPoint)
+            return DTM_ERROR;
+        } while (deletedPoint);
+
+    if (hasDeletedPoints)
+        bcdtmTin_compactPointAndNodeTablesDtmObject(dtmP);
+    return DTM_SUCCESS;
+    }
+
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
 BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
 (
  BC_DTM_OBJ *dtmP //  Pointer To DTM Object
@@ -7703,6 +7774,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         dtmFeatureP->dtmFeatureType = DTMFeatureType::Breakline;
         }
 
+    long previousNumPoints = dtmP->numPoints;
     // Triangulate DTM
     dtmP->edgeOption = 3;
     double prevMaxSide = dtmP->maxSide;
@@ -7711,6 +7783,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     dtmP->plTol = 0;
     bcdtmObject_triangulateDtmObject (dtmP, false, false);
     dtmP->maxSide = prevMaxSide;
+
 
     if (dbg)
         {
@@ -7728,11 +7801,15 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     // Remove as much tin edges as we can.
     bcdtmList_removeNoneFeatureHullLinesDtmObject (dtmP);
 
-    // Add voids to hull.
-    //bcdtmObject_addVoidsToTinHullDtmObject (dtmP);
-
-    // Add internal voids.
-    bcdtmObject_addVoidsToInternalDtmObject (dtmP);
+    // Check if there are inserted points which aren't a triangle point.
+    if (previousNumPoints != dtmP->numPoints)
+        {
+        if (DTM_SUCCESS == bcdtmObject_stmFixInsertedPoints(dtmP))
+            bcdtmObject_addVoidsToInternalDtmObject(dtmP);
+        }
+    else
+        // Add internal voids.
+        bcdtmObject_addVoidsToInternalDtmObject (dtmP);
 
     // Delete all breaklines.
     bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject (dtmP, DTMFeatureType::Breakline);
@@ -7770,24 +7847,25 @@ errexit:
     goto cleanup;
     }
 
+
 BENTLEYDTM_EXPORT DTMStatusInt bcdtmObject_storeTrianglesInDtmObject(BC_DTM_OBJ* dtmP, DTMFeatureType dtmFeatureType, DPoint3dCP points, int numPoints, int* pointIndex, int numTriangles)
     {
     long firstPointIndex = dtmP->numPoints;
     DTMFeatureId dtmFeatureId;
- 
+
     // Add the points.
     if (bcdtmObject_storeDtmFeatureInDtmObject(dtmP, DTMFeatureType::RandomSpots, DTM_NULL_USER_TAG, 1, &dtmFeatureId, points, numPoints))
         return DTM_ERROR;
- 
+
     dtmP->memFeatures += numTriangles;
- 
+
     if (bcdtmObject_allocateFeaturesMemoryDtmObject(dtmP))
         return DTM_ERROR;
- 
+
     for (int i = 0; i < numTriangles; i++)
         {
         BC_DTM_FEATURE* dtmFeatureP = ftableAddrP(dtmP, dtmP->numFeatures);
- 
+
         dtmFeatureP->dtmFeatureState = DTMFeatureState::OffsetsArray;
         dtmFeatureP->dtmFeatureType = (DTMFeatureType)dtmFeatureType;
         dtmFeatureP->internalToDtmFeature = dtmP->nullPnt;

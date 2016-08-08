@@ -113,6 +113,7 @@ BENTLEYDTM_Private                     int bcdtmClip_externalPolygonalDtmFeature
 BENTLEYDTM_Public                      int bcdtmClip_externalToTptrPolygonDtmObject (BC_DTM_OBJ *dtmP, long startPnt); 
 BENTLEYDTM_EXPORT                      int bcdtmClip_featurePointArrayToTinHullDtmObject (BC_DTM_OBJ *dtmP, DTMFenceOption clipOption, DPoint3d *featPtsP, long numFeatPts, long *clipResultP, DTM_POINT_ARRAY ***clipArraysPPP, long *numClipArraysP);
 BENTLEYDTM_Public                      int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject (BC_DTM_OBJ *dtmP, long point);
+BENTLEYDTM_Public                      int bcdtmClip_checkFillTptrPolygonWithTrianglesDtmDTMObject(BC_DTM_OBJ *dtmP, long point);
 BENTLEYDTM_Public                      int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject (BC_DTM_OBJ *dtmP, long dtmFeature); 
 BENTLEYDTM_Private                     int bcdtmClip_getExclusiveIntersectPolygonsDtmObject (BC_DTM_OBJ *dtmP, DTM_POLYGON_OBJ *Poly); 
 BENTLEYDTM_Public                      int bcdtmClip_groupSpotDtmFeatureDtmObject (BC_DTM_OBJ *dtmP, long dtmFeature, long mark); 
