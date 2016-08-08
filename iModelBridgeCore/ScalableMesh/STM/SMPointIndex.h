@@ -111,16 +111,6 @@ struct IDisplayCacheNodeManager
 
 template <class POINT, class EXTENT> class ProducedNodeContainer;
 
-
-enum class DisplayMovementType
-    {
-    ZOOM_IN, 
-    ZOOM_OUT, 
-    PAN, 
-    ROTATE, 
-    UNKNOWN
-    };
-
 template <class POINT, class EXTENT> class SMMeshIndex;    
 template <class POINT, class EXTENT> class SMMeshIndexNode;    
 
@@ -997,8 +987,7 @@ protected:
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HFCPtr<SMPointIndexNode<POINT, EXTENT>>& resultNode);        
 
     bool              QueryVisibleNode (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);   
-    bool              QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);   
-    bool              QueryNodesAround (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevelDistance, size_t maxNeighborDistance, DisplayMovementType displayMovementType, bmap<__int64, __int64>& searchedNodes, ProducedNodeContainer<POINT, EXTENT>& previewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP, IDisplayCacheNodeManager* displayCacheNodeManagerP);
+    bool              QueryOverview (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevel, ProducedNodeContainer<POINT, EXTENT>& overviewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP);       
 
 
     /**----------------------------------------------------------------------------
