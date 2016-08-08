@@ -83,12 +83,9 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
     {
     DateTime createdDate = DateTime();
-    DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::UploadedDate].asCString()));
+    DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::CreatedDate].asCString()));
     repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(),
-                                    value[ServerSchema::Property::FileId].asString(), value[ServerSchema::Property::URL].asString(),
-                                    value[ServerSchema::Property::FileName].asString(), value[ServerSchema::Property::Description].asString(),
-                                    value[ServerSchema::Property::MergedRevisionId].asString(), value[ServerSchema::Property::UserUploaded].asString(),
-                                    createdDate);
+        value[ServerSchema::Property::Description].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -135,27 +132,138 @@ AuthenticationHandlerPtr authenticationHandler
         }
 
     DgnDbRepositoryConnectionPtr repositoryConnection(new DgnDbRepositoryConnection(repository, credentials, clientInfo, authenticationHandler));
-    if (!repository.GetFileId().empty())
-        {
-        #ifndef DEBUG
-        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
-        #endif
-            repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
-        }
+    #ifndef DEBUG
+    if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
+    #endif
+        repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
+    return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Success(repositoryConnection));
+    }
 
-    return repositoryConnection->UpdateRepositoryInfo(repository.GetId(), cancellationToken)->Then<DgnDbRepositoryConnectionResult>([=] (DgnDbServerStatusResultCR result)
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+Json::Value CreateFileJson(FileInfoCR fileInfo)
+    {
+    Json::Value createFileJson = Json::objectValue;
+    createFileJson[ServerSchema::Instance] = Json::objectValue;
+    createFileJson[ServerSchema::Instance][ServerSchema::SchemaName] = fileInfo.GetObjectId().schemaName;
+    createFileJson[ServerSchema::Instance][ServerSchema::ClassName] = fileInfo.GetObjectId().className;
+    fileInfo.ToPropertiesJson(createFileJson[ServerSchema::Instance][ServerSchema::Properties]);
+    return createFileJson;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(DgnDbPtr db, Utf8StringCR description, ICancellationTokenPtr cancellationToken) const
+    {
+    FileInfo fileInfo = FileInfo(*db, description);
+    
+    return m_wsRepositoryClient->SendCreateObjectRequest(CreateFileJson(fileInfo), BeFileName(), nullptr, cancellationToken)->Then<DgnDbServerFileResult>
+        ([=] (const WSCreateObjectResult& result)
         {
         if (!result.IsSuccess())
-            return DgnDbRepositoryConnectionResult::Error(result.GetError());
-
-        #ifndef DEBUG
-        if (Utf8String::npos != repositoryConnection->GetRepositoryInfo().GetServerURL().rfind("cloudapp.net"))
-        #endif
-            repositoryConnection->SetAzureClient(AzureBlobStorageClient::Create());
-
-        return DgnDbRepositoryConnectionResult::Success(repositoryConnection);
+            return DgnDbServerFileResult::Error(result.GetError());
+        return DgnDbServerFileResult::Success(FileInfo::FromJson(result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange], fileInfo));
         });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    if (objectId.remoteId.empty())
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepostioryName)); //NEEDSWORK
+
+    return m_wsRepositoryClient->SendUpdateFileRequest(objectId, filePath, callback, cancellationToken)
+        ->Then<DgnDbServerStatusResult>([=] (const WSUpdateFileResult& uploadFileResult)
+        {
+        if (!uploadFileResult.IsSuccess())
+            return DgnDbServerStatusResult::Error(uploadFileResult.GetError());
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    IAzureBlobStorageClientPtr azureClient = AzureBlobStorageClient::Create();
+    return azureClient->SendUpdateFileRequest(url, filePath, callback, cancellationToken)
+        ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UploadServerFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    if (fileInfo.GetFileURL().empty())
+        return OnPremiseFileUpload(filePath, fileInfo.GetObjectId(), callback, cancellationToken);
+    else
+        return AzureFileUpload(filePath, fileInfo.GetFileURL(), callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
+    {
+    Json::Value fileProperties;
+    fileInfo.ToPropertiesJson(fileProperties);
+    fileProperties[ServerSchema::Property::IsUploaded] = true;
+
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), fileProperties, nullptr, nullptr, cancellationToken)
+        ->Then<DgnDbServerStatusResult>([=] (const WSUpdateObjectResult& initializeFileResult)
+        {
+        if (!initializeFileResult.IsSuccess())
+            return DgnDbServerStatusResult::Error(initializeFileResult.GetError());
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(DgnDbPtr db, Utf8StringCR description, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
+    BeFileName filePath = db->GetFileName();
+    return CreateNewServerFile(db, description, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
+        {
+        if (!fileCreationResult.IsSuccess())
+            {
+            finalResult->SetError(fileCreationResult.GetError());
+            return;
+            }
+
+        FileInfoPtr fileInfo = fileCreationResult.GetValue();
+        finalResult->SetSuccess(fileInfo);
+
+        UploadServerFile(filePath, *fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR uploadResult)
+            {
+            if (!uploadResult.IsSuccess())
+                {
+                finalResult->SetError(uploadResult.GetError());
+                return;
+                }
+            InitializeServerFile(*fileInfo, cancellationToken)->Then([=] (DgnDbServerStatusResultCR initializationResult)
+                {
+                if (!initializationResult.IsSuccess())
+                    finalResult->SetError(initializationResult.GetError());
+                });
+            });
+        })->Then<DgnDbServerFileResult>([=] ()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------

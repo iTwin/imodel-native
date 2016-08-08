@@ -17,13 +17,13 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, RepositoryInfoCR repositoryInfo)
+BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName baseDirectory, BeBriefcaseId briefcase, RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo)
     {
     baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetId()));
     BeFileName briefcaseId;
     briefcaseId.Sprintf(L"%u", briefcase);
     baseDirectory.AppendToPath(briefcaseId);
-    baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetFileName()));
+    baseDirectory.AppendToPath(BeFileName(fileInfo.GetFileName()));
     return baseDirectory;
     };
 
@@ -162,58 +162,17 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR repositoryGuid, Utf8StringCR description, Utf8StringCR localPath, bool published)
+Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR description, bool published)
     {
     Json::Value repositoryCreation(Json::objectValue);
     JsonValueR instance = repositoryCreation[ServerSchema::Instance] = Json::objectValue;
     instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
     instance[ServerSchema::ClassName] = ServerSchema::Class::Repository;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-    properties[ServerSchema::Property::Description] = description;
     properties[ServerSchema::Property::RepositoryName] = repositoryName;
-    properties[ServerSchema::Property::FileId] = repositoryGuid;
-    Utf8String fileName;
-    BeStringUtilities::WCharToUtf8(fileName, BeFileName(localPath).GetFileNameAndExtension().c_str());
-    properties[ServerSchema::Property::FileName] = fileName;
-    uint64_t size;
-    BeFileName(localPath).GetFileSize(size);
-    properties[ServerSchema::Property::FileSize] = size;
+    properties[ServerSchema::Property::Description] = description;
     properties[ServerSchema::Property::Published] = published;
-    properties[ServerSchema::Property::IsUploaded] = false;
     return repositoryCreation;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Andrius.Zonys                  01/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerRepositoryTaskPtr DgnDbClient::InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
-    ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
-    {
-    Json::Value repositoryProperties = Json::Value(repositoryCreationJson[ServerSchema::Instance][ServerSchema::Properties]);
-    repositoryProperties[ServerSchema::Property::IsUploaded] = true;
-
-    DgnDbServerRepositoryResultPtr finalResult = std::make_shared<DgnDbServerRepositoryResult>();
-    return client->SendUpdateObjectRequest(repositoryObjectId, repositoryProperties, nullptr, callback, cancellationToken)
-        ->Then([=] (const WSUpdateObjectResult& initializeRepositoryResult)
-        {
-        if (!initializeRepositoryResult.IsSuccess())
-            {
-            finalResult->SetError(initializeRepositoryResult.GetError());
-            return;
-            }
-
-        ConnectToRepository(RepositoryInfo(m_serverUrl, repositoryId), cancellationToken)
-            ->Then([=] (const DgnDbRepositoryConnectionResult& result)
-            {
-            if (result.IsSuccess())
-                finalResult->SetSuccess(std::make_shared<RepositoryInfo>(result.GetValue()->GetRepositoryInfo()));
-            else
-                finalResult->SetError(result.GetError());
-            });
-        })->Then<DgnDbServerRepositoryResult>([=]
-            {
-            return *finalResult;
-            });
     }
 
 DgnDbPtr CleanDb(DgnDbCR db)
@@ -274,13 +233,12 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     Utf8String dbFileName = tempdb->GetDbFileName();
     BeFileName fileName = tempdb->GetFileName();
     Utf8String dbFileId = tempdb->GetDbGuid().ToString();
-    tempdb->CloseDb();
 
     // Stage 1. Create repository.
     Utf8String project;
     project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
-    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, dbFileId, description, dbFileName, published);
+    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description, published);
     client->SetCredentials(m_credentials);
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
     return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)
@@ -292,57 +250,30 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
             return;
             }
 
-        // Stage 2. Upload master file. 
         JsonValueCR repositoryInstance   = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
         Utf8String  repositoryInstanceId = repositoryInstance[ServerSchema::InstanceId].asString();
-        ObjectId    repositoryObjectId   = ObjectId(ServerSchema::Schema::Project, ServerSchema::Class::Repository, repositoryInstanceId);
-        Utf8StringCR url = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::URL].asString();
 
-        if (url.empty())
+        Utf8String name = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::RepositoryName].asString();
+        Utf8String description = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::Description].asString();
+        auto repositoryInfo = std::make_shared<RepositoryInfo>(m_serverUrl, repositoryInstanceId, name, description);
+        finalResult->SetSuccess(repositoryInfo);
+
+        //NEEDSWORK: SetSuccess here
+        ConnectToRepository(repositoryInstanceId, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
             {
-            client->SendUpdateFileRequest(repositoryObjectId, fileName, callback, cancellationToken)
-                ->Then([=] (const WSUpdateFileResult& uploadFileResult)
+            if (!connectionResult.IsSuccess())
                 {
-                if (!uploadFileResult.IsSuccess())
-                    {
-                    finalResult->SetError(uploadFileResult.GetError());
-                    return;
-                    }
-
-                // Stage 3. Initialize repository.
-                InitializeRepository(client, repositoryInstanceId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
-                    ->Then([=] (const DgnDbServerRepositoryResult& result)
-                    {
-                    if (result.IsSuccess())
-                        finalResult->SetSuccess(result.GetValue());
-                    else
-                        finalResult->SetError(result.GetError());
-                    });
-                });
-            }
-        else
-            {
-            IAzureBlobStorageClientPtr azureClient = AzureBlobStorageClient::Create();
-            azureClient->SendUpdateFileRequest(url, fileName, callback, cancellationToken)
-                ->Then([=] (const AzureResult& result)
+                finalResult->SetError(connectionResult.GetError());
+                return;
+                }
+            DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
+            connection->UploadNewFile(tempdb, description, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
                 {
-                if (!result.IsSuccess())
-                    {
-                    finalResult->SetError(DgnDbServerError(result.GetError()));
-                    return;
-                    }
-
-                // Stage 3. Initialize repository.
-                InitializeRepository(client, repositoryInstanceId, repositoryCreationJson, repositoryObjectId, callback, cancellationToken)
-                    ->Then([=] (const DgnDbServerRepositoryResult& result)
-                    {
-                    if (result.IsSuccess())
-                        finalResult->SetSuccess(result.GetValue());
-                    else
-                        finalResult->SetError(result.GetError());
-                    });
+                if (!fileUploadResult.IsSuccess())
+                    finalResult->SetError(fileUploadResult.GetError());
                 });
-            }
+            });
+
         })->Then<DgnDbServerRepositoryResult>([=]
             {
             return *finalResult;
@@ -422,14 +353,14 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, Utf8StringCR url,
+DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, FileInfoCR fileInfo,
                                                         bool doSync, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    auto briefcaseTask = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), url, callback, cancellationToken);
+    auto briefcaseTask = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
     if (!doSync)
         return briefcaseTask;
 
-    auto pullTask = connection->Pull(connection->GetRepositoryInfo().GetMergedRevisionId(), callback, cancellationToken);
+    auto pullTask = connection->Pull(fileInfo.GetMergedRevisionId(), callback, cancellationToken);
     bset<std::shared_ptr<AsyncTask>> tasks;
     tasks.insert(briefcaseTask);
     tasks.insert(pullTask);
@@ -521,10 +452,10 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
             JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
             JsonValueCR properties = instance[ServerSchema::Properties];
             uint32_t briefcaseId = properties[ServerSchema::Property::BriefcaseId].asUInt();
-            Utf8StringCR url = properties[ServerSchema::Property::URL].asString();
             bool isReadOnly = properties[ServerSchema::Property::IsReadOnly].asBool();
+            FileInfoPtr fileInfo = FileInfo::FromJson(instance);
 
-            BeFileName filePath = fileNameCallback(baseDirectory, BeBriefcaseId(briefcaseId), connection->GetRepositoryInfo());
+            BeFileName filePath = fileNameCallback(baseDirectory, BeBriefcaseId(briefcaseId), connection->GetRepositoryInfo(), *fileInfo);
             if (filePath.DoesPathExist())
                 {
                 finalResult->SetError(DgnDbServerError::Id::FileAlreadyExists);
@@ -535,7 +466,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
                 BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
                 }
 
-            DownloadBriefcase(connection, filePath, BeBriefcaseId(briefcaseId), url, doSync, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
+            DownloadBriefcase(connection, filePath, BeBriefcaseId(briefcaseId), *fileInfo, doSync, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
                 {
                 if (downloadResult.IsSuccess())
                     finalResult->SetSuccess(DgnDbServerBriefcaseInfo(filePath, isReadOnly));
@@ -561,10 +492,10 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR r
         {
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::FileAlreadyExists));
         }
-    return AcquireBriefcaseToDir(repositoryInfo, localFileName, doSync, [=] (BeFileName baseDirectory, BeBriefcaseId, RepositoryInfoCR repositoryInfo)
+    return AcquireBriefcaseToDir(repositoryInfo, localFileName, doSync, [=] (BeFileName baseDirectory, BeBriefcaseId, RepositoryInfoCR repositoryInfo, FileInfoCR fileInfo)
         {
         if (baseDirectory.IsDirectory())
-            baseDirectory.AppendToPath(BeFileName(repositoryInfo.GetFileName()));
+            baseDirectory.AppendToPath(BeFileName(fileInfo.GetFileName()));
         return baseDirectory;
         }, callback, cancellationToken);
     }
