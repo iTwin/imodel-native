@@ -1953,25 +1953,6 @@ protected:
     explicit InformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
-#ifdef WIP_SCRIPT_ELEMENT
-//=======================================================================================
-//! An ECMAScript script that is stored in a bim. Scripts can play many roles in a bim. Roles are clarified by subclasses in the ECSchema.
-//! @ingroup GROUP_DgnScript
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnScriptElement : InformationElement
-    {
-    DEFINE_T_SUPER(InformationElement);
-
-protected:
-    explicit DgnScriptElement(CreateParams const&);
-    
-    static RefCountedPtr<DgnScriptElement> CreateDgnScriptElement(DgnDbR db, DgnModelId modelId, DgnClassId classId, Utf8CP text, Utf8CP entryPoint, Utf8CP esv);
-
-public:
-    DGNPLATFORM_EXPORT static RefCountedPtr<DgnScriptElement> CreateElementFilterFunction(DgnDbR db, DgnModelId modelId, Utf8CP text, Utf8CP entryPoint, Utf8CP esv = "ES5");
-    };
-#endif
-
 //=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
 //! For example, a paper document or an electronic file is an information carrier.

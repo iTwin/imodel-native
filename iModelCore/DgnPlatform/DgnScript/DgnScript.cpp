@@ -15,8 +15,14 @@
 #include <DgnPlatform/GeomJsApi.h>
 #include <DgnPlatform/DgnJsApi.h>
 #include <DgnPlatform/DgnJsApiProjection.h>
+#include <DgnPlatform/ScriptDomain.h>
+#include <regex>
+#include <iostream>
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
+
+DOMAIN_DEFINE_MEMBERS(ScriptDomain)
+HANDLER_DEFINE_MEMBERS(ScriptDefinitionElementHandler)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct DgnScriptContext : BeJsContext
@@ -472,4 +478,317 @@ void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP de
 #else
     T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Exception, exname, details);
 #endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus ScriptDomain::ImportSchema(DgnDbR db)
+    {
+    Register(); // make sure it's registered
+
+    BeFileName domainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    domainSchemaFile.AppendToPath(SCRIPT_DOMAIN_ECSCHEMA_PATH);
+    BeAssert(domainSchemaFile.DoesPathExist());
+
+    DgnDomainR domain = ScriptDomain::GetDomain();
+    DgnDbStatus importSchemaStatus = domain.ImportSchema(db, domainSchemaFile);
+    BeAssert(DgnDbStatus::Success == importSchemaStatus);
+    return importSchemaStatus;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+ScriptDefinitionElement::ScriptDefinitionElement(CreateParams const& params) : T_Super(params) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+static bool isNonEmptyString(ECN::ECValueCR value)
+    {
+    return !value.IsNull() && value.IsString() && !value.ToString().empty();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+static bvector<Utf8String> parseCDL(Utf8StringCR cdl)
+    {
+    bvector<Utf8String> items;
+
+    size_t offset = 0;
+    Utf8String arg;
+    while ((offset = cdl.GetNextToken(arg, "\t\n ,", offset)) != Utf8String::npos)
+        {
+        items.push_back(arg.c_str());
+        }
+    return items;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8StringCR signature)
+    {
+    std::regex re("function\\s+(\\w+)\\s*[(](.*)[)]", std::regex_constants::ECMAScript);
+    std::smatch sm;
+    std::string s (textIn);
+    while (std::regex_search(s, sm, re))
+        {
+        s = sm.suffix().str();
+
+        if (3 != sm.size())
+            continue;
+
+        auto name = sm[1].str();
+        if (name != entryPoint)
+            continue;
+
+
+        // *** NEEDS WORK: how to validate arguments??
+        //auto haveArgs = parseCDL(sm[2].str().c_str());
+        //auto wantArgs = parseCDL(signature);
+
+        return BSISUCCESS;
+        }
+
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
+    {
+    if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_Text, name))
+        {
+        if (!isNonEmptyString(value))
+            return DgnDbStatus::BadArg;
+        // *** TBD: Is there any way to check that this is valid script (without evaluating it)?
+        }
+    else if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, name))
+        {
+        if (!isNonEmptyString(value))
+            return DgnDbStatus::BadArg;
+
+        auto const& str = value.ToString();
+        if (!str.StartsWithI("ES"))
+            return DgnDbStatus::BadArg;
+        }
+    else if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, name))
+        {
+        if (!isNonEmptyString(value))
+            return DgnDbStatus::BadArg;
+
+        ECN::ECValue text;
+        GetProperty(text, SCRIPT_DOMAIN_PROPERTY_Script_Text);
+        Utf8String rt, args;
+        GetSignature(rt, args);
+        if (BSISUCCESS != checkEntryPoint(value.ToString().c_str(), text.ToString().c_str(), rt))
+            return DgnDbStatus::BadArg;
+        }
+
+    return T_Super::_SetProperty(name, value);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+ScriptDefinitionElementPtr ScriptDefinitionElement::CreateElement(DgnDbStatus* statOut, DgnDbR db, DgnModelId modelId, Utf8CP className, Utf8CP text, Utf8CP entryPoint, Utf8CP esv)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, statOut);
+
+    DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, className));
+    if (!classId.IsValid())
+        {
+        stat = DgnDbStatus::MissingDomain;
+        return nullptr;
+        }
+    CreateParams params(db, modelId, classId);
+    ScriptDefinitionElementPtr el = new ScriptDefinitionElement(params);
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(text));
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(esv));
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(entryPoint));
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    return el;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+Utf8String ScriptDefinitionElement::GetText() const
+    {
+    ECN::ECValue v;
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_Text);
+    return v.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+Utf8String ScriptDefinitionElement::GetEntryPoint() const
+    {
+    ECN::ECValue v;
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint);
+    return v.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+Utf8String ScriptDefinitionElement::GetEcmaScriptVersionRequired() const
+    {
+    ECN::ECValue v;
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired);
+    return v.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+void ScriptDefinitionElement::GetSignature(Utf8StringR returnType, Utf8StringR arguments) const
+    {
+    ECN::ECClassCP caClass = GetDgnDb().Schemas().GetECClass(SCRIPT_DOMAIN_NAME, "ScriptSignature");
+    if (nullptr == caClass)
+        {
+        BeAssert(false);
+        return;
+        }
+    auto caInstance = GetElementClass()->GetCustomAttribute(*caClass);
+    if (!caInstance.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    ECN::ECValue value;
+    auto status = caInstance->GetValue(value, "ReturnType");
+    BeAssert(ECN::ECObjectsStatus::Success == status);
+    returnType = value.ToString();
+    status = caInstance->GetValue(value, "Arguments");
+    BeAssert(ECN::ECObjectsStatus::Success == status);
+    arguments = value.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus ScriptDefinitionElement::LoadScript(bool forceReload) const
+    {
+    static bset<DgnElementId> s_loaded;
+
+    if (!forceReload)
+        {
+        if (s_loaded.find(GetElementId()) != s_loaded.end())
+            return DgnDbStatus::Success;
+        }
+
+    s_loaded.erase(GetElementId());
+
+    Utf8String text = GetText();
+
+    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
+
+    Utf8String fileUrl("file:///"); // This does not really identify a file. It is something tricky that is needed to get JS to accept the script that we pass in as a script to be evaluated.
+    fileUrl.append(Utf8PrintfString("%lld", GetElementId().GetValue()).c_str());
+    fileUrl.append(".js");
+
+    BeJsContext::EvaluateStatus jsStatus = BeJsContext::EvaluateStatus::Success;
+    BeJsContext::EvaluateException jsException;
+    ctx.EvaluateScript(text.c_str(), fileUrl.c_str(), &jsStatus, &jsException);   // evaluate the whole script, allowing it to define objects and their properties. 
+
+    if (BeJsContext::EvaluateStatus::Success != jsStatus)
+        {
+        if (BeJsContext::EvaluateStatus::RuntimeError == jsStatus)
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Exception, jsException.message.c_str(), jsException.trace.c_str());
+        else if (BeJsContext::EvaluateStatus::ParseError == jsStatus)
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::ParseError, fileUrl.c_str(), jsException.message.c_str());
+        else
+            T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, fileUrl.c_str(), "");
+
+        return DgnDbStatus::BadRequest;
+        }
+
+    s_loaded.insert(GetElementId());
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus ScriptDefinitionElement::Execute(Utf8String argTypeCdl, ...) const
+    {
+    DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
+    
+    DgnDbStatus status = DgnDbStatus::Success;
+    
+    // VVVVVVV CallContext VVVVVVVV         *** DO NOT RETURN EARLY ***
+    ctx.BeginCallContext();
+
+    Utf8String returnType, argumentTypes;
+    GetSignature(returnType, argumentTypes);
+    if (argTypeCdl.empty())
+        argTypeCdl = argumentTypes;
+
+    auto argTypes = parseCDL(argTypeCdl);
+
+    bvector<BeJsValue> jsValues;
+
+    va_list va;
+    va_start(va, argTypeCdl);
+    for (auto const& argType : argTypes)
+        {
+        if (argType.EqualsI("DgnDb"))
+            {
+            DgnDbP db = va_arg(va, DgnDbP);
+            if (nullptr != db)
+                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnDb(*db), true));
+            else
+                jsValues.push_back(BeJsNativePointer());
+            }
+        else if (argType.EqualsI("Viewport"))
+            {
+            DgnViewportP vp = va_arg(va, DgnViewportP);
+            if (nullptr != vp)
+                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsViewport(*vp), true));
+            else
+                jsValues.push_back(BeJsNativePointer());
+            }
+        else if (argType.EqualsI("DgnObjectId"))
+            {
+            BeInt64Id id = va_arg(va, BeInt64Id);
+            jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnObjectId(id.GetValue())));
+            }
+        else if (argType.EqualsI("DgnElement"))
+            {
+            DgnElementP el = va_arg(va, DgnElementP);
+            if (nullptr != el)
+                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnElement(*el)));
+            else
+                jsValues.push_back(BeJsNativePointer());
+            }
+        }
+
+    va_end(va);
+    
+    BeJsObject callScope = ctx.GetGlobalObject();   // *** WIP_DGNSCRIPT - embed scriptlets in some kind of namespace object
+    auto entryPoint = callScope.GetFunctionProperty(GetEntryPoint().c_str());
+    if (!entryPoint.IsValid() || !entryPoint.IsFunction() || entryPoint.IsNull())
+        {
+        BeAssert(false);
+        status = DgnDbStatus::NotFound;
+        }
+    else
+        {
+        auto retVal = entryPoint.CallWithList(&callScope, false, jsValues.data(), jsValues.size());
+        }
+
+    ctx.EndCallContext();
+
+    return status;
     }

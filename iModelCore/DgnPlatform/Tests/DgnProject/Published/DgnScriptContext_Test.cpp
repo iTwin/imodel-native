@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/ScriptDomain.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -356,21 +357,43 @@ TEST_F(DgnScriptTest, CRUD)
     // EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime)); // *** NEEDS WORK - fails in DgnDb06, VC12, Optimized, WinX86. 
     }
 
-#ifdef WIP_SCRIPT_ELEMENT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, ScriptElementCRUD)
     {
     SetupSeedProject();
+    DgnDbStatus dstatus = ScriptDomain::ImportSchema(*m_db);
+    ASSERT_EQ(DgnDbStatus::Success, dstatus);
+    m_db->SaveChanges();
 
     Utf8CP text = "function foo(db, viewport) {return true;}";
 
-    DgnClassId classElementFilterFunction(m_db->Schemas().GetECClassId("Script", "ElementFilterFunction").GetValue());
-    ASSERT_TRUE(classElementFilterFunction.IsValid());
-    InformationElement script(InformationElement::CreateParams(*m_db, m_defaultModelId, classElementFilterFunction));
-    script.SetProperty("Text", ECN::ECValue(text));
+    if (true)
+        {
+        DgnDbStatus status;
+
+        DgnClassId dmodelClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DefinitionModel).GetValue());
+        auto dmodel = DefinitionModel::Create(DefinitionModel::CreateParams(*m_db, dmodelClassId, DgnModel::CreateModelCode("scripts")));
+        ASSERT_TRUE(dmodel.IsValid());
+        status = dmodel->Insert();
+        ASSERT_EQ(DgnDbStatus::Success, status);
+
+        ScriptDefinitionElementPtr scriptEl = ScriptDefinitionElement::CreateElementFilterFunction(&status, *m_db, dmodel->GetModelId(), text, "foo");
+        ASSERT_TRUE(scriptEl.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+
+        ScriptDefinitionElementPtr scriptElBad = ScriptDefinitionElement::CreateElementFilterFunction(&status, *m_db, dmodel->GetModelId(), text, "notfoo");
+        ASSERT_FALSE(scriptElBad.IsValid());
+        ASSERT_NE(DgnDbStatus::Success, status);
+
+        auto persistentScriptEl = scriptEl->Insert(&status);
+        ASSERT_TRUE(persistentScriptEl.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+
+        scriptEl->LoadScript();
+        scriptEl->Execute("", persistentScriptEl.get());
+        }
     }
-#endif
 
 #endif

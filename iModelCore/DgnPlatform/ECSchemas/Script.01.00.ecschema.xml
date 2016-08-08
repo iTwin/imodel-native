@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Script" nameSpacePrefix="doc" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+
+    <ECCustomAttributeClass typeName="ScriptSignature" description="The signature of the script." appliesTo="EntityClass">
+      <ECProperty propertyName="ReturnType" typeName="string"/>
+      <ECProperty propertyName="Arguments" typeName="string"/>
+    </ECCustomAttributeClass>
+
+    <ECEntityClass typeName="Script" modifier="Abstract" description="Base class for an ECMAScript script that is stored in a bim. Scripts can play many roles in a bim. Roles are clarified by subclasses.">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="Text" displayLabel="The script" typeName="string"/>
+        <ECProperty propertyName="EcmaScriptVersionRequired" displayLabel="EcmaScriptVersion required to run this script" typeName="script"/>
+        <ECProperty propertyName="EntryPoint" displayLabel="The 'main' function in the script." typeName="string"/>
+    </ECEntityClass>
+
+  <ECEntityClass typeName="Function" modifier="Abstract" description="Base class for scripts that compute and return a value. Function Scripts can return various kinds of things, as defined by concrete subclasses.">
+    <BaseClass>Script</BaseClass>
+  </ECEntityClass>
+
+  <ECEntityClass typeName="ModelListFunction" description="Scripts that compute and return a DgnModelIdList as a value.">
+    <BaseClass>Function</BaseClass>
+    <ECCustomAttributes>
+      <ScriptSignature>
+        <ReturnType>DgnObjectIdSet</ReturnType>
+        <Arguments>DgnDb,Viewport</Arguments>
+      </ScriptSignature>
+    </ECCustomAttributes>
+  </ECEntityClass>
+
+  <ECEntityClass typeName="ModelFilterFunction" description="Scripts that filter models and return a boolean as a value.">
+    <ECCustomAttributes>
+      <ScriptSignature>
+        <ReturnType>boolean</ReturnType>
+        <Arguments>DgnDb,DgnObjectId</Arguments>
+      </ScriptSignature>
+    </ECCustomAttributes>
+    <BaseClass>Function</BaseClass>
+  </ECEntityClass>
+
+  <ECEntityClass typeName="ElementListFunction" description="Scripts that compute and return a DgnElementIdList as a value.">
+    <BaseClass>Function</BaseClass>
+    <ECCustomAttributes>
+      <ScriptSignature>
+        <ReturnType>DgnObjectIdSet</ReturnType>
+        <Arguments>DgnDb,Viewport</Arguments>
+      </ScriptSignature>
+    </ECCustomAttributes>
+  </ECEntityClass>
+
+  <ECEntityClass typeName="ElementFilterFunction" description="Scripts that filter models and return a boolean as a value.">
+    <ECCustomAttributes>
+      <ScriptSignature>
+        <ReturnType>boolean</ReturnType>
+        <Arguments>DgnElement</Arguments>
+      </ScriptSignature>
+    </ECCustomAttributes>
+    <BaseClass>Function</BaseClass>
+  </ECEntityClass>
+
+  <!-- Associate a script with an element. The script may update the element, or it may just check the element. -->
+  <ECRelationshipClass typeName="ScriptAppliesToElement" strength="referencing">
+    <Source cardinality="(0,N)" polymorphic="true">
+      <Class class="Script"/>
+    </Source>
+    <Target cardinality="(0,N)" polymorphic="true">
+      <Class class="bis:Element"/>
+    </Target>
+  </ECRelationshipClass>
+
+</ECSchema>
