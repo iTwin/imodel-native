@@ -28,6 +28,10 @@ struct          LzmaProgressTracker : BeSQLite::ICompressProgressTracker
 //---------------------------------------------------------------------------------------
 static void runCompressFileTest()
     {
+    BeFileName tempDir;
+    BeTest::GetHost().GetTempDir(tempDir);
+    BentleyApi::BeSQLite::BeSQLiteLib::Initialize(tempDir);
+    
     LzmaProgressTracker abortTracker;
 
     BeFileName  nameOriginalFile;
