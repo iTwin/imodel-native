@@ -602,8 +602,6 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     if (parentClassMap)
         m_parentMapClassId = parentClassMap->GetClass().GetId();
 
-    std::vector<PropertyDbMapping const*> allPropertyMappings;
-    mapInfo.GetPropertyMappings(allPropertyMappings, false);
 
     std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
     for (auto property : GetClass().GetProperties(false))
@@ -615,14 +613,14 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 
-    if (allPropertyMappings.empty())
+    if (mapInfo.GetPropertyMappings().empty())
         {
         SetTable(*const_cast<DbTable*>(GetECDbMap().GetDbSchema().GetNullTable()));
         return SUCCESS;
         }
     else
         {
-        for (PropertyDbMapping const* propMapping : allPropertyMappings)
+        for (auto const& propMapping : mapInfo.GetPropertyMappings())
             {
             if (propMapping->GetColumns().front()->GetKind() == DbColumn::Kind::ECClassId)
                 continue;

@@ -1388,43 +1388,16 @@ void DbMappings::Reset()
 //ClassMapping
 //****************************************************************************************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMaps, bool onlyLocal) const
-    {
-    if (!onlyLocal && m_baseClassMappingId.IsValid())
-        {
-        ClassDbMapping const* baseClassMapping = m_dbMappings.FindClassMapping(m_baseClassMappingId);
-        BeAssert(baseClassMapping != nullptr);
-        baseClassMapping->GetPropertyMappings(propertyMaps, onlyLocal);
-        }
-
-    propertyMaps.erase(
-        std::remove_if(
-            propertyMaps.begin(),
-            propertyMaps.end(), [] (PropertyDbMapping const* minfo)
-        {
-        const DbColumn::Kind kind = minfo->ExpectingSingleColumn()->GetKind();
-        return kind != DbColumn::Kind::DataColumn && kind != DbColumn::Kind::SharedDataColumn;
-        }),
-        propertyMaps.end());
-
-    for (std::unique_ptr<PropertyDbMapping> const& localPropertyMap : m_localPropertyMaps)
-        propertyMaps.push_back(localPropertyMap.get());
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const
     {
-    std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, false);
-    for (PropertyDbMapping const* pm : propMappings)
+    for (auto const& pm : m_localPropertyMaps)
         {
         if (pm->GetPropertyPath().GetRootPropertyId() == rootPropertyId && pm->GetPropertyPath().GetAccessString() == accessString)
-            return pm;
+            return pm.get();
         }
 
     return nullptr;
@@ -1435,13 +1408,10 @@ PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId r
 //---------------------------------------------------------------------------------------
 PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(Utf8CP accessString) const
     {
-    std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, false);
-
-    for (PropertyDbMapping const* pm : propMappings)
+    for (auto const& pm : m_localPropertyMaps)
         {
         if (pm->GetPropertyPath().GetAccessString() == accessString)
-            return pm;
+            return pm.get();
         }
 
     return nullptr;

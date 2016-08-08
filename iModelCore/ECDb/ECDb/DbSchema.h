@@ -530,7 +530,7 @@ public:
 
     ClassMapId GetBaseClassMappingId() const { return m_baseClassMappingId; }
     ClassDbMapping const* GetBaseClassMapping() const;
-    void GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMappings, bool onlyLocal) const;
+    std::vector<std::unique_ptr<PropertyDbMapping>> const& GetPropertyMappings() const { return m_localPropertyMaps; }
 
     PropertyDbMapping const* FindPropertyMapping(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const;
     PropertyDbMapping const* FindPropertyMapping(Utf8CP accessString) const;
