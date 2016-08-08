@@ -2230,6 +2230,8 @@ TEST(BeFileNameTests, IsAbsolutePath)
 //---------------------------------------------------------------------------------------
 TEST (BeFileNameTests, PopDir)
     {
+// WIP_NONPORT_WINRT
+#if !defined (BENTLEY_WINRT)
 #if defined (BENTLEY_WIN32)
     CharCP fileSpec = "C:\\dir\\somefile.txt";
 #else
@@ -2237,7 +2239,7 @@ TEST (BeFileNameTests, PopDir)
 #endif
     BeFileName fileName(fileSpec, BentleyCharEncoding::Locale);
 
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) && !defined(BENTLEY_WINRT)
     EXPECT_STREQ(L"C:\\dir\\somefile.txt", fileName.c_str());
     fileName.PopDir();
     EXPECT_STREQ(L"C:\\dir", fileName.c_str());
@@ -2253,5 +2255,6 @@ TEST (BeFileNameTests, PopDir)
     EXPECT_STREQ(L"/var", fileName.c_str());
     fileName.PopDir();
     EXPECT_STREQ(L"", fileName.c_str());
+#endif
 #endif
     }
