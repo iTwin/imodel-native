@@ -367,23 +367,24 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
     ASSERT_EQ(DgnDbStatus::Success, dstatus);
     m_db->SaveChanges();
 
-    Utf8CP text = "function foo(db, viewport) {return true;}";
+    Utf8CP text = "function foo(element) {return true;}";
 
     if (true)
         {
         DgnDbStatus status;
 
-        DgnClassId dmodelClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DefinitionModel).GetValue());
-        auto dmodel = DefinitionModel::Create(DefinitionModel::CreateParams(*m_db, dmodelClassId, DgnModel::CreateModelCode("scripts")));
-        ASSERT_TRUE(dmodel.IsValid());
-        status = dmodel->Insert();
+        auto scriptLib = ScriptLibraryModel::Create(*m_db, DgnModel::CreateModelCode("scripts"));
+        ASSERT_TRUE(scriptLib.IsValid());
+        status = scriptLib->Insert();
         ASSERT_EQ(DgnDbStatus::Success, status);
 
-        ScriptDefinitionElementPtr scriptEl = ScriptDefinitionElement::CreateElementFilterFunction(&status, *m_db, dmodel->GetModelId(), text, "foo");
+        ScriptDefinitionElement::Definition fooScript(text, "foo", "a script");
+        ScriptDefinitionElementPtr scriptEl = ScriptDefinitionElement::CreateElementFilterFunction(&status, *scriptLib, fooScript);
         ASSERT_TRUE(scriptEl.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, status);
 
-        ScriptDefinitionElementPtr scriptElBad = ScriptDefinitionElement::CreateElementFilterFunction(&status, *m_db, dmodel->GetModelId(), text, "notfoo");
+        ScriptDefinitionElement::Definition missingEntryPointScriptDef(text, "missing_entry_point", "a script");
+        ScriptDefinitionElementPtr scriptElBad = ScriptDefinitionElement::CreateElementFilterFunction(&status, *scriptLib, missingEntryPointScriptDef);
         ASSERT_FALSE(scriptElBad.IsValid());
         ASSERT_NE(DgnDbStatus::Success, status);
 

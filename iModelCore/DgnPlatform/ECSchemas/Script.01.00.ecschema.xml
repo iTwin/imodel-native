@@ -4,7 +4,15 @@
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
-    <ECCustomAttributeClass typeName="ScriptSignature" description="The signature of the script." appliesTo="EntityClass">
+    <ECEntityClass typeName="ScriptLibraryModel" displayLabel="A collection of scripts">
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00"/>
+      </ECCustomAttributes>
+      <BaseClass>bis:DefinitionModel</BaseClass>
+      <ECProperty propertyName="SourceUrl" displayLabel="Identifies the BIM that this library of scripts was copied from." typeName="string"/>
+    </ECEntityClass>
+
+  <ECCustomAttributeClass typeName="ScriptSignature" description="The signature of the script." appliesTo="EntityClass">
       <ECProperty propertyName="ReturnType" typeName="string"/>
       <ECProperty propertyName="Arguments" typeName="string"/>
     </ECCustomAttributeClass>
@@ -14,6 +22,8 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="Description" displayLabel="Describes what this script does." typeName="string"/>
+        <ECProperty propertyName="SourceUrl" displayLabel="Identifies the BIM that this script was copied from." typeName="string"/>
         <ECProperty propertyName="Text" displayLabel="The script" typeName="string"/>
         <ECProperty propertyName="EcmaScriptVersionRequired" displayLabel="EcmaScriptVersion required to run this script" typeName="script"/>
         <ECProperty propertyName="EntryPoint" displayLabel="The 'main' function in the script." typeName="string"/>

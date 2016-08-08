@@ -23,6 +23,7 @@ extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
 HANDLER_DEFINE_MEMBERS(ScriptDefinitionElementHandler)
+HANDLER_DEFINE_MEMBERS(ScriptLibraryModelHandler)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct DgnScriptContext : BeJsContext
@@ -595,9 +596,10 @@ DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR va
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-ScriptDefinitionElementPtr ScriptDefinitionElement::CreateElement(DgnDbStatus* statOut, DgnDbR db, DgnModelId modelId, Utf8CP className, Utf8CP text, Utf8CP entryPoint, Utf8CP esv)
+ScriptDefinitionElementPtr ScriptDefinitionElement::CreateElement(DgnDbStatus* statOut, ScriptLibraryModel& smodel, Utf8CP className, Definition const& scparams)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, statOut);
+    auto& db = smodel.GetDgnDb();
 
     DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, className));
     if (!classId.IsValid())
@@ -605,15 +607,22 @@ ScriptDefinitionElementPtr ScriptDefinitionElement::CreateElement(DgnDbStatus* s
         stat = DgnDbStatus::MissingDomain;
         return nullptr;
         }
-    CreateParams params(db, modelId, classId);
-    ScriptDefinitionElementPtr el = new ScriptDefinitionElement(params);
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(text));
+
+    CreateParams ecparams(db, smodel.GetModelId(), classId);
+    ScriptDefinitionElementPtr el = new ScriptDefinitionElement(ecparams);
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(scparams.m_text));
     if (DgnDbStatus::Success != stat)
         return nullptr;
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(esv));
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(scparams.m_esv));
     if (DgnDbStatus::Success != stat)
         return nullptr;
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(entryPoint));
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(scparams.m_entryPoint));
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Description, ECN::ECValue(scparams.m_desc));
+    if (DgnDbStatus::Success != stat)
+        return nullptr;
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl, ECN::ECValue(scparams.m_url));
     if (DgnDbStatus::Success != stat)
         return nullptr;
     return el;
@@ -642,10 +651,20 @@ Utf8String ScriptDefinitionElement::GetEntryPoint() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-Utf8String ScriptDefinitionElement::GetEcmaScriptVersionRequired() const
+Utf8String ScriptDefinitionElement::GetSourceUrl() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired);
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl);
+    return v.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+Utf8String ScriptDefinitionElement::GetDescription() const
+    {
+    ECN::ECValue v;
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_Text);
     return v.ToString();
     }
 
@@ -791,4 +810,18 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8String argTypeCdl, ...) const
     ctx.EndCallContext();
 
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+ScriptLibraryModelPtr ScriptLibraryModel::Create(DgnDbR db, DgnCode code, Utf8CP sourceUrl)
+    {
+    DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel));
+    CreateParams mcparams(db, classId, code);
+    auto model = new ScriptLibraryModel(mcparams);
+    if (nullptr == model)
+        return nullptr;
+    // *** TBD: set sourceUrl ... where?
+    return model;
     }
