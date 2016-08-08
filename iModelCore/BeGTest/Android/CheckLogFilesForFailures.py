@@ -40,12 +40,9 @@ def checkLogFileForFailures(logfilename):
             if lline.startswith("ok ("):
                 report = report + line
 
-    if failureCount != 0 or not foundSummary:
-        # When we detect failing or crashing tests, print the whole log. That will then go into bb's build log.
-        # The user will want to scroll up to see complete details.
-        with open(logfilename, 'r') as logfile:
-            for line in logfile.readlines():
-                print line,
+    # There is no point in printing the log file, as it does not contain any details of the failures.
+    # The user must run "adb logcat" in order to see the native code logging output.
+    # We cannot do that here.
 
     return failureCount, report
     

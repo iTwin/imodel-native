@@ -59,8 +59,6 @@ always:
     %error No Android device attached. Cannot run unit tests.
 %endif
 
-teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
-
 %if defined (winNT) 
     %if defined(RUN_GTEST_MINIMIZED) || defined(BEGTEST_RUN_MINIMIZED)
         RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT \/MIN
@@ -68,16 +66,16 @@ teeCmd = python $(SrcRoot)bsicommon/build/Tee.py
         RunPrefix=start "$(ANDROIDJUNIT_PRODUCT)" \/WAIT
     %endif
 
-    always:
+    $(logFile): $(_MakeFileSpec)
         >${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
         call $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
-        adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | $(teeCmd) $(logFile)
+        adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | python $(SrcRoot)bsicommon/build/Tee.py $(logFile)
         exit
         <
         -$(RunPrefix) ${ANDROIDJUNIT_OUTPUT_DIR}run$(scriptExt)
 
 %else
-    always:
+    $(logFile): $(_MakeFileSpec)
         $(ANDROIDJUNITPROJ)Scripts/installApk$(scriptExt) 
         -adb shell am instrument -w com.bentley.unittest\/com.bentley.unittest.BeInstrumentationTestRunner | tee -q $(logFile)
 

@@ -50,7 +50,7 @@ always:
     %endif
 
 
-    always:
+    $(ResultsCapture): $(_MakeFileSpec)
         >$(ResultsCapture)
         $(exeName)
         <
@@ -80,7 +80,7 @@ always:
 
     exeName = $(copyToDirectory)${appDirectory}/$[@basename $(GTEST_EXE)]
 
-    always:
+    $(ResultsCapture): $(_MakeFileSpec)
         >$(ResultsCapture)
         $(exeName)
         <
