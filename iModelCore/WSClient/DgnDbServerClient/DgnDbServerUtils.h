@@ -39,9 +39,9 @@ namespace ServerSchema
         }
     namespace Class
         {
-        static Utf8CP Briefcase = "DgnDbBriefcase";
+        static Utf8CP Briefcase = "BIMBriefcase";
         static Utf8CP Revision = "Revision";
-        static Utf8CP File = "DgnDbFile";
+        static Utf8CP File = "BIMFile";
         static Utf8CP Repository = "BIMRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
