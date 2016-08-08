@@ -98,9 +98,9 @@ public:
 namespace dgn_ElementHandler
 {
     //! @private
-    struct GeometryPart : Element
+    struct GeometryPart : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometryPart, DgnGeometryPart, GeometryPart, Definition, DGNPLATFORM_EXPORT);
     };
 };
 

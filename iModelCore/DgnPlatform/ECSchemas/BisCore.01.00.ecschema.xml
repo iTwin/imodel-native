@@ -525,6 +525,7 @@
     <ECEntityClass typeName="InformationElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -533,6 +534,7 @@
         <!-- Proxy for information carriers in the physical world.  For example, printed copies of documents or electronic files -->
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
@@ -540,6 +542,7 @@
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationElement</BaseClass>
         <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>

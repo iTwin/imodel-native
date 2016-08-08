@@ -140,9 +140,9 @@ namespace dgn_ElementHandler
     //! The handler for named colors
     //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
-    struct TrueColor : Element
+    struct TrueColor : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TrueColor, DgnTrueColor, TrueColor, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TrueColor, DgnTrueColor, TrueColor, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

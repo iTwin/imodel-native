@@ -116,9 +116,9 @@ namespace dgn_ElementHandler
     //! The handler for named textures
     //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
-    struct Texture : Element
+    struct Texture : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Texture, DgnTexture, Texture, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Texture, DgnTexture, Texture, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

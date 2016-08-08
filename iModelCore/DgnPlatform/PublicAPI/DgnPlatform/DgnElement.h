@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct Subject;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct Information; struct InformationCarrier; struct Definition; struct Subject;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -1948,7 +1948,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationElement, DgnElement);
+    friend struct dgn_ElementHandler::Information;
 
 protected:
     virtual InformationElementCP _ToInformationElement() const override final {return this;}
@@ -1964,7 +1965,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationCarrierElement : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationCarrierElement, DgnElement);
+    friend struct dgn_ElementHandler::InformationCarrier;
 
 protected:
     explicit InformationCarrierElement(CreateParams const& params) : T_Super(params) {}
@@ -1976,7 +1978,8 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
 {
-    DEFINE_T_SUPER(InformationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, InformationElement);
+    friend struct dgn_ElementHandler::Definition;
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;

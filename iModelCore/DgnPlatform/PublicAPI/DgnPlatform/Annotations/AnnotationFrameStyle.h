@@ -209,9 +209,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The handler for annotation frame styles
     //=======================================================================================
-    struct AnnotationFrameStyleHandler : Element
+    struct AnnotationFrameStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationFrameStyle, AnnotationFrameStyle, AnnotationFrameStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationFrameStyle, AnnotationFrameStyle, AnnotationFrameStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

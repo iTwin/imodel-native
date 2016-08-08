@@ -218,9 +218,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The handler for annotation text styles
     //=======================================================================================
-    struct AnnotationTextStyleHandler : Element
+    struct AnnotationTextStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationTextStyle, AnnotationTextStyle, AnnotationTextStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

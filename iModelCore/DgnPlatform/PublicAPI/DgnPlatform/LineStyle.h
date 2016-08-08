@@ -1692,9 +1692,9 @@ namespace dgn_ElementHandler
     //! The handler for annotation text styles
     //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
-    struct LineStyleHandler : Element
+    struct LineStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LineStyle, LineStyleElement, LineStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LineStyle, LineStyleElement, LineStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 //__PUBLISH_SECTION_START__

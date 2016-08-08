@@ -480,15 +480,15 @@ struct EXPORT_VTABLE_ATTRIBUTE Link : Model
 namespace dgn_ElementHandler
 {
 //! The handler for UrlLink elements
-struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Element
+struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Information
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, Element, DGNPLATFORM_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, Information, DGNPLATFORM_EXPORT)
 };
 
 //! The handler for EmbeddedFileLink elements
-struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Element
+struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Information
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Element, DGNPLATFORM_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Information, DGNPLATFORM_EXPORT)
 };
 
 }

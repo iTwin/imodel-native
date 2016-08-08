@@ -216,9 +216,9 @@ namespace dgn_ElementHandler
     //! The handler for material elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct Material : Element
+    struct Material : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DgnMaterial, Material, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DgnMaterial, Material, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

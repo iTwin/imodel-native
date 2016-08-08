@@ -409,18 +409,18 @@ namespace dgn_ElementHandler
     //! The handler for category elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct Category : Element
+    struct Category : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Category, DgnCategory, Category, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Category, DgnCategory, Category, Definition, DGNPLATFORM_EXPORT);
         };
 
     //=======================================================================================
     //! The handler for sub-category elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct SubCategory : Element
+    struct SubCategory : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SubCategory, DgnSubCategory, SubCategory, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

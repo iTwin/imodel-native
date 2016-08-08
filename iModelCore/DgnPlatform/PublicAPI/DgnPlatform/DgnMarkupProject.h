@@ -715,15 +715,15 @@ public:
 namespace dgn_ElementHandler
 {
 //! The handler for MarkupExternalLink elements
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Element
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkHandler : Information
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Element, DGNPLATFORM_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLink, MarkupExternalLink, MarkupExternalLinkHandler, Information, DGNPLATFORM_EXPORT)
 };
 
 //! The handler for MarkupExternalLinkGroup elements
-struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : Element
+struct EXPORT_VTABLE_ATTRIBUTE MarkupExternalLinkGroupHandler : Information
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Element, DGNPLATFORM_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_MarkupExternalLinkGroup, MarkupExternalLinkGroup, MarkupExternalLinkGroupHandler, Information, DGNPLATFORM_EXPORT)
 };
 }
 

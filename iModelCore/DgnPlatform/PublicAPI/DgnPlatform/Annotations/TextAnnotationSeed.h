@@ -163,9 +163,9 @@ namespace dgn_ElementHandler
     //=======================================================================================
     //! The handler for text annotation seeds
     //=======================================================================================
-    struct TextAnnotationSeedHandler : Element
+    struct TextAnnotationSeedHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TextAnnotationSeed, TextAnnotationSeed, TextAnnotationSeedHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TextAnnotationSeed, TextAnnotationSeed, TextAnnotationSeedHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 
