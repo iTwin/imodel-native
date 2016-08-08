@@ -2,12 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmClip.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -51,16 +51,16 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmFile
       {
        bcdtmWrite_message(2,0,0,"Dtm Object Corrupted") ;
        goto errexit ;
-      } 
+      }
     else bcdtmWrite_message(2,0,0,"Dtm Object OK") ;
    }
 /*
-** Write Clipped Dtm File 
+** Write Clipped Dtm File
 */
- if( clipDtmFileP[0] != 0 ) 
+ if( clipDtmFileP[0] != 0 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Writing Clipped Dtm Object %p To File %s",dtmP,clipDtmFileP)  ;
-    if( bcdtmWrite_toFileDtmObject(dtmP,clipDtmFileP)) goto errexit ; 
+    if( bcdtmWrite_toFileDtmObject(dtmP,clipDtmFileP)) goto errexit ;
    }
 /*
 ** Reset Name Of Current DTM Object
@@ -113,9 +113,9 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Polygon") ; 
+    bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Polygon") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"ptsP         = %p",ptsP) ;
     bcdtmWrite_message(0,0,0,"numPts       = %8ld",numPts) ;
@@ -128,7 +128,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 /*
 **     Write Clipping Polygon Points To Log File
 */
-       for( p3dP = ptsP ; p3dP < ptsP + numPts ; ++p3dP ) 
+       for( p3dP = ptsP ; p3dP < ptsP + numPts ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"Clip Polygon Point [%4ld] = %10.4lf %10.4lf %10.4lf",(long)(p3dP-ptsP),p3dP->x,p3dP->y,p3dP->z) ;
          }
@@ -137,10 +137,10 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 */
        if( bcdtmWrite_binaryFileP3D(L"clipPoly.xyz",ptsP,numPts)) goto errexit ;
 /*
-**     Write Clipping Polygon To Dat File 
+**     Write Clipping Polygon To Dat File
 */
        bcdtmWrite_dataFileFromP3DArray(L"clipPoly.dat",ptsP,numPts,DTMFeatureType::Breakline) ;
-      } 
+      }
    }
 /*
 ** Test For Valid Dtm Object
@@ -157,24 +157,24 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 /*
 ** Test For Valid Clip Option
 */
- if( clipOption != DTMClipOption::Internal && clipOption != DTMClipOption::External) 
-   { 
+ if( clipOption != DTMClipOption::Internal && clipOption != DTMClipOption::External)
+   {
     bcdtmWrite_message(2,0,0,"Invalid Clip Option") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Check User Clip Polygon
 */
- if( ptsP == NULL || numPts <= 0 ) 
-   { 
+ if( ptsP == NULL || numPts <= 0 )
+   {
     bcdtmWrite_message(1,0,0,"Error In Clip Polygon") ;
     goto errexit ;
    }
 /*
 ** Test For Pre 98 Dtm File
 */
- if( dtmP->ppTol == 0.0 ) 
-   { 
+ if( dtmP->ppTol == 0.0 )
+   {
     bcdtmWrite_message(1,0,0,"Pre 1998 Dtm - Convert Tin") ;
     ret = 20 ;
     goto errexit ;
@@ -189,8 +189,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
       {
        dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
        bcdtmWrite_message(0,0,0,"dtmFeature[%8ld] ** Type = %4ld  State = %4ld",dtmFeature,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmFeatureState) ;
-      } 
-   } 
+      }
+   }
 /*
 ** Delete All RollBack And Tin Error Features
 */
@@ -205,14 +205,14 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
           bcdtmMemory_free(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) ;
           dtmFeatureP->dtmFeaturePts.pointsPI = 0 ;
          }
-       dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ; 
+       dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
       }
-   } 
+   }
 /*
 **  Check Tolerance Settings
 */
- savePpTol = dtmP->ppTol ; 
- savePlTol = dtmP->plTol ; 
+ savePpTol = dtmP->ppTol ;
+ savePlTol = dtmP->plTol ;
  if( dtmP->ppTol > dtmP->mppTol * 10000.0 ) dtmP->ppTol = dtmP->plTol = dtmP->mppTol * 10000.0 ;
  if( dtmP->plTol > dtmP->mppTol * 10000.0 ) dtmP->ppTol = dtmP->plTol = dtmP->mppTol * 10000.0 ;
 /*
@@ -228,7 +228,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 ** Validate Clip Polgon
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Validating Clip Polygon") ;
- if( bcdtmClean_validatePointArrayPolygon(&clipPtsP,&numClipPts,1,dtmP->ppTol) ) goto errexit ; 
+ if( bcdtmClean_validatePointArrayPolygon(&clipPtsP,&numClipPts,1,dtmP->ppTol) ) goto errexit ;
 /*
 **  Extract Dtm Hull
 */
@@ -251,19 +251,19 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 /*
 ** If Clip Polygon Intersects Dtm Hull Or Is Internal To Dtm Hull Then Clip Tin
 */
- if( intersectFlag == 1 || intersectFlag == 3 ) 
+ if( intersectFlag == 1 || intersectFlag == 3 )
    {
 /*
 **  If More Than One Intersect Polygon Get And Use Largest Area Intersect Polygon For Clip
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersect Polygons = %2ld",polyP->numPolygons) ;
     polyOffset = 0 ;
-    area = (polyP->polyListP)->area ; 
+    area = (polyP->polyListP)->area ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Polygon[  0] Area = %12.4lf",area) ;
     for( polyListP = polyP->polyListP + 1 ; polyListP < polyP->polyListP + polyP->numPolygons ; ++polyListP )
-      { 
+      {
        if( dbg ) bcdtmWrite_message(0,0,0,"Polygon[%3ld] Area = %12.4lf",(long)(polyListP-polyP->polyListP),polyListP->area) ;
-       if( polyListP->area > area ) { polyOffset = (long)(polyListP-polyP->polyListP) ; area = polyListP->area ; } 
+       if( polyListP->area > area ) { polyOffset = (long)(polyListP-polyP->polyListP) ; area = polyListP->area ; }
       }
 /*
 **  Get Clip Polygon Vertices
@@ -276,7 +276,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
        bcdtmWrite_message(0,0,0,"Clipping Polygon Area      = %12.4lf",area) ;
        bcdtmMath_calculateAreaAndDirectionHptrPolygonDtmObject(dtmP,dtmP->hullPoint,&area,&direction) ;
        bcdtmWrite_message(0,0,0,"Tin Hull Area              = %12.4lf",area) ;
-       for( p3dP = clipPtsP ; p3dP < clipPtsP +numClipPts ; ++p3dP ) 
+       for( p3dP = clipPtsP ; p3dP < clipPtsP +numClipPts ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"Clip Point[%5ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-clipPtsP),p3dP->x,p3dP->y,p3dP->z) ;
          }
@@ -288,8 +288,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 /*
 **  Check Tolerance Settings
 */
-    savePpTol = dtmP->ppTol ; 
-    savePlTol = dtmP->plTol ; 
+    savePpTol = dtmP->ppTol ;
+    savePlTol = dtmP->plTol ;
     if( dtmP->ppTol > dtmP->mppTol * 10000.0 ) dtmP->ppTol = dtmP->plTol = dtmP->mppTol * 10000.0 ;
     if( dtmP->plTol > dtmP->mppTol * 10000.0 ) dtmP->ppTol = dtmP->plTol = dtmP->mppTol * 10000.0 ;
 /*
@@ -310,7 +310,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 **     Check Connectivity Of Tptr Polygon
 */
        bcdtmWrite_message(0,0,0,"Checking Connectivity Tptr Polygon") ;
-       if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0)) 
+       if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0))
          {
           bcdtmWrite_message(2,0,0,"Connectivity Errors In Tptr Polygon") ;
           goto errexit ;
@@ -334,7 +334,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 **  Free Memory
 */
     free(clipPtsP) ;
-    clipPtsP = NULL  ; 
+    clipPtsP = NULL  ;
 /*
 **  Clip Dtm Object
 */
@@ -345,8 +345,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 /*
 **  Check Dtm Integrity After Clipping Polygon
 */
-    if( cdbg ) 
-      { 
+    if( cdbg )
+      {
        if( dbg ) bcdtmWrite_message(0,0,0,"Checking Dtm After Clipping Dtm") ;
        if( bcdtmCheck_tinComponentDtmObject(dtmP)) { bcdtmWrite_message(0,0,0,"DTM Corrupted") ; goto errexit ; }
        else                                          bcdtmWrite_message(0,0,0,"DTM OK") ;
@@ -383,8 +383,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_toPolygonDtmObject
 ** Job Completed
 */
  if( tdbg ) bcdtmWrite_message(0,0,0,"**** Time To Clip Dtm Object = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),clipTime)) ;
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Polygon Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Polygon Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Polygon Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Polygon Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -416,9 +416,9 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndClipToPolygonDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object %p To Polygon",dtmP) ; 
+    bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object %p To Polygon",dtmP) ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"*cloneDtmPP  = %p",*cloneDtmPP) ;
     bcdtmWrite_message(0,0,0,"ptsP         = %p",ptsP) ;
@@ -450,8 +450,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndClipToPolygonDtmObject
 */
  if( cdbg )
    {
-     bcdtmWrite_message(0,0,0,"Checking Direction Of Clip Polygon") ;   
-     if( bcdtmMath_getPolygonDirectionP3D(ptsP,numPts,&direction,&area)) goto errexit ; 
+     bcdtmWrite_message(0,0,0,"Checking Direction Of Clip Polygon") ;
+     if( bcdtmMath_getPolygonDirectionP3D(ptsP,numPts,&direction,&area)) goto errexit ;
      bcdtmWrite_message(0,0,0,"Clip Polygon Area = %12.3lf ** direction = %2ld",area,direction) ;
      if (direction == DTMDirection::Clockwise) bcdtmWrite_message (0, 0, 0, "Polygon direction Clockwise");
      if (direction == DTMDirection::AntiClockwise) bcdtmWrite_message (0, 0, 0, "Polygon direction Anti Clockwise");
@@ -472,8 +472,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndClipToPolygonDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object To Polygon Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object To Polygon Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object To Polygon Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Clipping Dtm Object To Polygon Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -486,22 +486,22 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndClipToPolygonDtmObject
 /*==============================================================================*//**
 * @memo   Clips A Tin With A User Defined Horizontal And Vertical Offset
 * @doc    Clips A Tin With A User Defined Horizontal And Vertical Offset
-* @notes  
-* 
+* @notes
+*
 * @author Rob Cormack 15 April 2003  Rob.Cormack@Bentley.com
 *
-* @param  *dtmP,            ==>  Dtm Object To Be Clipped                               
-* @param  **clipDtmPP,      <==  The Clipped Dtm Object                              
-* @param  *clipPtsP,        ==>  An Array Of Points Representating The Clip Polygon  
-* @param  numClipPts,       ==>  Size of the Array of clip points                      
-* @param  clipOption,       ==>  Clip Otion , 1 = Clip Internally 2 = Clip Externally 
-* @param  isHorOffset,      ==>  Flag To Horizontal Offset Clip Polygon , TRUE = Horizontal Offset , FALSE = Don't Horizontal Offset 
-* @param  horOffset,        ==>  Horizontal Offset Value . < 0.0 Horizontal Offset Internal Amount > 0.0 Horizontal Offset External Amount 
-* @param  isVertOffset,     ==>  Flag To Vertical Offset Clipped Tin. TRUE = Vertical Offset , FALSE = Do Not Vertical Offset              
-* @param  vertOffset        ==>  Vertical Offset Amount                                                                                    
+* @param  *dtmP,            ==>  Dtm Object To Be Clipped
+* @param  **clipDtmPP,      <==  The Clipped Dtm Object
+* @param  *clipPtsP,        ==>  An Array Of Points Representating The Clip Polygon
+* @param  numClipPts,       ==>  Size of the Array of clip points
+* @param  clipOption,       ==>  Clip Otion , 1 = Clip Internally 2 = Clip Externally
+* @param  isHorOffset,      ==>  Flag To Horizontal Offset Clip Polygon , TRUE = Horizontal Offset , FALSE = Don't Horizontal Offset
+* @param  horOffset,        ==>  Horizontal Offset Value . < 0.0 Horizontal Offset Internal Amount > 0.0 Horizontal Offset External Amount
+* @param  isVertOffset,     ==>  Flag To Vertical Offset Clipped Tin. TRUE = Vertical Offset , FALSE = Do Not Vertical Offset
+* @param  vertOffset        ==>  Vertical Offset Amount
 *
 * @return DTM_SUCCESS or DTM_ERROR
-* @version 
+* @version
 * @see None
 *===============================================================================*/
 BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
@@ -517,7 +517,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
  double vertOffset          /*  ==>  Vertical Offset Amount                                                                                     */
 )
 /*
-** This Is A Special Purpose Modeller Function For Clipping A DTM 
+** This Is A Special Purpose Modeller Function For Clipping A DTM
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -528,7 +528,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
 */
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Clipping Dtm Object Using Offsets") ; 
+    bcdtmWrite_message(0,0,0,"Clipping Dtm Object Using Offsets") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"clipDtmPP      = %p",*clipDtmPP) ;
     bcdtmWrite_message(0,0,0,"userClipPtsP   = %p",userClipPtsP) ;
@@ -541,7 +541,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
     for( p3dP = userClipPtsP ; p3dP < userClipPtsP + numUserClipPts ; ++p3dP)
       {
        bcdtmWrite_message(0,0,0,"Clip Point[%6ld] = %10.4lf %10.4lf %8.4lf",(long)(p3dP-userClipPtsP),p3dP->x,p3dP->y,p3dP->z) ;
-      } 
+      }
    }
 /*
 ** Validate Parameters
@@ -565,7 +565,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
 /*
 ** Validate Clip Polygon
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Validating Clip Polygon") ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Validating Clip Polygon") ;
  if( bcdtmMath_validatePointArrayPolygon(&clipPtsP,&numClipPts,dtmP->ppTol) ) goto errexit ;
 /*
 ** Horizontal Offset Clip Polygon
@@ -580,13 +580,13 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
        for( p3dP = parallelPts ; p3dP < parallelPts + numParallelPts ; ++p3dP)
          {
           bcdtmWrite_message(0,0,0,"Parallel Point[%6ld] = %10.4lf %10.4lf %8.4lf",(long)(p3dP-parallelPts),p3dP->x,p3dP->y,p3dP->z) ;
-         } 
+         }
       }
    }
  else
    {
     parallelPts    = clipPtsP ;
-    numParallelPts = numClipPts ; 
+    numParallelPts = numClipPts ;
    }
 /*
 ** Clip The Dtm Object
@@ -597,7 +597,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
 /*
 ** Vertical Offset The Clip Dtm Object
 */
- if( isVertOffset == TRUE ) 
+ if( isVertOffset == TRUE )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Vertical Offseting Clipped Dtm Object Points") ;
     for( pnt = 0 ; pnt < (*clipDtmPP)->numPoints ; ++pnt )
@@ -614,8 +614,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_usingOffsetsDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object Using Offsets Completed") ; 
- if( dbg && ret == DTM_ERROR   ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object Using Offsets Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object Using Offsets Completed") ;
+ if( dbg && ret == DTM_ERROR   ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object Using Offsets Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -637,7 +637,7 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
  long numUserClipPts,
  BC_DTM_OBJ **dtm3PP,
  BC_DTM_OBJ **dtm4PP
-) 
+)
 /*
 ** This Function Clips Two Dtm Objects To A Common Polygon
 */
@@ -652,7 +652,7 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
 /*
 **  Write Status Message
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Clip From Polygon Dtm Objects") ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Clip From Polygon Dtm Objects") ;
 /*
 **  Validate Dtm Object For Storing Clips
 */
@@ -666,7 +666,7 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
 /*
 ** Test For Pre 98 Tin Files
 */
- if( dtm1P->ppTol == 0.0 || dtm2P->ppTol == 0.0 ) 
+ if( dtm1P->ppTol == 0.0 || dtm2P->ppTol == 0.0 )
    {
     bcdtmWrite_message(1,0,0,"Convert Tin File(s)") ;
     ret = 20 ;
@@ -683,7 +683,7 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
 /*
 ** Validate Clip Polgon
 */
-    if( bcdtmMath_validatePointArrayPolygon(&clipPtsP,&numClipPts,dtm1P->ppTol) ) goto errexit ; 
+    if( bcdtmMath_validatePointArrayPolygon(&clipPtsP,&numClipPts,dtm1P->ppTol) ) goto errexit ;
    }
 /*
 **  Extract Tin Hulls
@@ -701,8 +701,8 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
 ** Intersect Tin Hulls
 */
  if( bcdtmPolygon_intersectPointArrayPolygons(hullPts1P,numHullPts1,hullPts2P,numHullPts2,&intersectFlag,&poly1P,ppTol,plTol)) goto errexit ;
- if( intersectFlag == 0 ) 
-   { 
+ if( intersectFlag == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Tin Hulls Do Not Intersect") ;
     goto errexit ;
    }
@@ -718,7 +718,7 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
    {
     bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject(clipPtsP,numClipPts,poly1P,ppTol,plTol,&intersectFlag,&poly2P) ;
     if( intersectFlag == 0 ) { bcdtmWrite_message(1,0,0,"Clip Polygon And Tin Hulls Do Not Intersect") ; goto errexit ; }
-    bcdtmPolygon_deletePolygonObject(&poly1P) ; 
+    bcdtmPolygon_deletePolygonObject(&poly1P) ;
     poly1P = poly2P ;
     poly2P = NULL  ;
    }
@@ -731,7 +731,7 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersect Polygons = %2ld",poly1P->numPolygons) ;
  polyofs = 0 ;
- area = (poly1P->polyListP)->area ; 
+ area = (poly1P->polyListP)->area ;
  for( pl = poly1P->polyListP + 1 ; pl < poly1P->polyListP + poly1P->numPolygons ; ++pl )
    {
     if( pl->area > area ) { polyofs = (long)(pl-poly1P->polyListP) ; area = pl->area ; }
@@ -756,12 +756,12 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
     if( bcdtmList_extractHullDtmObject(*dtm3PP,&hullPts1P,&numHullPts1)) goto errexit ;
     if( bcdtmList_extractHullDtmObject(*dtm4PP,&hullPts2P,&numHullPts2)) goto errexit ;
     bcdtmMath_getPolygonDirectionP3D(hullPts1P,numHullPts1,&direction,&area) ;
-    bcdtmWrite_message(0,0,0,"Area Of dtm3PP = %12.4lf",area) ; 
+    bcdtmWrite_message(0,0,0,"Area Of dtm3PP = %12.4lf",area) ;
     bcdtmMath_getPolygonDirectionP3D(hullPts2P,numHullPts2,&direction,&area) ;
-    bcdtmWrite_message(0,0,0,"Area Of dtm4PP = %12.4lf",area) ; 
-    free(hullPts1P) ; hullPts1P = NULL ; 
-    free(hullPts2P) ; hullPts2P = NULL ; 
-   } 
+    bcdtmWrite_message(0,0,0,"Area Of dtm4PP = %12.4lf",area) ;
+    free(hullPts1P) ; hullPts1P = NULL ;
+    free(hullPts2P) ; hullPts2P = NULL ;
+   }
 /*
 ** Clean Up
 */
@@ -774,8 +774,8 @@ BENTLEYDTM_Public int bcdtmClip_toPolygonDtmObjects
  /*
 ** Job Completed
 */
- if( dbg && ! ret ) bcdtmWrite_message(0,0,0,"Clip From Polygon Dtm Objects Completed") ; 
- if( dbg &&   ret ) bcdtmWrite_message(0,0,0,"Clip From Polygon Dtm Objects Error") ; 
+ if( dbg && ! ret ) bcdtmWrite_message(0,0,0,"Clip From Polygon Dtm Objects Completed") ;
+ if( dbg &&   ret ) bcdtmWrite_message(0,0,0,"Clip From Polygon Dtm Objects Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -801,20 +801,20 @@ BENTLEYDTM_Public int bcdtmClip_toTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,long sta
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Clipping Dtm Object To Tptr Polygon") ;
     bcdtmWrite_message(0,0,0,"dtmP       = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"startPnt   = %8ld",startPnt) ;
     bcdtmWrite_message(0,0,0,"clipOption = %8ld",clipOption) ;
-   } 
+   }
 /*
 ** Test For Valid Clip Option
 */
- if( clipOption != DTMClipOption::Internal && clipOption != DTMClipOption::External ) 
-   { 
+ if( clipOption != DTMClipOption::Internal && clipOption != DTMClipOption::External )
+   {
     bcdtmWrite_message(2,0,0,"Invalid Clip Option") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Test For Valid Dtm  Object
@@ -831,10 +831,10 @@ BENTLEYDTM_Public int bcdtmClip_toTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,long sta
 /*
 ** Check For Valid Tptr Polygon Start Point
 */
- if( startPnt < 0 || startPnt >= dtmP->numPoints || nodeAddrP(dtmP,startPnt)->tPtr < 0 || nodeAddrP(dtmP,startPnt)->tPtr >= dtmP->numPoints )  
-   { 
+ if( startPnt < 0 || startPnt >= dtmP->numPoints || nodeAddrP(dtmP,startPnt)->tPtr < 0 || nodeAddrP(dtmP,startPnt)->tPtr >= dtmP->numPoints )
+   {
     bcdtmWrite_message(2,0,0,"Invalid Start Point For Clip Tptr Polygon") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Check Connectivity Of Tptr Polygon - Development Only
@@ -850,14 +850,14 @@ BENTLEYDTM_Public int bcdtmClip_toTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,long sta
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking Direction Tptr Polygon") ;
  if( bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,startPnt,&area,&direction) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Tptr Polygon Area = %15.4lf Direction = %2ld",area,direction) ;
- if( direction == DTMDirection::Clockwise ) 
+ if( direction == DTMDirection::Clockwise )
    {
     if( bcdtmList_reverseTptrPolygonDtmObject(dtmP,startPnt)) goto errexit ;
    }
 /*
 ** Check Integrity Of Dtm Object - Development Only
 */
- if( cdbg ) 
+ if( cdbg )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Dtm") ;
     if( bcdtmCheck_tinComponentDtmObject(dtmP)) { bcdtmWrite_message(0,0,0,"DTM Corrupted") ; goto errexit ; }
@@ -866,31 +866,31 @@ BENTLEYDTM_Public int bcdtmClip_toTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,long sta
 /*
 ** Clip Internal To Tptr Polygon
 */
- if( clipOption == DTMClipOption::Internal ) 
+ if( clipOption == DTMClipOption::Internal )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object Internal") ;
-    if( bcdtmClip_internalToTptrPolygonDtmObject(dtmP,startPnt,1)) goto errexit ; 
+    if( bcdtmClip_internalToTptrPolygonDtmObject(dtmP,startPnt,1)) goto errexit ;
    }
 /*
 ** Clip External To Tptr Polygon
 */
- if( clipOption == DTMClipOption::External ) 
+ if( clipOption == DTMClipOption::External )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Clipping Dtm Object External") ;
-    if( bcdtmClip_externalToTptrPolygonDtmObject(dtmP,startPnt)) goto errexit ; 
+    if( bcdtmClip_externalToTptrPolygonDtmObject(dtmP,startPnt)) goto errexit ;
    }
 /*
 ** Remove All But Tin Features
-*/ 
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing All Features Except Tin State Features") ;
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureState != DTMFeatureState::Tin )
       {
-       if( bcdtmInsert_removeDtmFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ; 
+       if( bcdtmInsert_removeDtmFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
       }
-   }  
+   }
 /*
 ** Clean Dtm Object
 */
@@ -900,16 +900,16 @@ BENTLEYDTM_Public int bcdtmClip_toTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,long sta
 /*
 ** Check Integrity Of Dtm Object - Development Only
 */
- if( cdbg ) 
+ if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Clipped Dtm") ;
-    if( bcdtmCheck_tinComponentDtmObject(dtmP)) 
+    if( bcdtmCheck_tinComponentDtmObject(dtmP))
       {
        bcdtmWrite_message(0,0,0,"DTM Corrupted After Clip") ;
-       goto errexit ; 
-      } 
+       goto errexit ;
+      }
     else bcdtmWrite_message(0,0,0,"DTM OK") ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -968,12 +968,12 @@ BENTLEYDTM_Public int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(BC_DTM_OBJ *
 /*
 **        Create Dtm Object
 */
-          if( bcdtmObject_createDtmObject(&tempDtmP)) goto errexit  ; 
+          if( bcdtmObject_createDtmObject(&tempDtmP)) goto errexit  ;
           bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempDtmP,2000,2000) ;
          }
 /*
 **     Copy Adjacent Dtm Feature To Dtm As Break Lines
-*/ 
+*/
        asp = ftableAddrP(dtmP,adjacentFeature)->dtmFeaturePts.firstPoint ;
        do
          {
@@ -986,19 +986,19 @@ BENTLEYDTM_Public int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(BC_DTM_OBJ *
 /*
 **     Delete  Adjacent dtmFeature
 */
-       if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,adjacentFeature)) goto errexit  ; 
-      }  
+       if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,adjacentFeature)) goto errexit  ;
+      }
     pp = sp ; sp = np ;
    } while ( sp != ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ) ;
 /*
 ** Process If Adjacent Features Detected
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Adjacent Flag = %2ld",adjacentFlag) ;
- if( adjacentFlag ) 
+ if( adjacentFlag )
    {
 /*
 **  Copy Dtm Feature To Dtm As Break Lines
-*/ 
+*/
     if( dbg ) bcdtmWrite_message(0,0,0,"Copying Dtm Feature To Dtm Object") ;
     sp = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ;
     do
@@ -1009,10 +1009,10 @@ BENTLEYDTM_Public int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(BC_DTM_OBJ *
        sp = np ;
       } while ( sp != ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ) ;
 /*
-**  Delete Dtm Feature 
+**  Delete Dtm Feature
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Dtm Feature From Dtm Object") ;
-    if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit  ; 
+    if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit  ;
 /*
 **  Triangulate Dtm Object
 */
@@ -1022,7 +1022,7 @@ BENTLEYDTM_Public int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(BC_DTM_OBJ *
 **  Remove None dtmFeature Hull Lines
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Removing Non dtmFeature Hull Lines") ;
-    if( bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtmP)) goto errexit  ; 
+    if( bcdtmList_removeNoneFeatureHullLinesDtmObject(tempDtmP)) goto errexit  ;
 /*
 **  Copy Dtm Hull To Tptr Polygon
 */
@@ -1037,7 +1037,7 @@ BENTLEYDTM_Public int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(BC_DTM_OBJ *
        bcdtmFlag_clearVoidBitPCWD(&nodeAddrP(dtmP,cp)->PCWD) ;
        sp = np ;
        cp = pp ;
-      } while ( sp != tempDtmP->hullPoint ) ;  
+      } while ( sp != tempDtmP->hullPoint ) ;
 /*
 **  Delete Temporary Objects
 */
@@ -1046,7 +1046,7 @@ BENTLEYDTM_Public int bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(BC_DTM_OBJ *
 **  Check Connectivity Of Tptr List
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Connectivity Tptr List") ;
-    if( bcdtmList_checkConnectivityTptrListDtmObject(dtmP,asp,0)) goto errexit  ; 
+    if( bcdtmList_checkConnectivityTptrListDtmObject(dtmP,asp,0)) goto errexit  ;
 /*
 **  Add dtmFeature To Tin
 */
@@ -1095,25 +1095,25 @@ BENTLEYDTM_Public int bcdtmClip_testForStartOfAdjoingFeatureDtmObject(BC_DTM_OBJ
  flPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
 /*
 ** Scan For thisPnt
-*/ 
+*/
  process = 0 ;
  while ( flPtr != dtmP->nullPtr && process )
    {
     if( flistAddrP(dtmP,flPtr)->nextPnt == thisPnt )
       {
-       if( flistAddrP(dtmP,flPtr)->dtmFeature != dtmFeature ) 
+       if( flistAddrP(dtmP,flPtr)->dtmFeature != dtmFeature )
          {
           if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == dtmFeatureType )
-            { 
-             isw = 1 ; 
+            {
+             isw = 1 ;
              fl1Ptr = nodeAddrP(dtmP,thisPnt)->fPtr ;
              while ( fl1Ptr != dtmP->nullPtr && isw )
                {
                 if( flistAddrP(dtmP,fl1Ptr)->nextPnt == priorPnt && flistAddrP(dtmP,fl1Ptr)->dtmFeature == flistAddrP(dtmP,flPtr)->dtmFeature ) isw = 0 ;
-                fl1Ptr = flistAddrP(dtmP,fl1Ptr)->nextPtr ;                
+                fl1Ptr = flistAddrP(dtmP,fl1Ptr)->nextPtr ;
                }
-             if( isw ) 
-               { 
+             if( isw )
+               {
                 *adjacentFeatureP = flistAddrP(dtmP,flPtr)->dtmFeature ;
                 return(0) ;
                }
@@ -1150,7 +1150,7 @@ BENTLEYDTM_Public int bcdtmClip_checkForInsertedVoidInternalToVoidDtmObject
  for( feature = 0 ; feature < dtmP->numFeatures ; ++feature )
    {
     dtmFeatureP = ftableAddrP(dtmP,feature) ;
-    if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == DTMFeatureType::Void ) 
+    if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == DTMFeatureType::Void )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Void Feature %4ld Type = %4ld Fpnt = %6ld",feature,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmFeaturePts.firstPoint) ;
        if( dbg ) bcdtmList_writePointsForDtmFeatureDtmObject(dtmP,feature) ;
@@ -1169,7 +1169,7 @@ BENTLEYDTM_Public int bcdtmClip_checkForInsertedVoidInternalToVoidDtmObject
           if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,np)->PCWD) )
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"Void Point Found On Void Hull ** Ndp = %6ld P = %6ld  %10.4lf %10.4lf %10.4lf",dtmP->numSortedPoints,np,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,np)->z) ;
-             ++numVoidPts ; 
+             ++numVoidPts ;
             }
 /*
 **        Get Next Point On Feature
@@ -1184,7 +1184,7 @@ BENTLEYDTM_Public int bcdtmClip_checkForInsertedVoidInternalToVoidDtmObject
           if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Void Feature %6ld",feature) ;
           if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,feature)) goto errexit ;
          }
-      } 
+      }
    }
 /*
 ** Clean Up
@@ -1256,7 +1256,7 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject(BC_DTM
 /*
 **        Write Feature
 */
-          if( dbg == 1  ) 
+          if( dbg == 1  )
             {
              bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName) ;
              bcdtmWrite_message(0,0,0,"Feature = %6ld of %6ld ** Type = %6ld Name = %s",dtmFeature,numFeatureTable,dtmFeatureType,dtmFeatureTypeName) ;
@@ -1264,7 +1264,7 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject(BC_DTM
 /*
 **        Initialise Scan Variables
 */
-          numMarked = numPts = numCoincident = 0 ; 
+          numMarked = numPts = numCoincident = 0 ;
           firstPnt  = nextPnt = lastPnt = dtmFeatureP->dtmFeaturePts.firstPoint  ;
           ++numPts ;
           if( nodeAddrP(dtmP,nextPnt)->tPtr == mark ) ++numMarked ;
@@ -1281,29 +1281,29 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject(BC_DTM
                 nextPnt = flistAddrP(dtmP,clPtr)->nextPnt ;
                 if( nextPnt != dtmP->nullPnt )
                   {
-                   ++numPts ; 
+                   ++numPts ;
                    if     ( nodeAddrP(dtmP,nextPnt)->tPtr == mark ) ++numMarked ;
                    else if( nodeAddrP(dtmP,nextPnt)->sPtr != dtmP->nullPnt ) ++numCoincident ;
                    clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
                    lastPnt = nextPnt ;
-                  }                
+                  }
                 if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt ) clPtr = dtmP->nullPtr ;
                }
             }
           if( dbg ) bcdtmWrite_message(0,0,0,"**** numPts = %6ld NumMarked = %6ld NumCoincident = %6ld",numPts,numMarked,numCoincident) ;
 /*
 **        Test If Feature Clipped
-*/ 
+*/
           if( numMarked == 0 && ( numCoincident > 0 && ( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void || dtmFeatureP->dtmFeatureType == DTMFeatureType::Island || dtmFeatureP->dtmFeatureType == DTMFeatureType::Hole ))) numMarked = numCoincident ;
 /*
 **        Process Clipped Feature
-*/ 
+*/
           if( numMarked > 0 )
-            { 
+            {
 /*
 **           Write Feature
 */
-             if( dbg ) 
+             if( dbg )
                {
                 bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName) ;
                 bcdtmWrite_message(0,0,0,"Clipping Feature = %6ld of %6ld ** Type = %6ld Name = %s",dtmFeature,numFeatureTable,dtmFeatureType,dtmFeatureTypeName) ;
@@ -1312,23 +1312,23 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject(BC_DTM
 **           Delete Origonal Feature From Dtm Object If All Points Marked
 */
              if( numPts == numMarked || ( dtmFeatureType != DTMFeatureType::GroupSpots && numPts == numMarked + 1) )
-               {  
+               {
                 if( dbg ) bcdtmWrite_message(0,0,0,"**** Removing Feature") ;
-                if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ; 
+                if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
                }
 /*
 **           Delete Clipped Sections Of Feature Only
 */
-             else 
+             else
                {
                 if( dbg ) bcdtmWrite_message(0,0,0,"**** Clipping Feature") ;
-                switch ( dtmFeatureType ) 
+                switch ( dtmFeatureType )
                   {
                    case DTMFeatureType::GroupSpots :
                    if( bcdtmClip_groupSpotDtmFeatureDtmObject(dtmP,dtmFeature,mark)) goto errexit ;
                    break ;
 
- 
+
                    case DTMFeatureType::Region :
                    case DTMFeatureType::Polygon :
                    case DTMFeatureType::Void    :
@@ -1336,18 +1336,18 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject(BC_DTM
                    case DTMFeatureType::Hole    :
                    if( bcdtmClip_internalPolygonalDtmFeatureDtmObject(dtmP,dtmFeature,clipPtsP,numClipPts)) goto errexit ;
                    break ;
-               
+
                    case DTMFeatureType::Breakline :
                    case DTMFeatureType::ContourLine :
-                   case DTMFeatureType::SoftBreakline : 
+                   case DTMFeatureType::SoftBreakline :
                    if( bcdtmClip_linearDtmFeatureDtmObject(dtmP,dtmFeature,mark)) goto errexit ;
                    break ;
 
                    default :
                    bcdtmWrite_message(2,0,0,"Unknown DTM Feature Type") ;
-                   goto errexit ; 
+                   goto errexit ;
                    break ;
-                  } ; 
+                  } ;
                }
             }
          }
@@ -1359,7 +1359,7 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesInternalToTptrPolygonDtmObject(BC_DTM
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Voids On Island Hulls") ;
  if( bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(dtmP)) goto errexit ;
 /*
-**  Copy Sptr List To Tptr 
+**  Copy Sptr List To Tptr
 */
  if( bcdtmList_reverseSptrPolygonDtmObject(dtmP,startPnt))     goto errexit ;
  if( bcdtmList_copySptrListToTptrListDtmObject(dtmP,startPnt)) goto errexit ;
@@ -1415,10 +1415,10 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
     do
       {
        ++numPts ;
-       if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&sp)) goto errexit ; 
+       if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&sp)) goto errexit ;
       } while ( sp != dtmP->nullPnt && sp != firstPnt ) ;
     if( sp == firstPnt ) ++numPts ;
-    bcdtmWrite_message(0,0,0,"Number Of Points In DTMFeatureType::GroupSpots = %6ld",numPts) ;  
+    bcdtmWrite_message(0,0,0,"Number Of Points In DTMFeatureType::GroupSpots = %6ld",numPts) ;
    }
 /*
 ** Scan Feature For Non Clipped Sections
@@ -1428,21 +1428,21 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
  lnp         = dtmP->nullPnt ;
  newFirstPnt = dtmP->nullPnt ;
  while ( process )
-   { 
+   {
 /*
 **  Scan To First Unmarked Point On Feature
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning To First Unmarked Point") ;
     while ( process && nodeAddrP(dtmP,sp)->tPtr == mark )
       {
-       if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&sp)) goto errexit ; 
+       if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&sp)) goto errexit ;
        if( sp == dtmP->nullPnt || sp == firstPnt ) process = 0 ;
       }
     if( dbg ) bcdtmWrite_message(0,0,0,"First Unmarked Point = %8ld",sp) ;
 /*
 **  Scan To Next Mark Point
 */
-    if( process )  	   
+    if( process )
       {
 /*
 **     Set New First Point
@@ -1458,26 +1458,26 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
        while ( process && nodeAddrP(dtmP,np)->tPtr != mark )
          {
           lnp = np ;
-          if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,np,&np)) goto errexit ; 
+          if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,np,&np)) goto errexit ;
           if( np == dtmP->nullPnt || np == firstPnt ) process = 0 ;
-          else                                        nodeAddrP(dtmP,lnp)->tPtr = np ;                                     
+          else                                        nodeAddrP(dtmP,lnp)->tPtr = np ;
          }
 /*
 **     Check For Closure
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Last Unmarked Point = %8ld",lnp) ;
-       if( np == firstPnt ) nodeAddrP(dtmP,lnp)->tPtr = np ; 
+       if( np == firstPnt ) nodeAddrP(dtmP,lnp)->tPtr = np ;
        sp = np ;
       }
    }
 /*
-** Add Feature To Dtm 
+** Add Feature To Dtm
 */
  if( newFirstPnt != dtmP->nullPnt )
    {
     if( dbg )
       {
-       bcdtmWrite_message(0,0,0,"Adding Feature To DTM") ;  
+       bcdtmWrite_message(0,0,0,"Adding Feature To DTM") ;
        numPts = 0 ;
        sp = newFirstPnt ;
        do
@@ -1486,7 +1486,7 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
           sp = nodeAddrP(dtmP,sp)->tPtr ;
           if( sp != dtmP->nullPnt ) if( nodeAddrP(dtmP,sp)->tPtr == mark ) sp = mark ;
          } while ( sp != dtmP->nullPnt && sp != newFirstPnt && sp != mark) ;
-       bcdtmWrite_message(0,0,0,"Number Of Points In DTMFeatureType::GroupSpots = %6ld",numPts) ;  
+       bcdtmWrite_message(0,0,0,"Number Of Points In DTMFeatureType::GroupSpots = %6ld",numPts) ;
       }
 /*
 **  Check Last Point Is Not A Mark
@@ -1501,9 +1501,9 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
             {
              nodeAddrP(dtmP,sp)->tPtr = dtmP->nullPnt ;
              np = mark ;
-            } 
+            }
          }
-       sp = np ; 
+       sp = np ;
       } while ( sp != dtmP->nullPnt && sp != newFirstPnt && sp != mark) ;
 /*
 **  Add Feature To Tin
@@ -1558,12 +1558,12 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
     bcdtmWrite_message(0,0,0,"Clip Polygon ** Area = %10.4lf Direction = %2ld",area,direction) ;
     bcdtmWrite_message(0,0,0,"Number Of Clip Polygon Points = %6ld",numClipPts) ;
     if( dbg == 2 )
-      { 
+      {
        for( p3d = clipPtsP ; p3d < clipPtsP + numClipPts ; ++p3d )
          {
           bcdtmWrite_message(0,0,0,"Clip Polygon Point [%4ld] = %10.4lf %10.4lf %10.4lf",(long)(p3d-clipPtsP),p3d->x,p3d->y,p3d->z) ;
          }
-      } 
+      }
    }
 /*
 ** Initialise
@@ -1587,10 +1587,10 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
 ** Allocate Memory For Feature Points
 */
  featurePtsP = ( DPoint3d *) malloc(numFeaturePts * sizeof(DPoint3d)) ;
- if( featurePtsP == NULL ) 
-   { 
+ if( featurePtsP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Copy Feature Points To Point Array
@@ -1613,7 +1613,7 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Polygons") ;
  if( bcdtmClip_exclusivelyPolygonWithClipPolygonDtmObject(featurePtsP,numFeaturePts,clipPtsP,numClipPts,&intersectFlag,&polyP)) goto errexit ;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Polygons Intersected") ;
     bcdtmWrite_message(0,0,0,"intersectFlag = %1ld",intersectFlag) ;
@@ -1630,7 +1630,7 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
 /*
 ** Free Memory
 */
- free(featurePtsP) ; 
+ free(featurePtsP) ;
  featurePtsP = NULL ;
  numFeaturePts = 0 ;
 /*
@@ -1646,10 +1646,10 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
        if( dbg )
          {
           bcdtmWrite_message(0,0,0,"Number Of Clipped Feature Points = %6ld Area = %15.8lf",numFeaturePts,pl->area) ;
-          for( p3d = featurePtsP ; p3d < featurePtsP + numFeaturePts ; ++p3d )  
+          for( p3d = featurePtsP ; p3d < featurePtsP + numFeaturePts ; ++p3d )
             {
              bcdtmWrite_message(0,0,0,"Clipped Feature Point [%4ld] = %10.4lf %10.4lf %10.4lf",(long)(p3d-featurePtsP),p3d->x,p3d->y,p3d->z) ;
-            } 
+            }
          }
 /*
 ** Determine Insert Type
@@ -1676,7 +1676,7 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
        if( ! polyError )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Checking Clipped Feature Point Numbers") ;
-          for( p3d = featurePtsP ; p3d < featurePtsP + numFeaturePts ; ++p3d )  
+          for( p3d = featurePtsP ; p3d < featurePtsP + numFeaturePts ; ++p3d )
             {
              sp = (long)p3d->z ;
              if( (double)sp != p3d->z )
@@ -1686,7 +1686,7 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
                 p3d->z = (double) sp ;
                }
             }
-         } 
+         }
 /*
 ** Copy Polygon Hull To Tptr List
 */
@@ -1694,18 +1694,18 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Copying Feature To Tptr Polygon") ;
           startPnt = (long) featurePtsP->z ;
-          for( p3d = featurePtsP + 1 ; p3d < featurePtsP + numFeaturePts ; ++p3d )  
+          for( p3d = featurePtsP + 1 ; p3d < featurePtsP + numFeaturePts ; ++p3d )
             {
              if( nodeAddrP(dtmP,startPnt)->tPtr != dtmP->nullPnt )
                {
                 if( dbg ) bcdtmWrite_message(0,0,0,"New Feature Contains Marked Point %6ld ** %12.5lf %12.5lf %10.4lf",startPnt,pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y,pointAddrP(dtmP,startPnt)->z) ;
-                polyError = 1 ;  
+                polyError = 1 ;
                 p3d  = featurePtsP + numFeaturePts ;
                }
              else
-               { 
+               {
                 nodeAddrP(dtmP,startPnt)->tPtr = (long)(p3d->z)  ;
-                startPnt = (long)(p3d->z) ; 
+                startPnt = (long)(p3d->z) ;
                }
             }
          }
@@ -1713,32 +1713,32 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
 **  Check Connectivity Of Tptr List
 */
         if( ! polyError )
-          { 
+          {
            if( dbg ) bcdtmWrite_message(0,0,0,"Checking Connectivity Tptr Polygon") ;
-           if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0)) 
+           if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0))
              {
-              for( p3d = featurePtsP ; p3d < featurePtsP + numFeaturePts - 1 ; ++p3d )  
+              for( p3d = featurePtsP ; p3d < featurePtsP + numFeaturePts - 1 ; ++p3d )
                 {
                  sp = (long)p3d->z ;
                  np = (long)(p3d+1)->z ;
                  if( sp != np )
-                   { 
+                   {
                     if( ! bcdtmList_testLineDtmObject(dtmP,sp,np) )
                       {
-                       if( dbg ) 
+                       if( dbg )
                          {
-                          bcdtmWrite_message(0,0,0,"Feature Points Not Connected") ;   
-                          bcdtmWrite_message(0,0,0,"Sp = %8ld ** %12.5lf %12.5lf %10.4lf",sp,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;   
-                          bcdtmWrite_message(0,0,0,"Np = %8ld ** %12.5lf %12.5lf %10.4lf",np,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,np)->z) ;   
+                          bcdtmWrite_message(0,0,0,"Feature Points Not Connected") ;
+                          bcdtmWrite_message(0,0,0,"Sp = %8ld ** %12.5lf %12.5lf %10.4lf",sp,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;
+                          bcdtmWrite_message(0,0,0,"Np = %8ld ** %12.5lf %12.5lf %10.4lf",np,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,np)->z) ;
                          }
                        nodeAddrP(dtmP,sp)->tPtr = dtmP->nullPnt ;
                        if( bcdtmInsert_lineBetweenPointsDtmObject(dtmP,sp,np,1,2)) goto errexit ;
                       }
                    }
                 }
-              if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0)) 
+              if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0))
                 {
-                 polyError = 1 ;  
+                 polyError = 1 ;
                  if( dbg ) bcdtmWrite_message(0,0,0,"Connectivity Error In Feature Being Inserted") ;
                 }
              }
@@ -1750,12 +1750,12 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
           {
            if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Direction Area And Perimeter Tptr Polygon") ;
            bcdtmMath_calculateDirectionAreaAndPerimeterTptrPolygonDtmObject(dtmP,startPnt,&direction,&area,&perimeter) ;
-           if( dbg ) bcdtmWrite_message(0,0,0,"Direction = %2ld Area = %15.5lf Perimeter = %15.5lf Area/Perimeter = %15.10lf",direction,area,perimeter,area/perimeter) ; 
+           if( dbg ) bcdtmWrite_message(0,0,0,"Direction = %2ld Area = %15.5lf Perimeter = %15.5lf Area/Perimeter = %15.10lf",direction,area,perimeter,area/perimeter) ;
            if( area < 0.1 || area / perimeter < 0.00001 ) polyError = 1 ;
            else if( direction == DTMDirection::Clockwise )
              {
               if( bcdtmList_reverseTptrPolygonDtmObject(dtmP,startPnt)) goto errexit ;
-             }  
+             }
           }
 /*
 **     Store New Feature In DTMFeatureState::Tin
@@ -1763,19 +1763,19 @@ BENTLEYDTM_Private int bcdtmClip_internalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
         if( ! polyError )
           {
            if( dbg ) bcdtmWrite_message(0,0,0,"Inserting %2ld Feature",insertType) ;
-           if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,insertType,userTag,userFeatureId,startPnt,1)) goto errexit ; 
+           if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,insertType,userTag,userFeatureId,startPnt,1)) goto errexit ;
           }
-        else 
+        else
           {
-           if( startPnt != dtmP->nullPnt && nodeAddrP(dtmP,startPnt)->tPtr >= 0 && nodeAddrP(dtmP,startPnt)->tPtr < dtmP->numPoints ) 
+           if( startPnt != dtmP->nullPnt && nodeAddrP(dtmP,startPnt)->tPtr >= 0 && nodeAddrP(dtmP,startPnt)->tPtr < dtmP->numPoints )
              {
-              bcdtmList_nullTptrListDtmObject(dtmP,startPnt) ;  
+              bcdtmList_nullTptrListDtmObject(dtmP,startPnt) ;
              }
           }
 /*
 ** Free Memory For Feature Points
 */
-       if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; } 
+       if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
       }
    }
 /*
@@ -1847,19 +1847,19 @@ BENTLEYDTM_Private int bcdtmClip_externalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
  do
    {
     ++numFeaturePts ;
-    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Sp = %6ld Tptr = %9ld ** %10.4lf %10.4lf %10.4lf",sp,nodeAddrP(dtmP,sp)->tPtr,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;  
+    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Sp = %6ld Tptr = %9ld ** %10.4lf %10.4lf %10.4lf",sp,nodeAddrP(dtmP,sp)->tPtr,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;
     bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&sp) ;
    } while ( sp != firstPnt && sp != dtmP->nullPnt ) ;
- if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Sp = %6ld Tptr = %9ld ** %10.4lf %10.4lf %10.4lf",sp,nodeAddrP(dtmP,sp)->tPtr,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;  
+ if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Sp = %6ld Tptr = %9ld ** %10.4lf %10.4lf %10.4lf",sp,nodeAddrP(dtmP,sp)->tPtr,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;
  ++numFeaturePts ;
 /*
 ** Allocate Memory For Feature Points
 */
  featurePtsP = ( DPoint3d *) malloc(numFeaturePts * sizeof(DPoint3d)) ;
- if( featurePtsP == NULL ) 
-   { 
+ if( featurePtsP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Copy Feature Points To DPoint3d Array
@@ -1885,11 +1885,11 @@ BENTLEYDTM_Private int bcdtmClip_externalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
     bcdtmMath_getPolygonDirectionP3D(featurePtsP,numFeaturePts,&direction,&area) ;
     bcdtmWrite_message(0,0,0,"Feature Polygon ** numPts = %6ld ** Area = %10.4lf Direction = %2ld",numFeaturePts,area,direction) ;
     if( dbg == 2 )
-      { 
+      {
        for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"Feature Point[%8ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-featurePtsP),p3dP->x,p3dP->y,p3dP->z) ;
-         } 
+         }
       }
    }
 /*
@@ -1897,30 +1897,30 @@ BENTLEYDTM_Private int bcdtmClip_externalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Polygons") ;
  if( bcdtmPolygon_intersectPolygons(clipPtsP,numClipPts,featurePtsP,numFeaturePts,&intersectFlag,&polyP,0.0,0.0)) goto errexit ;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Polygons Intersected") ;
     bcdtmWrite_message(0,0,0,"intersectFlag = %1ld",intersectFlag) ;
     bcdtmWrite_message(0,0,0,"Number Of Intersected Polygons = %4ld",polyP->numPolygons) ;
     if( dbg == 1 )
-      { 
+      {
        for( plistP = polyP->polyListP ; plistP < polyP->polyListP + polyP->numPolygons ; ++plistP )
          {
           bcdtmWrite_message(0,0,0,"Polygon [%4ld] ** Area = %10.4lf",(long)(plistP-polyP->polyListP),plistP->area) ;
           if( dbg == 2 )
-            { 
+            {
              for( p3dP = polyP->polyPtsP + plistP->firstPnt ; p3dP <= polyP->polyPtsP + plistP->lastPnt ; ++p3dP )
                {
                 bcdtmWrite_message(0,0,0,"Poly Point [%4ld] = %10.4lf %10.4lf %10.4lf",(long)(p3dP-polyP->polyPtsP),p3dP->x,p3dP->y,p3dP->z) ;
-               } 
+               }
             }
-         }   
+         }
       }
    }
 /*
 ** Free Memory
 */
- free(featurePtsP) ; 
+ free(featurePtsP) ;
  featurePtsP = NULL ;
  numFeaturePts = 0 ;
 /*
@@ -1934,51 +1934,51 @@ BENTLEYDTM_Private int bcdtmClip_externalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
        bcdtmWrite_message(0,0,0,"Number Of Feature Points = %6ld",numFeaturePts) ;
        if( dbg == 2 )
          {
-          for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )  
+          for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
             {
              bcdtmWrite_message(0,0,0,"Feature Point [%4ld] = %10.4lf %10.4lf %10.4lf",(long)(p3dP-featurePtsP),p3dP->x,p3dP->y,p3dP->z) ;
-            } 
-         } 
+            }
+         }
       }
 /*
 **  Get Tin Points For Polygon Points
 */
-    for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )  
+    for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
       {
        bcdtmFind_closestPointDtmObject(dtmP,p3dP->x,p3dP->y,&startPnt) ;
        p3dP->z = (double) startPnt  ;
        nodeAddrP(dtmP,startPnt)->tPtr = dtmP->nullPnt ;
-      } 
+      }
 /*
 **  Write Feature Points
 */
     if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Number Of Feature Points = %6ld",numFeaturePts) ;
-       for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )  
+       for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"Feature Point [%4ld] = %10.4lf %10.4lf ** %10ld",(long)(p3dP-featurePtsP),p3dP->x,p3dP->y,(long)p3dP->z) ;
-         } 
+         }
       }
 /*
 **  Copy Polygon Hull To Tptr List
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Copying Polygon Hull To Tptr List") ;
     startPnt = (long) featurePtsP->z ;
-    for( p3dP = featurePtsP + 1 ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )  
+    for( p3dP = featurePtsP + 1 ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
       {
-       if( ! bcdtmList_testLineDtmObject(dtmP,startPnt,(long)p3dP->z)) 
+       if( ! bcdtmList_testLineDtmObject(dtmP,startPnt,(long)p3dP->z))
          {
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Inserting Line Between %8ld %8ld",startPnt,(long)p3dP->z) ;
           if( bcdtmInsert_lineBetweenPointsDtmObject(dtmP,startPnt,(long)p3dP->z,1,2)) goto errexit ;
          }
        else  nodeAddrP(dtmP,startPnt)->tPtr = (long)(p3dP->z)  ;
-       startPnt = (long)(p3dP->z) ; 
-      } 
+       startPnt = (long)(p3dP->z) ;
+      }
 /*
 **  Check Connectivity Of Tptr Polygon
 */
-    if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0)) 
+    if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,startPnt,0))
       {
        bcdtmWrite_message(2,0,0,"Connectivity Error In Clipped Dtm Feature") ;
        goto errexit ;
@@ -1986,12 +1986,12 @@ BENTLEYDTM_Private int bcdtmClip_externalPolygonalDtmFeatureDtmObject(BC_DTM_OBJ
 /*
 **  Store New Feature In DTMFeatureState::Tin
 */
-    if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,dtmFeatureType,userTag,userFeatureId,startPnt,1)) goto errexit ; 
+    if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,dtmFeatureType,userTag,userFeatureId,startPnt,1)) goto errexit ;
 /*
 **  Free Memory For Feature Points
 */
     free(featurePtsP) ;
-    featurePtsP = NULL ; 
+    featurePtsP = NULL ;
    }
 /*
 ** Delete Origonal Feature From Dtm Object
@@ -2042,7 +2042,7 @@ BENTLEYDTM_Public int bcdtmClip_exclusivelyPolygonWithClipPolygonDtmObject(DPoin
 {
  int     ret=DTM_SUCCESS ;
  long    sp,fPtr,numHullPts,numPoly1DtmPts,numPoly2DtmPts  ;
- DPoint3d     *p3d1P,*p3d2P,linePts[2] ; 
+ DPoint3d     *p3d1P,*p3d2P,linePts[2] ;
  BC_DTM_OBJ *dtmP=NULL   ;
 /*
 ** Initialise
@@ -2051,9 +2051,9 @@ BENTLEYDTM_Public int bcdtmClip_exclusivelyPolygonWithClipPolygonDtmObject(DPoin
 /*
 ** Create Polygon Object If Necessary
 */
- if( *polyPP == NULL ) 
-   { 
-    if( bcdtmPolygon_createPolygonObject(polyPP)) goto errexit ; 
+ if( *polyPP == NULL )
+   {
+    if( bcdtmPolygon_createPolygonObject(polyPP)) goto errexit ;
    }
 /*
 ** Create Data Object
@@ -2113,7 +2113,7 @@ BENTLEYDTM_Public int bcdtmClip_exclusivelyPolygonWithClipPolygonDtmObject(DPoin
           if(ftableAddrP(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature)->dtmUserTag == 1 ) ++numPoly1DtmPts ;
           if(ftableAddrP(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature)->dtmUserTag == 2 ) ++numPoly2DtmPts ;
           fPtr = flistAddrP(dtmP,fPtr)->nextPtr ;
-         } 
+         }
        sp = nodeAddrP(dtmP,sp)->hPtr ;
       } while ( sp != dtmP->hullPoint ) ;
 /*
@@ -2121,31 +2121,31 @@ BENTLEYDTM_Public int bcdtmClip_exclusivelyPolygonWithClipPolygonDtmObject(DPoin
 */
     if( numPoly2DtmPts == numHullPts && numPoly1DtmPts != numHullPts )
       {
-       *clipResult = 2 ; 
+       *clipResult = 2 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly1PtsP,numPoly1Pts,1)) goto errexit ;
-      } 
+      }
 /*
 **  Check For Polygon Two Totally Within Polygon One
 */
     if( numPoly1DtmPts == numHullPts && numPoly2DtmPts != numHullPts )
       {
-       *clipResult = 3 ; 
+       *clipResult = 3 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly2PtsP,numPoly2Pts,2)) goto errexit ;
-      } 
+      }
 /*
 **  Check For Coincident Polygons
 */
     if( numPoly1DtmPts == numHullPts && numPoly2DtmPts == numHullPts )
       {
-       *clipResult = 4 ; 
+       *clipResult = 4 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly2PtsP,numPoly2Pts,2) ) goto errexit ;
-      } 
+      }
    }
 /*
 ** Cleanup
 */
  cleanup :
- if( dtmP  != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ; 
+ if( dtmP  != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Job Completed
 */
@@ -2163,13 +2163,13 @@ BENTLEYDTM_Public int bcdtmClip_exclusivelyPolygonWithClipPolygonDtmObject(DPoin
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_OBJ *dtmP,DTM_POLYGON_OBJ *polyP) 
+BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_OBJ *dtmP,DTM_POLYGON_OBJ *polyP)
 /*
-** This Function Gets The Exclusive Intersect Polygons 
+** This Function Gets The Exclusive Intersect Polygons
 ** And Copies Them To The Polygon Object
 */
 {
- int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    pp,sp,np,np1,np2,spnt,clc,feature,numFeatureTable ;
  DTMUserTag usertag,usertag1,usertag2 ;
 /*
@@ -2193,7 +2193,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
  spnt = dtmP->hullPoint ;
  do
    {
-    if( nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr && ! nodeAddrP(dtmP,spnt)->PRGN ) 
+    if( nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr && ! nodeAddrP(dtmP,spnt)->PRGN )
       {
 /*
 **     Determine Number Of Features On Point
@@ -2202,7 +2202,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
 /*
 **     If More Than One Feature At Point Then Polygons Intersect
 */
-       if( numFeatureTable > 1 ) 
+       if( numFeatureTable > 1 )
          {
           if( dbg )
             {
@@ -2220,7 +2220,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
           while( clc != dtmP->nullPtr && np2 == dtmP->nullPnt )
             {
              feature = flistAddrP(dtmP,clc)->dtmFeature ;
-             usertag = ftableAddrP(dtmP,feature)->dtmUserTag ; 
+             usertag = ftableAddrP(dtmP,feature)->dtmUserTag ;
              bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,feature,spnt,&np) ;
              if( np1 == dtmP->nullPnt ) { np1 = np ; usertag1 = usertag ; }
              else                     { np2 = np ; usertag2 = usertag ; }
@@ -2236,27 +2236,27 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
 /*
 **        External Point
 */
-          if( np1 != np2 ) 
-            { 
+          if( np1 != np2 )
+            {
 /*
 **           Determine Next Point
 */
              np = dtmP->nullPnt ;
-             if( usertag1 == 1 ) { np = np1 ; usertag = usertag1 ; } 
-             if( usertag2 == 1 ) { np = np2 ; usertag = usertag2 ; } 
+             if( usertag1 == 1 ) { np = np1 ; usertag = usertag1 ; }
+             if( usertag2 == 1 ) { np = np2 ; usertag = usertag2 ; }
 /*
 **           Scan Back To Start Point
 */
              if( np != dtmP->nullPnt && nodeAddrP(dtmP,spnt)->hPtr == np )
-               { 
+               {
                 if( dbg )
                   {
                    bcdtmWrite_message(0,0,0,"Next Point = %6ld ** %10.4lf %10.4lf %8.4lf",np,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,np)->z) ;
                    bcdtmWrite_message(0,0,0,"UserTag    = %1ld ",usertag) ;
-                  } 
+                  }
                 sp = spnt ;
                 do
-                  { 
+                  {
                    nodeAddrP(dtmP,sp)->tPtr = np ;
                    if( dbg ) bcdtmWrite_message(0,0,0,"sp = %6ld ** %10.4lf %10.4lf %10.4lf",sp,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;
                    pp = sp ; sp = np ; np = pp ;
@@ -2279,7 +2279,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
                   } while ( sp != spnt ) ;
 /*
 **               Null Out Tptr Polygon
-*/         
+*/
                 bcdtmList_nullTptrListDtmObject(dtmP,spnt) ;
                }
             }
@@ -2288,7 +2288,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
 /*
 **  Get Next Point On Hull
 */
-    spnt = nodeAddrP(dtmP,spnt)->hPtr ;     
+    spnt = nodeAddrP(dtmP,spnt)->hPtr ;
    } while ( spnt != dtmP->hullPoint ) ;
 /*
 ** Scan Internal Points For More Than One Feature
@@ -2296,7 +2296,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Internal Points") ;
  for( spnt = 0 ; spnt < dtmP->numPoints ; ++spnt )
    {
-    if( nodeAddrP(dtmP,spnt)->hPtr == dtmP->nullPnt && nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr && nodeAddrP(dtmP,spnt)->PRGN != 2 ) 
+    if( nodeAddrP(dtmP,spnt)->hPtr == dtmP->nullPnt && nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr && nodeAddrP(dtmP,spnt)->PRGN != 2 )
       {
 /*
 **     Determine Number Of Features On Point
@@ -2305,7 +2305,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
 /*
 **     If More Than One Feature At Point Then Polygons Intersect
 */
-       if( numFeatureTable > 1 ) 
+       if( numFeatureTable > 1 )
          {
           if( dbg )
             {
@@ -2319,7 +2319,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
           while( clc != dtmP->nullPtr && np2 == dtmP->nullPnt )
             {
              feature = flistAddrP(dtmP,clc)->dtmFeature ;
-             usertag = ftableAddrP(dtmP,feature)->dtmUserTag ; 
+             usertag = ftableAddrP(dtmP,feature)->dtmUserTag ;
              bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,feature,spnt,&np) ;
              if( np1 == dtmP->nullPnt ) { np1 = np ; usertag1 = usertag ; }
              else                     { np2 = np ; usertag2 = usertag ; }
@@ -2337,22 +2337,22 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
 **        Determine Next Point
 */
           np = dtmP->nullPnt ;
-          if( usertag1 == 2 ) { np = np1 ; usertag = usertag1 ; } 
-          if( usertag2 == 2 ) { np = np2 ; usertag = usertag2 ; } 
+          if( usertag1 == 2 ) { np = np1 ; usertag = usertag1 ; }
+          if( usertag2 == 2 ) { np = np2 ; usertag = usertag2 ; }
           if( np != dtmP->nullPnt ) bcdtmList_countNumberOfDtmFeaturesForPointDtmObject(dtmP,np,&numFeatureTable) ;
 /*
 **        Scan Back To Start Point
 */
           if( np != dtmP->nullPnt && ! nodeAddrP(dtmP,np)->PRGN && numFeatureTable == 1 )
-            { 
+            {
              if( dbg )
                {
                 bcdtmWrite_message(0,0,0,"Next Point = %6ld ** %10.4lf %10.4lf %8.4lf",np,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,np)->z) ;
                 bcdtmWrite_message(0,0,0,"UserTag    = %1ld ",usertag) ;
-               } 
+               }
              sp = spnt ;
              do
-               { 
+               {
                 nodeAddrP(dtmP,sp)->tPtr = np ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"sp = %6ld ** %10.4lf %10.4lf %10.4lf",sp,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;
                 pp = sp ; sp = np ; np = pp ;
@@ -2379,7 +2379,7 @@ BENTLEYDTM_Private int bcdtmClip_getExclusiveIntersectPolygonsDtmObject(BC_DTM_O
                } while ( sp != spnt ) ;
 /*
 **           Null Out Tptr Polygon
-*/         
+*/
              bcdtmList_nullTptrListDtmObject(dtmP,spnt) ;
             }
          }
@@ -2433,7 +2433,7 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
           bcdtmWrite_message(0,0,0,"Feature = %6ld firstPnt = %6ld TYPE = %4ld userTag = %9ld",islandFeature,dtmFeatureP->dtmFeaturePts.firstPoint,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag) ;
          }
       }
-   } 
+   }
 /*
 ** Scan Island Features
 */
@@ -2463,9 +2463,9 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
 /*
 **        Test For Internal Void On Island Hull
 */
-          if( voidFeature != dtmP->nullPnt )  
+          if( voidFeature != dtmP->nullPnt )
             {
-             if( dbg ) 
+             if( dbg )
                {
                 bcdtmWrite_message(0,0,0,"Adjoining Void Feature = %6ld firstPnt = %6ld TYPE = %4ld userTag = %9ld",voidFeature,ftableAddrP(dtmP,voidFeature)->dtmFeaturePts.firstPoint,ftableAddrP(dtmP,voidFeature)->dtmFeatureType,ftableAddrP(dtmP,voidFeature)->dtmUserTag) ;
                 bcdtmWrite_message(0,0,0,"pp = %6ld ** %10.4lf %10.4lf %10.4lf",pp,pointAddrP(dtmP,pp)->x,pointAddrP(dtmP,pp)->y,pointAddrP(dtmP,pp)->z) ;
@@ -2474,10 +2474,10 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
                }
 /*
 **           Copy Island Hull To Tptr Polygon
-*/            
+*/
              if( bcdtmList_copyDtmFeatureToTptrListDtmObject(dtmP,islandFeature,&islandPnt) ) goto errexit ;
              if( dbg )
-               {   
+               {
                 if( bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,islandPnt,&area,&direction) ) goto errexit ;
                 bcdtmWrite_message(0,0,0,"Island Polygon Area = %15.4lf Direction = %2ld",area,direction) ;
                }
@@ -2494,19 +2494,19 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
                   }
                 if( nodeAddrP(dtmP,lp)->tPtr != sp) { nodeAddrP(dtmP,sp)->tPtr = lp ; islandStartPnt = lp ; }
                 np = sp ;
-                sp = lp ; 
-               } while ( sp != ssp ) ; 
+                sp = lp ;
+               } while ( sp != ssp ) ;
 /*
 **          Check Connectivity Of Inserted Tptr Polygon
 */
             if( dbg )
               {
                bcdtmWrite_message(0,0,0,"Checking Connectivity Of Void Polygon") ;
-               if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,islandStartPnt,0)) 
+               if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,islandStartPnt,0))
                  {
                   bcdtmWrite_message(0,0,0,"Connectivity Error In Void Polygon") ;
-                  bcdtmList_writeTptrListDtmObject(dtmP,islandStartPnt) ; 
-                  goto errexit ;  
+                  bcdtmList_writeTptrListDtmObject(dtmP,islandStartPnt) ;
+                  goto errexit ;
                  }
                if( bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,islandStartPnt,&area,&direction) ) goto errexit ;
                bcdtmWrite_message(0,0,0,"Intersected Island Polygon Area = %15.4lf Direction = %2ld",area,direction) ;
@@ -2514,7 +2514,7 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
 /*
 **          Insert Modified Island Feature
 */
-            if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Island,userTag,userFeatureId,islandStartPnt,1)) goto errexit ; 
+            if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Island,userTag,userFeatureId,islandStartPnt,1)) goto errexit ;
 /*
 **          Delete Island
 */
@@ -2538,8 +2538,8 @@ BENTLEYDTM_Public int bcdtmClip_modifyIslandHullsForExternalVoidsDtmObject(BC_DT
             }
           pp = sp ;
           sp = np ;
-         } while ( sp != dtmFeatureP->dtmFeaturePts.firstPoint ) ;  
-      } 
+         } while ( sp != dtmFeatureP->dtmFeaturePts.firstPoint ) ;
+      }
    }
 /*
 ** Compact Features
@@ -2586,7 +2586,7 @@ BENTLEYDTM_Public int bcdtmClip_linearDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,long 
 /*
 ** Initialise Varaibles
 */
- nextPnt         = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ; 
+ nextPnt         = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ;
  dtmFeatureType  = ftableAddrP(dtmP,dtmFeature)->dtmFeatureType ;
  userTag         = ftableAddrP(dtmP,dtmFeature)->dtmUserTag  ;
  userFeatureId        = ftableAddrP(dtmP,dtmFeature)->dtmFeatureId ;
@@ -2604,14 +2604,14 @@ BENTLEYDTM_Public int bcdtmClip_linearDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,long 
       {
        bcdtmClip_scanToMarkedPointDtmFeatureDtmObject(dtmP,dtmFeature,unMarkedPoint,mark,&markedPoint,&priorPoint) ;
        if( unMarkedPoint != priorPoint )
-         { 
-          if( bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObject(dtmP,dtmFeature,unMarkedPoint,priorPoint)) goto errexit ; 
-          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,dtmFeatureType,userTag,userFeatureId,unMarkedPoint,1)) goto errexit ; 
+         {
+          if( bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObject(dtmP,dtmFeature,unMarkedPoint,priorPoint)) goto errexit ;
+          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,dtmFeatureType,userTag,userFeatureId,unMarkedPoint,1)) goto errexit ;
          }
        if( markedPoint == dtmP->nullPnt ) process = 0 ;
        else                              nextPnt = markedPoint ;
-      } 
-   }  
+      }
+   }
 /*
 ** Delete Origonal Feature From Dtm Object
 */
@@ -2624,8 +2624,8 @@ BENTLEYDTM_Public int bcdtmClip_linearDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,long 
 /*
 ** Normal Exit
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Internally Clipping Linear Dtm Feature %6ld Completed",dtmFeature) ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Internally Clipping Linear Dtm Feature %6ld Error",dtmFeature) ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Internally Clipping Linear Dtm Feature %6ld Completed",dtmFeature) ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Internally Clipping Linear Dtm Feature %6ld Error",dtmFeature) ;
  return(ret) ;
 /*
 ** Error Exit
@@ -2655,13 +2655,13 @@ BENTLEYDTM_Private int bcdtmClip_initialiseMarkScanDtmObject(BC_DTM_OBJ *dtmP,lo
 /*
 ** Initialise
 */
- nextPnt = firstPnt = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ; 
+ nextPnt = firstPnt = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ;
  if( nextPnt == dtmP->nullPnt ) { bcdtmWrite_message(1,0,0,"Error Initialising Scan Of Dtm Feature") ; goto errexit ; }
 /*
 ** Only Scan If First Point Not Marked
 */
- if( nodeAddrP(dtmP,firstPnt)->tPtr != mark ) 
-   { 
+ if( nodeAddrP(dtmP,firstPnt)->tPtr != mark )
+   {
 /*
 ** Check For A Closed Dtm Feature
 */
@@ -2678,17 +2678,17 @@ BENTLEYDTM_Private int bcdtmClip_initialiseMarkScanDtmObject(BC_DTM_OBJ *dtmP,lo
       }
 /*
 ** Write Dtm Feature Close Status
-*/ 
+*/
     if( dbg )
       {
        if( nextPnt == firstPnt ) bcdtmWrite_message(0,0,0,"Dtm Feature Closes") ;
        else                      bcdtmWrite_message(0,0,0,"Dtm Feature Open") ;
-      } 
+      }
 /*
 ** If Dtm Feature Closes Scan To First Marked Point
 */
-    if( nextPnt == firstPnt ) 
-      { 
+    if( nextPnt == firstPnt )
+      {
        clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
        while ( clPtr != dtmP->nullPtr )
          {
@@ -2737,7 +2737,7 @@ BENTLEYDTM_Private int bcdtmClip_scanToMarkedPointDtmFeatureDtmObject(BC_DTM_OBJ
 ** This Function Scans To The First Marked Or Unmarked Point In The Dtm Feature List
 */
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;  
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long nextPnt,firstPnt,lastPnt,clPtr ;
 /*
 ** Write Entry Message
@@ -2758,16 +2758,16 @@ BENTLEYDTM_Private int bcdtmClip_scanToMarkedPointDtmFeatureDtmObject(BC_DTM_OBJ
  else
    {
     nextPnt  = startPnt  ;
-    if( nodeAddrP(dtmP,nextPnt)->tPtr == mark ) 
-      { 
-       *markPoint  = nextPnt ; 
+    if( nodeAddrP(dtmP,nextPnt)->tPtr == mark )
+      {
+       *markPoint  = nextPnt ;
        *priorPoint = dtmP->nullPnt ;
       }
 /*
 ** Initialise
 */
     else
-      { 
+      {
        clPtr  = nodeAddrP(dtmP,nextPnt)->fPtr ;
        firstPnt = ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint ;
 /*
@@ -2781,24 +2781,24 @@ BENTLEYDTM_Private int bcdtmClip_scanToMarkedPointDtmFeatureDtmObject(BC_DTM_OBJ
              lastPnt = nextPnt ;
              nextPnt = flistAddrP(dtmP,clPtr)->nextPnt ;
              if( nextPnt != dtmP->nullPnt )
-               {  
+               {
                 clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
-                if( nodeAddrP(dtmP,nextPnt)->tPtr == mark ) 
-                  { 
-                   *markPoint  = nextPnt  ; 
-                   *priorPoint = lastPnt  ; 
-                   clPtr = dtmP->nullPtr ; 
+                if( nodeAddrP(dtmP,nextPnt)->tPtr == mark )
+                  {
+                   *markPoint  = nextPnt  ;
+                   *priorPoint = lastPnt  ;
+                   clPtr = dtmP->nullPtr ;
                   }
-               } 
+               }
              if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt ) clPtr = dtmP->nullPtr ;
             }
          }
 /*
 ** Set Prior Point
 */
-       *priorPoint = lastPnt ; 
+       *priorPoint = lastPnt ;
       }
-   } 
+   }
 /*
 ** Job Completed
 */
@@ -2868,7 +2868,7 @@ BENTLEYDTM_Public int bcdtmClip_externalToTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,
           if( bcdtmList_deleteLineDtmObject(dtmP,sp,cp) ) goto errexit ;
          ++numLines ;
          }
-       nodeP = nodeAddrP(dtmP,sp) ; 
+       nodeP = nodeAddrP(dtmP,sp) ;
        nodeP->hPtr = dtmP->nullPnt ;
        nodeP->tPtr = dtmP->nullPnt ;
        nodeP->sPtr = dtmP->nullPnt ;
@@ -2890,7 +2890,7 @@ BENTLEYDTM_Public int bcdtmClip_externalToTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Lines External To tPtr Polygon") ;
  numLines = 0 ;
- sp = startPnt ; 
+ sp = startPnt ;
  do
    {
     np = nodeAddrP(dtmP,sp)->tPtr ;
@@ -2898,12 +2898,12 @@ BENTLEYDTM_Public int bcdtmClip_externalToTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,
     while ( nodeAddrP(dtmP,cp)->tPtr != sp )
       {
        if(( lp = bcdtmList_nextClkDtmObject(dtmP,sp,cp)) < 0 ) goto errexit ;
-       if( dbg ) bcdtmWrite_message(0,0,0,"Deleting %10ld %10ld",sp,cp) ;      
+       if( dbg ) bcdtmWrite_message(0,0,0,"Deleting %10ld %10ld",sp,cp) ;
        if( bcdtmList_deleteLineDtmObject(dtmP,sp,cp)) goto errexit ;
        ++numLines ;
        cp = lp ;
       }
-    sp = np ; 
+    sp = np ;
    } while( sp != startPnt ) ;
 /*
 ** Write Statistics
@@ -2914,25 +2914,25 @@ BENTLEYDTM_Public int bcdtmClip_externalToTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Copying Tptr List To Hptr List") ;
  if( bcdtmList_copyTptrListToHptrListDtmObject(dtmP,startPnt)) goto errexit ;
- dtmP->hullPoint = startPnt ; 
+ dtmP->hullPoint = startPnt ;
  dtmP->nextHullPoint = nodeAddrP(dtmP,startPnt)->hPtr ;
 /*
 ** Null Out Tptr List
-*/ 
+*/
  if( dbg ) bcdtmWrite_message(0,0,0,"Nulling Out Tptr List") ;
  if( bcdtmList_nullTptrListDtmObject(dtmP,startPnt)) goto errexit ;
 /*
 ** Clean Polygonal Dtm Features On Dtm Hull
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Cleaning Polygonal Features On Dtm Hull") ;
- if( bcdtmClip_externalCleanPolygonalFeaturesDtmObject(dtmP) ) goto errexit ; 
+ if( bcdtmClip_externalCleanPolygonalFeaturesDtmObject(dtmP) ) goto errexit ;
 /*
 ** Check Tin
 */
  if( cdbg )
    {
     bcdtmWrite_message(0,0,0,"Checking DTM After External Clip") ;
-    if( bcdtmCheck_tinComponentDtmObject(dtmP)) 
+    if( bcdtmCheck_tinComponentDtmObject(dtmP))
       {
        bcdtmWrite_message(0,0,0,"DTM Corrupted After External Clip") ;
        goto errexit  ;
@@ -2966,7 +2966,7 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
 ** This Function Clips Dtm Features External To Clip Polygon
 */
 {
- int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
+ int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    clc,spnt,fspnt,dtmFeature,numFeatures ;
  DTMFeatureType dtmFeatureType;
  long    numMarked,numPts,numClipPts ;
@@ -3003,13 +3003,13 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeaturePts.firstPoint != dtmP->nullPnt )
-      { 
+      {
        dtmFeatureType = dtmFeatureP->dtmFeatureType ;
 /*
 **     Initialise Scan Variables
 */
-       numPts = 1 ; 
-       numMarked = 0 ; 
+       numPts = 1 ;
+       numMarked = 0 ;
        fspnt = spnt  = dtmFeatureP->dtmFeaturePts.firstPoint  ;
        if( dbg ) bcdtmWrite_message(0,0,0,"dtmFeature = %8ld ** dtmFeatureType = %2ld firstPoint = %8ld",dtmFeature,dtmFeatureType,fspnt) ;
        clc   = nodeAddrP(dtmP,fspnt)->fPtr ;
@@ -3026,7 +3026,7 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeatureType = %2ld firstPoint = %8ld nextPoint = %8ld",dtmFeatureType,fspnt,spnt) ;
              if( spnt != dtmP->nullPnt )
                {
-                ++numPts ; 
+                ++numPts ;
                 if( nodeAddrP(dtmP,spnt)->tPtr == mark ) ++numMarked ;
                 clc = nodeAddrP(dtmP,spnt)->fPtr ;
                }
@@ -3035,13 +3035,13 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
          }
 /*
 **     Clip Feature
-*/ 
+*/
        if( numMarked > 0 )
-         { 
+         {
 /*
 **        Write Feature
 */
-          if( dbg ) 
+          if( dbg )
             {
              bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName) ;
              bcdtmWrite_message(0,0,0,"Clipping Feature = %6ld of %6ld ** Type = %6ld Name = %s",dtmFeature,numFeatures,dtmFeatureType,dtmFeatureTypeName) ;
@@ -3051,18 +3051,18 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
 **        Delete Origonal Feature From Dtm Object If All Feature Points marked
 */
           if( numPts == numMarked || ( dtmFeatureType != DTMFeatureType::GroupSpots && numPts == numMarked + 1) )
-            {  
+            {
              if( dbg ) bcdtmWrite_message(0,0,0,"**** Removing Feature") ;
-             if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ; 
+             if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
             }
 
 /*
 **        Delete Clipped Sections Of Feature Only
 */
-          else 
+          else
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"**** Clipping Feature %6ld",dtmFeature) ;
-             switch ( dtmFeatureType ) 
+             switch ( dtmFeatureType )
                {
                 case DTMFeatureType::GroupSpots :
                 if( bcdtmClip_groupSpotDtmFeatureDtmObject(dtmP,dtmFeature,mark)) goto errexit ;
@@ -3075,18 +3075,18 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
                 case DTMFeatureType::Hole    :
                 if( bcdtmClip_externalPolygonalDtmFeatureDtmObject(dtmP,dtmFeature,clipPtsP,numClipPts)) goto errexit ;
                 break ;
-               
+
                 case DTMFeatureType::Breakline :
-                case DTMFeatureType::ContourLine : 
+                case DTMFeatureType::ContourLine :
                 case DTMFeatureType::SoftBreakline :
                 if( bcdtmClip_linearDtmFeatureDtmObject(dtmP,dtmFeature,mark)) goto errexit ;
                 break ;
 
                 default :
                 bcdtmWrite_message(2,0,0,"Unknown DTM Feature Type = %8d",dtmFeatureType) ;
-                goto errexit ; 
+                goto errexit ;
                 break ;
-               } ; 
+               } ;
             }
          }
       }
@@ -3116,14 +3116,14 @@ BENTLEYDTM_Public int bcdtmClip_dtmFeaturesExternalToTptrPolygonDtmObject(BC_DTM
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|                                                                    |                        
+|                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
 (
  BC_DTM_OBJ *dtmP,
  long       mark
-) 
+)
 /*
 ** Scan Feature Lists And Mark Feature Lines That Span Concave Clip Boundaries
 */
@@ -3139,7 +3139,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
 ** Check For Existence Of Features
 */
  numMarked = 0 ;
- if( dtmP->numFeatures > 0 ) 
+ if( dtmP->numFeatures > 0 )
    {
 /*
 ** Scan Feature Lists
@@ -3152,7 +3152,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Dtm Feature = %6ld Type = %4ld Tag = %9I64d",dtmFeature,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag) ;
 /*
 **        Process Feature Marking External Parts
-*/ 
+*/
           nextPnt = firstPnt = lastPnt = dtmFeatureP->dtmFeaturePts.firstPoint ;
           clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
           while ( clPtr != dtmP->nullPtr )
@@ -3169,7 +3169,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
                   {
 /*
 **                 Check If Feature Line End Points Are Not marked
-*/ 
+*/
                    if( nodeAddrP(dtmP,lastPnt)->tPtr == dtmP->nullPnt && nodeAddrP(dtmP,nextPnt)->tPtr == dtmP->nullPnt )
                      {
 /*
@@ -3181,26 +3181,26 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
 **                       Check The Feature Segment Is Not Coincident With The Clip Boundary
 */
                          if( nodeAddrP(dtmP,lastPnt)->sPtr != nextPnt || nodeAddrP(dtmP,nextPnt)->sPtr != lastPnt )
-                           {                         
+                           {
 /*
 **                          Check Feature Line Is Outside OF Clip Boundary
 */
                             outside = 0 ;
-                            if( ( lp = bcdtmList_nextClkDtmObject(dtmP,lastPnt,nodeAddrP(dtmP,lastPnt)->sPtr)) < 0 ) 
+                            if( ( lp = bcdtmList_nextClkDtmObject(dtmP,lastPnt,nodeAddrP(dtmP,lastPnt)->sPtr)) < 0 )
                               {
                                bcdtmWrite_message(0,0,0,"Processing DTM Feature %8ld",dtmFeature) ;
                                goto errexit  ;
-                              } 
+                              }
                             while( nodeAddrP(dtmP,lp)->sPtr != lastPnt && ! outside )
                               {
-                               if( lp == nextPnt ) outside = 1 ;  
-                               else if( ( lp = bcdtmList_nextClkDtmObject(dtmP,lastPnt,lp)) < 0 ) 
+                               if( lp == nextPnt ) outside = 1 ;
+                               else if( ( lp = bcdtmList_nextClkDtmObject(dtmP,lastPnt,lp)) < 0 )
                                  {
                                   bcdtmWrite_message(0,0,0,"Processing DTM Feature %8ld",dtmFeature) ;
                                   goto errexit  ;
-                                 } 
+                                 }
                               }
-                              
+
                             if( outside )
                               {
                                nodeAddrP(dtmP,lastPnt)->tPtr = mark ;
@@ -3208,20 +3208,20 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
                                numMarked = numMarked + 2 ;
                               }
                            }
-                        }   
+                        }
                      }
                    clPtr   = nodeAddrP(dtmP,nextPnt)->fPtr ;
                   }
-                if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt )  clPtr = dtmP->nullPtr ; 
+                if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt )  clPtr = dtmP->nullPtr ;
                }
-            } 
+            }
          }
-      } 
+      }
    }
 /*
 ** Log Number Marked
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Features Marked = %8ld",numMarked) ;   
+ if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Features Marked = %8ld",numMarked) ;
 /*
 ** Clean Up
 */
@@ -3231,7 +3231,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
 */
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Marking DTM Feature Concave Spans Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Marking DTM Feature Concave Spans Error") ;
- return(ret) ; 
+ return(ret) ;
 /*
 ** Error Exit
 */
@@ -3241,10 +3241,10 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndMarkConcaveSpansDtmObject
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|                                                                    |                        
+|                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObject(BC_DTM_OBJ *dtmP,long Mark) 
+BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObject(BC_DTM_OBJ *dtmP,long Mark)
 /*
 ** Scan Feature Lists And Detect And Fix Lines That Span Concave Clip Boundaries
 */
@@ -3260,7 +3260,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
 /*
 ** Check For Existence Of Features
 */
- if( dtmP->numFeatures > 0 ) 
+ if( dtmP->numFeatures > 0 )
    {
 /*
 ** Scan Feature Lists
@@ -3273,7 +3273,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
           if( dbg ) bcdtmWrite_message(0,0,0,"Dtm Feature = %6ld Type = %4ld Tag = %9I64d",dtmFeature,dtmFeatureP->dtmFeatureType,dtmFeatureP->dtmUserTag) ;
 /*
 **        Process Feature Marking External Parts
-*/ 
+*/
           nextPnt = firstPnt = lastPnt = dtmFeatureP->dtmFeaturePts.firstPoint ;
           clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
           while ( clPtr != dtmP->nullPtr )
@@ -3290,14 +3290,14 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
                   {
 /*
 **                 Check If Feature Line End Points Are Not Marked
-*/ 
+*/
                    if( nodeAddrP(dtmP,lastPnt)->tPtr == dtmP->nullPnt && nodeAddrP(dtmP,nextPnt)->tPtr == dtmP->nullPnt )
                      {
 /*
 **                    Check Feature Line End Points Are On Clip Boundary
 */
                       if(nodeAddrP(dtmP,lastPnt)->sPtr != dtmP->nullPnt && nodeAddrP(dtmP,nextPnt)->sPtr != dtmP->nullPnt )
-                        { 
+                        {
 /*
 **                       Check Feature Line Is Not Coincident With Clip Boundary
 */
@@ -3307,7 +3307,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
                             if( ( lp = bcdtmList_nextClkDtmObject(dtmP,lastPnt,nodeAddrP(dtmP,lastPnt)->sPtr)) < 0 ) goto errexit  ;
                             while( nodeAddrP(dtmP,lp)->sPtr != lastPnt && ! outside )
                               {
-                               if( lp == nextPnt ) outside = 1 ;  
+                               if( lp == nextPnt ) outside = 1 ;
                                else if( ( lp = bcdtmList_nextClkDtmObject(dtmP,lastPnt,lp)) < 0 ) goto errexit  ;
                               }
                             if( outside )
@@ -3322,47 +3322,47 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
                                if( bcdtmInsert_addPointToDtmObject(dtmP,x,y,z,&np) ) goto errexit  ;
                                if( bcdtmList_deleteLineDtmObject(dtmP,lastPnt,nextPnt)) goto errexit  ;
                                if( ap != dtmP->nullPnt && cp != dtmP->nullPnt )
-                                 { 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,lastPnt,np,ap) ) goto errexit  ;   
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,lastPnt,dtmP->nullPnt) ) goto errexit  ;   
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,ap,np,nextPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,ap,lastPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,nextPnt,np,cp)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,nextPnt,ap)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,np,lastPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,cp,nextPnt)) goto errexit  ; 
+                                 {
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,lastPnt,np,ap) ) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,lastPnt,dtmP->nullPnt) ) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,ap,np,nextPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,ap,lastPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,nextPnt,np,cp)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,nextPnt,ap)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,np,lastPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,cp,nextPnt)) goto errexit  ;
                                  }
                                if( ap != dtmP->nullPnt && cp == dtmP->nullPnt )
-                                 { 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,lastPnt,np,ap) ) goto errexit  ;   
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,lastPnt,dtmP->nullPnt) ) goto errexit  ;   
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,ap,np,nextPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,ap,lastPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineBeforePointDtmObject(dtmP,nextPnt,np,ap)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,nextPnt,ap)) goto errexit  ; 
+                                 {
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,lastPnt,np,ap) ) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,lastPnt,dtmP->nullPnt) ) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,ap,np,nextPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,ap,lastPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineBeforePointDtmObject(dtmP,nextPnt,np,ap)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,nextPnt,ap)) goto errexit  ;
                                  }
                                if( ap == dtmP->nullPnt && cp != dtmP->nullPnt )
-                                 { 
-                                  if( bcdtmList_insertLineBeforePointDtmObject(dtmP,lastPnt,np,cp) ) goto errexit  ;   
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,lastPnt,dtmP->nullPnt) ) goto errexit  ;   
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,nextPnt,np,cp))   goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,nextPnt,lastPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,np,lastPnt)) goto errexit  ; 
-                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,cp,nextPnt)) goto errexit  ; 
+                                 {
+                                  if( bcdtmList_insertLineBeforePointDtmObject(dtmP,lastPnt,np,cp) ) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,lastPnt,dtmP->nullPnt) ) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,nextPnt,np,cp))   goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,nextPnt,lastPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,np,lastPnt)) goto errexit  ;
+                                  if( bcdtmList_insertLineAfterPointDtmObject(dtmP,np,cp,nextPnt)) goto errexit  ;
                                  }
-                               if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,lastPnt,nextPnt,np)) goto errexit  ;                 
+                               if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,lastPnt,nextPnt,np)) goto errexit  ;
                                nodeAddrP(dtmP,np)->tPtr = Mark ;
                               }
-                           }  
+                           }
                         }
                      }
                    clPtr   = nodeAddrP(dtmP,nextPnt)->fPtr ;
                   }
-                if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt )  clPtr = dtmP->nullPtr ; 
+                if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt )  clPtr = dtmP->nullPtr ;
                }
-            } 
+            }
          }
-      } 
+      }
    }
 /*
 ** Clean Up
@@ -3373,7 +3373,7 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
 */
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Fixing DTM Feature Concave Spans Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Fixing DTM Feature Concave Spans Error") ;
- return(ret) ; 
+ return(ret) ;
 /*
 ** Error Exit
 */
@@ -3389,10 +3389,10 @@ BENTLEYDTM_Public int bcdtmClip_scanFeatureListAndDetectAndFixConcaveSpansDtmObj
 BENTLEYDTM_Private int bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature,long startPnt,long endPnt)
 /*
 **
-** This Function Places A section Of The Dtm dtmFeature Into The Tptr List 
+** This Function Places A section Of The Dtm dtmFeature Into The Tptr List
 **
 */
-{  
+{
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long firstPnt,nextPnt,lastPnt,sectionStartPnt,clPtr ;
 /*
@@ -3406,7 +3406,7 @@ BENTLEYDTM_Private int bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObje
    {
     bcdtmWrite_message(2,0,0,"Start Point In Dtm Feature List Is Equal To Last Point ") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Initialise
 */
@@ -3426,10 +3426,10 @@ BENTLEYDTM_Private int bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObje
          {
           nextPnt = flistAddrP(dtmP,clPtr)->nextPnt ;
           if( nextPnt != dtmP->nullPnt )
-            { 
+            {
              if( nextPnt == startPnt ) { sectionStartPnt = nextPnt ; nextPnt = dtmP->nullPnt ; }
              else                      clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
-            } 
+            }
           if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt ) clPtr = dtmP->nullPtr ;
          }
       }
@@ -3440,7 +3440,7 @@ BENTLEYDTM_Private int bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObje
       {
        bcdtmWrite_message(2,0,0,"Cannot Find Start Point In Dtm Feature List") ;
        goto errexit ;
-      }    
+      }
    }
 /*
 ** Scan From Start Point To End Point And Store In Tptr List
@@ -3456,9 +3456,9 @@ BENTLEYDTM_Private int bcdtmClip_placeLinearDtmFeatureSectionIntoTptrListDtmObje
        nodeAddrP(dtmP,lastPnt)->tPtr = nextPnt ;
        lastPnt = nextPnt ;
        if( nextPnt != dtmP->nullPnt )
-         { 
+         {
           clPtr = nodeAddrP(dtmP,nextPnt)->fPtr ;
-          if( nextPnt == endPnt ) nodeAddrP(dtmP,nextPnt)->tPtr = dtmP->nullPnt ; 
+          if( nextPnt == endPnt ) nodeAddrP(dtmP,nextPnt)->tPtr = dtmP->nullPnt ;
          }
        if( nextPnt == dtmP->nullPnt || nextPnt == firstPnt || nextPnt == endPnt ) clPtr = dtmP->nullPtr ;
       }
@@ -3511,7 +3511,7 @@ BENTLEYDTM_Public int bcdtmClip_resolveAdjoiningPolygonalFeaturesDtmObject(BC_DT
 /*
 ** Only Process If Polygonal Features Present
 */
- if( numVoid > 1 || numIsland != 0 || numHole != 0 ) 
+ if( numVoid > 1 || numIsland != 0 || numHole != 0 )
    {
 /*
 **  Look For Adjoining Voids
@@ -3529,8 +3529,8 @@ BENTLEYDTM_Public int bcdtmClip_resolveAdjoiningPolygonalFeaturesDtmObject(BC_DT
                 if( bcdtmClip_findAndMergeAdjoiningVoidsDtmObject(dtmP,dtmFeature)) goto errexit ;
                }
             }
-         } 
-      } 
+         }
+      }
 /*
 **  Compact Features
 */
@@ -3574,14 +3574,14 @@ BENTLEYDTM_EXPORT int  bcdtmClip_checkTinHullsIntersectDtmObject(BC_DTM_OBJ *dtm
  long numhullPts1P=0,numhullPts2P=0,intersectFlag ;
  DPoint3d  *hullPts1P=NULL,*hullPts2P=NULL ;
 /*
-** Initialise 
+** Initialise
 */
  *intersectResultP = 0 ;
 /*
 ** Extract Tin Hull From Tin Objects
 */
  if( bcdtmList_extractHullDtmObject(dtm1P,&hullPts1P,&numhullPts1P)) goto errexit ;
- if( bcdtmList_extractHullDtmObject(dtm2P,&hullPts2P,&numhullPts2P)) goto errexit ; 
+ if( bcdtmList_extractHullDtmObject(dtm2P,&hullPts2P,&numhullPts2P)) goto errexit ;
 /*
 ** Check Intersection
 */
@@ -3594,8 +3594,8 @@ BENTLEYDTM_EXPORT int  bcdtmClip_checkTinHullsIntersectDtmObject(BC_DTM_OBJ *dtm
 ** Cleanup
 */
  cleanup :
- if( hullPts1P != NULL ) free(hullPts1P) ;  
- if( hullPts2P != NULL ) free(hullPts2P) ;  
+ if( hullPts1P != NULL ) free(hullPts1P) ;
+ if( hullPts2P != NULL ) free(hullPts2P) ;
 /*
 ** Job Completed
 */
@@ -3642,7 +3642,7 @@ BENTLEYDTM_Private int bcdtmClip_copyTptrListToPointArrayDtmObject(BC_DTM_OBJ *d
  sp = startPnt ;
  do
    {
-    ++*numTptrPtsP ; 
+    ++*numTptrPtsP ;
     sp = nodeAddrP(dtmP,sp)->tPtr ;
    } while ( sp != startPnt && nodeAddrP(dtmP,sp)->tPtr != dtmP->nullPnt ) ;
 /*
@@ -3651,7 +3651,7 @@ BENTLEYDTM_Private int bcdtmClip_copyTptrListToPointArrayDtmObject(BC_DTM_OBJ *d
  if( sp == startPnt ) ++*numTptrPtsP ;
 /*
 ** Allocate memory For DPoint3d Array
-*/ 
+*/
  *tptrPtsPP = ( DPoint3d * ) malloc( *numTptrPtsP * sizeof(DPoint3d)) ;
  if( *tptrPtsPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
@@ -3660,7 +3660,7 @@ BENTLEYDTM_Private int bcdtmClip_copyTptrListToPointArrayDtmObject(BC_DTM_OBJ *d
  p3dP = *tptrPtsPP ;
  sp = startPnt ;
  do
-   { 
+   {
     p3dP->x = pointAddrP(dtmP,sp)->x  ;
     p3dP->y = pointAddrP(dtmP,sp)->y  ;
     p3dP->z = (double) sp  ;
@@ -3675,7 +3675,7 @@ if( sp == startPnt )
    p3dP->x = pointAddrP(dtmP,sp)->x  ;
    p3dP->y = pointAddrP(dtmP,sp)->y  ;
    p3dP->z = (double) sp  ;
-  } 
+  }
 /*
 ** Clean Up
 */
@@ -3717,8 +3717,8 @@ BENTLEYDTM_Private int bcdtmClip_testForVoidOrHoleHullLineDtmObject(BC_DTM_OBJ *
        if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
            ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    ) { *featureP = flistAddrP(dtmP,flPtr)->dtmFeature ; return(1) ; }
       }
-    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;  
-   } 
+    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+   }
 /*
 ** Test For Void Hull Line From pnt2 To pnt1
 */
@@ -3730,8 +3730,8 @@ BENTLEYDTM_Private int bcdtmClip_testForVoidOrHoleHullLineDtmObject(BC_DTM_OBJ *
        if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
            ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    ) { *featureP = flistAddrP(dtmP,flPtr)->dtmFeature ; return(1) ; }
       }
-    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;  
-   } 
+    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+   }
 /*
 ** Job Completed
 */
@@ -3762,8 +3762,8 @@ BENTLEYDTM_Private int bcdtmClip_testForIslandHullLineDtmObject(BC_DTM_OBJ *dtmP
       {
        if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Island ) { *featureP = flistAddrP(dtmP,flPtr)->dtmFeature ; return(1) ; }
       }
-    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;  
-   } 
+    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+   }
 /*
 ** Test For Void Hull Line From pnt2 To pnt1
 */
@@ -3774,8 +3774,8 @@ BENTLEYDTM_Private int bcdtmClip_testForIslandHullLineDtmObject(BC_DTM_OBJ *dtmP
       {
        if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Island ) { *featureP = flistAddrP(dtmP,flPtr)->dtmFeature ; return(1) ; }
       }
-    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;  
-   } 
+    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+   }
 /*
 ** Job Completed
 */
@@ -3799,9 +3799,9 @@ BENTLEYDTM_Private int bcdtmClip_testForPointOnVoidHullDtmObject(BC_DTM_OBJ *dtm
  while ( flPtr != dtmP->nullPtr )
    {
     if( ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Void ||
-        ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    )  return(1) ; 
-    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;  
-   } 
+        ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Hole    )  return(1) ;
+    flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+   }
 /*
 ** Job Completed
 */
@@ -3845,14 +3845,14 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
           bcdtmWrite_message(0,0,0,"dtmFeature = %6ld firstPnt = %6ld TYPE = %4ld userTag = %9ld",dtmFeature,ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint,ftableAddrP(dtmP,dtmFeature)->dtmFeatureType,ftableAddrP(dtmP,dtmFeature)->dtmUserTag) ;
          }
       }
-   } 
+   }
 /*
 **  Clear Tin Hull Markers
 */
  sp = dtmP->hullPoint ;
  do
-   { 
-    nodeAddrP(dtmP,sp)->PRGN = 0 ; 
+   {
+    nodeAddrP(dtmP,sp)->PRGN = 0 ;
     sp = nodeAddrP(dtmP,sp)->hPtr ;
    } while ( sp != dtmP->hullPoint ) ;
 /*
@@ -3864,13 +3864,13 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
     np = nodeAddrP(dtmP,sp)->hPtr ;
     if( bcdtmClip_testForVoidOrHoleHullLineDtmObject(dtmP,sp,np,&dtmFeature) && ! nodeAddrP(dtmP,sp)->PRGN && ! nodeAddrP(dtmP,np)->PRGN && ! bcdtmClip_testForIslandHullLineDtmObject(dtmP,sp,np,&feature) )
       {
-       if( dbg ) 
+       if( dbg )
          {
           bcdtmWrite_message(0,0,0,"Void dtmFeature %6ld Fpnt = %6ld On Tin Hull %6ld %6ld",dtmFeature,ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint,sp,np) ;
           bcdtmWrite_message(0,0,0,"Sp = %6ld Fptr = %6ld ** %10.4lf %10.4lf %10.4lf",sp,nodeAddrP(dtmP,sp)->hPtr,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,sp)->z) ;
           bcdtmWrite_message(0,0,0,"Np = %6ld Fptr = %6ld ** %10.4lf %10.4lf %10.4lf",np,nodeAddrP(dtmP,np)->hPtr,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,pointAddrP(dtmP,np)->z) ;
-         } 
-       connectError = 0 ;  
+         }
+       connectError = 0 ;
        ssp = sp ; snp = np ;
 /*
 **     Get Void dtmFeature Tag
@@ -3880,10 +3880,10 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
 /*
 **     Scan Anti-Clockwise Around Inside Of Hull back To Start Point
 */
-       if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Anti Clockwise Around Inside") ; 
-       nodeAddrP(dtmP,sp)->tPtr = np ; 
+       if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Anti Clockwise Around Inside") ;
+       nodeAddrP(dtmP,sp)->tPtr = np ;
         do
-          {   
+          {
            if(( lp = bcdtmList_nextClkDtmObject(dtmP,np,sp)) < 0 ) goto errexit ;
            while ( ! bcdtmClip_testForVoidOrHoleHullLineDtmObject(dtmP,np,lp,&feature) &&
                    ! bcdtmClip_testForIslandHullLineDtmObject(dtmP,np,lp,&feature)         )
@@ -3891,52 +3891,52 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
               if(( lp = bcdtmList_nextClkDtmObject(dtmP,np,lp)) < 0 ) goto errexit ;
              }
            sp = np ; np = lp ;
-           nodeAddrP(dtmP,sp)->tPtr = np ; 
+           nodeAddrP(dtmP,sp)->tPtr = np ;
           } while ( sp != ssp ) ;
 /*
 **     Check Connectivity Of Inserted Tptr Polygon
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Checking Connectivity Of Void Polygon") ;
-       if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,ssp,0)) 
+       if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,ssp,0))
          {
-          if( dbg == 2 ) bcdtmList_writeTptrListDtmObject(dtmP,ssp) ; 
+          if( dbg == 2 ) bcdtmList_writeTptrListDtmObject(dtmP,ssp) ;
           connectError = 1 ;
-         } 
+         }
 /*
-**     Insert New Feature If No Connect Error  
+**     Insert New Feature If No Connect Error
 */
        if( ! connectError )
-         {  
+         {
           if( dbg )
-            {  
+            {
              if( bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,ssp,&area,&direction) ) goto errexit ;
              bcdtmWrite_message(0,0,0,"Void Polygon area = %15.4lf direction = %2ld",area,direction) ;
-            } 
+            }
 /*
 **        Mark Hull Points
 */
           sp = ssp ;
-          do 
+          do
             {
              nodeAddrP(dtmP,sp)->PRGN = 1  ;
              sp = nodeAddrP(dtmP,sp)->tPtr ;
-            } while ( sp != ssp ) ; 
+            } while ( sp != ssp ) ;
 /*
 **        Insert Void In Tin
 */
           if( dbg ) bcdtmWrite_message(0,0,0,"Inserting New Feature") ;
-          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Void,userTag,userFeatureId,ssp,1)) goto errexit ; 
-         }   
+          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Void,userTag,userFeatureId,ssp,1)) goto errexit ;
+         }
 /*
 **     Mark Origonal Void dtmFeature For Deletion
 */
        if( ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint >= 0 ) ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint = - (ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint + 1 ) ;
 /*
-**     Reset 
+**     Reset
 */
        sp = ssp ;
        np = snp ;
-      } 
+      }
     sp = np ;
    } while ( sp != dtmP->hullPoint ) ;
 /*
@@ -3945,7 +3945,7 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
     if( ftableAddrP(dtmP,dtmFeature)->dtmFeatureState == DTMFeatureState::Tin )
-      { 
+      {
         if( ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint != dtmP->nullPnt )
           {
            if( ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint < 0 )
@@ -3955,7 +3955,7 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
               if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
              }
           }
-      }  
+      }
    }
 /*
 ** Clear Hull Markers
@@ -3967,11 +3967,11 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Looking For Void Points On Tin Hull") ;
  sp = dtmP->hullPoint ;
- do 
-   { 
+ do
+   {
     if( ! bcdtmClip_testForPointOnVoidHullDtmObject(dtmP,sp) )
       {
-       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,sp)->PCWD) ) 
+       if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,sp)->PCWD) )
          {
           ssp = sp ;
           np  = nodeAddrP(dtmP,sp)->hPtr ;
@@ -3980,9 +3980,9 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
 /*
 **        Scan Anti Clockwise And Extract Void
 */
-          nodeAddrP(dtmP,sp)->tPtr = np ; 
+          nodeAddrP(dtmP,sp)->tPtr = np ;
           do
-            {   
+            {
              if(( lp = bcdtmList_nextClkDtmObject(dtmP,np,sp)) < 0 ) goto errexit ;
              while ( nodeAddrP(dtmP,np)->hPtr != lp && ! bcdtmClip_testForIslandHullLineDtmObject(dtmP,lp,np,&feature) )
                {
@@ -3990,7 +3990,7 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
                }
              if( dbg ) bcdtmWrite_message(0,0,0,"Lp Point %6ld ** Fptr = %9ld %10.4lf %10.4lf %10.4lf",lp,nodeAddrP(dtmP,lp)->hPtr,pointAddrP(dtmP,lp)->x,pointAddrP(dtmP,lp)->y,pointAddrP(dtmP,lp)->z) ;
              sp = np ; np = lp ;
-             nodeAddrP(dtmP,sp)->tPtr = np ; 
+             nodeAddrP(dtmP,sp)->tPtr = np ;
             } while ( sp != ssp ) ;
 /*
 **        Check Connectivity Of Inserted Tptr Polygon
@@ -3998,21 +3998,21 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
           if( dbg )
             {
              bcdtmWrite_message(0,0,0,"Checking Connectivity Of Void Polygon") ;
-             if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,ssp,0)) 
+             if( bcdtmList_checkConnectivityTptrPolygonDtmObject(dtmP,ssp,0))
                {
-                bcdtmList_writeTptrListDtmObject(dtmP,ssp) ; 
-                goto errexit ;  
+                bcdtmList_writeTptrListDtmObject(dtmP,ssp) ;
+                goto errexit ;
                }
              if( bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,ssp,&area,&direction) ) goto errexit ;
              bcdtmWrite_message(0,0,0,"Void Polygon area = %15.4lf direction = %2ld",area,direction) ;
-            } 
+            }
 /*
 **        Insert Void In Tin
 */
-          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->nullFeatureId,ssp,1)) goto errexit ; 
+          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->nullFeatureId,ssp,1)) goto errexit ;
 /*
 **        Reset
-*/       
+*/
           sp = ssp ;
          }
       }
@@ -4032,7 +4032,7 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
 **     Delete Island Feature From Tin
 */
        if( bcdtmInsert_removeDtmTinFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
-      } 
+      }
     sp = np ;
    } while ( sp != dtmP->hullPoint ) ;
 /*
@@ -4057,6 +4057,97 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+//=======================================================================================
+// @bsimethod                                    Daryl.Holmwood                 08/2016
+//=======================================================================================
+BENTLEYDTM_Public int bcdtmClip_checkFillTptrPolygonWithTrianglesDtmDTMObject(BC_DTM_OBJ *dtmP, long point)
+/*
+** This Function Fills A Tptr Polygon With Triangles
+*/
+    {
+    int   ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0), cdbg = DTM_CHECK_VALUE(0);
+    long  numPoints;
+    DPoint3d   *pointsP = NULL;
+    BC_DTM_OBJ  *tempDtmP = NULL;
+    /*
+    ** Write Entry Message
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Filling Tptr Polygon With Triangles");
+    /*
+    ** Check Line Connections
+    */
+    if (cdbg)
+        {
+        bcdtmWrite_message(0, 0, 0, "Checking Reverse Line Connections");
+        if (bcdtmClip_checkReverseLineConnectionsDtmObject(dtmP)) goto errexit;
+        }
+    /*
+    ** Write Out Tptr Polygon
+    */
+    if (dbg) bcdtmList_writeTptrListDtmObject(dtmP, point);
+    /*
+    ** Copy Tptr Polygon To Point Array
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Copying Tptr Polygon To Point Array");
+    if (bcdtmClip_copyTptrListToPointArrayDtmObject(dtmP, point, &pointsP, &numPoints)) goto errexit;
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Number Of Tptr Polygon Points = %8ld", numPoints);
+    /*
+    ** Create Dtm Object
+    */
+    if (bcdtmObject_createDtmObject(&tempDtmP)) goto errexit;
+    /*
+    ** Set Memory Allocation Parameters For tempDtmP Object
+    */
+    if (bcdtmObject_setPointMemoryAllocationParametersDtmObject(tempDtmP, numPoints, numPoints)) goto errexit;
+    /*
+    **  Store Polygon In tempDtmP Object As Break Lines
+    */
+    if (bcdtmObject_storeDtmFeatureInDtmObject(tempDtmP, DTMFeatureType::Breakline, tempDtmP->nullUserTag, 1, &tempDtmP->nullFeatureId, pointsP, numPoints)) goto errexit;
+    /*
+    ** Triangulate tempDtmP Object
+    */
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Triangulating Temporary Dtm Object");
+    tempDtmP->ppTol = tempDtmP->plTol = 0.0;
+    if (bcdtmObject_createTinDtmObject(tempDtmP, 1, 0.0, false, false)) goto errexit;
+
+    if (tempDtmP->numPoints != numPoints - 1)
+        goto errexit;
+
+    for (int i = 0; i < tempDtmP->numPoints - 1; i++)
+        {
+        DPoint3dCR pt = *pointAddrP(tempDtmP, i);
+        bool foundPt = false;
+        for (int j = 0; j < numPoints; j++)
+            {
+            if (pointsP[j].IsEqual(pt))
+                {
+                foundPt = true;
+                break;
+                }
+            }
+        if (!foundPt)
+            goto errexit;
+        }
+    /*
+    ** Clean Up
+    */
+cleanup:
+    if (pointsP != NULL) free(pointsP);
+    if (tempDtmP != NULL) bcdtmObject_destroyDtmObject(&tempDtmP);
+    /*
+    ** Job Completed
+    */
+    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Check Filling Tptr Polygon With Triangles Completed");
+    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Check Filling Tptr Polygon With Triangles Error");
+    return(ret);
+    /*
+    ** Error Exit
+    */
+errexit:
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4109,16 +4200,16 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
 ** Triangulate tempDtmP Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Temporary Dtm Object") ;
- tempDtmP->ppTol = tempDtmP->plTol = 0.0 ;  
+ tempDtmP->ppTol = tempDtmP->plTol = 0.0 ;
  if( bcdtmObject_createTinDtmObject(tempDtmP,1,0.0, false, false)) goto errexit ;
 /*
 ** Check For Triangulation Errors
 */
  if( cdbg )
    {
-    bcdtmWrite_message(0,0,0,"Checking For Tin Feature Errors") ; 
+    bcdtmWrite_message(0,0,0,"Checking For Tin Feature Errors") ;
     if( bcdtmCheck_forTinFeatureErrorsDtmObject(tempDtmP,1,&numTinErrors)) goto errexit ;
-    bcdtmWrite_message(0,0,0,"Number Of Tin Feature Errors = %6ld",numTinErrors) ; 
+    bcdtmWrite_message(0,0,0,"Number Of Tin Feature Errors = %6ld",numTinErrors) ;
    }
 /*
 ** Remove None Feature Hull Lines
@@ -4136,17 +4227,17 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
 */
     bcdtmWrite_message(0,0,0,"Checking Topology") ;
     if( bcdtmCheck_topologyDtmObject(tempDtmP,1))
-      { 
+      {
        bcdtmWrite_message(1,0,0,"Fill DTM Topology Corrupted") ;
-       goto errexit ; 
+       goto errexit ;
       }
     bcdtmWrite_message(0,0,0,"Fill DTM Topology Valid") ;
 /*
 **  Check Precision
 */
     bcdtmWrite_message(0,0,0,"Checking Precision") ;
-    if( bcdtmCheck_precisionDtmObject(tempDtmP,1)) 
-      { 
+    if( bcdtmCheck_precisionDtmObject(tempDtmP,1))
+      {
        bcdtmWrite_message(1,0,0,"Fill DTM Precision Corrupted") ;
        goto errexit ;
       }
@@ -4166,7 +4257,7 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
           bcdtmWrite_message(0,0,0,"Inconsistency In Related Points ** sp = %8ld np = %8ld ** rsp = %8ld rnp = %8ld",sp,np,rsp,rnp) ;
           bcdtmWrite_message(1,0,0,"Related Points Error") ;
           goto errexit ;
-         }  
+         }
        sp = np ;
       } while( sp != tempDtmP->hullPoint ) ;
     bcdtmWrite_message(0,0,0,"Checking Consistency Of Related Points OK") ;
@@ -4177,15 +4268,15 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Internal Lines") ;
  pp  = tempDtmP->hullPoint ;
  sp  = nodeAddrP(tempDtmP,pp)->hPtr ;
- rsp = (long)pointAddrP(tempDtmP,sp)->z ;
+ rsp = (long)pointAddrP(tempDtmP, sp)->z;
  do
-   { 
+   {
     np  = nodeAddrP(tempDtmP,sp)->hPtr ;
-    rnp = (long)pointAddrP(tempDtmP,np)->z ;
+    rnp = (long)pointAddrP(tempDtmP, np)->z;
     if(( cp = bcdtmList_nextClkDtmObject(tempDtmP,sp,pp)) < 0 ) goto errexit ;
     while ( cp != np )
       {
-       rcp = (long)pointAddrP(tempDtmP,cp)->z ;
+       rcp = (long)pointAddrP(tempDtmP, cp)->z;
        if( bcdtmList_insertLineBeforePointDtmObject(dtmP,rsp,rcp,rnp)) goto errexit  ;
        if(( cp = bcdtmList_nextClkDtmObject(tempDtmP,sp,cp)) < 0 ) goto errexit  ;
       }
@@ -4206,7 +4297,7 @@ BENTLEYDTM_Public int bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(BC_DTM_OBJ
 */
  cleanup :
  if( pointsP  != NULL ) free(pointsP) ;
- if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP)  ;  
+ if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP)  ;
 /*
 ** Job Completed
 */
@@ -4247,9 +4338,9 @@ BENTLEYDTM_Private int bcdtmClip_checkReverseLineConnectionsDtmObject(BC_DTM_OBJ
          {
           clPnt = clistAddrP(dtmP,clPtr)->pntNum ;
           clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-          if( ! bcdtmList_testLineDtmObject(dtmP,clPnt,point)) 
+          if( ! bcdtmList_testLineDtmObject(dtmP,clPnt,point))
             {
-             bcdtmWrite_message(0,0,0,"No Reverse Connection For Tin Line %8ld %8ld",point,clPnt) ; 
+             bcdtmWrite_message(0,0,0,"No Reverse Connection For Tin Line %8ld %8ld",point,clPnt) ;
              ret = DTM_ERROR ;
             }
          }
@@ -4294,7 +4385,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_buildClippingTinFromFencePointsDtmObject(BC_DTM_
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Building Clipping Tin") ;
     bcdtmWrite_message(0,0,0,"dtmPP           = %p",*dtmPP) ;
@@ -4305,8 +4396,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_buildClippingTinFromFencePointsDtmObject(BC_DTM_
        for( p3dP = fencePtsP ; p3dP < fencePtsP + numFencePts ; ++p3dP )
          {
           bcdtmWrite_message(0,0,0,"fencePts[%4ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-fencePtsP),p3dP->x,p3dP->y,p3dP->z) ;
-         } 
-      } 
+         }
+      }
    }
 /*
 ** Validate Point Array
@@ -4370,7 +4461,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
  DTMFenceOption clipOption,
  DPoint3d  *featPtsP,
  long numFeatPts,
- long *clipResultP,                  // <  0  Clip = None , 1 Clip = Feature Pts , 2 Clip = Clip Arrays  > 
+ long *clipResultP,                  // <  0  Clip = None , 1 Clip = Feature Pts , 2 Clip = Clip Arrays  >
  DTM_POINT_ARRAY ***clipArraysPPP,
  long *numClipArraysP
 )
@@ -4397,7 +4488,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 ** Validate Point Array Arguments
 */
  *numClipArraysP = 0 ;
- if( *clipArraysPPP != NULL ) 
+ if( *clipArraysPPP != NULL )
    {
     bcdtmWrite_message(2,0,0,"Pointer Array Is Not Null") ;
     goto errexit ;
@@ -4450,16 +4541,16 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
     if( dbg == 1 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",numDrapePts) ;
-       for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )  
+       for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )
          {
           bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP.data()),drapeP->drapeLine,drapeP->drapeType,drapeP->drapePt.x,drapeP->drapePt.y ) ;
          }
-      } 
+      }
 /*
 **  Determine Feature Extent
 */
-    numPtsOnDrape = 0 ; 
-    for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )  
+    numPtsOnDrape = 0 ;
+    for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )
       {
        if( drapeP->drapeType != DTMDrapedLineCode::External ) ++numPtsOnDrape ;
       }
@@ -4472,7 +4563,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
 */
  if( dbg ) if( featureExtent == DTMFenceOption::Overlap ) bcdtmWrite_message(0,0,0,"featureExtent = %2ld ** clipOption = %2ld",featureExtent,clipOption) ;
 /*
-** If Feature Extent Satifies Clip Option 
+** If Feature Extent Satifies Clip Option
 */
  if ((clipOption == DTMFenceOption::Inside  && featureExtent == DTMFenceOption::Inside) ||
      (clipOption == DTMFenceOption::Outside && featureExtent == DTMFenceOption::Outside) ||
@@ -4493,7 +4584,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
        for( ptsP = featPtsP ; ptsP < featPtsP + numFeatPts ; ++ptsP )
          {
           bcdtmWrite_message(0,0,0,"Feature Point[%6ld]  ** %12.5lf %12.5lf",(long)(ptsP-featPtsP),ptsP->x,ptsP->y,ptsP->z ) ;
-         } 
+         }
       }
 /*
 **  Write Drape Points
@@ -4501,15 +4592,15 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
     if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",numDrapePts) ;
-       for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )  
+       for( drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++drapeP )
          {
           bcdtmWrite_message(0,0,0,"Drape Point[%6ld]  L = %4ld T = %2ld ** %10.4lf %10.4lf",(long)(drapeP-drapePtsP.data()),drapeP->drapeLine-1,drapeP->drapeType,drapeP->drapePt.x,drapeP->drapePt.y ) ;
          }
-      } 
+      }
 /*
 **  Set Clip Result To Arrays
-*/ 
-    *clipResultP = 2  ; 
+*/
+    *clipResultP = 2  ;
 /*
 **  Scan Drape Line Points And Write Clipped Feature Sections To Point Arrays
 */
@@ -4523,9 +4614,9 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
          {
          while (drape1P < drapePtsP.data() + numDrapePts && drape1P->drapeType == DTMDrapedLineCode::External) ++drape1P;
          if (drape1P >= drapePtsP.data() + numDrapePts) --drape1P;
-          drape2P = drape1P + 1 ;  
+          drape2P = drape1P + 1 ;
           while (drape2P < drapePtsP.data() + numDrapePts &&   drape2P->drapeType != DTMDrapedLineCode::External) ++drape2P;
-          --drape2P ;   
+          --drape2P ;
          }
 /*
 **     Get First And Last Drape Point For Outside Segment
@@ -4535,7 +4626,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
          while (drape1P < drapePtsP.data() + numDrapePts &&  drape1P->drapeType != DTMDrapedLineCode::External) ++drape1P;
          if (drape1P >= drapePtsP.data() + numDrapePts) --drape1P;
          else if (drape1P > drapePtsP.data()) --drape1P;
-          drape2P = drape1P + 1 ;  
+          drape2P = drape1P + 1 ;
           while (drape2P < drapePtsP.data() + numDrapePts &&  drape2P->drapeType == DTMDrapedLineCode::External) ++drape2P;
           if (drape2P >= drapePtsP.data() + numDrapePts) --drape2P;
          }
@@ -4559,18 +4650,18 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
            {
             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
             goto errexit ;
-           } 
+           }
 /*
 **       Copy Feature Points To Clip Points
 */
          ptsP  = clipPtsP ;
-         p3d1P = featPtsP + drape1P->drapeLine - 1 ; 
+         p3d1P = featPtsP + drape1P->drapeLine - 1 ;
          p3d2P = featPtsP + drape2P->drapeLine - 1 ;
 /*
 **       Copy First Feature Point
-*/  
+*/
          if (drape1P != drapePtsP.data())
-           {  
+           {
             bcdtmMath_interpolatePointOnLine(p3d1P->x,p3d1P->y,p3d1P->z,(p3d1P+1)->x,(p3d1P+1)->y,(p3d1P+1)->z,drape1P->drapePt.x,drape1P->drapePt.y,&drape1P->drapePt.z) ;
             ptsP->x = drape1P->drapePt.x ;
             ptsP->y = drape1P->drapePt.y ;
@@ -4581,23 +4672,23 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
             ptsP->x = featPtsP->x ;
             ptsP->y = featPtsP->y ;
             ptsP->z = featPtsP->z ;
-           }  
+           }
          ++ptsP ;
 /*
 **       Copy Intermediate Points
-*/  
+*/
          for( p3dP = p3d1P + 1 ; p3dP <= p3d2P ; ++p3dP )
            {
             ptsP->x = p3dP->x ;
             ptsP->y = p3dP->y ;
             ptsP->z = p3dP->z ;
             ++ptsP ;
-           } 
+           }
 /*
 **       Copy Last Feature Point
-*/  
+*/
          if (drape2P != drapePtsP.data() + numDrapePts - 1)
-           { 
+           {
             bcdtmMath_interpolatePointOnLine(p3d2P->x,p3d2P->y,p3d2P->z,(p3d2P+1)->x,(p3d2P+1)->y,(p3d2P+1)->z,drape2P->drapePt.x,drape2P->drapePt.y,&drape2P->drapePt.z) ;
             ptsP->x = drape2P->drapePt.x ;
             ptsP->y = drape2P->drapePt.y ;
@@ -4608,7 +4699,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
             ptsP->x = (featPtsP+numFeatPts-1)->x ;
             ptsP->y = (featPtsP+numFeatPts-1)->y ;
             ptsP->z = (featPtsP+numFeatPts-1)->z ;
-           } 
+           }
          ++ptsP ;
 /*
 **       Check Number Of Points Copied Is Same As Number Of Clip Points
@@ -4619,7 +4710,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
             goto errexit ;
            }
 /*
-**       Allocate Memory For Pointer Array 
+**       Allocate Memory For Pointer Array
 */
           if( *numClipArraysP == memPointArrays )
             {
@@ -4633,7 +4724,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
          }
 /*
 **        Set Drape 1 Pointer
-*/ 
+*/
         drape1P = drape2P + 1 ;
       }
    }
@@ -4652,9 +4743,9 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
     bcdtmWrite_message(0,0,0,"Number Of Clipped Point Arrays = %6ld",*numClipArraysP) ;
     for( num = 0 ; num < *numClipArraysP ; ++num )
       {
-       bcdtmWrite_message(0,0,0,"Point Array[%4ld] = %p %p ** %p %4ld",num,(*clipArraysPPP+num),*(*clipArraysPPP+num),(*(*clipArraysPPP+num))->pointsP,(*(*clipArraysPPP+num))->numPoints) ; 
+       bcdtmWrite_message(0,0,0,"Point Array[%4ld] = %p %p ** %p %4ld",num,(*clipArraysPPP+num),*(*clipArraysPPP+num),(*(*clipArraysPPP+num))->pointsP,(*(*clipArraysPPP+num))->numPoints) ;
       }
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -4673,7 +4764,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_featurePointArrayToTinHullDtmObject
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-}       
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4693,13 +4784,13 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 **
 ** Possible Extent Values   =  DTMFenceOption::Inside   If Feature Is Totally Internal To Hull
 **                          =  DTMFenceOption::Overlap  If Feature Overlaps Hull
-**                          =  DTMFenceOption::Outside  If Feature Is Totally External To Hull   
+**                          =  DTMFenceOption::Outside  If Feature Is Totally External To Hull
 **
 */
 {
  int             ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long            trgPnt1,trgPnt2,trgPnt3,pntFnd,numPtsOnDrape ;
- double          xMin,xMax,yMin,yMax ; 
+ double          xMin,xMax,yMin,yMax ;
  DPoint3d             *p3dP ;
  bvector<DTMDrapePoint> drapePtsP;
 /*
@@ -4718,12 +4809,12 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 /*
 **  Check Bounding Rectangle
 */
-    if( featurePtsP->x < tinP->xMin || featurePtsP->x > tinP->xMax  || 
+    if( featurePtsP->x < tinP->xMin || featurePtsP->x > tinP->xMax  ||
         featurePtsP->y < tinP->yMin || featurePtsP->y > tinP->yMax     ) *featureExtentP = DTMFenceOption::Outside ;
 /*
 **  Check If Point Is Internal To Tin
 */
-    else 
+    else
       {
        if( bcdtmFind_triangleDtmObject(tinP,featurePtsP->x,featurePtsP->y,&pntFnd,&trgPnt1,&trgPnt2,&trgPnt3) ) goto errexit ;
        if( ! pntFnd ) *featureExtentP = DTMFenceOption::Outside ;
@@ -4749,7 +4840,7 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
 /*
 **  Check Bounding Rectangle
 */
-    if( xMax < tinP->xMin || xMin > tinP->xMax  || 
+    if( xMax < tinP->xMin || xMin > tinP->xMax  ||
         yMax < tinP->yMin || yMin > tinP->yMax     ) *featureExtentP = DTMFenceOption::Outside ;
 /*
 **  Drape Feature On Tin
@@ -4757,16 +4848,16 @@ BENTLEYDTM_Public int bcdtmClip_determineFeatureExtentWithFenceDtmObject
     else
       {
        if( bcdtmDrape_stringDtmObject(tinP,featurePtsP,numFeaturePts,false,drapePtsP)) goto errexit ;
-       numPtsOnDrape = 0 ; 
+       numPtsOnDrape = 0 ;
 
-       for(auto drapeP : drapePtsP )  
+       for(auto drapeP : drapePtsP )
          {
          if (drapeP.drapeType != DTMDrapedLineCode::External) ++numPtsOnDrape;
          }
        if (numPtsOnDrape == drapePtsP.size()) *featureExtentP = DTMFenceOption::Inside;
        else if( numPtsOnDrape == 0           ) *featureExtentP = DTMFenceOption::Outside ;
        else                                    *featureExtentP = DTMFenceOption::Overlap ;
-      } 
+      }
    }
 /*
 ** Clean Up
@@ -4796,8 +4887,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
  DPoint3d *polygonPtsP,                  // ==> Feature Points
  long numPolygonPts,                // ==> Number Of Feature Points
  DTM_POINT_ARRAY ***polygonsPPP,    // <== Pointer To Polygon Arrays
- long   *numPolygnsP                // <== Number Of Polygons  
-) 
+ long   *numPolygnsP                // <== Number Of Polygons
+)
 /*
 ** This Function Clips A Polygon To The Tin Hull
 ** It May Result In None or One Or More Polgons
@@ -4805,13 +4896,13 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   ofs,numHullPts,numPolyPts,intersectFlag;
- DPoint3d    *p3dP,*polyPtsP=NULL,*hullPtsP=NULL ; 
+ DPoint3d    *p3dP,*polyPtsP=NULL,*hullPtsP=NULL ;
  DTM_POLYGON_OBJ *polygonP=NULL ;
  DTM_POINT_ARRAY *pArrayP=NULL,**pArrayPP ;
 /*
 ** Write Status Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Clipping Polygon To Tin Hull") ;
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
@@ -4837,8 +4928,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
 /*
 ** Initialise
 */
- *numPolygnsP = 0 ; 
- if( *polygonsPPP != NULL ) 
+ *numPolygnsP = 0 ;
+ if( *polygonsPPP != NULL )
    {
     bcdtmWrite_message(2,0,0,"None Null Pointer") ;
     goto errexit ;
@@ -4846,7 +4937,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
 /*
 ** Validate Polygon
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Validating Polygon") ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Validating Polygon") ;
 // if( bcdtmMath_validatePointArrayPolygon(&polyPtsP,&numPolyPts,ppTol) ) goto errexit ;
 /*
 **  Intersect Region With Tin Hull
@@ -4864,23 +4955,23 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      }  
+      }
     **polygonsPPP = NULL ;
     pArrayP = ( DTM_POINT_ARRAY *) malloc(sizeof(DTM_POINT_ARRAY)) ;
     if( pArrayP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      } 
-    pArrayP->pointsP = NULL ;  
-    pArrayP->numPoints = 0 ; 
+      }
+    pArrayP->pointsP = NULL ;
+    pArrayP->numPoints = 0 ;
     **polygonsPPP = pArrayP ;
     pArrayP = NULL ;
     if( bcdtmList_extractHullDtmObject(dtmP,&hullPtsP,&numHullPts)) goto errexit ;
     (**polygonsPPP)->pointsP   = hullPtsP ;
     (**polygonsPPP)->numPoints = numHullPts ;
-    hullPtsP = NULL ; 
-   }  
+    hullPtsP = NULL ;
+   }
 /*
 **  Tin Hull And Polygon Intersect In One Or More Intersections
 */
@@ -4893,7 +4984,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      } 
+      }
 /*
 **  Allocate Point Array Memory
 */
@@ -4905,12 +4996,12 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-         } 
-       pArrayP->pointsP = NULL ;  
-       pArrayP->numPoints = 0 ; 
+         }
+       pArrayP->pointsP = NULL ;
+       pArrayP->numPoints = 0 ;
        *pArrayPP = pArrayP ;
        pArrayP = NULL ;
-      } 
+      }
 /*
 **  Get Intersect Polygons
 */
@@ -4920,7 +5011,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
        (*(*polygonsPPP+ofs))->pointsP   = polyPtsP ;
        (*(*polygonsPPP+ofs))->numPoints = numPolyPts ;
        polyPtsP = NULL ;
-      }  
+      }
    }
 /*
 ** Clean Up
@@ -4928,7 +5019,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
  cleanup :
  if( pArrayP    != NULL ) free(pArrayP) ;
  if( hullPtsP   != NULL ) free(hullPtsP) ;
- if( polyPtsP   != NULL ) free(polyPtsP) ;      
+ if( polyPtsP   != NULL ) free(polyPtsP) ;
  if( polygonP   != NULL ) bcdtmPolygon_deletePolygonObject(&polygonP) ;
 /*
 ** Job Completed
@@ -4949,8 +5040,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_polygonToTinHullDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
 (
- BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object To Insert Bounadries  
- BC_DTM_OBJ *bndyDtmP,           // ==> Pointer To Dtm Object Containing Boundaries 
+ BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object To Insert Bounadries
+ BC_DTM_OBJ *bndyDtmP,           // ==> Pointer To Dtm Object Containing Boundaries
  BC_DTM_OBJ *clipDtmP            // ==> Pointer To Dtm Object Containing Validated Boundaries
 )
 {
@@ -4963,13 +5054,13 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
  char   dtmFeatureTypeName[256] ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  DTM_POLYGON_OBJ *polyP=NULL ;
- DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ; 
+ DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries") ; 
+    bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries") ;
     bcdtmWrite_message(0,0,0,"dtmP       = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"bndyDtmP   = %p",bndyDtmP) ;
     bcdtmWrite_message(0,0,0,"clipDtmP   = %p",clipDtmP) ;
@@ -4988,12 +5079,12 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
       {
 
 //     Log Feature Type
-      
+
        if( dbg == 1 )
          {
           bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureP->dtmFeatureType,dtmFeatureTypeName);
           bcdtmWrite_message(0,0,0,"Validating %20s Feature Id = %10I64d",dtmFeatureTypeName,dtmFeatureP->dtmFeatureId ) ;
-         } 
+         }
        if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(bndyDtmP,dtmFeature,&clipPtsP,&numClipPts)) goto errexit ;
 /*
 **     Validate Clipping polygon
@@ -5006,15 +5097,15 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
          {
           bcdtmMath_getPolygonDirectionP3D(clipPtsP,numClipPts,&direction,&area) ;
           bcdtmWrite_message(0,0,0,"Polygon Before Hull Intersection ** Direction = %2ld Area = %12.4lf",direction,area) ;
-         } 
+         }
 /*
 **     Intersect Clipping Polygon With Tin Hull
 */
        if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Intersecting Dtm Hull And Clip Polygon") ;
        if( bcdtmPolygon_intersectPolygons(hullPtsP,numHullPts,clipPtsP,numClipPts,&intersectFlag,&polyP,0.0,0.0)) goto errexit ;
        if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Intersect Flag = %1ld Number Of Clipping Polygons = %4ld",intersectFlag,polyP->numPolygons) ;
-       if( intersectFlag == 0 ) 
-         { 
+       if( intersectFlag == 0 )
+         {
           bcdtmWrite_message(1,0,0,"Clip Polygon and Dtm Hull Do Not Intersect") ;
           goto errexit ;
          }
@@ -5022,7 +5113,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
 **     Store Clipping Polygons
 */
        for( poly = 0 ; poly < polyP->numPolygons ; ++poly )
-         { 
+         {
           if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,poly,&clipPtsP,&numClipPts)) goto errexit ;
 /*
 **        Log Area After Intersection With Tin Hull
@@ -5031,14 +5122,14 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
             {
              bcdtmMath_getPolygonDirectionP3D(clipPtsP,numClipPts,&direction,&area) ;
              bcdtmWrite_message(0,0,0,"Polygon After  Hull Intersection ** Direction = %2ld Area = %12.4lf",direction,area) ;
-            } 
+            }
 /*
 **        Log Points
-*/            
+*/
           if( dbg == 2 )
             {
              bcdtmWrite_message(0,0,0,"Number Of Clip Feature Points = %8ld",numClipPts) ;
-             for( p3dP = clipPtsP ; p3dP < clipPtsP +numClipPts ; ++p3dP ) 
+             for( p3dP = clipPtsP ; p3dP < clipPtsP +numClipPts ; ++p3dP )
                {
                 bcdtmWrite_message(0,0,0,"Clip Point[%5ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-clipPtsP),p3dP->x,p3dP->y,p3dP->z) ;
                }
@@ -5050,8 +5141,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
    }
 /*
 ** Set Number Of Start Features
-*/   
- numStartFeatures = clipDtmP->numFeatures ; 
+*/
+ numStartFeatures = clipDtmP->numFeatures ;
 /*
 ** Count Validated Void And Island Occurrences
 */
@@ -5061,8 +5152,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
     dtmFeatureP = ftableAddrP(clipDtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void   ) ++numVoids ;
     if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island ) ++numIslands ;
-   } 
- if( dbg ) bcdtmWrite_message(0,0,0,"numStartFeatures = %8ld numVoids = %8ld numIslands = %8ld",numStartFeatures,numVoids,numIslands) ;  
+   }
+ if( dbg ) bcdtmWrite_message(0,0,0,"numStartFeatures = %8ld numVoids = %8ld numIslands = %8ld",numStartFeatures,numVoids,numIslands) ;
 /*
 **  Resolve Voids
 */
@@ -5071,7 +5162,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Resolving Intersecting Voids") ;
     if( bcdtmData_resolveIntersectingPolygonalDtmFeatureTypeDtmObject(clipDtmP,DTMFeatureType::Void)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Voids Resolved") ;
-   }  
+   }
 /*
 **  Resolve Islands
 */
@@ -5080,7 +5171,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Resolving Intersecting Islands") ;
     if( bcdtmData_resolveIntersectingPolygonalDtmFeatureTypeDtmObject(clipDtmP,DTMFeatureType::Island)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Islands Resolved") ;
-   }  
+   }
 /*
 **  Resolve Voids And Islands
 */
@@ -5089,7 +5180,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
     if( dbg ) bcdtmWrite_message(0,0,0,"Resolving Intersecting Islands And Voids") ;
 //    if( bcdtmData_resolveIntersectingPolygonalDtmFeatureTypeDtmObject(clipDtmP,DTMFeatureType::Island)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Islands And Voids Resolved") ;
-   }  
+   }
 /*
 ** Clean Up
 */
@@ -5100,8 +5191,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -5117,7 +5208,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_validateVoidIslandClippingBoundariesDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Private int bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject
 (
- BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object To Insert Bounadries  
+ BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object To Insert Bounadries
  long       numStartFeatures     // ==> Number Of Feature Before Inserting Void Island Clipping Features
 )
 {
@@ -5127,9 +5218,9 @@ BENTLEYDTM_Private int bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Resolving Void Island Clipping Boundaries") ; 
+    bcdtmWrite_message(0,0,0,"Resolving Void Island Clipping Boundaries") ;
     bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"numStartFeatures  = %8ld",numStartFeatures) ;
     bcdtmWrite_message(0,0,0,"dtmP->numFeatures = %8ld",dtmP->numFeatures) ;
@@ -5142,7 +5233,7 @@ BENTLEYDTM_Private int bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
 /*
 **  Void All Points Internal To Void
-*/    
+*/
     if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void )
       {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Voiding Points Internal To Void Feature %8ld",dtmFeature) ;
@@ -5150,14 +5241,14 @@ BENTLEYDTM_Private int bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject
       }
 /*
 **  Void All Points External To Island
-*/    
+*/
     if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island )
       {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Voiding Points External To Island Feature %8ld",dtmFeature) ;
        if( bcdtmMark_pointsExternalToIslandDtmObject(dtmP,dtmFeature)) goto errexit ;
-      }  
+      }
    }
-    
+
 /*
 ** Clean Up
 */
@@ -5165,8 +5256,8 @@ BENTLEYDTM_Private int bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Validating Island And Void Clipping Boundaries Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -5182,18 +5273,18 @@ BENTLEYDTM_Private int bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmClip_cloneAndInsertIslandAndVoidBoundariesDtmObject
 (
- BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object  
+ BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object
  BC_DTM_OBJ *bndyDtmP,           // ==> Pointer To Dtm Object Containing Boundaries
- BC_DTM_OBJ **clonedDtmPP        // ==> Pointer To Cloned Dtm Object With Inserted Boundaries 
+ BC_DTM_OBJ **clonedDtmPP        // ==> Pointer To Cloned Dtm Object With Inserted Boundaries
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Cloning And Inserting Island And Void Boundaries") ; 
+    bcdtmWrite_message(0,0,0,"Cloning And Inserting Island And Void Boundaries") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"bndyDtmP     = %p",bndyDtmP) ;
     bcdtmWrite_message(0,0,0,"clonedDtmPP  = %p",clonedDtmPP) ;
@@ -5226,15 +5317,15 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndInsertIslandAndVoidBoundariesDtmObject
    {
     bcdtmWrite_message(1,0,0,"Method Requires Null Pointer For Clone DTM ") ;
     goto errexit ;
-   }  
+   }
 /*
 **  Clone DTM
 */
  if( bcdtmObject_cloneDtmObject(dtmP,clonedDtmPP)) goto errexit ;
 /*
 ** Insert Island And Void Boundaries
-*/ 
- if( bcdtmClip_insertIslandAndVoidBoundariesDtmObject(*clonedDtmPP,bndyDtmP)) goto errexit ;     
+*/
+ if( bcdtmClip_insertIslandAndVoidBoundariesDtmObject(*clonedDtmPP,bndyDtmP)) goto errexit ;
 /*
 ** Clean Up
 */
@@ -5242,8 +5333,8 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndInsertIslandAndVoidBoundariesDtmObject
 /*
 ** Job Completed
 */
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Inserting Island And Void Clipping Boundaries Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Inserting Island And Void Clipping Boundaries Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Inserting Island And Void Clipping Boundaries Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Cloning And Inserting Island And Void Clipping Boundaries Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -5259,7 +5350,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_cloneAndInsertIslandAndVoidBoundariesDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
 (
- BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object To Insert Bounadries  
+ BC_DTM_OBJ *dtmP,               // ==> Pointer To Dtm Object To Insert Bounadries
  BC_DTM_OBJ *bndyDtmP            // ==> Pointer To Dtm Object Containing Boundaries
 )
 /*
@@ -5279,9 +5370,9 @@ BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Inserting Island And Void Boundaries") ; 
+    bcdtmWrite_message(0,0,0,"Inserting Island And Void Boundaries") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"bndyDtmP     = %p",bndyDtmP) ;
    }
@@ -5319,11 +5410,11 @@ BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Before Validating ** numVoids = %8ld numIslands = %8ld ** numFeatures = %8ld ",numVoids,numIslands,bndyDtmP->numFeatures) ;
 /*
 ** Create DTM For Storing Validated Clipping Boundaries
-*/   
+*/
  if( bcdtmObject_createDtmObject(&clipDtmP)) goto errexit ;
 /*
-** Validate Clipping Boundaries   
-*/   
+** Validate Clipping Boundaries
+*/
  if( bcdtmClip_validateVoidIslandClippingBoundariesDtmObject(dtmP,bndyDtmP,clipDtmP)) goto errexit ;
 /*
 ** Count Number Of Clip Feature Boundaries After Validating
@@ -5349,29 +5440,29 @@ BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
        for( dtmFeature = 0 ; dtmFeature < clipDtmP->numFeatures ; ++dtmFeature )
          {
           dtmFeatureP = ftableAddrP(clipDtmP,dtmFeature) ;
-          if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void || dtmFeatureP->dtmFeatureType == DTMFeatureType::Island ) 
+          if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void || dtmFeatureP->dtmFeatureType == DTMFeatureType::Island )
             {
              if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(clipDtmP,dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
              if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Void )
                {
                 if( bcdtmClip_toPolygonDtmObject(dtmP,featurePtsP,numFeaturePts,DTMClipOption::Internal)) goto errexit ;
                }
-             else if ( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island )  
+             else if ( dtmFeatureP->dtmFeatureType == DTMFeatureType::Island )
                {
                 if( bcdtmClip_toPolygonDtmObject(dtmP,featurePtsP,numFeaturePts,DTMClipOption::External)) goto errexit ;
                }
             }
-         }    
+         }
       }
 /*
 **  Multiple Clip Boundaries So Insert As Voids and Islands
 */
-    else if( numVoids >= 1 || numIslands >= 1 )  
+    else if( numVoids >= 1 || numIslands >= 1 )
       {
 /*
 **     Log Validated Clipping Boundaries
 */
-       if( dbg == 1 ) bcdtmObject_reportStatisticsDtmObject(clipDtmP) ;  
+       if( dbg == 1 ) bcdtmObject_reportStatisticsDtmObject(clipDtmP) ;
 /*
 **     Remove Tin Error And Roll Back Features
 */
@@ -5397,15 +5488,15 @@ BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
              if( bcdtmMath_calculateAreaAndDirectionTptrPolygonDtmObject(dtmP,startPnt,&area,&direction)) goto errexit ;
              bcdtmWrite_message(0,0,0,"Tptr Polygon Direction     = %12ld",direction) ;
              bcdtmWrite_message(0,0,0,"Tptr Polygon Area          = %12.4lf",area) ;
-            } 
-          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,dtmFeatureP->dtmFeatureType,dtmP->nullUserTag,dtmP->nullFeatureId,startPnt,1)) goto errexit  ;          
+            }
+          if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,dtmFeatureP->dtmFeatureType,dtmP->nullUserTag,dtmP->nullFeatureId,startPnt,1)) goto errexit  ;
          }
-       if( dbg ) bcdtmWrite_message(0,0,0,"numStartFeatures = %8ld dtmP->numFeatures = %8ld",numStartFeatures,dtmP->numFeatures) ;              
+       if( dbg ) bcdtmWrite_message(0,0,0,"numStartFeatures = %8ld dtmP->numFeatures = %8ld",numStartFeatures,dtmP->numFeatures) ;
 /*
 **     Resolve Void Island Clipping
 */
-//       if( bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject(dtmP,numStartFeatures)) goto errexit ; 
-       if( clipDtmP    != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ; 
+//       if( bcdtmClip_resolveVoidIslandClippingBoundariesDtmObject(dtmP,numStartFeatures)) goto errexit ;
+       if( clipDtmP    != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
        if( bcdtmData_resolveTinStateIslandsVoidsAndHolesDtmObject(dtmP,&clipDtmP)) goto errexit ;
       }
 /*
@@ -5414,14 +5505,14 @@ BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
     if( cdbg  )
       {
        bcdtmWrite_message(0,0,0,"Checking Clipped DTM") ;
-       if( bcdtmCheck_tinComponentDtmObject(dtmP)) 
+       if( bcdtmCheck_tinComponentDtmObject(dtmP))
          {
           bcdtmWrite_message(0,0,0,"Clipped DTM Invalid") ;
           goto errexit ;
          }
-       else  bcdtmWrite_message(0,0,0,"Clipped DTM Valid") ; 
+       else  bcdtmWrite_message(0,0,0,"Clipped DTM Valid") ;
       }
-   }      
+   }
 /*
 ** Clean Up
 */
@@ -5429,13 +5520,13 @@ BENTLEYDTM_EXPORT int bcdtmClip_insertIslandAndVoidBoundariesDtmObject
  dtmP->ppTol = savePptol ;
  dtmP->plTol = savePltol ;
  if( featurePtsP != NULL ) free(featurePtsP) ;
- if( clipDtmP    != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ; 
+ if( clipDtmP    != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
 /*
 ** Job Completed
 */
  if( tdbg ) bcdtmWrite_message(0,0,0,"**** Time To Clip Dtm Object = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),clipTime)) ;
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Island And Void Boundaries Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Island And Void Boundaries Error") ; 
+ if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Island And Void Boundaries Completed") ;
+ if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Inserting Island And Void Boundaries Error") ;
  return(ret) ;
 /*
 ** Error Exit
@@ -5478,7 +5569,7 @@ BENTLEYDTM_Public int bcdtmClip_checkPolygonsIntersect(DPoint3d *Poly1,long numP
    {
     for( p3d2 = Poly2 ; p3d2 < Poly2 + numPts2 && ! coinflag ; ++p3d2 )
       {
-       if( p3d1->x == p3d2->x && p3d1->y == p3d2->y ) 
+       if( p3d1->x == p3d2->x && p3d1->y == p3d2->y )
          { coinflag = 1 ; *IntersectFlag = 1 ; }
       }
    }
@@ -5491,7 +5582,7 @@ BENTLEYDTM_Public int bcdtmClip_checkPolygonsIntersect(DPoint3d *Poly1,long numP
       {
        for( p3d2 = Poly2 ; p3d2 < Poly2 + numPts2 - 1 && ! intflag ; ++p3d2 )
          {
-          if(bcdtmMath_intersectCordLines(p3d1->x,p3d1->y,(p3d1+1)->x,(p3d1+1)->y,p3d2->x,p3d2->y,(p3d2+1)->x,(p3d2+1)->y,&Xi,&Yi))  
+          if(bcdtmMath_intersectCordLines(p3d1->x,p3d1->y,(p3d1+1)->x,(p3d1+1)->y,p3d2->x,p3d2->y,(p3d2+1)->x,(p3d2+1)->y,&Xi,&Yi))
             { intflag = 1 ; *IntersectFlag = 1 ; }
          }
       }
@@ -5500,11 +5591,11 @@ BENTLEYDTM_Public int bcdtmClip_checkPolygonsIntersect(DPoint3d *Poly1,long numP
 /*
 **  Check If Polygon 1 is inside Polygon 2
 */
-       if     ( bcdtmClip_pointInPointArrayPolygon(Poly2,numPts2,Poly1->x,Poly1->y )) *IntersectFlag = 2 ; 
+       if     ( bcdtmClip_pointInPointArrayPolygon(Poly2,numPts2,Poly1->x,Poly1->y )) *IntersectFlag = 2 ;
 /*
 **  Check If Polygon 2 is inside Polygon 1
 */
-       else if( bcdtmClip_pointInPointArrayPolygon(Poly1,numPts1,Poly2->x,Poly2->y )) *IntersectFlag = 3 ; 
+       else if( bcdtmClip_pointInPointArrayPolygon(Poly1,numPts1,Poly2->x,Poly2->y )) *IntersectFlag = 3 ;
       }
    }
 /*

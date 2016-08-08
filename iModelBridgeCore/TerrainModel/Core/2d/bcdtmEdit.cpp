@@ -7156,6 +7156,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deletePointDtmObject
    {
     case 1  : /* Delete Internal Point And Retriangulate */
       if( dbg ) bcdtmWrite_message(0,0,0,"Deleting Internal Point And Retriangulating") ;
+      if (bcdtmClip_checkFillTptrPolygonWithTrianglesDtmDTMObject(dtmP, spnt)) goto errexit;
       if( bcdtmEdit_removePointDtmObject(dtmP,tinPoint,0,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
       if( bcdtmClip_fillTptrPolygonWithTrianglesDtmObject(dtmP,spnt)) goto errexit ;
       if( bcdtmList_nullTptrListDtmObject(dtmP,spnt)) goto errexit ;
