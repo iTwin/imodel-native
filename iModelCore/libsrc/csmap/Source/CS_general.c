@@ -91,7 +91,8 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 	   
 	   There is no "getenv" in the NS VC++ Version 8 embedded
 	   environment. */
-#if !defined (__WINCE__) && !defined (BENTLEY_WINRT)
+#if !defined (__WINCE__)
+#if defined(NO_BENTLEY_CHANGES) || !defined (BENTLEY_WINRT)
 	if (alt_dir == NULL)
 	{
 		cp = CS_getenv (cs_Envvar);
@@ -110,7 +111,9 @@ int EXP_LVL1 CS_altdr (Const char *alt_dir)
 			cp = ctemp;
 		}
 	}
-	else if (*alt_dir != '\0')
+	else
+#endif // BENTLEY_WINRT
+        if (*alt_dir != '\0')
 	{
 		/* If we have been given something, use it. Note,
 		   we add a directory separator character if there
