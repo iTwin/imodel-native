@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/Utils.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "StdAfx.h"
@@ -639,7 +639,11 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
                            pt -= m_globalOrigin;
                            }
                        else
-                           { pt =  m_activeUORs[0] - m_globalOrigin;}
+                           { 
+                           pt.x = m_activeUORs[0].x - m_globalOrigin.x;
+                           pt.y = m_activeUORs[0].y - m_globalOrigin.y;
+                           pt.z = m_activeUORs[0].z - m_globalOrigin.z;
+                           }
 
                        m_textCollector.PreTraverse (pt.z * m_factor, GetViewport()->GetViewNumber());
                        for (DPoint3dCP intersectionPt = &intersectPtsA[0]; intersectionPt < &intersectPtsA[numIntersectPts]; ++intersectionPt)
