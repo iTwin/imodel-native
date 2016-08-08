@@ -13,23 +13,24 @@ DgnDbServerClientMkiSourceDir = $(DgnDbServerClientSourceDirectory)DgnDbServerCl
 #   Set up build dependencies for precompiled header and Client.mki
 #----------------------------------------------------------------------------------------
 
-DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                                 \
-		                        $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                             \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                                \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryManager.h                     \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h                  \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h                        \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSubscription.h               \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h                          \
-								$(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                           \
-								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEvent.h         \
-								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEventParser.h   \
-								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerCodeEvent.h     \
-								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerLockEvent.h     \
-								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionEvent.h \
-								$(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
-		                        $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h                                     \
-		                        $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h
+DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerCommon.h                      \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbBriefcase.h                  \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbClient.h                     \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryManager.h          \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbRepositoryConnection.h       \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevision.h             \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerEventSubscription.h    \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerResult.h               \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerError.h                \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEvent.h         \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerEventParser.h   \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerCodeEvent.h     \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerLockEvent.h     \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionEvent.h \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
+                                $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h							\
+                                $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -44,6 +45,8 @@ $(o)DgnDbServerRevision$(oext)             : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbServerEventSubscription$(oext)    : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventSubscription.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)RepositoryInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbRepositoryConnection$(oext)       : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryConnection.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 

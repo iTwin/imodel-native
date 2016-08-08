@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <WebServices/Client/WSClient.h>
+#include <DgnDbServer/Client/FileInfo.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
@@ -26,7 +27,7 @@ DEFINE_TASK_TYPEDEFS(bvector<RepositoryInfoPtr>, DgnDbServerRepositories);
 DEFINE_TASK_TYPEDEFS(DgnDbBriefcasePtr, DgnDbServerBriefcase);
 DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfo, DgnDbServerBriefcaseInfo);
 
-typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, RepositoryInfoCR)> BriefcaseFileNameCallback;
+typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, RepositoryInfoCR, FileInfoCR)> BriefcaseFileNameCallback;
 
 //=======================================================================================
 //! DgnDbServerBriefcaseInfo results.
@@ -76,8 +77,8 @@ private:
                                                                  ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerStatusTaskPtr DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
-                                                                 Utf8StringCR url, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
-                                                                 ICancellationTokenPtr cancellationToken = nullptr) const;
+                                               FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
+                                               ICancellationTokenPtr cancellationToken = nullptr) const;
 
 //__PUBLISH_SECTION_START__
 public:

@@ -12,6 +12,7 @@
 #include <DgnDbServer/Client/DgnDbServerError.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
+#include <DgnDbServer/Client/FileInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
 #include <WebServices/Azure/EventServiceClient.h>
@@ -32,6 +33,7 @@ typedef struct DgnDbRepositoryConnection const&                         DgnDbRep
 
 struct DgnDbCodeLockSetResultInfo;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
+DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
 DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
@@ -114,6 +116,21 @@ private:
     //! Write the briefcaseId into the file.
     DgnDbServerStatusResult WriteBriefcaseIdIntoFile (BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
 
+    //! Creates a new file instance on the server. 
+    DgnDbServerFileTaskPtr   CreateNewServerFile(DgnDbPtr db, Utf8StringCR description, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Performs a file upload to on-premise server. 
+    DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Performs a file upload to azure blob storage.
+    DgnDbServerStatusTaskPtr AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url , Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Uploads a BIM file to the server.
+    DgnDbServerStatusTaskPtr UploadServerFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Finalizes the file upload.
+    DgnDbServerStatusTaskPtr InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Download a copy of the master file from the repository
     DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -169,8 +186,16 @@ public:
     //! @param[in] authenticationHandler Http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note DgnDbClient is the class that creates this connection. See DgnDbClient::OpenBriefcase.
-    static DgnDbRepositoryConnectionTaskPtr Create (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
-                                                    ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
+    static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
+                                                   ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
+
+    //! Create an instance of a BIM file on the server and upload it.
+    //! @param[in] db The BIM file to upload.
+    //! @param[in] description Description of the changes in the uploaded file.
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the uploaded file information as the result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(DgnDbPtr db, Utf8StringCR description, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
