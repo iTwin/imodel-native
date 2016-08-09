@@ -2297,7 +2297,7 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
     if (8 == sizeof (void*))
         {
         int64_t output;
-        swscanf (inWChar, L"%I64x", &output);
+        swscanf (inWChar, L"%llx", &output);
         return (void*)output;
         }
     else if (4 == sizeof (void*))
