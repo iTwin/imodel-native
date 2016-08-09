@@ -141,6 +141,7 @@ public:
     
     //! Execute this script, passing it the supplied arguments.
     //! @param[out] result   A JSON-encoded object that captures the return value from the script. Will be empty if the script could not be executed
+    //! @param[in] args     The arguments to the script's entry point function
     //! @return non-zero error status if any argument is bad or if the script is invalid or triggered and exception.
     DGNPLATFORM_EXPORT DgnDbStatus Execute(Utf8StringR result, std::initializer_list<ArgValueUnion> const& args) const;
     };
