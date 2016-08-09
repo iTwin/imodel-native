@@ -20,7 +20,8 @@ Utf8String fromEventSubscriptionId,
 Utf8String codeAuthorityId,
 Utf8String codeNamespace,
 bvector<Utf8String> values,
-Utf8String state,
+Utf8String reserved,
+Utf8String used,
 Utf8String briefcaseId,
 Utf8String usedWithRevision
 )
@@ -30,7 +31,8 @@ Utf8String usedWithRevision
     m_codeAuthorityId = codeAuthorityId;
     m_codeNamespace = codeNamespace;
     m_values = values;
-    m_state = state;
+    m_reserved = reserved;
+    m_used = used;
     m_briefcaseId = briefcaseId;
     m_usedWithRevision = usedWithRevision;
     }
@@ -45,7 +47,8 @@ Utf8String fromEventSubscriptionId,
 Utf8String codeAuthorityId,
 Utf8String codeNamespace,
 bvector<Utf8String> values,
-Utf8String state,
+Utf8String reserved,
+Utf8String used,
 Utf8String briefcaseId,
 Utf8String usedWithRevision
 )
@@ -58,7 +61,8 @@ Utf8String usedWithRevision
                 codeAuthorityId,
                 codeNamespace,
                 values,
-                state,
+                reserved,
+                used,
                 briefcaseId,
                 usedWithRevision));
     }
@@ -106,11 +110,18 @@ bvector<Utf8String> DgnDbServerCodeEvent::GetValues()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-Utf8String DgnDbServerCodeEvent::GetState()
+Utf8String DgnDbServerCodeEvent::GetReserved()
     {
-    return m_state;
+    return m_reserved;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Arvind.Venkateswaran             06/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerCodeEvent::GetUsed()
+    {
+    return m_used;
+    }
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
