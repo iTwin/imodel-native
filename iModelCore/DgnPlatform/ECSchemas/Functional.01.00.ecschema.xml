@@ -5,10 +5,10 @@
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="FunctionalModel">
+        <BaseClass>bis:Model</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <BaseClass>bis:Model</BaseClass>
     </ECEntityClass>
 
     <ECEntityClass typeName="FunctionalElement" modifier="Abstract">
