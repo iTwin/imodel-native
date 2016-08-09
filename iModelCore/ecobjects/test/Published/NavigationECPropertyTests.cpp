@@ -71,7 +71,7 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     ECRelationshipClassP relClass2;
 
     ECSchema::CreateSchema(schema, "NavTest", 4, 2);
-    schema->SetNamespacePrefix("navt");
+    schema->SetAlias("navt");
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(relClass2, "RelClass2");
     schema->CreateEntityClass(sourceClass, "Source");
@@ -116,7 +116,7 @@ TEST_F(NavigationECPropertyTests, NavPropUsingRelationshipWithMultipleConstraint
     ECRelationshipClassP relClass;
 
     ECSchema::CreateSchema(schema, "NavTest", 4, 2);
-    schema->SetNamespacePrefix("navt");
+    schema->SetAlias("navt");
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateEntityClass(sourceClass, "Source");
     schema->CreateEntityClass(source2Class, "Source2");

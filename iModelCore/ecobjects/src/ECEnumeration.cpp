@@ -88,21 +88,21 @@ ECSchemaCR primarySchema,
 ECEnumerationCR  ecEnumeration
 )
     {
-    Utf8String namespacePrefix;
+    Utf8String alias;
     Utf8StringCR enumName = ecEnumeration.GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveNamespacePrefix (ecEnumeration.GetSchema(), namespacePrefix)))
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (ecEnumeration.GetSchema(), alias)))
         {
-        LOG.warningv ("warning: Cannot qualify an ECEnumeration name with a namespace prefix unless the schema containing the ECEnumeration is referenced by the primary schema."
+        LOG.warningv ("warning: Cannot qualify an ECEnumeration name with an alias unless the schema containing the ECEnumeration is referenced by the primary schema."
             "The name will remain unqualified.\n  Primary ECSchema: %s\n  ECEnumeration: %s\n ECSchema containing ECEnumeration: %s", primarySchema.GetName().c_str(), enumName.c_str(), ecEnumeration.GetSchema().GetName().c_str());
         return enumName;
         }
-    if (namespacePrefix.empty())
+    if (alias.empty())
         return enumName;
     else
-        return namespacePrefix + ":" + enumName;
+        return alias + ":" + enumName;
     }
 
-ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName)
+ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8StringR enumName, Utf8StringCR qualifiedEnumName)
     {
     if (0 == qualifiedEnumName.length())
         {
@@ -112,7 +112,7 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8Stri
     Utf8String::size_type colonIndex = qualifiedEnumName.find(':');
     if (Utf8String::npos == colonIndex)
         {
-        prefix.clear();
+        alias.clear();
         enumName = qualifiedEnumName;
         return ECObjectsStatus::Success;
         }
@@ -123,9 +123,9 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR prefix, Utf8Stri
         }
 
     if (0 == colonIndex)
-        prefix.clear();
+        alias.clear();
     else
-        prefix = qualifiedEnumName.substr(0, colonIndex);
+        alias = qualifiedEnumName.substr(0, colonIndex);
 
     enumName = qualifiedEnumName.substr(colonIndex + 1);
 

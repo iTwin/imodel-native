@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ComprehensiveSchemaWithUnknowns" nameSpacePrefix="cmpr" version="01.00" description="Comprehensive Schema to demonstrate use of all ECSchema concepts." displayLabel="Comprehensive Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.11.11">
-    <ECSchemaReference unknownAttribute="foo" name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+<ECSchema schemaName="ComprehensiveSchemaWithUnknowns" alias="cmpr" version="01.00" description="Comprehensive Schema to demonstrate use of all ECSchema concepts." displayLabel="Comprehensive Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.11.11">
+    <ECSchemaReference unknownAttribute="foo" name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
     <UnknownElement />
     <ECCustomAttributeClass unknownAttribute="foo" typeName="GeneralCustomAttribute" description="Custom Attribute that can be applied to anything." modifier="None">
         <ECProperty unknownAttribute="foo" propertyName="Primitive" typeName="string" readOnly="false"/>

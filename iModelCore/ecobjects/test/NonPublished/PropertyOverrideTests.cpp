@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/PropertyOverrideTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -92,7 +92,7 @@ ECSchemaPtr PropertyOverrideTests::SetUpBaseSchema()
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
     EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias ("ts");
 
     ECEntityClassP root = NULL;
     EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(root, "Root"));
@@ -129,7 +129,7 @@ TEST_F(PropertyOverrideTests, PropertyOverrideInMultiInheritance)
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias("ts");
 
     ECEntityClassP ab = NULL;
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ab, "ab"));
@@ -313,7 +313,7 @@ TEST_F(PropertyOverrideTests, AddingBasePropertyOverrideChangesPropertyInDerived
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias("ts");
     ECEntityClassP baseClass = NULL;
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
     PrimitiveECPropertyP primitiveProperty;

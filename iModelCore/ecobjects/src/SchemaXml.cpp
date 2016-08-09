@@ -26,6 +26,7 @@ struct SchemaXmlReaderImpl
         bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
         virtual bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) = 0;
         SchemaReadStatus _ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes, int ecXmlVersionMajor);
+        SchemaReadStatus _ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMajor, int ecXmlVersionMinor);
 
     protected:
         ECEntityClassP CreateEntityClass(ECSchemaPtr& schemaOut);
@@ -35,7 +36,7 @@ struct SchemaXmlReaderImpl
 
     public:
         SchemaXmlReaderImpl(ECSchemaReadContextR context, BeXmlDomR xmlDom);
-        SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+        virtual SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor) = 0;
 
         virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
@@ -63,6 +64,7 @@ struct SchemaXmlReader2 : SchemaXmlReaderImpl
 
     public:
         SchemaXmlReader2(ECSchemaReadContextR context, ECSchemaPtr schemaOut, BeXmlDomR xmlDom);
+        SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor) override;
         SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) override;
     };
 
@@ -76,6 +78,7 @@ struct SchemaXmlReader3 : SchemaXmlReaderImpl
 
     public:
         SchemaXmlReader3(ECSchemaReadContextR context, BeXmlDomR xmlDom);
+        SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor) override;
         SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) override;
         
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode) override;
@@ -118,9 +121,9 @@ bool  SchemaXmlReaderImpl::IsOpenPlantPidCircularReferenceSpecialCase
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2015
+// @bsimethod                                   Caleb.Shafer                08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
@@ -135,13 +138,23 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& s
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        Utf8String prefix;
-        if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(prefix, SCHEMAREF_PREFIX_ATTRIBUTE))
+        Utf8String alias;
+        if (ecXmlVersionMajor >= 3 && ecXmlVersionMinor >= 1)
             {
-            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), SCHEMAREF_PREFIX_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
+            if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE))
+                {
+                LOG.errorv("Invalid ECSchemaXML: %s element must contain an %s attribute", schemaReferenceNode->GetName(), ALIAS_ATTRIBUTE);
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
             }
-
+        else
+            {
+            if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(alias, SCHEMAREF_PREFIX_ATTRIBUTE))
+                {
+                LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", schemaReferenceNode->GetName(), SCHEMAREF_PREFIX_ATTRIBUTE);
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            }
 
         Utf8String versionString;
         if (BEXML_Success != schemaReferenceNode->GetAttributeStringValue(versionString, SCHEMAREF_VERSION_ATTRIBUTE))
@@ -174,7 +187,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& s
 
         if (referencedSchema.IsValid())
             {
-            //We can encounter some time same schema referenced twice with different namespacePrefix.
+            //We can encounter some time same schema referenced twice with different alias.
             //We will not treat it as error.
             SchemaKeyCR refSchemaKey = referencedSchema->GetSchemaKey();
             auto const& references = schemaOut->GetReferencedSchemas();
@@ -183,7 +196,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& s
                 continue;
                 }
 
-            ECObjectsStatus status = schemaOut->AddReferencedSchema(*referencedSchema, prefix, m_schemaContext);
+            ECObjectsStatus status = schemaOut->AddReferencedSchema(*referencedSchema, alias, m_schemaContext);
             if (ECObjectsStatus::Success != status)
                 return ECObjectsStatus::SchemaHasReferenceCycle == status ? SchemaReadStatus::HasReferenceCycle : static_cast<SchemaReadStatus> (status);
             }
@@ -562,6 +575,14 @@ SchemaReadStatus SchemaXmlReader2::ReadClassContentsFromXml(ECSchemaPtr& schemaO
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReader2::ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor)
+    {
+    return _ReadSchemaReferencesFromXml(schemaOut, schemaNode, 2, ecXmlVersionMinor);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlReader3::SchemaXmlReader3(ECSchemaReadContextR context, BeXmlDomR xmlDom) : SchemaXmlReaderImpl(context, xmlDom)
@@ -637,6 +658,14 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
 SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes)
     {
     return _ReadClassContentsFromXml(schemaOut, classes, 3);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReader3::ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor)
+    {
+    return _ReadSchemaReferencesFromXml(schemaOut, schemaNode, 3, ecXmlVersionMinor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -832,7 +861,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionWrite, versionMinor).c_str());
 
-    //Using the old overload of CreateSchema as we don't have the namespace prefix at this point.
+    //Using the old overload of CreateSchema as we don't have the alias at this point.
     ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -849,13 +878,13 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid
     Utf8String value;  // used by macro.
-    if (ecXmlMajorVersion >= 3)
+    if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 1)
         {
-        READ_REQUIRED_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, NamespacePrefix, EC_SCHEMA_ELEMENT)
+        READ_REQUIRED_XML_ATTRIBUTE((*schemaNode), ALIAS_ATTRIBUTE, schemaOut, Alias, EC_SCHEMA_ELEMENT)
         }
     else
         {
-        READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, NamespacePrefix)
+        READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, Alias)
         }
 
     READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DESCRIPTION_ATTRIBUTE, schemaOut, Description)
@@ -868,7 +897,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     else
         reader = new SchemaXmlReader3(m_schemaContext, m_xmlDom);
 
-    if (SchemaReadStatus::Success != (status = reader->ReadSchemaReferencesFromXml(schemaOut, *schemaNode)))
+    if (SchemaReadStatus::Success != (status = reader->ReadSchemaReferencesFromXml(schemaOut, *schemaNode, ecXmlMinorVersion)))
         return status;
 
     readingSchemaReferences.Stop();
@@ -951,7 +980,7 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     bmap<ECSchemaP, Utf8String>::const_iterator iterator;
-    for (iterator = m_ecSchema.m_referencedSchemaNamespaceMap.begin(); iterator != m_ecSchema.m_referencedSchemaNamespaceMap.end(); iterator++)
+    for (iterator = m_ecSchema.m_referencedSchemaAliasMap.begin(); iterator != m_ecSchema.m_referencedSchemaAliasMap.end(); iterator++)
         {
         bpair<ECSchemaP, const Utf8String> mapPair = *(iterator);
         ECSchemaP   refSchema = mapPair.first;
@@ -967,8 +996,16 @@ SchemaWriteStatus SchemaXmlWriter::WriteSchemaReferences()
             m_xmlWriter.WriteAttribute(SCHEMAREF_VERSION_ATTRIBUTE, refSchema->GetSchemaKey().GetVersionString().c_str());
             }
 
-        const Utf8String prefix = mapPair.second;
-        m_xmlWriter.WriteAttribute(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str());
+        const Utf8String alias = mapPair.second;
+        if (m_ecXmlVersionMajor >= 3 && m_ecXmlVersionMinor >= 1)
+            {
+            m_xmlWriter.WriteAttribute(ALIAS_ATTRIBUTE, alias.c_str());
+            }
+        else
+            {
+            m_xmlWriter.WriteAttribute(SCHEMAREF_PREFIX_ATTRIBUTE, alias.c_str());
+            }
+
         m_xmlWriter.WriteElementEnd();
         }
     return status;
@@ -1101,14 +1138,15 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
     m_xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ns.c_str());
 
     m_xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, m_ecSchema.GetName().c_str());
-    m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetNamespacePrefix().c_str());
 
     if (m_ecXmlVersionMajor == 2)
         {
+        m_xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, m_ecSchema.GetAlias().c_str());
         m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetLegacyVersionString().c_str());
         }
     else
         {
+        m_xmlWriter.WriteAttribute(ALIAS_ATTRIBUTE, m_ecSchema.GetAlias().c_str());
         m_xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, m_ecSchema.GetSchemaKey().GetVersionString().c_str());
         }
     

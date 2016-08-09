@@ -645,17 +645,17 @@ Utf8String PrimitiveECProperty::_GetTypeNameForXml(int ecXmlVersionMajor) const
 
 ECObjectsStatus ResolveEnumerationType(ECEnumerationCP& enumeration, Utf8StringCR typeName, ECSchemaCR parentSchema)
     {
-    // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
-    Utf8String namespacePrefix;
+    // typeName may potentially be qualified so we must parse into an alias and short class name
+    Utf8String alias;
     Utf8String enumName;
-    ECObjectsStatus status = ECEnumeration::ParseEnumerationName(namespacePrefix, enumName, typeName);
+    ECObjectsStatus status = ECEnumeration::ParseEnumerationName(alias, enumName, typeName);
     if (ECObjectsStatus::Success != status)
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return status;
         }
 
-    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByNamespacePrefixP(namespacePrefix);
+    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByAliasP(alias);
     if (nullptr == resolvedSchema)
         {
         return ECObjectsStatus::SchemaNotFound;
@@ -794,16 +794,16 @@ ECObjectsStatus ExtendedTypeECProperty::SetExtendedTypeName(Utf8CP extendedTypeN
 
 ECObjectsStatus ResolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8StringCR typeName, ECSchemaCR parentSchema)
     {
-    // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
-    Utf8String prefix;
+    // typeName may potentially be qualified so we must parse into an alias and short class name
+    Utf8String alias;
     Utf8String kindOfQuantityName;
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseName(prefix, kindOfQuantityName, typeName))
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseName(alias, kindOfQuantityName, typeName))
         {
         LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
         return ECObjectsStatus::ParseError;
         }
 
-    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByNamespacePrefixP(prefix);
+    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByAliasP(alias);
     if (nullptr == resolvedSchema)
         {
         return ECObjectsStatus::SchemaNotFound;
@@ -1029,10 +1029,10 @@ Utf8String StructECProperty::_GetTypeName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR containingClass, bool doLogging = true)
     {
-    // typeName may potentially be qualified so we must parse into a namespace prefix and short class name
-    Utf8String namespacePrefix;
+    // typeName may potentially be qualified so we must parse into an alias and short class name
+    Utf8String alias;
     Utf8String className;
-    ECObjectsStatus status = ECClass::ParseClassName (namespacePrefix, className, typeName);
+    ECObjectsStatus status = ECClass::ParseClassName (alias, className, typeName);
     if (ECObjectsStatus::Success != status)
         {
         if (doLogging)
@@ -1040,12 +1040,12 @@ ECObjectsStatus ResolveStructType (ECStructClassCP& structClass, Utf8StringCR ty
         return status;
         }
     
-    ECSchemaCP resolvedSchema = containingClass.GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaCP resolvedSchema = containingClass.GetSchema().GetSchemaByAliasP (alias);
     if (NULL == resolvedSchema)
         {
         if (doLogging)
-            LOG.errorv("Cannot resolve the type name '%s' as a struct type because the namespacePrefix '%s' can not be resolved to the primary or a referenced schema.",
-                typeName.c_str(), namespacePrefix.c_str());
+            LOG.errorv("Cannot resolve the type name '%s' as a struct type because the alias '%s' can not be resolved to the primary or a referenced schema.",
+                typeName.c_str(), alias.c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
@@ -1189,9 +1189,9 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlV
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    // This used to always compare GetTypeName(). Type names for struct arrays include the namespace prefix as defined in the referencing schema. That is weird and easily breaks if:
+    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
     //  -Base property is defined in same schema as the struct class (cannot be worked around), or
-    //  -Base property's schema declares different namespace prefix for struct class's schema than the overriding property's schema (dumb workaround: make them use the same namespace).
+    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
     // Instead, compare the full-qualified class name.
     auto baseArray = baseProperty.GetAsArrayProperty();
     if (nullptr == baseArray || baseArray->GetKind() != GetKind())
@@ -1373,9 +1373,9 @@ bool ECProperty::HasExtendedType () const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    // This used to always compare GetTypeName(). Type names for struct arrays include the namespace prefix as defined in the referencing schema. That is weird and easily breaks if:
+    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
     //  -Base property is defined in same schema as the struct class (cannot be worked around), or
-    //  -Base property's schema declares different namespace prefix for struct class's schema than the overriding property's schema (dumb workaround: make them use the same namespace).
+    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
     // Instead, compare the full-qualified class name.
     auto baseArray = baseProperty.GetAsStructArrayProperty();
     if (nullptr == baseArray || baseArray->GetKind() != GetKind())
@@ -1454,20 +1454,20 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
     {
     PRECONDITION(nullptr != relationshipName, ECObjectsStatus::PreconditionViolated);
 
-    Utf8String namespacePrefix;
+    Utf8String alias;
     Utf8String relClassName;
-    ECObjectsStatus status = ECClass::ParseClassName(namespacePrefix, relClassName, relationshipName);
+    ECObjectsStatus status = ECClass::ParseClassName(alias, relClassName, relationshipName);
     if (ECObjectsStatus::Success != status)
         {
         LOG.errorv("Cannot resolve the relationship class name '%s' as a relationship class because the name could not be parsed.", relationshipName);
         return status;
         }
 
-    ECSchemaCP resolvedSchema = GetClass().GetSchema().GetSchemaByNamespacePrefixP(namespacePrefix);
+    ECSchemaCP resolvedSchema = GetClass().GetSchema().GetSchemaByAliasP(alias);
     if (nullptr == resolvedSchema)
         {
-        LOG.errorv("Cannot resolve the relationship class name '%s' as a relationship class because the namespacePrefix '%s' cannot be resolved to the primary or a referenced schema.",
-                     relationshipName, namespacePrefix.c_str());
+        LOG.errorv("Cannot resolve the relationship class name '%s' as a relationship class because the alias '%s' cannot be resolved to the primary or a referenced schema.",
+                     relationshipName, alias.c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
     

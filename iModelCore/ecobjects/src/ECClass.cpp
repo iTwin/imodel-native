@@ -350,7 +350,7 @@ void ECClass::FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP 
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
     {
     Utf8String newName;
-    FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetNamespacePrefix().c_str(), prop->GetName().c_str());
+    FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetAlias().c_str(), prop->GetName().c_str());
     return RenameConflictProperty(prop, renameDerivedProperties, newName);
     }
 
@@ -563,7 +563,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             return ECObjectsStatus::NamedItemAlreadyExists;
             }
         Utf8String newName;
-        FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+        FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetAlias().c_str(), pProperty->GetName().c_str());
         pProperty->SetName(newName);
         }
 
@@ -579,7 +579,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
             else
                 {
                 Utf8String newName;
-                FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetNamespacePrefix().c_str(), pProperty->GetName().c_str());
+                FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetAlias().c_str(), pProperty->GetName().c_str());
                 pProperty->SetName(newName);
                 }
             }
@@ -1610,10 +1610,10 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
     Utf8String qualifiedClassName;
     childNode->GetContent (qualifiedClassName);
 
-    // Parse the potentially qualified class name into a namespace prefix and short class name
-    Utf8String namespacePrefix;
+    // Parse the potentially qualified class name into an alias and short class name
+    Utf8String alias;
     Utf8String className;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName (namespacePrefix, className, qualifiedClassName))
+    if (ECObjectsStatus::Success != ECClass::ParseClassName (alias, className, qualifiedClassName))
         {
         LOG.errorv ("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be parsed.",  
             GetName().c_str(), EC_BASE_CLASS_ELEMENT, qualifiedClassName.c_str());
@@ -1621,11 +1621,11 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP (alias);
     if (NULL == resolvedSchema)
         {
-        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the namespace prefix '%s' that can not be resolved to a referenced schema.",
-            GetName().c_str(), EC_BASE_CLASS_ELEMENT, namespacePrefix.c_str());
+        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the alias '%s' that can not be resolved to a referenced schema.",
+            GetName().c_str(), EC_BASE_CLASS_ELEMENT, alias.c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -1811,36 +1811,36 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMa
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::ParseClassName 
 (
-Utf8StringR  prefix, 
+Utf8StringR  alias, 
 Utf8StringR  className, 
 Utf8StringCR qualifiedClassName
 )
     {
     if (0 == qualifiedClassName.length())
         {
-        LOG.error("Failed to parse a prefix and class name from a qualified class name because the string is empty.");
+        LOG.error("Failed to parse an alias and class name from a qualified class name because the string is empty.");
         return ECObjectsStatus::ParseError;
         }
         
     Utf8String::size_type colonIndex = qualifiedClassName.find (':');
     if (Utf8String::npos == colonIndex)
         {
-        prefix.clear();
+        alias.clear();
         className = qualifiedClassName;
         return ECObjectsStatus::Success;
         }
 
     if (qualifiedClassName.length() == colonIndex + 1)
         {
-        LOG.errorv("Failed to parse a prefix and class name from the qualified class name '%s' because the string ends with a colon. There must be characters after the colon.",
+        LOG.errorv("Failed to parse an alias and class name from the qualified class name '%s' because the string ends with a colon. There must be characters after the colon.",
             qualifiedClassName.c_str());
         return ECObjectsStatus::ParseError;
         }
 
     if (0 == colonIndex)
-        prefix.clear();
+        alias.clear();
     else
-        prefix = qualifiedClassName.substr (0, colonIndex);
+        alias = qualifiedClassName.substr (0, colonIndex);
 
     className = qualifiedClassName.substr (colonIndex + 1);
 
@@ -1856,17 +1856,17 @@ ECSchemaCR primarySchema,
 ECClassCR  ecClass
 )
     {
-    Utf8String namespacePrefix;
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveNamespacePrefix (ecClass.GetSchema(), namespacePrefix)))
+    Utf8String alias;
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias (ecClass.GetSchema(), alias)))
         {
-        LOG.warningv ("warning: Cannot qualify an ECClass name with a namespace prefix unless the schema containing the ECClass is referenced by the primary schema."
+        LOG.warningv ("warning: Cannot qualify an ECClass name with an alias unless the schema containing the ECClass is referenced by the primary schema."
             "The class name will remain unqualified.\n  Primary ECSchema: %s\n  ECClass: %s\n ECSchema containing ECClass: %s", primarySchema.GetName().c_str(), ecClass.GetName().c_str(), ecClass.GetSchema().GetName().c_str());
         return ecClass.GetName();
         }
-    if (namespacePrefix.empty())
+    if (alias.empty())
         return ecClass.GetName();
     else
-        return namespacePrefix + ":" + ecClass.GetName();
+        return alias + ":" + ecClass.GetName();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2448,21 +2448,21 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         if (BEXML_Success != constraintClassNode->GetAttributeStringValue(constraintClassName, CONSTRAINTCLASSNAME_ATTRIBUTE))
             return SchemaReadStatus::InvalidECSchemaXml;
         
-        // Parse the potentially qualified class name into a namespace prefix and short class name
-        Utf8String namespacePrefix;
+        // Parse the potentially qualified class name into an alias and short class name
+        Utf8String alias;
         Utf8String className;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName (namespacePrefix, className, constraintClassName))
+        if (ECObjectsStatus::Success != ECClass::ParseClassName (alias, className, constraintClassName))
             {
             LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that can not be parsed.",
                 CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         
-        ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByNamespacePrefixP (namespacePrefix);
+        ECSchemaCP resolvedSchema = m_relClass->GetSchema().GetSchemaByAliasP (alias);
         if (NULL == resolvedSchema)
             {
-            LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a %s attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.",
-                CONSTRAINTCLASSNAME_ATTRIBUTE, namespacePrefix.c_str());
+            LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
+                CONSTRAINTCLASSNAME_ATTRIBUTE, alias.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 

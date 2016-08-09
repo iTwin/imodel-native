@@ -395,9 +395,9 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     ECSchema::CreateSchema(schema2, "BaseSchema", 5, 5);
     ECSchema::CreateSchema(schema3, "BaseSchema2", 5, 5);
 
-    schema->SetNamespacePrefix("ecw");
-    schema2->SetNamespacePrefix("base");
-    schema3->SetNamespacePrefix("base");
+    schema->SetAlias("ecw");
+    schema2->SetAlias("base");
+    schema3->SetAlias("base");
 
     ECEntityClassP class1;
     ECEntityClassP baseClass;
@@ -841,7 +841,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     {
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema(testSchema, "TestSchema", 1, 2);
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias("ts");
     testSchema->SetDescription("Schema for testing programmatic construction");
     testSchema->SetDisplayLabel("Test Schema");
 
@@ -849,7 +849,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(1, testSchema->GetVersionMajor());
     EXPECT_EQ(2, testSchema->GetVersionMinor());
     EXPECT_EQ(0, strcmp(testSchema->GetName().c_str(), "TestSchema"));
-    EXPECT_EQ(0, strcmp(testSchema->GetNamespacePrefix().c_str(), "ts"));
+    EXPECT_EQ(0, strcmp(testSchema->GetAlias().c_str(), "ts"));
     EXPECT_EQ(0, strcmp(testSchema->GetDescription().c_str(), "Schema for testing programmatic construction"));
     EXPECT_EQ(0, strcmp(testSchema->GetDisplayLabel().c_str(), "Test Schema"));
 
@@ -2135,7 +2135,7 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     EXPECT_EQ(schema->CopyClass(base, *class2), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->CreateRelationshipClass(relationshipClass, "RelationshipClass"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetName("Some new name"), ECObjectsStatus::SchemaIsImmutable);
-    EXPECT_EQ(schema->SetNamespacePrefix("Some new prefix"), ECObjectsStatus::SchemaIsImmutable);
+    EXPECT_EQ(schema->SetAlias("Some new alias"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetDescription("Some new description"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetDisplayLabel("Some new label"), ECObjectsStatus::SchemaIsImmutable);
     EXPECT_EQ(schema->SetVersionMajor(13), ECObjectsStatus::SchemaIsImmutable);

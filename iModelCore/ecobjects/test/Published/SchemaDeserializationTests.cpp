@@ -41,7 +41,7 @@ struct SchemaDeserializationTest : ECTestFixture
     void VerifyWidgetsSchema (ECSchemaPtr const&   schema)
         {
         EXPECT_STREQ ("Widgets", schema->GetName ().c_str ());
-        EXPECT_STREQ ("wid", schema->GetNamespacePrefix ().c_str ());
+        EXPECT_STREQ ("wid", schema->GetAlias ().c_str ());
         EXPECT_STREQ ("Widgets Display Label", schema->GetDisplayLabel ().c_str ());
         EXPECT_TRUE (schema->GetIsDisplayLabelDefined ());
         EXPECT_STREQ ("Widgets Description", schema->GetDescription ().c_str ());
@@ -648,7 +648,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_STREQ("OnlyRequiredECSchemaAttributes", schema->GetName().c_str());
-    EXPECT_STREQ("", schema->GetNamespacePrefix().c_str());
+    EXPECT_STREQ("", schema->GetAlias().c_str());
     EXPECT_STREQ("OnlyRequiredECSchemaAttributes", schema->GetDisplayLabel().c_str());
     EXPECT_FALSE(schema->GetIsDisplayLabelDefined());
     EXPECT_STREQ("", schema->GetDescription().c_str());
@@ -699,7 +699,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingECSchemaFromStri
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_STREQ("Widgets", schema->GetName().c_str());
-    EXPECT_STREQ("wid", schema->GetNamespacePrefix().c_str());
+    EXPECT_STREQ("wid", schema->GetAlias().c_str());
     EXPECT_STREQ("Widgets Display Label", schema->GetDisplayLabel().c_str());
     EXPECT_TRUE(schema->GetIsDisplayLabelDefined());
     EXPECT_STREQ("Widgets Description", schema->GetDescription().c_str());

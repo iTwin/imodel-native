@@ -722,8 +722,8 @@ protected:
     virtual ExtendedTypeECPropertyCP    _GetAsExtendedTypePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual ExtendedTypeECPropertyP     _GetAsExtendedTypePropertyP() { return nullptr; } // used to avoid dynamic_cast
 
-    // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
-    // prefix relative to the containing schema.
+    // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with an alias
+    // relative to the containing schema.
     virtual Utf8String                  _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
     
@@ -790,11 +790,11 @@ public:
     //! Sets the ECXML typename for the property.  @see GetTypeName()
     ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
     //! The ECXML typename for the property.
-    //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with a namespacePrefix if
+    //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with an alias if
     //! the struct belongs to a schema that is referenced by the schema actually containing this property.
     //! The TypeName for array properties will be the type of the elements the array contains.
-    //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
-    //! prefix relative to the containing schema.
+    //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with an alias
+    //! relative to the containing schema.
     ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
     //! Sets the description for this ECProperty
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
@@ -1552,18 +1552,18 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    //! Given a qualified class name, will parse out the schema's namespace prefix and the class name.
-    //! @param[out] prefix  The namespace prefix of the schema
+    //! Given a qualified class name, will parse out the schema's alias and the class name.
+    //! @param[out] alias       The alias of the schema
     //! @param[out] className   The name of the class
     //! @param[in]  qualifiedClassName  The qualified name of the class, in the format of ns:className
     //! @return A status code indicating whether the qualified name was successfully parsed or not
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (Utf8StringR prefix, Utf8StringR className, Utf8StringCR qualifiedClassName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (Utf8StringR alias, Utf8StringR className, Utf8StringCR qualifiedClassName);
 
     //! Given a schema and a class, will return the fully qualified class name.  If the class is part of the passed in schema, there
-    //! is no namespace prefix.  Otherwise, the class's schema must be a referenced schema in the passed in schema
-    //! @param[in]  primarySchema   The schema used to lookup the namespace prefix of the class's schema
+    //! is no alias.  Otherwise, the class's schema must be a referenced schema in the passed in schema
+    //! @param[in]  primarySchema   The schema used to lookup the alias of the class's schema
     //! @param[in]  ecClass         The class whose schema should be searched for
-    //! @return WString    The namespace prefix if the class's schema is not the primarySchema
+    //! @return WString    The alias if the class's schema is not the primarySchema
     ECOBJECTS_EXPORT static Utf8String GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
 
     //! Given two ECClass's, checks to see if they are equal by name
@@ -1635,17 +1635,17 @@ friend struct SchemaXmlReaderImpl;
         //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
         //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
-        //! is no namespace prefix.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
-        //! @param[in]  primarySchema   The schema used to lookup the namespace prefix of the class's schema
-        //! @param[in]  ecEnumeration         The enumeration whose schema should be searched for
-        //! @return WString    The namespace prefix if the enumeration's schema is not the primarySchema
+        //! is no alias.  Otherwise, the enumeration's schema must be a referenced schema in the passed in schema
+        //! @param[in]  primarySchema   The schema used to lookup the alias of the class's schema
+        //! @param[in]  ecEnumeration   The enumeration whose schema should be searched for
+        //! @return WString    The alias if the enumeration's schema is not the primarySchema
         ECOBJECTS_EXPORT static Utf8String GetQualifiedEnumerationName(ECSchemaCR primarySchema, ECEnumerationCR ecEnumeration);
-        //! Given a qualified enum name, will parse out the schema's namespace prefix and the enum name.
-        //! @param[out] prefix  The namespace prefix of the schema
-        //! @param[out] enumName   The name of the enum
+        //! Given a qualified enum name, will parse out the schema's alias and the enum name.
+        //! @param[out] alias      The alias of the schema
+        //! @param[out] enumName    The name of the enum
         //! @param[in]  qualifiedEnumName  The qualified name of the enum, in the format of ns:enumName
         //! @return A status code indicating whether the qualified name was successfully parsed or not
-        ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR prefix, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseEnumerationName(Utf8StringR alias, Utf8StringR enumName, Utf8StringCR qualifiedEnumName);
 
         //! Gets the PrimitiveType of this ECEnumeration
         PrimitiveType GetType() const { return m_primitiveType; }
@@ -1795,14 +1795,14 @@ struct KindOfQuantity : NonCopyableClass
 
         //! {SchemaName}:{KindOfQuantityName} The pointer will remain valid as long as the KindOfQuantity exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-        //! Given a qualified enum name, will parse out the schema's namespace prefix and the kind of quantity name.
-        //! @param[out] prefix  The namespace prefix of the schema
-        //! @param[out] kindOfQuantityName   The name of the KindOfQuantity
+        //! Given a qualified enum name, will parse out the schema's alias and the kind of quantity name.
+        //! @param[out] alias               The alias of the schema
+        //! @param[out] kindOfQuantityName  The name of the KindOfQuantity
         //! @param[in]  stringToParse  The qualified name, in the format of {SchemaName}:{KindOfQuantityName}
         //! @return A status code indicating whether the qualified name was successfully parsed or not
-        ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR prefix, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
+        ECOBJECTS_EXPORT static ECObjectsStatus ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse);
 
-        //! Gets a qualified name of the enumeration, prefixed by the schema prefix if it does not match the primary schema.
+        //! Gets a qualified name of the enumeration, prefixed by the schema alias if it does not match the primary schema.
         ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
         //! Sets the display label of this KindOfQuantity
@@ -3053,7 +3053,7 @@ friend struct SchemaXmlWriter;
 
 private:
     SchemaKey               m_key;
-    Utf8String              m_namespacePrefix;
+    Utf8String              m_alias;
     Utf8String              m_displayLabel;
     mutable ECSchemaId      m_ecSchemaId;
     Utf8String              m_description;
@@ -3072,7 +3072,7 @@ private:
     bool                        m_immutable;
     mutable ECSchemaElementsOrder m_serializationOrder; //mutable because we might modify this during serialization
 
-    bmap<ECSchemaP, Utf8String> m_referencedSchemaNamespaceMap;
+    bmap<ECSchemaP, Utf8String> m_referencedSchemaAliasMap;
     /*__PUBLISH_SECTION_END__*/
     SchemaLocalizedStrings      m_localizedStrings;
     /*__PUBLISH_SECTION_START__*/
@@ -3093,7 +3093,7 @@ private:
 
     void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
 
-    ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR prefix, ECSchemaReadContextR readContext);
+    ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 
 protected:
@@ -3129,10 +3129,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetName(Utf8StringCR value);
     //! Returns the name of this ECSchema
     ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
-    //! Sets the namespace prefix for this ECSchema
-    ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(Utf8StringCR value);
-    //! Gets the namespace prefix for this ECSchema
-    ECOBJECTS_EXPORT Utf8StringCR       GetNamespacePrefix() const;
+    //! Sets the alias for this ECSchema
+    ECOBJECTS_EXPORT ECObjectsStatus    SetAlias(Utf8StringCR value);
+    //! Gets the alias for this ECSchema
+    ECOBJECTS_EXPORT Utf8StringCR       GetAlias() const;
     //! Sets the description for this ECSchema
     ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
     //! Gets the description for this ECSchema.  Returns the localized description if one exists.
@@ -3209,7 +3209,7 @@ public:
     ECOBJECTS_EXPORT bool               IsStandardSchema() const;
 
     //! Returns true if the passed in schema is the same base schema as the current schema
-    //! @remarks FullName, NamespacePrefix, and ClassCount are checked
+    //! @remarks FullName, Alias, and ClassCount are checked
     //! @return True    if the schemas are the same
     ECOBJECTS_EXPORT bool               IsSamePrimarySchema(ECSchemaR primarySchema) const;
 
@@ -3272,17 +3272,17 @@ public:
     //! @return A status code indicating whether or not the enumeration was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateEnumeration(ECEnumerationP& ecEnumeration, Utf8CP name, PrimitiveType type);
 
-    //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
-    //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
-    //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
-    //! @return   A non-refcounted pointer to an ECN::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
-    ECOBJECTS_EXPORT ECSchemaCP         GetSchemaByNamespacePrefixP(Utf8StringCR namespacePrefix) const;
+    //! Get a schema by alias within the context of this schema and its referenced schemas.
+    //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
+    //!                     Passing an empty alias will return a pointer to the current schema.
+    //! @return   A non-refcounted pointer to an ECN::ECSchema if it can be successfully resolved from the specified alias; otherwise, NULL
+    ECOBJECTS_EXPORT ECSchemaCP         GetSchemaByAliasP(Utf8StringCR alias) const;
 
-    //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
-    //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.
-    //! @param[out] namespacePrefix The namespace prefix if schema is a referenced schema; empty string if the sechema is the current schema;
+    //! Resolve an alias for the specified schema within the context of this schema and its references.
+    //! @param[in]  schema     The schema to lookup an alias in the context of this schema and its references.
+    //! @param[out] alias      The alias if schema is a referenced schema; empty string if the sechema is the current schema;
     //! @return   Success if the schema is either the current schema or a referenced schema;  ECObjectsStatus::SchemaNotFound if the schema is not found in the list of referenced schemas
-    ECOBJECTS_EXPORT ECObjectsStatus    ResolveNamespacePrefix (ECSchemaCR schema, Utf8StringR namespacePrefix) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    ResolveAlias (ECSchemaCR schema, Utf8StringR alias) const;
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
@@ -3329,8 +3329,8 @@ public:
     //! It is necessary to add any ECSchema as a referenced schema that will be used when adding a base
     //! class from a different schema, or custom attributes from a different schema.
     //! @param[in]  refSchema   The schema to add as a referenced schema
-    //! @param[in]  prefix      The prefix to use within the context of this schema for referencing the referenced schema
-    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR prefix);
+    //! @param[in]  alias       The alias to use within the context of this schema for referencing the referenced schema
+    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias);
 
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
@@ -3424,16 +3424,16 @@ public:
     //! @return The version string
     static Utf8String FormatSchemaVersion(uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor) { return SchemaKey::FormatSchemaVersion(versionMajor, versionWrite, versionMinor); }
 
-    //! If the given schemaName and namespacePrefix is valid, this will create a new schema object
+    //! If the given schemaName and alias is valid, this will create a new schema object
     //! @param[out] schemaOut       if successful, will contain a new schema object
     //! @param[in]  schemaName      Name of the schema to be created.
-    //! @param[in]  namespacePrefix Namespace prefix of the schema to be created
+    //! @param[in]  alias           Alias of the schema to be created
     //! @param[in]  versionMajor    The major version number.
     //! @param[out] versionWrite The  write compatibility version number
     //! @param[in]  versionMinor    The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
     ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, 
-                                                         Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
+                                                         Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in] versionMajor    The major version number

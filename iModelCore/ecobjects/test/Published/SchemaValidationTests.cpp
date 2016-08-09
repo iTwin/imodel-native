@@ -104,22 +104,22 @@ TEST_F(SchemaValidationTests, TestValidSchemaNames)
     }
 
 //---------------------------------------------------------------------------------------//
-// Tests that Namespace prefixes are valid. For instance they may not differ by case     //
+// Tests that Aliases are valid. For instance they may not differ by case                //
 // @bsimethod                                    Andreas.Kurka                       01/2016
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(SchemaValidationTests, TestNamespaces)
+TEST_F(SchemaValidationTests, TestAliases)
     {
     ECSchemaPtr schemaA;
 
-    ECObjectsStatus status = ECSchema::CreateSchema(schemaA, "somethingsomethingdarkside", 2, 3);
-    status = schemaA->SetNamespacePrefix("testprfx");
-    EXPECT_TRUE(status == ECObjectsStatus::Success) << "Expected success because a valid namespace prefix was given";
+    ECObjectsStatus status = ECSchema::CreateSchema(schemaA, "somethingsomethingdarkside", 3, 1);
+    status = schemaA->SetAlias("testalias");
+    EXPECT_TRUE(status == ECObjectsStatus::Success) << "Expected success because a valid alias was given";
 
-    status = schemaA->SetNamespacePrefix("invalid&/(!$&(/§!$");
-    EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the prefix contains invalid characters";
+    status = schemaA->SetAlias("invalid&/(!$&(/§!$");
+    EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the alias contains invalid characters";
 
-    //status = schemaA->SetNamespacePrefix("");
-    //EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the prefix is empty";
+    //status = schemaA->SetAlias("");
+    //EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the alias is empty";
 
     }
 

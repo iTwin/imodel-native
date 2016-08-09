@@ -391,25 +391,25 @@ ECObjectsStatus ECSchema::SetName (Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECSchema::GetNamespacePrefix () const
+Utf8StringCR ECSchema::GetAlias () const
     {
-    return m_namespacePrefix;
+    return m_alias;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::SetNamespacePrefix (Utf8StringCR namespacePrefix)
+ECObjectsStatus ECSchema::SetAlias (Utf8StringCR alias)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    else if (Utf8String::IsNullOrEmpty(namespacePrefix.c_str()))
+    else if (Utf8String::IsNullOrEmpty(alias.c_str()))
         return ECObjectsStatus::Success;
           
-    else if (!ECNameValidation::IsValidName(namespacePrefix.c_str()))
+    else if (!ECNameValidation::IsValidName(alias.c_str()))
         return ECObjectsStatus::InvalidName;
 
-    ECNameValidation::EncodeToValidName(m_namespacePrefix, namespacePrefix);
+    ECNameValidation::EncodeToValidName(m_alias, alias);
 
     return ECObjectsStatus::Success;
     }
@@ -539,7 +539,7 @@ bool ECSchema::IsSamePrimarySchema
 ECSchemaR primarySchema
 ) const
     {
-    if (0 != BeStringUtilities::StricmpAscii(this->GetNamespacePrefix().c_str(), primarySchema.GetNamespacePrefix().c_str()))
+    if (0 != BeStringUtilities::StricmpAscii(this->GetAlias().c_str(), primarySchema.GetAlias().c_str()))
         return false;
 
     if (0 != BeStringUtilities::StricmpAscii(this->GetFullSchemaName().c_str(), primarySchema.GetFullSchemaName().c_str()))
@@ -1220,14 +1220,14 @@ ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR sche
 //-------------------------------------------------------------------------------------//
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+----//
-ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR namespacePrefix, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
+ECObjectsStatus ECSchema::CreateSchema(ECSchemaPtr& schemaOut, Utf8StringCR schemaName, Utf8StringCR alias, uint32_t versionMajor, uint32_t versionWrite, uint32_t versionMinor)
     {
     schemaOut = new ECSchema();
 
     ECObjectsStatus status;
 
     if (ECObjectsStatus::Success != (status = schemaOut->SetName(schemaName)) ||
-        ECObjectsStatus::Success != (status = schemaOut->SetNamespacePrefix(namespacePrefix)) ||
+        ECObjectsStatus::Success != (status = schemaOut->SetAlias(alias)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMajor (versionMajor)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionWrite(versionWrite)) ||
         ECObjectsStatus::Success != (status = schemaOut->SetVersionMinor (versionMinor)))
@@ -1283,16 +1283,16 @@ ECSchemaPtr& schemaOut
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECSchema::GetSchemaByNamespacePrefixP (Utf8StringCR namespacePrefix) const
+ECSchemaCP ECSchema::GetSchemaByAliasP (Utf8StringCR alias) const
     {
-    if (namespacePrefix.length() == 0)
+    if (alias.length() == 0)
         return this;
 
-    // lookup referenced schema by prefix
+    // lookup referenced schema by alias
     bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator;
-    for (schemaIterator = m_referencedSchemaNamespaceMap.begin(); schemaIterator != m_referencedSchemaNamespaceMap.end(); schemaIterator++)
+    for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++)
         {
-        if (0 == namespacePrefix.compare (schemaIterator->second))
+        if (0 == alias.compare (schemaIterator->second))
             return schemaIterator->first;
         }
 
@@ -1302,16 +1302,16 @@ ECSchemaCP ECSchema::GetSchemaByNamespacePrefixP (Utf8StringCR namespacePrefix) 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::ResolveNamespacePrefix (ECSchemaCR schema, Utf8StringR namespacePrefix) const
+ECObjectsStatus ECSchema::ResolveAlias (ECSchemaCR schema, Utf8StringR alias) const
     {
-    namespacePrefix = EMPTY_STRING;
+    alias = EMPTY_STRING;
     if (&schema == this)
         return ECObjectsStatus::Success;
 
-    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaNamespaceMap.find((ECSchemaP) &schema);
-    if (schemaIterator != m_referencedSchemaNamespaceMap.end())
+    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator = m_referencedSchemaAliasMap.find((ECSchemaP) &schema);
+    if (schemaIterator != m_referencedSchemaAliasMap.end())
         {
-        namespacePrefix = schemaIterator->second;
+        alias = schemaIterator->second;
         return ECObjectsStatus::Success;
         }
 
@@ -1339,61 +1339,61 @@ ECSchemaReferenceListCR ECSchema::GetReferencedSchemas () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema)
     {
-    return AddReferencedSchema (refSchema, refSchema.GetNamespacePrefix());
+    return AddReferencedSchema (refSchema, refSchema.GetAlias());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR namespacePrefix)
+ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR alias)
     {
     ECSchemaReadContext context (NULL, false, false);
-    return AddReferencedSchema(refSchema, namespacePrefix, context);
+    return AddReferencedSchema(refSchema, alias, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR namespacePrefix, ECSchemaReadContextR readContext)
+ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext)
     {
     SchemaKeyCR refSchemaKey = refSchema.GetSchemaKey();
     if (m_refSchemaList.end () != m_refSchemaList.find (refSchemaKey))
         return ECObjectsStatus::NamedItemAlreadyExists;
 
-    Utf8String prefix(namespacePrefix);
-    if (prefix.length() == 0)
-        prefix = "s";
+    Utf8String tmpAlias(alias);
+    if (tmpAlias.length() == 0)
+        tmpAlias = "s";
 
-    // Make sure prefix is unique within this schema
-    bmap<ECSchemaP, Utf8String>::const_iterator namespaceIterator;
-    for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
+    // Make sure the alias is unique within this schema
+    bmap<ECSchemaP, Utf8String>::const_iterator aliasIterator;
+    for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++)
         {
-        if (0 == prefix.compare (namespaceIterator->second))
+        if (0 == tmpAlias.compare (aliasIterator->second))
             {
             break;
             }
         }
 
-    // We found a matching prefix already being referenced
-    if (namespaceIterator != m_referencedSchemaNamespaceMap.end())
+    // We found a matching alias already being referenced
+    if (aliasIterator != m_referencedSchemaAliasMap.end())
         {
         int subScript;
         for (subScript = 1; subScript < 500; subScript++)
             {
             Utf8Char temp[256];
-            BeStringUtilities::Snprintf(temp, "%s%d", prefix.c_str(), subScript);
-            Utf8String tryPrefix(temp);
-            for (namespaceIterator = m_referencedSchemaNamespaceMap.begin(); namespaceIterator != m_referencedSchemaNamespaceMap.end(); namespaceIterator++)
+            BeStringUtilities::Snprintf(temp, "%s%d", tmpAlias.c_str(), subScript);
+            Utf8String tryAlias(temp);
+            for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++)
                 {
-                if (0 == tryPrefix.compare (namespaceIterator->second))
+                if (0 == tryAlias.compare (aliasIterator->second))
                     {
                     break;
                     }
                 }
-            // we didn't find the prefix in the map
-            if (namespaceIterator == m_referencedSchemaNamespaceMap.end())
+            // we didn't find the alias in the map
+            if (aliasIterator == m_referencedSchemaAliasMap.end())
                 {
-                prefix = tryPrefix;
+                tmpAlias = tryAlias;
                 break;
                 }
             }
@@ -1407,7 +1407,7 @@ ECObjectsStatus ECSchema::AddReferencedSchema (ECSchemaR refSchema, Utf8StringCR
         return ECObjectsStatus::SchemaHasReferenceCycle;
         }
 
-    m_referencedSchemaNamespaceMap.insert(bpair<ECSchemaP, const Utf8String> (&refSchema, prefix));
+    m_referencedSchemaAliasMap.insert(bpair<ECSchemaP, const Utf8String> (&refSchema, tmpAlias));
     return ECObjectsStatus::Success;
     }
 
@@ -1490,9 +1490,9 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
         }
 
     m_refSchemaList.erase(schemaIterator);
-    bmap<ECSchemaP, Utf8String>::iterator iterator = m_referencedSchemaNamespaceMap.find(&refSchema);
-    if (iterator != m_referencedSchemaNamespaceMap.end())
-        m_referencedSchemaNamespaceMap.erase(iterator);
+    bmap<ECSchemaP, Utf8String>::iterator iterator = m_referencedSchemaAliasMap.find(&refSchema);
+    if (iterator != m_referencedSchemaAliasMap.end())
+        m_referencedSchemaAliasMap.erase(iterator);
 
     return ECObjectsStatus::Success;
     }

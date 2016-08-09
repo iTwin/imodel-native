@@ -2574,7 +2574,7 @@ StandaloneECInstancePtr CreateConstraintInstance( Utf8String className, Utf8Stri
     ECSchemaCP constraintSchema = Utf8String::IsNullOrEmpty(constraintSchemaName.c_str()) ? defaultSchema : GetSchema(constraintSchemaName);
     if (nullptr == constraintSchema)
         {
-        LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the namespace prefix '%s' that can not be resolved to a referenced schema.",
+        LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the alias '%s' that can not be resolved to a referenced schema.",
             constraintSchemaName.c_str());
         return nullptr;
         }
