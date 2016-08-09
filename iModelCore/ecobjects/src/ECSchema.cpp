@@ -1709,6 +1709,8 @@ ECSchemaReadContextCR schemaContext
 
     for (WString schemaPathStr : m_searchPaths)
         {
+        LOG.debugv("(SearchPathSchemaFileLocater) Attempting to locate schema %s in path %ls", schemaName, schemaPathStr.c_str());
+
         AddCandidateSchemas(foundFiles, schemaPathStr, twoVersionExpression, desiredSchemaKey, matchType, schemaContext);
         AddCandidateSchemas(foundFiles, schemaPathStr, threeVersionExpression, desiredSchemaKey, matchType, schemaContext);
         }
