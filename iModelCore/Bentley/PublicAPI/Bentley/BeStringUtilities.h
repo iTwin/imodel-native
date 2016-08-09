@@ -208,6 +208,10 @@ public:
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
     BENTLEYDLL_EXPORT static BentleyStatus Utf8ToUtf16 (Utf16BufferR, Utf8CP, size_t count = AsManyAsPossible);
 
+    //! Converts a UTF-8 string to a pointer. The Microsoft scanf method does not support the "%p" format specifier, so this method is needed to return the correct size pointer in 32- and 64- bit environments.
+    //! @param[in]  inChar     Input string; this must be NULL-terminated. It must be of the form produced by using "0x%p" as the format specifier in an sprintf or similar statement (something like 0x1dab0310 in 32-bit or 0x000000014dab4008 in a 64-bit environment)
+    BENTLEYDLL_EXPORT static void* Utf8ToPointer (Utf8CP inChar);
+
     //! Converts a UTF-16 string to a UTF-8 string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty.

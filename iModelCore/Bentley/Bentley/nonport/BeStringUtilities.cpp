@@ -2316,6 +2316,35 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   08/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void*   BeStringUtilities::Utf8ToPointer (Utf8CP inChar)
+    {
+    if ( (nullptr == inChar) || (0 == *inChar) )
+        return NULL;
+
+    if (8 == sizeof (void*))
+        {
+        int64_t output;
+        sscanf (inChar, "%I64x", &output);
+        return (void*)output;
+        }
+    else if (4 == sizeof (void*))
+        {
+        void*   output = nullptr;
+        sscanf (inChar, "%x", (unsigned int*)&output);
+        return output;
+        }
+    else
+        {
+        // unexpected pointer size!
+        BeAssert (false);
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BeStringUtilities::Itow(wchar_t *buffer, int value, size_t sizeInCharacters, int radix)
