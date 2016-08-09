@@ -2326,7 +2326,7 @@ void*   BeStringUtilities::Utf8ToPointer (Utf8CP inChar)
     if (8 == sizeof (void*))
         {
         int64_t output;
-        sscanf (inChar, "%I64x", &output);
+        sscanf (inChar, "%llx", &output);
         return (void*)output;
         }
     else if (4 == sizeof (void*))
