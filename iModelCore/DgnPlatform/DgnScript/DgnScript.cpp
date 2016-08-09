@@ -21,6 +21,19 @@
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
+namespace {
+struct ArgMarshallInfo
+    {
+    typedef ScriptDefinitionElement::ArgValueUnion::Type Type;
+    Type m_type;
+    bool m_grabOutput;
+    DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* m_nativePtrMarshaller;
+    ArgMarshallInfo(Type t, DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* pm, bool grabOutput = false) : m_type(t), m_nativePtrMarshaller(pm), m_grabOutput(grabOutput) { ; }
+    };
+}
+
+static bmap<DgnClassId, bvector<ArgMarshallInfo>> s_argMarshalling;
+
 DOMAIN_DEFINE_MEMBERS(ScriptDomain)
 HANDLER_DEFINE_MEMBERS(ScriptDefinitionElementHandler)
 HANDLER_DEFINE_MEMBERS(ScriptLibraryModelHandler)
@@ -442,6 +455,20 @@ void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
+DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* DgnPlatformLib::Host::ScriptAdmin::GetINativePointerMarshaller(Utf8StringCR typeScriptTypeName)
+    {
+    for (auto const& entry : m_importers)
+        {
+        auto m = entry.second.first->_GetMarshallerForType(typeScriptTypeName);
+        if (nullptr != m)
+            return m;
+        }
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
 DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     DgnScriptLibrary jslib(db);
@@ -560,6 +587,25 @@ static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8Strin
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
+static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR signature)
+    {
+    std::regex re("function\\s+(\\w+)\\s*[(](.*)[)]", std::regex_constants::ECMAScript);
+    std::smatch sm;
+    std::string s(textIn);
+    while (std::regex_search(s, sm, re))
+        {
+        s = sm.suffix().str();
+
+        if (3 != sm.size())
+            continue;
+
+        entryPoint = sm[1].str().c_str();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
 DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
     if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_Text, name))
@@ -596,7 +642,8 @@ DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR va
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-ScriptDefinitionElementPtr ScriptDefinitionElement::CreateElement(DgnDbStatus* statOut, ScriptLibraryModel& smodel, Utf8CP className, Definition const& scparams)
+ScriptDefinitionElementPtr ScriptDefinitionElement::Create(DgnDbStatus* statOut, ScriptLibraryModel& smodel, Utf8CP className, 
+    Utf8CP text, Utf8CP entryPoint, Utf8CP desc, Utf8CP url, Utf8CP esv)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, statOut);
     auto& db = smodel.GetDgnDb();
@@ -610,21 +657,47 @@ ScriptDefinitionElementPtr ScriptDefinitionElement::CreateElement(DgnDbStatus* s
 
     CreateParams ecparams(db, smodel.GetModelId(), classId);
     ScriptDefinitionElementPtr el = new ScriptDefinitionElement(ecparams);
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(scparams.m_text));
+    
+    if (nullptr == text || 0 == *text)
+        {
+        stat = DgnDbStatus::BadArg;
+        return nullptr;
+        }
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(text));
     if (DgnDbStatus::Success != stat)
         return nullptr;
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(scparams.m_esv));
+
+    if (nullptr == esv || 0 == *esv)
+        esv = "ES5";
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(esv));
     if (DgnDbStatus::Success != stat)
         return nullptr;
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(scparams.m_entryPoint));
+
+    Utf8String defaultEntryPoint;
+    if (nullptr == entryPoint || 0 == *entryPoint)
+        {
+        findLastFunction(defaultEntryPoint, text, "");
+        entryPoint = defaultEntryPoint.c_str();
+        }
+
+    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(entryPoint));
     if (DgnDbStatus::Success != stat)
         return nullptr;
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Description, ECN::ECValue(scparams.m_desc));
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl, ECN::ECValue(scparams.m_url));
-    if (DgnDbStatus::Success != stat)
-        return nullptr;
+
+    if (nullptr != desc && 0 != *desc)
+        {
+        stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Description, ECN::ECValue(desc));
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
+
+    if (nullptr != url && 0 != *url)
+        {
+        stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl, ECN::ECValue(url));
+        if (DgnDbStatus::Success != stat)
+            return nullptr;
+        }
+
     return el;
     }
 
@@ -655,7 +728,7 @@ Utf8String ScriptDefinitionElement::GetSourceUrl() const
     {
     ECN::ECValue v;
     GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl);
-    return v.ToString();
+    return v.IsNull() ? "" : v.ToString();
     }
 
 //---------------------------------------------------------------------------------------
@@ -664,7 +737,17 @@ Utf8String ScriptDefinitionElement::GetSourceUrl() const
 Utf8String ScriptDefinitionElement::GetDescription() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_Text);
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_Description);
+    return v.IsNull()? "": v.ToString();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+Utf8String ScriptDefinitionElement::GetEcmaScriptVersionRequired() const
+    {
+    ECN::ECValue v;
+    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired);
     return v.ToString();
     }
 
@@ -699,6 +782,9 @@ void ScriptDefinitionElement::GetSignature(Utf8StringR returnType, Utf8StringR a
 //---------------------------------------------------------------------------------------
 DgnDbStatus ScriptDefinitionElement::LoadScript(bool forceReload) const
     {
+    if (!GetElementId().IsValid())
+        return DgnDbStatus::MissingId;
+
     static bset<DgnElementId> s_loaded;
 
     if (!forceReload)
@@ -740,61 +826,156 @@ DgnDbStatus ScriptDefinitionElement::LoadScript(bool forceReload) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDefinitionElement::Execute(Utf8String argTypeCdl, ...) const
+static DgnDbStatus compileScriptSignature(bvector<ArgMarshallInfo>& marshallers, Utf8StringCR argsCdl)
     {
+    auto& scriptAdmin = T_HOST.GetScriptAdmin();
+
+    auto argTypes = parseCDL(argsCdl);
+
+    Utf8String _plainArgType;
+
+    for (auto const& decoratedArgType : argTypes)
+        {
+        Utf8StringCP plainArgType = &decoratedArgType;
+        Utf8String modifiers;
+        auto iModifier = decoratedArgType.find('[');
+        if (iModifier != Utf8String::npos)
+            {
+            _plainArgType = decoratedArgType.substr(0, iModifier);
+            plainArgType = &_plainArgType;
+//            _plainArgType.Strip();
+            modifiers = decoratedArgType.substr(iModifier, -1);
+            }
+
+        if (plainArgType->EqualsIAscii("DgnObjectId"))
+            marshallers.push_back(ArgMarshallInfo(ArgMarshallInfo::Type::ObjectId, nullptr));
+        else if (plainArgType->EqualsIAscii("boolean") || plainArgType->EqualsIAscii("cxx_bool"))
+            marshallers.push_back(ArgMarshallInfo(ArgMarshallInfo::Type::Bool, nullptr));
+        else if (plainArgType->EqualsIAscii("integer") || plainArgType->EqualsIAscii("cxx_int32_t"))
+            marshallers.push_back(ArgMarshallInfo(ArgMarshallInfo::Type::Int32, nullptr));
+        else if (plainArgType->EqualsIAscii("double") || plainArgType->EqualsIAscii("cxx_double"))
+            marshallers.push_back(ArgMarshallInfo(ArgMarshallInfo::Type::Double, nullptr));
+        else if (plainArgType->EqualsIAscii("string") || plainArgType->EqualsIAscii("cxx_Utf8String"))
+            marshallers.push_back(ArgMarshallInfo(ArgMarshallInfo::Type::Utf8CP, nullptr));
+        else
+            {
+            auto m = scriptAdmin.GetINativePointerMarshaller(*plainArgType);
+            if (nullptr == m)
+                return DgnDbStatus::UnknownFormat;
+                
+            marshallers.push_back(ArgMarshallInfo(ArgMarshallInfo::Type::Pointer, m));
+            }
+
+        if (modifiers.find("[out]") != Utf8String::npos)
+            marshallers.back().m_grabOutput = true;
+        }
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      08/16
+//---------------------------------------------------------------------------------------
+DgnDbStatus ScriptDefinitionElement::Execute(Utf8StringR result, std::initializer_list<ArgValueUnion> const& argValues) const
+    {
+    DgnDbStatus status = LoadScript();
+    if (DgnDbStatus::Success != status)
+        return status;
+    
+    auto imarshallers = s_argMarshalling.find(GetElementClassId());
+    if (imarshallers == s_argMarshalling.end())
+        {
+        Utf8String returnType, argumentTypes;
+        GetSignature(returnType, argumentTypes);
+        status = compileScriptSignature(s_argMarshalling[GetElementClassId()], argumentTypes);
+        if (DgnDbStatus::Success != status)
+            return status;
+        imarshallers = s_argMarshalling.find(GetElementClassId());
+        }
+
+    bvector<ArgMarshallInfo> const& marshallers = imarshallers->second;
+
+    //  Check inputs
+    if (argValues.size() != marshallers.size())
+        {
+        return DgnDbStatus::BadArg;
+        }
+
+    size_t i=0;
+    for (ArgValueUnion const& argValue : argValues)
+        {
+        ArgMarshallInfo const& marshaller = marshallers[i];
+        ArgMarshallInfo::Type mtype = marshaller.m_type;
+        ArgMarshallInfo::Type atype = argValue.m_type;
+        if (mtype != atype)
+            {
+            return DgnDbStatus::BadArg;
+            }
+        ++i;
+        }
+
+    struct OutputVar
+        {
+        BeJsNativePointer m_jsptr;
+        void* m_nativeptr;
+        DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* m_marshaller;
+        OutputVar(void* native, BeJsNativePointer const& js, DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller& m) : m_nativeptr(native), m_jsptr(js), m_marshaller(&m) {;}
+        };
+
     DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    
-    DgnDbStatus status = DgnDbStatus::Success;
-    
-    // VVVVVVV CallContext VVVVVVVV         *** DO NOT RETURN EARLY ***
-    ctx.BeginCallContext();
 
-    Utf8String returnType, argumentTypes;
-    GetSignature(returnType, argumentTypes);
-    if (argTypeCdl.empty())
-        argTypeCdl = argumentTypes;
+    /* !@!!@!!@!!@!!@! */       ctx.BeginCallContext();         /* !@!!@!!@!!@!!@!!@! */
+        
+    //  !@!!@!!@! DO NOT RETURN EARLY before calling EndCallContext !@!!@!!@!
 
-    auto argTypes = parseCDL(argTypeCdl);
-
+    bvector<OutputVar> outputVars;
     bvector<BeJsValue> jsValues;
 
-    va_list va;
-    va_start(va, argTypeCdl);
-    for (auto const& argType : argTypes)
+    i = 0;
+    for (auto const& argValue : argValues)
         {
-        if (argType.EqualsI("DgnDb"))
+        auto const& marshaller = marshallers[i];
+        ++i;
+
+        switch(argValue.m_type)
             {
-            DgnDbP db = va_arg(va, DgnDbP);
-            if (nullptr != db)
-                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnDb(*db), true));
-            else
-                jsValues.push_back(BeJsNativePointer());
-            }
-        else if (argType.EqualsI("Viewport"))
-            {
-            DgnViewportP vp = va_arg(va, DgnViewportP);
-            if (nullptr != vp)
-                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsViewport(*vp), true));
-            else
-                jsValues.push_back(BeJsNativePointer());
-            }
-        else if (argType.EqualsI("DgnObjectId"))
-            {
-            BeInt64Id id = va_arg(va, BeInt64Id);
-            jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnObjectId(id.GetValue())));
-            }
-        else if (argType.EqualsI("DgnElement"))
-            {
-            DgnElementP el = va_arg(va, DgnElementP);
-            if (nullptr != el)
-                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnElement(*el)));
-            else
-                jsValues.push_back(BeJsNativePointer());
+            case ArgMarshallInfo::Type::Pointer:
+                {
+                if (nullptr != argValue.m_ptr)
+                    {
+                    BeJsNativePointer jsptr;
+                    marshaller.m_nativePtrMarshaller->_MarshallNativePointerToJs(jsptr, ctx, argValue.m_ptr);
+                    jsValues.push_back(jsptr);
+                    if (marshaller.m_grabOutput)
+                        outputVars.push_back(OutputVar(argValue.m_ptr, jsptr, *marshaller.m_nativePtrMarshaller));
+                    }
+                else
+                    {
+                    jsValues.push_back(BeJsNativePointer::Null(ctx));
+                    }
+                break;
+                }
+            case ArgMarshallInfo::Type::ObjectId:
+                jsValues.push_back(ctx.ObtainProjectedClassInstancePointer(new JsDgnObjectId(argValue.m_objectId.GetValueUnchecked())));
+                break;
+
+            case ArgMarshallInfo::Type::Bool:
+                jsValues.push_back(BeJsBoolean(ctx, argValue.m_bool));
+                break;
+
+            case ArgMarshallInfo::Type::Int32:
+                jsValues.push_back(BeJsNumber(ctx, argValue.m_int32));
+                break;
+
+            case ArgMarshallInfo::Type::Double:
+                jsValues.push_back(BeJsNumber(ctx, argValue.m_double));
+                break;
+            
+            case ArgMarshallInfo::Type::Utf8CP:
+                jsValues.push_back(BeJsString(ctx, argValue.m_utf8cp));
+                break;
             }
         }
 
-    va_end(va);
-    
     BeJsObject callScope = ctx.GetGlobalObject();   // *** WIP_DGNSCRIPT - embed scriptlets in some kind of namespace object
     auto entryPoint = callScope.GetFunctionProperty(GetEntryPoint().c_str());
     if (!entryPoint.IsValid() || !entryPoint.IsFunction() || entryPoint.IsNull())
@@ -805,9 +986,17 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8String argTypeCdl, ...) const
     else
         {
         auto retVal = entryPoint.CallWithList(&callScope, false, jsValues.data(), jsValues.size());
+        result = retVal.Serialize();
+
+        status = DgnDbStatus::Success; // *** NEEDS WORK: Detect JS exception
+
+        for (auto const& outputVar : outputVars)
+            {
+            outputVar.m_marshaller->_MarshallNativePointerFromJs(outputVar.m_nativeptr, outputVar.m_jsptr);
+            }
         }
 
-    ctx.EndCallContext();
+    /* !@!!@!!@!!@!!@! */       ctx.EndCallContext();       /* !@!!@!!@!!@!!@! */
 
     return status;
     }

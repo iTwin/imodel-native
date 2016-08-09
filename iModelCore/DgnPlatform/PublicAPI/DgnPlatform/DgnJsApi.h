@@ -1423,7 +1423,8 @@ struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
     ~DgnJsApi();
 
     void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
-};
+    DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) override;
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   06/16

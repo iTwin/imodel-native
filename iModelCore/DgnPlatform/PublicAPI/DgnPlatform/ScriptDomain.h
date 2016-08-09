@@ -11,6 +11,7 @@
 #include "DgnModel.h"
 #include "ElementHandler.h"
 #include "DgnDomain.h"
+#include "DgnPlatformLib.h"
 
 #define SCRIPT_DOMAIN_ECSCHEMA_PATH             L"ECSchemas/Domain/Script.01.00.ecschema.xml"
 #define SCRIPT_DOMAIN_NAME                      "SCRIPT"
@@ -19,11 +20,10 @@
 #define SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel      "ScriptLibraryModel"
 
 #define SCRIPT_DOMAIN_CLASSNAME_Script                  "Script"
-#define SCRIPT_DOMAIN_CLASSNAME_Function                "Function"
-#define SCRIPT_DOMAIN_CLASSNAME_ModelListFunction       "ModelListFunction"
-#define SCRIPT_DOMAIN_CLASSNAME_ModelFilterFunction     "ModelFilterFunction"
-#define SCRIPT_DOMAIN_CLASSNAME_ElementListFunction     "ElementListFunction"
-#define SCRIPT_DOMAIN_CLASSNAME_ElementFilterFunction   "ElementFilterFunction"
+#define SCRIPT_DOMAIN_CLASSNAME_PopulateModelList       "PopulateModelList"
+#define SCRIPT_DOMAIN_CLASSNAME_FilterModel             "FilterModel"
+#define SCRIPT_DOMAIN_CLASSNAME_PopulateElementList     "PopulateElementList"
+#define SCRIPT_DOMAIN_CLASSNAME_FilterElement           "FilterElement"
 
 #define SCRIPT_DOMAIN_PROPERTY_Script_Text              "Text"
 #define SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint        "EntryPoint"
@@ -78,43 +78,22 @@ struct ScriptDefinitionElement : DefinitionElement
 public:
     friend struct ScriptDefinitionElementHandler;
 
-    //! The definition of a script. Applicable to all types of scripts.
-    struct Definition
-        {
-        Utf8CP m_text, m_entryPoint, m_desc, m_url, m_esv;
-
-        //! The definition of a script. Applicable to scripts of all kinds.
-        //! @param[in] text     The script
-        //! @param[in] entryPoint The function in the script that should be called 
-        //! @param[in] desc     A description of the script
-        //! @param[in] url      The source URL
-        //! @param[in] esv      The ECMAScript version required to run this script.
-        Definition(Utf8CP text, Utf8CP entryPoint, Utf8CP desc, Utf8CP url="", Utf8CP esv = "ES5") : m_text(text), m_entryPoint(entryPoint),
-            m_desc(desc), m_url(url), m_esv(esv)
-            {
-            }
-        };
-
 private:
     explicit ScriptDefinitionElement(CreateParams const&);
-    DGNPLATFORM_EXPORT static RefCountedPtr<ScriptDefinitionElement> CreateElement(DgnDbStatus*, ScriptLibraryModel&, Utf8CP className, Definition const&);
     DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
 public:
-    //! Create an ElementFilterFunction. The returned element is non-persisent. The caller must call its Insert method in order to store it to the bim.
+    //! Create a script element. The returned element is non-persisent. The caller must call its Insert method in order to store it to the bim.
     //! @param[out] stat    Optional. An error status if the element could not be created. DgnDbStatus::MissingDomain if the Script domain has not been imported.
-    //! @param[in] model    The ScriptLibraryModel model that will eventually hold the new element.
-    //! @param[in] def      The definition of the script
+    //! @param[in] model    The ScriptLibraryModel model that will eventually hold the new script element.
+    //! @param[in] className The name of the script element ECClass
+    //! @param[in] text     The script
+    //! @param[in] entryPoint Optional. The function in the script that should be called. Defaults to the last function defined in \a text.
+    //! @param[in] desc     Optional. A description of the script.
+    //! @param[in] url      Optional. The source URL.
+    //! @param[in] esv      Optional. The ECMAScript version required to run this script. Defaults to "ES5".
     //! @return a new non-persistent script element or an invalid ptr if the input is invalid.
-    static ScriptDefinitionElementPtr CreateElementFilterFunction(DgnDbStatus* stat, ScriptLibraryModel& model, Definition const& def)
-        {return CreateElement(stat, model, SCRIPT_DOMAIN_CLASSNAME_ElementFilterFunction, def);}
-
-    //! Create an ElementListFunction. The returned element is non-persisent. The caller must call its Insert method in order to store it to the bim.
-    //! @param[out] stat    Optional. An error status if the element could not be created. DgnDbStatus::MissingDomain if the Script domain has not been imported.
-    //! @param[in] model    The ScriptLibraryModel model that will eventually hold the new element.
-    //! @param[in] def      The definition of the script
-    //! @return a new non-persistent script element or an invalid ptr if the input is invalid
-    static ScriptDefinitionElementPtr CreateElementListFunction(DgnDbStatus* stat, ScriptLibraryModel& model, Definition const& def)
-        {return CreateElement(stat, model, SCRIPT_DOMAIN_CLASSNAME_ElementListFunction, def);}
+    DGNPLATFORM_EXPORT static ScriptDefinitionElementPtr Create(DgnDbStatus* stat, ScriptLibraryModel& model, 
+        Utf8CP className, Utf8CP text, Utf8CP entryPoint = nullptr, Utf8CP desc = nullptr, Utf8CP url = nullptr, Utf8CP esv = "ES5");
 
     //! Get the Script text
     DGNPLATFORM_EXPORT Utf8String GetText() const;
@@ -138,7 +117,32 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus LoadScript(bool forceReload = false) const;
 
-    DGNPLATFORM_EXPORT DgnDbStatus Execute(Utf8String argTypeCdl, ...) const;
+    //! Holds the types of data that can be arguments to a script
+    struct ArgValueUnion
+        {
+        enum class Type { Bool, ObjectId, Int32, Double, Utf8CP, Pointer };
+        Type m_type;
+        union 
+            {
+            void* m_ptr;
+            BeInt64Id m_objectId;
+            int32_t m_int32;
+            double m_double;
+            Utf8CP m_utf8cp;
+            bool m_bool;
+            };
+        ArgValueUnion(std::nullptr_t ) : m_type(Type::Pointer), m_ptr(nullptr) { ; }
+        ArgValueUnion(void const*p) : m_type(Type::Pointer), m_ptr((void*)p) { ; }
+        ArgValueUnion(int32_t i) : m_type(Type::Int32), m_int32(i) { ; }
+        ArgValueUnion(BeInt64Id const& id) : m_type(Type::ObjectId), m_objectId(id) { ; }
+        ArgValueUnion(double v) : m_type(Type::Double), m_double(v) { ; }
+        ArgValueUnion(Utf8CP s) : m_type(Type::Utf8CP), m_utf8cp(s) { ; }
+        };
+    
+    //! Execute this script, passing it the supplied arguments.
+    //! @param[out] result   A JSON-encoded object that captures the return value from the script. Will be empty if the script could not be executed
+    //! @return non-zero error status if any argument is bad or if the script is invalid or triggered and exception.
+    DGNPLATFORM_EXPORT DgnDbStatus Execute(Utf8StringR result, std::initializer_list<ArgValueUnion> const& args) const;
     };
 
 

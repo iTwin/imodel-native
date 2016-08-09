@@ -235,7 +235,8 @@ struct GeomJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
     ~GeomJsApi();
 
     void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
-};
+    DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) override;
+    };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
