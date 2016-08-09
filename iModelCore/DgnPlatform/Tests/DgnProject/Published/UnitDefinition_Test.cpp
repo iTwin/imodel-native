@@ -233,3 +233,36 @@ TEST_F (UnitDefinitionTest, AssignLabel)
 
     ASSERT_TRUE (def.GetLabel() == label);
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik  08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitDefinitionTest, operator_equal)
+    {
+    UnitDefinition s3 = GenerateMeter_1_10();
+    UnitDefinition s4(s3);
+    ASSERT_TRUE(s4.operator == (s3) );
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik  08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitDefinitionTest, operator_notequal)
+    {
+    UnitDefinition s2 = GenerateDegree_1_10();
+    ASSERT_TRUE(GenerateMeter_1_10().operator != (s2));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik  08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitDefinitionTest,BaseFromInt)
+    {
+    ASSERT_TRUE(UnitBase::Degree == UnitDefinition::BaseFromInt(2));
+    ASSERT_TRUE(UnitBase::None == UnitDefinition::BaseFromInt(5));
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ridha.Malik  08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UnitDefinitionTest, SystemFromInt)
+    {
+    ASSERT_TRUE(UnitSystem::Metric == UnitDefinition::SystemFromInt(2));
+    ASSERT_TRUE(UnitSystem::Undefined == UnitDefinition::SystemFromInt(5));
+    }
