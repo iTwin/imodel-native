@@ -837,16 +837,15 @@
         </ECCustomAttributes>
         <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
-    <!-- Specialize ElementOwnsUniqueAspect?
     <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding">
+        <BaseClass>ElementOwnsUniqueAspect</BaseClass>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="TextAnnotation2d"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="false">
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
-    -->
     
     <!-- 3D text element -->
     <ECEntityClass typeName="TextAnnotation3d">
@@ -855,16 +854,15 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement3d</BaseClass>
     </ECEntityClass>
-    <!-- Specialize ElementOwnsUniqueAspect?
     <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding">
+        <BaseClass>ElementOwnsUniqueAspect</BaseClass>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="TextAnnotation3d"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="false">
             <Class class="TextAnnotationData"/>
         </Target>
     </ECRelationshipClass>
-    -->
 
     <ECEntityClass typeName="AnnotationTable">
         <!-- An AnnotationTable is an annotation element that displays a grid containing text and or graphics -->
@@ -916,7 +914,15 @@
         <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
         <ECProperty propertyName="TextSymbKey" typeName="int"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsUniqueAspect ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding">
+        <BaseClass>ElementOwnsUniqueAspect</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="AnnotationTableHeader"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableRow">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
@@ -925,7 +931,15 @@
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableRow"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableColumn">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
@@ -934,7 +948,15 @@
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableColumn"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECStructClass typeName="AnnotationTableCellIndex">
         <ECProperty propertyName="RowIndex" typeName="int"/>
@@ -954,7 +976,15 @@
         <ECProperty propertyName="MarginLeft" typeName="double"/>
         <ECProperty propertyName="MarginRight" typeName="double"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableCell"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableMerge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
@@ -963,7 +993,15 @@
         <ECProperty propertyName="RowSpan" typeName="int"/>
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableMerge"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableSymbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
@@ -976,7 +1014,15 @@
         <ECProperty propertyName="LineStyleScale" typeName="double"/>
         <ECProperty propertyName="FillColor" typeName="int"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableSymbology"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECEntityClass typeName="AnnotationTableEdgeRun">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
@@ -987,7 +1033,15 @@
         <ECProperty propertyName="Span" typeName="int"/>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
-    <!-- WIP: Add AnnotationTableOwnsMultiAspects ECRelationship specialization? -->
+    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
+        <Source cardinality="(1,1)" polymorphic="false">
+            <Class class="AnnotationTable"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="false">
+            <Class class="AnnotationTableEdgeRun"/>
+        </Target>
+    </ECRelationshipClass>
 
     <!--
     <ECEntityClass typeName="DimensionStyle">
@@ -1226,8 +1280,8 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <!-- WIP: Specialize ElementOwnsMultiAspects?
-    <ECRelationshipClass typeName="ElementOwnsExternalKey" strength="embedding">
+    <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding">
+        <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source cardinality="(1,1)" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1235,7 +1289,6 @@
             <Class class="ElementExternalKey"/>
         </Target>
     </ECRelationshipClass>
-    -->
 
     <ECRelationshipClass typeName="ElementsReferToElements" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
