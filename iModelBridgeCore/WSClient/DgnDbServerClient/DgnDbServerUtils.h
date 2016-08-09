@@ -91,7 +91,8 @@ namespace ServerSchema
         static Utf8CP Values = "Values";
         static Utf8CP StateRevision = "StateRevision";
         static Utf8CP StateRevisionIndex = "StateRevisionIndex";
-        static Utf8CP State = "State";
+        static Utf8CP Reserved = "Reserved";
+        static Utf8CP Used = "Used";
         static Utf8CP CodeStateInvalid = "CodeStateInvalid";
         static Utf8CP ConflictingCodes = "ConflictingCodes";
         static Utf8CP CodesNotFound = "CodesNotFound";

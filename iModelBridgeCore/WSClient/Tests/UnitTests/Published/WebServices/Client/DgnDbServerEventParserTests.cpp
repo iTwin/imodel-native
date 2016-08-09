@@ -97,7 +97,8 @@ Utf8String StubHttpResponseValidCodeEvent()
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "Namespace":"SomeNamespace",
               "Values":["SomeValue1", "SomeValue2", "SomeValue3"],
-              "State":"SomeState",
+              "Reserved":"True",
+              "Used":"False",
               "BriefcaseId":"SomeBriefcaseId",
               "UsedWithRevision":"SomeUsedWithRevision"
               }
@@ -198,7 +199,8 @@ Utf8String StubHttpResponseInvalidCodeEvent2()
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "Namespace":"SomeNamespace",
               "Values":[],
-              "State":"SomeState",
+              "Reserved":"True",
+              "Used":"False",
               "BriefcaseId":"SomeBriefcaseId",
               "UsedWithRevision":"SomeUsedWithRevision"
               }

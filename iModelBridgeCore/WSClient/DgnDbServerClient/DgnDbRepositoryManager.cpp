@@ -87,9 +87,12 @@ RepositoryStatus DgnDbRepositoryManager::GetResponseStatus(DgnDbServerResult<voi
         map[DgnDbServerError::Id::LockOwnedByAnotherBriefcase]    = RepositoryStatus::LockAlreadyHeld;
         map[DgnDbServerError::Id::PullIsRequired]                 = RepositoryStatus::RevisionRequired;
         map[DgnDbServerError::Id::RevisionDoesNotExist]           = RepositoryStatus::InvalidRequest;
-        map[DgnDbServerError::Id::CodeStateInvalid]               = RepositoryStatus::CodeUnavailable;
+        map[DgnDbServerError::Id::CodeStateInvalid]               = RepositoryStatus::InvalidRequest;
         map[DgnDbServerError::Id::CodeReservedByAnotherBriefcase] = RepositoryStatus::CodeUnavailable;
         map[DgnDbServerError::Id::CodeDoesNotExist]               = RepositoryStatus::CodeNotReserved;
+        map[DgnDbServerError::Id::InvalidPropertiesValues]        = RepositoryStatus::InvalidRequest;
+        map[DgnDbServerError::Id::CodeStateRevisionDenied]        = RepositoryStatus::InvalidRequest;
+        map[DgnDbServerError::Id::CodeAlreadyExists]              = RepositoryStatus::CodeUnavailable;
         }
 
     auto it = map.find(result.GetError().GetId());

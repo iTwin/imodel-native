@@ -24,6 +24,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
     if (map.empty())
         {
         map["DgnDbServer.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
+        map["DgnDbServer.InvalidPropertiesValues"]                   = Id::InvalidPropertiesValues;
         map["DgnDbServer.InvalidBriefcase"]                          = Id::InvalidBriefcase;
         map["DgnDbServer.AnotherUserPushing"]                        = Id::AnotherUserPushing;
         map["DgnDbServer.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
@@ -44,7 +45,9 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["DgnDbServer.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
         map["DgnDbServer.UserAlreadyExists"]                         = Id::UserAlreadyExists;
         map["DgnDbServer.CodeStateInvalid"]                          = Id::CodeStateInvalid;
+        map["DgnDbServer.CodeStateRevisionDenied"]                   = Id::CodeStateRevisionDenied;
         map["DgnDbServer.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
+        map["DgnDbServer.CodeAlreadyExists"]                         = Id::CodeAlreadyExists;
         map["DgnDbServer.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
         map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
         }
