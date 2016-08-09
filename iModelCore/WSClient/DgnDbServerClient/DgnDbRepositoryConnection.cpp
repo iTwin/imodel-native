@@ -461,23 +461,24 @@ bool                            queryOnly = false
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
-int CodeStateToInt(DgnCodeStateCR state)
+void CodeStateToReservedUsed(DgnCodeStateCR state, bool* reserved, bool* used)
     {
     //NEEDSWORK: Make DgnCodeState::Type public
     if (state.IsReserved())
         {
-        return 1;
+        *reserved = true;
+        *used     = false;
+        return;
         }
-    else if (state.IsUsed())
+    if (state.IsUsed())
         {
-        return 2;
+        *reserved = false;
+        *used     = true;
+        return;
         }
-    else if (state.IsDiscarded())
-        {
-        return 3;
-        }
-
-    return 0;
+    
+    *reserved = false;
+    *used     = false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -495,10 +496,14 @@ bool                         queryOnly
     Json::Value properties;
     DgnCode const* firstCode = codes.begin();
 
+    bool reserved, used;
+    CodeStateToReservedUsed(state, &reserved, &used);
+
     properties[ServerSchema::Property::AuthorityId]   = firstCode->GetAuthority().GetValue();
     properties[ServerSchema::Property::Namespace]     = firstCode->GetNamespace();
     properties[ServerSchema::Property::BriefcaseId]   = briefcaseId.GetValue();
-    properties[ServerSchema::Property::State]         = CodeStateToInt (state);
+    properties[ServerSchema::Property::Reserved]      = reserved;
+    properties[ServerSchema::Property::Used]          = used;
     properties[ServerSchema::Property::StateRevision] = stateRevisionId;
     properties[ServerSchema::Property::QueryOnly]     = queryOnly;
 
@@ -794,7 +799,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AcquireCodesLocks
     
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created);
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
@@ -967,6 +972,14 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikolinuas             08/2016
+//---------------------------------------------------------------------------------------
+inline const char * const BoolToString(bool b)
+    {
+    return b ? "true" : "false";
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             06/2016
 //---------------------------------------------------------------------------------------
 WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint64_t lastRevisionIndex)
@@ -982,8 +995,8 @@ WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint6
                         ServerSchema::Property::ReleasedWithRevisionIndex, lastRevisionIndex);
 
     //NEEDSWORK: Make DgnCodeState::Type public
-    codesFilter.Sprintf("%s+ne+%u+and+(%s+ne+%u+or+%s+gt+%u)", ServerSchema::Property::State, 0,
-                        ServerSchema::Property::State, 3, ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
+    codesFilter.Sprintf("%s+eq+%s+or+%s+eq+%s+or+%s+gt+%u", ServerSchema::Property::Reserved, BoolToString(true),
+                        ServerSchema::Property::Used, BoolToString(true), ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
 
     //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
     filter.Sprintf("%s+ne+%u+and+((%s)+and+(%s))", ServerSchema::Property::BriefcaseId,

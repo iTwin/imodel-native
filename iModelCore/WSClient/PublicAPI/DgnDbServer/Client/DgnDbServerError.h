@@ -19,6 +19,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             Unknown = -1,
             //DgnDbServer Errors
             MissingRequiredProperties = 1,
+            InvalidPropertiesValues,
             InvalidBriefcase,
             BriefcaseDoesNotBelongToUser,
             AnotherUserPushing,
@@ -40,7 +41,9 @@ struct DgnDbServerError : public Tasks::AsyncError
             UserAlreadyExists,
             UserDoesNotExist,
             CodeStateInvalid,
+            CodeStateRevisionDenied,
             CodeReservedByAnotherBriefcase,
+            CodeAlreadyExists,
             CodeDoesNotExist,
 
             //WebServices Errors
