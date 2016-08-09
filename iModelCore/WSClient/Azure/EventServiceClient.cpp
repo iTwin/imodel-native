@@ -35,9 +35,22 @@ AsyncTaskPtr<EventServiceResult> EventServiceClient::MakeReceiveDeleteRequest(bo
     {
     char numBuffer[10];
     if (longPolling)
-        itoa(230, numBuffer, 10); //max timeout for service bus rest api is set to 230 seconds
+        {
+        //itoa is non-portable - itoa(230, numBuffer, 10);
+        //Sure, you could snprintf, but this is so easy...
+        numBuffer[0] = '2';
+        numBuffer[1] = '3';
+        numBuffer[2] = '0';
+        numBuffer[3] = 0;
+        }
     else
-        itoa(0, numBuffer, 10);
+        {
+        //itoa is non-portable - itoa(0, numBuffer, 10);
+        //Sure, you could snprintf, but this is so easy...
+        numBuffer[0] = '0';
+        numBuffer[1] = 0;
+        }
+    
     Utf8String url = m_fullAddress + Utf8String(numBuffer);
     Http::Request request(url.c_str(), "DELETE", nullptr);
     request.GetHeaders().Clear();
