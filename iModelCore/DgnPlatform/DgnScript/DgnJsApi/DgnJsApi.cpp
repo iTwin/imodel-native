@@ -1010,9 +1010,12 @@ struct ObjectIdSetMarshaller : DgnPlatformLib::Host::ScriptAdmin::INativePointer
 
     void _MarshallNativePointerFromJs(void* outptr, BeJsNativePointerCR inptr) override
         {
-        DgnElementIdSet* outset = (DgnElementIdSet*)outptr;
-        DgnElementIdSet* inset = (DgnElementIdSet*)inptr.GetValue();
-        outset->insert(inset->begin(), inset->end());
+        auto outset = (DgnElementIdSet*)outptr;
+        auto inset = (JsDgnObjectIdSet*)(inptr.GetValue());
+        for (auto const& id : inset->m_collection)
+            {
+            outset->insert(DgnElementId(id));
+            }
         }
     };
 

@@ -416,7 +416,7 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
         ScriptDefinitionElementCPtr scriptEl1;
         
         scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
-            "function ifElementIsNotNull(element) {return element != null;}", "", ""));
+            "function ifElementIsNotNull(element) {return element != null;}"));
         Utf8String retVal;
         ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {scriptEl1.get()}));
         ASSERT_STREQ("true", retVal.c_str());
@@ -431,12 +431,22 @@ TEST_F(DgnScriptTest, ScriptElementCRUD)
 #endif
 
         scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_PopulateElementList,
-            "function fillEleList(dgnObjectIdSet,db,viewport) {dgnObjectIdSet.Insert(new DgnObjectId(1));}", "", ""));
+"function fillEleList(dgnObjectIdSet,db,viewport) {\
+    var be = Bentley.Dgn;\
+    var categories = be.DgnCategory.QueryCategories(db);\
+    for (var catiter = categories.Begin(); categories.IsValid(catiter); categories.ToNext(catiter))\
+        {\
+        dgnObjectIdSet.Insert(categories.GetId(catiter));\
+        }\
+    }"
+        ));
         DgnElementIdSet ids;
         ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
-        ASSERT_STREQ("void", retVal.c_str());
-        ASSERT_EQ(0, ids.size());
-        ASSERT_EQ(1, ids.begin()->GetValue());
+        //ASSERT_STREQ("", retVal.c_str());
+        ASSERT_NE(0, ids.size());
+        auto categories = DgnCategory::QueryCategories(*m_db);
+        ASSERT_EQ(categories.size(), ids.size());
+        ASSERT_TRUE(categories.begin()->GetValue() == ids.begin()->GetValue());
         }
     }
 

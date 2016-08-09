@@ -17,7 +17,6 @@
 #include <DgnPlatform/DgnJsApiProjection.h>
 #include <DgnPlatform/ScriptDomain.h>
 #include <regex>
-#include <iostream>
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
@@ -557,9 +556,10 @@ static bvector<Utf8String> parseCDL(Utf8StringCR cdl)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8StringCR signature)
+static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8StringCR signature, Utf8StringCR args)
     {
-    std::regex re("function\\s+(\\w+)\\s*[(](.*)[)]", std::regex_constants::ECMAScript);
+    //                           1           2
+    std::regex re("function\\s+(\\w+)\\s*[(](.*)[)]\\s*[{]", std::regex_constants::ECMAScript);
     std::smatch sm;
     std::string s (textIn);
     while (std::regex_search(s, sm, re))
@@ -573,10 +573,12 @@ static BentleyStatus checkEntryPoint(Utf8CP entryPoint, Utf8CP textIn, Utf8Strin
         if (name != entryPoint)
             continue;
 
-
-        // *** NEEDS WORK: how to validate arguments??
-        //auto haveArgs = parseCDL(sm[2].str().c_str());
-        //auto wantArgs = parseCDL(signature);
+#ifdef NEEDS_WORK // regex problem - I seem to get the rest of the function along with the args...
+        auto haveArgs = parseCDL(sm[2].str().c_str());
+        auto wantArgs = parseCDL(args);
+        if (haveArgs.size() != wantArgs.size())
+            return BSIERROR;
+#endif
 
         return BSISUCCESS;
         }
@@ -632,7 +634,7 @@ DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR va
         GetProperty(text, SCRIPT_DOMAIN_PROPERTY_Script_Text);
         Utf8String rt, args;
         GetSignature(rt, args);
-        if (BSISUCCESS != checkEntryPoint(value.ToString().c_str(), text.ToString().c_str(), rt))
+        if (BSISUCCESS != checkEntryPoint(value.ToString().c_str(), text.ToString().c_str(), rt, args))
             return DgnDbStatus::BadArg;
         }
 
@@ -986,7 +988,9 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8StringR result, std::initialize
     else
         {
         auto retVal = entryPoint.CallWithList(&callScope, false, jsValues.data(), jsValues.size());
-        result = retVal.Serialize();
+
+        if (retVal.IsValid() && !retVal.IsEmpty() && !retVal.IsUndefined() && !retVal.IsNull())
+            result = retVal.Serialize();
 
         status = DgnDbStatus::Success; // *** NEEDS WORK: Detect JS exception
 
