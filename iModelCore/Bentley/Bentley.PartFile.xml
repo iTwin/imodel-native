@@ -113,9 +113,12 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Bentley-Gtest/BentleyTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/Bentley" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Bentley-Gtest/BentleyTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="Bentley-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BentleyTest.log</Files>
+        </Bindings>
     </Part>
 
     <!--                ********************** -->
@@ -136,6 +139,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=Bentley-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="Bentley-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Bentley-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
     
     <!--                ********************** -->
