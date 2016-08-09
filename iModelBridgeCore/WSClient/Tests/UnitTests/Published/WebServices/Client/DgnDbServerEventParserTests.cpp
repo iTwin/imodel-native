@@ -46,6 +46,7 @@ Utf8String StubHttpResponseInvalid()
     return "abcd";
     }
 
+#ifdef WIP_MERGE
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
@@ -220,6 +221,7 @@ Utf8String StubHttpResponseInvalidDeletedEvent()
               }
              )";
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
@@ -856,6 +858,8 @@ void DgnDbServerEventParserTests::SetUp()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
+#ifdef WIP_MERGE
+
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
@@ -871,6 +875,8 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
 	EXPECT_EQ(objectIds, lockEvent1.GetObjectIds());
     }
 
+#endif
+    
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------

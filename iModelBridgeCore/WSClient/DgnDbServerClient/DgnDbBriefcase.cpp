@@ -266,9 +266,9 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeToEvents(bvector<DgnDbServerEv
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
-        return false;
+        return nullptr;
     if (!m_repositoryConnection)
-        return false;
+        return nullptr;
     return m_repositoryConnection->SubscribeToEvents(eventTypes, nullptr);
     }
 

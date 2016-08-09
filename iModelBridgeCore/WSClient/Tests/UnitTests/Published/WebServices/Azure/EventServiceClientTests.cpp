@@ -12,7 +12,7 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-unsigned __stdcall workThreadHandler(void* arg)
+unsigned STDCALL_ATTRIBUTE workThreadHandler(void* arg)
     {
     EventServiceClient** clPtr = (EventServiceClient**)arg;
     printf("Entering thread\n");
