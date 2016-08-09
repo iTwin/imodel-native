@@ -42,7 +42,7 @@ using namespace std;
 #define ID_MAXOCCURS "MaxOccurs"
 #define ID_MINOCCURS "MinOccurs"
 #define ID_CUSTOMATTRIBUTES "CustomAttributes"
-#define ID_NAMESPACEPREFIX "NamespacePrefix"
+#define ID_ALIAS "Alias"
 #define ID_IS_ABSTRACT "IsAbstract"
 #define ID_IS_SEALED "IsSealed"
     
@@ -817,7 +817,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::MaxOccurs: return ID_MAXOCCURS;
         case DiffNodeId::MinOccurs: return ID_MINOCCURS;
         case DiffNodeId::CustomAttributes: return ID_CUSTOMATTRIBUTES;
-        case DiffNodeId::NamespacePrefix: return ID_NAMESPACEPREFIX;
+        case DiffNodeId::Alias: return ID_ALIAS;
         case DiffNodeId::IsAbstract: return ID_IS_ABSTRACT;
         case DiffNodeId::IsSealed: return ID_IS_SEALED;
         }
@@ -846,8 +846,8 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     if (!left.GetDescription().Equals(right.GetDescription()))
         diff->Add (DiffNodeId::Description)->SetValue (left.GetDescription().c_str(), right.GetDescription().c_str());
 
-    if (!left.GetNamespacePrefix().Equals(right.GetNamespacePrefix()))
-        diff->Add (DiffNodeId::NamespacePrefix)->SetValue (left.GetNamespacePrefix().c_str(), right.GetNamespacePrefix().c_str());
+    if (!left.GetAlias().Equals(right.GetAlias()))
+        diff->Add (DiffNodeId::Alias)->SetValue (left.GetAlias().c_str(), right.GetAlias().c_str());
 
     DiffReferences (*diff, left, right);
     DiffCustomAttributes (*diff, left, right);
@@ -880,24 +880,24 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
         ECSchemaReferenceListCR right = schemaRight.GetReferencedSchemas();
    
         set<Utf8String> referenceSchemas;
-        Utf8String namespacePrefix;
+        Utf8String alias;
         for (ECSchemaReferenceList::const_iterator itor = left.begin(); itor != left.end() ; ++itor)
-            if (schemaLeft.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECObjectsStatus::Success)
-                if (referenceSchemas.find (namespacePrefix) == referenceSchemas.end())
-                    referenceSchemas.insert(namespacePrefix);
+            if (schemaLeft.ResolveAlias (*itor->second, alias) == ECObjectsStatus::Success)
+                if (referenceSchemas.find (alias) == referenceSchemas.end())
+                    referenceSchemas.insert(alias);
 
         for (ECSchemaReferenceList::const_iterator itor = right.begin(); itor != right.end() ; ++itor)
-            if (schemaRight.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECObjectsStatus::Success)
-                if (referenceSchemas.find (namespacePrefix) == referenceSchemas.end())
-                    referenceSchemas.insert(namespacePrefix);
+            if (schemaRight.ResolveAlias (*itor->second, alias) == ECObjectsStatus::Success)
+                if (referenceSchemas.find (alias) == referenceSchemas.end())
+                    referenceSchemas.insert(alias);
 
         if (referenceSchemas.empty())
             return NULL;
     ECDiffNodeP diff= parentDiff.Add (DiffNodeId::References);
         for(set<Utf8String>::const_iterator itor = referenceSchemas.begin(); itor != referenceSchemas.end(); ++itor)
             {
-            ECSchemaCP leftR =  schemaLeft.GetSchemaByNamespacePrefixP (*itor);
-            ECSchemaCP rightR =  schemaRight.GetSchemaByNamespacePrefixP (*itor);
+            ECSchemaCP leftR =  schemaLeft.GetSchemaByAliasP (*itor);
+            ECSchemaCP rightR =  schemaRight.GetSchemaByAliasP (*itor);
             if (leftR && !rightR)
                 diff->Add ((*itor).c_str(), DiffNodeId::Reference)->ImplGetValueLeft().SetValue (leftR->GetFullSchemaName().c_str());
             else if (!leftR && rightR)
@@ -1863,8 +1863,8 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         GetMerged().SetDescription (v->GetValueString());
 
-    if ((v = GetMergeValue (r, DiffNodeId::NamespacePrefix)) == NULL)
-        GetMerged().SetNamespacePrefix (GetDefault().GetNamespacePrefix());
+    if ((v = GetMergeValue (r, DiffNodeId::Alias)) == NULL)
+        GetMerged().SetAlias (GetDefault().GetAlias());
     else
         GetMerged().SetDescription (v->GetValueString());
 

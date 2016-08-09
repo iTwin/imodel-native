@@ -129,7 +129,7 @@ enum class DiffNodeId
     CustomAttribute = 37,
     ConstraintClasses = 38,
     ConstraintClass = 39,
-    NamespacePrefix = 40,
+    Alias = 40,
     IsAbstract = 41,
     IsSealed = 42,
     MinimumValue = 43,
