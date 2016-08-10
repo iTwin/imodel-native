@@ -241,37 +241,27 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-bool CodeStateFromJson(DgnCodeStateR codeState, JsonValueCR value, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+bool CodeStateFromJson(DgnCodeStateR codeState, JsonValueCR reservedValue, JsonValueCR usedValue, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
-    if (value.isNull())
+    if (reservedValue.isNull())
         return false;
 
-    uint64_t stateInt;
+    bool reserved, used;
 
-    if (value.isString())
-        {
-        if (SUCCESS != BeStringUtilities::ParseUInt64(stateInt, value.asCString()))
-            return false;
-        }
-    else
-        stateInt = (uint64_t)value.asInt64();
-
-    if (stateInt == 0)
-        {
-        codeState.SetAvailable();
-        return true;
-        }
-    else if (stateInt == 1)
+    reserved = reservedValue.asBool();
+    used = usedValue.isNull() ? false : usedValue.asBool();
+    
+    if (reserved)
         {
         codeState.SetReserved(briefcaseId);
         return true;
         }
-    else if (stateInt == 2)
+    else if (!reserved && used)
         {
         codeState.SetUsed(revisionId);
         return true;
         }
-    else if (stateInt == 3)
+    else if (!reserved && !used)
         {
         codeState.SetDiscarded(revisionId);
         return true;
@@ -293,7 +283,7 @@ bool GetCodeFromServerJson(JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR 
         !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]) ||
         !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
         !RepositoryJson::BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
-        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId, revisionId))
+        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
         return false;
 
     // State revision is optional

@@ -18,6 +18,7 @@ typedef std::shared_ptr<struct DgnDbBriefcase> DgnDbBriefcasePtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbBriefcase);
 
 DEFINE_TASK_TYPEDEFS(bool, DgnDbServerBool);
+DEFINE_TASK_TYPEDEFS(Utf8String, DgnDbServerEventString);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisionMerge);
 
 //=======================================================================================
@@ -70,6 +71,18 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr IsBriefcaseUpToDate(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Return true if able to subscribe to given event types
+    //! @param[in] eventTypes
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
+
+    //! 
+    //! @param[in] longPolling
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr   GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Cancels the get event request 
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeToEvents();
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.

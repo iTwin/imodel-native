@@ -257,6 +257,58 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
         });
     }
 
+/* EventService Methods Start */
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Caleb.Shafer	                    06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
+    {
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        return nullptr;
+    if (!m_repositoryConnection)
+        return nullptr;
+    return m_repositoryConnection->SubscribeToEvents(eventTypes, nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr  DgnDbBriefcase::UnsubscribeToEvents()
+    {
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::FileNotFound));    
+    if (!m_repositoryConnection)
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+    return m_repositoryConnection->UnsubscribeToEvents();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Arvind.Venkateswaran	              06/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventTaskPtr  DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
+    {
+    BeAssert(DgnDbServerHost::IsInitialized());
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));      
+    if (!m_repositoryConnection)    
+        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
+
+    return m_repositoryConnection->GetEvent(longPolling, cancellationToken)->Then<DgnDbServerEventResult>([=](DgnDbServerEventResult result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerEventResult::Error(result.GetError());
+        DgnDbServerEventPtr currentEvent = result.GetValue();
+        if (currentEvent == nullptr)
+            return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
+        return DgnDbServerEventResult::Success(currentEvent);
+        });
+    }
+
+/* EventService Methods End */
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------

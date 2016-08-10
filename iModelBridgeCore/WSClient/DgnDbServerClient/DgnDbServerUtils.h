@@ -21,6 +21,7 @@ namespace ServerSchema
     static Utf8CP Instance = "instance";
     static Utf8CP InstanceId = "instanceId";
     static Utf8CP ChangedInstance = "changedInstance";
+    static Utf8CP ChangedInstances = "changedInstances";
     static Utf8CP InstanceAfterChange = "instanceAfterChange";
     static Utf8CP Instances = "instances";
     static Utf8CP Properties = "properties";
@@ -38,14 +39,16 @@ namespace ServerSchema
         }
     namespace Class
         {
-        static Utf8CP Briefcase = "DgnDbBriefcase";
+        static Utf8CP Briefcase = "BIMBriefcase";
         static Utf8CP Revision = "Revision";
-        static Utf8CP File = "DgnDbFile";
+        static Utf8CP File = "BIMFile";
         static Utf8CP Repository = "BIMRepository";
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
         static Utf8CP Code = "Code";
         static Utf8CP MultiCode = "MultiCode";
+        static Utf8CP EventSAS = "EventSAS";
+        static Utf8CP EventSubscription = "EventSubscription";
         }
     namespace Property
         {
@@ -78,6 +81,9 @@ namespace ServerSchema
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
         static Utf8CP CodesRequiresPull = "CodesRequiresPull";
+		static Utf8CP EventServiceSASToken = "EventServiceSASToken";
+		static Utf8CP BaseAddress = "BaseAddress";
+        static Utf8CP EventTypes = "EventTypes";
         static Utf8CP IsReadOnly = "IsReadOnly";
         static Utf8CP AuthorityId = "AuthorityId";
         static Utf8CP Namespace = "Namespace";
@@ -85,7 +91,8 @@ namespace ServerSchema
         static Utf8CP Values = "Values";
         static Utf8CP StateRevision = "StateRevision";
         static Utf8CP StateRevisionIndex = "StateRevisionIndex";
-        static Utf8CP State = "State";
+        static Utf8CP Reserved = "Reserved";
+        static Utf8CP Used = "Used";
         static Utf8CP CodeStateInvalid = "CodeStateInvalid";
         static Utf8CP ConflictingCodes = "ConflictingCodes";
         static Utf8CP CodesNotFound = "CodesNotFound";
