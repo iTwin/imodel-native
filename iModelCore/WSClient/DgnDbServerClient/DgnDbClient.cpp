@@ -151,7 +151,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
             {
             Utf8String repositoryId = repository[ServerSchema::InstanceId].asString();
             Utf8String name         = repository[ServerSchema::Properties][ServerSchema::Property::RepositoryName].asString();
-            Utf8String description  = repository[ServerSchema::Properties][ServerSchema::Property::Description].asString();
+            Utf8String description  = repository[ServerSchema::Properties][ServerSchema::Property::RepositoryDescription].asString();
 
             repositories.push_back(std::make_shared<RepositoryInfo>(m_serverUrl, repositoryId, name, description));
             }
@@ -170,7 +170,7 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR des
     instance[ServerSchema::ClassName] = ServerSchema::Class::Repository;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
     properties[ServerSchema::Property::RepositoryName] = repositoryName;
-    properties[ServerSchema::Property::Description] = description;
+    properties[ServerSchema::Property::RepositoryDescription] = description;
     properties[ServerSchema::Property::Published] = published;
     return repositoryCreation;
     }
@@ -234,7 +234,10 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     BeFileName fileName = tempdb->GetFileName();
     Utf8String dbFileId = tempdb->GetDbGuid().ToString();
 
-    // Stage 1. Create repository.
+    FileInfo fileInfo = FileInfo(*tempdb, description);
+    BeFileName filePath = tempdb->GetFileName();
+    tempdb->CloseDb();
+
     Utf8String project;
     project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
@@ -254,11 +257,10 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
         Utf8String  repositoryInstanceId = repositoryInstance[ServerSchema::InstanceId].asString();
 
         Utf8String name = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::RepositoryName].asString();
-        Utf8String description = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::Description].asString();
+        Utf8String description = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::RepositoryDescription].asString();
         auto repositoryInfo = std::make_shared<RepositoryInfo>(m_serverUrl, repositoryInstanceId, name, description);
         finalResult->SetSuccess(repositoryInfo);
-
-        //NEEDSWORK: SetSuccess here
+        
         ConnectToRepository(repositoryInstanceId, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
             {
             if (!connectionResult.IsSuccess())
@@ -267,7 +269,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
                 return;
                 }
             DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
-            connection->UploadNewFile(tempdb, description, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
+            connection->UploadNewFile(filePath, fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
                 {
                 if (!fileUploadResult.IsSuccess())
                     finalResult->SetError(fileUploadResult.GetError());
