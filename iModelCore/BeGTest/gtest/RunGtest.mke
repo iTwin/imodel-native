@@ -50,7 +50,7 @@ always:
     %endif
 
 
-    $(ResultsCapture) : $(exeName)
+    $(ResultsCapture) : $(exeName).exe
         >$(ResultsCapture)
         $(exeName)
         <
