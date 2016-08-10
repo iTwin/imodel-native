@@ -16,10 +16,19 @@ def checkLogFileForFailures(logfilename):
     failureCount = 0
 
     foundSummary = False
+    lineNo = 0
 
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
             lline = line.lower()
+    
+            if lineNo == 0:
+                if lline.startswith('android junit tests were not run'):
+                    report = report + '\n' + line
+                    return 0,report
+
+            lineNo = lineNo + 1
+
             if lline.startswith("failure in test"):
                 failureCount = failureCount + 1
                 report = report + line
