@@ -79,4 +79,3 @@ ImportTest.ImportElementsWithAuthorities
 ImportTest.ImportElementsWithDependencies
 
 DgnScriptTest.TestEga
-ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main
