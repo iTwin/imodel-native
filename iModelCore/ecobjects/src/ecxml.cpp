@@ -191,7 +191,7 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
         }
     
     Utf8String cardinalityWithoutSpaces = cardinalityString;
-    cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
+    cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end());
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {
@@ -221,6 +221,54 @@ ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &u
     // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
     upperLimit = UINT_MAX;
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECXml::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &upperLimit, const Utf8String &multiplicityString)
+    {
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    Utf8String multiplicityWithoutSpaces = multiplicityString;
+    multiplicityWithoutSpaces.erase(std::remove_if(multiplicityWithoutSpaces.begin(), multiplicityWithoutSpaces.end(), ::isspace), multiplicityWithoutSpaces.end());
+    
+    size_t openParenIndex = multiplicityWithoutSpaces.find('(');
+    if (openParenIndex == std::string::npos
+            || (openParenIndex != 0 && multiplicityWithoutSpaces.find(')') != multiplicityWithoutSpaces.length() - 1))
+        {
+        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(multiplicityWithoutSpaces.c_str(), "(%d..%d)", &lowerLimit, &upperLimit);
+    if (2 == scanned)
+        return ECObjectsStatus::Success;
+        
+    if (0 == scanned)
+        {
+        LOG.errorv("Multiplicity string '%s' is invalid.", multiplicityString.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
+    upperLimit = UINT_MAX;
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String ECXml::MultiplicityToLegacyString(RelationshipMultiplicity multiplicity)
+    {
+    Utf8Char legacyString[32];
+
+    if (multiplicity.IsUpperLimitUnbounded())
+        BeStringUtilities::Snprintf(legacyString, "(%d,N)", multiplicity.GetLowerLimit());
+    else
+        BeStringUtilities::Snprintf(legacyString, "(%d,%d)", multiplicity.GetLowerLimit(), multiplicity.GetUpperLimit());
+
+    return legacyString;
     }
 
 //---------------------------------------------------------------------------------------

@@ -1450,7 +1450,7 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties)
     {
     bvector<Utf8String> comments;
 
@@ -2158,15 +2158,15 @@ ECPropertyIterable::IteratorState::~IteratorState()
     delete m_properties;
     }    
     
-static RelationshipCardinality s_zeroOneCardinality(0, 1);
-static RelationshipCardinality s_zeroManyCardinality(0, UINT_MAX);
-static RelationshipCardinality s_oneOneCardinality(1, 1);
-static RelationshipCardinality s_oneManyCardinality(1, UINT_MAX);
+static RelationshipMultiplicity s_zeroOneMultiplicity(0, 1);
+static RelationshipMultiplicity s_zeroManyMultiplicity(0, UINT_MAX);
+static RelationshipMultiplicity s_oneOneMultiplicity(1, 1);
+static RelationshipMultiplicity s_oneManyMultiplicity(1, UINT_MAX);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinality::RelationshipCardinality
+RelationshipMultiplicity::RelationshipMultiplicity
 (
 )
     {
@@ -2177,7 +2177,7 @@ RelationshipCardinality::RelationshipCardinality
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinality::RelationshipCardinality
+RelationshipMultiplicity::RelationshipMultiplicity
 (
 uint32_t lowerLimit,
 uint32_t upperLimit
@@ -2193,10 +2193,10 @@ uint32_t upperLimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-int RelationshipCardinality::Compare
+int RelationshipMultiplicity::Compare
 (
-RelationshipCardinality const& lhs, 
-RelationshipCardinality const& rhs
+RelationshipMultiplicity const& lhs,
+RelationshipMultiplicity const& rhs
 )
     {
     if (lhs.GetLowerLimit() == rhs.GetLowerLimit() && 
@@ -2209,7 +2209,7 @@ RelationshipCardinality const& rhs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t RelationshipCardinality::GetLowerLimit
+uint32_t RelationshipMultiplicity::GetLowerLimit
 (
 ) const
     {
@@ -2219,7 +2219,7 @@ uint32_t RelationshipCardinality::GetLowerLimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t RelationshipCardinality::GetUpperLimit
+uint32_t RelationshipMultiplicity::GetUpperLimit
 (
 ) const
     {
@@ -2229,7 +2229,7 @@ uint32_t RelationshipCardinality::GetUpperLimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipCardinality::IsUpperLimitUnbounded 
+bool RelationshipMultiplicity::IsUpperLimitUnbounded
 (
 ) const
     {
@@ -2239,59 +2239,58 @@ bool RelationshipCardinality::IsUpperLimitUnbounded
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String RelationshipCardinality::ToString
+Utf8String RelationshipMultiplicity::ToString
 (
 ) const
     {
-    Utf8Char cardinalityString[32];
+    Utf8Char multiplicityString[32];
     
     if (UINT_MAX == m_upperLimit)
-        BeStringUtilities::Snprintf(cardinalityString, "(%d,N)", m_lowerLimit);
+        BeStringUtilities::Snprintf(multiplicityString, "(%d..N)", m_lowerLimit);
     else
-        BeStringUtilities::Snprintf(cardinalityString, "(%d,%d)", m_lowerLimit, m_upperLimit);
+        BeStringUtilities::Snprintf(multiplicityString, "(%d..%d)", m_lowerLimit, m_upperLimit);
         
-    return cardinalityString;
-        
+    return multiplicityString;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinalityCR RelationshipCardinality::ZeroOne
+RelationshipMultiplicityCR RelationshipMultiplicity::ZeroOne
 (
 )
     {
-    return s_zeroOneCardinality;
+    return s_zeroOneMultiplicity;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinalityCR RelationshipCardinality::ZeroMany
+RelationshipMultiplicityCR RelationshipMultiplicity::ZeroMany
 (
 )
     {
-    return s_zeroManyCardinality;
+    return s_zeroManyMultiplicity;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinalityCR RelationshipCardinality::OneOne
+RelationshipMultiplicityCR RelationshipMultiplicity::OneOne
 (
 )
     {
-    return s_oneOneCardinality;
+    return s_oneOneMultiplicity;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinalityCR RelationshipCardinality::OneMany
+RelationshipMultiplicityCR RelationshipMultiplicity::OneMany
 (
 )
     {
-    return s_oneManyCardinality;
+    return s_oneManyMultiplicity;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2304,7 +2303,7 @@ bool isSource
 ) :m_constraintClasses(relationshipClass), m_isSource(isSource)
     {
     m_relClass = relationshipClass;
-    m_cardinality = &s_zeroOneCardinality;
+    m_multiplicity = &s_zeroOneMultiplicity;
     m_isPolymorphic = true;
     }
 
@@ -2324,9 +2323,9 @@ ECRelationshipConstraint::~ECRelationshipConstraint
 (
 )
     {
-     if ((m_cardinality != &s_zeroOneCardinality) && (m_cardinality != &s_zeroManyCardinality) &&
-        (m_cardinality != &s_oneOneCardinality) && (m_cardinality != &s_oneManyCardinality))
-        delete m_cardinality;
+     if ((m_multiplicity != &s_zeroOneMultiplicity) && (m_multiplicity != &s_zeroManyMultiplicity) &&
+        (m_multiplicity != &s_oneOneMultiplicity) && (m_multiplicity != &s_oneManyMultiplicity))
+        delete m_multiplicity;
     } 
    
 /*---------------------------------------------------------------------------------**//**
@@ -2384,7 +2383,7 @@ ECEntityClassCR constraintClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const
+ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const
     {
 #ifdef THIS_BREAKS_264_TESTS
     ECRelationshipClassCP relationshipClass = m_relClass;
@@ -2400,7 +2399,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t
                                                                               : &relationshipBaseClass->GetTarget();
 
         // Validate against the base class again...
-        ECObjectsStatus validationStatus = baseClassConstraint->ValidateCardinalityConstraint(lowerLimit, upperLimit);
+        ECObjectsStatus validationStatus = baseClassConstraint->ValidateMultiplicityConstraint(lowerLimit, upperLimit);
         if (validationStatus != ECObjectsStatus::Success)
             {
             return validationStatus;
@@ -2418,7 +2417,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateCardinalityConstraint(uint32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor)
+SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     
@@ -2426,7 +2425,15 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     ECObjectsStatus setterStatus;
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
-    READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
+
+    if (ecXmlVersionMajor >= 3 && ecXmlVersionMinor >= 1)
+        {
+        READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, MULTIPLICITY_ATTRIBUTE, this, Multiplicity);
+        }
+    else
+        {
+        READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
+        }
     
     // Add Custom Attributes
     if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema(), ecXmlVersionMajor))
@@ -2515,13 +2522,17 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return *this;
             }  Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const
+SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const
     {
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     
     xmlWriter.WriteElementStart(elementName);
     
-    xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, m_cardinality->ToString().c_str());
+    if (ecXmlVersionMajor >= 3 && ecXmlVersionMinor >= 1)
+        xmlWriter.WriteAttribute(MULTIPLICITY_ATTRIBUTE, m_multiplicity->ToString().c_str());
+    else
+        xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
+    
     if (IsRoleLabelDefined())
         xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
 
@@ -2659,30 +2670,30 @@ ECObjectsStatus ECRelationshipConstraint::SetIsPolymorphic (Utf8CP isPolymorphic
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipCardinalityCR ECRelationshipConstraint::GetCardinality () const
+RelationshipMultiplicityCR ECRelationshipConstraint::GetMultiplicity () const
     {
-    return *m_cardinality;
+    return *m_multiplicity;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::SetCardinality (uint32_t& lowerLimit, uint32_t& upperLimit)
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (uint32_t& lowerLimit, uint32_t& upperLimit)
     {
-    ECObjectsStatus validationStatus = ValidateCardinalityConstraint(lowerLimit, upperLimit);
+    ECObjectsStatus validationStatus = ValidateMultiplicityConstraint(lowerLimit, upperLimit);
     if (validationStatus != ECObjectsStatus::Success)
         return validationStatus;
 
     if (lowerLimit == 0 && upperLimit == 1)
-        m_cardinality = &s_zeroOneCardinality;
+        m_multiplicity = &s_zeroOneMultiplicity;
     else if (lowerLimit == 0 && upperLimit == UINT_MAX)
-        m_cardinality = &s_zeroManyCardinality;
+        m_multiplicity = &s_zeroManyMultiplicity;
     else if (lowerLimit == 1 && upperLimit == 1)
-        m_cardinality = &s_oneOneCardinality;
+        m_multiplicity = &s_oneOneMultiplicity;
     else if (lowerLimit == 1 && upperLimit == UINT_MAX)
-        m_cardinality = &s_oneManyCardinality;
+        m_multiplicity = &s_oneManyMultiplicity;
     else
-        m_cardinality = new RelationshipCardinality(lowerLimit, upperLimit);
+        m_multiplicity = new RelationshipMultiplicity(lowerLimit, upperLimit);
 
     return ECObjectsStatus::Success;
     }
@@ -2690,14 +2701,34 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (uint32_t& lowerLimit, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::SetCardinality (RelationshipCardinalityCR cardinality)
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (RelationshipMultiplicityCR multiplicity)
     {
-    uint32_t lowerLimit = cardinality.GetLowerLimit();
-    uint32_t upperLimit = cardinality.GetUpperLimit();
+    uint32_t lowerLimit = multiplicity.GetLowerLimit();
+    uint32_t upperLimit = multiplicity.GetUpperLimit();
 
-    return SetCardinality(lowerLimit, upperLimit);
+    return SetMultiplicity(lowerLimit, upperLimit);
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                    08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (Utf8CP multiplicity)
+    {
+    PRECONDITION (NULL != multiplicity, ECObjectsStatus::PreconditionViolated);
+    uint32_t lowerLimit;
+    uint32_t upperLimit;
+    ECObjectsStatus status = ECXml::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity);
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.errorv ("Failed to parse the RelationshipMultiplicity string '%s'.", multiplicity);
+        return ECObjectsStatus::ParseError;
+        }
+    else
+        m_multiplicity = new RelationshipMultiplicity(lowerLimit, upperLimit);
+        
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2713,7 +2744,7 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
         return ECObjectsStatus::ParseError;
         }
     else
-        m_cardinality = new RelationshipCardinality(lowerLimit, upperLimit);
+        m_multiplicity = new RelationshipMultiplicity(lowerLimit, upperLimit);
         
     return ECObjectsStatus::Success;
     }
@@ -2770,7 +2801,7 @@ ECRelationshipConstraintR toRelationshipConstraint
     if (IsRoleLabelDefined())
         toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel());
 
-    toRelationshipConstraint.SetCardinality(GetCardinality());
+    toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
     toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
 
     ECObjectsStatus status;
@@ -3014,8 +3045,8 @@ SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter, int ec
     //    return SchemaWriteStatus::FailedToCreateXml;
     //    }
         
-    m_source->WriteXml (xmlWriter, EC_SOURCECONSTRAINT_ELEMENT);
-    m_target->WriteXml (xmlWriter, EC_TARGETCONSTRAINT_ELEMENT);
+    m_source->WriteXml (xmlWriter, EC_SOURCECONSTRAINT_ELEMENT, ecXmlVersionMajor, ecXmlVersionMinor);
+    m_target->WriteXml (xmlWriter, EC_TARGETCONSTRAINT_ELEMENT, ecXmlVersionMajor, ecXmlVersionMinor);
     xmlWriter.WriteElementEnd();
 
     return status;
@@ -3040,21 +3071,21 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, ecXmlVersionMajor, navigationProperties);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, ecXmlVersionMajor, ecXmlVersionMinor, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
-        status = m_source->ReadXml (*sourceNode, context, ecXmlVersionMajor);
+        status = m_source->ReadXml (*sourceNode, context, ecXmlVersionMajor, ecXmlVersionMinor);
     if (status != SchemaReadStatus::Success)
         return status;
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != targetNode)
-        status = m_target->ReadXml (*targetNode, context, ecXmlVersionMajor);
+        status = m_target->ReadXml (*targetNode, context, ecXmlVersionMajor, ecXmlVersionMinor);
     if (status != SchemaReadStatus::Success)
         return status;
         
@@ -3077,10 +3108,10 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
 
-        // Compare Cardinality. In general, the cardinality of the derived class must be more restrictive 
-        // than the bounds defined in the base class cardinality. 
-        if (RelationshipCardinality::Compare(GetSource().GetCardinality(), relationshipBaseClass->GetSource().GetCardinality()) == 1 ||
-            RelationshipCardinality::Compare(GetTarget().GetCardinality(), relationshipBaseClass->GetTarget().GetCardinality()) == 1)
+        // Compare Multiplicity. In general, the multiplicity of the derived class must be more restrictive 
+        // than the bounds defined in the base class multiplicity. 
+        if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == 1 ||
+            RelationshipMultiplicity::Compare(GetTarget().GetMultiplicity(), relationshipBaseClass->GetTarget().GetMultiplicity()) == 1)
             {
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }

@@ -78,14 +78,14 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     schema->CreateEntityClass(targetClass, "Target");
 
     relClass->GetSource().AddClass(*sourceClass);
-    relClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     relClass2->GetSource().AddClass(*sourceClass);
-    relClass2->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
+    relClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     relClass2->GetTarget().AddClass(*targetClass);
-    relClass2->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
 
     NavigationECPropertyP navPropSource;
@@ -125,10 +125,10 @@ TEST_F(NavigationECPropertyTests, NavPropUsingRelationshipWithMultipleConstraint
 
     relClass->GetSource().AddClass(*sourceClass);
     relClass->GetSource().AddClass(*source2Class);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
     relClass->GetTarget().AddClass(*target2Class);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget2Constraints", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
@@ -154,9 +154,9 @@ TEST_F(NavigationECPropertyTests, InvalidNavigationProperties)
     schema->CreateEntityClass(targetClass, "Target");
 
     relClass->GetSource().AddClass(*sourceClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     // Test wrong direction fails
     NavigationECPropertyP failure;
@@ -181,9 +181,9 @@ TEST_F(NavigationECPropertyTests, InvalidXml)
     schema->CreateEntityClass(otherClass, "Other");
 
     relClass->GetSource().AddClass(*sourceClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
@@ -228,9 +228,9 @@ TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     schema->CreateEntityClass(targetClass, "Target");
 
     relClass->GetSource().AddClass(*sourceClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource);
@@ -371,14 +371,14 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     schema->CreateEntityClass(targetClass, "Target");
 
     relClass->GetSource().AddClass(*sourceClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relClass->GetTarget().AddClass(*targetClass);
-    relClass->GetTarget().SetCardinality(RelationshipCardinality::OneOne());
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
 
     relClass2->GetSource().AddClass(*sourceClass);
-    relClass2->GetTarget().SetCardinality(RelationshipCardinality::ZeroMany());
+    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     relClass2->GetTarget().AddClass(*targetClass);
-    relClass2->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+    relClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
     NavigationECPropertyP navPropSource;
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, navPropType);

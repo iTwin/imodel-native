@@ -56,7 +56,7 @@ EC_TYPEDEFS(ECStructClass);
 EC_TYPEDEFS(ECRelationshipConstraintClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
-EC_TYPEDEFS(RelationshipCardinality);
+EC_TYPEDEFS(RelationshipMultiplicity);
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECInstanceInterface);
 EC_TYPEDEFS(IECRelationshipInstance);

@@ -1328,7 +1328,7 @@ protected:
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
     //! @param[out] navigationProperties A running list of all navigation properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties);
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties);
 
     void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
@@ -1876,7 +1876,7 @@ public:
     //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
     // @param[out]  ecProperty          Outputs the property if successfully created
     // @param[in]   name                The name for the navigation property.  Must be a valid ECName
-    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The cardinality of the other constraint determiness if the nav prop is a primitive or an array.
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
     // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
     // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
@@ -1955,62 +1955,62 @@ protected:
 
 
 //=======================================================================================
-//! This class describes the cardinality of a relationship. It is based on the
-//!     Martin notation. Valid cardinalities are (x,y) where x is smaller or equal to y,
+//! This class describes the multiplicity of a relationship. It is based on the
+//!     Martin notation. Valid multiplicities are (x..y) where x is smaller or equal to y,
 //!     x >= 0 and y >= 1 or y = n (where n represents infinity).
-//!     For example, (0,1), (1,1), (1,n), (0,n), (1,10), (2,5), ...
+//!     For example, (0..1), (1..1), (1..n), (0..n), (1..10), (2..5), ...
 //! @bsiclass
 //=======================================================================================
-struct RelationshipCardinality
+struct RelationshipMultiplicity
 {
 private:
     uint32_t   m_lowerLimit;
     uint32_t   m_upperLimit;
 
 public:
-    //! Default constructor.  Creates a cardinality of (0, 1)
-    ECOBJECTS_EXPORT RelationshipCardinality();
+    //! Default constructor.  Creates a multiplicity of (0..1)
+    ECOBJECTS_EXPORT RelationshipMultiplicity();
 
     //! Constructor with lower and upper limit parameters.
     //! @param[in]  lowerLimit  must be less than or equal to upperLimit and greater than or equal to 0
     //! @param[in]  upperLimit  must be greater than or equal to lowerLimit and greater than 0
-    ECOBJECTS_EXPORT RelationshipCardinality(uint32_t lowerLimit, uint32_t upperLimit);
+    ECOBJECTS_EXPORT RelationshipMultiplicity(uint32_t lowerLimit, uint32_t upperLimit);
 
-    //! Returns the lower limit of the cardinality
+    //! Returns the lower limit of the multiplicity
     ECOBJECTS_EXPORT uint32_t GetLowerLimit() const;
-    //! Returns the upper limit of the cardinality
+    //! Returns the upper limit of the multiplicity
     ECOBJECTS_EXPORT uint32_t GetUpperLimit() const;
 
-    //! Indicates if the cardinality is unbound (ie, upper limit is equal to "n")
+    //! Indicates if the multiplicity is unbound (ie, upper limit is equal to "n")
     ECOBJECTS_EXPORT bool     IsUpperLimitUnbounded() const;
 
-    //! Converts the cardinality to a string, for example "(0,n)", "(1,1)"
+    //! Converts the multiplicity to a string, for example "(0..n)", "(1..1)"
     ECOBJECTS_EXPORT Utf8String ToString() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
 
-    //!     Returns the shared static RelationshipCardinality object that represents the
-    //!     (0,1) cardinality. This static property can be used instead of a standard
-    //!     constructor of RelationshipCardinality to reduce memory usage.
-    ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroOne();
-    //!     Returns the shared static RelationshipCardinality object that represents the
-    //!     (0,n) cardinality. This static property can be used instead of a standard
-    //!     constructor of RelationshipCardinality to reduce memory usage.
-    ECOBJECTS_EXPORT static RelationshipCardinalityCR ZeroMany();
-    //!     Returns the shared static RelationshipCardinality object that represents the
-    //!     (1,1) cardinality. This static property can be used instead of a standard
-    //!     constructor of RelationshipCardinality to reduce memory usage.
-    ECOBJECTS_EXPORT static RelationshipCardinalityCR OneOne();
-    //!     Returns the shared static RelationshipCardinality object that represents the
-    //!     (1,n) cardinality. This static property can be used instead of a standard
-    //!     constructor of RelationshipCardinality to reduce memory usage.
-    ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
+    //!     Returns the shared static RelationshipMultiplicity object that represents the
+    //!     (0..1) multiplicity. This static property can be used instead of a standard
+    //!     constructor of RelationshipMultiplicity to reduce memory usage.
+    ECOBJECTS_EXPORT static RelationshipMultiplicityCR ZeroOne();
+    //!     Returns the shared static RelationshipMultiplicity object that represents the
+    //!     (0..n) multiplicity. This static property can be used instead of a standard
+    //!     constructor of RelationshipMultiplicity to reduce memory usage.
+    ECOBJECTS_EXPORT static RelationshipMultiplicityCR ZeroMany();
+    //!     Returns the shared static RelationshipMultiplicity object that represents the
+    //!     (1..1) multiplicity. This static property can be used instead of a standard
+    //!     constructor of RelationshipMultiplicity to reduce memory usage.
+    ECOBJECTS_EXPORT static RelationshipMultiplicityCR OneOne();
+    //!     Returns the shared static RelationshipMultiplicity object that represents the
+    //!     (1..n) multiplicity. This static property can be used instead of a standard
+    //!     constructor of RelationshipMultiplicity to reduce memory usage.
+    ECOBJECTS_EXPORT static RelationshipMultiplicityCR OneMany();
 
     //! Compares the two Cardinalities and returns whether they are equal (0). Otherwise the
     //! larger scope will be returned either rhs (1) or lhs (-1)
-    ECOBJECTS_EXPORT static int Compare(RelationshipCardinality const& lhs, RelationshipCardinality const& rhs);
+    ECOBJECTS_EXPORT static int Compare(RelationshipMultiplicity const& lhs, RelationshipMultiplicity const& rhs);
 };
 //=======================================================================================
 //! This class holds a class in an ECRelationship constraint plus its key properties
@@ -2130,17 +2130,20 @@ private:
 
     Utf8String                  m_roleLabel;
     bool                        m_isPolymorphic;
-    RelationshipCardinality*    m_cardinality;
+    RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipClassP        m_relClass;
     bool                        m_isSource;
 
-    ECObjectsStatus             SetCardinality(uint32_t& lowerLimit, uint32_t& upperLimit);
+    ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
 
-    SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const;
-    SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor);
+    // Legacy: Only used for version 3.0 and previous
+    ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
+
+    SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
+    SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor, int ecXmlVersionMinor);
 
     ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
-    ECObjectsStatus             ValidateCardinalityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
+    ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -2179,13 +2182,13 @@ public:
     //! @return    Success if the string is parsed into a bool
     ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(Utf8CP isPolymorphic);
 
-    //! Sets the cardinality of the constraint in the relationship
-    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(RelationshipCardinalityCR value);
-    //! Sets the cardinality of the constraint in the relationship
-    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(Utf8CP cardinality);
+    //! Sets the multiplicity of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus            SetMultiplicity(RelationshipMultiplicityCR value);
+    //! Sets the multiplicity of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus            SetMultiplicity(Utf8CP multiplicity);
 
-    //! Gets the cardinality of the constraint in the relationship
-    ECOBJECTS_EXPORT RelationshipCardinalityCR  GetCardinality() const;
+    //! Gets the multiplicity of the constraint in the relationship
+    ECOBJECTS_EXPORT RelationshipMultiplicityCR  GetMultiplicity() const;
 
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
@@ -2262,7 +2265,7 @@ protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, bvector<NavigationECPropertyP>& navigationProperties) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }

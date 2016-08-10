@@ -31,7 +31,7 @@ using namespace std;
 #define ID_STRENGTH_DIRECTION "StrengthDirection"
 #define ID_SOURCE "Source"
 #define ID_TARGET "Target"
-#define ID_CARDINALITY "Cardinality"
+#define ID_MULTIPLICITY "Multiplicity"
 #define ID_IS_POLYMORPHIC "IsPolymorphic"
 #define ID_ROLE_LABEL "RoleLabel"
 #define ID_STRENGTH_DIRECTION_BACKWARD "Backward"
@@ -811,7 +811,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::StrengthDirection:return ID_STRENGTH_DIRECTION;
         case DiffNodeId::Source: return ID_SOURCE;
         case DiffNodeId::Target:return ID_TARGET;
-        case DiffNodeId::Cardinality: return ID_CARDINALITY;
+        case DiffNodeId::Multiplicity: return ID_MULTIPLICITY;
         case DiffNodeId::IsPolymorphic: return ID_IS_POLYMORPHIC;
         case DiffNodeId::RoleLabel: return ID_ROLE_LABEL;
         case DiffNodeId::MaxOccurs: return ID_MAXOCCURS;
@@ -1116,8 +1116,8 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     {
     ECDiffNodeP diff = endPoint == ECRelationshipEnd_Source ? parent.Add (DiffNodeId::Source) : parent.Add (DiffNodeId::Target);
 
-    if (left.GetCardinality().ToString() != right.GetCardinality().ToString())
-        diff->Add (DiffNodeId::Cardinality)->SetValue (left.GetCardinality().ToString().c_str(), right.GetCardinality().ToString().c_str());
+    if (left.GetMultiplicity().ToString() != right.GetMultiplicity().ToString())
+        diff->Add (DiffNodeId::Multiplicity)->SetValue (left.GetMultiplicity().ToString().c_str(), right.GetMultiplicity().ToString().c_str());
 
     if (left.GetIsPolymorphic() != right.GetIsPolymorphic())
         diff->Add (DiffNodeId::IsPolymorphic)->SetValue (left.GetIsPolymorphic(), right.GetIsPolymorphic());
@@ -1202,7 +1202,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationship(ECDiffNodeR parent, ECRelations
 ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, ECRelationshipConstraintCR  relationshipConstraint,ECRelationshipEnd endPoint, ECDiffNode::ValueDirection direction)
     {
     ECDiffNodeP diff = endPoint == ECRelationshipEnd_Source ? parent.Add (DiffNodeId::Source) : parent.Add (DiffNodeId::Target);
-    diff->Add (DiffNodeId::Cardinality)->GetValue(direction).SetValue (relationshipConstraint.GetCardinality().ToString());
+    diff->Add (DiffNodeId::Multiplicity)->GetValue(direction).SetValue (relationshipConstraint.GetMultiplicity().ToString());
     diff->Add (DiffNodeId::IsPolymorphic)->GetValue(direction).SetValue (relationshipConstraint.GetIsPolymorphic());
     diff->Add (DiffNodeId::RoleLabel)->GetValue(direction).SetValue (relationshipConstraint.GetRoleLabel());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
@@ -2158,14 +2158,14 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
     BeAssert (!diff.IsEmpty());
     MergeStatus status;
     ECDiffValueP v  = NULL;
-    if ((v = GetMergeValue (diff, DiffNodeId::Cardinality)) != NULL)
+    if ((v = GetMergeValue (diff, DiffNodeId::Multiplicity)) != NULL)
         {
-        if (mergedConstraint.SetCardinality (v->GetValueString().c_str()) != ECObjectsStatus::Success)
-            return MergeStatus::ErrorParsingCardinality;
+        if (mergedConstraint.SetMultiplicity (v->GetValueString().c_str()) != ECObjectsStatus::Success)
+            return MergeStatus::ErrorParsingMultiplicity;
         }
     else
         if (defaultContraint)
-            mergedConstraint.SetCardinality(defaultContraint->GetCardinality());
+            mergedConstraint.SetMultiplicity(defaultContraint->GetMultiplicity());
 
     if ((v = GetMergeValue (diff, DiffNodeId::RoleLabel)) != NULL)
         mergedConstraint.SetRoleLabel (v->GetValueString()); 
@@ -2758,7 +2758,7 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipToMerge(ECRelationshipClassR me
 MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint)
     {
     MergeStatus status;
-    mergedRelationshipClassConstraint.SetCardinality (defaultRelationshipClassConstraint.GetCardinality());
+    mergedRelationshipClassConstraint.SetMultiplicity (defaultRelationshipClassConstraint.GetMultiplicity());
     mergedRelationshipClassConstraint.SetIsPolymorphic (defaultRelationshipClassConstraint.GetIsPolymorphic());
     mergedRelationshipClassConstraint.SetRoleLabel (defaultRelationshipClassConstraint.GetRoleLabel());
     status = AppendCustomAttributesToMerge (mergedRelationshipClassConstraint, defaultRelationshipClassConstraint);

@@ -25,7 +25,7 @@ struct SchemaXmlReaderImpl
 
         bool IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName, Utf8String& referencingECSchemaFullName);
         virtual bool ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut) = 0;
-        SchemaReadStatus _ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes, int ecXmlVersionMajor);
+        SchemaReadStatus _ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes, int ecXmlVersionMajor, int ecXmlVersionMinor);
         SchemaReadStatus _ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMajor, int ecXmlVersionMinor);
 
     protected:
@@ -39,7 +39,7 @@ struct SchemaXmlReaderImpl
         virtual SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor) = 0;
 
         virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
-        virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
+        virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes, int ecXmlVersionMinor) = 0;
         SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         SchemaReadStatus ReadKindOfQuantitiesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         
@@ -65,7 +65,7 @@ struct SchemaXmlReader2 : SchemaXmlReaderImpl
     public:
         SchemaXmlReader2(ECSchemaReadContextR context, ECSchemaPtr schemaOut, BeXmlDomR xmlDom);
         SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor) override;
-        SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) override;
+        SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes, int ecXmlVersionMinor) override;
     };
 
 //---------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ struct SchemaXmlReader3 : SchemaXmlReaderImpl
     public:
         SchemaXmlReader3(ECSchemaReadContextR context, BeXmlDomR xmlDom);
         SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, int ecXmlVersionMinor) override;
-        SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) override;
+        SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes, int ecXmlVersionMinor) override;
         
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode) override;
     };
@@ -299,7 +299,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
 //   base classes, properties & relationship endpoints.
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes, int ecXmlVersionMajor)
+SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes, int ecXmlVersionMajor, int ecXmlVersionMinor)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
@@ -313,7 +313,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
         {
         ecClass = classesIterator->first;
         classNode = classesIterator->second;
-        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, conversionSchema.get(), ecXmlVersionMajor, navigationProperties);
+        status = ecClass->_ReadXmlContents(*classNode, m_schemaContext, conversionSchema.get(), ecXmlVersionMajor, ecXmlVersionMinor, navigationProperties);
         if (SchemaReadStatus::Success != status)
             return status;
         }
@@ -321,7 +321,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
     for (auto const& navProp : navigationProperties)
         if (!navProp->Verify())
             {
-            LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max cardinality is greater than 1.",
+            LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max multiplicity is greater than 1.",
                         navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
                         navProp->GetRelationshipClass()->GetName().c_str(), ECXml::DirectionToString(navProp->GetDirection()));
                 
@@ -569,9 +569,9 @@ void SchemaXmlReader2::DetermineClassTypeAndModifier(Utf8StringCR className, ECS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader2::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes)
+SchemaReadStatus SchemaXmlReader2::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes, int exXmlVersionMinor)
     {
-    return _ReadClassContentsFromXml(schemaOut, classes, 2);
+    return _ReadClassContentsFromXml(schemaOut, classes, 2, exXmlVersionMinor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -655,9 +655,9 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes)
+SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes, int ecXmlVersionMinor)
     {
-    return _ReadClassContentsFromXml(schemaOut, classes, 3);
+    return _ReadClassContentsFromXml(schemaOut, classes, 3, ecXmlVersionMinor);
     }
 
 //---------------------------------------------------------------------------------------
@@ -933,7 +933,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents("Reading class contents", true);
-    if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes)))
+    if (SchemaReadStatus::Success != (status = reader->ReadClassContentsFromXml(schemaOut, classes, ecXmlMinorVersion)))
         return status;
     
     readingClassContents.Stop();

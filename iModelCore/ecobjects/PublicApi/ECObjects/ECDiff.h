@@ -120,7 +120,7 @@ enum class DiffNodeId
     StrengthDirection = 28,
     Source = 29,
     Target = 30,
-    Cardinality =31,
+    Multiplicity=31,
     IsPolymorphic = 32,
     RoleLabel = 33,
     MaxOccurs = 34,
@@ -195,7 +195,7 @@ enum class MergeStatus
     ErrorCreatingCopyOfCustomAttribute,
     ErrorParsingRelationshipStrengthType,
     ErrorParsingRelationshipStrengthDirection,
-    ErrorParsingCardinality,
+    ErrorParsingMultiplicity,
     };
 
 #define ECDIFF_DEFAULT_TABSIZE 3

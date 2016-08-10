@@ -80,6 +80,7 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define     STRENGTH_ATTRIBUTE                  "strength"
 #define     STRENGTHDIRECTION_ATTRIBUTE         "strengthDirection"
 #define     CARDINALITY_ATTRIBUTE               "cardinality"
+#define     MULTIPLICITY_ATTRIBUTE              "multiplicity"
 #define     ROLELABEL_ATTRIBUTE                 "roleLabel"
 #define     POLYMORPHIC_ATTRIBUTE               "polymorphic"
 #define     CONSTRAINTCLASSNAME_ATTRIBUTE       "class"
@@ -165,6 +166,8 @@ public:
     static Utf8CP DirectionToString (ECRelatedInstanceDirection direction);
     static ECObjectsStatus ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString);
     static ECObjectsStatus ParseCardinalityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR cardinalityString);
+    static ECObjectsStatus ParseMultiplicityString (uint32_t& lowerLimit, uint32_t& upperLimit, Utf8StringCR multiplicityString);
+    static Utf8String MultiplicityToLegacyString (RelationshipMultiplicity multiplicity);
     static Utf8CP ModifierToString(ECClassModifier modifier);
     static ECObjectsStatus ParseModifierString(ECClassModifier& modifier, Utf8StringCR modifierString);
     static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);

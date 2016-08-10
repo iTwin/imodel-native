@@ -598,9 +598,9 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     relationshipClass->SetStrength(StrengthType::Referencing);
     relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     relationshipClass->GetSource().AddClass(*entityClass);
-    relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+    relationshipClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     relationshipClass->GetTarget().AddClass(*entityClass);
-    relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    relationshipClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
 
     NavigationECPropertyP navProp;
     entityClass->CreateNavigationProperty(navProp, "NavigationProperty", *relationshipClass, ECRelatedInstanceDirection::Forward);
@@ -1020,19 +1020,19 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->GetTarget().AddClass(*class2);
     EXPECT_EQ(2, relationshipClass->GetTarget().GetClasses().size());
 
-    EXPECT_EQ(0, relationshipClass->GetSource().GetCardinality().GetLowerLimit());
-    EXPECT_EQ(0, relationshipClass->GetTarget().GetCardinality().GetLowerLimit());
-    EXPECT_EQ(1, relationshipClass->GetSource().GetCardinality().GetUpperLimit());
-    EXPECT_EQ(1, relationshipClass->GetTarget().GetCardinality().GetUpperLimit());
+    EXPECT_EQ(0, relationshipClass->GetSource().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(0, relationshipClass->GetTarget().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(1, relationshipClass->GetSource().GetMultiplicity().GetUpperLimit());
+    EXPECT_EQ(1, relationshipClass->GetTarget().GetMultiplicity().GetUpperLimit());
 
-    relationshipClass->GetSource().SetCardinality(RelationshipCardinality::OneMany());
-    EXPECT_EQ(1, relationshipClass->GetSource().GetCardinality().GetLowerLimit());
-    EXPECT_TRUE(relationshipClass->GetSource().GetCardinality().IsUpperLimitUnbounded());
+    relationshipClass->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
+    EXPECT_EQ(1, relationshipClass->GetSource().GetMultiplicity().GetLowerLimit());
+    EXPECT_TRUE(relationshipClass->GetSource().GetMultiplicity().IsUpperLimitUnbounded());
 
-    RelationshipCardinality *card = new RelationshipCardinality(2, 5);
-    relationshipClass->GetTarget().SetCardinality(*card);
-    EXPECT_EQ(2, relationshipClass->GetTarget().GetCardinality().GetLowerLimit());
-    EXPECT_EQ(5, relationshipClass->GetTarget().GetCardinality().GetUpperLimit());
+    RelationshipMultiplicity *card = new RelationshipMultiplicity(2, 5);
+    relationshipClass->GetTarget().SetMultiplicity(*card);
+    EXPECT_EQ(2, relationshipClass->GetTarget().GetMultiplicity().GetLowerLimit());
+    EXPECT_EQ(5, relationshipClass->GetTarget().GetMultiplicity().GetUpperLimit());
     }
 
 /*---------------------------------------------------------------------------------**//**
