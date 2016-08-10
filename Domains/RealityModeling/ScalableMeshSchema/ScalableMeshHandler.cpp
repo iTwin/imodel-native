@@ -442,7 +442,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
             if (context.CheckStop())
                 break;     
 
-            bvector<bool> clips;
+            bset<uint64_t> clips;
             //NEEDS_WORK_SM : Not supported yet
             //dtmDataRef->GetVisibleClips(clips);
             
@@ -730,7 +730,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
-        assert(m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
+       // assert(m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
 
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         assert(status == SUCCESS);
