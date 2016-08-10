@@ -1332,8 +1332,6 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool   _AddClip(uint64_t id, bool isVisible) const override;
 
-        virtual bool   _AddClipAsync(uint64_t id, bool isVisible) const override;
-
         virtual bool   _ModifyClip(uint64_t id,  bool isVisible) const override;
 
         virtual bool   _DeleteClip(uint64_t id, bool isVisible) const override;

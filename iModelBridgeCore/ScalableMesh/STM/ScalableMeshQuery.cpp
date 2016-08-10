@@ -2454,10 +2454,6 @@ bool     IScalableMeshNode::AddClip(uint64_t id, bool isVisible) const
     return _AddClip(id, isVisible);
     }
 
-bool     IScalableMeshNode::AddClipAsync(uint64_t id, bool isVisible) const
-    {
-    return _AddClipAsync(id, isVisible);
-    }
 
 bool     IScalableMeshNode::ModifyClip(uint64_t id,  bool isVisible) const
     {

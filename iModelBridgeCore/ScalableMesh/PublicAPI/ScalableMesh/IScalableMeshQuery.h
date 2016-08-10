@@ -514,8 +514,6 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool     _AddClip(uint64_t id, bool isVisible) const = 0;
 
-        virtual bool     _AddClipAsync(uint64_t id, bool isVisible) const = 0;
-
         virtual bool     _ModifyClip(uint64_t id, bool isVisible) const = 0;
 
         virtual bool     _DeleteClip(uint64_t id, bool isVisible) const = 0;

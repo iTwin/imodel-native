@@ -3676,46 +3676,6 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 09/15
 //=======================================================================================
-template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::DoClip(uint64_t clipId, bool isVisible)
-    {
-    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
-    for (const auto& diffSet : *diffSetPtr) 
-        if (diffSet.clientID == clipId)
-        {
-        if (diffSet.upToDate) return;
-        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
-                                            ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
-        bvector<DPoint3d> clipPts;
-        GetClipRegistry()->GetClip(clipId, clipPts);
-        if (clipPts.size() == 0) return;
-
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
-
-        vector<DPoint3d> points(pointsPtr->size());
-
-        PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());        
-
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
-
-        Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], m_nodeHeader.m_nbFaceIndexes, nodeRange);
-        const_cast<DifferenceSet&>(diffSet) = clipNode.ClipNonConvexPolygon2D(&clipPts[0], clipPts.size());
-        bool emptyClip = false;
-        if (diffSet.addedFaces.size() == 0 && diffSet.removedFaces.size() == 0 && diffSet.addedVertices.size() == 0 && diffSet.removedVertices.size() == 0) emptyClip = true;
-        const_cast<DifferenceSet&>(diffSet).clientID = clipId;
-        const_cast<DifferenceSet&>(diffSet).upToDate = true;
-        if (isVisible && !emptyClip)
-            {
-            PropagateClipUpwards(clipId, ClipAction::ACTION_ADD);
-            PropagateClipToNeighbors(clipId, ClipAction::ACTION_ADD);
-            }
-        if (m_nodeHeader.m_level < 7) PropagateClip(clipId, ClipAction::ACTION_ADD);
-        return;
-        }
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Elenie.Godzaridis 09/15
-//=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::DeleteClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn)
     {
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
@@ -3824,27 +3784,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
                 dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node)->DeleteClip(clipId, false);
                 }
         }
-    }
-
-//=======================================================================================
-// @bsimethod                                                   Elenie.Godzaridis 09/15
-//=======================================================================================
-template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::AddClipAsync(uint64_t clipId, bool isVisible)
-    {
-    DifferenceSet d;
-    d.clientID = clipId;
-    RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffSetPtr = GetDiffSetPtr();
-    diffSetPtr->push_back(d);
-    const_cast<DifferenceSet&>(*(diffSetPtr->begin() + (diffSetPtr->size() - 1))).upToDate = false;
-    m_nbClips++;
-    SMTask task = SMTask(std::bind(std::mem_fn(&SMMeshIndexNode<POINT, EXTENT>::DoClip), this, clipId, isVisible));
-    s_schedulerLock.lock();
-    if (s_clipScheduler == nullptr) s_clipScheduler = new ScalableMeshScheduler();
-
-    s_clipScheduler->ScheduleTask(task, isVisible ? ScalableMeshScheduler::PRIORITY_HIGH : ScalableMeshScheduler::PRIORITY_DEFAULT);
-
-    s_schedulerLock.unlock();
-    return true;
     }
 
 //=======================================================================================

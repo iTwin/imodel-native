@@ -2207,11 +2207,6 @@ template <class POINT> bool ScalableMeshNode<POINT>::_AddClip(uint64_t id, bool 
     return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->AddClip(id, isVisible);
     }
 
-template <class POINT> bool ScalableMeshNode<POINT>::_AddClipAsync(uint64_t id, bool isVisible) const
-    {
-    return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->AddClipAsync(id, isVisible);
-    }
-
 template <class POINT> bool ScalableMeshNode<POINT>::_ModifyClip(uint64_t id, bool isVisible) const
     {
     return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ModifyClip(id,  isVisible);

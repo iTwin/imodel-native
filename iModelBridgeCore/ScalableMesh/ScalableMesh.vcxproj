@@ -456,12 +456,10 @@ BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableM
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h" />
     <ClInclude Include="STM\SMSQLiteFile.h" />
-    <ClInclude Include="STM\DTMGraphTileStore.h" />
     <ClInclude Include="STM\Edits\ClipRegistry.h" />
     <ClInclude Include="STM\Edits\ClipUtilities.h" />
     <ClInclude Include="STM\Edits\ClipUtilities.hpp" />
     <ClInclude Include="STM\Edits\DifferenceSet.h" />
-    <ClInclude Include="STM\Edits\DiffSetTileStore.h" />
     <ClInclude Include="STM\HGF3DFilterCoord.h" />
     <ClInclude Include="STM\HGF3DFilterCoord.hpp" />
     <ClInclude Include="STM\ImagePPHeaders.h" />
