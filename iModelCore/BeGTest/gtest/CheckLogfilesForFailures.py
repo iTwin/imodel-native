@@ -12,6 +12,7 @@ import os, sys, re
 # [  FAILED  ] FileFormatTests/ExportTester.ToBestiTiff/21, where GetParam() = L"D:\\ATP\\Dataset\\Images_Files\\_forATPs\\Images\\jpeg\\Mosaic_Jpeg_WF\\TC06L0\\15.jpg"
 failedpat = re.compile (r"FAILED\s*]\s*(\w+\.\w+|\w+/\w+\.\w+/\d+)", re.I)
 summarypat = re.compile (r"\[==========\].*ran", re.I)
+runpat = re.compile (r"RUN\s*]\s*(\w+\.\w+)", re.I)
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     Sam.Wilson      05/2016
@@ -20,6 +21,7 @@ def checkLogFileForFailures(logfilename):
     exename = ''
     foundSummary = False
     failedTestsList = ""
+    lastTestRun = ""
     comma = ''
     anyFailures = False
     lineNo = 0
@@ -39,6 +41,11 @@ def checkLogFileForFailures(logfilename):
                 if summarypat.search(line) != None:
                     summarystr = summarystr + line
                     foundSummary = True
+                else:
+                    run = runpat.search(line)
+                    if run != None:
+                        lastTestRun = run.group(1)
+
                 continue
 
             else:
@@ -61,6 +68,11 @@ def checkLogFileForFailures(logfilename):
         advicestr = advicestr + "\n"
         advicestr = advicestr + "\n*** CRASH ***"
         advicestr = advicestr + "\n"
+        advicestr = advicestr + "\n" + lastTestRun
+        advicestr = advicestr + "\n"
+        advicestr = advicestr + "\nTo run just the crashing test, run the following command in your debugger:"
+        advicestr = advicestr + "\n    " + exename + " --gtest_break_on_failure --gtest_filter=" + lastTestRun
+        advicestr = advicestr + "\n"
 
     # Report all failures that we saw in the log
     if len(failedTestsList) != 0:
@@ -72,9 +84,11 @@ def checkLogFileForFailures(logfilename):
     if anyFailures or not foundSummary:
         # When we detect failing or crashing tests, print the whole log. That will then go into bb's build log.
         # The user will want to scroll up to see complete details.
+        print '************ ' + logfilename + ' ******************'
         with open(logfilename, 'r') as logfile:
             for line in logfile.readlines():
                 print line,
+        print '*********************************************************************************'
 
     return advicestr,summarystr
 
@@ -119,6 +133,6 @@ if __name__ == '__main__':
         print "All tests passed."
         exit (0)
 
-    print adviceForThisLog
+    print advicestr
     exit(breakonfailure)
 
