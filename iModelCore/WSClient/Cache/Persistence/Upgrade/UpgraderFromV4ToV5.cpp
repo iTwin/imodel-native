@@ -126,8 +126,8 @@ StrengthType strength = StrengthType::Holding
     relationshipClass->SetStrength(strength);
     relationshipClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
 
-    relationshipClass->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
-    relationshipClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroMany());
+    relationshipClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
+    relationshipClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
     relationshipClass->GetSource().AddClass(*parentClass);
     for (ECEntityClassCP childClass : childClasses)
