@@ -15,9 +15,9 @@ USING_NAMESPACE_BENTLEY_RENDER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnTexturesTest : public GenericDgnModelTestFixture
+struct DgnTexturesTest : public DgnDbTestFixture
 {
-    DgnDbR GetDb(){ return *m_dgnDb; }
+    DgnDbR GetDb(){ return *m_db; }
     ImageSource MakeTextureData(ImageSource::Format fmt, uint32_t w, uint32_t h)
         {
         // For the purposes of this test we really don't know/care about the raw texture data
@@ -43,7 +43,6 @@ struct DgnTexturesTest : public GenericDgnModelTestFixture
         EXPECT_EQ (lhData.GetByteStream().GetSize(), rhData.GetByteStream().GetSize());
         EXPECT_EQ (0, memcmp (lhData.GetByteStream().GetData(), rhData.GetByteStream().GetData(), lhData.GetByteStream().GetSize()));
         }
-    void SetupProject(WCharCP inFileName){ GetDgnDb(inFileName); }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -51,7 +50,7 @@ struct DgnTexturesTest : public GenericDgnModelTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     {
-    SetupProject(L"InsertQueryUpdateDelete.bim");
+    SetupSeedProject();
     DgnDbR db = GetDb();
 
     // Textures have names

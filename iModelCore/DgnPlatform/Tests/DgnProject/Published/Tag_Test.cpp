@@ -14,20 +14,18 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                   08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TagTest : public GenericDgnModelTestFixture
+struct TagTest : public DgnDbTestFixture
 {
-private:
-    typedef GenericDgnModelTestFixture T_Super;
 public:
     static WChar* tagStyleName;
     static WChar* tagSetName;
     static WChar* tagName;
     static char*    tagValue;
-    TagTest () :GenericDgnModelTestFixture (__FILE__, false)
+    TagTest ()
         {}
     
     virtual void    SetUp () override;
-    DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, *GetDgnModelP()->GetDgnDb());}
+    DgnTextStylePtr GetTextStyle () const {return DgnTextStyle::GetByName (tagStyleName, GetDgnDb());}
     BentleyStatus   GetTagDef (DgnTagDefinitionR tagDef);
     BentleyStatus   CreateTagWithTextStyle (EditElementHandleR element, DgnTextStyleCR style);
     BentleyStatus   GetOrigin (DPoint3dR origin, ElementHandleCR tagElement);
@@ -42,8 +40,8 @@ char*    TagTest::tagValue = "DgnTagValue";
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            TagTest::SetUp () 
     {
-    T_Super::SetUp ();
-    DgnTextStylePtr tagStyle = DgnTextStyle::Create (tagStyleName, *GetDgnModelP()->GetDgnDb());
+    SetupSeedProject();
+    DgnTextStylePtr tagStyle = DgnTextStyle::Create (tagStyleName, GetDgnDb());
     tagStyle->SetProperty(DgnTextStyleProperty::Height, 10000.0);
     tagStyle->SetProperty(DgnTextStyleProperty::Width, 10000.0);
 
@@ -58,9 +56,9 @@ void            TagTest::SetUp ()
     tagDef.value.val.stringVal = new char [20];
     strcpy(tagDef.value.val.stringVal, tagValue);
     EditElementHandle tagElment;
-    if (SUCCESS == (status = TagSetHandler::Create (tagElment, &tagDef, 1, tagSetName, NULL, true, *GetDgnModelP()->GetDgnDb())))
+    if (SUCCESS == (status = TagSetHandler::Create (tagElment, &tagDef, 1, tagSetName, NULL, true, *GetDgnDb())))
         {
-        tagElment.SetDgnModel (GetDgnModelP()->GetDgnDb()->GetDictionaryModel());
+        tagElment.SetDgnModel (GetDgnDb().GetDictionaryModel());
         status = (BentleyStatus) tagElment.AddToModel ();
         }
     }
@@ -72,7 +70,7 @@ BentleyStatus   TagTest::GetTagDef (DgnTagDefinitionR tagDef)
     {
     BentleyStatus status = SUCCESS;
     EditElementHandle tagElement;
-    if (SUCCESS != (status = TagSetHandler::GetByName (tagElement, tagSetName, *GetDgnModelP()->GetDgnDb())))
+    if (SUCCESS != (status = TagSetHandler::GetByName (tagElement, tagSetName, GetDgnDb())))
         return status;
     
     return SUCCESS;
@@ -93,7 +91,7 @@ TEST_F (TagTest, CreateTag)
     DgnTagDefinition tagDef;
     ASSERT_TRUE (SUCCESS == GetTagDef(tagDef)); //This tests tagset creation
 
-    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, *GetDgnModelP()->GetDgnDb());
+    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, GetDgnDb());
     ASSERT_TRUE (tagData.IsValid());
     
     EditElementHandle lineElement;
@@ -127,7 +125,7 @@ TEST_F (TagTest, CreateTag)
     EXPECT_EQ (storedValue.type, newVal.type);
     EXPECT_EQ (storedValue.val.doubleVal, newVal.val.doubleVal);
 
-//    GetDgnModelP()->GetDgnDb()->ProcessChanges(DgnSaveReason::ApplInitiated);
+//  GetDgnDb()->ProcessChanges(DgnSaveReason::ApplInitiated);
     }
 #endif
 /*---------------------------------------------------------------------------------**//**
@@ -145,7 +143,7 @@ TEST_F (TagTest, CreateEmptyTag)
     DgnTagDefinition tagDef;
     ASSERT_TRUE (SUCCESS == GetTagDef(tagDef)); //This tests tagset creation
 
-    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, *GetDgnModelP()->GetDgnDb());
+    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, *textStyle, GetDgnDb());
     ASSERT_TRUE (tagData.IsValid());
     
     EditElementHandle lineElement;
@@ -197,7 +195,7 @@ BentleyStatus   TagTest::CreateTagWithTextStyle (EditElementHandleR tagElement, 
     if (SUCCESS != GetTagDef(tagDef))
         return ERROR;
 
-    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, style, *GetDgnModelP()->GetDgnDb());
+    ITagCreateDataPtr tagData = ITagCreateData::Create (tagName, tagSetName, style, GetDgnDb());
     if (tagData.IsNull())
         return ERROR;
     
@@ -283,14 +281,14 @@ TEST_F (TagTest, FindTagByName)
     defs[1] = tagDef2;
     EditElementHandle tagElement;
     StatusInt status;
-    if (SUCCESS == (status = TagSetHandler::Create (tagElement, defs, 2, L"NewTagSet", NULL, true, *GetDgnModelP()->GetDgnDb())))
+    if (SUCCESS == (status = TagSetHandler::Create (tagElement, defs, 2, L"NewTagSet", NULL, true, GetDgnDb())))
         {
-        tagElement.SetDgnModel (GetDgnModelP()->GetDgnDb()->GetDictionaryModel());
+        tagElement.SetDgnModel (GetDgnDb().GetDictionaryModel());
         status = (BentleyStatus) tagElement.AddToModel ();
         }
     
     EditElementHandle foundElement;
-    if (SUCCESS != (status = TagSetHandler::GetByName (foundElement, L"NewTagSet", *GetDgnModelP()->GetDgnDb())))
+    if (SUCCESS != (status = TagSetHandler::GetByName (foundElement, L"NewTagSet", GetDgnDb())))
         return;
     
     DgnTagDefinition newtag;

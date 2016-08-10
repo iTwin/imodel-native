@@ -100,12 +100,9 @@
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\LinearDimension_Test.cpp" />
     <ClCompile Include="Published\LinkElement_Test.cpp" />
-    <ClCompile Include="Published\LocksManager_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\MemoryManager_Test.cpp" />
-    <ClCompile Include="Published\NamedVolume_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
-    <ClCompile Include="Published\RealityDataCache_Test.cpp" />
     <ClCompile Include="Published\Revision_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />

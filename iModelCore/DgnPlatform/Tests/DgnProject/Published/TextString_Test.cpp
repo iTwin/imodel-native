@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_DGN
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct TextStringTest : public GenericDgnModelTestFixture
+struct TextStringTest : public DgnDbTestFixture
 {
     TextStringTest()  { }
 };
@@ -60,13 +60,13 @@ TEST_F(TextStringTest, BoundingShape)
 // @bsimethod                                            Umar.Hayat                 02/16
 //---------------------------------------------------------------------------------------
 TEST_F(TextStringTest, TextStringToAnnotation)
-    {    
-    DgnDbR db = *GetDgnDb(L"TextStringToAnnotation");
+    {
+    SetupSeedProject();
+    DgnDbR db = GetDgnDb();
     TextStringStylePtr tss = TextStringStyle::Create();
     tss->SetFont(DgnFontManager::GetLastResortTrueTypeFont());
     tss->SetSize(DPoint2d::From(1000.0, 1000.0));
     AnnotationTextStyle ats(db);
     ASSERT_TRUE(SUCCESS == TextStyleInterop::TextStringToAnnotation(db, ats, *tss));
     EXPECT_TRUE(db.Fonts().FindId(tss->GetFont()) == ats.GetFontId());
-    
     }

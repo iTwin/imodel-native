@@ -9,7 +9,7 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
-USING_NAMESPACE_BENTLEY_DPTEST
+USING_NAMESPACE_BENTLEY_DPTEST 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/16
@@ -47,19 +47,26 @@ void ChangeTestFixture::_CreateDgnDb()
     // Note: Since creating the DgnDb everytime consumes too much time, we instead
     // just copy one we have created the first time around. 
 
-    BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
-    if (pathname.DoesPathExist())
-        BeFileName::BeDeleteFile(pathname);
+    //BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    //if (pathname.DoesPathExist())
+    //    BeFileName::BeDeleteFile(pathname);
 
-    BeFileName seedPathname;
-    CreateSeedDgnDb(seedPathname);
+    //BeFileName seedPathname;
+    //CreateSeedDgnDb(seedPathname);
 
-    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedPathname.c_str(), pathname.c_str());
-    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+    //BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedPathname.c_str(), pathname.c_str());
+    //ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-    DbResult openStatus;
-    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
+    //DbResult openStatus;
+    //DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    //m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
+    BeFileName newName(TEST_NAME, true);
+    newName.AppendString(L".ibim");
+
+    //SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", newName.c_str(), BeSQLite::Db::OpenMode::ReadWrite, true, m_wantTestDomain);
+    SetupSeedProject();
+    m_testDb = m_db;
+    m_testFileName = BeFileName(m_db->GetDbFileName(),true);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
 
     if (m_wantTestDomain)
@@ -68,12 +75,13 @@ void ChangeTestFixture::_CreateDgnDb()
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 
     m_testModelId = InsertSpatialModel("TestModel");
-    ASSERT_TRUE(m_testModelId.IsValid());
+    ASSERT_TRUE(m_testModelId.IsValid()); 
+    //m_testModelId = m_defaultModelId;
 
     m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
 
-    m_testCategoryId = InsertCategory("TestCategory");
+    m_testCategoryId =  InsertCategory("TestCategory");
     ASSERT_TRUE(m_testCategoryId.IsValid());
 
     m_testAuthorityId = InsertNamespaceAuthority("TestAuthority");
@@ -90,7 +98,8 @@ void ChangeTestFixture::OpenDgnDb()
     {
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
+    //m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
+    m_testDb = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
 
     if (!m_testModelId.IsValid())

@@ -83,6 +83,7 @@ CategoryTests.SubCategoryInvariants
 ElementGeomPartTests.ElementUsesGeometryParts
 TransactionManagerTests.UndoRedo
 ImportTest.ImportElementsWithAuthorities
+ImportTest.ImportElementsWithDependencies
 
 DgnScriptTest.TestEga
 ECInstanceSelectTests.SelectQueriesOnDbGeneratedDuringBuild_79Main

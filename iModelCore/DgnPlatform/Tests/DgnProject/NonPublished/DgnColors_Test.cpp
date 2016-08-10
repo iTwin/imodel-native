@@ -12,9 +12,8 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnColorTests : public GenericDgnModelTestFixture
+struct DgnColorTests : public DgnDbTestFixture
 {
-
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +21,7 @@ struct DgnColorTests : public GenericDgnModelTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorTests, TrueColors)
     {
-    DgnDbR db = *GetDgnDb(L"TrueColors");
+    DgnDbR db = GetDgnDb();
 
     DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
     EXPECT_TRUE(color1.Insert().IsValid());
