@@ -160,14 +160,14 @@ BentleyStatus UpgraderFromV5ToCurrent::CopySchema(DataSourceCache& newCache)
         return ERROR;
         }
 
-    Utf8String schemaNamespacePrefix(schemaCopy->GetNamespacePrefix());
+    Utf8String schemaAlias(schemaCopy->GetAlias());
 
     RawWSObjectsReader::RawInstance instance;
     instance.json = std::make_shared<rapidjson::Document>();
     instance.objectId = ObjectId("MetaSchema", "ECSchemaDef", "LEGACY_SCHEMA");
     instance.json->SetObject();
     instance.json->AddMember("Name", rapidjson::StringRef(schemaName.c_str()), instance.json->GetAllocator());
-    instance.json->AddMember("NameSpacePrefix", rapidjson::StringRef(schemaNamespacePrefix.c_str()), instance.json->GetAllocator());
+    instance.json->AddMember("NameSpacePrefix", rapidjson::StringRef(schemaAlias.c_str()), instance.json->GetAllocator());
     instance.json->AddMember("VersionMajor", schemaCopy->GetVersionMajor(), instance.json->GetAllocator());
     instance.json->AddMember("VersionMinor", schemaCopy->GetVersionMinor(), instance.json->GetAllocator());
 

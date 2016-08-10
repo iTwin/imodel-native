@@ -124,7 +124,7 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
     if (ecSchema.IsNull())
         return nullptr;
 
-    if (ECObjectsStatus::Success != ecSchema->SetNamespacePrefix(schemaName) ||
+    if (ECObjectsStatus::Success != ecSchema->SetAlias(schemaName) ||
         ECObjectsStatus::Success != ecSchema->AddReferencedSchema((ECSchemaR) parentClass->GetSchema()))
         return nullptr;
 
