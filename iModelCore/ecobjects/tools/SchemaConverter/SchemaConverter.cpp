@@ -30,7 +30,7 @@ static void ShowUsage(char* str)
     {
     fprintf(stderr, "\n%s -i <inputSchemaPath> -o <outputDirectory> [-x exmlVersion] [-r directories] [-c directory] [-a] [-s] [-u] [-v version]\n\n%s\n\n%s\n\n%s\t\t%s\n%s\t%s\n%s\t%s\n%s\t\t%s\n%s\t\t%s\n%s\t\t%s\n%s\n\n%s\t%s\n\t%s\n\n",
         str, "Tool to convert ECSchemas between different versions of ECXml", "options:",
-        " -x --xml 2|3", "convert to the specified exmlversion",
+        " -x --xml 2|3", "convert to the specified ecxmlversion",
         " -r --ref DIR0 [DIR1 ... DIRN]", "other directories for reference schemas",
         " -c --conversion DIR", "looks for the conversion schema file in this directory",
         " -u --include", "include the standard schemas in the converted schemas",
@@ -52,7 +52,8 @@ struct ConversionOptions
     bool                HasConversionDirectory = false;
     BeFileName          ConversionDirectory;
 
-    int                 TargetECXmlVersion = 3;
+    int                 TargetECXmlVersionMajor = 3;
+    int                 TargetECXmlVersionMinor = 1;
 
     bool                IncludeSupplementals = false;
     bool                IncludeAll = false;
@@ -81,9 +82,9 @@ ConversionOptions   options
         schema.SetVersionWrite(options.WriteVersion);
         schema.SetVersionMinor(options.MinorVersion);
         }
-    if (options.TargetECXmlVersion == 2)
+    if (options.TargetECXmlVersionMajor == 2)
         schemaName.AssignUtf8(schema.GetLegacyFullSchemaName().c_str());
-    else if (options.TargetECXmlVersion == 3)
+    else if (options.TargetECXmlVersionMajor == 3)
         schemaName.AssignUtf8(schema.GetFullSchemaName().c_str());
     schemaName += L".ecschema.xml";
     BeFileName file(nullptr, options.OutputDirectory.GetName(), schemaName.c_str(), nullptr);
@@ -99,10 +100,10 @@ static bool TryWriteSchema(ECSchemaR schema, ConversionOptions options)
     GetOutputFile(outputFile, schema, options);
 
     s_logger->infov(L"Saving converted version schema '%ls' in directory '%ls'", outputFile.GetFileNameAndExtension(), options.OutputDirectory.GetName());
-    SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), options.TargetECXmlVersion, 0);
+    SchemaWriteStatus status = schema.WriteToXmlFile(outputFile.GetName(), options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor);
     if (status != SchemaWriteStatus::Success)
         {
-        s_logger->errorv("Failed to save '%s' as ECXml version '%d'.0", schema.GetName(), options.TargetECXmlVersion);
+        s_logger->errorv("Failed to save '%s' as ECXml version '%d'.'%d'", schema.GetName(), options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor);
         return false;
         }
     return true;
@@ -177,7 +178,7 @@ ConversionOptions options
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(true);
 
-    if (options.TargetECXmlVersion == 3)
+    if (options.TargetECXmlVersionMajor == 3)
         context->SetPreserveElementOrder(true);
 
     for (auto const& refDir: options.ReferenceDirectories)
@@ -302,12 +303,17 @@ static bool TryParseInput(int argc, char** argv, ConversionOptions& options)
                 return false;
 
             ++i;
-            options.TargetECXmlVersion = atoi(argv[i]);
-            if (2 != options.TargetECXmlVersion && 3 != options.TargetECXmlVersion)
+            options.TargetECXmlVersionMajor = atoi(argv[i]);
+            if (2 != options.TargetECXmlVersionMajor && 3 != options.TargetECXmlVersionMajor)
                 {
                 fprintf(stderr, "-x/--xml should be followed by '2' or '3'");
                 return false;
                 }
+
+            if (2 == options.TargetECXmlVersionMajor)
+                options.TargetECXmlVersionMinor = 0;
+            else if (3 == options.TargetECXmlVersionMajor)
+                options.TargetECXmlVersionMinor = 1;
             }
         else if (0 == strcmp(argv[i], "-r") || 0 == strcmp(argv[i], "--ref"))
             {
@@ -361,7 +367,7 @@ int main(int argc, char** argv)
     ECSchemaReadContext::Initialize(workingDirectory);
     s_logger->infov(L"Initializing ECSchemaReadContext to '%ls'", workingDirectory);
 
-    s_logger->infov(L"Loading schema '%ls' for conversion to ECXml version '%d'", options.InputFile.GetName(), options.TargetECXmlVersion);
+    s_logger->infov(L"Loading schema '%ls' for conversion to ECXml version '%d'.'%d'", options.InputFile.GetName(), options.TargetECXmlVersionMajor, options.TargetECXmlVersionMinor);
     return ConvertSchema(options);
     }
 
