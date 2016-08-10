@@ -180,9 +180,12 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECObjects" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECObjects-Gtest/ECObjectsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECObjects-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ECObjectsTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
@@ -203,6 +206,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECObjects-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="ECObjects-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECObjects-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
@@ -223,6 +229,38 @@
 
     <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECObjects-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="ECObjects-iOSXCTest"/>
+    </Part>
+
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=ECObjects -dTEST_COLLECTION_PRODUCT=ECObjects-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="G06"
+        >
+        <SubProduct ProductName="ECObjects-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/ECObjects/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECObjects-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECObjects-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="ECObjects-UwpTest"/>
     </Part>
 
     <!-- Define a gtest program to run the PerformanceTests. -->

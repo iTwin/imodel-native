@@ -48,3 +48,22 @@ ClassTests.DerivedClassTypesOfAbstractClass # Not yet implemented
 SchemaVersionConversionTests.SchemaWithOldUnitSpecifications
 UnitsTest.TestConvertingUnitSpecifications
 
+AdhocPropertyTest.SwapAdhocProperties
+    # DgnDb0601, x64, NDEBUG, PRG
+    # <build output no longer provides failure details, and cannot access log files in PRG>
+
+AdhocPropertyTest.InvalidCases
+    # DgnDb0601, x64, NDEBUG, PRG
+    # <build output no longer provides failure details, and cannot access log files in PRG>
+
+AdhocPropertyTest.GetAdhocPropertyUsingECValueAccessor
+    # DgnDb0601, x64, NDEBUG, PRG
+    # <build output no longer provides failure details, and cannot access log files in PRG>
+
+AdhocPropertyTest.VerifyReadOnlyAdhocProperty
+    # DgnDb0601, x64, NDEBUG, PRG
+    # <build output no longer provides failure details, and cannot access log files in PRG>
+
+AdhocPropertyTest.AddPropertyWithOptionalMetadata
+    # DgnDb0601, x64, NDEBUG, PRG
+    # <build output no longer provides failure details, and cannot access log files in PRG>
