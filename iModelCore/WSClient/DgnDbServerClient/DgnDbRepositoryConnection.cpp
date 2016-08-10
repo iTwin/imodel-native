@@ -823,7 +823,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::QueryCodesLocksAvailability
 
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Modified, true);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, lastRevisionId, *changeset, WSChangeset::ChangeState::Created, true);
 
     return SendChangesetRequest(changeset, cancellationToken);
     }
@@ -957,10 +957,7 @@ ICancellationTokenPtr cancellationToken
                     }
                 else if (GetCodeFromServerJson(value[ServerSchema::Properties], code, codeState, briefcaseId, repositoryId))
                     {
-                    if (codeState.IsReserved() || codeState.IsUsed())
-                        { 
-                        codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
-                        }
+                    codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
                     }
                 //NEEDSWORK: log an error
                 }
