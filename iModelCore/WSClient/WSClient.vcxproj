@@ -58,6 +58,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Azure\AzureBlobStorageClient.cpp" />
+    <ClCompile Include="Azure\AzureServiceBusSASDTO.cpp" />
+    <ClCompile Include="Azure\EventServiceClient.cpp" />
     <ClCompile Include="Cache\CacheNavigationTask.cpp" />
     <ClCompile Include="Cache\CachingDataSource.cpp" />
     <ClCompile Include="Cache\CachingTaskBase.cpp" />
@@ -170,9 +172,17 @@
     <ClCompile Include="DgnDbServerClient\DgnDbClient.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerCodeEvent.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerDeletedEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEventParser.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventSubscription.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerLockEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerRevision.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerRevisionEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp" />
+    <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp" />
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
@@ -200,6 +210,8 @@
     <ClCompile Include="Client\WSRepository.cpp" />
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
+    <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -254,7 +266,12 @@
     <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />
     <ClInclude Include="Cache\SessionInfo.h" />
@@ -271,6 +288,11 @@
     <ClInclude Include="ConnectC\CWSCCPrivate.h" />
     <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerLockEvent.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventConnection.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\EventServiceInfo.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaBufferGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\ConnectWsgGlobal\GlobalSchemaGenPublic.h" />
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h" />
@@ -291,6 +313,7 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\RepositoryInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\DgnDbServerCommon.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Azure\EventServiceClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
@@ -391,6 +414,8 @@
     <ClInclude Include="PublicAPI\WebServices\Client\WSRepositoryClient.h" />
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
+    <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
@@ -426,6 +451,7 @@
     <None Include="CacheLib.mke" />
     <None Include="CachePrewire.mke" />
     <None Include="Cache\Cache.mki" />
+    <None Include="ClassDiagram.cd" />
     <None Include="ClientLib.mke" />
     <None Include="ClientLibCompileOptions.mki" />
     <None Include="Client\Client.mki" />

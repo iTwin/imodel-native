@@ -12,14 +12,20 @@
 #include <DgnDbServer/Client/DgnDbServerError.h>
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/RepositoryInfo.h>
+#include <DgnDbServer/Client/FileInfo.h>
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <WebServices/Azure/AzureBlobStorageClient.h>
+#include <WebServices/Azure/EventServiceClient.h>
+#include <WebServices/Azure/AzureServiceBusSASDTO.h>
+#include <DgnDbServer/Client/DgnDbServerEventSubscription.h>
+#include <DgnDbServer/Client/Events/DgnDbServerEventParser.h>
 #include <BeHttp/AuthenticationHandler.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+using namespace std;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbRepositoryConnection);
 typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRepositoryConnectionPtr;
@@ -27,10 +33,14 @@ typedef struct DgnDbRepositoryConnection const&                         DgnDbRep
 
 struct DgnDbCodeLockSetResultInfo;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
+DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
+DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
+DEFINE_TASK_TYPEDEFS(Http::Response, DgnDbServerEventReponse);
+
 
 //=======================================================================================
 //! DgnDbCodeSet and DgnDbLockSet results.
@@ -74,6 +84,10 @@ private:
     RepositoryInfo                          m_repositoryInfo;
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
+    // TODO: Make non static
+    static EventServiceClient*         m_eventServiceClient;
+    DgnDbServerEventSubscriptionPtr m_eventSubscription;
+	AzureServiceBusSASDTOPtr m_eventSAS;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -84,6 +98,15 @@ private:
     //! Sets AzureBlobStorageClient. 
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
 
+    //! Sets EventServiceClient.
+    bool SetEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Sets the EventSASToken in the EventServiceClient
+    bool SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Sets the EventSubscription in the EventServiceClient
+    bool SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
+
     //! Update repository info from the server.
     DgnDbServerStatusTaskPtr UpdateRepositoryInfo (Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr);
 
@@ -92,6 +115,21 @@ private:
 
     //! Write the briefcaseId into the file.
     DgnDbServerStatusResult WriteBriefcaseIdIntoFile (BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
+
+    //! Creates a new file instance on the server. 
+    DgnDbServerFileTaskPtr   CreateNewServerFile(DgnDbPtr db, Utf8StringCR description, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Performs a file upload to on-premise server. 
+    DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Performs a file upload to azure blob storage.
+    DgnDbServerStatusTaskPtr AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url , Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Uploads a BIM file to the server.
+    DgnDbServerStatusTaskPtr UploadServerFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Finalizes the file upload.
+    DgnDbServerStatusTaskPtr InitializeServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a copy of the master file from the repository
     DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
@@ -110,6 +148,21 @@ private:
 
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    // This pointer needs to change to be generic
+    DgnDbServerEventSubscriptionTaskPtr SendEventChangesetRequest(std::shared_ptr<WSChangeset> changeset, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Gets the Event SAS Token from EventServiceClient
+	AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get EventSubscription with the given Event Types
+    DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Update the EventSubscription to the given EventTypes
+    DgnDbServerEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Get Responses from the EventServiceClient
+    DgnDbServerEventReponseTaskPtr GetEventServiceResponse(bool longpolling = true, int numOfRetries = 3);
 
     //! Get the index from a revisionId.
     DgnDbServerUInt64TaskPtr GetRevisionIndex (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -133,8 +186,16 @@ public:
     //! @param[in] authenticationHandler Http handler for connect authentication.
     //! @return Asynchronous task that has the created connection instance as the result.
     //! @note DgnDbClient is the class that creates this connection. See DgnDbClient::OpenBriefcase.
-    static DgnDbRepositoryConnectionTaskPtr Create (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
-                                                    ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
+    static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
+                                                   ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
+
+    //! Create an instance of a BIM file on the server and upload it.
+    //! @param[in] db The BIM file to upload.
+    //! @param[in] description Description of the changes in the uploaded file.
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the uploaded file information as the result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(DgnDbPtr db, Utf8StringCR description, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
@@ -226,5 +287,19 @@ public:
     //! @param[in] lastRevisionId
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    
+    //! Update the Event Subscription
+    //! @param[in] eventTypes
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr   SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Receive Events from EventService
+    //! @param[in] longPolling
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Cancel Events from EventService
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents();
+
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

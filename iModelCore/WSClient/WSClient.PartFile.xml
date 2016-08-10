@@ -118,6 +118,7 @@
 
     <Part Name="DgnDbServerClient-Library" BentleyBuildMakeFile="DgnDbServerClientLib.mke"  ApiNumber="G06" ExcludePlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
         <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
@@ -357,6 +358,7 @@
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
+		<SubPart PartName="DgnDbServerClient-Library" />
         
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="WebServices/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
@@ -396,11 +398,14 @@
 
     <Part Name="RunGtest" 
         BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" 
-        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/WSClient" 
+        BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/WSClient-Gtest/WSClientTest" 
         OnlyPlatforms="x86,x64,MacOs*,Linux*"
         >
         <SubProduct ProductName="WSClient-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/WSClientTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- Part for Visual Studio based builds on G0505 -->
@@ -427,6 +432,9 @@
 
     <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=WSClient-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="WSClient-AndroidJUnit"/>
+        <Bindings>
+          <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/WSClient-AndroidJUnit.log</Files>
+        </Bindings>
     </Part>
 
     <!-- ********************** -->
