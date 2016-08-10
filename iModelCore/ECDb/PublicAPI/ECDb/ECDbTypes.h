@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDbTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,7 +58,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 enum class ResolveSchema
     {
     BySchemaName, //!< ECClass is qualified by schema name
-    BySchemaNamespacePrefix, //!< ECClass is qualified by schema namespace prefix
+    BySchemaAlias, //!< ECClass is qualified by schema alias
     AutoDetect//!< Detect automatically whether ECClass is qualiried by schema name or namespace prefix
     };
 

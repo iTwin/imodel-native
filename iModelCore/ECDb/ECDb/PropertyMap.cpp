@@ -1120,7 +1120,7 @@ PropertyMapPtr NavigationPropertyMap::Create(ClassMapLoadContext& ctx, ECDbCR ec
         {
         ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "NavigationECProperty '%s.%s' has a multiplicity of '%s'. ECDb only supports NavigationECProperties with a maximum multiplicity of 1.",
                                                       ecClass.GetFullName(), navProp.GetName().c_str(),
-                                                      GetConstraint(navProp, NavigationEnd::To).GetCardinality().ToString().c_str());
+                                                      GetConstraint(navProp, NavigationEnd::To).GetMultiplicity().ToString().c_str());
         return nullptr;
         }
 
@@ -1242,9 +1242,9 @@ bool NavigationPropertyMap::IsSupportedInECSql(bool logIfNotSupported, ECDbCP ec
             ecdb->GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                            "NavigationECProperty '%s.%s' cannot be used in ECSQL because its multiplicity is %s. Only the multiplicities %s or %s are supported.",
                                                            GetNavigationProperty().GetClass().GetFullName(), GetNavigationProperty().GetName().c_str(),
-                                                           GetConstraint(GetNavigationProperty(), NavigationEnd::To).GetCardinality().ToString().c_str(),
-                                                           RelationshipCardinality::ZeroOne().ToString().c_str(),
-                                                           RelationshipCardinality::OneOne().ToString().c_str());
+                                                           GetConstraint(GetNavigationProperty(), NavigationEnd::To).GetMultiplicity().ToString().c_str(),
+                                                           RelationshipMultiplicity::ZeroOne().ToString().c_str(),
+                                                           RelationshipMultiplicity::OneOne().ToString().c_str());
         return false;
         }
     if (m_relClassMap == nullptr)

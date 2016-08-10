@@ -314,7 +314,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
         else
             {
             isArray = true;
-            RelationshipCardinalityCR multiplicity = NavigationPropertyMap::GetConstraint(*navProp, NavigationPropertyMap::NavigationEnd::To).GetCardinality();
+            RelationshipMultiplicityCR multiplicity = NavigationPropertyMap::GetConstraint(*navProp, NavigationPropertyMap::NavigationEnd::To).GetMultiplicity();
             minOccurs = multiplicity.GetLowerLimit();
             maxOccurs = multiplicity.GetUpperLimit();
             }

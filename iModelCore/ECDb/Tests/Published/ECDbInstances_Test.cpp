@@ -320,7 +320,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
 
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", 1, 2);
-    schema->SetNamespacePrefix("ts");
+    schema->SetAlias("ts");
     schema->SetDescription("Schema for testing nested struct arrays");
     schema->SetDisplayLabel("Display Label");
 

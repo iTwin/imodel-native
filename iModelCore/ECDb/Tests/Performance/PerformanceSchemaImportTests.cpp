@@ -62,7 +62,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
 
     ECSchema::CreateSchema(testSchema, "TestSchema", 1, 0);
     EXPECT_TRUE(testSchema.IsValid());
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias("ts");
     testSchema->SetDescription("Dynamic Test Schema");
     testSchema->SetDisplayLabel("Test Schema");
 

@@ -457,7 +457,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     //+++ Determine FK column(s) +++
     //Note: The FK column is the column that refers to the referenced end. Therefore the ECRelationshipEnd of the referenced end has to be taken!
     DbColumn::Kind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
-    const bool cardinalityImpliesNotNullOnFkCol = referencedEndConstraint.GetCardinality().GetLowerLimit() > 0;
+    const bool multiplicityImpliesNotNullOnFkCol = referencedEndConstraint.GetMultiplicity().GetLowerLimit() > 0;
 
     Utf8String fkColName;
     if (!fkTableFkColSet.empty())
@@ -465,7 +465,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         m_hasKeyPropertyFk = true;
         for (DbColumn const* fkCol : fkTableFkColSet)
             {
-            if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+            if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                 return ERROR;
 
             ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
@@ -500,7 +500,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 //for existing tables, the FK column must exist otherwise we fail schema import
                 if (fkCol != nullptr)
                     {
-                    if (SUCCESS != ValidateForeignKeyColumn(*fkCol, cardinalityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+                    if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                         return ERROR;
 
                     ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
@@ -534,7 +534,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 return ERROR;
                 }
 
-            const bool makeFkColNotNull = cardinalityImpliesNotNullOnFkCol && foreignEndTable->HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(foreignEndTable->GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
+            const bool makeFkColNotNull = multiplicityImpliesNotNullOnFkCol && foreignEndTable->HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(foreignEndTable->GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
             if (makeFkColNotNull)
                 newFkCol->GetConstraintsR().SetNotNullConstraint();
 
@@ -580,7 +580,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     for (DbColumn const* fkCol : columns.m_fkColumnsPerFkTable)
         {
         DbTable& fkTable = fkCol->GetTableR();
-        const bool makeRelClassIdColNotNull = cardinalityImpliesNotNullOnFkCol && fkTable.IsOwnedByECDb() && fkTable.HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(fkTable.GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
+        const bool makeRelClassIdColNotNull = multiplicityImpliesNotNullOnFkCol && fkTable.IsOwnedByECDb() && fkTable.HasExclusiveRootECClass() && foreignEndConstraintClassIds.find(fkTable.GetExclusiveRootECClassId()) != foreignEndConstraintClassIds.end();
         DbColumn* relClassIdCol = CreateRelECClassIdColumn(fkTable, relECClassIdColName.c_str(), makeRelClassIdColNotNull);
         if (relClassIdCol == nullptr)
             {
@@ -767,8 +767,8 @@ Utf8String RelationshipClassEndTableMap::DetermineFkColumnName(RelationshipMappi
         fkColumnName.assign(fkColInfo.GetImpliedColumnName());
     else
         {
-        //default name: prefix_<schema namespace prefix>_<rel class name>
-        fkColumnName.assign(DEFAULT_FKCOLUMNNAME_PREFIX).append(relClass.GetSchema().GetNamespacePrefix()).append("_").append(relClass.GetName());
+        //default name: prefix_<schema alias>_<rel class name>
+        fkColumnName.assign(DEFAULT_FKCOLUMNNAME_PREFIX).append(relClass.GetSchema().GetAlias()).append("_").append(relClass.GetName());
         }
 
     BeAssert(!fkColumnName.empty());
@@ -787,7 +787,7 @@ Utf8String RelationshipClassEndTableMap::DetermineRelECClassIdColumnName(ECRelat
         relECClassIdColName.append(RELCLASSIDCOLUMNNAME_TERM);
         }
     else if (fkColumnName.StartsWithIAscii(DEFAULT_FKCOLUMNNAME_PREFIX))
-        relECClassIdColName.assign(RELCLASSIDCOLUMNNAME_TERM "_").append(relClass.GetSchema().GetNamespacePrefix()).append("_").append(relClass.GetName());
+        relECClassIdColName.assign(RELCLASSIDCOLUMNNAME_TERM "_").append(relClass.GetSchema().GetAlias()).append("_").append(relClass.GetName());
     else
         relECClassIdColName.assign(fkColumnName).append(RELCLASSIDCOLUMNNAME_TERM);
 
@@ -1035,7 +1035,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     {
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&mapInfo) != nullptr);
     RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
-    const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMappingInfo::Cardinality::OneToOne;
+    const bool isUniqueIndex = relMapInfo.GetMultiplicity() == RelationshipMappingInfo::Multiplicity::OneToOne;
 
     if (!relMapInfo.CreateIndexOnForeignKey() ||
         (!isUniqueIndex && m_hasKeyPropertyFk))
@@ -1052,7 +1052,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
 
         // name of the index
         Utf8String name(isUniqueIndex ? "uix_" : "ix_");
-        name.append(persistenceEndTable.GetName()).append("_fk_").append(GetClass().GetSchema().GetNamespacePrefix() + "_" + GetClass().GetName());
+        name.append(persistenceEndTable.GetName()).append("_fk_").append(GetClass().GetSchema().GetAlias() + "_" + GetClass().GetName());
         if (GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
             name.append("_source");
         else
@@ -1554,24 +1554,24 @@ void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& schemaImport
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&mapInfo) != nullptr);
     RelationshipMappingInfo const& relationshipClassMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
 
-    RelationshipMappingInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
+    RelationshipMappingInfo::Multiplicity multiplicity = relationshipClassMapInfo.GetMultiplicity();
     const bool enforceUniqueness = !relationshipClassMapInfo.AllowDuplicateRelationships();
 
     // Add indices on the source and target based on cardinality
     bool sourceIsUnique = enforceUniqueness;
     bool targetIsUnique = enforceUniqueness;
 
-    switch (cardinality)
+    switch (multiplicity)
         {
         //the many side can be unique, but the one side must never be unique
-            case RelationshipMappingInfo::Cardinality::OneToMany:
+            case RelationshipMappingInfo::Multiplicity::OneToMany:
                 sourceIsUnique = false;
                 break;
-            case RelationshipMappingInfo::Cardinality::ManyToOne:
+            case RelationshipMappingInfo::Multiplicity::ManyToOne:
                 targetIsUnique = false;
                 break;
 
-            case RelationshipMappingInfo::Cardinality::ManyToMany:
+            case RelationshipMappingInfo::Multiplicity::ManyToMany:
                 sourceIsUnique = false;
                 targetIsUnique = false;
                 break;
@@ -1599,7 +1599,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
     else
         name.append("ix_");
 
-    name.append(GetClass().GetSchema().GetNamespacePrefix()).append("_").append(GetClass().GetName()).append("_");
+    name.append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
 
     switch (spec)
         {

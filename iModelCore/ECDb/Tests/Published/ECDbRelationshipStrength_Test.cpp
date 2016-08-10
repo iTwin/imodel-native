@@ -329,7 +329,7 @@ TEST_F(RelationshipStrength, BackwardHoldingForwardEmbedding)
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbRelationshipsIntegrityTests : ECDbMappingTestFixture
     {
-    enum class Cardinality
+    enum class Multiplicity
         {
         ZeroOne,
         ZeroMany,
@@ -346,7 +346,7 @@ struct ECDbRelationshipsIntegrityTests : ECDbMappingTestFixture
     private:
         ECEntityClassP GetEntityClass(Utf8CP className);
 
-        RelationshipCardinalityCR GetClassCardinality(Cardinality classCardinality);
+        RelationshipMultiplicityCR GetClassMultiplicity(Multiplicity classMultiplicity);
 
         ECRelatedInstanceDirection GetRelationDirection(Direction direction);
 
@@ -358,7 +358,7 @@ struct ECDbRelationshipsIntegrityTests : ECDbMappingTestFixture
         //Adding a Class automatically adds a Property of Type string with Name "SqlPrintfString ("%sProp", className)" to the class.
         void AddEntityClass(Utf8CP className);
 
-        void AddRelationShipClass(Cardinality SourceClassCardinality, Cardinality targetClassCardinality, StrengthType strengthType, Direction direction, Utf8CP relationshipClassName, Utf8CP sourceClass, Utf8CP targetClass, bool isPolymorphic);
+        void AddRelationShipClass(Multiplicity SourceClassMultiplicity, Multiplicity targetClassMultiplicity, StrengthType strengthType, Direction direction, Utf8CP relationshipClassName, Utf8CP sourceClass, Utf8CP targetClass, bool isPolymorphic);
 
         void AssertSchemaImport(bool isSchemaImportExpectedToSucceed);
 
@@ -386,16 +386,16 @@ ECEntityClassP ECDbRelationshipsIntegrityTests::GetEntityClass(Utf8CP className)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-RelationshipCardinalityCR ECDbRelationshipsIntegrityTests::GetClassCardinality(Cardinality classCardinality)
+RelationshipMultiplicityCR ECDbRelationshipsIntegrityTests::GetClassMultiplicity(Multiplicity classMultiplicity)
     {
-    if (classCardinality == Cardinality::ZeroOne)
-        return RelationshipCardinality::ZeroOne();
-    else if (classCardinality == Cardinality::ZeroMany)
-        return RelationshipCardinality::ZeroMany();
-    else if (classCardinality == Cardinality::OneOne)
-        return RelationshipCardinality::OneOne();
+    if (classMultiplicity == Multiplicity::ZeroOne)
+        return RelationshipMultiplicity::ZeroOne();
+    else if (classMultiplicity == Multiplicity::ZeroMany)
+        return RelationshipMultiplicity::ZeroMany();
+    else if (classMultiplicity == Multiplicity::OneOne)
+        return RelationshipMultiplicity::OneOne();
     else
-        return RelationshipCardinality::OneMany();
+        return RelationshipMultiplicity::OneMany();
     }
 
 //---------------------------------------------------------------------------------------
@@ -412,12 +412,12 @@ ECRelatedInstanceDirection ECDbRelationshipsIntegrityTests::GetRelationDirection
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbRelationshipsIntegrityTests::CreateSchema(Utf8CP schemaName, Utf8CP schemaNamePrefix)
+void ECDbRelationshipsIntegrityTests::CreateSchema(Utf8CP schemaName, Utf8CP schemaNameAlias)
     {
     ECSchema::CreateSchema(testSchema, schemaName, 1, 0);
     ASSERT_TRUE(testSchema.IsValid());
 
-    testSchema->SetNamespacePrefix(schemaNamePrefix);
+    testSchema->SetAlias(schemaNameAlias);
     }
 
 //---------------------------------------------------------------------------------------
@@ -454,7 +454,7 @@ void ECDbRelationshipsIntegrityTests::AddEntityClass(Utf8CP className)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbRelationshipsIntegrityTests::AddRelationShipClass(Cardinality SourceClassCardinality, Cardinality targetClassCardinality, StrengthType strengthType, Direction direction, Utf8CP relationshipClassName, Utf8CP sourceClass, Utf8CP targetClass, bool isPolymorphic)
+void ECDbRelationshipsIntegrityTests::AddRelationShipClass(Multiplicity SourceClassMultiplicity, Multiplicity targetClassMultiplicity, StrengthType strengthType, Direction direction, Utf8CP relationshipClassName, Utf8CP sourceClass, Utf8CP targetClass, bool isPolymorphic)
     {
     ECRelationshipClassP testRelationshipClass = nullptr;
     EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateRelationshipClass(testRelationshipClass, relationshipClassName));
@@ -464,12 +464,12 @@ void ECDbRelationshipsIntegrityTests::AddRelationShipClass(Cardinality SourceCla
     //Set Relstionship Source Class and Cardinality
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().AddClass(*GetEntityClass(sourceClass)));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetIsPolymorphic(true));
-    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetCardinality(GetClassCardinality(SourceClassCardinality)));
+    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetMultiplicity(GetClassMultiplicity(SourceClassMultiplicity)));
 
     //Set Relstionship Target Class and Cardinality
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().AddClass(*GetEntityClass(targetClass)));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetIsPolymorphic(true));
-    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetCardinality(GetClassCardinality(targetClassCardinality)));
+    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetMultiplicity(GetClassMultiplicity(targetClassMultiplicity)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -599,8 +599,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardEmbeddingRelationshipsTest)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Embedding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Embedding, Direction::Forward, "FooOwnsManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneOne, StrengthType::Embedding, Direction::Forward, "FooOwnsGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneMany, StrengthType::Embedding, Direction::Forward, "FooOwnsManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -695,8 +695,8 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardEmbeddingRelationshipsTest)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::OneMany, Multiplicity::ZeroOne, StrengthType::Embedding, Direction::Backward, "FooOwnedByManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -791,9 +791,9 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardReferencingRelationshipsTest)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Referencing, Direction::Forward, "FooHasGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Forward, "FooHasManyGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::ZeroMany, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Forward, "ManyFoohaveManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Referencing, Direction::Forward, "FooHasGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroMany, StrengthType::Referencing, Direction::Forward, "FooHasManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroMany, Multiplicity::ZeroMany, StrengthType::Referencing, Direction::Forward, "ManyFoohaveManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -929,9 +929,9 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardReferencingRelationshipsTest)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasFoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::ZeroMany, Cardinality::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasManyFoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::ZeroMany, Cardinality::ZeroMany, StrengthType::Referencing, Direction::Backward, "ManyGooHaveManyFoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasFoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroMany, Multiplicity::ZeroOne, StrengthType::Referencing, Direction::Backward, "GooHasManyFoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroMany, Multiplicity::ZeroMany, StrengthType::Referencing, Direction::Backward, "ManyGooHaveManyFoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -1067,7 +1067,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToOne)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -1160,7 +1160,7 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingOneToMany)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -1252,9 +1252,9 @@ TEST_F(ECDbRelationshipsIntegrityTests, ForwardHoldingRelationshipsTest)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Forward, "ManyFooHoldManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneOne, StrengthType::Holding, Direction::Forward, "FooHoldsGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::OneMany, StrengthType::Holding, Direction::Forward, "FooHoldManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::OneMany, Multiplicity::OneMany, StrengthType::Holding, Direction::Forward, "ManyFooHoldManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;
@@ -1387,9 +1387,9 @@ TEST_F(ECDbRelationshipsIntegrityTests, BackwardHoldingRelationshipsTest)
     CreateSchema("testSchema", "ts");
     AddEntityClass("Foo");
     AddEntityClass("Goo");
-    AddRelationShipClass(Cardinality::ZeroOne, Cardinality::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::OneMany, Cardinality::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByManyGoo", "Foo", "Goo", true);
-    AddRelationShipClass(Cardinality::OneMany, Cardinality::OneMany, StrengthType::Holding, Direction::Backward, "ManyFooHeldByManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::ZeroOne, Multiplicity::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::OneMany, Multiplicity::ZeroOne, StrengthType::Holding, Direction::Backward, "FooHeldByManyGoo", "Foo", "Goo", true);
+    AddRelationShipClass(Multiplicity::OneMany, Multiplicity::OneMany, StrengthType::Holding, Direction::Backward, "ManyFooHeldByManyGoo", "Foo", "Goo", true);
     AssertSchemaImport(true);
 
     std::vector<ECInstanceKey> fooKeys, gooKeys;

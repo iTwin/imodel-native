@@ -51,10 +51,10 @@ enum class SystemId
     {
     None,
     AlternativePresentationUnitList,
+    Alias,
     Array,
     BaseClass,
     BaseClasses,
-    Cardinality,
     Class,
     Classes,
     ClassFullName,
@@ -93,8 +93,8 @@ enum class SystemId
     MaxOccurs,
     MinimumValue,
     MinOccurs,
+    Multiplicity,
     Name,
-    NamespacePrefix,
     Navigation,
     PersistenceUnit,
     Precision,
@@ -846,7 +846,7 @@ struct ECSchemaChange : ECObjectChange
         UInt32Change& GetVersionMajor() { return Get<UInt32Change>(SystemId::VersionMajor); }
         UInt32Change& GetVersionMinor() { return Get<UInt32Change>(SystemId::VersionMinor); }
         UInt32Change& GetVersionWrite() { return Get<UInt32Change>(SystemId::VersionWrite); }
-        StringChange& GetNamespacePrefix() { return Get<StringChange>(SystemId::NamespacePrefix); }
+        StringChange& GetAlias() { return Get<StringChange>(SystemId::Alias); }
         ReferenceChanges& References() { return Get<ReferenceChanges>(SystemId::References); }
         ECClassChanges& Classes() { return Get<ECClassChanges>(SystemId::Classes); }
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
@@ -1058,7 +1058,7 @@ struct ECRelationshipConstraintChange :ECObjectChange
             }
         virtual ~ECRelationshipConstraintChange() {}
         StringChange& GetRoleLabel() { return Get<StringChange>(SystemId::RoleLabel); }
-        StringChange& GetCardinality() { return Get<StringChange>(SystemId::Cardinality); }
+        StringChange& GetMultiplicity() { return Get<StringChange>(SystemId::Multiplicity); }
         BooleanChange& IsPolymorphic() { return Get<BooleanChange>(SystemId::IsPolymorphic); }
         ECRelationshipConstraintClassChanges& ConstraintClasses() { return Get<ECRelationshipConstraintClassChanges>(SystemId::ConstraintClasses); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }

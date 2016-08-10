@@ -123,10 +123,10 @@ TEST_F(ECDbSchemaManagerTests, CasingTests)
     ecclass = ecdb.Schemas().GetECClass("ECSqlTest", "p");
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecSqL", "P", ResolveSchema::BySchemaNamespacePrefix);
+    ecclass = ecdb.Schemas().GetECClass("ecSqL", "P", ResolveSchema::BySchemaAlias);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
-    ecclass = ecdb.Schemas().GetECClass("ecsql", "p", ResolveSchema::BySchemaNamespacePrefix);
+    ecclass = ecdb.Schemas().GetECClass("ecsql", "p", ResolveSchema::BySchemaAlias);
     ASSERT_TRUE(ecclass != nullptr && BeStringUtilities::StricmpAscii(ecclass->GetFullName(), "ECSqlTest:P") == 0);
 
     ecclass = ecdb.Schemas().GetECClass("ecsqlTest", "P", ResolveSchema::AutoDetect);
@@ -440,7 +440,7 @@ ECSchemaPtr CreateTestSchema()
     ECSchemaPtr testSchema = nullptr;
     auto stat = ECSchema::CreateSchema(testSchema, TEST_SCHEMA_NAME, 1, 0);
     EXPECT_EQ(ECObjectsStatus::Success, stat);
-    testSchema->SetNamespacePrefix("test");
+    testSchema->SetAlias("test");
     if (testSchema == nullptr)
         return nullptr;
 
@@ -761,7 +761,7 @@ TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
     ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"TestSchema.01.00.ecschema.xml", true);
     ECClassCP ecClass = ecdbr.Schemas().GetECClass("TestSchema", "DerivedTestClass");
     EXPECT_TRUE(ecClass != nullptr);
-    ecClass = ecdbr.Schemas().GetECClass("TS", "DerivedTestClass", ResolveSchema::BySchemaNamespacePrefix);
+    ecClass = ecdbr.Schemas().GetECClass("TS", "DerivedTestClass", ResolveSchema::BySchemaAlias);
     EXPECT_TRUE(ecClass != nullptr);
 
     ecClass = ecdbr.Schemas().GetECClass("TestSchema", "DerivedTestClass", ResolveSchema::AutoDetect);

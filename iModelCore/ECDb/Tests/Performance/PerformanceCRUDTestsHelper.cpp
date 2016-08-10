@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/PerformanceCRUDTestsHelper.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceCRUDTestsHelper.h"
@@ -576,7 +576,7 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb (ECDbR ecdb, Utf8String destFileN
 
         ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
         ASSERT_TRUE (testSchema.IsValid ());
-        testSchema->SetNamespacePrefix ("ts");
+        testSchema->SetAlias ("ts");
 
         ASSERT_EQ (ECObjectsStatus::Success, testSchema->CreateEntityClass (baseClass, "BaseClass"));
         CreatePrimitiveProperties (*baseClass);

@@ -43,7 +43,7 @@ struct ECSchemaValidationRule
             {
             CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
             CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
-            SchemaNamespacePrefix,
+            SchemaAlias,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
             ValidRelationshipConstraints
             };
@@ -298,7 +298,7 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
-struct SchemaNamespacePrefixRule : ECSchemaValidationRule
+struct SchemaAliasRule : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
@@ -307,7 +307,7 @@ struct SchemaNamespacePrefixRule : ECSchemaValidationRule
         struct Error : ECSchemaValidationRule::Error
             {
             private:
-                std::vector<ECN::ECSchemaCP> m_invalidNamespacePrefixes;
+                std::vector<ECN::ECSchemaCP> m_invalidAliases;
 
                 virtual Utf8String _ToString() const override;
 
@@ -315,8 +315,8 @@ struct SchemaNamespacePrefixRule : ECSchemaValidationRule
                 explicit Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
                 ~Error() {}
 
-                void AddInvalidPrefix(ECN::ECSchemaCR schema) { m_invalidNamespacePrefixes.push_back(&schema); }
-                bool HasInconsistencies() const { return !m_invalidNamespacePrefixes.empty(); }
+                void AddInvalidAlias(ECN::ECSchemaCR schema) { m_invalidAliases.push_back(&schema); }
+                bool HasInconsistencies() const { return !m_invalidAliases.empty(); }
             };
 
         mutable std::unique_ptr<Error> m_error;
@@ -325,8 +325,8 @@ struct SchemaNamespacePrefixRule : ECSchemaValidationRule
         virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
 
     public:
-        SchemaNamespacePrefixRule();
-        ~SchemaNamespacePrefixRule() {}
+        SchemaAliasRule();
+        ~SchemaAliasRule() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

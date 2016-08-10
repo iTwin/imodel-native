@@ -898,9 +898,9 @@ BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCla
 
     if (tablePrefix.empty())
         {
-        Utf8StringCR namespacePrefix = schema.GetNamespacePrefix();
-        if (!namespacePrefix.empty())
-            tablePrefix = namespacePrefix;
+        Utf8StringCR alias = schema.GetAlias();
+        if (!alias.empty())
+            tablePrefix = alias;
         else
             tablePrefix = schema.GetName();
         }
@@ -914,7 +914,7 @@ BentleyStatus ClassMap::DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECCla
 Utf8String ClassMap::GetUpdatableViewName() const
     {
     Utf8String name;
-    name.Sprintf("_%s_%s", GetClass().GetSchema().GetNamespacePrefix().c_str(), GetClass().GetName().c_str());
+    name.Sprintf("_%s_%s", GetClass().GetSchema().GetAlias().c_str(), GetClass().GetName().c_str());
     return name;
     }
 

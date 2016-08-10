@@ -560,7 +560,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema()
     {
     ECSchemaPtr testSchema = nullptr;
     ECSchema::CreateSchema(testSchema, "test", 1, 0);
-    testSchema->SetNamespacePrefix("t");
+    testSchema->SetAlias("t");
     ECEntityClassP fooClass = nullptr;
     testSchema->CreateEntityClass(fooClass, "Foo");
     PrimitiveECPropertyP prop = nullptr;
@@ -575,17 +575,17 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema()
     testSchema->CreateRelationshipClass(oneToManyRelClass, "FooHasGoo");
     oneToManyRelClass->SetStrength(StrengthType::Holding);
     oneToManyRelClass->GetSource().AddClass(*fooClass);
-    oneToManyRelClass->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+    oneToManyRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     oneToManyRelClass->GetTarget().AddClass(*gooClass);
-    oneToManyRelClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroMany());
+    oneToManyRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
     ECRelationshipClassP manyToManyRelClass = nullptr;
     testSchema->CreateRelationshipClass(manyToManyRelClass, "RelFooGoo");
     manyToManyRelClass->SetStrength(StrengthType::Referencing);
     manyToManyRelClass->GetSource().AddClass(*fooClass);
-    manyToManyRelClass->GetSource().SetCardinality(RelationshipCardinality::ZeroMany());
+    manyToManyRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     manyToManyRelClass->GetTarget().AddClass(*gooClass);
-    manyToManyRelClass->GetTarget().SetCardinality(RelationshipCardinality::ZeroMany());
+    manyToManyRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
     auto schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*testSchema);
@@ -746,7 +746,7 @@ void CreateCustomAttributeTestSchema(ECSchemaPtr& testSchema, ECSchemaCachePtr& 
     ECSchemaPtr schema = nullptr;
     ECObjectsStatus stat = ECSchema::CreateSchema(schema, "foo", 1, 0);
     ASSERT_EQ(ECObjectsStatus::Success, stat) << "Creating test schema failed";
-    schema->SetNamespacePrefix("f");
+    schema->SetAlias("f");
 
     ECEntityClassP domainClass = nullptr;
     stat = schema->CreateEntityClass(domainClass, "domain1");

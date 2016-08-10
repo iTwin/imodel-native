@@ -99,7 +99,7 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchem
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(ECDbCR db, Utf8CP namespacePrefix)
+bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(ECDbCR db, Utf8CP alias)
     {
     CachedStatementPtr stmt = nullptr;
     //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
@@ -107,7 +107,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(ECDbCR db,
     if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE NamespacePrefix=? COLLATE NOCASE"))
         return false;
 
-    stmt->BindText(1, namespacePrefix, Statement::MakeCopy::No);
+    stmt->BindText(1, alias, Statement::MakeCopy::No);
     return stmt->Step() == BE_SQLITE_ROW;
     }
 
@@ -137,7 +137,7 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, ECClassCR ecClass
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema)
+ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema)
     {
     Utf8CP sql = nullptr;
     switch (resolveSchema)
@@ -148,7 +148,7 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
                 sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
                 break;
 
-            case ResolveSchema::BySchemaNamespacePrefix:
+            case ResolveSchema::BySchemaAlias:
                 sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.NamespacePrefix=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
                 break;
 
@@ -161,7 +161,7 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
     if (stmt == nullptr)
         return ECClassId();
 
-    stmt->BindText(1, schemaNameOrPrefix, Statement::MakeCopy::No);
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
     stmt->BindText(2, className, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
         return ECClassId();

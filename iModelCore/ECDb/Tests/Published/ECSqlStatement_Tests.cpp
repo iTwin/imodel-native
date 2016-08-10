@@ -311,8 +311,8 @@ TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
     stmt.Finalize();
 
     //Using GetECClassId in Nested Select statement
-    ECClassId supplierClassId = ecdb.Schemas().GetECClassId("ECST", "Supplier", ResolveSchema::BySchemaNamespacePrefix);
-    ECClassId customerClassId = ecdb.Schemas().GetECClassId("ECST", "Customer", ResolveSchema::BySchemaNamespacePrefix);
+    ECClassId supplierClassId = ecdb.Schemas().GetECClassId("ECST", "Supplier", ResolveSchema::BySchemaAlias);
+    ECClassId customerClassId = ecdb.Schemas().GetECClassId("ECST", "Customer", ResolveSchema::BySchemaAlias);
     ECClassId firstClassId = std::min<ECClassId>(supplierClassId, customerClassId);
     ECClassId secondClassId = std::max<ECClassId>(supplierClassId, customerClassId);
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT ECClassId FROM ECST.Supplier UNION ALL SELECT ECClassId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
@@ -3496,7 +3496,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
 
         ASSERT_EQ(ECN::ECObjectsStatus::Success, imported->SetName(schemaIn.GetName()));
 
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, imported->SetNamespacePrefix(schemaIn.GetNamespacePrefix()));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, imported->SetAlias(schemaIn.GetAlias()));
 
         ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
         ASSERT_EQ(ECN::ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
@@ -3511,7 +3511,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
     {
     ECN::ECSchemaPtr schema;
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0));
-    schema->SetNamespacePrefix("tir");
+    schema->SetAlias("tir");
 
     ECN::ECEntityClassP ecclass;
     ASSERT_EQ(ECN::ECObjectsStatus::Success, schema->CreateEntityClass(ecclass, "C1"));

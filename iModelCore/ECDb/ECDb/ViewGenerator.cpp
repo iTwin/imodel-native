@@ -141,7 +141,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 BentleyStatus ViewGenerator::CreateECClassView(ClassMapCR classMap)
     {
     Utf8String viewName;
-    viewName.Sprintf("[%s.%s]", classMap.GetClass().GetSchema().GetNamespacePrefix().c_str(), classMap.GetClass().GetName().c_str());
+    viewName.Sprintf("[%s.%s]", classMap.GetClass().GetSchema().GetAlias().c_str(), classMap.GetClass().GetName().c_str());
 
     ViewGenerator viewGenerator(classMap.GetECDbMap(), true, false);
     NativeSqlBuilder viewSql;

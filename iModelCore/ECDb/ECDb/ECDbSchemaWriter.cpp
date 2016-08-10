@@ -67,8 +67,8 @@ BentleyStatus ECDbSchemaWriter::Import(ECSchemaCompareContext& ctx, ECN::ECSchem
         DbResult lastErrorCode;
         m_ecdb.GetLastError(&lastErrorCode);
         if (BE_SQLITE_CONSTRAINT_UNIQUE == lastErrorCode)
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to import ECSchema '%s'. Namespace prefix '%s' is already used by an existing ECSchema.",
-                            ecSchema.GetFullSchemaName().c_str(), ecSchema.GetNamespacePrefix().c_str());
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to import ECSchema '%s'. Alias '%s' is already used by an existing ECSchema.",
+                            ecSchema.GetFullSchemaName().c_str(), ecSchema.GetAlias().c_str());
         return ERROR;
         }
 
@@ -725,10 +725,10 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
     if (BE_SQLITE_OK != stmt->BindInt(2, endpoint))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(3, relationshipConstraint.GetCardinality().GetLowerLimit()))
+    if (BE_SQLITE_OK != stmt->BindInt(3, relationshipConstraint.GetMultiplicity().GetLowerLimit()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetCardinality().GetUpperLimit()))
+    if (BE_SQLITE_OK != stmt->BindInt(4, relationshipConstraint.GetMultiplicity().GetUpperLimit()))
         return ERROR;
 
     if (relationshipConstraint.IsRoleLabelDefined())
@@ -789,7 +789,7 @@ BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
 #endif
 
 
-    if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetNamespacePrefix().c_str(), Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(5, ecSchema.GetAlias().c_str(), Statement::MakeCopy::No))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(6, ecSchema.GetVersionMajor()))
@@ -1203,9 +1203,9 @@ BentleyStatus ECDbSchemaWriter::UpdateECRelationshipConstraint(ECContainerId con
     if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    if (constraintChange.GetCardinality().IsValid())
+    if (constraintChange.GetMultiplicity().IsValid())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s - Constraint: %s: Changing 'Cardinality' of an ECRelationshipConstraint is not supported.",
+        Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECRelationshipClass %s - Constraint: %s: Changing 'Multiplicity' of an ECRelationshipConstraint is not supported.",
                                   relationshipName, constraintEndStr);
         return ERROR;
         }
@@ -2147,23 +2147,23 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         updateBuilder.AddSetExp("VersionDigit3", schemaChange.GetVersionMinor().GetNew().Value());
         }
 
-    if (schemaChange.GetNamespacePrefix().IsValid())
+    if (schemaChange.GetAlias().IsValid())
         {
-        if (schemaChange.GetNamespacePrefix().GetNew().IsNull())
+        if (schemaChange.GetAlias().GetNew().IsNull())
             {
-            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: NamespacePrefix must always be set.",
+            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Alias must always be set.",
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        if (ECDbSchemaPersistenceHelper::ContainsECSchemaWithNamespacePrefix(m_ecdb, schemaChange.GetNamespacePrefix().GetNew().Value().c_str()))
+        if (ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(m_ecdb, schemaChange.GetAlias().GetNew().Value().c_str()))
             {
-            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: NamespacePrefix is already used by another existing ECSchema.",
+            Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECSchema %s: Alias is already used by another existing ECSchema.",
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("NamespacePrefix", schemaChange.GetNamespacePrefix().GetNew().Value().c_str());
+        updateBuilder.AddSetExp("NamespacePrefix", schemaChange.GetAlias().GetNew().Value().c_str());
         }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name

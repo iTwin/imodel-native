@@ -8626,7 +8626,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ECSchema::CreateSchema(testSchema, "TestSchema", 1, 0);
     ASSERT_TRUE(testSchema.IsValid());
 
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias("ts");
     testSchema->AddReferencedSchema(*ecdbmapSchema);
 
     testSchema->CreateEntityClass(foo, "Foo");
@@ -8653,19 +8653,19 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ASSERT_TRUE(prim != nullptr);
 
     oneFooHasOneGoo->GetSource().AddClass(*foo);
-    oneFooHasOneGoo->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+    oneFooHasOneGoo->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     oneFooHasOneGoo->GetTarget().AddClass(*goo);
-    oneFooHasOneGoo->GetTarget().SetCardinality(RelationshipCardinality::ZeroOne());
+    oneFooHasOneGoo->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
 
     oneFooHasManyGoo->GetSource().AddClass(*foo);
-    oneFooHasManyGoo->GetSource().SetCardinality(RelationshipCardinality::ZeroOne());
+    oneFooHasManyGoo->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
     oneFooHasManyGoo->GetTarget().AddClass(*goo);
-    oneFooHasManyGoo->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+    oneFooHasManyGoo->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
 
     manyFooHasManyGoo->GetSource().AddClass(*foo);
-    manyFooHasManyGoo->GetSource().SetCardinality(RelationshipCardinality::OneMany());
+    manyFooHasManyGoo->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     manyFooHasManyGoo->GetTarget().AddClass(*goo);
-    manyFooHasManyGoo->GetTarget().SetCardinality(RelationshipCardinality::OneMany());
+    manyFooHasManyGoo->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneMany());
     BackDoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
 
     if (allowDuplicateRelationships)

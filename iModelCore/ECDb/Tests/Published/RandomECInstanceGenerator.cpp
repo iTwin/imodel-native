@@ -620,8 +620,8 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances(ECRelatio
     if (sourceInstances.empty() || targetInstances.empty())
         return BentleyStatus::ERROR;
 
-    auto sUL = sourceConstraint.GetCardinality().GetUpperLimit();
-    auto tUL = targetConstraint.GetCardinality().GetUpperLimit();
+    auto sUL = sourceConstraint.GetMultiplicity().GetUpperLimit();
+    auto tUL = targetConstraint.GetMultiplicity().GetUpperLimit();
 
     enum class Cardinality
     {

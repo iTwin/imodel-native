@@ -245,8 +245,8 @@ BentleyStatus ECSchemaComparer::CompareECSchema(ECSchemaChange& change, ECSchema
         change.GetDescription().SetValue(a.GetDescription(), b.GetDescription());
 #endif
 
-    if (a.GetNamespacePrefix() != b.GetNamespacePrefix())
-        change.GetNamespacePrefix().SetValue(a.GetNamespacePrefix(), b.GetNamespacePrefix());
+    if (a.GetAlias() != b.GetAlias())
+        change.GetAlias().SetValue(a.GetAlias(), b.GetAlias());
 
     if (a.GetVersionMajor() != b.GetVersionMajor())
         change.GetVersionMajor().SetValue(a.GetVersionMajor(), b.GetVersionMajor());
@@ -386,8 +386,8 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipCo
     if (a.GetIsPolymorphic() != b.GetIsPolymorphic())
         change.IsPolymorphic().SetValue(a.GetIsPolymorphic(), b.GetIsPolymorphic());
 
-    if (a.GetCardinality().ToString() != b.GetCardinality().ToString())
-        change.GetCardinality().SetValue(a.GetCardinality().ToString(), b.GetCardinality().ToString());
+    if (a.GetMultiplicity().ToString() != b.GetMultiplicity().ToString())
+        change.GetMultiplicity().SetValue(a.GetMultiplicity().ToString(), b.GetMultiplicity().ToString());
 
     return CompareECRelationshipConstraintClasses(change.ConstraintClasses(), a.GetConstraintClasses(), b.GetConstraintClasses());
     }
@@ -1212,7 +1212,7 @@ BentleyStatus ECSchemaComparer::AppendECSchema(ECSchemaChanges& changes, ECSchem
     change.GetDescription().SetValue(appendType, v.GetDescription());
 #endif
 
-    change.GetNamespacePrefix().SetValue(appendType, v.GetNamespacePrefix());
+    change.GetAlias().SetValue(appendType, v.GetAlias());
     change.GetVersionMajor().SetValue(appendType, v.GetVersionMajor());
     change.GetVersionMinor().SetValue(appendType, v.GetVersionMinor());
     change.GetVersionWrite().SetValue(appendType, v.GetVersionWrite());
@@ -1298,7 +1298,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipClass(ECRelationshipChange& 
 BentleyStatus ECSchemaComparer::AppendECRelationshipConstraint(ECRelationshipConstraintChange& change, ECRelationshipConstraintCR v, ValueId appendType)
     {
     change.GetRoleLabel().SetValue(appendType, v.GetRoleLabel());
-    change.GetCardinality().SetValue(appendType, v.GetCardinality().ToString());
+    change.GetMultiplicity().SetValue(appendType, v.GetMultiplicity().ToString());
     change.IsPolymorphic().SetValue(appendType, v.GetIsPolymorphic());
     if (AppendECRelationshipConstraintClasses(change.ConstraintClasses(), v.GetConstraintClasses(), appendType) != SUCCESS)
         return ERROR;
@@ -1643,10 +1643,10 @@ SystemId ECChange::StringToSystemId(Utf8CP idString)
         return SystemId::None;
 
     if (strcmp(idString, "AlternativePresentationUnitList") == 0)  return SystemId::AlternativePresentationUnitList;
+    if (strcmp(idString, "Alias") == 0) return SystemId::Alias;
     if (strcmp(idString, "Array") == 0) return SystemId::Array;
     if (strcmp(idString, "BaseClass") == 0) return SystemId::BaseClass;
     if (strcmp(idString, "BaseClasses") == 0) return SystemId::BaseClasses;
-    if (strcmp(idString, "Cardinality") == 0) return SystemId::Cardinality;
     if (strcmp(idString, "Classes") == 0) return SystemId::Classes;
     if (strcmp(idString, "Class") == 0) return SystemId::Class;
     if (strcmp(idString, "ConstantKey") == 0) return SystemId::ConstantKey;
@@ -1687,8 +1687,8 @@ SystemId ECChange::StringToSystemId(Utf8CP idString)
     if (strcmp(idString, "MaxOccurs") == 0) return SystemId::MaxOccurs;
     if (strcmp(idString, "MinimumValue") == 0) return SystemId::MinimumValue;
     if (strcmp(idString, "MinOccurs") == 0) return SystemId::MinOccurs;
+    if (strcmp(idString, "Multiplicity") == 0) return SystemId::Multiplicity;
     if (strcmp(idString, "Name") == 0) return SystemId::Name;
-    if (strcmp(idString, "NamespacePrefix") == 0) return SystemId::NamespacePrefix;
     if (strcmp(idString, "Navigation") == 0) return SystemId::Navigation;
     if (strcmp(idString, "PersistenceUnit") == 0) return SystemId::PersistenceUnit;
     if (strcmp(idString, "Precision") == 0) return SystemId::Precision;
@@ -1726,10 +1726,10 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
         {
             case SystemId::None: return "";
             case SystemId::AlternativePresentationUnitList: return "AlternativePresentationUnitList";
+            case SystemId::Alias: return "Alias";
             case SystemId::Array: return "Array";
             case SystemId::BaseClass: return "BaseClass";
             case SystemId::BaseClasses: return "BaseClasses";
-            case SystemId::Cardinality: return "Cardinality";
             case SystemId::Classes: return "Classes";
             case SystemId::Class: return "Class";
             case SystemId::ConstantKey: return "ConstantKey";
@@ -1770,8 +1770,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::MaxOccurs: return "MaxOccurs";
             case SystemId::MinimumValue: return "MinimumValue";
             case SystemId::MinOccurs: return "MinOccurs";
+            case SystemId::Multiplicity: return "Multiplicity";
             case SystemId::Name: return "Name";
-            case SystemId::NamespacePrefix: return "NamespacePrefix";
             case SystemId::Navigation: return "Navigation";
             case SystemId::PersistenceUnit: return "PersistenceUnit";
             case SystemId::Precision: return "Precision";

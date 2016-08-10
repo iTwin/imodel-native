@@ -72,7 +72,7 @@ public:
     static BentleyStatus SerializeKoqAlternativePresentationUnits(Utf8StringR jsonStr, ECN::KindOfQuantityCR);
     static BentleyStatus DeserializeKoqAlternativePresentationUnits(ECN::KindOfQuantityR, Utf8CP jsonStr);
 
-    static bool ContainsECSchemaWithNamespacePrefix(ECDbCR, Utf8CP namespacePrefix);
+    static bool ContainsECSchemaWithAlias(ECDbCR, Utf8CP alias);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

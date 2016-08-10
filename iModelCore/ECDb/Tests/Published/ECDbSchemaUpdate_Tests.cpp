@@ -237,7 +237,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
     //Verify Schema attributes upgraded successfully
     ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+    ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
     ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -280,7 +280,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassAttributes)
     //Verify Schema and Class attributes upgraded successfully
     ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+    ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
     ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -343,7 +343,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
     //Verify Schema, Class and property attributes upgraded successfully
     ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
     ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+    ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
     ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
     ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -1240,7 +1240,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
         ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -1550,7 +1550,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
         ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -1712,7 +1712,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
         ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -1965,7 +1965,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
         ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -2079,7 +2079,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
         //Verify Schema, Class and property attributes upgraded successfully
         ECSchemaCP testSchema = GetECDb().Schemas().GetECSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetNamespacePrefix() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 

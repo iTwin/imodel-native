@@ -526,7 +526,7 @@ TEST_F(ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     PrimitiveECPropertyP premitiveProperty = nullptr;
     ECSchema::CreateSchema(testSchema, "TestSchema", 1, 0);
     ASSERT_TRUE(testSchema.IsValid());
-    testSchema->SetNamespacePrefix("ts");
+    testSchema->SetAlias("ts");
     testSchema->SetDescription("Dynamic Test Schema");
     testSchema->SetDisplayLabel("Test Schema");
 

@@ -649,14 +649,14 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     Utf8CP schemaName = stmt->GetValueText(0);
     Utf8CP displayLabel = stmt->IsColumnNull(1) ? nullptr : stmt->GetValueText(1);
     Utf8CP description = stmt->IsColumnNull(2) ? nullptr : stmt->GetValueText(2);
-    Utf8CP nsprefix = stmt->GetValueText(3);
+    Utf8CP alias = stmt->GetValueText(3);
     uint32_t versionMajor = (uint32_t) stmt->GetValueInt(4);
     uint32_t versionWrite = (uint32_t) stmt->GetValueInt(5);
     uint32_t versionMinor = (uint32_t) stmt->GetValueInt(6);
     const int typesInSchema = stmt->GetValueInt(7);
 
     ECSchemaPtr schema = nullptr;
-    if (ECSchema::CreateSchema(schema, schemaName, nsprefix, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema(schema, schemaName, alias, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
         return ERROR;
 
     schema->SetId(ecSchemaId);
@@ -1097,7 +1097,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
 
     ECRelationshipConstraintR constraint = (relationshipEnd == ECRelationshipEnd_Target) ? ecRelationship->GetTarget() : ecRelationship->GetSource();
 
-    constraint.SetCardinality(RelationshipCardinality(stmt->GetValueInt(1), stmt->GetValueInt(2)));
+    constraint.SetMultiplicity(RelationshipMultiplicity(stmt->GetValueInt(1), stmt->GetValueInt(2)));
     constraint.SetIsPolymorphic(DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(3)));
 
     if (!stmt->IsColumnNull(4))

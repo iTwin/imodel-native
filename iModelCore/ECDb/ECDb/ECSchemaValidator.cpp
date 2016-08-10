@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new SchemaNamespacePrefixRule()));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new SchemaAliasRule()));
 
     bool valid = true;
     for (ECSchemaCP schema : schemas)
@@ -575,13 +575,13 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
     }
 
 //**********************************************************************
-// SchemaNamespacePrefixRule
+// SchemaAliasRule
 //**********************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-SchemaNamespacePrefixRule::SchemaNamespacePrefixRule()
-    : ECSchemaValidationRule(Type::SchemaNamespacePrefix), m_error(nullptr)
+SchemaAliasRule::SchemaAliasRule()
+    : ECSchemaValidationRule(Type::SchemaAlias), m_error(nullptr)
     {
     m_error = std::unique_ptr<Error>(new Error(GetType()));
     }
@@ -589,13 +589,13 @@ SchemaNamespacePrefixRule::SchemaNamespacePrefixRule()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool SchemaNamespacePrefixRule::_ValidateSchemas(bvector<ECSchemaP> const& schemas, ECN::ECSchemaCR schema)
+bool SchemaAliasRule::_ValidateSchemas(bvector<ECSchemaP> const& schemas, ECN::ECSchemaCR schema)
     {
     bool valid = true;
-    Utf8StringCR prefix = schema.GetNamespacePrefix().c_str();
-    if (prefix.empty() || !ECNameValidation::IsValidName(prefix.c_str()))
+    Utf8StringCR alias = schema.GetAlias().c_str();
+    if (alias.empty() || !ECNameValidation::IsValidName(alias.c_str()))
         {
-        m_error->AddInvalidPrefix(schema);
+        m_error->AddInvalidAlias(schema);
         valid = false;
         }
 
@@ -606,7 +606,7 @@ bool SchemaNamespacePrefixRule::_ValidateSchemas(bvector<ECSchemaP> const& schem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> SchemaNamespacePrefixRule::_GetError() const
+std::unique_ptr<ECSchemaValidationRule::Error> SchemaAliasRule::_GetError() const
     {
     if (!m_error->HasInconsistencies())
         return nullptr;
@@ -615,25 +615,25 @@ std::unique_ptr<ECSchemaValidationRule::Error> SchemaNamespacePrefixRule::_GetEr
     }
 
 //**********************************************************************
-// SchemaNamespacePrefixRule::Error
+// SchemaAliasRule::Error
 //**********************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-Utf8String SchemaNamespacePrefixRule::Error::_ToString() const
+Utf8String SchemaAliasRule::Error::_ToString() const
     {
-    if (m_invalidNamespacePrefixes.empty())
+    if (m_invalidAliases.empty())
         return "";
 
-    Utf8String error("Found ECSchemas with invalid namespace prefixes: ");
+    Utf8String error("Found ECSchemas with invalid aliases: ");
     bool isFirstItem = true;
-    for (ECSchemaCP schema : m_invalidNamespacePrefixes)
+    for (ECSchemaCP schema : m_invalidAliases)
         {
         if (!isFirstItem)
             error.append("; ");
 
         Utf8String descr;
-        descr.Sprintf("'%': Prefix '%s' is empty or not a valid EC name", schema->GetFullSchemaName().c_str(), schema->GetNamespacePrefix().c_str());
+        descr.Sprintf("'%': Alias '%s' is empty or not a valid EC name", schema->GetFullSchemaName().c_str(), schema->GetAlias().c_str());
         error.append(descr);
         isFirstItem = false;
         }
