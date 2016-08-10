@@ -801,6 +801,39 @@ protected:
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
+    //! Return the value of a double ECProperty by name
+    //! @note Returns 0.0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
+    //! @see GetProperty
+    DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName) const;
+    //! Return the value of a integer ECProperty by name
+    //! @note Returns 0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
+    //! @see GetProperty
+    DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName) const;
+    //! Return the value of a UInt64 ECProperty by name
+    //! @note Returns 0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
+    //! @see GetProperty
+    DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName) const;
+    //! Return the value of an ECNavigationProperty by name
+    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
+        {
+        return TBeInt64Id(GetPropertyValueUInt64(propertyName));
+        }
+    //! Return the value of a string ECProperty by name
+    DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName) const;
+
+    //! Set a double ECProperty by name
+    //! @see SetProperty
+    DGNPLATFORM_EXPORT void SetPropertyValue(Utf8CP propertyName, double value);
+    //! Set an integer ECProperty by name
+    //! @see SetProperty
+    DGNPLATFORM_EXPORT void SetPropertyValue(Utf8CP propertyName, int32_t value);
+    //! Set an ECNavigationProperty by name
+    //! @see SetProperty
+    DGNPLATFORM_EXPORT void SetPropertyValue(Utf8CP propertyName, BeInt64Id value);
+    //! Set a string ECProperty by name
+    //! @see SetProperty
+    DGNPLATFORM_EXPORT void SetPropertyValue(Utf8CP propertyName, Utf8CP value);
+
     //! Invoked when loading an element from the database, to allow subclasses to extract their custom-handled property values
     //! from the SELECT statement. The parameters are those which are marked in the schema with the CustomHandledProperty CustomAttribute.
     //! @param[in] statement The SELECT statement which selected the data from the database
