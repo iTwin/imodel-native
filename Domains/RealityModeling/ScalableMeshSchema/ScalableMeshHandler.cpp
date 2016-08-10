@@ -66,6 +66,9 @@ BentleyStatus ScalableMeshModel::_QueryTexture(ITextureTileId const& tileId, ITe
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
     {
+     if (!IsTerrain())
+        return SUCCESS;
+
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
     m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
@@ -78,6 +81,9 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& 
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_ReloadAllClipMasks()
     {
+    if (!IsTerrain())
+        return SUCCESS;
+
     return ERROR;
     }
 
@@ -86,6 +92,9 @@ BentleyStatus ScalableMeshModel::_ReloadAllClipMasks()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
     {
+     if (!IsTerrain())
+        return SUCCESS;
+
     if (nullptr == m_smPtr.get()) return ERROR;
     m_smPtr->SetIsInsertingClips(true);
     return SUCCESS;
@@ -96,6 +105,9 @@ BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
 //----------------------------------------------------------------------------------------
 BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
     {
+     if (!IsTerrain())
+        return SUCCESS;
+
     if (nullptr == m_smPtr.get()) return ERROR;
     m_smPtr->SetIsInsertingClips(false);
     bvector<uint64_t> currentlyShown;
@@ -144,7 +156,7 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 #define QUERY_ID 0 
 
-static double s_minScreenPixelsPerPoint = 1000;
+static double s_minScreenPixelsPerPoint = 350;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
     {    
@@ -726,14 +738,14 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        assert(status == SUCCESS);
 
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
-       // assert(m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
-
+        
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
-        assert(status == SUCCESS);
+        
         needProgressive = false;
         m_forceRedraw = false;
         }
@@ -1021,6 +1033,9 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips)
     {
+    if (!IsTerrain())
+        return;
+
     m_activeClips = activeClips;
     bvector<uint64_t> clipIds;
     for (auto& clip: previouslyActiveClips)
