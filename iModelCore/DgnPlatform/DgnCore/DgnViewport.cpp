@@ -126,7 +126,7 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint4dCP screenPts, int nPts)
     for (int i=0; i<nPts; i++)
         {
         bsiDMatrix4d_multiplyMatrixPoint(&m_rootToView.M1, &tPt, screenPts+i);
-        tPt.GetProjectedXYZ (rootPts[i]);
+        tPt.GetProjectedXYZ(rootPts[i]);
         }
     }
 
@@ -430,8 +430,8 @@ void DgnViewport::_AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const
         return;
         }
 
-    // set the front plane distance to about twice the length of the average human nose
-    delta.z = cameraDir.z - (120.0 * DgnUnits::OneMillimeter());
+    // set the front plane distance to about 6 inches
+//    delta.z = cameraDir.z - (15.2 * DgnUnits::OneCentimeter());
     }
 
 struct ViewChangedCaller
@@ -1202,10 +1202,10 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
             // Check for view flag changes that may require us to re-generate cached graphic...
             if (newFlags.GetRenderMode() == oldFlags.GetRenderMode() &&
-                newFlags.constructions == oldFlags.constructions &&
-                newFlags.text == oldFlags.text &&
-                newFlags.dimensions == oldFlags.dimensions &&
-                newFlags.fill == oldFlags.fill)
+                newFlags.m_constructions == oldFlags.m_constructions &&
+                newFlags.m_text == oldFlags.m_text &&
+                newFlags.m_dimensions == oldFlags.m_dimensions &&
+                newFlags.m_fill == oldFlags.m_fill)
                 {
                 // Both sub-category visibility and appearance gets baked into cached graphic...
                 if (!m_viewController->HasSubCategoryOverride() && !viewController.HasSubCategoryOverride())

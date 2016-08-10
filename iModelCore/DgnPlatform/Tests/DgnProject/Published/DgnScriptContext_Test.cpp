@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/ScriptDomain.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -356,5 +357,97 @@ TEST_F(DgnScriptTest, CRUD)
     // EXPECT_TRUE(areDateTimesEqual(queryLastModifiedTime, scriptLastModifiedTime)); // *** NEEDS WORK - fails in DgnDb06, VC12, Optimized, WinX86. 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnScriptTest, ScriptElementCRUD)
+    {
+    SetupSeedProject();
+    DgnDbStatus dstatus = ScriptDomain::ImportSchema(*m_db);
+    ASSERT_EQ(DgnDbStatus::Success, dstatus);
+    m_db->SaveChanges();
+
+    DgnDbStatus status;
+
+    //  Create a ScriptLibraryModel to hold the scripts
+    auto scriptLib = ScriptLibraryModel::Create(*m_db, DgnModel::CreateModelCode("scripts"));
+    ASSERT_TRUE(scriptLib.IsValid());
+    status = scriptLib->Insert();
+    ASSERT_EQ(DgnDbStatus::Success, status);
+
+    if (true)
+        {
+        //  Create a valid script definition
+        ScriptDefinitionElementPtr scriptEl = ScriptDefinitionElement::Create(&status, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function foo(element) {return true;}", "foo", "a script");
+        ASSERT_TRUE(scriptEl.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+        ASSERT_STREQ("a script", scriptEl->GetDescription().c_str());
+        ASSERT_STREQ("function foo(element) {return true;}", scriptEl->GetText().c_str());
+        ASSERT_STREQ("foo", scriptEl->GetEntryPoint().c_str());
+        ASSERT_STREQ("ES5", scriptEl->GetEcmaScriptVersionRequired().c_str());
+        ASSERT_STREQ("", scriptEl->GetSourceUrl().c_str());
+        Utf8String rt, args;
+        scriptEl->GetSignature(rt, args);
+        ASSERT_STREQ("boolean", rt.c_str());
+        ASSERT_STREQ("DgnElement", args.c_str());
+
+        //  Create a invalid script definition (incorrect entry point)
+        ScriptDefinitionElementPtr scriptElBad = ScriptDefinitionElement::Create(&status, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function foo(element) {return true;}", "missing_entry_point", "a script");
+        ASSERT_FALSE(scriptElBad.IsValid());
+        ASSERT_NE(DgnDbStatus::Success, status);
+
+        //  Persist the valid script definition
+        auto persistentScriptEl = m_db->Elements().Insert(*scriptEl, &status);
+        ASSERT_TRUE(persistentScriptEl.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, status);
+        
+        //  Execute the valid script definition
+        Utf8String retVal;
+        status = persistentScriptEl->Execute(retVal, { persistentScriptEl.get() });
+        ASSERT_EQ(DgnDbStatus::Success, status);
+        ASSERT_STREQ("true", retVal.c_str());
+        }
+
+    if (true)
+        {
+        // Try executing various kinds of scripts and checking their return values
+        ScriptDefinitionElementCPtr scriptEl1;
+        
+        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function ifElementIsNotNull(element) {return element != null;}"));
+        Utf8String retVal;
+        ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {scriptEl1.get()}));
+        ASSERT_STREQ("true", retVal.c_str());
+        ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {nullptr}));
+        ASSERT_STREQ("false", retVal.c_str());
+
+#ifdef WIP_EXCEPTIONS
+        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_FilterElement,
+            "function throwsException(element) {return element.Id != null;}", "throwsException", ""));
+        ASSERT_STREQ("false", scriptEl1->Execute(&status, nullptr).c_str());
+        ASSERT_NE(DgnDbStatus::Success, status);
+#endif
+
+        scriptEl1 = m_db->Elements().Insert(*ScriptDefinitionElement::Create(nullptr, *scriptLib, SCRIPT_DOMAIN_CLASSNAME_PopulateElementList,
+"function fillEleList(dgnObjectIdSet,db,viewport) {\
+    var be = Bentley.Dgn;\
+    var categories = be.DgnCategory.QueryCategories(db);\
+    for (var catiter = categories.Begin(); categories.IsValid(catiter); categories.ToNext(catiter))\
+        {\
+        dgnObjectIdSet.Insert(categories.GetId(catiter));\
+        }\
+    }"
+        ));
+        DgnElementIdSet ids;
+        ASSERT_EQ(DgnDbStatus::Success, scriptEl1->Execute(retVal, {&ids, m_db.get(), nullptr}));
+        //ASSERT_STREQ("", retVal.c_str());
+        ASSERT_NE(0, ids.size());
+        auto categories = DgnCategory::QueryCategories(*m_db);
+        ASSERT_EQ(categories.size(), ids.size());
+        ASSERT_TRUE(categories.begin()->GetValue() == ids.begin()->GetValue());
+        }
+    }
 
 #endif

@@ -19,19 +19,19 @@ void GradientSymb::CopyFrom(GradientSymb const& other)
     m_tint  = other.m_tint;
     m_shift = other.m_shift;
 
-    memcpy(m_colors, other.m_colors, m_nKeys * sizeof (m_colors[0]));
-    memcpy(m_values, other.m_values, m_nKeys * sizeof (m_values[0]));
+    memcpy(m_colors, other.m_colors, m_nKeys * sizeof(m_colors[0]));
+    memcpy(m_values, other.m_values, m_nKeys * sizeof(m_values[0]));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GradientSymb::SetKeys(uint16_t nKeys, ColorDef const* pColors, double const* pValues)
+void GradientSymb::SetKeys(uint32_t nKeys, ColorDef const* pColors, double const* pValues)
     {
     m_nKeys = nKeys > MAX_GRADIENT_KEYS ? MAX_GRADIENT_KEYS : nKeys;
 
-    memcpy(m_colors, pColors, m_nKeys * sizeof (m_colors[0]));
-    memcpy(m_values, pValues, m_nKeys * sizeof (m_values[0]));
+    memcpy(m_colors, pColors, m_nKeys * sizeof(m_colors[0]));
+    memcpy(m_values, pValues, m_nKeys * sizeof(m_values[0]));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,7 +62,7 @@ bool GradientSymb::operator==(GradientSymbCR rhs) const
 
     int nKeys = m_nKeys > MAX_GRADIENT_KEYS ? MAX_GRADIENT_KEYS : m_nKeys;
 
-    for (int i=0; i<nKeys; i++)
+    for (int i=0; i<nKeys; ++i)
         {
         if (rhs.m_values[i] != m_values[i])
             return false;
