@@ -58,6 +58,8 @@ namespace ServerSchema
         static Utf8CP FileId = "FileId";
         static Utf8CP Index = "Index";
         static Utf8CP Description = "Description";
+        static Utf8CP FileDescription = "FileDescription";
+        static Utf8CP RepositoryDescription = "RepositoryDescription";
         static Utf8CP UserCreated = "UserCreated";
         static Utf8CP CreatedDate = "CreatedDate";
         static Utf8CP UserUploaded = "UserUploaded";
