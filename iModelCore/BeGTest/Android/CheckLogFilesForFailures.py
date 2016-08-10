@@ -49,6 +49,10 @@ def checkLogFileForFailures(logfilename):
             if lline.startswith("ok ("):
                 report = report + line
 
+    if lineNo == 0:
+        report = report + '\n' + 'Empty test results log. Tests were not run?'
+        return 0,report
+
     # There is no point in printing the log file, as it does not contain any details of the failures.
     # The user must run "adb logcat" in order to see the native code logging output.
     # We cannot do that here.
