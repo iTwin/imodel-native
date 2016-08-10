@@ -243,7 +243,7 @@ virtual StatusInt    /*AuxCoordSys::*/_SetFlags(ACSFlags flags) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController (SpatialViewControllerCP info)
+virtual StatusInt   /*AuxCoordSys::*/_CompleteSetupFromViewController(SpatialViewControllerCP info)
     {
     m_attachedToView = true;
 
@@ -982,7 +982,7 @@ void IAuxCoordSys::_AddAxisText(GraphicBuilderR graphic, Utf8CP labelStr, bool i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddZAxis (GraphicBuilderR builder, ColorDef color, ACSDisplayOptions options) const
+void IAuxCoordSys::_AddZAxis(GraphicBuilderR builder, ColorDef color, ACSDisplayOptions options) const
     {
     DPoint3d    linePts[2];
 
@@ -1026,7 +1026,7 @@ void IAuxCoordSys::_AddZAxis (GraphicBuilderR builder, ColorDef color, ACSDispla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IAuxCoordSys::_AddXYAxis (GraphicBuilderR builder, ColorDef color, Utf8CP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
+void IAuxCoordSys::_AddXYAxis(GraphicBuilderR builder, ColorDef color, Utf8CP labelStrP, bool swapAxis, ACSDisplayOptions options, ACSFlags flags) const
     {
     DPoint2d    userOrg;
     DPoint3d    shapePts[8];
@@ -1068,14 +1068,7 @@ void IAuxCoordSys::_AddXYAxis (GraphicBuilderR builder, ColorDef color, Utf8CP l
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-GraphicBuilderPtr     IAuxCoordSys::_CreateGraphic
-(
-DecorateContextR    context,
-DPoint3dCR          drawOrigin,
-double              acsSizePixels,
-ACSDisplayOptions   options,
-bool                drawName
-) const
+GraphicBuilderPtr IAuxCoordSys::_CreateGraphic(DecorateContextR context, DPoint3dCR drawOrigin, double acsSizePixels, ACSDisplayOptions options, bool drawName) const
     {
     double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * acsSizePixels;
     double      exagg = context.GetViewport()->GetViewController().GetAspectRatioSkew();
@@ -1121,7 +1114,7 @@ bool                drawName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            IAuxCoordSys::_IsOriginInView(DPoint3dR drawOrigin, DgnViewportCR viewport, bool adjustOrigin) const
+bool IAuxCoordSys::_IsOriginInView(DPoint3dR drawOrigin, DgnViewportCR viewport, bool adjustOrigin) const
     {
     DPoint3d    testPtView, screenRange;
     Frustum     frustum = viewport.GetFrustum(DgnCoordSystem::Screen, false);
@@ -1273,7 +1266,7 @@ IAuxCoordSysPtr IACSManager::GetByName(Utf8CP name, DgnModelP modelRef, uint32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IACSManager::Save(IAuxCoordSysP acs, DgnModelP modelRef, ACSSaveOptions saveOption, ACSEventType eventType)
+StatusInt IACSManager::Save(IAuxCoordSysP acs, DgnModelP modelRef, ACSSaveOptions saveOption, ACSEventType eventType)
     {
 #if defined (NEEDS_WORK_DGNITEM)
 #endif
@@ -1283,7 +1276,7 @@ StatusInt       IACSManager::Save(IAuxCoordSysP acs, DgnModelP modelRef, ACSSave
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IACSManager::Delete(Utf8CP name, DgnModelP modelRef)
+StatusInt IACSManager::Delete(Utf8CP name, DgnModelP modelRef)
     {
 #if defined (NEEDS_WORK_DGNITEM)
 #endif
@@ -1293,9 +1286,9 @@ StatusInt       IACSManager::Delete(Utf8CP name, DgnModelP modelRef)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::DisplayCurrent(DecorateContextR context, bool isCursorView)
+void IACSManager::DisplayCurrent(DecorateContextR context, bool isCursorView)
     {
-    if (GetInhibitCurrentACSDisplay() || !context.GetViewport()->GetViewFlags().acs)
+    if (GetInhibitCurrentACSDisplay() || !context.GetViewport()->GetViewFlags().m_acsTriad)
         return;
 
     IAuxCoordSysP acs = GetActive(*context.GetViewport());
@@ -1309,7 +1302,7 @@ void            IACSManager::DisplayCurrent(DecorateContextR context, bool isCur
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysPtr IACSManager::CreateACS ()
+IAuxCoordSysPtr IACSManager::CreateACS()
     {
     return AuxCoordSys::CreateNew();
     }
@@ -1317,15 +1310,7 @@ IAuxCoordSysPtr IACSManager::CreateACS ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysPtr IACSManager::CreateACS
-(
-ACSType         type,
-DPoint3dCR      pOrigin,
-RotMatrixCR     pRot,
-double          scale,
-Utf8CP          name,
-Utf8CP          descr
-)
+IAuxCoordSysPtr IACSManager::CreateACS(ACSType type, DPoint3dCR pOrigin, RotMatrixCR pRot, double scale, Utf8CP name, Utf8CP descr)
     {
     IAuxCoordSysPtr auxSys = AuxCoordSys::CreateNew();
 
@@ -1343,7 +1328,7 @@ Utf8CP          descr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::AddExtender(IAuxCoordSystemExtender* extender)
+void IACSManager::AddExtender(IAuxCoordSystemExtender* extender)
     {
     if (NULL == m_extenders)
         m_extenders = new EventHandlerList<IAuxCoordSystemExtender>;
@@ -1425,7 +1410,7 @@ int             extenderData[1];
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            IACSManager::ReadSettings (SpatialViewControllerP viewController)
+void            IACSManager::ReadSettings(SpatialViewControllerP viewController)
     {
 #ifdef DGN_IMPORTER_REORG_WIP
     // NEEDSWORK...
@@ -1435,7 +1420,7 @@ void            IACSManager::ReadSettings (SpatialViewControllerP viewController
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IACSManager::SaveSettings (SpatialViewControllerCP viewController)
+void IACSManager::SaveSettings(SpatialViewControllerCP viewController)
     {
 #ifdef DGN_IMPORTER_REORG_WIP
     XAttributeChangeSet* changeSet;

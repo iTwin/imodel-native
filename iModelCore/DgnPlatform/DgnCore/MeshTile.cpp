@@ -930,10 +930,6 @@ struct TileGeometryProcessor : IGeometryProcessor
         {
         return UnhandledPreference::Facet; // ###TODO: Solids...
         }
-    virtual UnhandledPreference _GetUnhandledPreference(PolyfaceQueryCR, SimplifyGraphic&) const override
-        {
-        return UnhandledPreference::Facet; // Brien checks this BEFORE invoking _ProcessBody(), and the default returns Ignore, so he doesn't apply our facet options...
-        }
 
     virtual void _OutputGraphics(ViewContextR context) override;
 };

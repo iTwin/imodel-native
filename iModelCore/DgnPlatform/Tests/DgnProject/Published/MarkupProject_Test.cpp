@@ -136,7 +136,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     createStatus = DgnDbStatus::Success;
     mproject->CreateRedlineModelView (&createStatus, *rdlModel, seedViewId, rect, rect);
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
-
+    EXPECT_TRUE(DbResult::BE_SQLITE_OK == mproject->SaveChanges());
     // *** WIP Create association - to do that, we'd need a real ViewInfo
     // rdlModel->SetAssociation (*dgnProject, dgnProjectViewInfo);
     }

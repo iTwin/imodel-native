@@ -381,10 +381,10 @@ Render::GraphicPtr ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddViewOverrides(OvrGraphicParamsR ovrMatSymb)
     {
-    if (!m_viewflags.weights)
+    if (!m_viewflags.m_weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!m_viewflags.transparency)
+    if (!m_viewflags.m_transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
@@ -836,7 +836,7 @@ void GraphicParams::Cook(GeometryParamsCR elParams, ViewContextR context)
 
             m_fillColor = ColorDef::White(); // Fill should be set to opaque white for gradient texture...
 
-            if (0 == (m_gradient->GetFlags() & static_cast<int>(GradientSymb::Flags::Outline)))
+            if (0 == (m_gradient->GetFlags() & GradientSymb::Flags::Outline))
                 {
                 m_lineColor.SetAlpha(0xff); // Qvis checks for this to disable auto-outline...
                 netElemTransparency = 0.0;  // Don't override the fully transparent outline below...

@@ -70,7 +70,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
 
     patternMap[RENDER_MATERIAL_TextureId]        = textureId.GetValue();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
-    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) JsonRenderMaterial::TextureMap::Mode::Parametric;
+    patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::Material::MapMode::Parametric;
 
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset.GetValueR()[RENDER_MATERIAL_Map] = mapsMap;

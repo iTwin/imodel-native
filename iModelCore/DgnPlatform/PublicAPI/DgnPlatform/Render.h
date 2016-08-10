@@ -51,25 +51,27 @@ private:
     RenderMode m_renderMode;
 
 public:
-    uint32_t    constructions:1;    //!< Shows or hides construction class geometry.
-    uint32_t    text:1;             //!< Shows or hides text.
-    uint32_t    dimensions:1;       //!< Shows or hides dimensions.
-    uint32_t    patterns:1;         //!< Shows or hides pattern geometry.
-    uint32_t    weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
-    uint32_t    styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
-    uint32_t    transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
-    uint32_t    fill:1;             //!< Controls whether the fills on filled elements are displayed.
-    uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
-    uint32_t    acs:1;              //!< Shows or hides the ACS triad.
-    uint32_t    bgImage:1;          //!< Shows or hides the background image. 
-    uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
-    uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
-    uint32_t    sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used. Note the inversion.
-    uint32_t    visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. This is typically controlled through a display style.
-    uint32_t    shadows:1;          //!< Shows or hides shadows. This is typically controlled through a display style.
-    uint32_t    noClipVolume:1;     //!< Controls whether the clip volume is applied. Note the inversion. Elements beyond will not be displayed.
-    uint32_t    ignoreLighting:1;   //!< Controls whether lights are used.
+    uint32_t m_constructions:1;    //!< Shows or hides construction class geometry.
+    uint32_t m_text:1;             //!< Shows or hides text.
+    uint32_t m_dimensions:1;       //!< Shows or hides dimensions.
+    uint32_t m_patterns:1;         //!< Shows or hides pattern geometry.
+    uint32_t m_weights:1;          //!< Controls whether non-zero line weights are used or display using weight 0.
+    uint32_t m_styles:1;           //!< Controls whether custom line styles are used (e.g. control whether elements with custom line styles draw normally, or as solid lines).
+    uint32_t m_transparency:1;     //!< Controls whether element transparency is used (e.g. control whether elements with transparency draw normally, or as opaque).
+    uint32_t m_fill:1;             //!< Controls whether the fills on filled elements are displayed.
+    uint32_t m_grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
+    uint32_t m_acsTriad:1;         //!< Shows or hides the ACS triad.
+    uint32_t m_textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
+    uint32_t m_materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).
+    uint32_t m_sceneLights:1;      //!< Controls whether the custom scene lights or the default lighting scheme are used.
+    uint32_t m_visibleEdges:1;     //!< Shows or hides visible edges in the shaded render mode. 
+    uint32_t m_hiddenEdges:1;      //!< Shows or hides hidden edges in the shaded render mode. 
+    uint32_t m_shadows:1;          //!< Shows or hides shadows. 
+    uint32_t m_noClipVolume:1;     //!< Controls whether the clip volume is applied. 
+    uint32_t m_ignoreLighting:1;   //!< Controls whether lights are used.
+    uint32_t m_monochrome:1;       //!< use monochrome style
+    uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
+    uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
 
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
     RenderMode GetRenderMode() const {return m_renderMode;}
@@ -336,6 +338,13 @@ public:
 //=======================================================================================
 struct Texture : RefCounted<NonCopyableClass>
 {
+    struct CreateParams
+    {
+        bool m_isTileSection = false;
+        int m_pitch = 0;
+        void SetIsTileSection() {m_isTileSection=true;}
+        void SetPitch(int val) {m_pitch=val;}
+    };
 };
 
 //=======================================================================================
@@ -343,8 +352,88 @@ struct Texture : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct Material : RefCounted<NonCopyableClass>
 {
-    bvector<TexturePtr> m_mappedTextures;
-    void AddMappedTexture(TextureR texture) {m_mappedTextures.push_back(&texture);}
+    enum class MapMode : int
+    {
+        None              = -1,
+        Parametric        = 0,
+        ElevationDrape    = 1,
+        Planar            = 2,
+        DirectionalDrape  = 3,
+        Cubic             = 4,
+        Spherical         = 5,
+        Cylindrical       = 6,
+        Solid             = 7,
+        FrontProject      = 8, //<! Only valid for lights.
+    };
+
+    struct CreateParams
+    {
+        struct MatColor
+        {
+            bool m_valid = false;
+            ColorDef m_value;
+            MatColor(){}
+            MatColor(ColorDef val) {m_valid=true; m_value=val;}
+            bool IsValid() const {return m_valid;}
+        };
+
+        MatColor m_diffuseColor;
+        MatColor m_specularColor;
+        MatColor m_emissiveColor;
+        double m_diffuse = 0.5;
+        double m_ambient = 0.5; 
+        double m_specularExponent = 0.0;
+        double m_reflect = 0.0;
+        double m_transparency = 0.0;
+        double m_specular = 0.05;
+        double m_refract = 1.0;
+        bool m_shadows = true;
+
+        void SetDiffuseColor(ColorDef val) {m_diffuseColor = val;} //<! Set the surface color for fill or diffuse illumination
+        void SetSpecularColor(ColorDef val) {m_specularColor = val;} //<! Set the surface color for specular illumination
+        void SetEmissiveColor(ColorDef val) {m_emissiveColor = val;} //<!  Set the surface emissive color
+        void SetDiffuse(double val) {m_diffuse = val;} //<! Set surface diffuse reflectivity
+        void SetAmbient(double val) {m_ambient = val;} //<! Set surface ambient reflectivity
+        void SetSpecularExponent(double val) {m_specularExponent = val;} //<! Set surface shininess (range 0 to 128)
+        void SetReflect(double val) {m_reflect = val;} //<! Set surface environmental reflectivity
+        void SetTransparency(double val) {m_transparency = val;} //<! Set surface transparency
+        void SetSpecular(double val) {m_specular = val;} //<! Set surface specular reflectivity
+        void SetRefract(double val) {m_refract = val;} //<! Set index of refraction
+        void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
+    };
+
+    struct Trans2x3 
+    {
+        double m_val[2][3];
+        Trans2x3() {}
+        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+    };
+    struct TextureMapParams
+    {
+        TextureMapParams() {}
+        double m_textureWeight = 1.0;
+        Trans2x3* m_textureMat2x3 = nullptr;
+        MapMode m_mapMode = MapMode::Parametric;
+        bool m_worldMapping = false;
+        DPoint3dCP m_basisX = nullptr;
+        DPoint3dCP m_basisY = nullptr;
+        DPoint3dCP m_basisZ = nullptr;
+        DPoint3dCP m_basisOrg = nullptr;
+        DPoint3dCP m_basisScale = nullptr;
+        void SetMapMode(MapMode val) {m_mapMode=val;}
+        void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
+        void SetTransform(Trans2x3* val) {m_textureMat2x3 = val;} //<! Set Texture 2x3 transform
+        void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
+        void SetBasis(DPoint3dCP x, DPoint3dCP y, DPoint3dCP z, DPoint3dCP org, DPoint3dCP scale) {m_basisX = x; m_basisY = y; m_basisZ = z; m_basisOrg = org; m_basisScale = scale;}
+    };
+
+protected:
+    bvector<TextureCPtr> m_mappedTextures;
+    void AddMappedTexture(TextureCR texture) {m_mappedTextures.push_back(&texture);}
+
+public:
+    //! Map a texture to this material
+    virtual void _MapTexture(Texture const& texture, TextureMapParams const& params = TextureMapParams()) = 0;
 };
 
 //=======================================================================================
@@ -583,6 +672,7 @@ enum class LineCap
 
 //=======================================================================================
 //! Parameters defining a gradient
+// @bsiclass                                                    Keith.Bentley   09/15
 //=======================================================================================
 struct GradientSymb : RefCountedBase
 {
@@ -591,7 +681,7 @@ struct GradientSymb : RefCountedBase
         MAX_GRADIENT_KEYS = 8,
     };
 
-    enum class Flags
+    enum Flags : Byte
     {
         None         = 0,
         Invert       = (1 << 0),
@@ -599,7 +689,7 @@ struct GradientSymb : RefCountedBase
         AlwaysFilled = (1 << 2),
     };
 
-    enum class Mode
+    enum class Mode : Byte
     {
         None          = 0,
         Linear        = 1,
@@ -610,17 +700,17 @@ struct GradientSymb : RefCountedBase
     };
 
 protected:
-    Mode m_mode;
-    uint16_t m_flags;
-    uint16_t m_nKeys;
-    double m_angle;
-    double m_tint;
-    double m_shift;
+    Mode m_mode = Mode::None;
+    Flags m_flags = Flags::None;
+    uint32_t m_nKeys = 0;
+    double m_angle = 0.0;
+    double m_tint = 0.0;
+    double m_shift = 0.0;
     ColorDef m_colors[MAX_GRADIENT_KEYS];
     double   m_values[MAX_GRADIENT_KEYS];
 
 public:
-    GradientSymb() {memset(&m_mode, 0, offsetof(GradientSymb, m_values) + sizeof(m_values) - offsetof(GradientSymb, m_mode));}
+    GradientSymb() {}
     
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
@@ -630,19 +720,19 @@ public:
     //! Compare two GradientSymb.
     DGNPLATFORM_EXPORT bool operator==(GradientSymbCR rhs) const;
 
-    int GetNKeys() const {return m_nKeys;}
+    uint32_t GetNKeys() const {return m_nKeys;}
     Mode GetMode() const {return m_mode;}
-    uint16_t GetFlags() const {return m_flags;}
+    Flags GetFlags() const {return m_flags;}
     double GetShift() const {return m_shift;}
     double GetTint() const {return m_tint;}
     double GetAngle() const {return m_angle;}
-    void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index], value = m_values[index];}
+    void GetKey(ColorDef& color, double& value, int index) const {color = m_colors[index]; value = m_values[index];}
     void SetMode(Mode mode) {m_mode = mode;}
-    void SetFlags(uint16_t flags) {m_flags = flags;}
+    void SetFlags(Flags flags) {m_flags = flags;}
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
-    DGNPLATFORM_EXPORT void SetKeys(uint16_t nKeys, ColorDef const* colors, double const* values);
+    DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
 };
 
 //=======================================================================================
@@ -971,7 +1061,7 @@ struct Graphic : RefCounted<NonCopyableClass>
     struct CreateParams
     {
         DgnViewportCP m_vp;
-        Transform     m_placement;
+Transform     m_placement;
         double        m_pixelSize;
         CreateParams(DgnViewportCP vp=nullptr, TransformCR placement=Transform::FromIdentity(), double pixelSize=0.0) : m_vp(vp), m_pixelSize(pixelSize), m_placement(placement) {}
     };
@@ -1465,10 +1555,16 @@ public:
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
-struct GraphicArray
+struct GraphicBranch
 {
+    ClipPrimitiveCP m_clip = nullptr;
+    bool m_hasFlags = false;
+    ViewFlags m_viewFlags;
     bvector<GraphicPtr> m_entries;
+
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
+    void SetClip(ClipPrimitiveCP clip) {m_clip = clip;}
+    void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
 };
 
 //=======================================================================================
@@ -1478,10 +1574,15 @@ struct GraphicArray
 //=======================================================================================
 struct System
 {
+    //! Get or create a material from a material element, by id
     virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
+
+    //! Create a Material from parameters
+    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
+
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
-    virtual GraphicPtr _CreateGroupNode(Graphic::CreateParams const& params, GraphicArray& entries, ClipPrimitiveCP clip) const = 0;
+    virtual GraphicPtr _CreateBranch(Graphic::CreateParams const& params, GraphicBranch& branch) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
@@ -1489,10 +1590,10 @@ struct System
     virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const = 0;
 
     //! Create a new Texture from an Image.
-    virtual TexturePtr _CreateTexture(ImageCR image) const = 0;
+    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a new Texture from an ImageSource.
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp) const = 0;
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const = 0;
 
     //! Create a Texture from a graphic.
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const = 0;
