@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRef.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -291,8 +291,8 @@ ViewportP      viewport
         DPoint3d point;
 
         dtm->GetRange (range);
-        endPt -= startPt;
-        if (!range.intersectRay (nullptr, nullptr, &sP, &eP, &startPt, &endPt))
+        DVec3d diagonalVector = DVec3d::FromStartEnd (startPt, endPt);
+        if (!range.intersectRay (nullptr, nullptr, &sP, &eP, &startPt, &diagonalVector))
             return false;
 
         // Non Top View

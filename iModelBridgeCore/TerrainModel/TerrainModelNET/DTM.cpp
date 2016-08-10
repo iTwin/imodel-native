@@ -31,7 +31,7 @@ void GetVectorPointsFromIEnumerable (bvector<DPoint3d>& pts, System::Collections
     {
     for each (BGEO::DPoint3d pt in points)
         {
-        pts.push_back(*(DPoint3d*)&pt);
+        pts.push_back(DPoint3d::From(pt.X, pt.Y, pt.Z));
         }
     }
 

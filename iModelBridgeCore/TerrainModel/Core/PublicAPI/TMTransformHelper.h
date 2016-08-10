@@ -728,7 +728,7 @@ struct TMTransformHelper : RefCountedBase
             }
 
         // Call back wrappers for converting the coordinates
-        struct PFTriangleMeshCallbackWrapper 
+        struct PFTriangleMeshCallbackWrapper
             {
             DTMTriangleMeshCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -742,7 +742,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (featureType, numTriangles, numMeshPoints, meshPointsP, numMeshFaces, meshFacesP, data->userP);
             }
 
-        struct PFDuplicatePointsCallbackWrapper 
+        struct PFDuplicatePointsCallbackWrapper
             {
             DTMDuplicatePointsCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -760,7 +760,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (x, y, dupErrorsP, numDupErrors, data->userP);
             }
 
-        struct PFCrossingFeaturesCallbackWrapper 
+        struct PFCrossingFeaturesCallbackWrapper
             {
             DTMCrossingFeaturesCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -779,7 +779,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (crossError, data->userP);
             }
 
-        struct PFBrowseSinglePointFeatureCallbackWrapper 
+        struct PFBrowseSinglePointFeatureCallbackWrapper
             {
             DTMBrowseSinglePointFeatureCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -794,7 +794,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (featureType, &pt, data->userP);
             }
 
-        struct PFBrowseContourCallbackWrapper 
+        struct PFBrowseContourCallbackWrapper
             {
             DTMFeatureCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -807,7 +807,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (featureType, featureTag, featureId, tPoint, (int)nPoint, data->userP);
             }
 
-        struct PFBrowseFeatureCacheCallbackWrapper 
+        struct PFBrowseFeatureCacheCallbackWrapper
             {
             DTMBrowseFeatureCacheCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -825,7 +825,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (cache, data->userP);
             }
 
-        struct PFBrowseFeatureCallbackWrapper 
+        struct PFBrowseFeatureCallbackWrapper
             {
             DTMFeatureCallback callback;
             bcDTMTransformWrapper* wrapper;

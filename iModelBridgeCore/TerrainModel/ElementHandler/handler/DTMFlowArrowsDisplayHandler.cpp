@@ -160,7 +160,8 @@ private:
         m_pointDrawer->CreateSymbolFromPointDisplayParams (m_dp, m_textStyleId);
         DPoint3d pts[2];
 
-        pts[0] = ( trianglePts[0] + trianglePts[1] + trianglePts[2] ) / 3.;
+        double a = 1.0 / 3.0;
+        pts[0] = DPoint3d::FromSumOf (trianglePts[0], a, trianglePts[1], a, trianglePts[2], a);
         double dc_pi = Angle::Pi();
         pts[1].x = (1.5 * dc_pi) - ((aspect * dc_pi) / 180.0);
         pts[1].y = pts[1].x - dc_pi;
