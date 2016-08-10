@@ -107,7 +107,7 @@ LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
-                   $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(stlibext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
 
 %if defined (BENTLEYCONFIG_FOLLY)

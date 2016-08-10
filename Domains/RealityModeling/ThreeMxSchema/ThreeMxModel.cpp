@@ -174,7 +174,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
-    args.DrawGraphics();  // the nodes that newly arrived drew into the GraphicsArray in the DrawArgs. Add them to the context in a GroupNode
+    args.DrawGraphics(context);  // the nodes that newly arrived drew into the GraphicsArray in the DrawArgs. Add them to the context in a GroupNode
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
@@ -197,16 +197,25 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics()
+void DrawArgs::DrawGraphics(ViewContextR context)
     {
     if (m_graphics.m_entries.empty())
         return;
 
     DEBUG_PRINTF("3MX drawing %d 3mx nodes", m_graphics.m_entries.size());
 
-    auto group = m_context.CreateGroupNode(Graphic::CreateParams(nullptr, m_scene.GetLocation()), m_graphics, nullptr);
-    BeAssert(m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
-    m_context.OutputGraphic(*group, nullptr);
+    ViewFlags flags = context.GetViewFlags();
+    flags.SetRenderMode(Render::RenderMode::SmoothShade);
+    flags.m_textures = true;
+    flags.m_visibleEdges = false;
+    flags.m_shadows = false;
+    flags.m_ignoreLighting = true;
+    m_graphics.SetViewFlags(flags);
+
+    auto branch = m_context.CreateBranch(Graphic::CreateParams(nullptr, m_scene.GetLocation()), m_graphics);
+    
+    BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
+    m_context.OutputGraphic(*branch, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,7 +247,6 @@ DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelNameIn, Utf8CP scene
     model->SetSceneFile(sceneFile);
     if (trans)
         model->SetLocation(*trans);
-
 
     model->Insert();
     return model->GetModelId();
@@ -288,7 +296,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     m_scene->Draw(args);
     DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->CountNodes(), args.m_missing.size());
 
-    args.DrawGraphics();
+    args.DrawGraphics(context);
 
     if (!args.m_missing.empty())
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing));

@@ -185,7 +185,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
 
     uint32_t buffersCount = 0;
 
-    Dgn::Render::GraphicArray graphicArray;
+    Dgn::Render::GraphicBranch graphicArray;
 
     while (1)
         {
@@ -269,7 +269,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
 
     if (!graphicArray.m_entries.empty())
         {
-        auto graphicGroup = context.CreateGroupNode(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()), graphicArray, nullptr);
+        auto graphicGroup = context.CreateBranch(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()), graphicArray);
         context.OutputGraphic(*graphicGroup, nullptr);
 
         if (pGraphicsPtr != nullptr)

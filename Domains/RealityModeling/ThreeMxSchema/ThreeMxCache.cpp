@@ -200,7 +200,8 @@ StatusInt ThreeMxFileData::SaveToDb() const
     if (m_node.IsValid()) // for the root, store NULL for time. That way it will never get purged.
         stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
 
-    if (BE_SQLITE_DONE != stmt->Step())
+    auto rc = stmt->Step();
+    if (BE_SQLITE_DONE != rc)
         {
         BeAssert(false);
         return ERROR;
