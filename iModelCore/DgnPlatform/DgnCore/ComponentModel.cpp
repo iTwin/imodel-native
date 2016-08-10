@@ -1590,7 +1590,7 @@ ECN::ECSchemaPtr ComponentDefCreator::GenerateSchema(DgnDbR db, Utf8StringCR sch
     if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
         return nullptr;
 
-    schema->SetNamespacePrefix(schemaName);
+    schema->SetAlias(schemaName);
     
     return schema;
     }
