@@ -1326,6 +1326,7 @@ protected:
     //! @param[in]  context         The read context that contains information about schemas used for deserialization
     //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
     //! @param[in]  ecXmlVersionMajor The major version of the ECXml spec used for serializing this ECClass
+    //! @param[in]  ecXmlVersionMinor The minor version of the ECXml spec used for serializing this ECClass
     //! @param[out] navigationProperties A running list of all navigation properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties);
@@ -2008,7 +2009,7 @@ public:
     //!     constructor of RelationshipMultiplicity to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipMultiplicityCR OneMany();
 
-    //! Compares the two Cardinalities and returns whether they are equal (0). Otherwise the
+    //! Compares the two Multiplicities and returns whether they are equal (0). Otherwise the
     //! larger scope will be returned either rhs (1) or lhs (-1)
     ECOBJECTS_EXPORT static int Compare(RelationshipMultiplicity const& lhs, RelationshipMultiplicity const& rhs);
 };
