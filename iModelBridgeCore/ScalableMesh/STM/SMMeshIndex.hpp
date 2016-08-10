@@ -263,14 +263,14 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         ISDiffSetDataStorePtr nodeDiffsetStore;
         result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                        
         assert(result == true && nodeDiffsetStore.IsValid());         
-        nodeDiffsetStore->DestroyBlock(GetBlockID());        
+        if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
         GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex);
         ISMInt32DataStorePtr nodeFeatureStore;
         result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeFeatureStore, &m_nodeHeader, SMStoreDataType::LinearFeature);
         assert(result == true && nodeFeatureStore.IsValid());         
-        nodeFeatureStore->DestroyBlock(GetBlockID());
+        if (nodeFeatureStore.IsValid()) nodeFeatureStore->DestroyBlock(GetBlockID());
         m_featurePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
        
         GetMemoryPool()->RemoveItem(m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex);
@@ -2818,8 +2818,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::GetMesh
     if(m_meshParts.empty()) return;
     ISMInt32DataStorePtr nodeDataStore;
     HPMBlockID blockId = HPMBlockID(m_nodeId);
-    bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::MeshParts);
-    assert(result == true);
+    m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::MeshParts);
     if(m_meshParts.size() > 0)
         {
         nodeDataStore->StoreBlock(&m_meshParts[0], m_meshParts.size(), blockId);
@@ -2862,8 +2861,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::StoreMe
     {
     if(m_meshParts.empty()) return;
     ISMTextureDataStorePtr nodeDataStore;
-    bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::Metadata);
-    assert(result == true);
+    m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::Metadata);
 
     HPMBlockID blockId = HPMBlockID(m_nodeId);
     bvector<unsigned char> str;

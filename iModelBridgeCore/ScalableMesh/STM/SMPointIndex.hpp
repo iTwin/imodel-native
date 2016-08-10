@@ -7670,7 +7670,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
     {    
 
     m_pRootNode->PropagateDataDownImmediately (true);
-#ifndef WIP_MESH_IMPORT    
+//#ifndef WIP_MESH_IMPORT    
     //size_t depth = m_pRootNode->GetDepth();    
 
     //NEEDS_WORK_SM - Not good when removing points, probably only good when adding points. 
@@ -7698,7 +7698,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
         }
 
     assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());    
-#endif
+//#endif
     //assert(depth == m_pRootNode->GetDepth());
     }
 

@@ -766,6 +766,106 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
     return status;    
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMeshContextMeshQuery::ScalableMeshContextMeshQuery
++----------------------------------------------------------------------------*/
+    template <class POINT> ScalableMeshContextMeshQuery<POINT>::ScalableMeshContextMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
+        : ScalableMeshViewDependentMeshQuery(pointIndexPtr)
+    {          
+    }       
+
+/*----------------------------------------------------------------------------+
+|ScalableMeshContextMeshQuery::~ScalableMeshContextMeshQuery
++----------------------------------------------------------------------------*/
+    template <class POINT> ScalableMeshContextMeshQuery<POINT>::~ScalableMeshContextMeshQuery()
+    {
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMeshContextMeshQuery::Query
++----------------------------------------------------------------------------*/
+    template <class POINT> int ScalableMeshContextMeshQuery<POINT>::_Query(IScalableMeshMeshPtr&                                meshPtr,
+                                                                             const DPoint3d*                               pQueryExtentPts,
+                                                                             int                                           nbQueryExtentPts,
+                                                                             const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const
+    {
+    int status = S_SUCCESS;
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
+
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
+
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
+        nbQueryExtentPts,
+        minZ,
+        maxZ));
+
+    double viewportRotMatrix[3][3];
+    double rootToViewMatrix[4][4];
+
+    IScalableMeshViewDependentMeshQueryParamsPtr scmViewDependentParamsPtr = IScalableMeshViewDependentMeshQueryParamsPtr(dynamic_cast<ScalableMeshViewDependentMeshQueryParams*>(scmQueryParamsPtr.get()));
+
+    memcpy(rootToViewMatrix, scmViewDependentParamsPtr->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
+
+    ScalableMeshQuadTreeContextMeshQuery<POINT, Extent3dType>* contextQueryP(new ScalableMeshQuadTreeContextMeshQuery < POINT, Extent3dType >
+                                                                                         (queryExtent,
+                                                                                         rootToViewMatrix,
+                                                                                         viewportRotMatrix,
+                                                                                         scmViewDependentParamsPtr->GetViewClipVector()
+                                                                                         )
+                                                                                         );
+
+    if (!m_scmIndexPtr->Query(contextQueryP.get(), meshPtr,
+        scmViewDependentParamsPtr->GetStopQueryCallback()))
+        {
+        status = S_ERROR;
+        }
+
+    return status;
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMeshContextMeshQuery::Query
++----------------------------------------------------------------------------*/
+template <class POINT> int ScalableMeshContextMeshQuery<POINT>::_Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                                                                             const DPoint3d*                               pQueryExtentPts,
+                                                                             int                                           nbQueryExtentPts,
+                                                                             const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const
+    {
+    int status = S_SUCCESS;
+    Extent3dType contentExtent(m_scmIndexPtr->GetContentExtent());
+
+    double minZ = ExtentOp<Extent3dType>::GetZMin(contentExtent);
+    double maxZ = ExtentOp<Extent3dType>::GetZMax(contentExtent);
+
+    Extent3dType queryExtent(ScalableMeshPointQuery::GetExtentFromClipShape<Extent3dType>(pQueryExtentPts,
+        nbQueryExtentPts,
+        minZ,
+        maxZ));
+
+    IScalableMeshViewDependentMeshQueryParamsPtr scmViewDependentParamsPtr = IScalableMeshViewDependentMeshQueryParamsPtr(dynamic_cast<ScalableMeshViewDependentMeshQueryParams*>(scmQueryParamsPtr.get()));
+
+    double viewportRotMatrix[3][3];
+    double rootToViewMatrix[4][4];
+    memcpy(rootToViewMatrix, scmViewDependentParamsPtr->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
+
+    ScalableMeshQuadTreeContextMeshQuery<POINT, Extent3dType>* contextQueryP(new ScalableMeshQuadTreeContextMeshQuery < POINT, Extent3dType >
+                                                                             (queryExtent,
+                                                                             rootToViewMatrix,
+                                                                             viewportRotMatrix,
+                                                                             scmViewDependentParamsPtr->GetViewClipVector()
+                                                                             )
+                                                                             );
+
+    if (!m_scmIndexPtr->Query(contextQueryP.get(), meshNodes,
+        scmViewDependentParamsPtr->GetStopQueryCallback()))
+        {
+        status = S_ERROR;
+        }
+
+    return status;
+    }
+
 template <class POINT> ScalableMeshFullResolutionMeshQuery<POINT>::ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr)
     {
     m_scmIndexPtr = pointIndexPtr;

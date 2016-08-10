@@ -996,11 +996,11 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
         void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
         void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
 
-    private:
+
+    protected:
 
         HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
 
-    protected:
 
         // Inherited from IScalableMeshMeshQuery
         virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
@@ -1019,6 +1019,37 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
 
         virtual ~ScalableMeshViewDependentMeshQuery();
     };
+
+template <class POINT> class ScalableMeshContextMeshQuery : public ScalableMeshViewDependentMeshQuery<POINT>
+    {
+    public:
+        void*   operator new(size_t size){ return bentleyAllocator_allocateRefCounted(size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted(rawMemory, size); }
+        void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
+
+    
+
+    protected:
+
+        // Inherited from IScalableMeshMeshQuery
+        virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+    public:
+
+        ScalableMeshContextMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
+
+        virtual ~ScalableMeshContextMeshQuery();
+    };
+
 
 template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalableMeshMeshQuery
     {

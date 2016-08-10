@@ -351,7 +351,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             isSingleFile = true;
 
         ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
-        ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;//SCM_FILTER_DUMB_MESH;
+        ScalableMeshFilterType filterType = SCM_FILTER_DUMB_MESH;
         ScalableMeshSaveType saveType = SCM_SAVE_STMFILE;
         int trimmingMethod = 5;
 

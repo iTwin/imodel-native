@@ -1575,24 +1575,6 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
 
     DPoint3d triangle[4];
 
-   /* for (unsigned int t = 0; t < m_nbFaceIndexes; t += 3)
-        {
-        for (int i = 0; i < 3; i++)
-            triangle[i] = m_points[m_faceIndexes[i + t] - 1];
-
-        triangle[3] = triangle[0];
-
-        std::swap(triangle[1], triangle[2]);
-        //colinearity test
-        if (triangle[0].AlmostEqualXY(triangle[1]) || triangle[1].AlmostEqualXY(triangle[2]) || triangle[2].AlmostEqualXY(triangle[0])) continue;
-        DSegment3d triSeg = DSegment3d::From(triangle[0], triangle[1]);
-        double param;
-        DPoint3d closestPt;
-        triSeg.ProjectPointXY(closestPt, param, triangle[2]);
-        if (closestPt.AlmostEqualXY(triangle[2])) continue;
-
-        bcdtmObject_storeDtmFeatureInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, bcdtm->GetTinHandle()->nullUserTag, 1, &bcdtm->GetTinHandle()->nullFeatureId, &triangle[0], 4);
-        }*/
 
     bvector<int> indices;
     bvector<DPoint3d> pts;
