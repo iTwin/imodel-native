@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentSpecification::ContentSpecification() : m_priority(1000) {}
+ContentSpecification::ContentSpecification() : m_priority(1000), m_showImages(false) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
