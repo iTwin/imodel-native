@@ -1312,8 +1312,6 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, bool applyAllClips = false) const;
-
         void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
@@ -1322,11 +1320,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool    _ArePointsFullResolution() const override;
 
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
-
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
@@ -1400,9 +1396,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
     protected: 
 
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
-
-            virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
             virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
@@ -1535,9 +1529,7 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
     private:
         GeoCoords::Reprojection  m_reprojectFunction;
     protected:
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
-
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
     public:

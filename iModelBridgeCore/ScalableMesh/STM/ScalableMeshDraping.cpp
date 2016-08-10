@@ -311,10 +311,10 @@ bool NodeMeshIntersectsRay(bool& extentIntersectsRay, MeshTraversalStep& step,  
             }
         else
             {
-            bvector<bool> clips;
+
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             flags->SetLoadGraph(true);
-            meshP = node->GetMesh(flags,clips);
+            meshP = node->GetMesh(flags);
             if (!findTriangleAlongRay) withinMesh = meshP->FindTriangleForProjectedPoint(triangle, step.startPoint, !node->ArePoints3d());
             if (findTriangleAlongRay || !withinMesh)
                 {

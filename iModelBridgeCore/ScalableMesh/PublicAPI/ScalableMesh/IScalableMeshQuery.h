@@ -494,11 +494,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool    _ArePointsFullResolution() const = 0;
 
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const = 0;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const = 0;
-
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const = 0;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const = 0;
 
@@ -558,11 +556,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT bool          ArePointsFullResolution() const;
         
-        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const;
+        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMesh(IScalableMeshMeshFlagsPtr& flags) const;
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags,uint64_t clip) const;
-
-        BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bvector<bool>& clipsToShow) const;
 
         BENTLEY_SM_EXPORT IScalableMeshMeshPtr GetMeshByParts(bset<uint64_t>& clipsToShow) const;
 

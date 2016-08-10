@@ -251,11 +251,11 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
             poolMemItemPtr = storedMemoryPoolItem.get();
-            bvector<bool> clips;
+
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
             IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
-            auto meshP = nodeP->GetMesh(flags, clips);
+            auto meshP = nodeP->GetMesh(flags);
             if (meshP != nullptr)
                 {
                 auto ptrP = storedMemoryPoolItem->EditData();

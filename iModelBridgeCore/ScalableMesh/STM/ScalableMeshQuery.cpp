@@ -2363,19 +2363,14 @@ bool IScalableMeshNode::ArePointsFullResolution() const
     return _ArePointsFullResolution();
     }
 
-IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const
+IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags) const
     {
-    return _GetMesh(flags, clipsToShow);
+    return _GetMesh(flags);
     }  
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const
     {
     return _GetMeshUnderClip(flags, clip);
-    }
-
-IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bvector<bool>& clipsToShow) const
-    {
-    return _GetMeshByParts(clipsToShow);
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow) const

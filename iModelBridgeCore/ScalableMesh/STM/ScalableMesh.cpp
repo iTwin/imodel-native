@@ -1381,15 +1381,15 @@ DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP)
             }
         }
     if (returnedNodes.size() == 0) return DTM_ERROR;
-    bvector<bool> clips;
+
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-    auto meshPtr = returnedNodes.front()->GetMesh(flags, clips);
+    auto meshPtr = returnedNodes.front()->GetMesh(flags);
     ScalableMeshMesh* meshP = dynamic_cast<ScalableMeshMesh*>(meshPtr.get());
     //add all triangles from returned nodes to DTM
     for (auto nodeIter = returnedNodes.begin() + 1; nodeIter != returnedNodes.end(); ++nodeIter)
         {
         if ((*nodeIter)->GetPointCount() <= 4) continue;
-        auto currentMeshPtr = (*nodeIter)->GetMesh(flags, clips);
+        auto currentMeshPtr = (*nodeIter)->GetMesh(flags);
         if (!currentMeshPtr.IsValid()) continue;
         bvector<int32_t> indices(currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCount());
         memcpy(&indices[0], currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCP(), indices.size()*sizeof(int32_t));
@@ -1530,10 +1530,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
     DRange3d rangeCurrent = DRange3d::From(current);
     for (auto& node : returnedNodes)
         {
-        bvector<bool> clips;
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(true);
-        auto meshP = node->GetMesh(flags, clips);
+        auto meshP = node->GetMesh(flags);
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
