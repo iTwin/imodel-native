@@ -11,7 +11,7 @@ import os, sys, re
 # bsimethod                                     Sam.Wilson      05/2016
 #-------------------------------------------------------------------------------------------
 def checkLogFileForFailures(logfilename):
-    report = '\n' + logfilename 
+    report = '\n' + logfilename + '\n'
 
     failureCount = 0
 
@@ -24,7 +24,7 @@ def checkLogFileForFailures(logfilename):
     
             if lineNo == 0:
                 if lline.startswith('android junit tests were not run'):
-                    report = report + '\n' + line
+                    report = report + line
                     return 0,report
 
             lineNo = lineNo + 1
