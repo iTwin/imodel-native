@@ -875,8 +875,6 @@ TEST_F(DgnDbServerEventParserTests, LockEventTests)
 	EXPECT_EQ(objectIds, lockEvent1.GetObjectIds());
     }
 
-#endif
-    
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
@@ -1041,3 +1039,4 @@ TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidDeletedEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidDeletedEvent()));
     }
+#endif

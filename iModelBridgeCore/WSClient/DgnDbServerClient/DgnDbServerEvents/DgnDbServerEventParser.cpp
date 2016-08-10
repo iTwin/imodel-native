@@ -62,7 +62,8 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    data.isMember(DgnDbServerEvent::CodeEventProperties::Namespace) &&
 			    data.isMember(DgnDbServerEvent::CodeEventProperties::Values) &&
 			    data[DgnDbServerEvent::CodeEventProperties::Values].isArray() &&
-			    data.isMember(DgnDbServerEvent::CodeEventProperties::State) &&
+			    data.isMember(DgnDbServerEvent::CodeEventProperties::Reserved) &&
+			    data.isMember(DgnDbServerEvent::CodeEventProperties::Used) &&
 			    data.isMember(DgnDbServerEvent::CodeEventProperties::BriefcaseId) &&
 			    data.isMember(DgnDbServerEvent::CodeEventProperties::UsedWithRevision)
 			    )
@@ -169,7 +170,8 @@ DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
 		(*data)[DgnDbServerEvent::CodeEventProperties::CodeAuthorityId].asString(),
 		(*data)[DgnDbServerEvent::CodeEventProperties::Namespace].asString(),
 		values,
-		(*data)[DgnDbServerEvent::CodeEventProperties::State].asString(),
+		(*data)[DgnDbServerEvent::CodeEventProperties::Reserved].asString(),
+		(*data)[DgnDbServerEvent::CodeEventProperties::Used].asString(),
 		(*data)[DgnDbServerEvent::CodeEventProperties::BriefcaseId].asString(),
 		(*data)[DgnDbServerEvent::CodeEventProperties::UsedWithRevision].asString()
 	    );
