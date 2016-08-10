@@ -26,9 +26,6 @@ Examples:
     SchemaResourceGenerator "c:\test data\House.01.00.02.ecschema.xml"
         Outputs: c:\testdata\House.01.00.02.en.xliff
         
-    SchemaResourceGenerator c:\SampleSchema.01.00.00.ecschema.xml -ns -r c:\myschema;"c:\other schemas"
-        Outputs: SampleSchema.01.00.00.en.resx
-        
     SchemaResourceGenerator c:\testdata\House.01.00.00.en.resx -c en-US
         Outputs: House_Supplemental_Localization_en_US.01.00.00.ecschema.xml
 )***"
