@@ -350,7 +350,7 @@ struct AutoHandledPropertiesCollection
 *   * Its _Clone method should call super and then copy its aspects. 
 *   * Its _CloneForImport method should call super, then copy over its aspects, and then tell the copied Aspects to remap their IDs.
 *
-* @note If you override any of the virtual methods mentioned above, you probably also need to set @ref ElementRestrictions
+* @note If a DgnElement subclass overrides any of the virtual methods mentioned above, then the corresponding ECClass should also specify @ref ElementRestrictions
 *
 * @see ElementRestrictions
 * @see @ref PAGE_ElementOverview
@@ -362,7 +362,7 @@ struct AutoHandledPropertiesCollection
 * Element restrictions specify what operations may be applied to an element when its handler is not present. 
 * Restrictions are specified in the ECSchema definition of an Element subclass.
 *
-* <b><em>If your DgnElement subclasss needs to do validation, then your dgn.Element should be restricted.</em></b>
+* <b><em>If a DgnElement subclasss needs to do validation, then the corresponding dgn.Element ECClass should specify restrictions.</em></b>
 *
 * As a rule of thumb, if you write a subclass of dgn_ElementHandler::Element, then you should probably restrict all actions in your Element's schema definition.
 *
@@ -398,8 +398,10 @@ struct AutoHandledPropertiesCollection
 * The base class implementation of DgnElement::_GetProperty and DgnElement::_SetProperty will provide access to all custom-handled properties.
 * New or updated auto-handled properties are automatically written to the Db when the element is inserted or updated.
 *
-* @note A domain must define a handler for an element subclass in order to <em>validate</em> property values or to generate side-effects when properties are modified.
-* In this case, the schema should also specify @ref ElementRestrictions.
+* <h4>Validating Auto-Handled Properties</h4>
+* The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
+* Beyond that, in order to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
+* the DgnElement::_SetProperty method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
 * If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
@@ -409,7 +411,7 @@ struct AutoHandledPropertiesCollection
 * the custom-handled properties. The subclass must also override DgnElement::_GetProperty and DgnElement::_SetProperty to provide name-based get/set support for its custom-handled properties.
 * Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods in order to support copying and importing of its custom-handled properties.
 * An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
-* @note You must override DgnElement::_GetProperty and DgnElement::_SetProperty to provide access to your custom-handled properties, even if you also define special custom access methods for them.
+* @note A class that has custom-handled properties must override DgnElement::_GetProperty and DgnElement::_SetProperty to provide access to those properties, even if it also define special custom access methods for them.
 * 
 * @see @ref ElementRestrictions
 * @see @ref PAGE_ElementOverview
@@ -996,7 +998,7 @@ protected:
     //! implementation and your superclass succeed.)
     //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
-    //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
+    //! @note If this element's data holds any IDs, it must also override _RemapIds. Also see _AdjustPlacementForImport
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source);
 
     //! Make a (near) duplicate of yourself in memory, in preparation for copying from another element that <em>may be</em> in a different DgnDb.
@@ -1275,7 +1277,9 @@ public:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const;
     DgnDbStatus GetProperty(ECN::ECValueR value, Utf8CP name) const {return _GetProperty(value, name);}
 
-    //! Set the value of a property. @note you must call Update in order to write the modified property to the DgnDb.  Also see @ref ElementProperties.
+    //! Set the value of a property. 
+    //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
+    //! its modified property to the DgnDb. Also see @ref ElementProperties.
     //! @param value The returned value
     //! @param name The name of the property
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
@@ -2197,7 +2201,7 @@ public:
     //! @param stat     Optional. If not null, an error status is returned here if the element cannot be created.
     //! @param properties The instance that contains all of the element's business properties
     //! @return a new, non-persistent element if successfull, or an invalid ptr if not.
-    //! @note The returned element, if any, is non-persistent. You must call its Insert method to add it to the bim.
+    //! @note The returned element, if any, is non-persistent. The caller must call the element's Insert method to add it to the bim.
     DGNPLATFORM_EXPORT DgnElementPtr CreateElement(DgnDbStatus* stat, ECN::IECInstanceCR properties);
 
     //! Get a DgnElement from this DgnDb by its DgnElementId.

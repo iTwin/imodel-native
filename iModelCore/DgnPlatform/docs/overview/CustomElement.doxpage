@@ -30,7 +30,7 @@ __PUBLISH_INSERT_FILE__ ToyTileElement_Declare.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->
-@section SECTION_CustomElement3 Override element virtual methods
+@section SECTION_CustomElement3 Define element virtual methods
 
 __PUBLISH_INSERT_FILE__ ToyTileElement_VirtualMethods.sampleCode
 

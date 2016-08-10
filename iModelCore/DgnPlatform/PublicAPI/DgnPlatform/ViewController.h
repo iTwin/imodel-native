@@ -677,10 +677,38 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    bool       m_isCameraOn;       //!< if true, m_camera is valid.
-    CameraInfo m_camera;           //!< Information about the camera lens used for the view.
+    struct Environment
+    {
+        struct GroundPlane
+        {
+            Byte m_edgeAlpha = 0xff;
+            Byte m_centerAlpha = 0x80;
+            Render::GradientSymb::Mode m_mode = Render::GradientSymb::Mode::Spherical;
+            AxisAlignedBox3d m_extents;
+            ColorDef m_color;
+            double GetElevation() const {return m_extents.low.z;}
+            bool IsValid() const {return m_extents.IsValid();}
+            void Draw(DecorateContextR);
+        };
+
+        struct SkyBox : ViewController::AppData
+        {
+            Render::MaterialPtr m_material;
+            SkyBox(JsonValueCR, Render::SystemCR system);
+            Render::TexturePtr LoadSkyBox(Utf8CP fileName, Render::SystemCR system);
+            void Draw(TerrainContextR);
+        };
+
+        enum class Projection
+        {
+            Cylindrical = 1,
+            Spherical = 2,
+        };
+    };
 
 protected:
+    bool m_isCameraOn;    //!< if true, m_camera is valid.
+    CameraInfo m_camera;  //!< Information about the camera lens used for the view.
 
     virtual CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR) override;
@@ -690,6 +718,12 @@ protected:
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
+    DGNPLATFORM_EXPORT virtual void _CreateTerrain(TerrainContextR context) override;
+
+    JsonValueCP GetEnvironmentSetting(Utf8CP) const;
+    Environment::GroundPlane GetGroundPlane(DgnViewportCR vp) const;
+    RefCountedPtr<Environment::SkyBox> GetSkyBox(DgnViewportCR vp) const;
+    void DrawEnvironment(DecorateContextR context);
 
 public:
     void VerifyFocusPlane();
