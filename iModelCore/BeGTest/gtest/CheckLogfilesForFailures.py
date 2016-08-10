@@ -37,11 +37,12 @@ def checkLogFileForFailures(logfilename):
                 continue
             
             if not foundSummary:
-                # Ignore everything until we hit the summary
+                # We don't look for much in the log before the summary. 
                 if summarypat.search(line) != None:
                     summarystr = summarystr + line
                     foundSummary = True
                 else:
+                    # We do keep track of the last test run, in case we need to report a crash or early exit
                     run = runpat.search(line)
                     if run != None:
                         lastTestRun = run.group(1)
@@ -49,10 +50,10 @@ def checkLogFileForFailures(logfilename):
                 continue
 
             else:
+                # The summary has the results, either the count of tests run or a list of failing tests.
                 if line.find('FAILED TESTS') != -1:
                     anyFailures = True
 
-                # Get the list of failures
                 failed = failedpat.search(line)
                 if failed != None:
                     failedTestsList = failedTestsList + comma + failed.group(1)
