@@ -87,13 +87,7 @@ protected:
 public:
     DgnViewId GetViewId() const { return DgnViewId(GetElementId().GetValue()); } //!< This view definition's ID
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
-    DGNPLATFORM_EXPORT Utf8StringCR GetDescr() const; //!< This view definition's description
-    DGNPLATFORM_EXPORT DgnViewSource GetSource() const; //!< This view definition's source
-
     DgnDbStatus SetName(Utf8StringCR name) { return SetCode(CreateCode(name)); } //!< Change this view definition's name
-    DGNPLATFORM_EXPORT void SetDescr(Utf8StringCR descr); //!< Change this view definition's description
-    DGNPLATFORM_EXPORT void SetSource(DgnViewSource source); //!< Change this view definition's source
-    DGNPLATFORM_EXPORT void SetBaseModelId(DgnModelId modelId); //!< Change the base model ID
 
     //! Inserts into the database and returns the new persistent copy.
     ViewDefinitionCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status); }
@@ -220,12 +214,7 @@ public:
     SheetViewDefinitionP ToSheetViewP() { return const_cast<SheetViewDefinitionP>(ToSheetView()); }
 
     ViewControllerPtr LoadViewController(bool allowOverrides, FillModels fillModels) const; //!< @private
-
-    DGNPLATFORM_EXPORT DgnElementId GetCategorySelector() const; //!< Get the CategorySelector used by this view
-    DGNPLATFORM_EXPORT DgnElementId GetDisplayStyle() const; //!< Get the DisplayStyle used by this view
-    DGNPLATFORM_EXPORT DgnDbStatus SetCategorySelector(DgnElementId); //!< Set the CategorySelector used by this view
-    DGNPLATFORM_EXPORT DgnDbStatus SetDisplayStyle(DgnElementId); //!< Set the DisplayStyle used by this view
-};
+    };
 
 //=======================================================================================
 //! Defines a view of a 3d model.
