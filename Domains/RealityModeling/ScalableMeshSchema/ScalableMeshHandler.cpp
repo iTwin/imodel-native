@@ -187,7 +187,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
 
-    Render::GraphicArray graphics; 
+    Render::GraphicBranch graphics; 
     
     if (overviewMeshNodes.size() > 0)
         {
@@ -288,7 +288,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     storageToUorsTransform.InitFrom(storageToUors);
     //context.PushTransform(storageToUorsTransform);
 
-    auto group = context.CreateGroupNode(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics, nullptr);    
+    auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);    
     context.OutputGraphic(*group, nullptr);    
     }
 
