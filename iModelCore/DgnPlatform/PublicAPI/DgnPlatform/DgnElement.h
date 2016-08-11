@@ -803,6 +803,10 @@ protected:
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
+    //! Return the value of a boolean ECProperty by name
+    //! @note Returns false if underlying property is null.  Use GetProperty if this behavior is not acceptable.
+    //! @see GetProperty
+    DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName) const;
     //! Return the value of a double ECProperty by name
     //! @note Returns 0.0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
     //! @see GetProperty
@@ -823,6 +827,9 @@ protected:
     //! Return the value of a string ECProperty by name
     DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName) const;
 
+    //! Set a boolean ECProperty by name
+    //! @see SetProperty
+    DGNPLATFORM_EXPORT void SetPropertyValue(Utf8CP propertyName, bool value);
     //! Set a double ECProperty by name
     //! @see SetProperty
     DGNPLATFORM_EXPORT void SetPropertyValue(Utf8CP propertyName, double value);
