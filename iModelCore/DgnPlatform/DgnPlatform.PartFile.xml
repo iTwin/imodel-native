@@ -64,7 +64,6 @@
 
         <!--
             Barry: For full geocoordinate capabilities, the datum conversion files are required to allow you to convert from whatever datum the GCS uses to WGS84. If our publishing code (which will have access to the datum shift files) was always able to convert from a non-WGS84-based GCS to a WGS84-based GCS as it publishes DgnDb’s, we would not need those files. I do not know whether that is always possible, perhaps Alain Robert could comment.
-
             JM: We end up with the full geocoord set on Windows and iOS due to other platform-specific parts including it. These are missing on Android, and it is suspected to cause problems. Based on the description above, I am unifying DgnPlatformDLL to use the full set, so at least we're consistent across platforms.
         -->
         <SubPart PartName="GeoCoordData" PartFile="csmap" Repository="libsrc-csmap"/>
@@ -78,7 +77,7 @@
             <Files Required="false" ProductDirectoryName="GeomJsApiTs" SubPartDirectory="Script/GeomJsApiTs">Delivery/GeomJsApi.d.ts</Files>
             <Directory Required="false" SubPartDirectory="DgnJsApiDoc" SourceName="Delivery/internal-docs/DgnJsApi" />
             <Directory Required="false" SubPartDirectory="GeomJsApiDoc" SourceName="Delivery/internal-docs/GeomJsApi" />
-            <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
+            <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" Required="false" />
         </Bindings>
     </Part>
 

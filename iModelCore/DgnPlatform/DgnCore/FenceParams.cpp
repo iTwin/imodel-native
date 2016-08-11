@@ -83,11 +83,11 @@ virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _CreateBranch(Render::Graphic::CreateParams const& params, Render::GraphicBranch& branch) override
+virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override
     {
 #if defined (NEEDS_WORK)
 #endif
-    return new SimplifyGraphic(params, *this, *this);
+    return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);
     }
 
 virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...

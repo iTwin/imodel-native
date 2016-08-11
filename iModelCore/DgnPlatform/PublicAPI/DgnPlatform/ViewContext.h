@@ -149,7 +149,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _VisitDgnModel(DgnModelP);
     virtual IPickGeomP _GetIPickGeom() {return nullptr;}
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) = 0;
-    virtual Render::GraphicPtr _CreateBranch(Render::Graphic::CreateParams const& params, Render::GraphicBranch&) = 0;
+    virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP trans, ClipVectorCP clips) = 0;
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria();
     virtual bool _WantUndisplayed() {return false;}
     DGNPLATFORM_EXPORT virtual void _AddViewOverrides(Render::OvrGraphicParamsR);
@@ -191,7 +191,7 @@ public:
     void EnableStopAfterTimout(uint32_t timeout) {m_endTime = BeTimeUtilities::QueryMillisecondsCounter()+timeout; m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateGraphic(Render::Graphic::CreateParams const& params=Render::Graphic::CreateParams()) {return _CreateGraphic(params);}
-    Render::GraphicPtr CreateBranch(Render::Graphic::CreateParams const& params, Render::GraphicBranch& branch) {return _CreateBranch(params, branch);}
+    Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, TransformCP trans=nullptr, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, trans, clips);}
     Render::GraphicPtr AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
@@ -357,7 +357,7 @@ public:
     Render::GraphicP _GetCachedGraphic(GeometrySourceCR source, double pixelSize) override {return source.Graphics().Find(*m_viewport, pixelSize);}
     DGNVIEW_EXPORT Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return m_target.CreateGraphic(params);}
-    Render::GraphicPtr _CreateBranch(Render::Graphic::CreateParams const& params, Render::GraphicBranch& branch) override {return m_target.GetSystem()._CreateBranch(params, branch);}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override {return m_target.GetSystem()._CreateBranch(branch, trans, clips);}
     Render::TargetR GetTargetR() {return m_target;}
     DgnViewportR GetViewportR()  {return *m_viewport;}   // A RenderContext always have a viewport.
 };
