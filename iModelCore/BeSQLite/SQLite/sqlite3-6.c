@@ -12948,15 +12948,21 @@ SQLITE_API sqlite3rbu *SQLITE_STDCALL sqlite3rbu_open(
 ** An RBU vacuum is similar to SQLite's built-in VACUUM command, except
 ** that it can be suspended and resumed like an RBU update.
 **
-** The second argument to this function, which may not be NULL, identifies 
-** a database in which to store the state of the RBU vacuum operation if
-** it is suspended. The first time sqlite3rbu_vacuum() is called, to start
-** an RBU vacuum operation, the state database should either not exist or
-** be empty (contain no tables). If an RBU vacuum is suspended by calling
+** The second argument to this function identifies a database in which 
+** to store the state of the RBU vacuum operation if it is suspended. The 
+** first time sqlite3rbu_vacuum() is called, to start an RBU vacuum
+** operation, the state database should either not exist or be empty
+** (contain no tables). If an RBU vacuum is suspended by calling 
 ** sqlite3rbu_close() on the RBU handle before sqlite3rbu_step() has
 ** returned SQLITE_DONE, the vacuum state is stored in the state database. 
 ** The vacuum can be resumed by calling this function to open a new RBU
 ** handle specifying the same target and state databases.
+**
+** If the second argument passed to this function is NULL, then the
+** name of the state database is "<database>-vacuum", where <database>
+** is the name of the target database file. In this case, on UNIX, if the
+** state database is not already present in the file-system, it is created
+** with the same permissions as the target db is made.
 **
 ** This function does not delete the state database after an RBU vacuum
 ** is completed, even if it created it. However, if the call to
@@ -15449,15 +15455,18 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 ** error occurs, leave an error code and message in the RBU handle.
 */
 static void rbuOpenDatabase(sqlite3rbu *p){
-  assert( p->rc==SQLITE_OK );
-  assert( p->dbMain==0 && p->dbRbu==0 );
-  assert( rbuIsVacuum(p) || p->zTarget!=0 );
+  assert( p->rc || (p->dbMain==0 && p->dbRbu==0) );
+  assert( p->rc || rbuIsVacuum(p) || p->zTarget!=0 );
 
   /* Open the RBU database */
   p->dbRbu = rbuOpenDbhandle(p, p->zRbu, 1);
 
   if( p->rc==SQLITE_OK && rbuIsVacuum(p) ){
     sqlite3_file_control(p->dbRbu, "main", SQLITE_FCNTL_RBUCNT, (void*)p);
+    if( p->zState==0 ){
+      const char *zFile = sqlite3_db_filename(p->dbRbu, "main");
+      p->zState = rbuMPrintf(p, "file://%s-vacuum?modeof=%s", zFile, zFile);
+    }
   }
 
   /* If using separate RBU and state databases, attach the state database to
@@ -16592,8 +16601,7 @@ static sqlite3rbu *openRbuHandle(
   sqlite3rbu *p;
   size_t nTarget = zTarget ? strlen(zTarget) : 0;
   size_t nRbu = strlen(zRbu);
-  size_t nState = zState ? strlen(zState) : 0;
-  size_t nByte = sizeof(sqlite3rbu) + nTarget+1 + nRbu+1+ nState+1;
+  size_t nByte = sizeof(sqlite3rbu) + nTarget+1 + nRbu+1;
 
   p = (sqlite3rbu*)sqlite3_malloc64(nByte);
   if( p ){
@@ -16615,8 +16623,7 @@ static sqlite3rbu *openRbuHandle(
       memcpy(p->zRbu, zRbu, nRbu+1);
       pCsr += nRbu+1;
       if( zState ){
-        p->zState = pCsr;
-        memcpy(p->zState, zState, nState+1);
+        p->zState = rbuMPrintf(p, "%s", zState);
       }
       rbuOpenDatabase(p);
     }
@@ -16727,6 +16734,20 @@ static sqlite3rbu *openRbuHandle(
 }
 
 /*
+** Allocate and return an RBU handle with all fields zeroed except for the
+** error code, which is set to SQLITE_MISUSE.
+*/
+static sqlite3rbu *rbuMisuseError(void){
+  sqlite3rbu *pRet;
+  pRet = sqlite3_malloc64(sizeof(sqlite3rbu));
+  if( pRet ){
+    memset(pRet, 0, sizeof(sqlite3rbu));
+    pRet->rc = SQLITE_MISUSE;
+  }
+  return pRet;
+}
+
+/*
 ** Open and return a new RBU handle. 
 */
 SQLITE_API sqlite3rbu *SQLITE_STDCALL sqlite3rbu_open(
@@ -16734,6 +16755,7 @@ SQLITE_API sqlite3rbu *SQLITE_STDCALL sqlite3rbu_open(
   const char *zRbu,
   const char *zState
 ){
+  if( zTarget==0 || zRbu==0 ){ return rbuMisuseError(); }
   /* TODO: Check that zTarget and zRbu are non-NULL */
   return openRbuHandle(zTarget, zRbu, zState);
 }
@@ -16745,6 +16767,7 @@ SQLITE_API sqlite3rbu *SQLITE_STDCALL sqlite3rbu_vacuum(
   const char *zTarget, 
   const char *zState
 ){
+  if( zTarget==0 ){ return rbuMisuseError(); }
   /* TODO: Check that both arguments are non-NULL */
   return openRbuHandle(0, zTarget, zState);
 }
@@ -16822,6 +16845,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
     rbuEditErrmsg(p);
     rc = p->rc;
     *pzErrmsg = p->zErrmsg;
+    sqlite3_free(p->zState);
     sqlite3_free(p);
   }else{
     rc = SQLITE_NOMEM;
@@ -24392,6 +24416,26 @@ static void jsonTest1Func(
 ****************************************************************************/
 
 /*
+** Implementation of the json_QUOTE(VALUE) function.  Return a JSON value
+** corresponding to the SQL value input.  Mostly this means putting 
+** double-quotes around strings and returning the unquoted string "null"
+** when given a NULL input.
+*/
+static void jsonQuoteFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonString jx;
+  UNUSED_PARAM(argc);
+
+  jsonInit(&jx, ctx);
+  jsonAppendValue(&jx, argv[0]);
+  jsonResult(&jx);
+  sqlite3_result_subtype(ctx, JSON_SUBTYPE);
+}
+
+/*
 ** Implementation of the json_array(VALUE,...) function.  Return a JSON
 ** array that contains all values given in arguments.  Or if any argument
 ** is a BLOB, throw an error.
@@ -25304,6 +25348,7 @@ SQLITE_PRIVATE int sqlite3Json1Init(sqlite3 *db){
     { "json_extract",        -1, 0,   jsonExtractFunc       },
     { "json_insert",         -1, 0,   jsonSetFunc           },
     { "json_object",         -1, 0,   jsonObjectFunc        },
+    { "json_quote",           1, 0,   jsonQuoteFunc         },
     { "json_remove",         -1, 0,   jsonRemoveFunc        },
     { "json_replace",        -1, 0,   jsonReplaceFunc       },
     { "json_set",            -1, 1,   jsonSetFunc           },
