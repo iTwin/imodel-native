@@ -223,6 +223,22 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbClassMapLoadContext::SetBaseClassMap(ClassMapCR classMap)
+    {
+    if (classMap.GetClass().GetId() != m_baseClassId)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    m_baseClassMap = &classMap;
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
@@ -240,6 +256,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, EC
     if (stmt->Step() != BE_SQLITE_ROW)
         return ERROR;
 
+    loadContext.m_baseClassMap = nullptr;
     loadContext.m_classMapId = stmt->GetValueId<ClassMapId>(0);
     loadContext.m_baseClassId = stmt->IsColumnNull(1) ? ECN::ECClassId() : stmt->GetValueId<ECN::ECClassId>(1);
     const int minSharedColCount = stmt->IsColumnNull(4) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
@@ -258,6 +275,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, EC
     loadContext.m_isValid = true;
     return SUCCESS;
     }
+
 
 
 //---------------------------------------------------------------------------------------

@@ -306,6 +306,9 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
     {
     const bool isJoinedTableMapping = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
     const bool isImportingSchemas = classMapInfo != nullptr && dbClassMapLoadContext == nullptr;
+    if (dbClassMapLoadContext)
+        parentClassMap = dbClassMapLoadContext->GetBaseClassMap();
+
     if (!isImportingSchemas && isJoinedTableMapping)
         parentClassMap = nullptr;
     
@@ -323,12 +326,11 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
             continue;
             }
 
-        //if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
-        //    {
-        //    BeAssert(false && "This should never happen");
-        //    GetPropertyMapsR().AddPropertyMap(propMapInBaseClass);
-        //    continue;
-        //    }
+        if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
+            {
+            GetPropertyMapsR().AddPropertyMap(propMapInBaseClass);
+            continue;
+            }
 
         //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
         //as the context (table, containing ECClass) is different
