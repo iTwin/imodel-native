@@ -1151,7 +1151,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             bvector<uint32_t> keyColors;
             bvector<double>   keyValues;
 
-            for (int i=0; i < gradient.GetNKeys(); i++)
+            for (uint32_t i=0; i < gradient.GetNKeys(); ++i)
                 {
                 double   keyValue;
                 ColorDef keyColor;
@@ -1598,7 +1598,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     GradientSymbPtr gradientPtr = GradientSymb::Create();
 
                     gradientPtr->SetMode(mode);
-                    gradientPtr->SetFlags(ppfb->flags());
+                    gradientPtr->SetFlags((GradientSymb::Flags)ppfb->flags());
                     gradientPtr->SetShift(ppfb->shift());
                     gradientPtr->SetTint(ppfb->tint());
                     gradientPtr->SetAngle(ppfb->angle());
@@ -1607,10 +1607,10 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
                     bvector<ColorDef> keyColors;
 
-                    for (uint32_t iColor=0; iColor < nColors; iColor++)
+                    for (uint32_t iColor=0; iColor < nColors; ++iColor)
                         keyColors.push_back(ColorDef(colors[iColor]));
 
-                    gradientPtr->SetKeys((uint16_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                    gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
                     elParams.SetGradient(gradientPtr.get());
                     }
                 }
@@ -2525,17 +2525,17 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     switch (geomParams.GetGeometryClass())
         {
         case DgnGeometryClass::Construction:
-            if (!viewFlags.constructions)
+            if (!viewFlags.m_constructions)
                 return false;
             break;
 
         case DgnGeometryClass::Dimension:
-            if (!viewFlags.dimensions)
+            if (!viewFlags.m_dimensions)
                 return false;
             break;
 
         case DgnGeometryClass::Pattern:
-            if (!viewFlags.patterns)
+            if (!viewFlags.m_patterns)
                 return false;
             break;
         }
@@ -2840,23 +2840,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (curvePtr->IsAnyRegionType() && SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, *curvePtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
@@ -2882,23 +2865,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, meshData))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromPolyface(shape, meshData))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
@@ -2917,23 +2883,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromSolidPrimitive(shape, *solidPtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddSolidPrimitive(*solidPtr);
                 break;
@@ -2951,23 +2900,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!reader.Get(egOp, surfacePtr))
                     break;
-
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromBSurface(shape, *surfacePtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);

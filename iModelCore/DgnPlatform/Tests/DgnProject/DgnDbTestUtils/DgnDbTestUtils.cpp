@@ -411,16 +411,16 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
 
     auto& viewFlags = viewController->GetViewFlagsR();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
-    viewFlags.constructions = true;
-    viewFlags.dimensions = true;
-    viewFlags.weights = true;
-    viewFlags.transparency = true;
-    viewFlags.fill = true;
-    viewFlags.materials = true;
-    viewFlags.patterns = true;
-    viewFlags.shadows = true;
-    viewFlags.grid = true;
-    viewFlags.acs = true;
+    viewFlags.m_constructions = true;
+    viewFlags.m_dimensions = true;
+    viewFlags.m_weights = true;
+    viewFlags.m_transparency = true;
+    viewFlags.m_fill = true;
+    viewFlags.m_materials = true;
+    viewFlags.m_patterns = true;
+    viewFlags.m_shadows = true;
+    viewFlags.m_grid = true;
+    viewFlags.m_acsTriad = true;
 
     viewController->Save();
 

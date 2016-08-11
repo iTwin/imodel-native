@@ -168,17 +168,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     };
 
 
-    struct GroundPlane
-    {
-        Byte m_edgeAlpha = 0xff;
-        Byte m_centerAlpha = 0x80;
-        Render::GradientSymb::Mode m_mode = Render::GradientSymb::Mode::Spherical;
-        AxisAlignedBox3d m_extents;
-        ColorDef m_color;
-        double GetElevation() const {return m_extents.low.z;}
-        bool IsValid() const {return m_extents.IsValid();}
-    };
-
 protected:
     bool m_noQuery = false;
     bool m_loading = false;
@@ -198,10 +187,6 @@ protected:
     void AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>&);
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
-    GroundPlane GetGroundPlane(DgnViewportCR vp) const;
-    Json::Value const* GetEnvironmentSetting(Utf8CP) const;
-    void DrawGroundPlane(DecorateContextR context);
-    void DrawEnvironment(DecorateContextR context);
 
     DgnQueryViewCP _ToQueryView() const override {return this;}
     DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;

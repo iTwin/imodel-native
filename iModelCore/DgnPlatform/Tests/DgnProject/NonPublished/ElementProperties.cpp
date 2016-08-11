@@ -50,7 +50,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     keyColors[1] = ColorDef::Red();
 
     gradient->SetMode(Render::GradientSymb::Mode::Spherical);
-    gradient->SetFlags(0);
+    gradient->SetFlags(Render::GradientSymb::None);
     gradient->SetAngle(8.0);
     gradient->SetTint(1.0);
     gradient->SetShift(1.0);

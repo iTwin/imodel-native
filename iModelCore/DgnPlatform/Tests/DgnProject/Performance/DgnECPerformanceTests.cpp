@@ -175,7 +175,7 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager
 
     ECSqlStatement statement;
     Utf8String query;
-    query.Sprintf ("SELECT * FROM %s.%s", schema.GetNamespacePrefix ().c_str (), TEST_CLASS_NAME);
+    query.Sprintf ("SELECT * FROM %s.%s", schema.GetAlias ().c_str (), TEST_CLASS_NAME);
     statement.Prepare (*tdm.GetDgnProjectP (), query.c_str ());
 
     int count = 0;

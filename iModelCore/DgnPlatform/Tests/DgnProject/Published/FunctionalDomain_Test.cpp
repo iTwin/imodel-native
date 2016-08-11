@@ -44,7 +44,7 @@ protected:
 
 public:
     static TestBreakdownPtr Create(FunctionalModelR, Utf8CP);
-    Utf8String GetStringProp1() const;
+    Utf8String GetStringProp1() const {return GetPropertyValueString("StringProp1");}
 };
 
 //=======================================================================================
@@ -68,7 +68,7 @@ protected:
 
 public:
     static TestComponentPtr Create(FunctionalModelR, double);
-    double GetDoubleProp1() const;
+    double GetDoubleProp1() const {return GetPropertyValueDouble("DoubleProp1");}
 };
 
 //=======================================================================================
@@ -112,17 +112,6 @@ TestBreakdownPtr TestBreakdown::Create(FunctionalModelR model, Utf8CP stringProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    08/2016
 //---------------------------------------------------------------------------------------
-Utf8String TestBreakdown::GetStringProp1() const
-    {
-    ECN::ECValue value;
-    DgnDbStatus status = GetProperty(value, "StringProp1");
-    BeAssert(DgnDbStatus::Success == status);
-    return value.GetUtf8CP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    08/2016
-//---------------------------------------------------------------------------------------
 TestComponentPtr TestComponent::Create(FunctionalModelR model, double doubleProp1)
     {
     DgnDbR db = model.GetDgnDb();
@@ -135,17 +124,6 @@ TestComponentPtr TestComponent::Create(FunctionalModelR model, double doubleProp
         return nullptr;
 
     return testComponent;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    08/2016
-//---------------------------------------------------------------------------------------
-double TestComponent::GetDoubleProp1() const
-    {
-    ECN::ECValue value;
-    DgnDbStatus status = GetProperty(value, "DoubleProp1");
-    BeAssert(DgnDbStatus::Success == status);
-    return value.GetDouble();
     }
 
 //---------------------------------------------------------------------------------------

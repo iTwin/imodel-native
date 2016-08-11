@@ -83,7 +83,7 @@ virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray& entries, ClipPrimitiveCP clip) override
+virtual Render::GraphicPtr _CreateBranch(Render::Graphic::CreateParams const& params, Render::GraphicBranch& branch) override
     {
 #if defined (NEEDS_WORK)
 #endif

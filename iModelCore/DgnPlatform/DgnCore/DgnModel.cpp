@@ -946,6 +946,9 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsert()
     {
+    if (GetDgnDb().IsReadonly())
+        return DgnDbStatus::ReadOnly;
+
     if (m_modelId.IsValid())
         return DgnDbStatus::IdExists;
 
