@@ -1958,8 +1958,8 @@ protected:
 //=======================================================================================
 //! This class describes the multiplicity of a relationship. It is based on the
 //!     Martin notation. Valid multiplicities are (x..y) where x is smaller or equal to y,
-//!     x >= 0 and y >= 1 or y = n (where n represents infinity).
-//!     For example, (0..1), (1..1), (1..n), (0..n), (1..10), (2..5), ...
+//!     x >= 0 and y >= 1 or y = * (where * represents infinity).
+//!     For example, (0..1), (1..1), (1..*), (0..*), (1..10), (2..5), ...
 //! @bsiclass
 //=======================================================================================
 struct RelationshipMultiplicity
@@ -1982,10 +1982,10 @@ public:
     //! Returns the upper limit of the multiplicity
     ECOBJECTS_EXPORT uint32_t GetUpperLimit() const;
 
-    //! Indicates if the multiplicity is unbound (ie, upper limit is equal to "n")
+    //! Indicates if the multiplicity is unbound (ie, upper limit is equal to "*")
     ECOBJECTS_EXPORT bool     IsUpperLimitUnbounded() const;
 
-    //! Converts the multiplicity to a string, for example "(0..n)", "(1..1)"
+    //! Converts the multiplicity to a string, for example "(0..*)", "(1..1)"
     ECOBJECTS_EXPORT Utf8String ToString() const;
 
     // ************************************************************************************************************************
@@ -1997,7 +1997,7 @@ public:
     //!     constructor of RelationshipMultiplicity to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipMultiplicityCR ZeroOne();
     //!     Returns the shared static RelationshipMultiplicity object that represents the
-    //!     (0..n) multiplicity. This static property can be used instead of a standard
+    //!     (0..*) multiplicity. This static property can be used instead of a standard
     //!     constructor of RelationshipMultiplicity to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipMultiplicityCR ZeroMany();
     //!     Returns the shared static RelationshipMultiplicity object that represents the
@@ -2005,7 +2005,7 @@ public:
     //!     constructor of RelationshipMultiplicity to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipMultiplicityCR OneOne();
     //!     Returns the shared static RelationshipMultiplicity object that represents the
-    //!     (1..n) multiplicity. This static property can be used instead of a standard
+    //!     (1..*) multiplicity. This static property can be used instead of a standard
     //!     constructor of RelationshipMultiplicity to reduce memory usage.
     ECOBJECTS_EXPORT static RelationshipMultiplicityCR OneMany();
 

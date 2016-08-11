@@ -2246,7 +2246,7 @@ Utf8String RelationshipMultiplicity::ToString
     Utf8Char multiplicityString[32];
     
     if (UINT_MAX == m_upperLimit)
-        BeStringUtilities::Snprintf(multiplicityString, "(%d..N)", m_lowerLimit);
+        BeStringUtilities::Snprintf(multiplicityString, "(%d..*)", m_lowerLimit);
     else
         BeStringUtilities::Snprintf(multiplicityString, "(%d..%d)", m_lowerLimit, m_upperLimit);
         
