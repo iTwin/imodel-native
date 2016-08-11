@@ -1067,7 +1067,7 @@ struct ComponentDef : RefCountedBase
     ~ComponentDef();
 
  public:
-    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetNamespacePrefix()); return ns.append(".").append(cls.GetName());}
+    static Utf8String GetClassECSqlName(ECN::ECClassCR cls) {Utf8String ns(cls.GetSchema().GetAlias()); return ns.append(".").append(cls.GetName());}
     Utf8String GetClassECSqlName() const {return GetClassECSqlName(m_class);}
 
     //! @private - called only by componenteditor

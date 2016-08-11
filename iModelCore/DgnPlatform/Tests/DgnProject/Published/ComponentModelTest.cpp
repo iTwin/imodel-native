@@ -914,7 +914,7 @@ TEST(SchemaImportTest, SelectAfterImport)
         {
         ECN::ECSchemaPtr schema;
         ASSERT_EQ( ECN::ECObjectsStatus::Success , ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0) );
-        schema->SetNamespacePrefix("tir");
+        schema->SetAlias("tir");
 
         ECN::ECClassCP baseClass = db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
 
