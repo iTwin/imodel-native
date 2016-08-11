@@ -55,6 +55,9 @@ struct ECDbHelper
         WSCACHE_EXPORT static bool IsInstanceInMultiMap(ECInstanceKeyCR instance, const ECInstanceKeyMultiMap& map);
         //! ECInstanceKeyMultiMap util
         WSCACHE_EXPORT static ECInstanceKeyMultiMapPair ToPair(ECInstanceKeyCR key);
+        //! Merge multimaps leaving only unique keys.
+        WSCACHE_EXPORT static ECInstanceKeyMultiMap MergeMultiMaps(const ECInstanceKeyMultiMap& map1, const ECInstanceKeyMultiMap& map2);
+
         //! ECInstanceKeyMultiMap util
         WSCACHE_EXPORT static void Erase(ECInstanceKeyMultiMap& map, ECInstanceKeyCR key);
 
