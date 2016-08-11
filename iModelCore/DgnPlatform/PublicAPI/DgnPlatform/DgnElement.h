@@ -1886,10 +1886,8 @@ public:
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
-//__PUBLISH_SECTION_END__
     // Function to allow apps such as Navigator to try to resolve URIs created in Graphite05 for things like issues and clashes.
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdGraphiteURI(Utf8CP uri) const;
-//__PUBLISH_SECTION_START__
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCode const& code) const;
