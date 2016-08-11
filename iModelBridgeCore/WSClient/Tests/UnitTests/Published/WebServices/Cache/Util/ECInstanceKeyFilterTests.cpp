@@ -15,6 +15,8 @@
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+#ifdef USE_GTEST
+
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassEmptyInput_EmptyResults)
     {
     auto ds = GetTestDataSourceV24();
@@ -420,3 +422,5 @@ TEST_F(ECInstanceKeyFilterTests, SetLimit_OnLabelFilter_ReturnsLimitedInstances)
 
     ASSERT_EQ(1, result.size());
     }
+
+#endif

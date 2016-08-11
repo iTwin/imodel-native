@@ -10,6 +10,8 @@
 
 #include "../BaseCachingDataSourceTest.h"
 
+#ifdef USE_GTEST
 class ECInstanceKeyFilterTests : public BaseCachingDataSourceTest
     {
     };
+#endif
