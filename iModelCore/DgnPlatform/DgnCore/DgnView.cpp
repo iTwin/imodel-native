@@ -14,13 +14,11 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define VIEWDEF_HANDLER_DEFINE_MEMBERS(CLASSNAME) HANDLER_DEFINE_MEMBERS(CLASSNAME)
-
 namespace dgn_ElementHandler
 {
-    VIEWDEF_HANDLER_DEFINE_MEMBERS(SpatialViewDef);
-    VIEWDEF_HANDLER_DEFINE_MEMBERS(DrawingViewDef);
-    VIEWDEF_HANDLER_DEFINE_MEMBERS(SheetViewDef);
+    HANDLER_DEFINE_MEMBERS(DrawingViewDef);
+    HANDLER_DEFINE_MEMBERS(SheetViewDef);
+    HANDLER_DEFINE_MEMBERS(OrthographicViewDef);
     HANDLER_DEFINE_MEMBERS(CameraViewDef);
     HANDLER_DEFINE_MEMBERS(RedlineViewDef);
 }
@@ -32,75 +30,8 @@ HANDLER_EXTENSION_DEFINE_MEMBERS(ViewControllerOverride)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_BindInsertParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindInsertParams(stmt);
-    if (DgnDbStatus::Success == status)
-        status = BindParams(stmt);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_BindUpdateParams(ECSqlStatement& stmt)
-    {
-    auto status = T_Super::_BindUpdateParams(stmt);
-    if (DgnDbStatus::Success == status)
-        status = BindParams(stmt);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
-    {
-    auto status = T_Super::_ReadSelectParams(stmt, params);
-    if (DgnDbStatus::Success == status)
-        {
-        Utf8String descr = stmt.GetValueText(params.GetSelectIndex(PROPNAME_Descr));
-        auto source = static_cast<DgnViewSource>(stmt.GetValueInt(params.GetSelectIndex(PROPNAME_Source)));
-        auto baseModelId = stmt.GetValueId<DgnModelId>(params.GetSelectIndex(PROPNAME_BaseModel));
-
-        m_data.Init(baseModelId, source, descr);
-        }
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::BindParams(ECSqlStatement& stmt)
-    {
-    if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROPNAME_Descr), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No)
-        || ECSqlStatus::Success != stmt.BindInt(stmt.GetParameterIndex(PROPNAME_Source), static_cast<int32_t>(m_data.m_source))
-        || ECSqlStatus::Success != stmt.BindId(stmt.GetParameterIndex(PROPNAME_BaseModel), m_data.m_baseModelId))
-        return DgnDbStatus::BadArg;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_CopyFrom(DgnElementCR el)
-    {
-    T_Super::_CopyFrom(el);
-    auto other = dynamic_cast<ViewDefinitionCP>(&el);
-    BeAssert(nullptr != other);
-    if (nullptr != other)
-        m_data = other->m_data;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewDefinition::CreateParams::CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data)
-    : T_Super(db, DgnModel::DictionaryId(), classId, code), m_data(data)
+ViewDefinition::CreateParams::CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId)
+    : T_Super(db, DgnModel::DictionaryId(), classId, code)
     {
     //
     }
@@ -177,40 +108,6 @@ ViewControllerPtr DrawingViewDefinition::_SupplyController() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::IsBaseModelValid() const
-    {
-    auto mid = GetBaseModelId();
-    auto model = mid.IsValid() ? GetDgnDb().Models().GetModel(mid) : nullptr;
-    return model.IsValid() && _IsValidBaseModel(*model);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_OnInsert()
-    {
-    auto status = T_Super::_OnInsert();
-    if (DgnDbStatus::Success == status && !IsBaseModelValid())
-        status = DgnDbStatus::BadModel;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::_OnUpdate(DgnElementCR orig)
-    {
-    auto status = T_Super::_OnUpdate(orig);
-    if (DgnDbStatus::Success == status && !IsBaseModelValid())
-        status = DgnDbStatus::BadModel;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition::_OnDelete() const
     {
     auto status = T_Super::_OnDelete();
@@ -223,7 +120,6 @@ DgnDbStatus ViewDefinition::_OnDelete() const
     if (DgnDbStatus::Success != status)
         return status;
 
-    DeleteSettings();
     return DgnDbStatus::Success;
     }
 
@@ -251,14 +147,28 @@ DgnDbStatus ViewDefinition::DeleteReferences() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_RemapIds(DgnImportContext& importer)
+bool ViewDefinition2d::IsBaseModelValid() const
+    {
+    auto mid = GetBaseModelId();
+    if (!mid.IsValid())
+        return false;
+    auto model = GetDgnDb().Models().GetModel(mid);
+    if (!model.IsValid())
+        return false;
+    return model->Is2dModel();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition2d::_RemapIds(DgnImportContext& importer)
     {
     T_Super::_RemapIds(importer);
     if (importer.IsBetweenDbs())
         {
         // We're not going to deep-copy the model in. We're expecting the user already copied it.
-        m_data.m_baseModelId = importer.FindModelId(m_data.m_baseModelId);
-        BeAssert(m_data.m_baseModelId.IsValid());
+        SetBaseModelId(importer.FindModelId(GetBaseModelId()));
+        BeAssert(IsBaseModelValid());
 
         // NOTE: We're not copying or remapping the settings from the db's properties table...
         }
@@ -273,30 +183,6 @@ DgnDbStatus ViewDefinition::_SetCode(DgnCode const& code)
     return IsValidCode(code) ? T_Super::_SetCode(code) : DgnDbStatus::InvalidName;
     }
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewDefinition::QuerySettings(Utf8StringR settings, DgnViewId viewId, DgnDbR db)
-    {
-    return db.QueryProperty(settings, DgnViewProperty::Settings(), viewId.GetValue(), 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewDefinition::SaveSettings(Utf8StringCR settings, DgnViewId viewId, DgnDbR db)
-    {
-    return db.SavePropertyString(DgnViewProperty::Settings(), settings, viewId.GetValue(), 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewDefinition::DeleteSettings(DgnViewId viewId, DgnDbR db)
-    {
-    return db.DeleteProperty(DgnViewProperty::Settings(), viewId.GetValue(), 0);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
@@ -392,14 +278,6 @@ Utf8String ViewDefinition::Iterator::Options::ToString() const
         }
 
     // WHERE
-    Utf8Char buf[0x20];
-    if (m_baseModelId.IsValid())
-        {
-        BeStringUtilities::FormatUInt64(buf, m_baseModelId.GetValue());
-        str.append(" WHERE " PROPNAME_BaseModel " = ");
-        str.append(buf);
-        }
-
     if (Source::All != m_source)
         {
         str.append(str.empty() ? " WHERE " : " AND ");

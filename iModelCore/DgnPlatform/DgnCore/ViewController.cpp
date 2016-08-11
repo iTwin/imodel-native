@@ -273,9 +273,12 @@ DbResult ViewController::Load()
         }
 
     m_viewedModels.clear();
+#ifdef WIP_VIEW_DEFINITION // *** 2D and 3D models will do this differently
     m_baseModelId = m_targetModelId = entry->GetBaseModelId();
     m_viewedModels.insert(m_baseModelId);
+#endif
 
+#ifdef WIP_VIEW_DEFINITION // *** get properties from view def
     Utf8String settingsStr;
     DbResult rc = entry->QuerySettings(settingsStr);
     if (BE_SQLITE_ROW != rc)
@@ -286,6 +289,7 @@ DbResult ViewController::Load()
 
     Json::Reader::Parse(settingsStr, m_settings);
     _RestoreFromSettings();
+#endif
 
     // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     // the model is not already loaded.
@@ -300,6 +304,7 @@ DbResult ViewController::Load()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_SaveToSettings() const
     {
+#ifdef WIP_VIEW_DEFINITION // *** write properties to view def
     m_viewFlags.ToBaseJson(m_settings[VIEW_SETTING_Flags()]);
 
     // only save background color if it's not the default (black)...
@@ -318,6 +323,7 @@ void ViewController::_SaveToSettings() const
         it.second.ToJson(ovrJson[i]);
         ++i;
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,9 +331,13 @@ void ViewController::_SaveToSettings() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::Save()
     {
+#ifdef WIP_VIEW_DEFINITION // *** write properties to view def
     _SaveToSettings();
 
     return ViewDefinition::SaveSettings(Json::FastWriter::ToString(m_settings), m_viewId, m_dgndb);
+#endif
+    BeAssert(false);
+    return DbResult::BE_SQLITE_ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

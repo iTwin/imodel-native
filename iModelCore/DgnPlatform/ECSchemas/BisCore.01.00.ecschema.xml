@@ -1563,55 +1563,156 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ViewDefinition" modifier="Abstract">
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Source" displayLabel="Source" typeName="int">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-        <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView" direction="Backward">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECNavigationProperty>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="BaseModelForView" strength="embedding">
+      <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
-            <Class class="Model"/>
+        <Source cardinality="(1,1)" roleLabel="is base model for 2D view" polymorphic="true">
+            <Class class="GeometricModel2d"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is used by N 2D views" polymorphic="true">
+            <Class class="ViewDefinition2d"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ModelSelectorForView3d" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="is list of models displayed in a 3D view" polymorphic="true">
+            <Class class="ModelSelector"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is used by N 3D views" polymorphic="true">
+            <Class class="ViewDefinition3d"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClipVolumeForView3d" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="is a clip volume applied in a 3D view" polymorphic="true">
+            <Class class="ClipVolumeDefinition"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is used by N 3D views" polymorphic="true">
+            <Class class="ViewDefinition3d"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CategorySelectorForView" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="is list of Categories displayed in a view" polymorphic="true">
+            <Class class="CategorySelector"/>
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Target>
     </ECRelationshipClass>
-
+    <ECRelationshipClass typeName="DisplayStyleForView" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="is display style for a view" polymorphic="true">
+            <Class class="DisplayStyle"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
+            <Class class="ViewDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ModelSelector">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ModelIds" typeName="string" displayLabel="JSON string consisting of array of DgnModelIds (as strings)"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CategorySelector">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CategoryIds" typeName="string" displayLabel="JSON string consisting of array of DgnElementIds (as strings)"/>
+        <ECProperty propertyName="SubCategoryOverrides" typeName="string" displayLabel="JSON string consisting of array of SubCategoryOverrides"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DisplayStyle">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ViewFlags" typeName="string" displayLabel="JSON string consisting of view flags, render mode, background color, lighting settings, etc."/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ClipVolumeDefinition">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ClipPlaneSet" typeName="string" displayLabel="JSON encoding of a ClipPlaneSet"/>
+    </ECEntityClass>
+  
+    <ECEntityClass typeName="ViewDefinition" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
+        <ECProperty propertyName="Source" displayLabel="Source" typeName="int"/>
+        <ECNavigationProperty propertyName="CategorySelector" relationshipName="CategorySelectorForView" direction="Forward"/>
+        <ECNavigationProperty propertyName="DisplayStyle" relationshipName="DisplayStyleForView" direction="Forward"/>
+    </ECEntityClass>
     <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ModelSelectorForView3d" direction="Forward"/>
+        <ECNavigationProperty propertyName="ClipVolume" relationshipName="ClipVolumeForView3d" direction="Forward"/>
     </ECEntityClass>
-    <ECEntityClass typeName="SpatialViewDefinition">
+    <!-- A view of an area defined in the bim's coordinate system. -->
+    <ECEntityClass typeName="SpatialViewDefinition" modifier="Abstract">
         <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <!-- A spatial view that shows a perspective projection -->
     <ECEntityClass typeName="CameraViewDefinition">
         <BaseClass>SpatialViewDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="BackOrigin" typeName="Point3d" displayLabel="Origin of the focus plane projected to the back plane"></ECProperty>
+        <ECProperty propertyName="Width" typeName="double" displayLabel="Extent in X on the focus plane in meters"></ECProperty>
+        <ECProperty propertyName="Height" typeName="double" displayLabel="Extent in Y on the focus plane in meters"></ECProperty>
+        <ECProperty propertyName="Depth" typeName="double" displayLabel="Distance between front and back planes in meters"></ECProperty>
+        <ECProperty propertyName="EyePoint" typeName="Point3d" displayLabel="Camera eye point"></ECProperty>
+        <ECProperty propertyName="LensAngle" typeName="double" displayLabel="Camera lens angle in degrees"></ECProperty>
+        <ECProperty propertyName="FocusDistance" typeName="double" displayLabel="Camera focus distance"></ECProperty>
+        <ECProperty propertyName="ViewDirectionYaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="ViewDirectionPitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="ViewDirectionRoll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
     </ECEntityClass>
+    <!-- A spatial view that shows an orthographic parallel projection -->
+    <ECEntityClass typeName="OrthographicViewDefinition">
+        <BaseClass>SpatialViewDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Origin" typeName="Point3d" displayLabel="Origin of the viewed volume on the lower, back, rear"></ECProperty>
+        <ECProperty propertyName="Extents" typeName="Point3d" displayLabel="Size of the view diagonal"></ECProperty>
+        <ECProperty propertyName="ViewDirectionYaw" typeName="double" displayLabel="Yaw component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="ViewDirectionPitch" typeName="double" displayLabel="Pitch component of the view direction in degrees"></ECProperty>
+        <ECProperty propertyName="ViewDirectionRoll" typeName="double" displayLabel="Roll component of the view direction in degrees"></ECProperty>
+    </ECEntityClass>
+    <!-- A view of a 2D model that has its own local coordinate system. -->
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+        <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView2d" direction="Backward"/>
+        <ECProperty propertyName="Origin" typeName="Point2d" displayLabel="Lower left corner of the viewed area."></ECProperty>
+        <ECProperty propertyName="Extents" typeName="Point2d" displayLabel="Size of the view diagonal"></ECProperty>
+        <ECProperty propertyName="RotationAngle" typeName="double" displayLabel="Rotation angle in degrees of the viewed area."></ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="DrawingViewDefinition">
         <BaseClass>ViewDefinition2d</BaseClass>

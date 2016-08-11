@@ -1384,7 +1384,7 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR 
         return nullptr;
         }
 
-    auto rdlView = ViewDefinition::QueryView(viewId, *markupProject);
+    RefCountedCPtr<RedlineViewDefinition> rdlView = dynamic_cast<RedlineViewDefinition const*>(ViewDefinition::QueryView(viewId, *markupProject).get());
     if (!rdlView.IsValid())
         {
         openStatus = DgnDbStatus::ViewNotFound;
@@ -1413,8 +1413,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         return NULL;
         }
 
-    RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str(),
-                ViewDefinition::Data(rdlModel.GetModelId(), DgnViewSource::Generated)));
+    RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str()), rdlModel.GetModelId());
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 

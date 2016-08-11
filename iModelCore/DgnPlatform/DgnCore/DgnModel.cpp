@@ -840,16 +840,33 @@ DgnDbStatus DgnModel::_OnDelete()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::DeleteAllViews()
     {
-    DgnDbStatus status = DgnDbStatus::Success;
-    for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+    if (Is2dModel())
         {
-        auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
-        status = view.IsValid() ? view->Delete() : DgnDbStatus::ViewNotFound;
-        if (DgnDbStatus::Success != status)
-            break;
+        for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options()))
+            {
+            auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
+            if (!view.IsValid())
+                continue;
+            auto view2d = dynamic_cast<ViewDefinition2d const*>(view.get());
+            if (nullptr == view2d)
+                continue;
+            if (view2d->GetBaseModelId() != GetModelId())
+                continue;
+            view->Delete();
+            }
+        }
+    else
+        {
+#ifdef WIP_VIEW_DEFINITION // *** cascade model delete to modelselectors
+        // *** 3d models: models are in modelselectors, which are used by views and by other things
+        // *** Select all modelselectors where this ID is in the selector
+        // *** WIP_VIEW_DEFINITION If this is the only model in the selector, delete the selector ... which should cascade to deleting all views that use it.
+        // *** WIP_VIEW_DEFINITION If this is only one model in the selector, remove it from the selector. *** NEEDS WORK: How to notify an open view that its selector has changed?
+#endif
+        BeAssert(false && "*** WIP_VIEW_DEFINITION");
         }
 
-    return status;
+    return DgnDbStatus::Success;
     }
 
 struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnDeleted(model);}};
@@ -894,8 +911,9 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                     }
                 }
 
+#ifdef WIP_VIEW_DEFINITION // *** Must handle 2D and 3D models differently
             // and we must delete all of its views
-            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options()))
                 {
                 auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
                 if (view.IsValid())
@@ -905,6 +923,7 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                         return stat;
                     }
                 }
+#endif
 
             break;
             }
