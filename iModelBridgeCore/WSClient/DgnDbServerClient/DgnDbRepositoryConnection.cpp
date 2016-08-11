@@ -85,7 +85,7 @@ void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR reposito
     DateTime createdDate = DateTime();
     DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::CreatedDate].asCString()));
     repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(),
-        value[ServerSchema::Property::Description].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
+        value[ServerSchema::Property::RepositoryDescription].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -155,10 +155,8 @@ Json::Value CreateFileJson(FileInfoCR fileInfo)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(DgnDbPtr db, Utf8StringCR description, ICancellationTokenPtr cancellationToken) const
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
-    FileInfo fileInfo = FileInfo(*db, description);
-    
     return m_wsRepositoryClient->SendCreateObjectRequest(CreateFileJson(fileInfo), BeFileName(), nullptr, cancellationToken)->Then<DgnDbServerFileResult>
         ([=] (const WSCreateObjectResult& result)
         {
@@ -232,11 +230,10 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(DgnDbPtr db, Utf8StringCR description, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
-    BeFileName filePath = db->GetFileName();
-    return CreateNewServerFile(db, description, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
+    return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
         {
         if (!fileCreationResult.IsSuccess())
             {
