@@ -1411,7 +1411,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
             drawCutInfo->_SetWasNotCut (false);
 
         DPlane3d dplane;
-        cutPlane._GetPlane(dplane, false);
+        cutPlane._GetPlane(dplane, true);
 
         if (fabs(dplane.normal.z) < mgds_fc_nearZero)
             {
