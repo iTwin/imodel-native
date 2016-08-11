@@ -556,6 +556,8 @@ public:
         friend struct MultiAspectMux;
 
     protected:
+        BeSQLite::EC::ECInstanceId m_instanceId;
+
         enum class ChangeType{None, Write, Delete};
         ChangeType m_changeType;
 
@@ -593,6 +595,9 @@ public:
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
     public:
+        //! Get the Id of this aspect
+        BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
+
         Utf8CP GetECClassName() const {return _GetECClassName();}
         Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
 
@@ -631,12 +636,7 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
-        BeSQLite::EC::ECInstanceId m_instanceId;
-
     public:
-        //! Get the Id of this aspect
-        BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
-
         //! Load the specified instance
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
