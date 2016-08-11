@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbHelper.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -215,6 +215,50 @@ void ECDbHelper::Erase(ECInstanceKeyMultiMap& map, ECInstanceKeyCR key)
             break;
             }
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKeyMultiMap ECDbHelper::MergeMultiMaps(const ECInstanceKeyMultiMap& map1, const ECInstanceKeyMultiMap& map2)
+    {
+    ECInstanceKeyMultiMap result;
+
+    bmap<ECClassId, bset<ECInstanceId>> map;
+
+    for (auto start = map1.begin(), end = start; start != map1.end(); start = end)
+        {
+        end = map1.upper_bound(end->first);
+
+        auto& set = map[start->first];
+
+        for (auto it = start; it != end; it++)
+            {
+            set.insert(it->second);
+            }
+        }
+
+    for (auto start = map2.begin(), end = start; start != map2.end(); start = end)
+        {
+        end = map2.upper_bound(end->first);
+
+        auto& set = map[start->first];
+
+        for (auto it = start; it != end; it++)
+            {
+            set.insert(it->second);
+            }
+        }
+
+    for (auto pair : map)
+        {
+        for (auto instanceId : pair.second)
+            {
+            result.insert({pair.first, instanceId});
+            }
+        }
+
+    return result;
     }
 
 /*--------------------------------------------------------------------------------------+
