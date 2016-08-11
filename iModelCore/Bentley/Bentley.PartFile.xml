@@ -43,7 +43,7 @@
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <Bindings>
-            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)Bentley$(libext)</Libs>
+            <Libs>Delivery/$(libprefix)Bentley$(libext)</Libs>
             <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
