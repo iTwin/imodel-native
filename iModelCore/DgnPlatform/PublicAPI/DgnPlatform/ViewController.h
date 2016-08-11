@@ -677,10 +677,37 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
+    struct EnvironmentDisplay
+    {
+        struct GroundPlane
+        {
+            bool m_enabled = false;
+            double m_elevation;
+            ColorDef m_aboveColor;
+            ColorDef m_belowColor;
+        };
+        struct SkyBox
+        {
+            bool m_enabled = false;
+            Utf8String m_jpegFile;
+            ColorDef m_zenithColor;
+            ColorDef m_nadirColor;
+            ColorDef m_groundColor;
+            ColorDef m_skyColor;
+            double m_groundExponent;
+            double m_skyExponent;
+        };
+        bool m_enabled = false;
+        GroundPlane m_groundPlane;
+        SkyBox m_skybox;
+
+    };
+
 protected:
     bool m_isCameraOn;    //!< if true, m_camera is valid.
     CameraInfo m_camera;  //!< Information about the camera lens used for the view.
     Render::MaterialPtr m_skybox;
+    EnvironmentDisplay m_environment;
 
     virtual CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR) override;
@@ -692,6 +719,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
     virtual void _CreateTerrain(TerrainContextR context) override {DrawSkyBox(context);}
 
+    void LoadEnvironment();
+    DGNPLATFORM_EXPORT void SaveEnvironment();
     void LoadSkyBox(Render::SystemCR system);
     Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
     double GetGroundElevation() const;
@@ -843,11 +872,13 @@ public:
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
 /** @} */
 
-/** @name Environment */
+/** @name Environment Display*/
 /** @{ */
-    DGNPLATFORM_EXPORT bool IsEnvironmentEnabled() const;
-    DGNPLATFORM_EXPORT bool IsGroundPlaneEnabled() const;
-    DGNPLATFORM_EXPORT bool IsSkyBoxEnabled() const;
+    bool IsEnvironmentEnabled() const {return m_environment.m_enabled;}
+    bool IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled;}
+    bool IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled;}
+    EnvironmentDisplay GetEnvironmentDisplay() const {return m_environment;}
+    void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment=val; SaveEnvironment();}
 /** @} */
 
 };

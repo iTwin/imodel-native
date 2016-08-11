@@ -7,53 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   07/16
-//=======================================================================================
-namespace EnvironmentJson
-{
-    static Utf8CP Display()     {return "display";}
-    static Utf8CP Environment() {return "environment";}
-    static Utf8CP GroundPlane() {return "groundPlane";}
-    static Utf8CP SkyBox()      {return "skybox";}
-
-    namespace GroundPlaneJson
-    {
-        static Utf8CP Elevation()   {return "elevation";}
-        static Utf8CP AboveColor()  {return "aboveColor";}
-        static Utf8CP BelowColor()  {return "belowColor";}
-    };
-    namespace SkyBoxJson
-    {
-        static Utf8CP Filename()    {return "file";}
-        static Utf8CP SkyColor()    {return "skyColor";}
-        static Utf8CP ZenithColor() {return "zenithColor";}
-        static Utf8CP NadirColor()  {return "nadirColor";}
-        static Utf8CP GroundColor() {return "groundColor";}
-        static Utf8CP SkyExponent() {return "skyExponent";}
-        static Utf8CP GroundExponent() {return "groundExponent";}
-    };
-
-    static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isInt() ? ColorDef(json.asInt()) : defaultVal;}
-    static double GetDouble(JsonValueCR in, Utf8CP name, double defaultVal) {JsonValueCR json = in[name]; return json.isDouble() ? json.asDouble() : defaultVal;}
-    static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
-    static DPoint2d GetUVForDirection(DPoint3dCR direction, double rotation, double zOffset);
-    static void DrawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR, double rotation, double zOffset);
-    static DPoint3d ComputeCamera(DgnViewportCR vp);
-};
-
-using namespace EnvironmentJson;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
     {
     AxisAlignedBox3d extents;
-#if defined (NEEDS_WORK_GROUND_PLANE)
     if (!IsGroundPlaneEnabled())
         return extents;
-#endif
 
     double elevation = GetGroundElevation();
 
@@ -88,14 +49,7 @@ AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CameraViewController::GetGroundElevation() const
     {
-    JsonValueCR ground = m_settings[Environment()][GroundPlane()];
-
-    // determine the height of the ground plane. By default, draw it one centimeter below 0.0
-    JsonValueCR elevationJson = ground[GroundPlaneJson::Elevation()];
-    double elevation = elevationJson.isNull() ? -DgnUnits::OneCentimeter() : elevationJson.asDouble();
-
-    elevation += m_dgndb.Units().GetGlobalOrigin().z; // adjust for global origin
-    return elevation;
+    return m_environment.m_groundPlane.m_elevation + m_dgndb.Units().GetGlobalOrigin().z; // adjust for global origin
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,7 +69,7 @@ void CameraViewController::DrawGroundPlane(DecorateContextR context)
 
     bool above = IsCameraAbove(extents.low.z);
     double keyValues[] = {0.0, 0.25, 0.5}; // gradient goes from edge of rectangle (0.0) to center (1.0)...
-    ColorDef color = GetColor(m_settings[Environment()][GroundPlane()], above ? GroundPlaneJson::AboveColor() : GroundPlaneJson::BelowColor(), above ? ColorDef::DarkGreen() : ColorDef::DarkBrown());
+    ColorDef color = above ? m_environment.m_groundPlane.m_aboveColor : m_environment.m_groundPlane.m_belowColor;
     ColorDef colors[] = {color, color, color};
 
     Byte alpha = above ? 0x80 : 0x85;
@@ -155,6 +109,8 @@ Render::TexturePtr CameraViewController::LoadTexture(Utf8CP fileName, Render::Sy
     return system._CreateTexture(jpeg, Image::Format::Rgba, Image::BottomUp::No);
     }
 
+static Byte lerp(double t, Byte a, Byte b) {return a + t * double(b - a);}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -162,22 +118,12 @@ void CameraViewController::LoadSkyBox(Render::SystemCR system)
     {
     Render::TexturePtr texture;
 
-    JsonValueCR json =  m_settings[Environment()][SkyBox()];
-    JsonValueCR fileJson = json[SkyBoxJson::Filename()];
-    if (!fileJson.isNull())
-        texture = LoadTexture(fileJson.asString().c_str(), system);
+    if (!m_environment.m_skybox.m_jpegFile.empty())
+        texture = LoadTexture(m_environment.m_skybox.m_jpegFile.c_str(), system);
 
     // we didn't get a jpeg sky, just create a gradient
     if (!texture.IsValid())
         {
-        // get the parameters for the environment gradient from the settings Json
-        double groundExponent = GetDouble(json, SkyBoxJson::GroundExponent(), 4.0);
-        double skyExponent = GetDouble(json, SkyBoxJson::SkyExponent(), 4.0);
-        ColorDef groundColor = GetColor(json, SkyBoxJson::GroundColor(), ColorDef(120,143,125));
-        ColorDef zenithColor = GetColor(json, SkyBoxJson::ZenithColor(), ColorDef(54,117,255));
-        ColorDef nadirColor  = GetColor(json, SkyBoxJson::NadirColor(), ColorDef(40,15,0));
-        ColorDef skyColor    = GetColor(json, SkyBoxJson::SkyColor(), ColorDef(143,205,255));
-
         enum {GRADIENT_PIXEL_COUNT=1024};
 
         // set up the gradient
@@ -190,17 +136,17 @@ void CameraViewController::LoadSkyBox(Render::SystemCR system)
 
             if (frac > 0.5)
                 {
-                color1 = nadirColor;
-                color2 = groundColor;
+                color1 = m_environment.m_skybox.m_nadirColor;
+                color2 = m_environment.m_skybox.m_groundColor;
                 frac = 1.0 -(2.0 * (frac - 0.5));
-                frac = pow(frac, groundExponent);
+                frac = pow(frac, m_environment.m_skybox.m_groundExponent);
                 }
             else
                 {
-                color1 = zenithColor;
-                color2 = skyColor;
+                color1 = m_environment.m_skybox.m_zenithColor;
+                color2 = m_environment.m_skybox.m_skyColor;
                 frac = 2.0*frac;
-                frac = pow(frac, skyExponent);
+                frac = pow(frac, m_environment.m_skybox.m_skyExponent);
                 }
             thisColor->SetRed(lerp(frac, color1.GetRed(), color2.GetRed()));
             thisColor->SetGreen(lerp(frac, color1.GetGreen(), color2.GetGreen()));
@@ -225,7 +171,7 @@ void CameraViewController::LoadSkyBox(Render::SystemCR system)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d EnvironmentJson::GetUVForDirection(DPoint3dCR direction, double rotation, double zOffset)
+static DPoint2d getUVForDirection(DPoint3dCR direction, double rotation, double zOffset)
     {
     double radius = sqrt(direction.x*direction.x + direction.y*direction.y);
     double zValue = direction.z - radius * zOffset;
@@ -241,7 +187,7 @@ DPoint2d EnvironmentJson::GetUVForDirection(DPoint3dCR direction, double rotatio
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d EnvironmentJson::ComputeCamera(DgnViewportCR vp)
+static DPoint3d computeCamera(DgnViewportCR vp)
     {
     Frustum frustum = vp.GetFrustum();
     DVec3d delta = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftBottomRear), frustum.GetCorner(NPC_LeftBottomFront));
@@ -259,7 +205,7 @@ DPoint3d EnvironmentJson::ComputeCamera(DgnViewportCR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void EnvironmentJson::DrawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR viewport, double rotation, double zOffset)
+static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR viewport, double rotation, double zOffset)
     {
     enum {MESH_DIMENSION=10};
 
@@ -268,7 +214,7 @@ void EnvironmentJson::DrawBackgroundMesh(Render::GraphicBuilderP builder, DgnVie
     bvector<DPoint3d> meshPoints;
     bvector<DPoint2d> meshParams; 
     bvector<int> indices;
-    DPoint3d cameraPos = ComputeCamera(viewport);
+    DPoint3d cameraPos = computeCamera(viewport);
 
     for (int row = 1; row < MESH_DIMENSION;  ++row)
         {
@@ -289,7 +235,7 @@ void EnvironmentJson::DrawBackgroundMesh(Render::GraphicBuilderP builder, DgnVie
             for (int i=0; i<4; ++i)
                 {
                 DVec3d direction = DVec3d::FromStartEnd(cameraPos, points[i]);
-                params[i] = GetUVForDirection(direction, rotation, zOffset);
+                params[i] = getUVForDirection(direction, rotation, zOffset);
 
                 // We need to move the point off the back plane slightly so it won't be clipped. Move it 1/10000 of the distance to the eye.
                 // That should keep it behind any geomtery of interest, but at least one value in zbuffer resolution inside the frustum.
@@ -335,10 +281,8 @@ void EnvironmentJson::DrawBackgroundMesh(Render::GraphicBuilderP builder, DgnVie
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CameraViewController::DrawSkyBox(TerrainContextR context)
     {
-#if defined (NEEDS_WORK_GROUND_PLANE)
     if (!IsSkyBoxEnabled())
         return;
-#endif
 
     auto vp=context.GetViewport();
     if (!m_skybox.IsValid())
@@ -353,7 +297,7 @@ void CameraViewController::DrawSkyBox(TerrainContextR context)
     skyGraphic->ActivateGraphicParams(params);
 
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates
-    EnvironmentJson::DrawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().Units().GetGlobalOrigin().z);
+    drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().Units().GetGlobalOrigin().z);
 
     // we want to control the rendermode, lighting, and edges for the mesh. To do that we have to create a GraphicBranch with the appropriate ViewFlags
     ViewFlags flags = context.GetViewFlags();
@@ -372,10 +316,96 @@ void CameraViewController::DrawSkyBox(TerrainContextR context)
     context.OutputGraphic(*context.CreateBranch(branch), nullptr);
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   07/16
+//=======================================================================================
+namespace EnvironmentJson
+{
+    static Utf8CP Display()     {return "display";}
+    static Utf8CP Environment() {return "environment";}
+    static Utf8CP Ground()      {return "ground";}
+    static Utf8CP Sky()         {return "sky";}
+
+    namespace GroundPlaneJson
+    {
+        static Utf8CP Elevation()   {return "elevation";}
+        static Utf8CP AboveColor()  {return "aboveColor";}
+        static Utf8CP BelowColor()  {return "belowColor";}
+    };
+    namespace SkyBoxJson
+    {
+        static Utf8CP Filename()    {return "file";}
+        static Utf8CP SkyColor()    {return "skyColor";}
+        static Utf8CP ZenithColor() {return "zenithColor";}
+        static Utf8CP NadirColor()  {return "nadirColor";}
+        static Utf8CP GroundColor() {return "groundColor";}
+        static Utf8CP SkyExponent() {return "skyExponent";}
+        static Utf8CP GroundExponent() {return "groundExponent";}
+    };
+
+    static ColorDef GetColor(JsonValueCR in, Utf8CP name, ColorDef defaultVal) {JsonValueCR json = in[name]; return json.isInt() ? ColorDef(json.asInt()) : defaultVal;}
+    static double GetDouble(JsonValueCR in, Utf8CP name, double defaultVal) {JsonValueCR json = in[name]; return json.isDouble() ? json.asDouble() : defaultVal;}
+};
+
+using namespace EnvironmentJson;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CameraViewController::IsEnvironmentEnabled() const {return m_settings[Environment()][Display()].asBool();}
-bool CameraViewController::IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_settings[Environment()][SkyBox()][Display()].asBool();}
-bool CameraViewController::IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_settings[Environment()][GroundPlane()][Display()].asBool();}
+void CameraViewController::LoadEnvironment()
+    {
+    JsonValueCR env = m_settings[Environment()];
+    m_environment.m_enabled = env[Display()].asBool();
+    
+    JsonValueCR ground = env[Ground()];
+    JsonValueCR elevationJson = ground[GroundPlaneJson::Elevation()];
 
+    m_environment.m_groundPlane.m_enabled = ground[Display()].asBool();
+    m_environment.m_groundPlane.m_elevation = elevationJson.isNull() ? -DgnUnits::OneCentimeter() : elevationJson.asDouble();
+    m_environment.m_groundPlane.m_aboveColor = GetColor(ground, GroundPlaneJson::AboveColor(), ColorDef::DarkGreen());
+    m_environment.m_groundPlane.m_belowColor = GetColor(ground, GroundPlaneJson::BelowColor(), ColorDef::DarkBrown());
+
+    JsonValueCR sky = env[Sky()];
+
+    m_environment.m_skybox.m_enabled = sky[Display()].asBool();
+    m_environment.m_skybox.m_jpegFile = sky[SkyBoxJson::Filename()].asString();
+    m_environment.m_skybox.m_groundExponent = GetDouble(sky, SkyBoxJson::GroundExponent(), 4.0);
+    m_environment.m_skybox.m_skyExponent = GetDouble(sky, SkyBoxJson::SkyExponent(), 4.0);
+    m_environment.m_skybox.m_groundColor = GetColor(sky, SkyBoxJson::GroundColor(), ColorDef(120,143,125));
+    m_environment.m_skybox.m_zenithColor = GetColor(sky, SkyBoxJson::ZenithColor(), ColorDef(54,117,255));
+    m_environment.m_skybox.m_nadirColor  = GetColor(sky, SkyBoxJson::NadirColor(), ColorDef(40,15,0));
+    m_environment.m_skybox.m_skyColor    = GetColor(sky, SkyBoxJson::SkyColor(), ColorDef(143,205,255));
+
+#if !defined (TESTING_ENVIRONMENT)
+    m_environment.m_enabled = m_environment.m_groundPlane.m_enabled = m_environment.m_skybox.m_enabled = true;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CameraViewController::SaveEnvironment()
+    {
+    Json::Value env;
+    env[Display()] = m_environment.m_enabled;
+    
+    Json::Value ground;
+    ground[Display()] = m_environment.m_groundPlane.m_enabled;
+    ground[GroundPlaneJson::Elevation()] = m_environment.m_groundPlane.m_elevation;
+    ground[GroundPlaneJson::AboveColor()] = m_environment.m_groundPlane.m_aboveColor.GetValue();
+    ground[GroundPlaneJson::BelowColor()] = m_environment.m_groundPlane.m_belowColor.GetValue();
+    env[Ground()] = ground;
+
+    Json::Value sky = env[Sky()];
+    sky[Display()] = m_environment.m_skybox.m_enabled;
+    sky[SkyBoxJson::Filename()] = m_environment.m_skybox.m_jpegFile;
+    sky[SkyBoxJson::GroundExponent()] = m_environment.m_skybox.m_groundExponent;
+    sky[SkyBoxJson::SkyExponent()] = m_environment.m_skybox.m_skyExponent;
+
+    sky[SkyBoxJson::GroundColor()] = m_environment.m_skybox.m_groundColor.GetValue();
+    sky[SkyBoxJson::ZenithColor()] = m_environment.m_skybox.m_zenithColor.GetValue();
+    sky[SkyBoxJson::NadirColor()] = m_environment.m_skybox.m_nadirColor.GetValue();
+    sky[SkyBoxJson::SkyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
+    env[Sky()] = sky;
+    
+    m_settings[Environment()] = env;
+    }
