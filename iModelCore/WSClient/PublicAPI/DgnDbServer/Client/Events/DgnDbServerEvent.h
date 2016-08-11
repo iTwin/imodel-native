@@ -32,6 +32,7 @@ namespace DgnDbServerEvent
         {
         static Utf8CP RevisionId = "RevisionId";
         static Utf8CP RevisionIndex = "RevisionIndex";
+		static Utf8CP BriefcaseId = "BriefcaseId";
         }
     namespace CodeEventProperties
         {
