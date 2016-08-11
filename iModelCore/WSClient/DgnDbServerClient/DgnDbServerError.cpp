@@ -25,6 +25,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         {
         map["DgnDbServer.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
         map["DgnDbServer.InvalidPropertiesValues"]                   = Id::InvalidPropertiesValues;
+        map["DgnDbServer.UserDoesNotHavePermission"]                 = Id::UserDoesNotHavePermission;
         map["DgnDbServer.InvalidBriefcase"]                          = Id::InvalidBriefcase;
         map["DgnDbServer.AnotherUserPushing"]                        = Id::AnotherUserPushing;
         map["DgnDbServer.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
@@ -50,6 +51,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["DgnDbServer.CodeAlreadyExists"]                         = Id::CodeAlreadyExists;
         map["DgnDbServer.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
         map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
+        map["DgnDbServer.FileDoesNotExist"]                          = Id::FileDoesNotExist;
         }
 
     auto it = map.find(errorIdString);

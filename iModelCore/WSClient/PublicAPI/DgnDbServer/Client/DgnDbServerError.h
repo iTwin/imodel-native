@@ -20,6 +20,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             //DgnDbServer Errors
             MissingRequiredProperties = 1,
             InvalidPropertiesValues,
+            UserDoesNotHavePermission,
             InvalidBriefcase,
             BriefcaseDoesNotBelongToUser,
             AnotherUserPushing,
@@ -45,6 +46,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             CodeReservedByAnotherBriefcase,
             CodeAlreadyExists,
             CodeDoesNotExist,
+            FileDoesNotExist,
 
             //WebServices Errors
             LoginFailed,

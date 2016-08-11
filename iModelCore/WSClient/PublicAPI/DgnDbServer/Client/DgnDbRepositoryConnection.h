@@ -117,7 +117,7 @@ private:
     DgnDbServerStatusResult WriteBriefcaseIdIntoFile (BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
 
     //! Creates a new file instance on the server. 
-    DgnDbServerFileTaskPtr   CreateNewServerFile(DgnDbPtr db, Utf8StringCR description, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerFileTaskPtr   CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Performs a file upload to on-premise server. 
     DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -195,7 +195,7 @@ public:
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the uploaded file information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(DgnDbPtr db, Utf8StringCR description, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
