@@ -164,24 +164,16 @@
         <SubProduct ProductName="Bentley-iOSXCTest"/>
     </Part>
 
-
-
-
-
-
-
-
-
-
-    
     <!-- *********************************************************** -->
     <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
     <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
     <Part
         Name="UwpTest"
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=Bentley -dTEST_COLLECTION_PRODUCT=Bentley-Tests"
         OnlyPlatforms="WinRT*"
+        ApiNumber="G06"
         >
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
@@ -190,7 +182,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="Bentley-UwpTest" >
+    <Product Name="Bentley-UwpTest">
         <SubPart PartName="UwpTest"/>
         <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
