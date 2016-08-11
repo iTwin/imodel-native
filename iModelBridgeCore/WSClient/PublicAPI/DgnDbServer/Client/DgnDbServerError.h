@@ -20,7 +20,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             //DgnDbServer Errors
             MissingRequiredProperties = 1,
             InvalidPropertiesValues,
-            InvalidPropertyValue,
+            UserDoesNotHavePermission,
             InvalidBriefcase,
             BriefcaseDoesNotBelongToUser,
             AnotherUserPushing,
