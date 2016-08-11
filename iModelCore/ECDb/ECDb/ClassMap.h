@@ -10,6 +10,8 @@
 #include "PropertyMap.h"
 #include <Bentley/NonCopyableClass.h>
 #include "DebugWriter.h"
+#include "DbSchemaPersistenceManager.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -166,10 +168,10 @@ struct ClassMap : RefCountedBase
 
         virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* parentClassMap);
         virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const&, ClassMap const* parentClassMap);
-        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap);
-        virtual BentleyStatus _Save(std::set<ClassMap const*>& savedGraph);
+        virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
+        virtual BentleyStatus _Save(DbMapSaveContext& ctx);
         virtual void _WriteDebugInfo(DebugWriter& writer) const;
-        MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, ClassDbMapping const* loadInfo, ClassMappingInfo const* classMapInfo);
+        MappingStatus AddPropertyMaps(ClassMapLoadContext&, ClassMap const* parentClassMap, DbClassMapLoadContext const* loadInfo, ClassMappingInfo const* classMapInfo);
         void SetTable(DbTable& newTable, bool append = false);
         PropertyMapCollection& GetPropertyMapsR() { return m_propertyMaps; }
         ECDbSchemaManagerCR Schemas() const;
@@ -180,7 +182,7 @@ struct ClassMap : RefCountedBase
         static ClassMapPtr Create(ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap(Type::Class, ecClass, ecdbMap, mapStrategy, setIsDirty); }
 
         //! Called when loading an existing class map from the ECDb file 
-        BentleyStatus Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap) { return _Load(loadGraph, ctx, mapInfo, parentClassMap); }
+        BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) { return _Load(ctx, mapInfo); }
 
         //! Called during schema import when creating the class map from the imported ECClass 
         MappingStatus Map(SchemaImportContext&, ClassMappingInfo const& classMapInfo);
@@ -196,7 +198,8 @@ struct ClassMap : RefCountedBase
         bool IsDirty() const { return m_isDirty; }
         ClassMapId GetId() const { return m_id; }
         void SetId(ClassMapId id) { m_id = id; }
-        BentleyStatus Save(std::set<ClassMap const*>& savedGraph) { return _Save(savedGraph); }
+        void SetBaseClassId(ECN::ECClassId id) { m_parentMapClassId = id; }
+        BentleyStatus Save(DbMapSaveContext& ctx) { return _Save(ctx); }
 
         ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         ColumnFactory& GetColumnFactoryR() { return m_columnFactory; }
@@ -250,7 +253,7 @@ private:
 
     virtual MappingStatus _MapPart1(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override;
     virtual MappingStatus _MapPart2(SchemaImportContext&, ClassMappingInfo const& classMapInfo, ClassMap const* parentClassMap) override { return MappingStatus::Success; }
-    virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap) override;
+    virtual BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
 
 public:
     ~UnmappedClassMap() {}

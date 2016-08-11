@@ -243,18 +243,24 @@ BentleyStatus PropertyMap::DetermineColumnInfo(Utf8StringR columnName, bool& isN
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PropertyMap::_Save(ClassDbMapping& classMapping) const
+BentleyStatus PropertyMap::_Save(DbClassMapSaveContext& ctx) const
     {
     std::vector<DbColumn const*> columns;
     GetColumns(columns);
     if (columns.size() == 0)
         return SUCCESS;
 
-    PropertyDbMapping* propMapping = classMapping.CreatePropertyMapping(GetRoot().GetProperty().GetId(), GetPropertyAccessString(), columns);
-    if (propMapping == nullptr)
-        return ERROR;
+    const ECPropertyId rootPropertyId = GetRoot().GetProperty().GetId();
+    Utf8CP accessString = GetPropertyAccessString();
+    for (DbColumn const* column : columns)
+        {
+        if (ctx.InsertPropertyMap(rootPropertyId, accessString, column->GetId()) != SUCCESS)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+        }
 
-    m_propertyPathId = propMapping->GetPropertyPath().GetId();
     return SUCCESS;
     }
 
@@ -620,11 +626,11 @@ BentleyStatus StructPropertyMap::_FindOrCreateColumnsInTable(ClassMap const& cla
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StructPropertyMap::_Load(ClassDbMapping const& classMapping)
+BentleyStatus StructPropertyMap::_Load(DbClassMapLoadContext const& dbClassMapLoadContext)
     {
     for (PropertyMap const* child : GetChildren())
         {
-        if (SUCCESS != const_cast<PropertyMap*>(child)->Load(classMapping))
+        if (SUCCESS != const_cast<PropertyMap*>(child)->Load(dbClassMapLoadContext))
             return ERROR;
 
         m_mappedTables.insert(m_mappedTables.end(), child->GetTables().begin(), child->GetTables().end());
@@ -637,11 +643,11 @@ BentleyStatus StructPropertyMap::_Load(ClassDbMapping const& classMapping)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StructPropertyMap::_Save(ClassDbMapping& mapping) const
+BentleyStatus StructPropertyMap::_Save(DbClassMapSaveContext& ctx) const
     {
     for (PropertyMap const* child : GetChildren())
         {
-        if (SUCCESS != child->Save(mapping))
+        if (SUCCESS != child->Save(ctx))
             return ERROR;
         }
 
@@ -682,16 +688,16 @@ Utf8String StructPropertyMap::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SingleColumnPropertyMap::_Load(ClassDbMapping const& classMapping)
+BentleyStatus SingleColumnPropertyMap::_Load(DbClassMapLoadContext const& dbClassMapLoadContext)
     {
     BeAssert(m_column == nullptr);
-    PropertyDbMapping const* info = classMapping.FindPropertyMapping(GetRoot().GetProperty().GetId(), GetPropertyAccessString());
+    auto info = dbClassMapLoadContext.FindColumnByAccessString(GetPropertyAccessString());
     if (info == nullptr)
         {
         return ERROR;
         }
-
-    SetColumn(*const_cast<DbColumn*>(info->ExpectingSingleColumn()));
+    BeAssert(info->size() == 1);
+    SetColumn(*const_cast<DbColumn*>(info->front()));
     return SUCCESS;
     }
 
@@ -787,22 +793,21 @@ PointPropertyMap::PointPropertyMap(PrimitiveECPropertyCR pointProperty, Utf8CP p
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointPropertyMap::_Save(ClassDbMapping& classMapping) const
+BentleyStatus PointPropertyMap::_Save(DbClassMapSaveContext& ctx) const
     {
     BeAssert(m_xColumn != nullptr);
     BeAssert(m_yColumn != nullptr);
-
+    
     auto rootPropertyId = GetRoot().GetProperty().GetId();
     Utf8String accessString = GetPropertyAccessString();
-    auto pm = classMapping.CreatePropertyMapping(rootPropertyId, (accessString + ".X").c_str(), {m_xColumn});
-    if (pm == nullptr)
+    
+    if (ctx.InsertPropertyMap(rootPropertyId, (accessString + ".X").c_str(), m_xColumn->GetId()) != SUCCESS)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    classMapping.CreatePropertyMapping(rootPropertyId, (accessString + ".Y").c_str(), {m_yColumn});
-    if (pm == nullptr)
+    if (ctx.InsertPropertyMap(rootPropertyId, (accessString + ".Y").c_str(), m_yColumn->GetId()) != SUCCESS)
         {
         BeAssert(false);
         return ERROR;
@@ -811,8 +816,7 @@ BentleyStatus PointPropertyMap::_Save(ClassDbMapping& classMapping) const
     if (m_is3d)
         {
         BeAssert(m_zColumn != nullptr);
-        classMapping.CreatePropertyMapping(rootPropertyId, (accessString + ".Z").c_str(), {m_zColumn});
-        if (pm == nullptr)
+        if (ctx.InsertPropertyMap(rootPropertyId, (accessString + ".Z").c_str(), m_zColumn->GetId()) != SUCCESS)
             {
             BeAssert(false);
             return ERROR;
@@ -825,7 +829,7 @@ BentleyStatus PointPropertyMap::_Save(ClassDbMapping& classMapping) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PointPropertyMap::_Load(ClassDbMapping const& classMapping)
+BentleyStatus PointPropertyMap::_Load(DbClassMapLoadContext const& dbClassMapLoadContext)
     {
     BeAssert(m_xColumn == nullptr);
     BeAssert(m_yColumn == nullptr);
@@ -833,32 +837,32 @@ BentleyStatus PointPropertyMap::_Load(ClassDbMapping const& classMapping)
 
     const ECPropertyId rootPropertyId = GetRoot().GetProperty().GetId();
     Utf8String accessString(GetPropertyAccessString());
-    PropertyDbMapping const* xPropMapping = classMapping.FindPropertyMapping(rootPropertyId, (accessString + ".X").c_str());
+    std::vector<DbColumn const*> const*  xPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".X").c_str());
     if (xPropMapping == nullptr)
         {
         //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
-    PropertyDbMapping const* yPropMapping = classMapping.FindPropertyMapping(rootPropertyId, (accessString + ".Y").c_str());
+    std::vector<DbColumn const*> const*  yPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".Y").c_str());
     if (yPropMapping == nullptr)
         {
         //WIP_ECSCHEMA_UPGRADE
         return ERROR;
         }
 
-    PropertyDbMapping const* zPropMapping = nullptr;
+    std::vector<DbColumn const*> const* zPropMapping = nullptr;
     if (m_is3d)
         {
-        zPropMapping = classMapping.FindPropertyMapping(rootPropertyId, (accessString + ".Z").c_str());
+        zPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".Z").c_str());
         if (zPropMapping == nullptr)
             {
             //WIP_ECSCHEMA_UPGRADE
             return ERROR;
             }
         }
-
-    return SetColumns(*xPropMapping->ExpectingSingleColumn(), *yPropMapping->ExpectingSingleColumn(), m_is3d ? zPropMapping->ExpectingSingleColumn() : nullptr);
+   
+    return SetColumns(*(xPropMapping->front()), *(yPropMapping->front()), m_is3d ? zPropMapping->front() : nullptr);
     }
 
 //----------------------------------------------------------------------------------

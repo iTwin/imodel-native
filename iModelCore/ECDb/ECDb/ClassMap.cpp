@@ -302,12 +302,13 @@ void ClassMap::SetTable(DbTable& newTable, bool append /*= false*/)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const* parentClassMap, ClassDbMapping const* classMapping, ClassMappingInfo const* classMapInfo)
+MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const* parentClassMap, DbClassMapLoadContext const* dbClassMapLoadContext, ClassMappingInfo const* classMapInfo)
     {
     const bool isJoinedTableMapping = Enum::Contains(GetMapStrategy().GetOptions(), ECDbMapStrategy::Options::JoinedTable);
-    const bool isImportingSchemas = classMapInfo != nullptr && classMapping == nullptr;
+    const bool isImportingSchemas = classMapInfo != nullptr && dbClassMapLoadContext == nullptr;
     if (!isImportingSchemas && isJoinedTableMapping)
         parentClassMap = nullptr;
+    
 
     std::vector<ECPropertyCP> propertiesToCreatePropMapsFor;
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
@@ -322,11 +323,12 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
             continue;
             }
 
-        if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
-            {
-            GetPropertyMapsR().AddPropertyMap(propMapInBaseClass);
-            continue;
-            }
+        //if (!isJoinedTableMapping && propMapInBaseClass->GetAsNavigationPropertyMap() == nullptr)
+        //    {
+        //    BeAssert(false && "This should never happen");
+        //    GetPropertyMapsR().AddPropertyMap(propMapInBaseClass);
+        //    continue;
+        //    }
 
         //nav prop maps and if the class is mapped to primary and joined table, create clones of property maps of the base class
         //as the context (table, containing ECClass) is different
@@ -356,7 +358,7 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
             }
         else
             {
-            if (ERROR == propMap->Load(*classMapping))
+            if (ERROR == propMap->Load(*dbClassMapLoadContext))
                 {
                 //ECSchema Upgrade
                 GetColumnFactoryR().Update();
@@ -365,6 +367,23 @@ MappingStatus ClassMap::AddPropertyMaps(ClassMapLoadContext& ctx, ClassMap const
                     BeAssert(false);
                     return MappingStatus::Error;
                     }
+                //! ECSchema update added new property for which we need to save property map
+                DbMapSaveContext ctx(GetECDbMap().GetECDb());
+                //First make sure table is updated on disk. The table must already exist for this operation to work.
+                if (GetECDbMap().GetDbSchema().UpdateTableOnDisk(*propMap->GetTable()) != SUCCESS)
+                    {
+                    BeAssert(false && "Failed to save table");
+                    return MappingStatus::Error;
+                    }
+
+                ctx.BeginSaving(*this);
+                DbClassMapSaveContext classMapContext(ctx);
+                propMap->Save(classMapContext);
+                ctx.EndSaving(*this);
+                //!WIP save this property map
+                //BeAssert(false);
+        
+                //we need to save this map
                 }
             }
 
@@ -553,79 +572,86 @@ ECDbSchemaManagerCR ClassMap::Schemas() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Save(std::set<ClassMap const*>& savedGraph)
+BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
     {
-    if (savedGraph.find(this) != savedGraph.end())
-        return BentleyStatus::SUCCESS;
+    if (GetId().IsValid())
+        return SUCCESS;
 
-    savedGraph.insert(this);
-    std::set<PropertyMapCP> baseProperties;
+    if (ctx.IsAlreadySaved(*this))
+        return SUCCESS;
 
-    if (!GetId().IsValid())
+    ECDbCR ecdb = GetECDbMap().GetECDb();
+    ClassMapId baseClassMapid;
+
+    ctx.BeginSaving(*this);
+    //auto baseClassMap = GetParentMapClassId () == 
+    if (GetParentMapClassId().IsValid())
         {
-        //auto baseClassMap = GetParentMapClassId () == 
-        auto baseClass = GetECDbMap().GetECDb ().Schemas().GetECClass(GetParentMapClassId());
-        ClassMap* baseClassMap = baseClass == nullptr ? nullptr : (ClassMap*)GetECDbMap().GetClassMap(*baseClass);
-        if (baseClassMap != nullptr)
+        auto baseClass = ecdb.Schemas().GetECClass(GetParentMapClassId());
+        if (baseClass == nullptr)
             {
-            if (SUCCESS != baseClassMap->Save(savedGraph))
-                return ERROR;
-
-            for (PropertyMapCP propertyMap : baseClassMap->GetPropertyMaps())
-                {
-                baseProperties.insert(propertyMap);
-                }
+            BeAssert(false && "Failed to find baseclass");
+            return ERROR;
             }
 
-        ClassDbMapping* mapping = m_ecDbMap.GetDbSchemaR().GetDbMappingsR().CreateClassMapping(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ClassMapId() : baseClassMap->GetId());
-        for (PropertyMapCP propertyMap : GetPropertyMaps())
+        ClassMap* baseClassMap = (ClassMap*) GetECDbMap().GetClassMap(*baseClass);
+        if (baseClassMap == nullptr)
             {
-            if (baseProperties.find(propertyMap) != baseProperties.end())
-                continue;
-
-            if (SUCCESS != propertyMap->Save(*mapping))
+            BeAssert(false && "Failed to find baseClass map");
+            return ERROR;
+            }
+        
+        if (!baseClassMap->GetId().IsValid())
+            {
+            if (SUCCESS != baseClassMap->Save(ctx))
                 return ERROR;
             }
 
-        m_id = mapping->GetId();
+        baseClassMapid = baseClassMap->GetId();
         }
 
-        m_isDirty = false;
-        return SUCCESS;
+    if (ctx.InsertClassMap(m_id, GetClass().GetId(), GetMapStrategy(), baseClassMapid) != SUCCESS)
+        {
+        m_id = ClassMapId();
+        BeAssert(false);
+        return ERROR;
+        }
+
+    DbClassMapSaveContext classMapSaveContext(ctx);
+    for (PropertyMapCP propertyMap : GetPropertyMaps())
+        {
+        if (SUCCESS != propertyMap->Save(classMapSaveContext))
+            return ERROR;
+        }
+
+    m_isDirty = false;
+    ctx.EndSaving(*this);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan      01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap)
+BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
-    if (parentClassMap)
-        m_parentMapClassId = parentClassMap->GetClass().GetId();
 
-
-    std::set<Utf8CP, CompareIUtf8Ascii> localPropSet;
-    for (auto property : GetClass().GetProperties(false))
-        {
-        localPropSet.insert(property->GetName().c_str());
-        }
-
-    localPropSet.insert(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 
-    if (mapInfo.GetPropertyMappings().empty())
+    if (!mapInfo.HasMappedProperties())
         {
         SetTable(*const_cast<DbTable*>(GetECDbMap().GetDbSchema().GetNullTable()));
         return SUCCESS;
         }
     else
         {
-        for (auto const& propMapping : mapInfo.GetPropertyMappings())
+        for (auto const& propMapping : mapInfo.GetPropertyMaps())
             {
-            if (propMapping->GetColumns().front()->GetKind() == DbColumn::Kind::ECClassId)
+            std::vector<DbColumn const*> const& columns = propMapping.second;
+            if (columns.front()->GetKind() == DbColumn::Kind::ECClassId)
                 continue;
 
-            for (DbColumn const* column : propMapping->GetColumns())
+            for (DbColumn const* column : columns)
                 {
                 if (column->GetTable().GetType() == DbTable::Type::Joined)
                     joinedTables.insert(&column->GetTableR());
@@ -646,16 +672,17 @@ BentleyStatus ClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoad
     if (GetECInstanceIdPropertyMap() != nullptr)
         return ERROR;
 
-    PropertyDbMapping const* ecInstanceIdMapping = mapInfo.FindPropertyMapping(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
-    if (ecInstanceIdMapping == nullptr)
+    std::vector<DbColumn const*> const* ecInstanceIdColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    if (ecInstanceIdColumns == nullptr)
         return ERROR;
 
-    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, ecInstanceIdMapping->GetColumns());
+    PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(Schemas(), *this, *ecInstanceIdColumns);
     if (ecInstanceIdPropertyMap == nullptr)
         return ERROR;
 
     GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap);
-    return AddPropertyMaps(ctx, parentClassMap, &mapInfo, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
+
+    return AddPropertyMaps(ctx, nullptr, &mapInfo, nullptr) == MappingStatus::Success ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1280,7 +1307,7 @@ MappingStatus UnmappedClassMap::_MapPart1(SchemaImportContext&, ClassMappingInfo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus UnmappedClassMap::_Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext& ctx, ClassDbMapping const& mapInfo, ClassMap const* parentClassMap)
+BentleyStatus UnmappedClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
     DbTable const* nullTable = GetECDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));

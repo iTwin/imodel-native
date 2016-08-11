@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaImportContext::Initialize(DbSchema& dbSchema, ECDbCR ecdb)
     {
-    return DbSchemaPersistenceManager::Load(dbSchema, ecdb, DbSchema::LoadState::ForSchemaImport);
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,9 +122,7 @@ BentleyStatus ECSchemaCompareContext::ReloadECSchemaIfRequired(ECDbSchemaManager
         m_importedSchemaList.push_back(schema);
         }
 
-    return DbSchemaPersistenceManager::Load(
-        schemaManager.GetECDb().GetECDbImplR().GetECDbMap().GetDbSchemaR(), 
-        schemaManager.GetECDb(), DbSchema::LoadState::ForSchemaImport);
+    return SUCCESS;
     
     }
 /*---------------------------------------------------------------------------------------

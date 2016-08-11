@@ -684,7 +684,12 @@ ECDbMapAnalyser::Class& ECDbMapAnalyser::GetClass(ClassMapCR classMap)
     if (classMap.HasJoinedTable())
         {
         Storage const& storage = GetStorage(classMap.GetJoinedTable().GetName().c_str());
-        for (ECClassId id : classMap.GetStorageDescription().GetVerticalPartition(classMap.GetJoinedTable())->GetClassIds())
+        auto vpart = classMap.GetStorageDescription().GetVerticalPartition(classMap.GetJoinedTable());
+        if (vpart == nullptr)
+            {
+            BeAssert(vpart != nullptr);
+            }
+        for (ECClassId id : vpart->GetClassIds())
             {
             ClassMapCP refClassMap = GetClassMap(id);
             BeAssert(refClassMap != nullptr);

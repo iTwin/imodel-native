@@ -138,7 +138,7 @@ private:
 public:
     ~Impl() {}
 
-    ECDbMap const& GetECDbMap() const { return *m_ecdbMap; }
+    ECDbMap const& GetECDbMap() const;
 
     BeBriefcaseBasedIdSequence& GetECInstanceIdSequence() { return m_ecInstanceIdSequence; }
     BeBriefcaseBasedIdSequence& GetECSchemaIdSequence() { return m_ecSchemaIdSequence; }
