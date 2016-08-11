@@ -212,7 +212,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_ignoreLighting = true;
     m_graphics.SetViewFlags(flags);
 
-    auto branch = m_context.CreateBranch(Graphic::CreateParams(nullptr, m_scene.GetLocation()), m_graphics);
+    auto branch = m_context.CreateBranch(m_graphics, &m_scene.GetLocation());
     
     BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
     m_context.OutputGraphic(*branch, nullptr);

@@ -269,7 +269,7 @@ bool PointCloudProgressiveDisplay::DrawPointCloud(Render::GraphicPtr* pGraphicsP
 
     if (!graphicArray.m_entries.empty())
         {
-        auto graphicGroup = context.CreateBranch(Render::Graphic::CreateParams(context.GetViewport(), m_model.GetSceneToWorld()), graphicArray);
+        auto graphicGroup = context.CreateBranch(graphicArray, &m_model.GetSceneToWorld());
         context.OutputGraphic(*graphicGroup, nullptr);
 
         if (pGraphicsPtr != nullptr)
