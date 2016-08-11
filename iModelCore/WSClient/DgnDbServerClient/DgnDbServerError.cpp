@@ -25,7 +25,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         {
         map["DgnDbServer.MissingRequiredProperties"]                 = Id::MissingRequiredProperties;
         map["DgnDbServer.InvalidPropertiesValues"]                   = Id::InvalidPropertiesValues;
-        map["DgnDbServer.InvalidPropertyValue"]                      = Id::InvalidPropertyValue;
+        map["DgnDbServer.UserDoesNotHavePermission"]                 = Id::UserDoesNotHavePermission;
         map["DgnDbServer.InvalidBriefcase"]                          = Id::InvalidBriefcase;
         map["DgnDbServer.AnotherUserPushing"]                        = Id::AnotherUserPushing;
         map["DgnDbServer.RevisionAlreadyExists"]                     = Id::RevisionAlreadyExists;
