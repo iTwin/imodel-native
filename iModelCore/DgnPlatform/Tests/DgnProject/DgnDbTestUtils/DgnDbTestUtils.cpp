@@ -389,8 +389,11 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
         return DgnViewId();
         }
 
+    CategorySelectorCPtr catSel = InsertNewCategorySelector(db, "Default", nullptr);
+
     CameraViewDefinition view(db, name);
     view.SetModelSelector(*modSel);
+    view.SetCategorySelector(*catSel);
     ViewDefinitionCPtr newViewDef = view.Insert();
     if (!newViewDef.IsValid())
         {
@@ -400,6 +403,8 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
 
     DgnViewId viewId = view.GetViewId();
     
+    db.SaveChanges();
+
     CameraViewController* viewController = new CameraViewController(db, viewId);
     if (nullptr == viewController)
         {
@@ -431,4 +436,60 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     viewController->Save();
 
     return viewId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/16
+//---------------------------------------------------------------------------------------
+ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
+    {
+    ModelSelector modSel(db, name, model);
+    auto modSelPersist = db.Elements().Insert(modSel);
+    if (!modSelPersist.IsValid())
+        {
+        EXPECT_TRUE(false) << " Failed to insert model selector with name =" << name;
+        return nullptr;
+        }
+
+    auto models = modSelPersist->GetModelIds();
+    EXPECT_EQ(1, models.size());
+    EXPECT_EQ(model, *models.begin());
+
+    return modSelPersist;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/16
+//---------------------------------------------------------------------------------------
+CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categoriesIn)
+    {
+    CategorySelector catSel(db, name);
+
+    CategorySelectorCPtr catSelPersist = db.Elements().Insert(catSel);
+    if (!catSelPersist.IsValid())
+        {
+        EXPECT_TRUE(false) << " Insertion of CategorySelector with name " << name << " failed";
+        return nullptr;
+        }
+
+    DgnCategoryIdSet const* categories = categoriesIn;
+    DgnCategoryIdSet _categories;
+    if (nullptr == categories)
+        {
+        for (auto const& categoryId : DgnCategory::QueryCategories(db))
+            _categories.insert(categoryId);
+        categories = &_categories;
+        }
+
+    if (!categories->empty())
+        {
+        CategorySelectorPtr catSelPersistW = catSelPersist->MakeCopy<CategorySelector>();
+        EXPECT_EQ(DgnDbStatus::Success, catSelPersistW->SetCategories(*categories));
+        EXPECT_TRUE(catSelPersistW->Update().IsValid());
+        EXPECT_EQ(catSelPersist.get(), db.Elements().GetElement(catSelPersistW->GetElementId()).get());
+    
+        auto categoriesStored = catSelPersist->GetCategories();
+        EXPECT_EQ(categoriesStored, *categories);
+        }
+    return catSelPersist;
     }

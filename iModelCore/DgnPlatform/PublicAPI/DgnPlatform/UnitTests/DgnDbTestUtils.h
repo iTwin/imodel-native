@@ -125,15 +125,14 @@ public:
     static DgnViewId InsertCameraView(SpatialModelR, Utf8CP viewName = nullptr);
     static void FitView(DgnDbR db, DgnViewId viewId);
 
-    //! Create a new modelselector
-    static ModelSelectorCPtr InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
-        {
-        ModelSelector modSel(db, name, model);
-        return db.Elements().Insert(modSel);
-        }
+    //! Create a new PERSISTENT modelselector
+    static ModelSelectorCPtr InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model);
 
     //! Create a new Category
     static DgnCategoryId InsertCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Scope scope = DgnCategory::Scope::Physical, DgnCategory::Rank rank = DgnCategory::Rank::Application);
+
+    //! Create a new PERSISTENT CategorySelector
+    static CategorySelectorCPtr InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categories = nullptr);
 
     //! Create a new CodeAuthority
     static DgnAuthorityId InsertNamespaceAuthority(DgnDbR, Utf8CP authorityName);

@@ -423,7 +423,7 @@ DgnCategoryIdSet CategorySelector::GetCategories() const
     {
     DgnCategoryIdSet categories;
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM %s WHERE SourceECInstanceId=" BIS_REL_CategorySelectorContainsCategory);
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM "  BIS_REL_CategorySelectorContainsCategory " WHERE SourceECInstanceId");
     if (!statement.IsValid())
         return DgnCategoryIdSet();
 
