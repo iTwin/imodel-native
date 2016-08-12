@@ -25,15 +25,7 @@
 #include "ScalableMesh.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.h"
 #include "ScalableMeshQuadTreeBCLIBFilters.hpp"
-/*
-template class ScalableMeshQuadTreeBCLIBFilter1<DPoint3d, IDTMFile::Extent3d64f>;
 
-template class ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, IDTMFile::Extent3d64f>;
-
-template class ScalableMeshQuadTreeBCLIBProgressiveFilter1<DPoint3d, IDTMFile::Extent3d64f>;
-
-template class ScalableMeshQuadTreeBCLIB_CGALMeshFilter<DPoint3d, IDTMFile::Extent3d64f>;
-*/
 
 template class ScalableMeshQuadTreeBCLIBFilter1<DPoint3d, DRange3d>;
 
@@ -42,3 +34,7 @@ template class ScalableMeshQuadTreeBCLIBMeshFilter1<DPoint3d, DRange3d>;
 template class ScalableMeshQuadTreeBCLIBProgressiveFilter1<DPoint3d, DRange3d>;
 
 template class ScalableMeshQuadTreeBCLIB_CGALMeshFilter<DPoint3d, DRange3d>;
+
+#ifdef WIP_MESH_IMPORT
+template class ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, DRange3d>;
+#endif

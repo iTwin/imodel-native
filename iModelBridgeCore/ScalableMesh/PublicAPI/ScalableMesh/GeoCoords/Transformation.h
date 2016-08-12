@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:27:12 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,13 +32,6 @@ struct Reprojection;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct TransfoModel
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
-        S_QTY,
-        };
 
 private:
     typedef TransfoModelBase                Impl;
@@ -58,7 +51,7 @@ public:
                                             GetIdentity                        ();               
 
     GEOCOORDS_DLLE static TransfoModel      CreateFrom                         (const TransfoMatrix&            transfoMatrix,
-                                                                                Status&                         status);
+                                                                                SMStatus&                         status);
 
     GEOCOORDS_DLLE static TransfoModel      CreateFrom                         (const TransfoMatrix&            transfoMatrix);
 
@@ -89,22 +82,22 @@ public:
     GEOCOORDS_DLLE bool                     IsEquivalent                       (const TransfoModel&             rhs) const;
 
 
-    GEOCOORDS_DLLE Status                   Transform                          (const DPoint3d&                 sourcePt,
+    GEOCOORDS_DLLE SMStatus                   Transform(const DPoint3d&                 sourcePt,
                                                                                 DPoint3d&                       targetPt) const;
 
 
-    GEOCOORDS_DLLE Status                   Transform                          (const DPoint3d*                 sourcePtP,
+    GEOCOORDS_DLLE SMStatus                   Transform(const DPoint3d*                 sourcePtP,
                                                                                 size_t                          sourcePtQty,
                                                                                 DPoint3d*                       targetPtP) const;
 
-    GEOCOORDS_DLLE Status                   Append                             (const TransfoModel&             rhs);
+    GEOCOORDS_DLLE SMStatus                   Append(const TransfoModel&             rhs);
 
 
-    GEOCOORDS_DLLE Status                   Inverse                            ();
+    GEOCOORDS_DLLE SMStatus                   Inverse();
 
     GEOCOORDS_DLLE friend TransfoModel      Combine                            (const TransfoModel&             lhs,
                                                                                 const TransfoModel&             rhs,
-                                                                                TransfoModel::Status&           status);
+                                                                                SMStatus&           status);
 
     };
 
@@ -116,12 +109,12 @@ GEOCOORDS_DLLE TransfoModel                 Combine                            (
 
 GEOCOORDS_DLLE TransfoModel                 Combine                            (const TransfoModel&             lhs,
                                                                                 const TransfoModel&             rhs,
-                                                                                TransfoModel::Status&           status);
+                                                                                SMStatus&           status);
 
 GEOCOORDS_DLLE TransfoModel                 InverseOf                          (const TransfoModel&             transform);
 
 GEOCOORDS_DLLE TransfoModel                 InverseOf                          (const TransfoModel&             transform,
-                                                                                TransfoModel::Status&           status);
+                                                                                SMStatus&           status);
 
 
 
@@ -132,12 +125,7 @@ GEOCOORDS_DLLE TransfoModel                 InverseOf                          (
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct TransfoMatrix
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
+
 
 private:
     double                                  m_parameters[3][4];
@@ -171,7 +159,7 @@ public:
     friend DPoint3d                         operator*                          (const TransfoMatrix&            lhs,
                                                                                 const DPoint3d&                 rhs);
 
-    GEOCOORDS_DLLE Status                   Inverse                            ();
+    GEOCOORDS_DLLE SMStatus                   Inverse();
 
     // TDORAY: Add a *= operator
     };
@@ -180,7 +168,7 @@ public:
 GEOCOORDS_DLLE TransfoMatrix                InverseOf                          (const TransfoMatrix&            matrix);
 
 GEOCOORDS_DLLE TransfoMatrix                InverseOf                          (const TransfoMatrix&            matrix,
-                                                                                TransfoMatrix::Status&          status);
+                                                                                SMStatus&          status);
 
 
 

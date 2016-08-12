@@ -64,7 +64,7 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
@@ -138,5 +138,6 @@ public:
         BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
 #endif                           
     };
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

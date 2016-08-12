@@ -11,10 +11,10 @@
 +--------------------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------+
-|																		|
-|	ScalableMeshNewFileCreator.h    		  	    		(C) Copyright 2001.		|
-|												BCIVIL Corporation.		|
-|												All Rights Reserved.	|
+|                                                                       |
+|   ScalableMeshNewFileCreator.h                (C) Copyright 2001.     |
+|                                               BCIVIL Corporation.     |
+|                                               All Rights Reserved.    |
 |                                                                       |
 +----------------------------------------------------------------------*/
 
@@ -48,7 +48,7 @@
 #include "ScalableMeshCoreFns.h"
 
 #include <ScalableMesh/GeoCoords/Reprojection.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 
 #include "ScalableMeshEditListener.h"
@@ -123,7 +123,7 @@ struct IScalableMeshSourceImporter::Impl : public EditListener
 
         /*
         template <typename PointIndex>
-		StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const;
+        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<ISMStore::Extent3d64f> listRemoveExtent) const;
         */
 /*        
         template <typename PointType, typename PointIndex, typename LinearIndex>
@@ -136,7 +136,7 @@ struct IScalableMeshSourceImporter::Impl : public EditListener
                                                                             int                                     levelToFilter = -1);        
         /*        
         StatusInt                           SaveSources                    ();  
-        StatusInt                           SaveSources                    (IDTMFile::File&                         file);
+        StatusInt                           SaveSources                    (ISMStore::File&                         file);
         */
 
         StatusInt                           SaveSources                    (IScalableMeshSourceImporterStoragePtr&                sourceImporterStoragePtr);

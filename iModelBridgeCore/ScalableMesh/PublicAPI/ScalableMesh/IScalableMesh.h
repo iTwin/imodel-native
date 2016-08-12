@@ -131,6 +131,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
+        virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
@@ -158,9 +159,11 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
-        virtual void                               _TextureFromRaster(MOSAIC_TYPE* mosaicP) = 0;
+        virtual void                               _TextureFromRaster(MOSAIC_TYPE* mosaicP, Transform unitTransform=Transform::FromIdentity()) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
+
+        virtual IScalableMeshNodePtr               _GetRootNode() = 0;
     /*__PUBLISH_SECTION_START__*/
     public:
         //! Gets the number of points of the DTM.
@@ -169,7 +172,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(MOSAIC_TYPE* mosaicP);
+        void TextureFromRaster(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
@@ -234,6 +237,8 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                    SynchWithSources(); 
 
+        BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
+
         BENTLEY_SM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
         BENTLEY_SM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
@@ -285,6 +290,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
                                                                 bool                    openShareable);
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
+        BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
 
     };

@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:36 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,6 +175,7 @@ public:
     MEMORY_DLLE explicit                RawCapacities                      (size_t s0, size_t s1);
     MEMORY_DLLE explicit                RawCapacities                      (size_t s0, size_t s1, size_t s2);
     MEMORY_DLLE explicit                RawCapacities                      (size_t s0, size_t s1, size_t s2, size_t s3);
+    MEMORY_DLLE explicit                RawCapacities                       (size_t s0, size_t s1, size_t s2, size_t s3, size_t s4);
 
     MEMORY_DLLE                         RawCapacities                      (const RawCapacities&    rhs);
     MEMORY_DLLE RawCapacities&          operator=                          (const RawCapacities&    rhs);

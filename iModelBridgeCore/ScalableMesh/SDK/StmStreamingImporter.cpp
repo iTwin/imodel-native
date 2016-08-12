@@ -26,6 +26,8 @@
 #include <ScalableTerrainModel/Type/IMrDTMLinear.h>
 #include <ScalableTerrainModel/Type/IMrDTMTIN.h>
 
+#include "../Stores/SMStoreUtils.h"
+
 
 //#include <STMInternal/Foundations/PrivateStringTools.h>
 
@@ -293,7 +295,7 @@ private:
         DG_QTY,
         };
             
-    PODPacketProxy<IDTMFile::FeatureHeader>
+    PODPacketProxy<ISMStore::FeatureHeader>
                                     m_headerPacket;
     PODPacketProxy<DPoint3d>        m_pointPacket;
     IDTMFeatureArray<DPoint3d>      m_featureArray;    
@@ -329,7 +331,7 @@ private:
 
         if (m_points.size() > 0)
             {
-            m_featureArray.Append((IDTMFile::FeatureType)m_featureType,
+            m_featureArray.Append((ISMStore::FeatureType)m_featureType,
                                   &m_points[0],
                                   &m_points[0] + m_points.size());
 
@@ -401,7 +403,7 @@ class StmStreamingLinearExtractorCreator : public InputExtractorCreatorMixinBase
                                                                                     const Source&                   source,
                                                                                     const ExtractionQuery&         selection) const override
         {        
-        return RawCapacities (sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (sizeof(ISMStore::FeatureHeader),
                               500000*sizeof(DPoint3d));
         }
 

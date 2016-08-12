@@ -50,12 +50,12 @@
 #include "ScalableMeshCoreFns.h"
 
 #include <ScalableMesh/GeoCoords/Reprojection.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 
 #include "ScalableMeshEditListener.h"
 #include "ScalableMeshStorage.h"
-#include "SMPointTileStore.h"
+#include "Stores\SMSQLiteStore.h"
 
 //#include <HGF3DExtent.h>
 
@@ -67,6 +67,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
+extern ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filter;
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 struct Sink;
@@ -82,7 +83,7 @@ typedef RefCountedPtr<IStorage>             IStoragePtr;
 typedef RefCountedPtr<ClipShapeStorage>     ClipShapeStoragePtr;
 
 typedef DPoint3d                          PointType;
-//typedef IDTMFile::Extent3d64f                         PointIndexExtentType;
+//typedef ISMStore::Extent3d64f                         PointIndexExtentType;
 typedef DRange3d PointIndexExtentType;
 typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
@@ -143,7 +144,7 @@ struct IScalableMeshCreator::Impl
         bool                                FileExist                      () const;
 
 
-        //IDTMFile::File::Ptr                 GetFile(const IDTMFile::AccessMode&             accessMode);
+        //ISMStore::File::Ptr                 GetFile(const ISMStore::AccessMode&             accessMode);
         virtual StatusInt                           Save();
         virtual StatusInt                           Load();
         void                                        SetupFileForCreation();
@@ -188,7 +189,7 @@ struct IScalableMeshCreator::Impl
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile);  
 
-        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
         StatusInt                           Filter                         ();
 

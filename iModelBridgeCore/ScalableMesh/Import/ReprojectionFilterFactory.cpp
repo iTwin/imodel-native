@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:36:54 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -353,9 +353,9 @@ Reprojection ReprojectionFilterFactory::CreateReprojectionFor  (const GCS&      
     if (sourceGCS.IsEquivalent(targetGCS))
         return Reprojection::GetNull();
 
-    ReprojectionFactory::Status status;
+    SMStatus status;
     Reprojection reprojection(m_implP->m_reprojectionFactory.Create(sourceGCS, targetGCS, sourceExtentP, status));
-    if (Reprojection::S_SUCCESS != status) 
+    if (SMStatus::S_SUCCESS != status)
         throw ReprojectionException(status);
 
     return reprojection;

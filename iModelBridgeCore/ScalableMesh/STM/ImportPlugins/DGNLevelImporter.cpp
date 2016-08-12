@@ -24,7 +24,7 @@
 #include <ScalableMesh\Type\IScalableMeshLinear.h>
 #include <ScalableMesh\Type\IScalableMeshPoint.h>
 #include <ScalableMesh\Type\IScalableMeshMesh.h>
-
+#include "..\Stores\SMStoreUtils.h"
 
 
 
@@ -751,7 +751,7 @@ private:
     bool                                    m_hasNext;
     ElementIterator                         m_elementIt;
 
-    PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
@@ -783,7 +783,7 @@ private:
         {
         m_headerPacket.AssignTo(rawEntities[DG_Header]);
         m_pointPacket.AssignTo(rawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader*)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
@@ -840,7 +840,7 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(ISMStore::FeatureHeader),
                              sourceBase.GetStats().m_linear.GetPointCapacity() * sizeof(DPoint3d));
         }
 
@@ -882,7 +882,7 @@ private:
     bool                                    m_hasNext;
     ElementIterator                         m_elementIt;
 
-    PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
@@ -906,7 +906,7 @@ private:
         {
         m_headerPacket.AssignTo(rawEntities[DG_Header]);
         m_pointPacket.AssignTo(rawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader*)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
@@ -961,7 +961,7 @@ class DGNLevelMeshExtractorCreator : public InputExtractorCreatorMixinBase<DGNLe
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(ISMStore::FeatureHeader),
                              sourceBase.GetStats().m_mesh.GetPointCapacity() * sizeof(DPoint3d));
         }
 

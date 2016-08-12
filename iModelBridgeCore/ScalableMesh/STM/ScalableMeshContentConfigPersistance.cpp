@@ -114,13 +114,13 @@ bool ContentConfigSerializer::Serialize(const ContentConfig&    config,
     if (config.GetGCSConfig().IsSet())
         {
         const GCS& gcs = config.GetGCSConfig().GetGCS();
-        GCS::Status status = GCS::S_SUCCESS;
+        SMStatus status = SMStatus::S_SUCCESS;
         WKT gcsWKT(gcs.GetWKT(status));
-        if (GCS::S_SUCCESS != status)
+        if (SMStatus::S_SUCCESS != status)
             return false;
 
         WString extendedWktStr(gcsWKT.GetCStr());
-        wchar_t wktFlavor[2] = { (wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0' };
+        wchar_t wktFlavor[2] = { (wchar_t)ISMStore::WktFlavor_Autodesk, L'\0' };
 
         extendedWktStr += WString(wktFlavor);
 
@@ -157,7 +157,7 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     config.SetScalableMeshConfig(ScalableMeshConfig(sourceData.GetScalableMeshData()));
     WString gcsWKT = sourceData.GetGCS();
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
 
     BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
 
@@ -165,10 +165,10 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     assert(result == true);
 
     GCS gcs(GCS::GetNull());
-    GCSFactory::Status gcsFromWKTStatus = GCSFactory::S_SUCCESS;
+    SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
     gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
 
-    if (GCSFactory::S_SUCCESS != gcsFromWKTStatus)
+    if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
         return false;
     config.SetGCSConfig(GCSConfig(gcs, sourceData.GetFlags()));
 

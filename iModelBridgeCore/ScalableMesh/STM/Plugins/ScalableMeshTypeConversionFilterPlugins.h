@@ -16,14 +16,14 @@
 #include "../Import/DimensionIterator.h"
 #include "..\IDTMFeatureArray.h"
 #include "ScalableMeshDimensionTypeConversionFilter.h"
-
+#include "..\Stores\SMStoreUtils.h"
 #include "ScalableMeshIDTMFileTraits.h"
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 
 namespace { // BEGIN UNAMED NAMESPACE
@@ -303,7 +303,108 @@ public:
 
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @description  
+*    
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename PointDimConverterT>
+class MeshConverter : public TypeConversionFilterBase
+    {
+public:  // OPERATOR_NEW_KLUDGE
+    void * operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+    void operator delete(void *rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+    void * operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+    void operator delete [] (void *rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
 
+    typedef DimTypeConvSame__To__Same           IdxDimConverter;
+    typedef DimTypeConvSame__To__Same           MetadataDimConverter;
+    typedef DimTypeConvSame__To__Same           TexDimConverter;
+    typedef DimTypeConvSame__To__Same           UvDimConverter;
+    typedef PointDimConverterT                  PointDimConverter;
+
+
+    enum 
+        {
+        POINT_DIM,
+        IDX_DIM,
+        METADATA_DIM,
+        TEX_DIM,
+        UV_DIM
+        };  
+
+    IdxDimConverter                          m_idxDimConv;
+    PointDimConverter                           m_pointDimConv;
+    MetadataDimConverter                     m_metadataDimConv;
+    TexDimConverter                     m_texDimConv;
+    UvDimConverter                     m_uvDimConv;
+
+    virtual void                                _Assign                (const PacketGroup&              pi_Src,
+                                                                        PacketGroup&                    po_Dst) override
+        {
+        assert(po_Dst.GetSize() >= pi_Src.GetSize());
+        m_idxDimConv.Assign(pi_Src[IDX_DIM], po_Dst[IDX_DIM]);
+        m_pointDimConv.Assign(pi_Src[POINT_DIM], po_Dst[POINT_DIM]);
+        m_metadataDimConv.Assign(pi_Src[METADATA_DIM], po_Dst[METADATA_DIM]);
+        m_texDimConv.Assign(pi_Src[TEX_DIM], po_Dst[TEX_DIM]);
+        m_uvDimConv.Assign(pi_Src[UV_DIM], po_Dst[UV_DIM]);
+        }
+
+    virtual void                                _Run                   () override
+        {
+        m_idxDimConv.Run();
+        m_pointDimConv.Run();
+        m_metadataDimConv.Run();
+        m_texDimConv.Run();
+        m_uvDimConv.Run();
+        }
+public:
+    class Binder : public PacketGroupBinder
+        {
+        typename IdxDimConverter::Binder     m_idxBinder;
+        typename MetadataDimConverter::Binder     m_metadataBinder;
+        typename PointDimConverter::Binder      m_pointBinder;
+        typename TexDimConverter::Binder      m_texBinder;
+        typename UvDimConverter::Binder      m_uvBinder;
+
+        virtual void                            _Bind                      (const PacketGroup&          pi_Src,
+                                                                            PacketGroup&                po_Dst) const override
+            { 
+            m_idxBinder.Bind(pi_Src[IDX_DIM], po_Dst[IDX_DIM]);
+            m_pointBinder.Bind(pi_Src[POINT_DIM], po_Dst[POINT_DIM]);
+            m_metadataBinder.Bind(pi_Src[METADATA_DIM], po_Dst[METADATA_DIM]);
+            m_texBinder.Bind(pi_Src[TEX_DIM], po_Dst[TEX_DIM]);
+            m_uvBinder.Bind(pi_Src[UV_DIM], po_Dst[UV_DIM]);
+            }
+        };
+
+    explicit                                    MeshConverter       (const DataType&             src,
+                                                                            const DataType&             dst,
+                                                                            const FilteringConfig&      config,
+                                                                            Log&                        warnLog)
+        :   m_idxDimConv(src.GetOrgGroup()[IDX_DIM], 
+        dst.GetOrgGroup()[IDX_DIM],
+                            config,
+                            warnLog),
+            m_pointDimConv(src.GetOrgGroup()[POINT_DIM], 
+                           dst.GetOrgGroup()[POINT_DIM], 
+                           config,
+                           warnLog) ,
+            m_metadataDimConv(src.GetOrgGroup()[METADATA_DIM],
+            dst.GetOrgGroup()[METADATA_DIM],
+            config,
+            warnLog),
+            m_texDimConv(src.GetOrgGroup()[TEX_DIM],
+            dst.GetOrgGroup()[TEX_DIM],
+            config,
+            warnLog),
+            m_uvDimConv(src.GetOrgGroup()[UV_DIM],
+            dst.GetOrgGroup()[UV_DIM],
+            config,
+            warnLog)
+        {}
+
+    };
 
 
 
@@ -506,7 +607,7 @@ public:  // OPERATOR_NEW_KLUDGE
         void                                    operator()             (FeatureHeader&                  linearHeader) const
             {
             if (DTMFeatureType::TinLine == (DTMFeatureType)linearHeader.type)
-                linearHeader.type = (IDTMFile::FeatureType)DTMFeatureType::Breakline;
+                linearHeader.type = (ISMStore::FeatureType)DTMFeatureType::Breakline;
             }
         };
 
@@ -697,7 +798,18 @@ class RegisterTINAsIDTMLinearToIDTMLinearConverter
                                                 m_autoRegister;
     };
 
-
+/*---------------------------------------------------------------------------------**//**
+* @description  
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename SrcPointT, typename DstPointT>
+class RegisterMeshConverter
+    {
+    RegisterConverter<MeshConverter<typename PointDimConverterTrait<SrcPointT, DstPointT>::type>,
+        typename MeshTypeCreatorTrait<SrcPointT>::type,
+        typename MeshTypeCreatorTrait<DstPointT>::type>
+                                                m_autoRegister;
+    };
 
 
 

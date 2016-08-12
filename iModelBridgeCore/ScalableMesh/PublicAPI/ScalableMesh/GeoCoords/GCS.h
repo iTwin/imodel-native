@@ -85,12 +85,7 @@ using BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GCSFactory : private Unassignable
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR, 
-        S_QTY,
-        };
+
 
 private:
     struct                                  Impl;
@@ -106,39 +101,39 @@ public:
      * No throw create methods
      */
     GEOCOORDS_DLLE GCS                      Create                             (const WChar*              wkt,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const WKT&                  wkt,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const wchar_t*              wkt,
                                                                                 BaseGCS::WktFlavor          wktFlavor,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const BaseGCSCPtr&          baseGCSPtr,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const GeospatialReference&  geoRef,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const Unit&                 unit,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const BaseGCSCPtr&          baseGCSPtr,
                                                                                 const LocalTransform&       localTransform,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const GeospatialReference&  geoRef,
                                                                                 const LocalTransform&       localTransform,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const Unit&                 unit,
                                                                                 const LocalTransform&       localTransform,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     GEOCOORDS_DLLE GCS                      Create                             (const GCS&                  gcs,
                                                                                 const LocalTransform&       appendedLocalTransform,
-                                                                                Status&                     status) const;
+                                                                                SMStatus&                     status) const;
 
     /*
      * Throwing/logging create methods
@@ -221,13 +216,8 @@ public:
 * @bsiclass                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GCS
-    {     
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR, 
-        S_QTY,
-        };
+    {
+
 
 private:
     friend struct                           GCSFactory;
@@ -266,10 +256,10 @@ public:
     GEOCOORDS_DLLE const LocalTransform&    GetLocalTransform                  () const;
 
     GEOCOORDS_DLLE void                     SetLocalTransform                  (const LocalTransform&       localTransform);
-    GEOCOORDS_DLLE Status                   AppendLocalTransform               (const LocalTransform&       localTransform);
+    GEOCOORDS_DLLE SMStatus                   AppendLocalTransform(const LocalTransform&       localTransform);
 
     GEOCOORDS_DLLE WKT                      GetWKT                             () const;
-    GEOCOORDS_DLLE WKT                      GetWKT                             (Status&                     status) const;
+    GEOCOORDS_DLLE WKT                      GetWKT(SMStatus&                     status) const;
     
     // TDORAY: Consider possibility of adding WKB accessors
 
@@ -296,12 +286,7 @@ GEOCOORDS_DLLE bool                         HaveEquivalentUnits                (
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GeospatialReference
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR, 
-        S_QTY,
-        };
+
 
 private:
     friend struct                           GCS;

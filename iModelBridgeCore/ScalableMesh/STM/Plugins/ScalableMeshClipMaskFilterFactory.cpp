@@ -16,9 +16,9 @@
 #include "../IDTMFeatureArray.h"
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
-
+#include "..\Stores\SMStoreUtils.h"
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
-using namespace IDTMFile;
+using namespace ISMStore;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

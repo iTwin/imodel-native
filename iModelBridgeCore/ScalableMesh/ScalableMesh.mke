@@ -44,6 +44,9 @@ CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM
 CCompOpts + -DVANCOUVER_API
 %endif
 
+#Uncomment this to allow generating design meshes
+#CCompOpts + -DWIP_MESH_IMPORT
+
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
 CCompOpts + -DNO_3D_MESH
@@ -176,7 +179,7 @@ $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  
 #   Build STM
 #-----------------------------------------------------------------------
 
-$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)IScalableMeshATP$(oext) : $(stmDir)IScalableMeshATP.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -262,7 +265,9 @@ $(o)ScalableMeshLib$(oext) : $(stmDir)ScalableMeshLib.cpp $(PCHHeaderDepends)  $
 
 $(o)DifferenceSet$(oext) : $(stmDir)Edits/DifferenceSet.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
-$(o)ClipUtilities$(oext) : $(stmDir)Edits/ClipUtilities.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)ClipRegistry$(oext) : $(stmDir)Edits/ClipRegistry.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ClipUtilities$(oext) : $(stmDir)Edits/ClipUtilities.cpp $(stmDir)Edits/ClipUtilities.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshScheduler$(oext) : $(stmDir)Threading/ScalableMeshScheduler.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -270,15 +275,23 @@ $(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderD
 
 $(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.h ${MultiCompileDepends}
 
-$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h $(stmDir)SMPointTileStore.h ${MultiCompileDepends}
-
-$(o)SMStreamingTileStore$(oext) : $(stmDir)SMStreamingTileStore.cpp $(stmDir)SMStreamingTileStore.h $(PCHHeaderDepends) ${MultiCompileDepends}
+$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h ${MultiCompileDepends}
 
 $(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
 
 $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
+
+
+#-----------------------------------------------------------------------
+#   Build Stores
+#-----------------------------------------------------------------------
+$(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
+
+$(o)SMStreamingDataStore$(oext) : $(stmDir)Stores/SMStreamingDataStore.cpp $(stmDir)Stores/SMStreamingDataStore.h $(stmDir)Stores/SMStreamingDataStore.hpp ${MultiCompileDepends}
+
+$(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
@@ -311,6 +324,8 @@ $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(
 $(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
@@ -425,6 +440,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)RasterCore.lib \
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib
     
 

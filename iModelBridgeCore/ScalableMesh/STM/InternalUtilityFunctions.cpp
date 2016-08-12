@@ -14,6 +14,7 @@
 #include "ImagePPHeaders.h"
 #include "SMPointIndex.h"
 #include "InternalUtilityFunctions.h"
+#include "Stores/SMStoreUtils.h"
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
@@ -243,93 +244,7 @@ StatusInt FillBBoxFromIppExtent(DPoint3d    boxPoints[],
 
     return SUCCESS;
     }
-#if 0
-int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTMLinearFeature>>& cutLinearList, HFCPtr<HVE2DPolygonOfSegments> queryPolyLine)
-    {   
-    int status = SUCCESS;
 
-    if (linearList.size() > 0)
-        {        
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIter    = linearList.begin();
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIterEnd = linearList.end();
-
-        while (linearIter != linearIterEnd) 
-            {                               
-            HGF3DPoint firstPt = (*linearIter)->GetPoint(0);
-            HGF3DPoint secondPt;
-            bool       addAllPts = false;
-            unsigned __int64 lastIndexPtAdd = UINT64_MAX;
-
-            HFCPtr<HVEDTMLinearFeature> cutFeatureP = new HVEDTMLinearFeature((*linearIter)->GetFeatureType(), 0);
-            IDTMFile::FeatureType type = (*linearIter)->GetFeatureType();
-            
-            switch (type)
-                {
-                case DTMFeatureType::Void:
-                case DTMFeatureType::BreakVoid:
-                case DTMFeatureType::DrapeVoid:
-                case DTMFeatureType::Hole:
-                case DTMFeatureType::Island:
-                case DTMFeatureType::Hull:
-                case DTMFeatureType::DrapeHull:
-                case DTMFeatureType::Polygon:
-                case DTMFeatureType::Region:                
-                    addAllPts = true;
-                    break;
-                default :
-                    addAllPts = false;
-                    break;
-                }
-
-            //TR 353473 - Once in the queryPolyline don't cut any segment even if there are outside to ensure 
-            //            that there is no connecting segment inserted between two segments that are not continuous 
-            //            that is overlapping the query polyline.
-            bool canSkipLine = true;
-
-            for (size_t indexPoints = 1 ; indexPoints < (*linearIter)->GetSize(); indexPoints++)
-                {                
-                secondPt = (*linearIter)->GetPoint(indexPoints);
-
-                HVE2DSegment line(HGF2DLocation(firstPt.GetX(), firstPt.GetY(), queryPolyLine->GetCoordSys()), HGF2DLocation(secondPt.GetX(), secondPt.GetY(), queryPolyLine->GetCoordSys()));
-
-                HGF2DLocationCollection CrossPoints;
-
-                // If the segment is not NULL and if the segment intersects the query polyline or if the segment is inside the query polyline, add the extremity points               
-                if (!line.IsNull() && 
-                    (queryPolyLine->Intersect(line, &CrossPoints) > 0 || queryPolyLine->IsPointIn(HGF2DLocation(firstPt.GetX(), firstPt.GetY(), queryPolyLine->GetCoordSys())) || (canSkipLine == false)))
-                    {
-                    if (addAllPts)
-                        {
-                        for (size_t indexPoints2 = 0 ; indexPoints2 < (*linearIter)->GetSize(); indexPoints2++)
-                            {  
-                            cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints2));
-                            }
-                        break;
-                        }
-
-                    if (lastIndexPtAdd != (indexPoints-1))
-                        {  
-                        cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints-1));   
-                        }      
-
-                    cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints));   
-                    lastIndexPtAdd = indexPoints;
-                    canSkipLine = false;
-                    }
-
-                firstPt = secondPt;
-                }
-
-            if (cutFeatureP->GetSize() > 0)
-                cutLinearList.push_back(cutFeatureP);
-
-            linearIter++;
-            }           
-        }
-
-    return status;
-    }
-#endif
 
 
 

@@ -15,7 +15,8 @@ WString GetHeaderForTestType(TestType t)
     switch (t)
         {
         case TEST_GENERATION:
-            return  L"File Name,Mesher,Filter,Trimming,Nb Input Points,Nb Output Points,Point Kept (%%), GroundDetection (%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), Ground Duration (minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";
+            return  L"File Name,Mesher,Filter,Trimming,Nb Input Points,Nb Output Points,Point Kept (%%),File Size (Mb),GroundDetection (%%), Import Points (%%),Balancing (%%),Meshing (%%),Filtering (%%),Stitching (%%),Duration (minutes),Duration (hours), GD Accelerator, GD Seed Creation, GD Params Estimation, GD Filter Ground, Ground Duration (minutes), Import Points (minutes),Balancing (minutes),Meshing (minutes),Filtering (minutes),Stitching (minutes),Status\n";            
+            break;
         case TEST_PARTIAL_UPDATE:
             return L"";
             break;
@@ -47,7 +48,7 @@ WString GetHeaderForTestType(TestType t)
             return L"";
             break;
         case TEST_LOADING:
-            return L"File Name, Time To Load (s), Nb of loaded nodes\n";
+            return L"File Name, Time To Load (s), Max depth To Load (if 0 all nodes are loaded), Nb of loaded nodes\n";
             break;
         case TEST_DRAPE_BASELINE:
             return L"Test Case,  Pass/Fail, Baseline, Nb of Lines, Nb of Lines Draped (baseline), Nb of Lines Draped(test), Nb Of Different Lines, %% unmatched points, Time to drape (1st load) (baseline), Time to drape (1st load) (test), Time taken (1st load) variation, Time to drape (cached) (baseline), Time to drape (cached) (test), Time taken (cached) variation\n";
@@ -76,9 +77,13 @@ WString GetHeaderForTestType(TestType t)
         //case IMPORT_VOLUME:
         //    return L"\n";
         //    break;
-		case EXPORT_TO_UNITY:
-			return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
-			break;
+        case EXPORT_TO_UNITY:
+            return L"File name, Nb points, Nb params, Level, Duration (seconds)\n";
+            break;
+        case TEST_SQL_FILE_UPDATE:
+            return L"File name, Duration (seconds)\n";
+            break;
+
         default: break;
         }
     return L"";
@@ -108,8 +113,9 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
 
     if (status == BEXML_Success)
         {
+        
         if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"generation"))
-            t = TEST_GENERATION;
+            t = TEST_GENERATION;        
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"partialUpdate"))
             t = TEST_PARTIAL_UPDATE;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"meshQuality"))
@@ -152,10 +158,12 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_LOADING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
             t = TEST_GROUP_NODE_HEADERS;
-		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
-			t = ADD_TEXTURES_TO_MESH;
-		else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
-			t = EXPORT_TO_UNITY;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
+            t = ADD_TEXTURES_TO_MESH;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
+            t = EXPORT_TO_UNITY;
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"sqlFileUpdate"))
+            t = TEST_SQL_FILE_UPDATE;        
         else return false;
         }
     else return false;
@@ -318,9 +326,13 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case ADD_TEXTURES_TO_MESH:
                 AddTexturesToMesh(pTestNode, pResultFile);
                 break;
-			case EXPORT_TO_UNITY:
-				PerformExportToUnityTest(pTestNode, pResultFile);
-				break;
+            case EXPORT_TO_UNITY:
+                PerformExportToUnityTest(pTestNode, pResultFile);
+                break;
+            case TEST_SQL_FILE_UPDATE:
+                PerformSqlFileUpdateTest(pTestNode, pResultFile);
+                break;
+               
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();

@@ -125,7 +125,7 @@ private:
         private:
             friend class                            GDALLinearExtractorCreator;
 
-            PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+            PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
             PODPacketProxy<DPoint3d>                m_pointPacket;
             IDTMFeatureArray<DPoint3d>              m_featureArray;
             OGRDataSourceH                          m_ogrSource;
@@ -429,7 +429,7 @@ class GDALLinearExtractorCreator : public InputExtractorCreatorMixinBase<GDALSou
                                                                                     const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetFeatureCount() * sizeof(IDTMFile::FeatureHeader), sourceBase.GetPointCount()*sizeof(DPoint3d));
+        return RawCapacities(sourceBase.GetFeatureCount() * sizeof(ISMStore::FeatureHeader), sourceBase.GetPointCount()*sizeof(DPoint3d));
         }
 
     /*---------------------------------------------------------------------------------**//**
