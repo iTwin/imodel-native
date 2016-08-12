@@ -584,7 +584,7 @@ BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
 
     ECDbCR ecdb = GetECDbMap().GetECDb();
     ClassMapId baseClassMapid;
-
+    std::set<PropertyMapCP> baseProperties;
     ctx.BeginSaving(*this);
     //auto baseClassMap = GetParentMapClassId () == 
     if (GetParentMapClassId().IsValid())
@@ -609,6 +609,9 @@ BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
                 return ERROR;
             }
 
+        for (PropertyMapCP propertyMap : baseClassMap->GetPropertyMaps())
+            baseProperties.insert(propertyMap);
+
         baseClassMapid = baseClassMap->GetId();
         }
 
@@ -622,6 +625,9 @@ BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
     DbClassMapSaveContext classMapSaveContext(ctx);
     for (PropertyMapCP propertyMap : GetPropertyMaps())
         {
+        if (baseProperties.find(propertyMap) != baseProperties.end())
+            continue;
+
         if (SUCCESS != propertyMap->Save(classMapSaveContext))
             return ERROR;
         }
