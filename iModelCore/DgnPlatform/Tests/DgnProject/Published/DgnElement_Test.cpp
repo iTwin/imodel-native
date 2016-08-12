@@ -768,13 +768,13 @@ void DgnElementTests::TestAutoHandledPropertiesCA()
     for (int i=0; i<_countof(s_autoHandledPropNames); ++i)
         {
         ECN::ECValue checkValue;
-        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, s_autoHandledPropNames[i]));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, s_autoHandledPropNames[i]));
         EXPECT_TRUE(checkValue.IsNull());
         }
 
     // Check a few non-auto-handled props
     ECN::ECValue checkValue;
-    EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "TestIntegerProperty1"));
+    EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "TestIntegerProperty1"));
 #endif
     }
 
@@ -792,15 +792,15 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
         //  No unhandled properties yet
         ECN::ECValue checkValue;
-        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_TRUE(checkValue.IsNull());
 
         //  Set unhandled property (in memory)
-        ASSERT_EQ(DgnDbStatus::Success, el.SetProperty("StringProperty", ECN::ECValue("initial value")));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue("StringProperty", ECN::ECValue("initial value")));
 
         //      ... check that we see the pending value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Insert the element
@@ -811,7 +811,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
     // Check that we see the stored value
     ECN::ECValue checkValue;
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
     if (true)
@@ -821,20 +821,20 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
         //      ... initially we still see the initial/stored value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Set a new value (in memory)
-        EXPECT_EQ(DgnDbStatus::Success, editEl->SetProperty("StringProperty", ECN::ECValue("changed value")));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->SetPropertyValue("StringProperty", ECN::ECValue("changed value")));
 
         //      ... check that we now see the pending value on the edited copy ...
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
         //      ... but no change on the persistent element
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Update the element
@@ -843,7 +843,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
     // Check that the stored value was changed
     checkValue.Clear();
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
     // REALLY check that the stored value was changed
@@ -857,7 +857,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
     persistentEl = m_db->Elements().GetElement(elid);
     ASSERT_TRUE(persistentEl.IsValid());
     checkValue.Clear();
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
     }
 
@@ -900,18 +900,18 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
         ECN::ECValue v;
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Label"));
         ASSERT_STREQ("my label", v.ToString().c_str());
         ASSERT_STREQ("my label", ele->GetLabel());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_TestElementProperty));
         ASSERT_STREQ("a string", v.ToString().c_str());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
         ASSERT_EQ(99, v.GetInteger());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
         ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
         ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
 
         // Now, make sure that we can actually insert the element
@@ -931,18 +931,18 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
     ECN::ECValue v;
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Label"));
     ASSERT_STREQ("my label", v.ToString().c_str());
     ASSERT_STREQ("my label", ele->GetLabel());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_TestElementProperty));
     ASSERT_STREQ("a string", v.ToString().c_str());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
     ASSERT_EQ(99, v.GetInteger());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
     ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
     ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
     }
 
