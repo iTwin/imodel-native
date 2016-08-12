@@ -1426,7 +1426,11 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
 //---------------------------------------------------------------------------------------
 std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable(DbTable const& table) const
     {
-    LoadClassIdsPerTable(table);
+    if (m_map.GetECDb().GetECSqlQueryOptimizationOption() == ECSqlQueryOptimizationOption::Interactive)
+        LoadClassIdsPerTable(table);
+    else
+        LoadClassIdsPerTable();
+
     return m_classIdsPerTable[&table];
     }
 
@@ -1435,7 +1439,11 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable(DbTa
 //---------------------------------------------------------------------------------------
 bset<DbTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
     {
-    LoadClassIdsPerTable(classId);
+    if (m_map.GetECDb().GetECSqlQueryOptimizationOption() == ECSqlQueryOptimizationOption::Interactive)
+        LoadClassIdsPerTable(classId);
+    else
+        LoadClassIdsPerTable();
+
     return m_tablesPerClassId[classId];
     }
 
@@ -1444,7 +1452,11 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForC
 //---------------------------------------------------------------------------------------
 ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache::GetHorizontalPartitionsForClass(ECN::ECClassId classId) const
     {
-    LoadHorizontalPartitions(classId);
+    if (m_map.GetECDb().GetECSqlQueryOptimizationOption() == ECSqlQueryOptimizationOption::Interactive)
+        LoadHorizontalPartitions(classId);
+    else
+        LoadHorizontalPartitions();
+
     return m_horizontalPartitions[classId];
     }
 

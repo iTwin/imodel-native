@@ -98,7 +98,7 @@ private:
     BeBriefcaseBasedIdSequence m_indexIdSequence;
     BeBriefcaseBasedIdSequence m_classmapIdSequence;
     BeBriefcaseBasedIdSequence m_propertypathIdSequence;
-
+    ECSqlQueryOptimizationOption m_ecsqlFirstAccessMode;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     ECSqlStatementRegistry m_statementRegistry;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
@@ -134,7 +134,8 @@ private:
     DbResult InitializeSequences() const;
     DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
-
+    void SetECSqlQueryOptimizationOption(ECSqlQueryOptimizationOption mode) { m_ecsqlFirstAccessMode = mode; }
+    ECSqlQueryOptimizationOption GetECSqlQueryOptimizationOption() const { return m_ecsqlFirstAccessMode; }
 public:
     ~Impl() {}
 
