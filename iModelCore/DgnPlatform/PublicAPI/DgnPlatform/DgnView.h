@@ -89,7 +89,8 @@ protected:
     virtual SpatialViewDefinitionCP _ToSpatialView() const { return nullptr; }
     virtual DrawingViewDefinitionCP _ToDrawingView() const { return nullptr; }
     virtual SheetViewDefinitionCP _ToSheetView() const { return nullptr; }
-    
+    virtual bool _ViewsModel(DgnModelId mid) const = 0;
+
     DGNPLATFORM_EXPORT virtual void _ToJson(Utf8StringR jsonStr) const;
 
 public:
@@ -232,6 +233,9 @@ public:
     DgnDbStatus SetDisplayStyle(DgnElementId value) { return SetPropertyValue("DisplayStyle", value); } //!< Set ID of display style for a view
 
     void ToJson(Utf8StringR jsonStr) const {return _ToJson(jsonStr);}
+
+    //! Query if the specified model is displayed in this view 
+    bool ViewsModel(DgnModelId mid) const {return _ViewsModel(mid);}
     };
 
 //=======================================================================================
@@ -260,6 +264,8 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetModelId(DgnModelId mid);
     DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(bvector<DgnModelId> const& models);
     DGNPLATFORM_EXPORT bvector<DgnModelId> GetModelIds() const;
+
+    bool ContainsModel(DgnModelId mid) const {bvector<DgnModelId> mids; return std::find(mids.begin(), mids.end(), mid) != mids.end();}
 
     static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector); }
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector)); }
@@ -299,6 +305,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition3d : ViewDefinition
 {
     DEFINE_T_SUPER(ViewDefinition);
 protected:
+    bool _ViewsModel(DgnModelId mid) const override {auto modsel = GetModelSelector(); return modsel.IsValid()? modsel->ContainsModel(mid): false;}
+
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
 public:
     DGNPLATFORM_EXPORT ModelSelectorCPtr GetModelSelector() const; //!< Get the ModelSelector used by this view
@@ -405,6 +413,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition2d : ViewDefinition
 protected:
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
 protected:
+    bool _ViewsModel(DgnModelId mid) const override {return mid == GetBaseModelId();}
+
     explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 public:
     ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId) 
