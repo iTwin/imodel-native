@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: ElementHandler/handlerNET/handlerNET.mke $
-#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
@@ -10,6 +10,9 @@ PolicyFile       = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolic
 SolutionPolicyMki=$(baseDir)handlerNET.mki
 
 %include  mdl.mki
+
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts +  -wd4457
 
 
 %ifdef CREATE_STATIC_LIBRARIES

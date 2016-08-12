@@ -12,7 +12,8 @@ SolutionPolicyMki=$(baseDir)handler.mki
 
 %include mdl.mki
 
-
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts +  -wd4456 -wd4457 -wd4459
 
 DLM_OBJECT_DEST       = $(terrainModelElementHandlerObj)
 DLM_NAME              = TerrainModelElementHandler
