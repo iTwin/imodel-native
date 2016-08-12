@@ -538,6 +538,7 @@ namespace dgn_ElementHandler
     };
 };
 
+typedef dgn_ElementHandler::CameraViewDef CameraViewHandler;
 typedef dgn_ElementHandler::DrawingViewDef DrawingViewHandler;
 typedef dgn_ElementHandler::SheetViewDef SheetViewHandler;
 
