@@ -374,10 +374,6 @@ void CameraViewController::LoadEnvironment()
     m_environment.m_skybox.m_zenithColor = GetColor(sky, SkyBoxJson::ZenithColor(), ColorDef(54,117,255));
     m_environment.m_skybox.m_nadirColor  = GetColor(sky, SkyBoxJson::NadirColor(), ColorDef(40,15,0));
     m_environment.m_skybox.m_skyColor    = GetColor(sky, SkyBoxJson::SkyColor(), ColorDef(143,205,255));
-
-#if !defined (TESTING_ENVIRONMENT)
-    m_environment.m_enabled = m_environment.m_groundPlane.m_enabled = m_environment.m_skybox.m_enabled = true;
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
