@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_config.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -204,16 +204,16 @@
 
 // NOTE: the __EDG__ macro is #defined by most EDG-based compilers
 
-#if    defined (__EDG__)                \
-    && !defined (__DECCXX)              \
-    && !defined (__HP_aCC)              \
-    && !defined (__INTEL_COMPILER)      \
-    && !defined (_SGI_COMPILER_VERSION)
-   // FIXME: make this more robust by detecting the EDG eccp demo
-   // during library configuration (and avoid relying on compiler
-   // specific macros)
-#  include "_config-eccp.h"
-#endif   // __EDG__
+//#if    defined (__EDG__)                \
+//    && !defined (__DECCXX)              \
+//    && !defined (__HP_aCC)              \
+//    && !defined (__INTEL_COMPILER)      \
+//    && !defined (_SGI_COMPILER_VERSION)
+//   // FIXME: make this more robust by detecting the EDG eccp demo
+//   // during library configuration (and avoid relying on compiler
+//   // specific macros)
+//#  include "_config-eccp.h"
+//#endif   // __EDG__
 
 /*** GCC ******************************************************************/
 
