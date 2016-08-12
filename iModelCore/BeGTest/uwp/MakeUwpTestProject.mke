@@ -170,6 +170,21 @@ always:
     CopyWithSymlinks.py $(collectionAssetsDir) $(projectDir)
     CopyWithSymlinks.py $(collectionAssembliesDir) $(projectDir)
 
+# Visual Studio cannot deal with linked WINMD files (similar for PFX files).
+# You'll get "corrupt" WINMD errors when it tries to create an APPX package.
+# This is a brute force way to deal with it via wildcards...
+always:
+    >$(o)RemoveWinmdLinks.bat
+    PUSHD $(projectDir)
+    MKDIR __winmdtemp
+    COPY *.winmd __winmdtemp
+    DEL *.winmd
+    COPY __winmdtemp/*.winmd .
+    RMDIR \/s \/q __winmdtemp
+    POPD
+    <
+    $(o)RemoveWinmdLinks.bat
+
 #--------------------------------------------------------------------------------------
 # Build
 #--------------------------------------------------------------------------------------

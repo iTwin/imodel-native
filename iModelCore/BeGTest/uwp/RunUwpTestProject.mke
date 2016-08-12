@@ -37,4 +37,5 @@ TestBundle = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/AppPackages/BeTestTest1/
 %endif
 
 always:
-    start \/WAIT \/MIN vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle)
+    vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle)
+    #start \/WAIT \/MIN vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle)
