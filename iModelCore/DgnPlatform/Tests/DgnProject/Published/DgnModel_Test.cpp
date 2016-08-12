@@ -218,7 +218,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
                                 DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
-        sheet1->SetLabel("a sheet model (in mm)");
+        sheet1->SetUserLabel("a sheet model (in mm)");
         ASSERT_EQ( DgnDbStatus::Success, sheet1->Insert() );
         ASSERT_TRUE( sheet1->GetModelId().IsValid() );
 
@@ -235,7 +235,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
                                 DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE(sheet2.IsValid());
-        sheet2->SetLabel("a second sheet model");
+        sheet2->SetUserLabel("a second sheet model");
         ASSERT_EQ( DgnDbStatus::Success, sheet2->Insert() );
         ASSERT_TRUE( sheet2->GetModelId().IsValid() );
         ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
@@ -331,7 +331,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
             continue;
 
         WString entryNameW(entry.GetCodeValue(), true); // string conversion
-        WString entryDescriptionW(entry.GetLabel(), true); // string conversion
+        WString entryDescriptionW(entry.GetUserLabel(), true); // string conversion
         testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str());
         testModel.IsEqual(models[i]);
         i++;
@@ -386,16 +386,16 @@ TEST_F (DgnModelTests, ModelsIterator)
 
     //Inserts models
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     db.SaveChanges ("changeSet1");
 
     DgnModelPtr m2 = seedModel->Clone (DgnModel::CreateModelCode("Model2"));
-    m2->SetLabel("Test Model 2");
+    m2->SetUserLabel("Test Model 2");
     m2->Insert ();
 
     DgnModelPtr m3 = seedModel->Clone (DgnModel::CreateModelCode("Model3"));
-    m3->SetLabel("Test Model 3");
+    m3->SetUserLabel("Test Model 3");
     m3->Insert();
     db.SaveChanges ("changeSet1");
 
@@ -422,7 +422,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             {
             EXPECT_EQ (m1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model1", entry.GetCodeValue ());
-            EXPECT_STREQ ("Test Model 1", entry.GetLabel());
+            EXPECT_STREQ ("Test Model 1", entry.GetUserLabel());
             EXPECT_EQ (true, entry.GetInGuiList ());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -431,7 +431,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             {
             EXPECT_EQ (m2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
             EXPECT_STREQ ("Model2", entry.GetCodeValue ());
-            EXPECT_STREQ("Test Model 2", entry.GetLabel());
+            EXPECT_STREQ("Test Model 2", entry.GetUserLabel());
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -440,7 +440,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             {
             EXPECT_EQ (m3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
             EXPECT_STREQ ("Model3", entry.GetCodeValue ());
-            EXPECT_STREQ("Test Model 3", entry.GetLabel());
+            EXPECT_STREQ("Test Model 3", entry.GetUserLabel());
             EXPECT_EQ(true, entry.GetInGuiList());
             EXPECT_STREQ(Utf8PrintfString("%" PRId64, db.Authorities().GetAuthority("DgnModels")->GetAuthorityId().GetValue()).c_str(), entry.GetCodeNamespace());
             EXPECT_TRUE(db.Authorities().QueryAuthorityId("dgn") == entry.GetCodeAuthorityId());
@@ -464,7 +464,7 @@ TEST_F (DgnModelTests, AbandonChanges)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert ();
     EXPECT_TRUE (m1 != nullptr);
     db.SaveChanges ("changeSet1");
@@ -511,7 +511,7 @@ TEST_F (DgnModelTests, AddAppData)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert ();
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());
@@ -545,7 +545,7 @@ TEST_F (DgnModelTests, DropAppData)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone (DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE (m1 != nullptr);
     EXPECT_TRUE (db.Models ().QueryModelId (DgnModel::CreateModelCode("Model1")).IsValid ());

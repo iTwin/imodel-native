@@ -5,45 +5,6 @@
     <ECSchemaReference name="EditorCustomAttributes" version="01.03" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
-    <ECCustomAttributes>
-        <RelatedItemsDisplaySpecifications xmlns="Bentley_Standard_CustomAttributes.01.09">
-            <Specifications>
-                <RelatedItemsDisplaySpecification>
-                    <ParentClass>GeometricElement2d</ParentClass>
-                    <RelationshipPath>GeometricElement2dIsInCategory:0:Category</RelationshipPath>
-                </RelatedItemsDisplaySpecification>
-                <RelatedItemsDisplaySpecification>
-                    <ParentClass>GeometricElement3d</ParentClass>
-                    <RelationshipPath>GeometricElement3dIsInCategory:0:Category</RelationshipPath>
-                </RelatedItemsDisplaySpecification>
-                <RelatedItemsDisplaySpecification>
-                    <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ModelContainsElements:1:Model</RelationshipPath>
-                </RelatedItemsDisplaySpecification>
-                <RelatedItemsDisplaySpecification>
-                    <ParentClass>Element</ParentClass>
-                    <RelationshipPath>Generic:ElementOwnsMultiAspect:0:Generic:MultiAspect</RelationshipPath>
-                </RelatedItemsDisplaySpecification>
-                <RelatedItemsDisplaySpecification>
-                    <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementsHaveLinks:0:LinkElement</RelationshipPath>
-                    <DerivedClasses>
-                        <string>UrlLink</string>
-                        <string>EmbeddedFileLink</string>
-                    </DerivedClasses>
-                </RelatedItemsDisplaySpecification>
-                <RelatedItemsDisplaySpecification>
-                    <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementsHaveLinks:0:LinkElement</RelationshipPath>
-                    <DerivedClasses>
-                        <string>UrlLink</string>
-                        <string>EmbeddedFileLink</string>
-                    </DerivedClasses>
-                </RelatedItemsDisplaySpecification>
-            </Specifications>
-        </RelatedItemsDisplaySpecifications>
-    </ECCustomAttributes>
-
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
          It should not be applied to any other ECClass.
@@ -237,7 +198,8 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Label" typeName="string">
+        <ECProperty propertyName="UserLabel" typeName="string">
+            <!-- The "name" given by the User vs. the official "name" which is the CodeValue -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>True</IsNullable>
@@ -408,10 +370,10 @@
                         </Properties>
                     </DbIndex>
                     <DbIndex>
-                        <Name>ix_bis_Element_Label</Name>
+                        <Name>ix_bis_Element_UserLabel</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
-                            <string>Label</string>
+                            <string>UserLabel</string>
                         </Properties>
                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
@@ -488,7 +450,8 @@
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty> 
-        <ECProperty propertyName="Label" typeName="string">
+        <ECProperty propertyName="UserLabel" typeName="string">
+            <!-- The "name" given by the User vs. the official "name" which is the CodeValue -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>True</IsNullable>

@@ -139,7 +139,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         DgnDbR      m_dgndb;
         DgnClassId  m_classId;
         DgnCode     m_code;
-        Utf8String  m_label;
+        Utf8String  m_userLabel;
         bool        m_inGuiList;
 
         //! Parameters to create a new instance of a DgnModel.
@@ -151,11 +151,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
         CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
             m_dgndb(dgndb), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
             {
-            SetLabel(label);
+            SetUserLabel(label);
             }
 
         void SetCode(DgnCode code) { m_code = code; } //!< Set the DgnCode for models created with this CreateParams
-        void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
+        void SetUserLabel(Utf8CP label) { m_userLabel.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
@@ -195,7 +195,7 @@ protected:
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
     DgnCode         m_code;
-    Utf8String      m_label;
+    Utf8String      m_userLabel;
     bool            m_inGuiList;
     int             m_dependencyIndex;
 
@@ -466,10 +466,10 @@ public:
 
     //! Get the label of this DgnModel.
     //! @note may be nullptr
-    Utf8CP GetLabel() const { return m_label.c_str(); }
+    Utf8CP GetUserLabel() const { return m_userLabel.c_str(); }
     
     //! Set the label of this DgnModel.
-    void SetLabel(Utf8CP label) { m_label.AssignOrClear(label); }
+    void SetUserLabel(Utf8CP label) { m_userLabel.AssignOrClear(label); }
 
     //! Get the visibility in model lists shown to the user
     bool GetInGuiList() const { return m_inGuiList; }

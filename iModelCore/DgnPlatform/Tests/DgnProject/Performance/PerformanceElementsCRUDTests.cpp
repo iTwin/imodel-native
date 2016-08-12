@@ -794,13 +794,13 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, BeSQ
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId(stmt.GetParameterIndex(":CodeAuthorityId"), elementCode.GetAuthority()));
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":CodeNamespace"), elementCode.GetNamespace().c_str(), BeSQLite::Statement::MakeCopy::No));
     
-    if (element->HasLabel())
+    if (element->HasUserLabel())
         {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":Label"), element->GetLabel(), BeSQLite::Statement::MakeCopy::No));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindText(stmt.GetParameterIndex(":UserLabel"), element->GetUserLabel(), BeSQLite::Statement::MakeCopy::No));
         }
     else
         {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindNull(stmt.GetParameterIndex(":Label")));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindNull(stmt.GetParameterIndex(":UserLabel")));
         }
 
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindId(stmt.GetParameterIndex(":ParentId"), element->GetParentId()));
@@ -1010,13 +1010,13 @@ void PerformanceElementsCRUDTestFixture::BindParams(DgnElementPtr& element, ECSq
     ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
     }
 
-    if (element->HasLabel())
+    if (element->HasUserLabel())
         {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("Label"), element->GetLabel(), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("UserLabel"), element->GetUserLabel(), IECSqlBinder::MakeCopy::No));
         }
     else
         {
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("Label")));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("UserLabel")));
         }
 
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ParentId"), element->GetParentId()));
@@ -1123,13 +1123,13 @@ void PerformanceElementsCRUDTestFixture::BindUpdateParams(DgnElementPtr& element
     ASSERT_EQ (ECSqlStatus::Success, codeBinder.GetMember("Namespace").BindText(elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No));
     }
 
-    if (element->HasLabel())
+    if (element->HasUserLabel())
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("Label"), element->GetLabel(), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindText(stmt.GetParameterIndex("UserLabel"), element->GetUserLabel(), IECSqlBinder::MakeCopy::No));
         }
     else
         {
-        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("Label")));
+        ASSERT_EQ (ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("UserLabel")));
         }
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("ParentId"), element->GetParentId()));
     ASSERT_EQ (ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("CategoryId"), element->ToGeometrySource()->GetCategoryId()));

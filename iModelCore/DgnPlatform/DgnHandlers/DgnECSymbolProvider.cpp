@@ -88,17 +88,17 @@ ECValue DgnElementExpressionContext::GetFullClassName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
-ECValue DgnElementExpressionContext::GetLabel() const
+ECValue DgnElementExpressionContext::GetUserLabel() const
     {
-    return ECValue(m_element.GetLabel());
+    return ECValue(m_element.GetUserLabel());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  05/2015
 //---------------------------------------------------------------------------------------
-ECValue DgnElementExpressionContext::HasLabel() const
+ECValue DgnElementExpressionContext::HasUserLabel() const
     {
-    return ECValue(m_element.HasLabel());
+    return ECValue(m_element.HasUserLabel());
     }
 
 //---------------------------------------------------------------------------------------
@@ -147,8 +147,8 @@ DgnElementExpressionContext::DgnElementExpressionContext(DgnElementCR element) :
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("ClassName", *this, &DgnElementExpressionContext::GetClassName));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("FullClassName", *this, &DgnElementExpressionContext::GetFullClassName));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("DisplayLabel", *this, &DgnElementExpressionContext::GetDisplayLabel));
-    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("Label", *this, &DgnElementExpressionContext::GetLabel));
-    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("HasLabel", *this, &DgnElementExpressionContext::HasLabel));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("UserLabel", *this, &DgnElementExpressionContext::GetUserLabel));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("HasUserLabel", *this, &DgnElementExpressionContext::HasUserLabel));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("CodeValue", *this, &DgnElementExpressionContext::GetCodeValue));
     methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("HasGeometry", *this, &DgnElementExpressionContext::HasGeometry));
 

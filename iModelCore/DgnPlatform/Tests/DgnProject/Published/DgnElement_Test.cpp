@@ -34,7 +34,7 @@ TEST_F (DgnElementTests, ResetStatistics)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE (m1 != nullptr);
     m_db->SaveChanges("changeSet1");
@@ -111,7 +111,7 @@ TEST_F (DgnElementTests, UpdateElement)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");
@@ -885,7 +885,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         // custom-handled properties
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Label", ECN::ECValue("my label")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
@@ -902,9 +902,9 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ECN::ECValue v;
         ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "UserLabel"));
         ASSERT_STREQ("my label", v.ToString().c_str());
-        ASSERT_STREQ("my label", ele->GetLabel());
+        ASSERT_STREQ("my label", ele->GetUserLabel());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
         ASSERT_STREQ("a string", v.ToString().c_str());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
@@ -933,9 +933,9 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ECN::ECValue v;
     ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "UserLabel"));
     ASSERT_STREQ("my label", v.ToString().c_str());
-    ASSERT_STREQ("my label", ele->GetLabel());
+    ASSERT_STREQ("my label", ele->GetUserLabel());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
     ASSERT_STREQ("a string", v.ToString().c_str());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));

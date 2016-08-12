@@ -297,7 +297,7 @@ public:
         DgnModelId m_id;
         DgnClassId m_classId;
         DgnCode m_code;
-        Utf8String m_label;
+        Utf8String m_userLabel;
         bool m_inGuiList = true;
 
     public:
@@ -305,14 +305,14 @@ public:
         Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
 
         void SetCode(DgnCode code) {m_code = code;}
-        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+        void SetUserLabel(Utf8CP userLabel) {m_userLabel.AssignOrClear(userLabel);}
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnCode const& GetCode() const {return m_code;}
-        Utf8CP GetLabel() const {return m_label.c_str();}
+        Utf8CP GetUserLabel() const {return m_userLabel.c_str();}
         bool GetInGuiList() const {return m_inGuiList;}
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
@@ -337,7 +337,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetLabel() const;
+            DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
 
