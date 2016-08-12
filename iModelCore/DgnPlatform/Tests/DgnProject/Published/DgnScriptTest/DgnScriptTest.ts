@@ -542,15 +542,15 @@ module DgnScriptTests {
     //---------------------------------------------------------------------------------------
     function testProperties(el: be.DgnElement)
     {
-        if (el.GetProperty('StringProperty'))
+        if (el.GetPropertyValue('StringProperty'))
             be.Script.ReportError('StringProperty should not be set at the outset');
 
-        if (0 != el.SetProperty('StringProperty', be.ECValue.FromString('stuff')))
+        if (0 != el.SetPropertyValue('StringProperty', be.ECValue.FromString('stuff')))
             be.Script.ReportError('SetProperty failed');
 
         el.Update();
 
-        var prop = el.GetProperty('StringProperty');
+        var prop = el.GetPropertyValue('StringProperty');
         if (!prop || prop.GetString() != 'stuff')
             be.Script.ReportError('SetProperty failed - changed value not verified');
     }

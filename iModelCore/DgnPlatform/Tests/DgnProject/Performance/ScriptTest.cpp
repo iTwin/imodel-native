@@ -124,18 +124,18 @@ void ScriptTest::SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBrie
 //---------------------------------------------------------------------------------------
 void ScriptTest::PopulateProperties(GeometricElement3d& el)
     {
-    el._SetProperty("IntegerProperty1", ECN::ECValue(1));
-    el._SetProperty("IntegerProperty2", ECN::ECValue(2));
-    el._SetProperty("IntegerProperty3", ECN::ECValue(3));
-    el._SetProperty("IntegerProperty4", ECN::ECValue(4));
-    el._SetProperty("DoubleProperty1",  ECN::ECValue(1));
-    el._SetProperty("DoubleProperty2",  ECN::ECValue(2));
-    el._SetProperty("DoubleProperty3",  ECN::ECValue(3));
-    el._SetProperty("DoubleProperty4",  ECN::ECValue(4));
-    el._SetProperty("PointProperty1",   ECN::ECValue(DPoint3d::From(1,2,3))); 
-    el._SetProperty("PointProperty2",   ECN::ECValue(DPoint3d::From(2,2,3))); 
-    el._SetProperty("PointProperty3",   ECN::ECValue(DPoint3d::From(3,2,3))); 
-    el._SetProperty("PointProperty4",   ECN::ECValue(DPoint3d::From(4,2,3))); 
+    el._SetPropertyValue("IntegerProperty1", ECN::ECValue(1));
+    el._SetPropertyValue("IntegerProperty2", ECN::ECValue(2));
+    el._SetPropertyValue("IntegerProperty3", ECN::ECValue(3));
+    el._SetPropertyValue("IntegerProperty4", ECN::ECValue(4));
+    el._SetPropertyValue("DoubleProperty1",  ECN::ECValue(1));
+    el._SetPropertyValue("DoubleProperty2",  ECN::ECValue(2));
+    el._SetPropertyValue("DoubleProperty3",  ECN::ECValue(3));
+    el._SetPropertyValue("DoubleProperty4",  ECN::ECValue(4));
+    el._SetPropertyValue("PointProperty1",   ECN::ECValue(DPoint3d::From(1,2,3))); 
+    el._SetPropertyValue("PointProperty2",   ECN::ECValue(DPoint3d::From(2,2,3))); 
+    el._SetPropertyValue("PointProperty3",   ECN::ECValue(DPoint3d::From(3,2,3))); 
+    el._SetPropertyValue("PointProperty4",   ECN::ECValue(DPoint3d::From(4,2,3))); 
     }
 
 //---------------------------------------------------------------------------------------

@@ -608,7 +608,7 @@ static void findLastFunction(Utf8StringR entryPoint, Utf8CP textIn, Utf8StringCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      08/16
 //---------------------------------------------------------------------------------------
-DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
+DgnDbStatus ScriptDefinitionElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
     {
     if (0 == strcmp(SCRIPT_DOMAIN_PROPERTY_Script_Text, name))
         {
@@ -631,14 +631,14 @@ DgnDbStatus ScriptDefinitionElement::_SetProperty(Utf8CP name, ECN::ECValueCR va
             return DgnDbStatus::BadArg;
 
         ECN::ECValue text;
-        GetProperty(text, SCRIPT_DOMAIN_PROPERTY_Script_Text);
+        GetPropertyValue(text, SCRIPT_DOMAIN_PROPERTY_Script_Text);
         Utf8String rt, args;
         GetSignature(rt, args);
         if (BSISUCCESS != checkEntryPoint(value.ToString().c_str(), text.ToString().c_str(), rt, args))
             return DgnDbStatus::BadArg;
         }
 
-    return T_Super::_SetProperty(name, value);
+    return T_Super::_SetPropertyValue(name, value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -665,13 +665,13 @@ ScriptDefinitionElementPtr ScriptDefinitionElement::Create(DgnDbStatus* statOut,
         stat = DgnDbStatus::BadArg;
         return nullptr;
         }
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(text));
+    stat = el->SetPropertyValue(SCRIPT_DOMAIN_PROPERTY_Script_Text, ECN::ECValue(text));
     if (DgnDbStatus::Success != stat)
         return nullptr;
 
     if (nullptr == esv || 0 == *esv)
         esv = "ES5";
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(esv));
+    stat = el->SetPropertyValue(SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired, ECN::ECValue(esv));
     if (DgnDbStatus::Success != stat)
         return nullptr;
 
@@ -682,20 +682,20 @@ ScriptDefinitionElementPtr ScriptDefinitionElement::Create(DgnDbStatus* statOut,
         entryPoint = defaultEntryPoint.c_str();
         }
 
-    stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(entryPoint));
+    stat = el->SetPropertyValue(SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint, ECN::ECValue(entryPoint));
     if (DgnDbStatus::Success != stat)
         return nullptr;
 
     if (nullptr != desc && 0 != *desc)
         {
-        stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_Description, ECN::ECValue(desc));
+        stat = el->SetPropertyValue(SCRIPT_DOMAIN_PROPERTY_Script_Description, ECN::ECValue(desc));
         if (DgnDbStatus::Success != stat)
             return nullptr;
         }
 
     if (nullptr != url && 0 != *url)
         {
-        stat = el->SetProperty(SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl, ECN::ECValue(url));
+        stat = el->SetPropertyValue(SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl, ECN::ECValue(url));
         if (DgnDbStatus::Success != stat)
             return nullptr;
         }
@@ -709,7 +709,7 @@ ScriptDefinitionElementPtr ScriptDefinitionElement::Create(DgnDbStatus* statOut,
 Utf8String ScriptDefinitionElement::GetText() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_Text);
+    GetPropertyValue(v, SCRIPT_DOMAIN_PROPERTY_Script_Text);
     return v.ToString();
     }
 
@@ -719,7 +719,7 @@ Utf8String ScriptDefinitionElement::GetText() const
 Utf8String ScriptDefinitionElement::GetEntryPoint() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint);
+    GetPropertyValue(v, SCRIPT_DOMAIN_PROPERTY_Script_EntryPoint);
     return v.ToString();
     }
 
@@ -729,7 +729,7 @@ Utf8String ScriptDefinitionElement::GetEntryPoint() const
 Utf8String ScriptDefinitionElement::GetSourceUrl() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl);
+    GetPropertyValue(v, SCRIPT_DOMAIN_PROPERTY_Script_SourceUrl);
     return v.IsNull() ? "" : v.ToString();
     }
 
@@ -739,7 +739,7 @@ Utf8String ScriptDefinitionElement::GetSourceUrl() const
 Utf8String ScriptDefinitionElement::GetDescription() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_Description);
+    GetPropertyValue(v, SCRIPT_DOMAIN_PROPERTY_Script_Description);
     return v.IsNull()? "": v.ToString();
     }
 
@@ -749,7 +749,7 @@ Utf8String ScriptDefinitionElement::GetDescription() const
 Utf8String ScriptDefinitionElement::GetEcmaScriptVersionRequired() const
     {
     ECN::ECValue v;
-    GetProperty(v, SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired);
+    GetPropertyValue(v, SCRIPT_DOMAIN_PROPERTY_Script_EcmaScriptVersionRequired);
     return v.ToString();
     }
 

@@ -26,18 +26,18 @@ module DgnScriptPerformanceTests {
     //---------------------------------------------------------------------------------------
     function PopulateProperties(el: be.GeometricElement3d): void {
 
-        el.SetProperty("IntegerProperty1", be.ECValue.FromInteger(1));
-        el.SetProperty("IntegerProperty2", be.ECValue.FromInteger(2));
-        el.SetProperty("IntegerProperty3", be.ECValue.FromInteger(3));
-        el.SetProperty("IntegerProperty4", be.ECValue.FromInteger(4));
-        el.SetProperty("DoubleProperty1", be.ECValue.FromDouble(1));
-        el.SetProperty("DoubleProperty2", be.ECValue.FromDouble(2));
-        el.SetProperty("DoubleProperty3", be.ECValue.FromDouble(3));
-        el.SetProperty("DoubleProperty4", be.ECValue.FromDouble(4));
-        el.SetProperty("PointProperty1",  be.ECValue.FromPoint3d(new be.DPoint3d(1,2,3))); 
-        el.SetProperty("PointProperty2",  be.ECValue.FromPoint3d(new be.DPoint3d(2,2,3))); 
-        el.SetProperty("PointProperty3",  be.ECValue.FromPoint3d(new be.DPoint3d(3,2,3))); 
-        el.SetProperty("PointProperty4",  be.ECValue.FromPoint3d(new be.DPoint3d(4,2,3))); 
+        el.SetPropertyValue("IntegerProperty1", be.ECValue.FromInteger(1));
+        el.SetPropertyValue("IntegerProperty2", be.ECValue.FromInteger(2));
+        el.SetPropertyValue("IntegerProperty3", be.ECValue.FromInteger(3));
+        el.SetPropertyValue("IntegerProperty4", be.ECValue.FromInteger(4));
+        el.SetPropertyValue("DoubleProperty1", be.ECValue.FromDouble(1));
+        el.SetPropertyValue("DoubleProperty2", be.ECValue.FromDouble(2));
+        el.SetPropertyValue("DoubleProperty3", be.ECValue.FromDouble(3));
+        el.SetPropertyValue("DoubleProperty4", be.ECValue.FromDouble(4));
+        el.SetPropertyValue("PointProperty1",  be.ECValue.FromPoint3d(new be.DPoint3d(1,2,3))); 
+        el.SetPropertyValue("PointProperty2",  be.ECValue.FromPoint3d(new be.DPoint3d(2,2,3))); 
+        el.SetPropertyValue("PointProperty3",  be.ECValue.FromPoint3d(new be.DPoint3d(3,2,3))); 
+        el.SetPropertyValue("PointProperty4",  be.ECValue.FromPoint3d(new be.DPoint3d(4,2,3))); 
     }
 
     //---------------------------------------------------------------------------------------

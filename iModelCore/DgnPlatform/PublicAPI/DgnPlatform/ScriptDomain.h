@@ -80,7 +80,7 @@ public:
 
 private:
     explicit ScriptDefinitionElement(CreateParams const&);
-    DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value) override;
 public:
     //! Create a script element. The returned element is non-persisent. The caller must call its Insert method in order to store it to the bim.
     //! @param[out] stat    Optional. An error status if the element could not be created. DgnDbStatus::MissingDomain if the Script domain has not been imported.

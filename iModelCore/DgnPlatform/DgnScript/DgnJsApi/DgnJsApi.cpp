@@ -209,11 +209,11 @@ int32_t JsDgnElement::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-JsECValueP JsDgnElement::GetProperty(Utf8StringCR name) 
+JsECValueP JsDgnElement::GetPropertyValue(Utf8StringCR name) 
     {
     DGNJSAPI_VALIDATE_ARGS_NULL(IsValid());
     ECN::ECValue v;
-    if (m_el->GetProperty(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
+    if (m_el->GetPropertyValue(v, name.c_str()) != DgnDbStatus::Success || v.IsNull())
         return nullptr;
     return new JsECValue(v);
     }
@@ -221,10 +221,10 @@ JsECValueP JsDgnElement::GetProperty(Utf8StringCR name)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      12/15
 //---------------------------------------------------------------------------------------
-int32_t JsDgnElement::SetProperty(Utf8StringCR name, JsECValueP v)
+int32_t JsDgnElement::SetPropertyValue(Utf8StringCR name, JsECValueP v)
     {
     DGNJSAPI_VALIDATE_ARGS_ERROR(IsValid());
-    return (int32_t) m_el->SetProperty(name.c_str(), v->m_value);
+    return (int32_t) m_el->SetPropertyValue(name.c_str(), v->m_value);
     }
 
 //---------------------------------------------------------------------------------------

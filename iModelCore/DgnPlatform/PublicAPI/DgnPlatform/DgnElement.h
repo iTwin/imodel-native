@@ -384,7 +384,7 @@ struct AutoHandledPropertiesCollection
 * Properties that are defined by the ECClass are defined for every instance. 
 *
 * Class-defined properties may be queried by name in ECSQL select statements.
-* See DgnElement::_GetProperty and DgnElement::_SetProperty for how to get and set class-defined property values in C++.
+* See DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue for how to get and set class-defined property values in C++.
 * Note that, while all class-defined properties are defined for every instance, the actual value of a property on a particular element may be NULL, 
 * if the property definition permits NULLs.
 *
@@ -395,23 +395,23 @@ struct AutoHandledPropertiesCollection
 * When you define a subclass of dgn.Element in your domain's schema and you define properties for it, you don't have to write
 * any code to enable applications to work with those properties. The base class implementation of the functions that load, store, and copy properties
 * will automatically detect and handle all properties defined in the schema. This is called "auto-handling" of properties, and it is the default.
-* The base class implementation of DgnElement::_GetProperty and DgnElement::_SetProperty will provide access to all custom-handled properties.
+* The base class implementation of DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue will provide access to all custom-handled properties.
 * New or updated auto-handled properties are automatically written to the Db when the element is inserted or updated.
 *
 * <h4>Validating Auto-Handled Properties</h4>
 * The domain schema can specifiy some validation rules for auto-handled properties in the ECSchema, such as the IsNullable CustomAttribute.
 * Beyond that, in order to apply custom validation rules to auto-handled properties, a domain must define an element subclass that overrides 
-* the DgnElement::_SetProperty method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
+* the DgnElement::_SetPropertyValue method that checks property values. In this case, the ECSchema should <em>also</em> specify @ref ElementRestrictions.
 *
 * <h3>Custom Properties</h3>
 * If, in rare cases, a subclass of DgnElement may want to map a property to a C++ member variable or must provide a custom API for a property.
 * That is often necessary for binary data. In such cases, the subclass can take over the job of loading and storing that one property.
 * This is called "custom-handling" a property. To opt into custom handling, the property definition in the schema must include the @a CustomHandledProperty
 * CustomAttribute. The subclass of DgnElement must then override DgnElement::_BindInsertParams, DgnElement::_BindUpdateParams, and DgnElement::_ReadSelectParams in order to load and store
-* the custom-handled properties. The subclass must also override DgnElement::_GetProperty and DgnElement::_SetProperty to provide name-based get/set support for its custom-handled properties.
+* the custom-handled properties. The subclass must also override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide name-based get/set support for its custom-handled properties.
 * Finally, the subclass must override DgnElement::_CopyFrom and possibly other virtual methods in order to support copying and importing of its custom-handled properties.
 * An element subclass that defines custom-handled properties <em>must</em> specify @ref ElementRestrictions.
-* @note A class that has custom-handled properties must override DgnElement::_GetProperty and DgnElement::_SetProperty to provide access to those properties, even if it also define special custom access methods for them.
+* @note A class that has custom-handled properties must override DgnElement::_GetPropertyValue and DgnElement::_SetPropertyValue to provide access to those properties, even if it also define special custom access methods for them.
 * 
 * @see @ref ElementRestrictions
 * @see @ref PAGE_ElementOverview
@@ -804,32 +804,32 @@ protected:
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
     //! Return the value of a DateTime ECProperty by name
-    //! @note Returns an invalid DateTime if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns an invalid DateTime if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT DateTime GetPropertyValueDateTime(Utf8CP propertyName) const;
     //! Return the value of a DPoint3d ECProperty by name
-    //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns DPoint3d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT DPoint3d GetPropertyValueDPoint3d(Utf8CP propertyName) const;
     //! Return the value of a DPoint2d ECProperty by name
-    //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns DPoint2d::From(0,0,0) if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT DPoint2d GetPropertyValueDPoint2d(Utf8CP propertyName) const;
     //! Return the value of a boolean ECProperty by name
-    //! @note Returns false if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns false if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT bool GetPropertyValueBoolean(Utf8CP propertyName) const;
     //! Return the value of a double ECProperty by name
-    //! @note Returns 0.0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns 0.0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT double GetPropertyValueDouble(Utf8CP propertyName) const;
     //! Return the value of a integer ECProperty by name
-    //! @note Returns 0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT int32_t GetPropertyValueInt32(Utf8CP propertyName) const;
     //! Return the value of a UInt64 ECProperty by name
-    //! @note Returns 0 if underlying property is null.  Use GetProperty if this behavior is not acceptable.
-    //! @see GetProperty
+    //! @note Returns 0 if underlying property is null.  Use GetPropertyValue if this behavior is not acceptable.
+    //! @see GetPropertyValue
     DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName) const;
     //! Return the value of an ECNavigationProperty by name
     template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
@@ -840,28 +840,28 @@ protected:
     DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName) const;
 
     //! Set a DateTime ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value);
     //! Set a DPoint3d ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value);
     //! Set a DPoint2d ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value);
     //! Set a boolean ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value);
     //! Set a double ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value);
     //! Set an integer ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value);
     //! Set an ECNavigationProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value);
     //! Set a string ECProperty by name
-    //! @see SetProperty
+    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value);
 
     //! Invoked when loading an element from the database, to allow subclasses to extract their custom-handled property values
@@ -1116,9 +1116,9 @@ protected:
     virtual GroupInformationElementCP _ToGroupInformationElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetProperties(ECN::IECInstanceCR);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR);
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1338,7 +1338,7 @@ public:
     //! @param value The returned value
     //! @param name The name of the property
     //! @return non-zero error status if this element has no such property or if the subclass has chosen not to expose it via this function
-    DgnDbStatus GetProperty(ECN::ECValueR value, Utf8CP name) const {return _GetProperty(value, name);}
+    DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP name) const {return _GetPropertyValue(value, name);}
 
     //! Set the value of a property. 
     //! @note This function does not write to the bim. The caller must call Update in order to write the element and all of 
@@ -1346,12 +1346,12 @@ public:
     //! @param value The returned value
     //! @param name The name of the property
     //! @return non-zero error status if this element has no such property, if the value is illegal, or if the subclass has chosen not to expose the property via this function
-    DgnDbStatus SetProperty(Utf8CP name, ECN::ECValueCR value) {return _SetProperty(name, value);}
+    DgnDbStatus SetPropertyValue(Utf8CP name, ECN::ECValueCR value) {return _SetPropertyValue(name, value);}
 
-    //! Set the properties of this element from the specified instance. Calls _SetProperty for each non-NULL property in the input instance.
+    //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.
     //! @param instance The source of the properties that are to be copied to this element
     //! @return non-zero error status if any property could not be set. Note that some properties might be set while others are not in case of error.
-    DGNPLATFORM_EXPORT DgnDbStatus SetProperties(ECN::IECInstanceCR instance) {return _SetProperties(instance);}
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValues(ECN::IECInstanceCR instance) {return _SetPropertyValues(instance);}
 
     //! @}
 };
@@ -1719,8 +1719,8 @@ protected:
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement&);
 public:
 
-    DGNPLATFORM_EXPORT DgnDbStatus _GetProperty(ECN::ECValueR value, Utf8CP name) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetProperty(Utf8CP name, ECN::ECValueCR value) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value) override;
     };
 
 //=======================================================================================

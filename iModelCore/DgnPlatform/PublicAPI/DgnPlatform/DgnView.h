@@ -89,6 +89,8 @@ protected:
     virtual SpatialViewDefinitionCP _ToSpatialView() const { return nullptr; }
     virtual DrawingViewDefinitionCP _ToDrawingView() const { return nullptr; }
     virtual SheetViewDefinitionCP _ToSheetView() const { return nullptr; }
+    
+    DGNPLATFORM_EXPORT virtual void _ToJson(Utf8StringR jsonStr) const;
 
 public:
     DgnViewId GetViewId() const { return DgnViewId(GetElementId().GetValue()); } //!< This view definition's ID
@@ -228,6 +230,8 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetCategorySelector(CategorySelectorCR); //!< Set the list of Categories displayed in a view. Note that the category selector must be persistent
     DgnElementId GetDisplayStyle() const { return GetPropertyValueId<DgnElementId>("DisplayStyle"); } //!< Get ID of display style for a view
     DgnDbStatus SetDisplayStyle(DgnElementId value) { return SetPropertyValue("DisplayStyle", value); } //!< Set ID of display style for a view
+
+    void ToJson(Utf8StringR jsonStr) const {return _ToJson(jsonStr);}
     };
 
 //=======================================================================================
@@ -243,13 +247,13 @@ protected:
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
 public:
     //! Construct a new modelselector. You should then call SetModelIds.
-    ModelSelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+    ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
     //! Construct a new modelselector containing a list of models prior to inserting it.
-    ModelSelector(DgnDbR db, Utf8CP name, bvector<DgnModelId> const& models) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {SetModelIds(models);}
+    ModelSelector(DgnDbR db, Utf8StringCR name, bvector<DgnModelId> const& models) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {SetModelIds(models);}
 
     //! Construct a new modelselector containing a single model prior to inserting it.
-    ModelSelector(DgnDbR db, Utf8CP name, DgnModelId model) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) { SetModelId(model); }
+    ModelSelector(DgnDbR db, Utf8StringCR name, DgnModelId model) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) { SetModelId(model); }
 
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
