@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:36 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,12 +52,8 @@ struct TransfoModel;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ReprojectionFactory : private Unassignable
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
+
+
 private:
     struct                                  Impl;
     SharedPtrTypeTrait<const Impl>::type    m_implP;
@@ -74,7 +70,7 @@ public:
     GEOCOORDS_DLLE Reprojection             Create                             (const GCS&                      sourceGCS,
                                                                                 const GCS&                      targetGCS,
                                                                                 const DRange3d*                 sourceExtentP,
-                                                                                Status&                         status) const;
+                                                                                SMStatus&                         status) const;
 
 
     GEOCOORDS_DLLE Reprojection             Create                             (const GCS&                      sourceGCS,
@@ -132,13 +128,7 @@ private:
     explicit                                Reprojection                       (const TransfoModel&             transfoModel);
 
 public:
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
-        S_QTY,
-        };
+
 
     GEOCOORDS_DLLE static const Reprojection&   
                                             GetNull                            ();
@@ -151,11 +141,11 @@ public:
 
     GEOCOORDS_DLLE bool                     IsNull                             () const;
 
-    GEOCOORDS_DLLE Status                   Reproject                          (const DPoint3d&                 sourcePt,
+    GEOCOORDS_DLLE SMStatus                   Reproject(const DPoint3d&                 sourcePt,
                                                                                 DPoint3d&                       targetPt) const;
 
 
-    GEOCOORDS_DLLE Status                   Reproject                          (const DPoint3d*                 sourcePtP,
+    GEOCOORDS_DLLE SMStatus                   Reproject(const DPoint3d*                 sourcePtP,
                                                                                 size_t                          sourcePtQty,
                                                                                 DPoint3d*                       targetPtP) const;
 

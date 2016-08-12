@@ -118,7 +118,7 @@ ImporterImpl::~ImporterImpl  ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportSequence&   sequence,
+SMStatus Importer::Import(const ImportSequence&   sequence,
                                     const ImportConfig&     config)
     {
     try
@@ -143,7 +143,7 @@ Importer::Status Importer::Import  (const ImportSequence&   sequence,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportSequence&   sequence)
+SMStatus Importer::Import(const ImportSequence&   sequence)
     {
     try
         {
@@ -160,7 +160,7 @@ Importer::Status Importer::Import  (const ImportSequence&   sequence)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportCommand&    command,
+SMStatus Importer::Import(const ImportCommand&    command,
                                     const ImportConfig&     config)
     {
     try
@@ -183,7 +183,7 @@ Importer::Status Importer::Import  (const ImportCommand&    command,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportCommand&    command)
+SMStatus Importer::Import(const ImportCommand&    command)
     {
     try
         {

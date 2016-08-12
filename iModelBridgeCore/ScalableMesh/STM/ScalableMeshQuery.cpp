@@ -140,77 +140,6 @@ void IScalableMeshFullResolutionQueryParams::SetReturnAllPtsForLowestLevel(bool 
     _SetReturnAllPtsForLowestLevel(returnAllPts);
     }
 
-/*==================================================================*/
-/*                   IScalableMeshFullResolutionLinearQueryParams          */
-/*==================================================================*/
-IScalableMeshFullResolutionLinearQueryParams::IScalableMeshFullResolutionLinearQueryParams()
-    {
-    }
-
-IScalableMeshFullResolutionLinearQueryParams::~IScalableMeshFullResolutionLinearQueryParams()
-    {
-    }
-
-IScalableMeshFullResolutionLinearQueryParamsPtr IScalableMeshFullResolutionLinearQueryParams::CreateParams()
-    {
-    return new ScalableMeshFullResolutionLinearQueryParams();
-    }
-
-size_t IScalableMeshFullResolutionLinearQueryParams::GetMaximumNumberOfPointsForLinear()
-    {
-    return _GetMaximumNumberOfPointsForLinear();
-    }
-
-int IScalableMeshFullResolutionLinearQueryParams::SetMaximumNumberOfPointsForLinear(size_t maximumNumberOfPointsForLinear)
-    {
-    return _SetMaximumNumberOfPointsForLinear(maximumNumberOfPointsForLinear);
-    }
-
-void IScalableMeshFullResolutionLinearQueryParams::SetUseDecimation(bool useDecimation)
-    {
-    _SetUseDecimation(useDecimation);
-    }
-
-bool IScalableMeshFullResolutionLinearQueryParams::GetUseDecimation()
-    {
-    return _GetUseDecimation();
-    }
-
-void IScalableMeshFullResolutionLinearQueryParams::SetCutLinears(bool cutLinears)
-    {
-    _SetCutLinears(cutLinears);
-    }
-
-bool IScalableMeshFullResolutionLinearQueryParams::GetCutLinears()
-    {
-    return _GetCutLinears();
-    }
-
-void IScalableMeshFullResolutionLinearQueryParams::SetAddLinears(const bool addLinears)
-    {
-    _SetAddLinears(addLinears);
-    }
-
-bool IScalableMeshFullResolutionLinearQueryParams::GetAddLinears()
-    {
-    return _GetAddLinears();
-    }
-
-const std::vector<int>& IScalableMeshFullResolutionLinearQueryParams::GetFilteringFeatureTypes(bool& doIncludeFilteringFeatureTypes)
-    {
-    return _GetFilteringFeatureTypes(doIncludeFilteringFeatureTypes);
-    }
-
-//When no feature type is specified all feature types are returned.
-int IScalableMeshFullResolutionLinearQueryParams::SetFilteringFeatureTypes(const std::vector<int>& filteringFeatureTypes, bool doIncludeFilteringFeatures)
-    {
-    return _SetFilteringFeatureTypes(filteringFeatureTypes, doIncludeFilteringFeatures);
-    }
-
-void IScalableMeshFullResolutionLinearQueryParams::SetIncludeFilteringFeatureTypes(const bool& doIncludeFilteringFeatures)
-    {
-    _SetIncludeFilteringFeatureTypes(doIncludeFilteringFeatures);
-    }
 
 /*==================================================================*/
 /*                   ISrDTMViewDependentQueryParams                 */
@@ -320,33 +249,7 @@ IScalableMeshFixResolutionMaxPointsQueryParamsPtr IScalableMeshFixResolutionMaxP
     {
     return new ScalableMeshFixResolutionMaxPointsQueryParams();
     }
-#if 0
-/*==================================================================*/
-/*                   IScalableMeshQueryAllLinearsQueryParams               */
-/*==================================================================*/
-IScalableMeshQueryAllLinearsQueryParams::IScalableMeshQueryAllLinearsQueryParams()
-    {
-    }
 
-IScalableMeshQueryAllLinearsQueryParams::~IScalableMeshQueryAllLinearsQueryParams()
-    {
-    }
-/*
-void IScalableMeshQueryAllLinearsQueryParams::SetFeatures (const list<HFCPtr<HVEDTMLinearFeature>>& features)
-    {
-    _SetFeatures(features);
-    }*/
-
-list<IScalableMeshFeaturePtr> IScalableMeshQueryAllLinearsQueryParams::GetFeatures()
-    {
-    return _GetFeatures();
-    }
-
-IScalableMeshQueryAllLinearsQueryParamsPtr IScalableMeshQueryAllLinearsQueryParams::CreateParams()
-    {
-    return new ScalableMeshQueryAllLinearsQueryParams();
-    }
-#endif
 /*==================================================================*/
 /*        QUERY PARAMETERS SECTION - END                            */
 /*==================================================================*/
@@ -537,12 +440,12 @@ ScalableMeshReprojectionQuery::ScalableMeshReprojectionQuery(IScalableMeshPointQ
 
     static const ReprojectionFactory REPROJECTION_FACTORY;
 
-    ReprojectionFactory::Status reprojCreateStatus;
+    SMStatus reprojCreateStatus;
     m_targetToSourceReproj = REPROJECTION_FACTORY.Create(m_targetGCS, m_sourceGCS, 0, reprojCreateStatus);
-    assert(Reprojection::S_SUCCESS == reprojCreateStatus);
+    assert(SMStatus::S_SUCCESS == reprojCreateStatus);
 
     m_sourceToTargetReproj = REPROJECTION_FACTORY.Create(m_sourceGCS, m_targetGCS, 0, reprojCreateStatus);
-    assert(Reprojection::S_SUCCESS == reprojCreateStatus);
+    assert(SMStatus::S_SUCCESS == reprojCreateStatus);
     }
 
 ScalableMeshReprojectionQuery::~ScalableMeshReprojectionQuery()
@@ -558,7 +461,7 @@ int IBcDTMReprojectionFunction(DPoint3d* pts, size_t numPoints, void* userP)
 
     GeoCoords::Reprojection* reprojectionFunctionP = (GeoCoords::Reprojection*)userP;
 
-    if (Reprojection::S_SUCCESS != reprojectionFunctionP->Reproject(pts, (int)numPoints, pts))
+    if (SMStatus::S_SUCCESS != reprojectionFunctionP->Reproject(pts, (int)numPoints, pts))
         {
         status = BSIERROR;
         }

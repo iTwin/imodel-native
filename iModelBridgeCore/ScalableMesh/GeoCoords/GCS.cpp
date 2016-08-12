@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>   
 #include "../STM/ImagePPHeaders.h"
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>
                       
@@ -429,12 +430,12 @@ struct GCS::Impl : public ShareableObjectTypeTrait<Impl>::type
 
 
 
-    Status                                  GetNullCSWKT                   (WString&                             wkt) const;
-    Status                                  GetBaseCSWKT                   (WString&                             wkt) const;
-    Status                                  GetLocalCSWKT                  (WString&                             wkt) const;
-    Status                                  GetFittedCSWKT                 (WString&                             wkt) const;
+    SMStatus                                  GetNullCSWKT(WString&                             wkt) const;
+    SMStatus                                  GetBaseCSWKT(WString&                             wkt) const;
+    SMStatus                                  GetLocalCSWKT(WString&                             wkt) const;
+    SMStatus                                  GetFittedCSWKT(WString&                             wkt) const;
 
-    Status                                  GetWKT                         (WString&                             wkt) const;
+    SMStatus                                  GetWKT(WString&                             wkt) const;
     };
 
 
@@ -491,7 +492,7 @@ GCS& GCS::operator= (const GCS& pi_rRight)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline GCS::Status GCS::Impl::GetNullCSWKT (WString& wkt) const
+inline SMStatus GCS::Impl::GetNullCSWKT(WString& wkt) const
     {
     wkt.clear();
     return S_SUCCESS;
@@ -501,7 +502,7 @@ inline GCS::Status GCS::Impl::GetNullCSWKT (WString& wkt) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCS::Status GCS::Impl::GetBaseCSWKT (WString& wkt) const
+SMStatus GCS::Impl::GetBaseCSWKT(WString& wkt) const
     {            
     if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk, false))
         return S_ERROR;  
@@ -513,7 +514,7 @@ GCS::Status GCS::Impl::GetBaseCSWKT (WString& wkt) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCS::Status GCS::Impl::GetLocalCSWKT (WString& wkt) const
+SMStatus GCS::Impl::GetLocalCSWKT(WString& wkt) const
     {
     assert(m_hasUnit);
 
@@ -536,12 +537,12 @@ GCS::Status GCS::Impl::GetLocalCSWKT (WString& wkt) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCS::Status GCS::Impl::GetFittedCSWKT (WString& wkt) const
+SMStatus GCS::Impl::GetFittedCSWKT(WString& wkt) const
     {
     assert(m_hasLocalTransform);
 
     WString baseCSWkt;
-    const Status baseCSStatus = (!m_geoRef.IsNull()) ? 
+    const SMStatus baseCSStatus = (!m_geoRef.IsNull()) ?
                                         GetBaseCSWKT(baseCSWkt) : 
                                         GetLocalCSWKT(baseCSWkt);
     if (S_SUCCESS != baseCSStatus)
@@ -573,7 +574,7 @@ GCS::Status GCS::Impl::GetFittedCSWKT (WString& wkt) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCS::Status GCS::Impl::GetWKT (WString& wkt) const
+SMStatus GCS::Impl::GetWKT(WString& wkt) const
     {
     if (m_hasLocalTransform)
         return GetFittedCSWKT(wkt);
@@ -604,7 +605,7 @@ WKT GCS::GetWKT () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKT GCS::GetWKT (Status& status) const
+WKT GCS::GetWKT(SMStatus& status) const
     {
     WString wktString;
     status = m_implP->GetWKT(wktString);
@@ -713,14 +714,14 @@ void GCS::SetLocalTransform (const LocalTransform& localTransform)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCS::Status GCS::AppendLocalTransform (const LocalTransform& localTransform)
+SMStatus GCS::AppendLocalTransform(const LocalTransform& localTransform)
     {
     assert(!IsNull());
 
-    LocalTransform::Status status;
+    SMStatus status;
     LocalTransform newLocalTransform(Combine(m_implP->m_localTransform, localTransform, status));
 
-    if (LocalTransform::S_SUCCESS != status)
+    if (SMStatus::S_SUCCESS != status)
         return S_ERROR;
 
     Impl::UpdateForEdit(m_implP);
@@ -790,9 +791,9 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
         {
         }
 
-    void                            OnUnhandledStatus                  (Status                          status)
+    void                            OnUnhandledStatus(SMStatus                          status)
         {
-        assert(BSISUCCESS != status);
+        assert(S_SUCCESS != status);
 
         // TDORAY: Evaluate different statuses
         CustomError error(L"Error creating gcs!");
@@ -807,7 +808,7 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
                                                                         Arg1T                           arg1,
                                                                         Arg2T                           arg2)
         {
-        Status status(S_SUCCESS);
+        SMStatus status(S_SUCCESS);
         GCS gcs(instance.Create(arg1, arg2, status));
         if (S_SUCCESS != status) OnUnhandledStatus(status);
         return gcs;
@@ -817,7 +818,7 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     GCS                             CreateWithUnhandledStatus          (const GCSFactory&               instance,
                                                                         Arg1T                           arg1)
         {
-        Status status(S_SUCCESS);
+        SMStatus status(S_SUCCESS);
         GCS gcs(instance.Create(arg1, status));
         if (S_SUCCESS != status) OnUnhandledStatus(status);
         return gcs;
@@ -827,50 +828,50 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     GCS                             CreateFromBaseCS                   (const WChar*                     wkt,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;    
+                                                                        SMStatus&                         status) const;
 
     GCS                             CreateFromLocalCS                  (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
     GCS                             CreateFromFittedCS                 (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
 
     GCS                             CreateFromComposedCS               (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
 
     GCS                             Create                             (const WChar*                     wktBegin,
                                                                         const WChar*                     wktEnd,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
     GCS                             Create                             (const WChar*                     wkt,
                                                                         BaseGCS::WktFlavor              wktFlavor,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
     GCS                             Create                             (const BaseGCSCPtr&              baseGCSPtr,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
     GCS                             Create                             (const GeospatialReference&      geoRef,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
 
     GCS                             Create                             (const Unit&                     unit,
                                                                         const LocalTransform*           localTransformP,
-                                                                        Status&                         status) const;
+                                                                        SMStatus&                         status) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -906,7 +907,7 @@ GCSFactory::GCSFactory (const GCSFactory& rhs)
 GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,                                        
                                         BaseGCS::WktFlavor      wktFlavor,
                                         const LocalTransform*   localTransformP,
-                                        Status&                 status) const
+                                        SMStatus&                 status) const
     {
     BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcsPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS());
     WString w_wkt(wkt);
@@ -930,10 +931,10 @@ GCS GCSFactory::Impl::CreateFromLocalCS(const WChar*             wktBegin,
                                         const WChar*             wktEnd,
                                         BaseGCS::WktFlavor      wktFlavor,
                                         const LocalTransform*   localTransformP,
-                                        Status&                 status) const
+                                        SMStatus&                 status) const
     {
     WKTRoot root(wktBegin, wktEnd);
-    if (WKTRoot::S_SUCCESS != root.Parse() || root.IsEmpty())
+    if (SMStatus::S_SUCCESS != root.Parse() || root.IsEmpty())
         {
         status = S_ERROR;
         return GCS::GetNull ();
@@ -965,10 +966,10 @@ GCS GCSFactory::Impl::CreateFromComposedCS (const WChar*             wktBegin,
                                             const WChar*             wktEnd,
                                             BaseGCS::WktFlavor      wktFlavor,
                                             const LocalTransform*   localTransformP,
-                                            Status&                 status) const
+                                            SMStatus&                 status) const
     {
     WKTRoot root(wktBegin, wktEnd);
-    if (WKTRoot::S_SUCCESS != root.Parse() || root.IsEmpty())
+    if (SMStatus::S_SUCCESS != root.Parse() || root.IsEmpty())
         {
         status = S_ERROR;
         return GCS::GetNull ();
@@ -1015,10 +1016,10 @@ GCS GCSFactory::Impl::CreateFromFittedCS   (const WChar*             wktBegin,
                                             const WChar*             wktEnd,
                                             BaseGCS::WktFlavor      wktFlavor,
                                             const LocalTransform*   localTransformP,
-                                            Status&                 status) const
+                                            SMStatus&                 status) const
     {
     WKTRoot root(wktBegin, wktEnd);
-    if (WKTRoot::S_SUCCESS != root.Parse() || root.IsEmpty())
+    if (SMStatus::S_SUCCESS != root.Parse() || root.IsEmpty())
         {
         status = S_ERROR;
         return GCS::GetNull ();
@@ -1045,10 +1046,10 @@ GCS GCSFactory::Impl::CreateFromFittedCS   (const WChar*             wktBegin,
         }
 
 
-    TransfoModel::Status transfoModelCreateStatus;
+    SMStatus transfoModelCreateStatus;
     TransfoModel transfoModel(TransfoModel::CreateFrom(transform, transfoModelCreateStatus));
 
-    if (TransfoModel::S_SUCCESS != transfoModelCreateStatus)
+    if (SMStatus::S_SUCCESS != transfoModelCreateStatus)
         {
         status = S_ERROR;
         return GCS::GetNull ();
@@ -1070,7 +1071,7 @@ GCS GCSFactory::Impl::Create   (const WChar*             wktBegin,
                                 const WChar*             wktEnd,
                                 BaseGCS::WktFlavor      wktFlavor,
                                 const LocalTransform*   localTransformP,
-                                Status&                 status) const
+                                SMStatus&                 status) const
     {
     const WChar* firstKeywordBegin = FindWKTSectionKeyword(wktBegin, wktEnd);
     if (wktEnd == firstKeywordBegin) 
@@ -1106,7 +1107,7 @@ GCS GCSFactory::Impl::Create   (const WChar*             wktBegin,
 inline GCS GCSFactory::Impl::Create    (const WChar*             wkt,
                                         BaseGCS::WktFlavor      wktFlavor,
                                         const LocalTransform*   localTransformP,
-                                        Status&                 status) const
+                                        SMStatus&                 status) const
     {
     const WChar* const wktEnd = wkt + wcslen(wkt);
     return Create(wkt, wktEnd, wktFlavor, localTransformP, status);
@@ -1118,7 +1119,7 @@ inline GCS GCSFactory::Impl::Create    (const WChar*             wkt,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::Create   (const BaseGCSCPtr&      baseGCSPtr,
                                 const LocalTransform*   localTransformP,
-                                Status&                 status) const
+                                SMStatus&                 status) const
     {
     if (baseGCSPtr == 0 || !baseGCSPtr->IsValid())
         {
@@ -1137,7 +1138,7 @@ GCS GCSFactory::Impl::Create   (const BaseGCSCPtr&      baseGCSPtr,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Impl::Create   (const GeospatialReference&      geoRef,
                                 const LocalTransform*           localTransformP,
-                                Status&                         status) const
+                                SMStatus&                         status) const
     {
     assert(!geoRef.IsNull());
 
@@ -1152,7 +1153,7 @@ GCS GCSFactory::Impl::Create   (const GeospatialReference&      geoRef,
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline GCS GCSFactory::Impl::Create    (const Unit&             unit,
                                         const LocalTransform*   localTransformP,
-                                        Status&                 status) const
+                                        SMStatus&                 status) const
     {
     status = S_SUCCESS;
     return GCS(new GCS::Impl(0, &unit, localTransformP));
@@ -1164,7 +1165,7 @@ inline GCS GCSFactory::Impl::Create    (const Unit&             unit,
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const WChar*  wkt,
-                        Status&         status) const
+                        SMStatus&         status) const
     {
     BaseGCS::WktFlavor wktFlavor = BaseGCS::wktFlavorOracle9; 
 
@@ -1177,7 +1178,7 @@ GCS GCSFactory::Create (const WChar*  wkt,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const wchar_t*              wkt,
                         BaseGCS::WktFlavor          wktFlavor,
-                        Status&                     status) const
+                        SMStatus&                     status) const
     {
     return m_implP->Create(wkt, wktFlavor, 0, status);
     }
@@ -1188,7 +1189,7 @@ GCS GCSFactory::Create (const wchar_t*              wkt,
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const WKT&  wkt,
-                        Status&     status) const
+                        SMStatus&     status) const
     {
     BaseGCS::WktFlavor wktFlavor = BaseGCS::wktFlavorOracle9; 
 
@@ -1200,7 +1201,7 @@ GCS GCSFactory::Create (const WKT&  wkt,
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const BaseGCSCPtr&  baseGCSPtr,
-                        Status&             status) const
+                        SMStatus&             status) const
     {
     return m_implP->Create(baseGCSPtr, 0, status);
     }
@@ -1210,7 +1211,7 @@ GCS GCSFactory::Create (const BaseGCSCPtr&  baseGCSPtr,
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const GeospatialReference&  geoRef,
-                        Status&                     status) const
+                        SMStatus&                     status) const
     {
     return m_implP->Create(geoRef, 0, status);
     }
@@ -1220,7 +1221,7 @@ GCS GCSFactory::Create (const GeospatialReference&  geoRef,
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const Unit& unit,
-                        Status&     status) const
+                        SMStatus&     status) const
     {
     return m_implP->Create(unit, 0, status);
     }
@@ -1231,15 +1232,15 @@ GCS GCSFactory::Create (const Unit& unit,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const GCS&              gcs,
                         const LocalTransform&   appendedLocalTransform,
-                        Status&                 status) const
+                        SMStatus&                 status) const
     {
-    LocalTransform::Status createTransfromStatus = LocalTransform::S_SUCCESS;
+    SMStatus createTransfromStatus = SMStatus::S_SUCCESS;
 
     const LocalTransform localTransform(gcs.HasLocalTransform() ? 
                                             Combine(gcs.GetLocalTransform(), appendedLocalTransform, createTransfromStatus) : 
                                             appendedLocalTransform);
 
-    if (LocalTransform::S_SUCCESS != createTransfromStatus)
+    if (SMStatus::S_SUCCESS != createTransfromStatus)
         {
         status = S_ERROR;
         return GCS::GetNull();
@@ -1267,7 +1268,7 @@ inline const LocalTransform* GetValidLocalTransformP (const LocalTransform&   lo
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const BaseGCSCPtr&      baseGCSPtr,
                         const LocalTransform&   localTransform,
-                        Status&                 status) const
+                        SMStatus&                 status) const
     {
     return m_implP->Create(baseGCSPtr, 
                            GetValidLocalTransformP(localTransform), 
@@ -1280,7 +1281,7 @@ GCS GCSFactory::Create (const BaseGCSCPtr&      baseGCSPtr,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const GeospatialReference&  geoRef,
                         const LocalTransform&       localTransform,
-                        Status&                     status) const
+                        SMStatus&                     status) const
     {
     return m_implP->Create(geoRef, 
                            GetValidLocalTransformP(localTransform), 
@@ -1293,7 +1294,7 @@ GCS GCSFactory::Create (const GeospatialReference&  geoRef,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCS GCSFactory::Create (const Unit&             unit,
                         const LocalTransform&   localTransform,
-                        Status&                 status) const
+                        SMStatus&                 status) const
     {
     return m_implP->Create(unit, 
                            GetValidLocalTransformP(localTransform), 
@@ -1396,11 +1397,11 @@ namespace {
 WKTSupport ComputeWKTSupport (const GCS&         gcs, 
                               BaseGCS::WktFlavor wktFlavor)
     {
-    GCS::Status toStatus;
+    SMStatus toStatus;
 
     WKT wkt(gcs.GetWKT(toStatus));
 
-    if (GCS::S_SUCCESS != toStatus)
+    if (SMStatus::S_SUCCESS != toStatus)
         return WKTSUPPORT_NONE; // TDORAY: As we may have been created from WKT, we may return that we are FROM compliant.
 
 
@@ -1408,10 +1409,10 @@ WKTSupport ComputeWKTSupport (const GCS&         gcs,
     static const GCSFactory DEFAULT_FACTORY;
 
 
-    GCSFactory::Status fromStatus;
+    SMStatus fromStatus;
     DEFAULT_FACTORY.Create(wkt.GetCStr(), wktFlavor, fromStatus);
 
-    return (GCSFactory::S_SUCCESS == fromStatus) ? WKTSUPPORT_FULL : WKTSUPPORT_ONLY_TO;
+    return (SMStatus::S_SUCCESS == fromStatus) ? WKTSUPPORT_FULL : WKTSUPPORT_ONLY_TO;
     }
 }
 

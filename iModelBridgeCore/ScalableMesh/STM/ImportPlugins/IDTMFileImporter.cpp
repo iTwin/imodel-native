@@ -271,10 +271,10 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
 
                 assert(result);    
 
-                GCSFactory::Status gcsCreateStatus = GCSFactory::S_SUCCESS;
+                SMStatus::Status gcsCreateStatus = SMStatus::S_SUCCESS;
                 gcs = GetGCSFactory().Create(wktStr.c_str(), baseGcsWktFlavor, gcsCreateStatus);
 
-                success &= (GCSFactory::S_SUCCESS == gcsCreateStatus);
+                success &= (SMStatus::S_SUCCESS == gcsCreateStatus);
                 }
 
             // TDORAY: Fetch units

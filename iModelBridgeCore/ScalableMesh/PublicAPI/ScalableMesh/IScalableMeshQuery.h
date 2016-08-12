@@ -48,9 +48,8 @@ struct IScalableMeshQueryParameters;
 struct IScalableMeshFixResolutionIndexQueryParams;
 struct IScalableMeshFixResolutionMaxPointsQueryParams;
 struct IScalableMeshFullResolutionQueryParams;
-struct IScalableMeshFullResolutionLinearQueryParams;
 struct IScalableMeshViewDependentQueryParams;
-struct IScalableMeshQueryAllLinearsQueryParams;
+
 
 typedef RefCountedPtr<IScalableMeshMesh>                              IScalableMeshMeshPtr;
 typedef RefCountedPtr<IScalableMeshMeshFlags>                         IScalableMeshMeshFlagsPtr;
@@ -70,14 +69,25 @@ typedef RefCountedPtr<IScalableMeshQueryParameters>                   IScalableM
 typedef RefCountedPtr<IScalableMeshFixResolutionIndexQueryParams>     IScalableMeshFixResolutionIndexQueryParamsPtr;
 typedef RefCountedPtr<IScalableMeshFixResolutionMaxPointsQueryParams> IScalableMeshFixResolutionMaxPointsQueryParamsPtr;
 typedef RefCountedPtr<IScalableMeshFullResolutionQueryParams>         IScalableMeshFullResolutionQueryParamsPtr;
-typedef RefCountedPtr<IScalableMeshFullResolutionLinearQueryParams>   IScalableMeshFullResolutionLinearQueryParamsPtr;
 typedef RefCountedPtr<IScalableMeshViewDependentQueryParams>          IScalableMeshViewDependentQueryParamsPtr;
-typedef RefCountedPtr<IScalableMeshQueryAllLinearsQueryParams>        IScalableMeshQueryAllLinearsQueryParamsPtr;
 
 
 struct ScalableMeshExtentQuery;
 typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
 
+
+/*
+* Warning: Descartes depends on these status indexes. Do not try to play with those when backward compatibility
+*          is required.
+*/
+enum class SMQueryStatus
+    {
+    S_SUCCESS,
+    S_ERROR,
+    S_NBPTSEXCEEDMAX,
+    S_SUCCESS_INCOMPLETE,
+    S_QTY,
+    };
 
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
@@ -138,64 +148,6 @@ struct IScalableMeshFullResolutionQueryParams : public virtual IScalableMeshQuer
         BENTLEY_SM_EXPORT void SetReturnAllPtsForLowestLevel(bool returnAllPts);                               
     };
 
-struct IScalableMeshFullResolutionLinearQueryParams : public virtual IScalableMeshFullResolutionQueryParams
-    {                 
-    protected :
-
-        IScalableMeshFullResolutionLinearQueryParams();
-        virtual ~IScalableMeshFullResolutionLinearQueryParams();
-
-
-        virtual size_t _GetMaximumNumberOfPointsForLinear() = 0;            
-
-        virtual int _SetMaximumNumberOfPointsForLinear(size_t maximumNumberOfPointsForLinear) = 0;                   
-                
-        virtual void _SetUseDecimation(bool useDecimation) = 0;
-           
-        virtual bool _GetUseDecimation() = 0;
-        
-        virtual void _SetCutLinears(bool cutLinears) = 0;
-
-        virtual bool _GetCutLinears() = 0;        
-
-        virtual void _SetAddLinears(const bool addLinears) = 0;        
-
-        virtual bool _GetAddLinears() = 0;        
-
-        virtual const std::vector<int>& _GetFilteringFeatureTypes(bool& doIncludeFilteringFeatureTypes) = 0;      
-
-        //When no feature type is specified all feature types are returned.
-        virtual int                     _SetFilteringFeatureTypes(const std::vector<int>& filteringFeatureTypes, bool doIncludeFilteringFeatures) = 0;      
-
-        virtual void                    _SetIncludeFilteringFeatureTypes(const bool& doIncludeFilteringFeatures) = 0;         
-       
-    public : 
-
-        BENTLEY_SM_EXPORT static IScalableMeshFullResolutionLinearQueryParamsPtr CreateParams();    
-
-        BENTLEY_SM_EXPORT size_t GetMaximumNumberOfPointsForLinear();            
-
-        BENTLEY_SM_EXPORT int SetMaximumNumberOfPointsForLinear(size_t maximumNumberOfPointsForLinear);                   
-
-        BENTLEY_SM_EXPORT void SetUseDecimation(bool useDecimation);
-           
-        BENTLEY_SM_EXPORT bool GetUseDecimation();
-        
-        BENTLEY_SM_EXPORT void SetCutLinears(bool cutLinears);
-
-        BENTLEY_SM_EXPORT bool GetCutLinears();        
-
-        BENTLEY_SM_EXPORT void SetAddLinears(const bool addLinears);        
-
-        BENTLEY_SM_EXPORT bool GetAddLinears();        
-
-        BENTLEY_SM_EXPORT const std::vector<int>& GetFilteringFeatureTypes(bool& doIncludeFilteringFeatureTypes);      
-
-        //When no feature type is specified all feature types are returned.
-        BENTLEY_SM_EXPORT int                     SetFilteringFeatureTypes(const std::vector<int>& filteringFeatureTypes, bool doIncludeFilteringFeatures);      
-
-        BENTLEY_SM_EXPORT void                    SetIncludeFilteringFeatureTypes(const bool& doIncludeFilteringFeatures);      
-    };
 
 //MS Should probably be in ScalableMeshQuery.h
 struct ISrDTMViewDependentQueryParams : public virtual IScalableMeshQueryParameters
@@ -292,23 +244,6 @@ struct IScalableMeshFixResolutionMaxPointsQueryParams : public virtual IScalable
         BENTLEY_SM_EXPORT static IScalableMeshFixResolutionMaxPointsQueryParamsPtr CreateParams();  
     };
 
-struct IScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshFullResolutionLinearQueryParams
-    {    
-    protected :
-
-        IScalableMeshQueryAllLinearsQueryParams();
-        virtual ~IScalableMeshQueryAllLinearsQueryParams();
-
-        virtual std::list<IScalableMeshFeaturePtr> _GetFeatures() = 0;        
-
-
-    public :                        
-
-                
-        BENTLEY_SM_EXPORT std::list<IScalableMeshFeaturePtr> GetFeatures();            
-
-        BENTLEY_SM_EXPORT static IScalableMeshQueryAllLinearsQueryParamsPtr CreateParams();  
-    };
 
 /*============================================================================**//**
 * Interface implemented by MRDTM engines.
@@ -339,17 +274,6 @@ struct IScalableMeshPointQuery abstract: RefCountedBase
     /*__PUBLISH_SECTION_START__*/
     public:
 
-    /* 
-    * Warning: Descartes depends on these status indexes. Do not try to play with those when backward compatibility
-    *          is required.
-    */          
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_NBPTSEXCEEDMAX, 
-        S_QTY,
-        };
         
         //! Gets the number of points of the DTM.
         //! @return The number of points of the DTM..
@@ -775,20 +699,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
         
     /*__PUBLISH_SECTION_START__*/
     public:
-
-    /* 
-    * Warning: Descartes depends on these status indexes. Do not try to play with those when backward compatibility
-    *          is required.
-    */          
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_NBPTSEXCEEDMAX, 
-        S_SUCCESS_INCOMPLETE,
-        S_QTY,
-        };
-        
+    
         //! Gets the number of points of the DTM.
         //! @return The number of points of the DTM..
         BENTLEY_SM_EXPORT int Query(IScalableMeshMeshPtr&                               meshPtr,  
@@ -861,18 +772,6 @@ struct IScalableMeshNodeRayQuery abstract : RefCountedBase
 
         /*__PUBLISH_SECTION_START__*/
     public:
-
-        /*
-        * Warning: Descartes depends on these status indexes. Do not try to play with those when backward compatibility
-        *          is required.
-        */
-        enum Status
-            {
-            S_SUCCESS,
-            S_ERROR,
-            S_NBPTSEXCEEDMAX,
-            S_QTY,
-            };
 
 
         BENTLEY_SM_EXPORT int Query(IScalableMeshNodePtr&                                nodePtr,

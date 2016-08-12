@@ -230,9 +230,9 @@ const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const
 
 StatusInt IScalableMesh::SetBaseGCS(const BaseGCSCPtr& baseGCSPtr)
     {
-    GCSFactory::Status createStatus = GCSFactory::S_SUCCESS;
+    SMStatus createStatus = SMStatus::S_SUCCESS;
     GCS gcs(GetGCSFactory().Create(baseGCSPtr, createStatus));
-    if (GCSFactory::S_SUCCESS != createStatus)
+    if (SMStatus::S_SUCCESS != createStatus)
         return BSIERROR;
 
     return _SetGCS(gcs);
@@ -556,10 +556,10 @@ bool ScalableMeshBase::LoadGCSFrom()
 
     assert(result);
 
-    GCSFactory::Status gcsCreateStatus;
+    SMStatus gcsCreateStatus;
     GCS gcs(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsCreateStatus));
 
-    if (GCSFactory::S_SUCCESS != gcsCreateStatus)
+    if (SMStatus::S_SUCCESS != gcsCreateStatus)
         return false;
 
     using std::swap;
@@ -985,55 +985,7 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   po
 
     return totalExtent;
     }
-#if 0
-/*----------------------------------------------------------------------------+
-|ScalableMesh::CreatePointIndexFilter
-+----------------------------------------------------------------------------*/
-template <class POINT> ISMPointIndexFilter<POINT, Extent3dType>* ScalableMesh<POINT>::CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const
-    {
-    HPRECONDITION(pointDirPtr != 0);
 
-    const ISMStore::FilteringDir* filteringDir = pointDirPtr->GetFilteringDir();
-    ISMStore::SpatialIndexDir* indexDirP = pointDirPtr->GetSpatialIndexDir();
-
-    if (0 == filteringDir || 0 == indexDirP)
-        return 0;
-
-    BTreeIndexHandler::Ptr indexHandler = BTreeIndexHandler::CreateFrom(indexDirP);
-
-    if (0 == indexHandler)
-        return 0;
- 
-
-    ISMPointIndexFilter<POINT, Extent3dType>* pFilter = 0;                            
-    ISMStore::FilterType filteringType = filteringDir->GetType();
-
-    if (indexHandler->IsProgressive())
-        {
-        switch (filteringType)
-            {
-            case ISMStore::FILTER_TYPE_DUMB :
-                pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, Extent3dType>();                           
-                break;            
-            default : 
-                assert(0);
-            }               
-        }
-    else
-        {
-        switch (filteringType)
-            {
-            case FILTER_TYPE_DUMB :
-                pFilter = new ScalableMeshQuadTreeBCLIBFilter1<POINT, Extent3dType>();                           
-                break;                        
-            default : 
-                assert(0);
-            }               
-        }        
-
-    return pFilter;
-    }
-#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ComputeTileBoundaryDuringQuery
@@ -1112,40 +1064,6 @@ template <class POINT> void ScalableMesh<POINT>::CreateSpatialIndexFromExtents(l
         }
     }
 
-/*----------------------------------------------------------------------------+
-|ScalableMesh::AddBreaklineSet
-+----------------------------------------------------------------------------*/
-#if 0
-template <class POINT> void ScalableMesh<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
-                                                          BC_DTM_OBJ*                         po_pBcDtmObj)
-    {   
-    int status;
-
-    if (breaklineList.size() > 0)
-        {        
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIter    = breaklineList.begin();
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIterEnd = breaklineList.end();
-
-        uint32_t TileNumber = 0;
-
-        while (BreaklineIter != BreaklineIterEnd) 
-            {
-            DPoint3d*     linePts = new DPoint3d[(*BreaklineIter)->GetSize()];        
-
-            for (size_t indexPoints = 0 ; indexPoints < (*BreaklineIter)->GetSize(); indexPoints++)
-                {
-                linePts[indexPoints].x = (*BreaklineIter)->GetPoint(indexPoints).GetX();
-                linePts[indexPoints].y = (*BreaklineIter)->GetPoint(indexPoints).GetY();
-                linePts[indexPoints].z = (*BreaklineIter)->GetPoint(indexPoints).GetZ();
-                }
-
-            status = bcdtmObject_storeDtmFeatureInDtmObject(po_pBcDtmObj, (DTMFeatureType)(*BreaklineIter)->GetFeatureType() /*DTMFeatureType::Breakline*/, TileNumber, 1, &po_pBcDtmObj->nullFeatureId, linePts, (uint32_t)(*BreaklineIter)->GetSize());
-            BreaklineIter++;
-            TileNumber++;
-            }         
-        }
-    }
-#endif
 /*-------------------Methods inherited from IDTM-----------------------------*/
 
 
@@ -1739,7 +1657,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
 
     //HCPWKT wkt;
 
-    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
+    SMStatus wktCreateStatus = SMStatus::S_SUCCESS;
     //wkt = HCPWKT(savedGCS.GetWKT(wktCreateStatus).GetCStr());
 
     WString extendedWktStr(savedGCS.GetWKT(wktCreateStatus).GetCStr());
@@ -1752,7 +1670,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
         //wkt = HCPWKT(extendedWktStr.c_str());
     }
 
-    if (GCS::S_SUCCESS != wktCreateStatus)
+    if (SMStatus::S_SUCCESS != wktCreateStatus)
         return BSIERROR;
 
     // This is called even if there are no GCS provided... In such case the WKT AString

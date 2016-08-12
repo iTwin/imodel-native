@@ -753,7 +753,7 @@ int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<MeshIndexType
 
     if (BSISUCCESS == status)
         {
-        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
+        if (SMStatus::S_SUCCESS != sourcesImporter.Import())
             {
             status = BSIERROR;
             }
@@ -909,7 +909,7 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
 
     if (BSISUCCESS == status)
         {
-        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
+        if (SMStatus::S_SUCCESS != sourcesImporter.Import())
             {
             status = BSIERROR;
             }
@@ -1096,8 +1096,8 @@ int IScalableMeshSourceCreator::Impl::ImportClipMaskSource(const IDTMSource&    
             return BSIERROR;
 
         // Import
-        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
-        if(importStatus != Importer::S_SUCCESS)
+        const SMStatus importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
+        if (importStatus != SMStatus::S_SUCCESS)
             return BSIERROR;
 
         return BSISUCCESS;
@@ -1115,7 +1115,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
                                           const GCS&                                               targetGCS,
                                           const ScalableMeshData&                    targetScalableMeshData) const
     {
-    StatusInt status = BSISUCCESS;
+    int status = S_SUCCESS;
     try
         {
         const SourceImportConfig& sourceImportConfig = dataSource.GetConfig();
@@ -1167,7 +1167,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
         }
     catch (...)
         {
-        status = BSIERROR;
+        status = S_ERROR;
         }
 
     return status;
@@ -1180,7 +1180,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollection(SourcesImporter& 
                                                     const ScalableMeshData&                        targetScalableMeshData)
 
     {
-    int status = BSISUCCESS;
+    int status = S_SUCCESS;
 
     ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
 
@@ -1189,7 +1189,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollection(SourcesImporter& 
 
     //The sources need to be parsed in the reverse order.
     for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
-        sourceIt != sourcesEnd && BSISUCCESS == status;
+        sourceIt != sourcesEnd && S_SUCCESS == status;
         ++sourceIt)
         {
         IDTMSource& source = *sourceIt;
@@ -1238,7 +1238,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionEditsOnly(SourcesI
                                                                const ScalableMeshData&                        targetScalableMeshData)
 
     {
-    int status = BSISUCCESS;
+    int status = S_SUCCESS;
 
     ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
 
@@ -1247,7 +1247,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionEditsOnly(SourcesI
 
     //The sources need to be parsed in the reverse order.
     for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
-         sourceIt != sourcesEnd && BSISUCCESS == status;
+         sourceIt != sourcesEnd && S_SUCCESS == status;
          ++sourceIt)
         {
         IDTMSource& source = *sourceIt;
@@ -1299,7 +1299,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionRasters(bvector<ID
                                                                         const ScalableMeshData&                        targetScalableMeshData)
 
     {
-    int status = BSISUCCESS;
+    int status = S_SUCCESS;
 
     ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
 
@@ -1308,7 +1308,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionRasters(bvector<ID
 
     //The sources need to be parsed in the reverse order.
     for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
-         sourceIt != sourcesEnd && BSISUCCESS == status;
+         sourceIt != sourcesEnd && S_SUCCESS == status;
          ++sourceIt)
         {
         IDTMSource& source = *sourceIt;

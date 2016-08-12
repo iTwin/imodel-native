@@ -108,7 +108,7 @@ WKTRoot::WKTRoot   (const WChar* wktBegin,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKTRoot::Status WKTRoot::Parse ()
+SMStatus WKTRoot::Parse()
     {
     const WChar* keywordBegin = FindWKTSectionKeyword(m_begin, m_end);
     if (m_end == keywordBegin)
@@ -124,7 +124,7 @@ WKTRoot::Status WKTRoot::Parse ()
 
     WKTSection section(keywordBegin, keywordEnd, sectionBegin);
 
-    if (WKTSection::S_SUCCESS != section.Parse(*this, m_end))
+    if (SMStatus::S_SUCCESS != section.Parse(*this, m_end))
         return S_ERROR;
 
     if (m_end != (section.strEnd() + 1))
@@ -156,7 +156,7 @@ WKTParameter::WKTParameter (const WChar* parameterBegin)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKTParameter::Status WKTParameter::Parse   (WKTRoot&        root,
+SMStatus WKTParameter::Parse(WKTRoot&        root,
                                             const WChar*     wktSectionEnd)
     {
     struct IsParameterEndOrSection : std::unary_function<WChar, bool>
@@ -189,7 +189,7 @@ WKTParameter::Status WKTParameter::Parse   (WKTRoot&        root,
 
     WKTSection section(m_begin, parameterEnd, sectionBegin);
 
-    if (WKTSection::S_SUCCESS != section.Parse(root, wktSectionEnd))
+    if (SMStatus::S_SUCCESS != section.Parse(root, wktSectionEnd))
         return S_ERROR;
     
     root.m_sections.push_back(section);
@@ -223,7 +223,7 @@ WKTSection::WKTSection (const WChar*     keywordBegin,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKTSection::Status WKTSection::Parse   (WKTRoot&        root,
+SMStatus WKTSection::Parse(WKTRoot&        root,
                                         const WChar*     sectionEnd)
     {
     assert(m_begin <= sectionEnd);
@@ -234,7 +234,7 @@ WKTSection::Status WKTSection::Parse   (WKTRoot&        root,
         {
         WKTParameter parameter(parameterBegin);
 
-        if (WKTParameter::S_SUCCESS != parameter.Parse(root, sectionEnd))
+        if (SMStatus::S_SUCCESS != parameter.Parse(root, sectionEnd))
             return S_ERROR;
 
         m_parameters.push_back(parameter);

@@ -151,7 +151,7 @@ private:
                  *              ourselves.
                  */
                 const TransfoModel localToGlobal(GetUnitRectificationTransfoModel(Unit::GetMeter(), gcs.GetUnit(), ANGULAR_TO_LINEAR_RATIO));
-                if (GCS::S_SUCCESS != gcs.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
+                if (SMStatus::S_SUCCESS != gcs.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
                     {
                     gcsError = true;
                     }

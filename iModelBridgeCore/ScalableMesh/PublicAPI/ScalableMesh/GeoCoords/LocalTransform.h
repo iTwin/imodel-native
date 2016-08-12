@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:34 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -81,11 +81,7 @@ private:
 
     explicit                                LocalTransform                     (Impl*                       implP);
 public:
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        };
+
     
     GEOCOORDS_DLLE static const LocalTransform&                     
                                             GetIdentity                        ();
@@ -102,9 +98,9 @@ public:
     GEOCOORDS_DLLE static LocalTransform    CreateDuplexFromToLocal            (const TransfoModel&         globalToLocal);
 
     GEOCOORDS_DLLE static LocalTransform    CreateDuplexFromToGlobal           (const TransfoModel&         localToGlobal,
-                                                                                Status&                     status);
+                                                                                SMStatus&                     status);
     GEOCOORDS_DLLE static LocalTransform    CreateDuplexFromToLocal            (const TransfoModel&         globalToLocal,
-                                                                                Status&                     status);
+                                                                                SMStatus&                     status);
 
     GEOCOORDS_DLLE                          ~LocalTransform                    ();
 
@@ -127,14 +123,14 @@ public:
     GEOCOORDS_DLLE bool                     HasToLocal                         () const;
     GEOCOORDS_DLLE const TransfoModel&      GetToLocal                         () const;
 
-    GEOCOORDS_DLLE Status                   ComputeDuplex                      ();
+    GEOCOORDS_DLLE SMStatus                   ComputeDuplex();
 
 
-    GEOCOORDS_DLLE Status                   Append                             (const LocalTransform&       rhs);
+    GEOCOORDS_DLLE SMStatus                   Append(const LocalTransform&       rhs);
 
     GEOCOORDS_DLLE friend LocalTransform    Combine                            (const LocalTransform&       lhs,
                                                                                 const LocalTransform&       rhs,
-                                                                                LocalTransform::Status&     status);
+                                                                                SMStatus&     status);
 
     GEOCOORDS_DLLE friend void              swap                               (LocalTransform&             lhs,
                                                                                 LocalTransform&             rhs);

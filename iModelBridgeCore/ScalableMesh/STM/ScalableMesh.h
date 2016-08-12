@@ -229,12 +229,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         static DRange3d                 ComputeTotalExtentFor          (const MeshIndexType*           pointIndexP);
 
         bool                            AreDataCompressed              ();
-#if 0
-        void                            AddBreaklineSet                (list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
-                                                                        BC_DTM_OBJ*                         po_ppBcDtmObj);
 
-        ISMPointIndexFilter<INDEXPOINT, Extent3dType>* CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const;
-#endif
         void CreateSpatialIndexFromExtents(list<HVE2DSegment>& pi_rpBreaklineList, 
                                            BC_DTM_OBJ**        po_ppBcDtmObj);
         

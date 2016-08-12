@@ -130,6 +130,17 @@ enum DTMStatus
     DTMSTATUS_UNSUPPORTED_VERSION,
     DTMSTATUS_QTY                
     };
+
+enum SMStatus
+    {
+    S_SUCCESS = 0,
+    S_ERROR,
+    S_ERROR_COULD_NOT_OPEN,
+    S_ERROR_NOT_SUPPORTED,
+    S_ERROR_NOT_FOUND,
+    S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
+    S_QTY,
+    };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 

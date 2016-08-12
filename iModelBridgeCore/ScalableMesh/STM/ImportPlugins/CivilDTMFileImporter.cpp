@@ -259,7 +259,7 @@ class CivilDTMFileCreator : public LocalFileSourceCreatorBase
         {
         BcDTMPtr pDTM = CreateDTMFromFilePath(pi_rSourceRef);
         if (pDTM.IsNull())
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
 
         //CivilDTMSource will take ownership of pDTM
         return new CivilDTMSource(*pDTM, GCS::GetNull());

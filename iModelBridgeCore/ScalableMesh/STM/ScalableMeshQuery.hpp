@@ -207,19 +207,19 @@ template <class POINT> int ScalableMeshFullResolutionPointQuery<POINT>::_Query(b
 
         m_scmIndexPtr->Query(pointQueryP.get(), pointList);
 
-        status = S_SUCCESS;
+        status = (int)SMQueryStatus::S_SUCCESS;
         
         if (queryParams->GetMaximumNumberOfPoints() < pointList.size())
             {
-            status = S_NBPTSEXCEEDMAX; 
+            status = (int)SMQueryStatus::S_NBPTSEXCEEDMAX;
             }        
         }
     catch (...)
         {
-        status = S_ERROR;
+        status = (int)SMQueryStatus::S_ERROR;
         }
        
-    if (status == S_SUCCESS)
+    if (status == (int)SMQueryStatus::S_SUCCESS)
         {
         status = AddPoints<POINT>(points, pointList);
         }
@@ -746,21 +746,21 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
                     }            
                 }
 
-            status = S_SUCCESS;
+            status = (int)SMQueryStatus::S_SUCCESS;
             }
         else
             {
-            status = S_ERROR;
+            status = (int)SMQueryStatus::S_ERROR;
             }
 
         if (!isComplete)
             {
-            status = S_SUCCESS_INCOMPLETE;
+            status = (int)SMQueryStatus::S_SUCCESS_INCOMPLETE;
             }        
         }
     catch (...)
         {
-        status = S_ERROR;
+        status = (int)SMQueryStatus::S_ERROR;
         }
 
     return status;    
@@ -1002,12 +1002,12 @@ template <class POINT> ScalableMeshReprojectionMeshQuery<POINT>::ScalableMeshRep
 
     static const ReprojectionFactory REPROJECTION_FACTORY;
 
-    ReprojectionFactory::Status reprojCreateStatus;
+    SMStatus reprojCreateStatus;
     m_targetToSourceReproj = REPROJECTION_FACTORY.Create(m_targetGCS, m_sourceGCS, 0, reprojCreateStatus);
-    assert(Reprojection::S_SUCCESS == reprojCreateStatus);
+    assert(SMStatus::S_SUCCESS == reprojCreateStatus);
 
     m_sourceToTargetReproj = REPROJECTION_FACTORY.Create(m_sourceGCS, m_targetGCS, 0, reprojCreateStatus);
-    assert(Reprojection::S_SUCCESS == reprojCreateStatus);
+    assert(SMStatus::S_SUCCESS == reprojCreateStatus);
     }
 
 
