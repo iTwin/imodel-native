@@ -201,7 +201,8 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCa
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
-    CameraViewDefinition viewRow(CameraViewDefinition::CreateParams(*m_testDb, "Default", ViewDefinition::Data(defaultModelId, DgnViewSource::Generated)));
+    CameraViewDefinition viewRow(*m_testDb, "Default");
+    viewRow.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_testDb, "Default", defaultModelId));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
     SpatialViewController viewController(*m_testDb, viewRow.GetViewId());

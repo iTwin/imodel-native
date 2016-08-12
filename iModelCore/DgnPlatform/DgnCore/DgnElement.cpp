@@ -2200,6 +2200,39 @@ DgnDbStatus GeometricElement3d::SetPlacementProperty(Utf8CP name, ECN::ECValueCR
    }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DateTime DgnElement::GetPropertyValueDateTime(Utf8CP propertyName) const
+    {
+    ECN::ECValue value;
+    DgnDbStatus status = GetProperty(value, propertyName);
+    BeAssert(DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+    return value.IsNull() ? DateTime() : value.GetDateTime();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d DgnElement::GetPropertyValueDPoint3d(Utf8CP propertyName) const
+    {
+    ECN::ECValue value;
+    DgnDbStatus status = GetProperty(value, propertyName);
+    BeAssert(DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+    return value.IsNull() ? DPoint3d::From(0,0,0) : value.GetPoint3D();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d DgnElement::GetPropertyValueDPoint2d(Utf8CP propertyName) const
+    {
+    ECN::ECValue value;
+    DgnDbStatus status = GetProperty(value, propertyName);
+    BeAssert(DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+    return value.IsNull() ? DPoint2d::From(0,0) : value.GetPoint2D();
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::GetPropertyValueBoolean(Utf8CP propertyName) const
@@ -2262,51 +2295,51 @@ Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetPropertyValue(Utf8CP propertyName, bool value)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, bool value)
     {
     DgnDbStatus status = SetProperty(propertyName, ECValue(value));
     BeAssert(DgnDbStatus::Success == status);
-    UNUSED_VARIABLE(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetPropertyValue(Utf8CP propertyName, double value)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, double value)
     {
     DgnDbStatus status = SetProperty(propertyName, ECValue(value));
     BeAssert(DgnDbStatus::Success == status);
-    UNUSED_VARIABLE(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value)
     {
     DgnDbStatus status = SetProperty(propertyName, ECValue(value));
     BeAssert(DgnDbStatus::Success == status);
-    UNUSED_VARIABLE(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id)
     {
     DgnDbStatus status = SetProperty(propertyName, ECValue(id.GetValueUnchecked()));
     BeAssert(DgnDbStatus::Success == status);
-    UNUSED_VARIABLE(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value)
     {
     DgnDbStatus status = SetProperty(propertyName, ECValue(value, false));
     BeAssert(DgnDbStatus::Success == status);
-    UNUSED_VARIABLE(status);
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

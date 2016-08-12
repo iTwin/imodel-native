@@ -124,7 +124,14 @@ public:
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR, Utf8CP viewName = nullptr);
     static void FitView(DgnDbR db, DgnViewId viewId);
-    
+
+    //! Create a new modelselector
+    static ModelSelectorCPtr InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
+        {
+        ModelSelector modSel(db, name, model);
+        return db.Elements().Insert(modSel);
+        }
+
     //! Create a new Category
     static DgnCategoryId InsertCategory(DgnDbR, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance = DgnSubCategory::Appearance(), DgnCategory::Scope scope = DgnCategory::Scope::Physical, DgnCategory::Rank rank = DgnCategory::Rank::Application);
 

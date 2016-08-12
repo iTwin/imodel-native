@@ -323,6 +323,80 @@ static void DPoint3dVectorFromJson(bvector<DPoint3d>& points, JsonValueCR inValu
         points.push_back(pt);
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+template<typename T>
+static T IdFromJson(JsonValueCR inValue)
+    {
+    uint64_t idValue;
+    BeStringUtilities::ParseUInt64(idValue, inValue.asCString());
+    return T(idValue);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+template<typename T>
+static void IdToJson(JsonValueR outValue, T id)
+    {
+    Utf8Char buf[32];
+    BeStringUtilities::FormatUInt64(buf, id.GetValueUnchecked());
+    outValue = buf;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+template<typename T>
+static void IdsFromJson(bvector<T>& ids, JsonValueCR jsonArray)
+    {
+    for (Json::ArrayIndex i=0; i<jsonArray.size(); ++i)
+        {
+        ids.push_back(IdFromJson<T>(jsonArray.get(i, "0")));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+template<typename T>
+static void IdsToJson(JsonValueR outValue, bvector<T> const& ids)
+    {
+    outValue = Json::arrayValue;
+    for (auto id : ids)
+        {
+        Json::Value member;
+        IdToJson(member, id);
+        outValue.append(member);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+static Utf8String IdsToJsonString(bvector<T> const& ids)
+    {
+    Json::Value jsonArray;
+    IdsToJson(jsonArray, ids);
+    return Json::FastWriter::ToString(jsonArray);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+static bvector<T> IdsFromJsonString(Utf8StringCR jsonString)
+    {
+    Json::Value jsonArray;
+    Json::Reader::Parse(jsonString, jsonArray);
+    bvector<DgnModelId> ids;
+    IdsFromJson(ids, jsonArray);
+    return ids;
+    }
+
 };
 
 END_BENTLEY_DGN_NAMESPACE

@@ -10,7 +10,10 @@
 
 #define PROPNAME_Descr "Descr"
 #define PROPNAME_Source "Source"
-#define PROPNAME_BaseModel "BaseModelId"
+
+#define BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector "CategorySelector"
+#define BIS_CLASS_ViewDefinition3d_PROPNAME_ModelSelector "ModelSelector"
+#define BIS_CLASS_ModelSelector_PROPNAME_ModelIds "ModelIds"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -21,6 +24,8 @@ namespace dgn_ElementHandler
     HANDLER_DEFINE_MEMBERS(OrthographicViewDef);
     HANDLER_DEFINE_MEMBERS(CameraViewDef);
     HANDLER_DEFINE_MEMBERS(RedlineViewDef);
+    HANDLER_DEFINE_MEMBERS(ModelSelectorDef);
+    HANDLER_DEFINE_MEMBERS(CategorySelectorDef);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -189,7 +194,7 @@ DgnDbStatus ViewDefinition::_SetCode(DgnCode const& code)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_BaseModel "," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA(BIS_CLASS_ViewDefinition);
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -335,4 +340,138 @@ bool ViewDefinition::Entry::IsSpatialView() const { return isEntryOfClass<Spatia
 bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<DrawingViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
+    {
+    bvector<DgnModelId> models;
+    models.push_back(mid);
+    return SetModelIds(models);
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::SetModelIds(bvector<DgnModelId> const& models)
+    {
+    SetPropertyValue(BIS_CLASS_ModelSelector_PROPNAME_ModelIds, JsonUtils::IdsToJsonString(models).c_str());
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<DgnModelId> ModelSelector::GetModelIds() const
+    {
+    return JsonUtils::IdsFromJsonString<DgnModelId>(GetPropertyValueString(BIS_CLASS_ModelSelector_PROPNAME_ModelIds));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_RemapIds(DgnImportContext& context)
+    {
+    auto ids = GetModelIds();
+    for (size_t i=0; i<ids.size(); ++i)
+        {
+        ids[i] = context.FindModelId(ids[i]);
+        }
+    SetModelIds(ids);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    09/2014
+//---------------------------------------------------------------------------------------
+static ECSqlStatus insertRelationship(DgnDbR db, Utf8CP relationshipName, ECInstanceId sourceId, ECInstanceId targetId)
+    {
+    if (!relationshipName || !*relationshipName)
+        return ECSqlStatus::Error;
+
+    if (!sourceId.IsValid() || !targetId.IsValid())
+        return ECSqlStatus::Error;
+
+    auto statement = db.GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", relationshipName).c_str());
+    if (!statement.IsValid())
+        return ECSqlStatus::Error;
+
+    statement->BindId(1, sourceId);
+    statement->BindId(2, targetId);
+
+    if (BE_SQLITE_DONE != statement->Step())
+        return ECSqlStatus::Error;
+
+    return ECSqlStatus::Success;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CategorySelector::SetCategories(DgnCategoryIdSet const& categories)
+    {
+    // *** WIP_VIEW_DEFINITION: Delete existing CategoryInSelector with Source = this
+    for (auto id : categories)
+        {
+        insertRelationship(GetDgnDb(), BIS_REL_CategorySelectorContainsCategory, ECInstanceId(GetElementId().GetValue()), ECInstanceId(id.GetValue()));
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCategoryIdSet CategorySelector::GetCategories() const
+    {
+    DgnCategoryIdSet categories;
+
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM %s WHERE SourceECInstanceId=" BIS_REL_CategorySelectorContainsCategory);
+    if (!statement.IsValid())
+        return DgnCategoryIdSet();
+
+    if (ECSqlStatus::Success != statement->BindId(1, GetElementId()))
+        return DgnCategoryIdSet();
+
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        categories.insert(statement->GetValueId<DgnCategoryId>(0));
+        }
+
+    return categories;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelSelectorCPtr ViewDefinition3d::GetModelSelector() const
+    {
+    auto id = GetPropertyValueId<DgnElementId>(BIS_CLASS_ViewDefinition3d_PROPNAME_ModelSelector);
+    if (!id.IsValid())
+        return nullptr;
+    return GetDgnDb().Elements().Get<ModelSelector>(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition3d::SetModelSelector(ModelSelectorCR modSel)
+    {
+    return SetPropertyValue(BIS_CLASS_ViewDefinition3d_PROPNAME_ModelSelector, modSel.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CategorySelectorCPtr ViewDefinition::GetCategorySelector() const
+    {
+    auto id = GetPropertyValueId<DgnElementId>(BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector);
+    if (!id.IsValid())
+        return nullptr;
+    return GetDgnDb().Elements().Get<CategorySelector>(id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition::SetCategorySelector(CategorySelectorCR modSel)
+    {
+    return SetPropertyValue(BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector, modSel.GetElementId());
+    }

@@ -382,7 +382,15 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     else
         name = nameIn;
 
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(db, name, ViewDefinition::Data(model.GetModelId())));
+    ModelSelectorCPtr modSel = InsertNewModelSelector(db, "Default", model.GetModelId());
+    if (!modSel.IsValid())
+        {
+        EXPECT_TRUE(false) << "Failed to create a ModelSelector with name 'Default'";
+        return DgnViewId();
+        }
+
+    CameraViewDefinition view(db, name);
+    view.SetModelSelector(*modSel);
     ViewDefinitionCPtr newViewDef = view.Insert();
     if (!newViewDef.IsValid())
         {
@@ -398,8 +406,6 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
         EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController ctor failed in %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
         return DgnViewId();
         }
-
-    viewController->SetBaseModelId(model.GetModelId());
 
     for (auto const& categoryId : DgnCategory::QueryCategories(db))
         viewController->ChangeCategoryDisplay(categoryId, true);

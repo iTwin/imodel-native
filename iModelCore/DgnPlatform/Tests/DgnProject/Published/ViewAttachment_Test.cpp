@@ -105,7 +105,7 @@ void ViewAttachmentTest::SetUp()
     m_drawingId = drawing->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(db, "MyDrawingView", DrawingViewDefinition::Data(m_drawingId)));
+    DrawingViewDefinition view(db, "MyDrawingView", m_drawingId);
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -258,7 +258,7 @@ TEST_F(ViewAttachmentTest, Geom)
     cpAttach = pAttach->Update();
     EXPECT_TRUE(cpAttach.IsValid());
 
-    SheetViewDefinition sheetView(SheetViewDefinition::CreateParams(db, "MySheetView", SheetViewDefinition::Data(m_sheetId)));
+    SheetViewDefinition sheetView(db, "MySheetView", m_sheetId);
     sheetView.Insert();
 
     SheetViewController viewController(db, sheetView.GetViewId());

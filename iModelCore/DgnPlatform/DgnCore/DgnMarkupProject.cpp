@@ -225,7 +225,9 @@ DgnViewId DgnMarkupProject::GetFirstViewOf(DgnModelId mid)
     {
     for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
-        if (view.GetBaseModelId() == mid)
+        auto viewObj = ViewDefinition::QueryView(view.GetId(), *this);
+        auto rdlView = dynamic_cast<RedlineViewDefinition const*>(viewObj.get());
+        if (rdlView != nullptr && rdlView->GetBaseModelId() == mid)
             return view.GetId();
         }
     return DgnViewId();
@@ -1108,7 +1110,11 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
     double closestDistance = DBL_MAX;
     for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
-        RedlineModelPtr rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
+        auto viewObj = ViewDefinition::QueryView(view.GetId(), *this);
+        auto rdlView = dynamic_cast<RedlineViewDefinition const*>(viewObj.get());
+        if (nullptr == rdlView)
+            continue;
+        RedlineModelPtr rdlModel = Models().Get<RedlineModel>(rdlView->GetBaseModelId());
         if (rdlModel.IsValid())
             {
             DgnViewAssociationData assoc;
@@ -1413,7 +1419,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         return NULL;
         }
 
-    RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str()), rdlModel.GetModelId());
+    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId());
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 

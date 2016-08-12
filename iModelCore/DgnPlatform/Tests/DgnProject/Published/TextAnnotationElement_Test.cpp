@@ -97,8 +97,7 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotation2dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        DrawingViewDefinition view(*db, "TextAnnotation2dTest-BasicCrud", modelId);
         EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
@@ -286,8 +285,8 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "TextAnnotation3dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        CameraViewDefinition view(*db, "TextAnnotation3dTest-BasicCrud");
+        view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*db, "TextAnnotation3dTest-BasicCrud", modelId));
         EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);

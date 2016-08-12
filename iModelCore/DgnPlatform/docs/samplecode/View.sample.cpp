@@ -2,7 +2,7 @@
 |
 |     $Source: docs/samplecode/View.sample.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ View_Includes.sampleCode
@@ -23,7 +23,12 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, DgnCategoryIdSet categories, DRange3dCR viewExtents)
     {
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(db, name, ViewDefinition::Data(baseModelId, DgnViewSource::Generated)));
+    CategorySelectorCptr catSel = CategorySelector(db, name).Insert();
+    catSel->SetCategories(categories);
+    ModelSelectorCPtr modSel = ModelSelector(db, name, baseModelId).Insert();
+    CameraViewDefinition view(db, name);
+    view.SetModelSelector(*modSel);
+    view.SetCategorySelector(*catSel);
     view.Insert();
     DgnViewId viewId = view.GetViewId();
     if (viewId.IsValid())

@@ -148,11 +148,12 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::AnnotationLeaderStyleHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotationSeedHandler::GetHandler());
 
-    RegisterHandler(dgn_ElementHandler::OrthographicViewDef::GetHandler());
-    RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::DrawingViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::SheetViewDef::GetHandler());
-
+    RegisterHandler(dgn_ElementHandler::ModelSelectorDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::CategorySelectorDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::OrthographicViewDef::GetHandler());
+    RegisterHandler(dgn_ElementHandler::CameraViewDef::GetHandler());
     RegisterHandler(dgn_ElementHandler::ViewAttachmentHandler::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());

@@ -1658,6 +1658,8 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     timer.Start();
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
     LogPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_CategoryInSelector), "SourceECInstanceId", "TargetECInstanceId");
+    LogPerformance(timer, "Import ECRelationships %s", BIS_REL_CategoryInSelector);
 
     // *** WIP_IMPORT *** ElementsHaveLinks -- should we deep-copy links?
 

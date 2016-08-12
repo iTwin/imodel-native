@@ -274,7 +274,8 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDbTestFixture::SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
+    CameraViewDefinition view(dgnDb, "TestView");
+    view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(dgnDb, "TestView", model.GetModelId()));
     EXPECT_TRUE(view.Insert().IsValid());
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
