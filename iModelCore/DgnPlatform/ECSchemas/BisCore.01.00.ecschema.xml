@@ -1641,32 +1641,33 @@
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
-        <Target cardinality="(1,1)" polymorphic="true">
+        <Target cardinality="(0,1)" polymorphic="true">
             <Class class="ClipVolumeDefinition"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" >
-        <Source cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
+        <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="is list of Categories displayed in a view" polymorphic="true">
+        <Target cardinality="(1,1)" polymorphic="true">
             <Class class="CategorySelector"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="CategorySelectorContainsCategory" strength="referencing">
-        <Source cardinality="(1,1)" roleLabel="is a selector of Categories" polymorphic="true">
-            <Class class="CategorySelector"/>
-        </Source>
-        <Target cardinality="(0,N)" roleLabel="categories in a selector" polymorphic="true">
-            <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing">
-        <Source cardinality="(0,N)" roleLabel="is used by N views" polymorphic="true">
+        <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
-        <Target cardinality="(1,1)" roleLabel="is display style for a view" polymorphic="true">
+        <Target cardinality="(1,1)" polymorphic="true">
             <Class class="DisplayStyle"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CategorySelectorsReferToCategories" strength="referencing">
+        <BaseClass>ElementsReferToElements</BaseClass>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="CategorySelector"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="ModelSelector">
