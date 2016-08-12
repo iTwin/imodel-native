@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
+#include <ECDb/JsonAdapter.h>
 
 #define PROPNAME_Descr "Descr"
 #define PROPNAME_Source "Source"
@@ -380,38 +381,25 @@ void ModelSelector::_RemapIds(DgnImportContext& context)
     SetModelIds(ids);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2014
-//---------------------------------------------------------------------------------------
-static ECSqlStatus insertRelationship(DgnDbR db, Utf8CP relationshipName, ECInstanceId sourceId, ECInstanceId targetId)
-    {
-    if (!relationshipName || !*relationshipName)
-        return ECSqlStatus::Error;
-
-    if (!sourceId.IsValid() || !targetId.IsValid())
-        return ECSqlStatus::Error;
-
-    auto statement = db.GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", relationshipName).c_str());
-    if (!statement.IsValid())
-        return ECSqlStatus::Error;
-
-    statement->BindId(1, sourceId);
-    statement->BindId(2, targetId);
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return ECSqlStatus::Error;
-
-    return ECSqlStatus::Success;
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CategorySelector::SetCategories(DgnCategoryIdSet const& categories)
     {
     // *** WIP_VIEW_DEFINITION: Delete existing CategoryInSelector with Source = this
+
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    if (!statement.IsValid())
+        return DgnDbStatus::WriteError;
+
     for (auto id : categories)
         {
-        insertRelationship(GetDgnDb(), BIS_REL_CategorySelectorContainsCategory, ECInstanceId(GetElementId().GetValue()), ECInstanceId(id.GetValue()));
+        statement->Reset();
+        statement->ClearBindings();
+        statement->BindId(1, GetElementId());
+        statement->BindId(2, id);
+        if (BE_SQLITE_DONE != statement->Step())
+            return DgnDbStatus::WriteError;
         }
     return DgnDbStatus::Success;
     }
@@ -423,7 +411,7 @@ DgnCategoryIdSet CategorySelector::GetCategories() const
     {
     DgnCategoryIdSet categories;
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM "  BIS_REL_CategorySelectorContainsCategory " WHERE SourceECInstanceId");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId");
     if (!statement.IsValid())
         return DgnCategoryIdSet();
 
@@ -474,4 +462,24 @@ CategorySelectorCPtr ViewDefinition::GetCategorySelector() const
 DgnDbStatus ViewDefinition::SetCategorySelector(CategorySelectorCR modSel)
     {
     return SetPropertyValue(BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector, modSel.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::_ToJson(Utf8StringR jsonStr) const
+    {
+    auto formatter = ECPropertyFormatter::Create();
+
+    auto eclass = GetElementClass();
+    for (auto prop : eclass->GetProperties())
+        {
+        ECN::ECValue value;
+        if (DgnDbStatus::Success != GetPropertyValue(value, prop->GetName().c_str()))
+            continue;
+        Utf8String str;
+        if (!formatter->FormattedStringFromECValue(str, value, *prop, false))
+            continue;
+        jsonStr.append(str);
+        }
     }
