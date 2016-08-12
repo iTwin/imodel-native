@@ -73,7 +73,7 @@ RasterBorderGeometrySource::RasterBorderGeometrySource(DPoint3dCP pCorners, Rast
     :m_dgnDb(model.GetDgnDb()),
     m_categoryId(DgnCategory::QueryFirstCategoryId(model.GetDgnDb())),
     m_hilited(DgnElement::Hilited::None),
-    m_infoString(model.GetLabel())
+    m_infoString(model.GetUserLabel())
     {
     if (m_infoString.empty())
         m_infoString = model.GetCode().GetValueCP();
