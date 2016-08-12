@@ -21,14 +21,11 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, DgnCategoryIdSet categories, DRange3dCR viewExtents)
+DgnViewId createAndInsertView(DgnDbR db, Utf8CP name, DgnModelId baseModelId, DgnCategoryIdSet categories, DRange3dCR viewExtents, CategorySelectorCR catSel, ModelSelectorCR modSel)
     {
-    CategorySelectorCptr catSel = CategorySelector(db, name).Insert();
-    catSel->SetCategories(categories);
-    ModelSelectorCPtr modSel = ModelSelector(db, name, baseModelId).Insert();
     CameraViewDefinition view(db, name);
-    view.SetModelSelector(*modSel);
-    view.SetCategorySelector(*catSel);
+    view.SetModelSelector(modSel);
+    view.SetCategorySelector(catSel);
     view.Insert();
     DgnViewId viewId = view.GetViewId();
     if (viewId.IsValid())
