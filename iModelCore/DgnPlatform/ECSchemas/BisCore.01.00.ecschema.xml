@@ -22,7 +22,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>Generic:ElementOwnsMultiAspect:0:Generic:MultiAspect</RelationshipPath>
+                    <RelationshipPath>ElementOwnsMultiAspects:0:ElementMultiAspect</RelationshipPath>
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
