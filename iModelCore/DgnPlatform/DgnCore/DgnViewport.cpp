@@ -395,16 +395,24 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
     viewTransform.InitFrom(m_rotMatrix);
 
     DRange3d extents = viewController.GetViewedExtents();
-    if (extents.IsEmpty())
-        return;
+    if (!extents.IsEmpty())
+        {
+        Frustum extFrust(extents);
+        extFrust.Multiply(viewTransform);
+        extents = extFrust.ToRange();
 
-    Frustum extFrust(extents);
-    extFrust.Multiply(viewTransform);
-    extents = extFrust.ToRange();
+        origin.z = extents.low.z;
+        delta.z = extents.high.z - origin.z;
+        }
 
-    origin.z = extents.low.z;
-    delta.z = extents.high.z - origin.z;
     delta.z = std::max(delta.z, DgnUnits::OneMeter());
+    double maxDelta = std::max(delta.x, delta.y);
+    if (maxDelta > delta.z)
+        {
+        double offset = maxDelta - delta.z;
+        origin.z -= offset;
+        delta.z += offset*2.0;
+        }
 
     m_rotMatrix.MultiplyTranspose(origin);
 
@@ -422,8 +430,8 @@ void DgnViewport::_AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewCon
         return;
         }
 
-    // set the front plane distance to about twice the length of the average human nose
-    delta.z = cameraDir.z - (120.0 * DgnUnits::OneMillimeter());
+    // set the front plane distance to about 6 inches
+//    delta.z = cameraDir.z - (15.2 * DgnUnits::OneCentimeter());
     }
 
 /*---------------------------------------------------------------------------------**//**
