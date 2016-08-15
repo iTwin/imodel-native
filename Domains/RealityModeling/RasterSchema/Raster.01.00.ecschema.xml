@@ -10,6 +10,7 @@
             <ClassHasHandler xmlns="dgn.02.00" />
         </ECCustomAttributes>
         <BaseClass>dgn:SpatialModel</BaseClass>
+        <ECProperty propertyName="Clip" typeName="binary" />
     </ECClass>
 
     <ECClass typeName="WmsModel" isDomainClass="True" >
