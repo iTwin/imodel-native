@@ -83,6 +83,7 @@ enum MeshQueryType
     MESH_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
     MESH_QUERY_VIEW_DEPENDENT,
     MESH_QUERY_PLANE_INTERSECT,
+    MESH_QUERY_CONTEXT,
     MESH_QUERY_QTY
     };
 

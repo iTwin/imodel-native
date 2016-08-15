@@ -581,6 +581,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
+        virtual void _WriteToFile(WString& filePath) override;
 
         ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
 

@@ -39,7 +39,7 @@ extern bool   GET_HIGHEST_RES;
 #include "ScalableMeshQuery.hpp"
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include "DrapeOnGraph.h"
-
+#include "LogUtils.h"
 
 //NEEDS_WORK_SM : Is there a way to avoid this mutex?
 std::mutex s_createdNodeMutex;
@@ -752,6 +752,13 @@ bool IScalableMeshMesh::FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray
 bool IScalableMeshMesh::CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const
     {
     return _CutWithPlane(segmentList, cuttingPlane);
+    }
+
+void IScalableMeshMesh::WriteToFile(WString& filePath)
+    {
+#ifndef NDEBUG
+    return _WriteToFile(filePath);
+#endif
     }
 
 ScalableMeshTexturePtr ScalableMeshTexture::Create(RefCountedPtr<SMMemoryPoolBlobItem<Byte>>& pTextureData)
@@ -1594,6 +1601,16 @@ bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
         
         }
     return true;
+    }
+
+int s_id = 0;
+
+void ScalableMeshMesh::_WriteToFile(WString& filePath)
+    {
+    WString name = filePath;
+    name.append(std::to_wstring(s_id++).c_str());
+    name.append(L".m");
+    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, m_nbPoints, m_nbFaceIndexes, m_points, m_faceIndexes)
     }
 
 const Byte* ScalableMeshTexture::_GetData() const
@@ -2476,6 +2493,8 @@ template class ScalableMeshViewDependentMeshQuery<DPoint3d>;
 template class ScalableMeshFullResolutionMeshQuery<DPoint3d>;
 
 template class ScalableMeshReprojectionMeshQuery<DPoint3d>;
+
+template class ScalableMeshContextMeshQuery<DPoint3d>;
 
 template class ScalableMeshNodeRayQuery<DPoint3d>;
 
