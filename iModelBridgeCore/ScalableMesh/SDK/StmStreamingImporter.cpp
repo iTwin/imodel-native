@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "DataPipe.h"
+
 #include <ImagePP/h/hstdcpp.h>
 #include <ImagePP\all\h\IDTMTypes.h>
 #include <ImagePP\all\h\IDTMFileDirectories\FeatureHeaderTypes.h>
@@ -18,6 +19,7 @@
 #include <ImagePP\all\h\HPUArray.h>
 #include <GeoCoord\BaseGeoCoord.h>
 #include <TerrainModel\TerrainModel.h>
+
 #include <ScalableTerrainModel\MrDTMDefs.h>
 #include <ScalableTerrainModel/Import/Plugin/SourceV0.h>
 #include <ScalableTerrainModel/Type/IMrDTMPoint.h>
@@ -26,8 +28,31 @@
 #include <ScalableTerrainModel/Type/IMrDTMLinear.h>
 #include <ScalableTerrainModel/Type/IMrDTMTIN.h>
 
-#include "../Stores/SMStoreUtils.h"
 
+namespace ISMStore
+    {
+    typedef HFCAccessMode                   AccessMode;
+    typedef uint32_t NodeID;
+    typedef uint32_t FeatureType;
+    inline uint32_t       GetNullNodeID               () {
+        return std::numeric_limits<uint32_t>::max();
+        };
+
+    struct FeatureHeader
+        {
+        typedef uint32_t                     feature_type;
+        typedef uint32_t                     group_id_type;
+        typedef uint32_t                     index_type;
+        typedef uint32_t                     size_type;
+
+        static group_id_type         GetNullID();
+
+        feature_type                        type;
+        index_type                          offset;     // In points
+        size_type                           size;       // In points
+        group_id_type                       groupId;    // Reference to the metadata for this feature
+        };
+    };
 
 //#include <STMInternal/Foundations/PrivateStringTools.h>
 
@@ -295,7 +320,7 @@ private:
         DG_QTY,
         };
             
-    PODPacketProxy<ISMStore::FeatureHeader>
+    PODPacketProxy<IDTMFile::FeatureHeader>
                                     m_headerPacket;
     PODPacketProxy<DPoint3d>        m_pointPacket;
     IDTMFeatureArray<DPoint3d>      m_featureArray;    
