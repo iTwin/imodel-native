@@ -139,71 +139,78 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json:
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJsonValue (ECValueR ecValue, const Json::Value& jsonValue, PrimitiveType primitiveType)
     {
-    Json::ValueType jsonValueType = jsonValue.type();
-
     BentleyStatus status = SUCCESS;
     switch (primitiveType)
         {
         case PRIMITIVETYPE_Point2D:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::objectValue))
+            if (!EXPECTED_CONDITION(jsonValue.isObject()))
                 return ERROR;
-            if (!EXPECTED_CONDITION (jsonValue["x"].isDouble() && jsonValue["y"].isDouble()))
+            if (!EXPECTED_CONDITION(jsonValue["x"].isNumeric() && jsonValue["y"].isNumeric()))
                 return ERROR;
             DPoint2d point2d;
             point2d.Init (jsonValue["x"].asDouble(), jsonValue["y"].asDouble());
             status = ecValue.SetPoint2D (point2d);
             break;
+
         case PRIMITIVETYPE_Point3D:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::objectValue))
+            if (!EXPECTED_CONDITION(jsonValue.isObject()))
                 return ERROR;
-            if (!EXPECTED_CONDITION (jsonValue["x"].isDouble() && jsonValue["y"].isDouble() && jsonValue["z"].isDouble()))
+            if (!EXPECTED_CONDITION(jsonValue["x"].isNumeric() && jsonValue["y"].isNumeric() && jsonValue["z"].isNumeric()))
                 return ERROR;
             DPoint3d point3d;
             point3d.Init (jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble());
             status = ecValue.SetPoint3D (point3d);
             break;
+
         case PRIMITIVETYPE_Integer: 
-            if (!EXPECTED_CONDITION (jsonValueType == Json::intValue))
+            if (!EXPECTED_CONDITION(jsonValue.isIntegral()))
                 return ERROR;
             status = ecValue.SetInteger (jsonValue.asInt());
             break;
+
         case PRIMITIVETYPE_Long:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
+            if (!EXPECTED_CONDITION(jsonValue.isString() && "int64_t values need to be serialized as strings to allow use in Javascript"))
                 return ERROR;
             status = ecValue.SetLong (BeJsonUtilities::Int64FromValue (jsonValue));
             break;
+
         case PRIMITIVETYPE_Double:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::realValue))
+            if (!EXPECTED_CONDITION(jsonValue.isNumeric()))
                 return ERROR;
             status = ecValue.SetDouble (jsonValue.asDouble());
             break;
+
         case PRIMITIVETYPE_DateTime:
             {
-            if (!EXPECTED_CONDITION (jsonValueType == Json::stringValue))
+            if (!EXPECTED_CONDITION (jsonValue.isString()))
                 return ERROR;
             DateTime dateTime;
             DateTime::FromString (dateTime, jsonValue.asString().c_str());
             status = ecValue.SetDateTime (dateTime);
             break;
             }
+
         case PRIMITIVETYPE_String:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::stringValue))
+            if (!EXPECTED_CONDITION(jsonValue.isString()))
                 return ERROR;
             status = ecValue.SetUtf8CP (jsonValue.asString().c_str(), true);
             break;
+
         case PRIMITIVETYPE_Boolean:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::booleanValue))
+            if (!EXPECTED_CONDITION(jsonValue.isBool()))
                 return ERROR;
             status = ecValue.SetBoolean (jsonValue.asBool());
             break;
+
         case PRIMITIVETYPE_Binary:
-            if (!EXPECTED_CONDITION (jsonValueType == Json::stringValue))
+            if (!EXPECTED_CONDITION(jsonValue.isString()))
                 return ERROR;
             // TODO: Do Base64 conversions of binary/text here!!!
             break;
+
         case PRIMITIVETYPE_IGeometry:
             {
-            if (!EXPECTED_CONDITION(jsonValueType == Json::objectValue))
+            if (!EXPECTED_CONDITION(jsonValue.isObject()))
                 return ERROR;
 
             if (jsonValue.isNull())
@@ -216,6 +223,7 @@ BentleyStatus ECJsonUtilities::ECPrimitiveValueFromJsonValue (ECValueR ecValue, 
             BeAssert(geometry.size() == 1);
             return ecValue.SetIGeometry(*(geometry[0]));
             }
+
         default:
             status = ERROR;
         }
@@ -421,7 +429,7 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJsonValue (ECValueR ecVa
             if (!jsonValue.IsObject())
                 return ERROR;
 
-            if (!jsonValue["x"].IsDouble() || !jsonValue["y"].IsDouble())
+            if (!jsonValue["x"].IsNumber() || !jsonValue["y"].IsNumber())
                 return ERROR;
 
             DPoint2d point2d;
@@ -432,7 +440,7 @@ BentleyStatus ECRapidJsonUtilities::ECPrimitiveValueFromJsonValue (ECValueR ecVa
             if (!jsonValue.IsObject())
                 return ERROR;
 
-            if (!jsonValue["x"].IsDouble() || !jsonValue["y"].IsDouble() || !jsonValue["z"].IsDouble())
+            if (!jsonValue["x"].IsNumber() || !jsonValue["y"].IsNumber() || !jsonValue["z"].IsNumber())
                 return ERROR;
 
             DPoint3d point3d;
