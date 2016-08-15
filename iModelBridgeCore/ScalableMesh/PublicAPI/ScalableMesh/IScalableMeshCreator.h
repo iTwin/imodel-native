@@ -23,7 +23,14 @@
 #include <ScalableMesh/IScalableMeshTime.h>
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
-#include <ImagePP\all\h\HIMMosaic.h>
+
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace ImagePP
+        {
+        class HIMMosaic;
+        }
+    }
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

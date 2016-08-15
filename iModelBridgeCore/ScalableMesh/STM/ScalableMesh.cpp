@@ -1560,6 +1560,8 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
             return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmIndexPtr);
         case MESH_QUERY_PLANE_INTERSECT:
             return new ScalableMeshNodePlaneQuery<POINT>(&*m_scmIndexPtr);
+        case MESH_QUERY_CONTEXT:
+            return new ScalableMeshContextMeshQuery<POINT>(&*m_scmIndexPtr);
         default:
             return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmIndexPtr);
         }

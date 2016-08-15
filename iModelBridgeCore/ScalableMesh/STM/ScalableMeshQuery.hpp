@@ -814,13 +814,13 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
                                                                                          scmViewDependentParamsPtr->GetViewClipVector()
                                                                                          )
                                                                                          );
-
-    if (!m_scmIndexPtr->Query(contextQueryP.get(), meshPtr,
-        scmViewDependentParamsPtr->GetStopQueryCallback()))
+    ScalableMeshMeshPtr returnMeshPtr(ScalableMeshMesh::Create());
+    if (!m_scmIndexPtr->Query(contextQueryP, returnMeshPtr.get()))
         {
         status = S_ERROR;
         }
 
+    meshPtr = returnMeshPtr;
     return status;
     }
 
@@ -857,11 +857,21 @@ template <class POINT> int ScalableMeshContextMeshQuery<POINT>::_Query(bvector<I
                                                                              )
                                                                              );
 
-    if (!m_scmIndexPtr->Query(contextQueryP.get(), meshNodes,
-        scmViewDependentParamsPtr->GetStopQueryCallback()))
+    vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
+
+    if (m_scmIndexPtr->Query(contextQueryP, returnedMeshNodes))
         {
-        status = S_ERROR;
+        meshNodes.resize(returnedMeshNodes.size());
+        for (size_t nodeInd = 0; nodeInd < returnedMeshNodes.size(); nodeInd++)
+            {
+            meshNodes[nodeInd] = new ScalableMeshNode<POINT>(returnedMeshNodes[nodeInd].m_indexNode);
+            }
+
+
+        status = S_SUCCESS;
         }
+    else status = S_ERROR;
+
 
     return status;
     }

@@ -1721,7 +1721,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<PO
                                                                                                           BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh*               mesh)
 
     {
-    bool result = false;
+    bool result = true;
 
 
     if (node->IsEmpty() || node->m_nodeHeader.m_level > 3)
@@ -1741,7 +1741,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<PO
     center.Init(ExtentOp<EXTENT>::GetXMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()) / 2,
                 ExtentOp<EXTENT>::GetYMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetHeight(node->GetContentExtent()) / 2,
                 ExtentOp<EXTENT>::GetZMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetThickness(node->GetContentExtent()) / 2);
-    if (node->m_nodeHeader.m_level == 3 || node.m_nodeHeader.m_IsLeaf)
+    if (node->m_nodeHeader.m_level == 3 || node->m_nodeHeader.m_IsLeaf)
         {
         auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(node);
 
@@ -1759,20 +1759,25 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<PO
 
         if (m_viewClipVector->PointInside(center, tolerance))
             {
-            AppendClippedToMesh meshOutput(mesh, m_viewClipVector);
-            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(node)));
+            AppendClippedToMesh meshOutput(mesh, m_viewClipVector.get());
+            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(node.GetPtr())));
             IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
-            bvector<bool> clips;
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-            auto meshP = nodeP->GetMesh(flags, clips);
+            IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
 
             if (meshP.get() != nullptr)
-                m_viewClipVector->ClipPolyface(*meshP->GetPolyfaceQuery(), meshOutput);
+                m_viewClipVector->ClipPolyface(*(meshP->GetPolyfaceQuery()), meshOutput, false);
 
             }
         else
             {
-            mesh->AppendMesh(pointsPtr->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+            bvector<int> indices(node->m_nodeHeader.m_nbFaceIndexes);
+            if (!indices.empty())
+                {
+                memcpy(indices.data(), &(*ptIndices)[0], indices.size()*sizeof(int));
+                for (auto& i : indices) i += (int)mesh->GetNbPoints();
+                mesh->AppendMesh(pointsPtr->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, indices.data(), 0, 0, 0, 0, 0, 0);
+                }
             }
         }
     return result;

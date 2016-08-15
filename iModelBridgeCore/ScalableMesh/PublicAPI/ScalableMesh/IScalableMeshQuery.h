@@ -325,6 +325,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const = 0;
 
+        virtual void _WriteToFile(WString& filePath) = 0;
+
     public: 
 
         BENTLEY_SM_EXPORT const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* GetPolyfaceQuery() const;
@@ -352,6 +354,9 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
+
+        BENTLEY_SM_EXPORT void WriteToFile(WString& filePath);
+
         
         BENTLEY_SM_EXPORT static IScalableMeshMeshPtr Create(size_t         nbPoints, 
                                                              DPoint3d*      points, 

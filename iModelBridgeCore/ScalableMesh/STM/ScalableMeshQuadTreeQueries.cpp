@@ -13,7 +13,13 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 StatusInt   AppendClippedToMesh::_ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery)
     {
-    m_targetMesh->AppendMesh(polyfaceQuery.GetPointCount(), const_cast<DPoint3d*>(polyfaceQuery.GetPointCP()), polyfaceQuery.GetPointIndexCount(), polyfaceQuery.GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
+    bvector<int> indices(polyfaceQuery.GetPointIndexCount());
+    if (!indices.empty())
+        {
+        memcpy(indices.data(), polyfaceQuery.GetPointIndexCP(), indices.size()*sizeof(int));
+        for (auto& i : indices) i += (int)m_targetMesh->GetNbPoints();
+        m_targetMesh->AppendMesh(polyfaceQuery.GetPointCount(), const_cast<DPoint3d*>(polyfaceQuery.GetPointCP()), polyfaceQuery.GetPointIndexCount(), polyfaceQuery.GetPointIndexCP(), 0, 0, 0, 0, 0, 0);
+        }
     return true;
     }
 
@@ -32,11 +38,11 @@ StatusInt   AppendClippedToMesh::_ProcessClippedPolyface(PolyfaceHeaderR polyfac
         double area;
         PolygonOps::CentroidNormalAndArea(tri, 3, centroid, normal, area);
         if (m_clipVec->PointInside(centroid, 1e-8)) continue;
-        indices.push_back(pointIndex[0] + 1);
-        indices.push_back(pointIndex[1] + 1);
-        indices.push_back(pointIndex[2] + 1);
+        indices.push_back(pointIndex[0] + 1 + (int)m_targetMesh->GetNbPoints());
+        indices.push_back(pointIndex[1] + 1 + (int)m_targetMesh->GetNbPoints());
+        indices.push_back(pointIndex[2] + 1 + (int)m_targetMesh->GetNbPoints());
         }
-    m_targetMesh->AppendMesh(pts.size(), &pts[0], indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
+    if(indices.size() > 0) m_targetMesh->AppendMesh(pts.size(), &pts[0], indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
     return true;
     }
 
@@ -51,6 +57,8 @@ template class ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>;
 template class ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<DPoint3d, DRange3d>;
 
 template class ScalableMeshQuadTreeViewDependentMeshQuery<DPoint3d, DRange3d>;
+
+template class ScalableMeshQuadTreeContextMeshQuery<DPoint3d, DRange3d>;
 
 
 
