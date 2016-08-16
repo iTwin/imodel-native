@@ -115,9 +115,10 @@ private:
     private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
+        uint32_t            m_lastNumCompleted = 0xffffffff;
         
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override { printf("%s: %u/%u\n", m_taskName.c_str(), completed, total); }
-        virtual void _SetTaskName(TileGenerator::TaskName task) override { m_taskName = TileGenerator::TaskName::CreatingTiles == task ? "Creating Tiles" : "Collecting Geometry"; }
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
+        virtual void _SetTaskName(TileGenerator::TaskName task) override;
         virtual bool _WasAborted() override { return TilesetPublisher::Status::Success != m_publisher.GetTileStatus(); }
     public:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }

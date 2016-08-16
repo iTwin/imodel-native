@@ -913,3 +913,33 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     return WriteWebApp(transformFromDgn);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint32_t total)
+    {
+    if (m_lastNumCompleted == completed)
+        {
+        printf("...");
+        }
+    else
+        {
+        m_lastNumCompleted = completed;
+        uint32_t pctComplete = static_cast<double>(completed)/total * 100;
+        printf("\n%s: %u%% (%u/%u)%s", m_taskName.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
+    {
+    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Collecting Geometry";
+    if (!m_taskName.Equals(newTaskName))
+        {
+        m_lastNumCompleted = 0xffffffff;
+        m_taskName = newTaskName;
+        }
+    }
+
