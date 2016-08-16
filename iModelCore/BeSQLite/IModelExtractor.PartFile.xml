@@ -21,13 +21,11 @@
     <ProductDirectoryList ListName="IModelExtractorDirList">  
         <!-- Only want a static build of the EXE -->      
         <ProductDirectory Name="IModelExeDir"               Deliver="true"  LibType="static" Path=""/>
-        <ProductDirectory Name="BentleyNativeAssemblies"    Deliver="false" LibType="static"/>        
-        <ProductDirectory Name="Libs"                       Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI"                  Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI"                  Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assemblies"    Deliver="false" LibType="static"/>        
+        <ProductDirectory Name="Assets"    Deliver="false"/>        
+        <ProductDirectory Name="Assets"    Deliver="false" LibType="static"/>        
         <ProductDirectory Name="VendorNotices"              Deliver="false" LibType="static"/>
         <ProductDirectory Name="GeomNativeAssemblies"       Deliver="false" LibType="static"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"    Deliver="false" LibType="static"/>
     </ProductDirectoryList>
     
 </BuildContext>

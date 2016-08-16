@@ -21,7 +21,7 @@
         <SubPart PartName="lzma" PartFile="Zlib" Repository="Libsrc-Compress" />
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLite$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)BeSQLite$(ApiNumber)$(shlibext)</Assemblies>
             <Files Required="false" SubPartDirectory="mki">Delivery/mki/BeSQLiteRequiredLibs.mki</Files>
         </Bindings>
     </Part>
