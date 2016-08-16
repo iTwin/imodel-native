@@ -131,6 +131,7 @@ public:
     TextureCache& GetTextureCache() { return m_textureCache; }
     TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
+    BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
 
     static Status ConvertStatus(TileGenerator::Status input);

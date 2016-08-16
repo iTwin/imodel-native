@@ -7,7 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <Geom/XYZRangeTree.h>
-#include <Bentley/BeThread.h>
+#include <folly/BeFolly.h>
+#include <folly/futures/Future.h>
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -1143,180 +1144,44 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, DRange3dCR ra
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t getProcessorCount()
-    {
-    // ###TODO: Replace with folly...
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
-    SYSTEM_INFO siSysInfo;
-    GetSystemInfo(&siSysInfo); 
-    return (size_t) siSysInfo.dwNumberOfProcessors;
-#else
-    return 4;
-#endif
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileProcessor
-{
-    TileNodeP                       m_tile;
-    TileGenerator::ITileCollector*  m_collector;
-
-    TileProcessor(TileNodeR tile, TileGenerator::ITileCollector& collector) : m_tile(&tile), m_collector(&collector) { }
-
-    void ProcessTile() { m_collector->_AcceptTile(*m_tile); }
-    void Abort() { } // for now just let the tiles finish...
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileQueue
-{
-    BeMutex                     m_mutex;
-    bvector<TileProcessor*>     m_waiting;
-    bset<TileProcessor*>        m_processing;
-
-    void Add(TileProcessor& tile) { m_waiting.push_back(&tile); }
-
-    size_t GetNumRemainingTiles()
-        {
-        BeMutexHolder lock(m_mutex);
-        return m_waiting.size() + m_processing.size();
-        }
-    bool ProcessingRemains()
-        {
-        BeMutexHolder lock(m_mutex);
-        return !m_waiting.empty() || !m_processing.empty();
-        }
-
-    TileProcessor* BeginProcessingTile();
-    void CompleteProcessingTile(TileProcessor& tile);
-    void AbortProcessing();
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileProcessor* TileQueue::BeginProcessingTile()
-    {
-    BeMutexHolder lock(m_mutex);
-
-    TileProcessor* tile = nullptr;
-    if (!m_waiting.empty())
-        {
-        m_processing.insert(tile = m_waiting.back());
-        m_waiting.pop_back();
-        }
-
-    return tile;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileQueue::CompleteProcessingTile(TileProcessor& tile)
-    {
-    BeMutexHolder lock(m_mutex);
-
-    m_processing.erase(m_processing.find(&tile));
-    delete &tile;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileQueue::AbortProcessing()
-    {
-    BeMutexHolder lock(m_mutex);
-
-    for (auto& waiting : m_waiting)
-        delete waiting;
-
-    m_waiting.clear();
-
-    for (auto& processing : m_processing)
-        processing->Abort();
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileWorker
-{
-    TileQueue&  m_queue;
-    size_t      m_index;
-
-    TileWorker(TileQueue& q, size_t index) : m_queue(q), m_index(index) { }
-
-    void Begin()
-        {
-        TileProcessor* tile;
-        while (nullptr != (tile = m_queue.BeginProcessingTile()))
-            {
-            tile->ProcessTile();
-            m_queue.CompleteProcessingTile(*tile);
-            }
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static THREAD_MAIN_IMPL tileThreadRunner(void* arg)
-    {
-    auto& worker = *reinterpret_cast<TileWorker*>(arg);
-    worker.Begin();
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector& collector)
     {
-    // ###TODO: Replace this threading stuff with folly....
-    static size_t s_maxThreadCount = getProcessorCount() - 2;
-    static int s_threadStackSize = 2 * 1024 * 1024;
-
     m_progressMeter._SetTaskName(TaskName::CreatingTiles);
 
-    TileQueue tileQueue;
+    // Enqueue all tiles for processing on the IO thread pool...
     bvector<TileNode*> tiles = root.GetTiles();
+    auto numTotalTiles = static_cast<uint32_t>(tiles.size());
+    BeAtomic<uint32_t> numCompletedTiles;
+
+    auto threadPool = &BeFolly::IOThreadPool::GetPool();
     for (auto& tile : tiles)
-        tileQueue.Add(*new TileProcessor(*tile, collector));
-
-    bvector<TileWorker*> tileWorkers;
-    for (size_t i = 0; i < s_maxThreadCount; i++)
-        tileWorkers.push_back(new TileWorker(tileQueue, i));
-
-    for (auto& tileWorker : tileWorkers)
-        BeThreadUtilities::StartNewThread(s_threadStackSize, tileThreadRunner, (void*)tileWorker);
+        folly::via(threadPool, [&]()
+                {
+                // Once the tile tasks are enqueued we must process them...do nothing if we've already aborted...
+                auto status = m_progressMeter._WasAborted() ? TileGenerator::Status::Aborted : collector._AcceptTile(*tile);
+                ++numCompletedTiles;
+                return status;
+                });
 
     static const uint32_t s_sleepMillis = 1000.0;
 
-    uint32_t numTotalTiles = static_cast<uint32_t>(tiles.size());
-
     BEGIN_DELTA_TIMER(m_statistics.m_tileCreationTime);
+
+    // Spin until all tiles complete, periodically notifying progress meter
+    // Note that we cannot abort any tasks which may still be 'pending' on the thread pool...but we can skip processing them if the abort flag is set
     do
         {
-        m_progressMeter._IndicateProgress(numTotalTiles - static_cast<uint32_t>(tileQueue.GetNumRemainingTiles()), numTotalTiles);
-        if (m_progressMeter._WasAborted())
-            tileQueue.AbortProcessing();
-
+        m_progressMeter._IndicateProgress(numCompletedTiles, numTotalTiles);
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
-    while (tileQueue.ProcessingRemains());
+    while (numCompletedTiles < numTotalTiles);
 
     END_DELTA_TIMER(m_statistics.m_tileCreationTime);
 
-    for (auto& tileWorker : tileWorkers)
-        delete tileWorker;
-
     m_progressMeter._IndicateProgress(numTotalTiles, numTotalTiles);
+
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
 
