@@ -1761,7 +1761,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<PO
             {
             AppendClippedToMesh meshOutput(mesh, m_viewClipVector.get());
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(node.GetPtr())));
-            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+            IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+            new ScalableMeshNode<POINT>(nodePtr)
+#else
+            ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+            );
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
 
