@@ -19,7 +19,7 @@
 <!--        <RequiredRepository>bsitools-wix_3.0.5419.0</RequiredRepository> -->
         <SubPart PartName="GeoCoordDataMinimal"/>
         <Bindings>
-            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordData/coordsys.dty
                 Delivery/GeoCoordData/coordsys.dty.xml
                 Delivery/GeoCoordData/NameMapper.csv
@@ -28,24 +28,24 @@
                 Delivery/GeoCoordData/Vertcon.gdc
                 Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
             </Files>
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Usa" SourceName="Delivery/GeoCoordData/Usa" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Australia" SourceName="Delivery/GeoCoordData/Australia" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Brazil" SourceName="Delivery/GeoCoordData/Brazil" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Canada" SourceName="Delivery/GeoCoordData/Canada" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="France" SourceName="Delivery/GeoCoordData/France" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Germany" SourceName="Delivery/GeoCoordData/Germany" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Japan" SourceName="Delivery/GeoCoordData/Japan" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="NewZealand" SourceName="Delivery/GeoCoordData/NewZealand" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="SouthAfrica" SourceName="Delivery/GeoCoordData/SouthAfrica" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Spain" SourceName="Delivery/GeoCoordData/Spain" />
-            <Directory ProductDirectoryName="GeoCoordData" ProductSubDirectory="Switzerland" SourceName="Delivery/GeoCoordData/Switzerland" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Usa" SourceName="Delivery/GeoCoordData/Usa" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Australia" SourceName="Delivery/GeoCoordData/Australia" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Brazil" SourceName="Delivery/GeoCoordData/Brazil" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Canada" SourceName="Delivery/GeoCoordData/Canada" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/France" SourceName="Delivery/GeoCoordData/France" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Germany" SourceName="Delivery/GeoCoordData/Germany" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Japan" SourceName="Delivery/GeoCoordData/Japan" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/NewZealand" SourceName="Delivery/GeoCoordData/NewZealand" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/SouthAfrica" SourceName="Delivery/GeoCoordData/SouthAfrica" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Spain" SourceName="Delivery/GeoCoordData/Spain" />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord/Switzerland" SourceName="Delivery/GeoCoordData/Switzerland" />
 <!--             <MergeModules ProductDirectoryName="CSMapMergeModules">Install/GeoCoordDataMergeModule.msm</MergeModules> -->
         </Bindings>
     </Part>
 
     <Part Name="GeoCoordDataMinimal" BentleyBuildMakeFile="GeoCoordData.mke" BMakeOptions="+dMinimal">
         <Bindings>
-            <Files ProductDirectoryName="GeoCoordData" SubPartDirectory="GeoCoordData">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordDataMinimal/datum.dty
                 Delivery/GeoCoordDataMinimal/GeodeticPath.dty
                 Delivery/GeoCoordDataMinimal/GeodeticTransform.dty
