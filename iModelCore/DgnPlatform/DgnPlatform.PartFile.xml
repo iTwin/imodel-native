@@ -560,6 +560,7 @@
         <SubPart PartName="UnitTests-Performance"        Repository="ECDb" PartFile="ECDb"/>
         <SubPart PartName="UnitTests-Performance"        Repository="Bentley" PartFile="Bentley"/>
         <SubPart PartName="UnitTests-Performance"        Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <SubPart PartName="UnitTests-Performance"        Repository="DgnClientFx" PartFile="DgnClientFx"/>
         <SubPart PartName="PerformanceTests"             Repository="ecobjects" PartFile="ECObjects"/>
         <SubPart PartName="UnitTests-PerformanceTest"        Repository="geomlibs" PartFile="geomlibs"/>
         <!-- Pull in the dgnplatform's db3 file to serve as the "framework" sqlang for testing purposes -->
