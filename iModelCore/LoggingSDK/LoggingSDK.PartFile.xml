@@ -21,7 +21,7 @@
         <SubPart PartName="log4cxx"                 PartFile="log4cxx"    Repository="libsrc-Log4cxx" />
         <Bindings>
             <Libs>Delivery\bentleylog4cxx$(libext)</Libs>
-            <Assemblies ProductDirectoryName="LoggingNativeAssemblies">Delivery\bentleylog4cxx$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery\bentleylog4cxx$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -36,14 +36,14 @@
 
     <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static">
         <Bindings>
-            <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.logging-2.0$(shlibext)</Assemblies>
+            <Assemblies>Delivery\Bentley.logging-2.0$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
     <Part Name="LoggingManagedConsole" BMakeFile="src\managed\console\console.mke" ExcludeLibType="Static">
         <SubPart PartName="LoggingManagedLog4net"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.Logging.console-2.0$(shlibext)</Assemblies>
+            <Assemblies>Delivery\Bentley.Logging.console-2.0$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -51,7 +51,7 @@
         <RequiredRepository>libsrc-Log4net</RequiredRepository>
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.Logging.log4net-2.0$(shlibext)</Assemblies>
+            <Assemblies>Delivery\Bentley.Logging.log4net-2.0$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -59,7 +59,7 @@
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <Bindings>
           <Libs>Delivery\Bentley.Logging.interop-2.0$(libext)</Libs>
-          <Assemblies ProductDirectoryName="LoggingManagedAssemblies">Delivery\Bentley.Logging.interop-2.0$(shlibext)</Assemblies>
+          <Assemblies>Delivery\Bentley.Logging.interop-2.0$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -79,7 +79,7 @@
 
     <Part Name="LoggingServer" BMakeFile="src\server\server.mke" ExcludeLibType="Static">
         <Bindings>
-            <Assemblies ProductDirectoryName="LoggingNativeAssemblies">
+            <Assemblies>
                 Delivery\BentleyLoggingServer-2.0.exe
                 Delivery\BentleyLoggingServer.exe.config
             </Assemblies>
@@ -137,9 +137,7 @@
         <ProductDirectory Name="LoggingInstallers"          Deliver="false"/>
         <ProductDirectory Name="Libs"                       Path="library"/>
         <ProductDirectory Name="PublicAPI"                  Path="include"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"    Path="bin"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"    Path="bin"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"   Path="bin"/>
+        <ProductDirectory Name="Assemblies"    Path="bin"/>
         <ProductDirectory Name="LoggingTests"               Path="bin"/>
 
         <ProductDirectory Name="PublicAPI"                  LibType="Static"    Deliver="false"/>
