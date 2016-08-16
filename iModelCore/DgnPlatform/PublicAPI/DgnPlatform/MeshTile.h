@@ -103,6 +103,7 @@ public:
     XYZRangeTreeRoot& GetTree() const { return *m_tree; }
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     TransformCR GetTransformToDgn() const { return m_transformToDgn; }
+    TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 
     void ResolveTexture(TileDisplayParamsCR params, DgnDbR db);
     DGNPLATFORM_EXPORT TextureImage const* GetTextureImage(TileDisplayParamsCR params) const;

@@ -1558,6 +1558,7 @@ void CameraViewController::_RestoreFromSettings()
     VerifyFocusPlane();
 
     LoadEnvironment();
+
 #if defined (NEEDS_WORK_REALTY_DATA)
     if (m_isCameraOn)
         {
