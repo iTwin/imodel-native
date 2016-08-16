@@ -201,18 +201,26 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
                curPickedObjects.color = curPickedColor;
            }
 
+           var elemId = "None";
            curPickedObjects = pickedObjects;
            if (Cesium.defined(curPickedObjects)) {
                curPickedColor = curPickedObjects.color;
                curPickedObjects.color = highlightColor;
+               elemId = pickedObjects.getProperty("element");
            } else {
                curPickedColor = null;
            }
+
+           var field = document.getElementById("field_elementId");
+           field.firstChild.nodeValue = elemId;
        }
    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 });
 
 </script>
+<div style="z-index:10000; position:absolute;top:0;left:0;background-color:whitesmoke;opacity:0.5;padding:5px; margin:5px">
+    <div>ElementId: <b id="field_elementId">None</b></div>
+</div>
 </body>
 </html>)HTML";
 
