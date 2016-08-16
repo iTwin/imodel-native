@@ -216,9 +216,12 @@ void TileDataQuery::Run()
         enableAlphaBlend = false;
         }
 #endif         
-    //&&MM need to add Texture::CreateParams and set tileSection to Target::CreateTexture, Render.h.
     if (image.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateTexture(image);
+        {
+        Render::Texture::CreateParams params;
+        params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
+        m_pTile = m_target.GetSystem()._CreateTexture(image, params);
+        }
         
     m_isFinished = true;
     }
