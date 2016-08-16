@@ -87,7 +87,7 @@ void BatchIdMap::ToJson(Json::Value& value) const
     {
     Json::Value elementIds(Json::arrayValue);
     for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
-        elementIds.append(elemIter->GetValueUnchecked());   // ###TODO: Convert to string...javascript doesn't support 64-bit integers...
+        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
 
     value["element"] = elementIds;
     }
