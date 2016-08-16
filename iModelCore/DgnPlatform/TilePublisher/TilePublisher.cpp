@@ -835,9 +835,33 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp()
+TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     {
-    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str());
+    // Set up initial view based on view controller settings
+    DVec3d xVec, yVec, zVec;
+    m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
+
+    auto cameraView = m_viewController._ToCameraView();
+    DPoint3d viewDest = nullptr != cameraView ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
+    if (nullptr == cameraView)
+        {
+        static const double s_zRatio = 1.5;
+        DVec3d viewDelta = m_viewController.GetDelta();
+        viewDest = DPoint3d::FromSumOf(viewDest, zVec, std::max(viewDelta.x, viewDelta.y) * s_zRatio);
+        }
+
+    transform.Multiply(viewDest);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    // Produce the html file contents
+    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str(),
+            viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
 
@@ -885,6 +909,6 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     if (Status::Success != status)
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
-    return WriteWebApp();
+    return WriteWebApp(transformFromDgn);
     }
 

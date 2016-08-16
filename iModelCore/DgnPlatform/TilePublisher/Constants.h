@@ -116,7 +116,10 @@ Utf8String s_untexturedFragShader =
 "gl_FragColor = vec4(u_color.rgb * n.z, u_color.a);\n"
 "}\n";
 
-// printf(s_viewHtml, dataDirectoryName, tilesetName)
+// printf(s_viewerHtml, dataDirectoryName, tilesetName,
+//        viewCenterX, viewCenterY, viewCenterZ,
+//        zVecX, zVecY, zVecZ,
+//        yVecZ, yVecY, yVecZ)
 Utf8CP s_viewerHtml =
 R"HTML(<!DOCTYPE html>
 <html lang="en">
@@ -182,7 +185,13 @@ var curPickedColor = null;
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
    var boundingSphere = tileset.boundingSphere;
    viewer.camera.viewBoundingSphere(boundingSphere); 
-   viewer.camera.setView({$initialView});
+   viewer.camera.setView({
+        "destination": new Cesium.Cartesian3(%f,%f,%f),
+        "orientation": {
+            direction: new Cesium.Cartesian3(%f,%f,%f),
+            up: new Cesium.Cartesian3(%f,%f,%f)
+        }
+    });
 
    var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
    handler.setInputAction(function(movement) {

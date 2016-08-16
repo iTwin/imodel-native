@@ -105,7 +105,7 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
-    Status WriteWebApp();
+    Status WriteWebApp(TransformCR transform);
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
