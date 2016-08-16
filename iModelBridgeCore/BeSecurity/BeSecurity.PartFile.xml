@@ -17,37 +17,37 @@
             <PublicAPI Domain="BeSecurity" />
         </Bindings>
     </Part>
-         
+
     <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json">
         <SubPart PartName="PublicAPI" />
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeSecurity" />
         </Bindings>
     </Part>
-    
+
     <Part Name="BeSecurityLibrary" BentleyBuildMakeFile="BeSecurity.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeSecurityLibrary-OpenSSL" />
         <SubPart PartName="BentleyDll"                 PartFile="Bentley"          Repository="Bentley" />
         <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <Bindings>
-            <Libs ProductDirectoryName="BeSecurityLibs">Delivery/$(libprefix)BeSecurity$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BeSecurityNativeAssemblies">Delivery/$(shlibprefix)BeSecurity$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)BeSecurity$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeSecurity$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
     <Part Name="BeSecurityLibrary-OpenSSL" ExcludePlatforms="WinRT*">
         <SubPart PartName="BeOpenSSL" PartFile="BeOpenSSL" Repository="Libsrc-openssl"/>
     </Part>
-    
+
     <Part Name="BeSecurityMavenArchive" BentleyBuildMakeFile="nonport/android/BeSecurity/BeSecurityMavenArchive.mke" OnlyPlatforms="Android*">
         <Bindings>
-            <Directory SourceName="Delivery/MavenArchive/com/bentley/android/BeSecurity" 
+            <Directory SourceName="Delivery/MavenArchive/com/bentley/android/BeSecurity"
                        ProductDirectoryName="MavenDependencies" ProductSubDirectory="com/bentley/android/BeSecurity"
                        SubPartDirectory="MavenDependencies/com/bentley/android/BeSecurity" />
         </Bindings>
     </Part>
-    
+
     <!-- ******************************** Unit Tests ************************************** -->
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BeSecurityLibrary"/>
@@ -55,7 +55,7 @@
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSecurity" SubPartDirectory="UnitTests/BeSecurity">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
-  
+
     <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="PublishedAPI" />
@@ -63,12 +63,12 @@
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="BeSecurity/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
-    
+
     <!-- Define a test collection part. This is included in MobileDgn's TestsAggregate-->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published"/>
     </Part>
-    
+
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts-->
     <Product Name="BeSecurity-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
