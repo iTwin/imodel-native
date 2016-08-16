@@ -470,7 +470,7 @@ public:
         Index,
         Trigger
         };
-
+#ifdef USE_HASH_TABLE
     struct Utf8StringHash
         {
         std::size_t operator()(Utf8String const& str) const
@@ -488,7 +488,11 @@ public:
         };
 
     typedef std::unordered_map<Utf8String, std::unique_ptr<DbTable>, Utf8StringHash, Utf8StringEqual> TableMap;
-private:
+#else
+    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMap;
+
+#endif
+    private:
 
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;

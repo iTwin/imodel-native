@@ -1187,7 +1187,6 @@ std::vector<ECN::ECClassId> const& ECDbMap::LightweightCache::LoadClassIdsPerTab
 
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, tbl.GetId());
-    DbTable const* currentTable = &tbl;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId id = stmt->GetValueId<ECClassId>(0);
