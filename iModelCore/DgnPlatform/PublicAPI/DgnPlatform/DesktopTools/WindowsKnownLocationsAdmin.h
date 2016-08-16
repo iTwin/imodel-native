@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,27 +24,31 @@ struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 {
     BeFileName m_tempDirectory;
     BeFileName m_executableDirectory;
+    BeFileName m_assetsDirectory;
 
-    virtual BeFileNameCR _GetLocalTempDirectoryBaseName () override {return m_tempDirectory;}
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory () override {return m_executableDirectory;}
+    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tempDirectory;}
+    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_assetsDirectory;}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-WindowsKnownLocationsAdmin ()
+WindowsKnownLocationsAdmin()
     {
     // use the standard Windows temporary directory
     wchar_t tempPathW[MAX_PATH];
     ::GetTempPathW (_countof(tempPathW), tempPathW);
-    m_tempDirectory.SetName (tempPathW);
-    m_tempDirectory.AppendSeparator ();
+    m_tempDirectory.SetName(tempPathW);
+    m_tempDirectory.AppendSeparator();
 
     // the application directory is where the executable is located
     wchar_t moduleFileName[MAX_PATH];
-    ::GetModuleFileNameW (NULL, moduleFileName, _countof (moduleFileName));
-    BeFileName moduleDirectory (BeFileName::DevAndDir, moduleFileName);
+    ::GetModuleFileNameW (NULL, moduleFileName, _countof(moduleFileName));
+    BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
     m_executableDirectory = moduleDirectory;
-    m_executableDirectory.AppendSeparator ();
+    m_executableDirectory.AppendSeparator();
+
+    m_assetsDirectory = m_executableDirectory;
+    m_assetsDirectory.AppendToPath(L"Assets");
     }
 };
 
