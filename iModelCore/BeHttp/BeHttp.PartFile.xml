@@ -27,9 +27,9 @@
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley"/>
         <SubPart PartName="BeSQLite"        PartFile="BeSQLite"     Repository="BeSQLite"/>
         <Bindings>
-            <Libs ProductDirectoryName="BeHttpLibs">Delivery/$(libprefix)BeHttp$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BeHttpNativeAssemblies">Delivery/$(shlibprefix)BeHttp$(ApiNumber)$(shlibext)</Assemblies>
-            <Directory ProductDirectoryName="BeHttpAssets" SourceName="Delivery/http"/>
+            <Libs>Delivery/$(libprefix)BeHttp$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BeHttp$(ApiNumber)$(shlibext)</Assemblies>
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="http" SourceName="Delivery/http"/>
         </Bindings>
     </Part>
     
