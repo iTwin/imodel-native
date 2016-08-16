@@ -27,12 +27,12 @@
         <SubPart PartName="StandardSchemasV3" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeSQLiteEC$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)BeSQLiteEC$(ApiNumber)$(shlibext)</Assemblies>
             <VendorNotices>
                 Delivery/openoffice-notice.txt
                 Delivery/openoffice-license.txt
             </VendorNotices>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/ECDb" SubPartDirectory="ECSchemas/ECDb">
                 ECSchemas/ECDb/*.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/ECDb" SubPartDirectory="Dox/Pages/ECDb"/>
@@ -242,7 +242,7 @@
         <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs"                               Deliver="false"/>
         <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
+        <ProductDirectory Name="Assemblies"            Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
