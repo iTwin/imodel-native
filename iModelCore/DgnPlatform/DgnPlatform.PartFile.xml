@@ -21,7 +21,7 @@
         <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
                 ECSchemas/dgn.02.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
                 ECSchemas/Markup.01.00.ecschema.xml
@@ -70,14 +70,14 @@
 
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
-            <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
-            <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
+            <Files Required="false" ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
             <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
             <Files Required="false" ProductDirectoryName="GeomJsApiTs" SubPartDirectory="Script/GeomJsApiTs">Delivery/GeomJsApi.d.ts</Files>
             <Directory Required="false" SubPartDirectory="DgnJsApiDoc" SourceName="Delivery/internal-docs/DgnJsApi" />
             <Directory Required="false" SubPartDirectory="GeomJsApiDoc" SourceName="Delivery/internal-docs/GeomJsApi" />
-            <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" Required="false" />
+            <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" Required="false" />
         </Bindings>
     </Part>
 
@@ -95,7 +95,7 @@
 
     <Part Name="DimStyleSchemaPrewire" BentleyBuildMakeFile="DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke" >
         <Bindings>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
                 GeneratedSchemas/DimensionStyleSchema.01.00.ecschema.xml
             </Files>
         </Bindings>
@@ -120,7 +120,7 @@
     <Part Name="DgnPlatformSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/DgnPlatform/DgnPlatform_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="DgnPlatformDLL" />
         <Bindings>
-            <Files ProductDirectoryName="DgnPlatformSqlang" Required="true">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
         </Bindings>
     </Part>
 
@@ -677,33 +677,12 @@
     <ProductDirectoryList ListName="BimConsoleDirList" >
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="ApplicationAssemblies"          RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ApplicationLibs"                RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
         <ProductDirectory Name="BeCurlAssemblies"               RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeIcu4cData"                    RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeIcu4cData"                    RelativeTo="ApplicationRoot" LibType="static"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"        RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ChakraCoreAssemblies"           RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="LibV8Assemblies"                RelativeTo="applicationroot"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"        RelativeTo="applicationroot"/>
-        <ProductDirectory Name="BeOpenSSLAssemblies"            RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"    RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="DgnPlatformSqlang"              RelativeTo="ApplicationRoot" Path="sqlang"/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies"      RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="UnitsNativeAssemblies"          RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"       RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="GeomNativeAssemblies"           RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ECSchemas"                      RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeHttpNativeAssemblies"         RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeHttpAssets"                   RelativeTo="ApplicationRoot" Path="http"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
         <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
-        <ProductDirectory Name="GeoCoordData"                   Deliver="false"/>
-        <ProductDirectory Name="Libs"                           Deliver="false"/>
-        <ProductDirectory Name="Libs"                           Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeHttpLibs"                     Deliver="false"/>
-        <ProductDirectory Name="BeHttpLibs"                     Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI"                      Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                      Deliver="false"/>
     </ProductDirectoryList>
     
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -731,31 +710,9 @@
         <ProductDirectory Name="ApplicationAssemblies"          RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="ApplicationLibs"                RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
-        <ProductDirectory Name="BeCurlAssemblies"               RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeIcu4cData"                    RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeIcu4cData"                    RelativeTo="ApplicationRoot" LibType="static"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"        RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ChakraCoreAssemblies"           RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="LibV8Assemblies"                RelativeTo="applicationroot"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"        RelativeTo="applicationroot"/>
-        <ProductDirectory Name="BeOpenSSLAssemblies"            RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"    RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="DgnPlatformSqlang"              RelativeTo="ApplicationRoot" Path="sqlang"/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies"      RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="UnitsNativeAssemblies"          RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"       RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="GeomNativeAssemblies"           RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ECSchemas"                      RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeHttpNativeAssemblies"         RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="BeHttpAssets"                   RelativeTo="ApplicationRoot" Path="http"/>
+        <ProductDirectory Name="Assemblies"        RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
-        <ProductDirectory Name="GeoCoordData"                   Deliver="false"/>
-        <ProductDirectory Name="Libs"                           Deliver="false"/>
-        <ProductDirectory Name="Libs"                           Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeHttpLibs"                     Deliver="false"/>
-        <ProductDirectory Name="BeHttpLibs"                     Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI"                      Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                      Deliver="false"/>
 		<ProductDirectory Name="GeoCoordData"                   Path="DgnGeoCoord" Deliver="true"/>
+
     </ProductDirectoryList>
 </BuildContext>
