@@ -101,6 +101,8 @@ private:
     TextureCache        m_textureCache;
     TileGeneratorP      m_generator = nullptr;
     Status              m_acceptTileStatus = Status::Success;
+    Transform           m_dbToTile;
+    Transform           m_tileToEcef;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
@@ -156,11 +158,11 @@ private:
     ByteStream              m_binaryData;
     TilesetPublisher&       m_context;
 
+
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
     static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
     static void WriteBoundingVolume(Json::Value&, TileNodeCR);
-    static void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath, bvector<WString> const& childPaths);
     static void AddTechniqueParameter(Json::Value&, Utf8CP name, int type, Utf8CP semantic);
     static void AppendProgramAttribute(Json::Value&, Utf8CP);
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
@@ -171,8 +173,10 @@ private:
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddShaders(Json::Value& value, bool isTextured);
+    Json::Value AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent);
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t id, uint32_t texId, TextureIdToNameMap& texNames);
     void AppendUInt32(uint32_t value);
+    void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath);
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 public:
     TilePublisher(TileNodeCR tile, TilesetPublisher& context);

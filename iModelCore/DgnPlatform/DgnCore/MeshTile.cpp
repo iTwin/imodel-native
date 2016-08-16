@@ -926,6 +926,8 @@ struct TileGeometryProcessor : IGeometryProcessor
     virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
     virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
     virtual bool _ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) override;
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
 
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override
         {
@@ -939,6 +941,7 @@ struct TileGeometryProcessor : IGeometryProcessor
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
+
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
@@ -1118,7 +1121,7 @@ TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double t
     m_progressMeter._IndicateProgress(0, 1);
 
     IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
-    TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformToDgn(), *facetOptions, m_progressMeter);
+    TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformFromDgn(), *facetOptions, m_progressMeter);
     
     BEGIN_DELTA_TIMER(m_statistics.m_collectionTime);
     GeometryProcessor::Process(processor, view.GetDgnDb());
