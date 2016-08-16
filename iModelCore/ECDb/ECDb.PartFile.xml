@@ -177,6 +177,38 @@
         <SubProduct ProductName="ECDb-iOSXCTest"/>
     </Part>
 
+    <!-- *********************************************************** -->
+    <!-- **** UWP Microsoft::VisualStudio::CppUnitTestFramework **** -->
+    <!-- *********************************************************** -->
+    <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
+    <Part
+        Name="UwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests"
+        OnlyPlatforms="WinRT*"
+        ApiNumber="G06"
+        >
+        <SubProduct ProductName="ECDb-Tests"/>
+        <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/ECDb/Project" />
+        </Bindings>
+    </Part>
+
+    <Product Name="ECDb-UwpTest">
+        <SubPart PartName="UwpTest"/>
+        <Directories DirectoryListName="UwpTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+    </Product>
+
+    <Part
+        Name="RunUwpTest"
+        BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/RunUwpTestProject.mke"
+        BentleyBuildMakeOptions="-dUWPTEST_PRODUCT=ECDb-UwpTest"
+        OnlyPlatforms="WinRT*"
+        >
+        <SubProduct ProductName="ECDb-UwpTest"/>
+    </Part>
+
     <!-- Performance tests -->
     <Product Name="ECDb-Tests-Performance">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
