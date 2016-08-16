@@ -17,8 +17,8 @@
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="Logging" />
         <Bindings>
-            <Libs ProductDirectoryName="UnitsLibs" Required="false">Delivery/$(libprefix)Units$(libext)</Libs>
-            <Assemblies ProductDirectoryName="UnitsNativeAssemblies">Delivery/$(shlibprefix)Units$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)Units$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Units$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -52,7 +52,6 @@
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
         <ProductDirectory Name="VendorNotices"                      Deliver="false" />
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
 
@@ -60,12 +59,11 @@
         <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
         <ProductDirectory   Name="VendorNotices"                LibType="Static"    Deliver="false" />
         <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="Assemblies"      LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="UnitsNativeAssemblies"        LibType="Static"    Deliver="false"/>
 
-        <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
+        <ProductDirectory Name="Assemblies"            Path="Runtime"/>
         <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
         <ProductDirectory Name="PublishedApi"                       Path="Include"/>
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
