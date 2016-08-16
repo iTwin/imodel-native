@@ -61,7 +61,7 @@
         <SubPart PartName="SCZ_Compress"    PartFile="scz_compress"     Repository="libsrc-scz_compress"/>
         <Bindings>
             <Libs>Delivery/$(shlibprefix)PointoolsVortexAPI$(libext)</Libs>
-            <Assemblies ProductDirectoryName="PointoolsAssemblies">Delivery/$(shlibprefix)PointoolsVortexAPI$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies Feature="PointCloud">Delivery/$(shlibprefix)PointoolsVortexAPI$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -84,7 +84,7 @@
     <Bindings>
       <VendorAPI Domain="PointoolsVortexAPI_FeatureExtract_DLL"/>
       <Libs> Delivery/VortexFeatureExtract.lib </Libs>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies"> Delivery/VortexFeatureExtract.dll </Assemblies>
+      <Assemblies Feature="PointCloud"> Delivery/VortexFeatureExtract.dll </Assemblies>
     </Bindings>
   </Part>
   
@@ -785,8 +785,8 @@
         <ProductDirectory Name="GeomNativeAssemblies" Path="Assemblies" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Path="" Deliver="false"/>
         <ProductDirectory Name="VendorNotices" Path="" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" Path="" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assemblies" Path="" Deliver="false"/>
         <ProductDirectory Name="Libs" Path="" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
