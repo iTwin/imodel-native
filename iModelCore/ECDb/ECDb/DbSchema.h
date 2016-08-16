@@ -11,7 +11,7 @@
 #include <Bentley/BeId.h>
 #include "BeBriefcaseBasedIdSequence.h"
 #include "MapStrategy.h"
-
+#include <unordered_map>
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 enum class PersistenceType
@@ -471,9 +471,25 @@ public:
         Trigger
         };
 
-    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMap;
+    struct Utf8StringHash
+        {
+        std::size_t operator()(Utf8String const& str) const
+            {
+            return std::hash_value(str.c_str());
+            }
+        };
 
+    struct Utf8StringEqual
+        {
+        bool operator()(Utf8String const& lhs, Utf8String const& rhs) const
+            {
+            return lhs.EqualsIAscii(rhs.c_str());
+            }
+        };
+
+    typedef std::unordered_map<Utf8String, std::unique_ptr<DbTable>, Utf8StringHash, Utf8StringEqual> TableMap;
 private:
+
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
     mutable TableMap m_tables;

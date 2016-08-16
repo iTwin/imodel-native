@@ -125,15 +125,23 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyid, Utf8CP accessString, bool addIfDoesNotExist)
+BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
     {
+#ifdef WIP_ECDB_PERF
+    auto itor = m_properytPathCache.find(std::make_tuple(rootPropertyId, accessString));
+    if (itor != m_properytPathCache.end())
+        {
+        id = (*itor).second;
+        return SUCCESS;
+        }
+#endif
     auto stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to prepare statement");
         return ERROR;
         }
-    stmt->BindId(1, rootPropertyid);
+    stmt->BindId(1, rootPropertyId);
     stmt->BindText(2, accessString, Statement::MakeCopy::No);
 
     if (stmt->Step() == BE_SQLITE_ROW)
@@ -158,13 +166,17 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
         return ERROR;
         }
     stmt->BindId(1, id);
-    stmt->BindId(2, rootPropertyid);
+    stmt->BindId(2, rootPropertyId);
     stmt->BindText(3, accessString, Statement::MakeCopy::No);
     if (stmt->Step() != BE_SQLITE_DONE)
         {
         BeAssert(false);
         return ERROR;
         }
+
+#ifdef WIP_ECDB_PERF
+    m_properytPathCache.insert(std::make_pair(std::make_pair(rootPropertyId, accessString), id));
+#endif
 
     return SUCCESS;
     }

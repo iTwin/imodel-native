@@ -64,9 +64,9 @@ struct ECDbMap :NonCopyableClass
                 void LoadHorizontalPartitions() const;
                 void LoadClassIdsPerTable() const;
                 void LoadRelationshipCache() const;
-                void LoadHorizontalPartitions(ECN::ECClassId classId)  const;
-                void LoadClassIdsPerTable(ECN::ECClassId iid) const;
-                void LoadClassIdsPerTable(DbTable const& tbl) const;
+                ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId classId)  const;
+                bset<DbTable const*> const& LoadClassIdsPerTable(ECN::ECClassId iid) const;
+                std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const& tbl) const;
             public:
                 explicit LightweightCache(ECDbMapCR map);
                 ~LightweightCache() {}

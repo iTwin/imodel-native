@@ -27,8 +27,8 @@ struct DbClassMapLoadContext : public NonCopyableClass
         static BentleyStatus ReadPropertyMaps(DbClassMapLoadContext& ctx, ECDbCR ecdb);
         ClassMapCP m_baseClassMap;
     public:
-        DbClassMapLoadContext():m_isValid (false), m_baseClassMap (nullptr){}
-        ~DbClassMapLoadContext(){}
+        DbClassMapLoadContext() :m_isValid(false), m_baseClassMap(nullptr) {}
+        ~DbClassMapLoadContext() {}
         ECDbMapStrategy GetMapStrategy() const { return m_mapStrategy; }
         ClassMapId GetClassMapId() const { return m_classMapId; }
         ECN::ECClassId GetBaseClassId() const { return m_baseClassId; }
@@ -48,20 +48,40 @@ struct DbClassMapLoadContext : public NonCopyableClass
 struct DbMapSaveContext : public NonCopyableClass
     {
     private:
-    std::map<ECN::ECClassId, ClassMapCP> m_savedClassMaps;
-    std::stack<ClassMapCP> m_editStack;
-    ECDbCR m_ecdb;
+
+#ifdef WIP_ECDB_PERF
+        struct PropertyPathHash
+            {
+            std::size_t operator()(std::tuple< ECN::ECPropertyId, Utf8CP> const& key) const
+                {
+                
+                return std::hash_value(std::get<1>(key)) ^ (std::hash<uint64_t>()(std::get<0>(key).GetValue()) << 1);
+                }
+            };
+
+        struct PropertyPathEqual
+            {
+            bool operator()(std::tuple< ECN::ECPropertyId, Utf8CP> const& lhs, std::tuple< ECN::ECPropertyId, Utf8CP> const& rhs) const
+                {
+                return std::get<0>(lhs) == std::get<0>(rhs) && CompareIUtf8Ascii()(std::get<1>(lhs), std::get<1>(rhs));
+                }
+            };
+        std::unordered_map<std::tuple<ECN::ECPropertyId, Utf8CP>, PropertyPathId, PropertyPathHash, PropertyPathEqual> m_properytPathCache;
+#endif
+        std::map<ECN::ECClassId, ClassMapCP> m_savedClassMaps;
+        std::stack<ClassMapCP> m_editStack;
+        ECDbCR m_ecdb;
     public:
-        DbMapSaveContext(ECDbCR ecdb):m_ecdb(ecdb)
+        DbMapSaveContext(ECDbCR ecdb) :m_ecdb(ecdb)
             {}
-        ~DbMapSaveContext(){}
+        ~DbMapSaveContext() {}
         ECDbCR GetECDb() const { return m_ecdb; }
         bool IsAlreadySaved(ClassMapCR classMap) const;
         void BeginSaving(ClassMapCR classMap);
         void EndSaving(ClassMapCR classMap);
-        ClassMapCP GetCurrent() const { return m_editStack.top(); }
+        ClassMapCP GetCurrent() const { return m_editStack.top();}
         BentleyStatus InsertClassMap(ClassMapId& classMapId, ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId);
-        BentleyStatus TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyid, Utf8CP accessString, bool addIfDoesNotExist);
+        BentleyStatus TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist);
     };
 
     
