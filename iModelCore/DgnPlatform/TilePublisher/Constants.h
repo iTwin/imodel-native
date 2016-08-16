@@ -41,31 +41,9 @@ USING_NAMESPACE_BENTLEY
 #define JSON_Children "children"
 #define JSON_Content "content"
 
-Utf8String s_texturedFragShader =
-"precision highp float;\n"
-"varying vec2 v_texc;\n"
-"uniform sampler2D u_tex;\n"
-"void main(void) {\n"
-"gl_FragColor = texture2D(u_tex, v_texc);\n"
-"}\n";
 
-#if USE_BATCH_TABLE
-
-Utf8String s_texturedVertexShader =
-"precision highp float;\n"
-"attribute vec3 a_pos;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"attribute vec2 a_texc;\n"
-"attribute float a_batchId;\n"
-"varying vec2 v_texc;\n"
-"void main(void) {\n"
-"v_texc = a_texc;\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
-"}\n";
-
-Utf8String s_untexturedVertexShader =
-"precision highp float;\n"
+//Shaders for display of mesh data
+static std::string s_textureShaderCommon = 
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_n;\n"
 "attribute float a_batchId;\n"
@@ -73,47 +51,60 @@ Utf8String s_untexturedVertexShader =
 "uniform mat4 u_proj;\n"
 "uniform mat3 u_nmx;\n"
 "varying vec3 v_n;\n"
+"varying vec3 v_pos;\n"
 "void main(void) {\n"
 "v_n = normalize(u_nmx * a_n);\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
-"}\n";
+"v_pos = a_pos;\n"
+"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n";
 
-#else
 
-Utf8String s_texturedVertexShader =
-"precision highp float;\n"
-"attribute vec3 a_pos;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
+
+static std::string s_texturedVertexShader =
+"precision highp float;\n" 
 "attribute vec2 a_texc;\n"
 "varying vec2 v_texc;\n"
-"void main(void) {\n"
++ s_textureShaderCommon +
 "v_texc = a_texc;\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
 "}\n";
 
-Utf8String s_untexturedVertexShader =
-"precision highp float;\n"
-"attribute vec3 a_pos;\n"
-"attribute vec3 a_n;\n"
-"uniform mat4 u_mv;\n"
-"uniform mat4 u_proj;\n"
-"uniform mat3 u_nmx;\n"
-"varying vec3 v_n;\n"
-"void main(void) {\n"
-"v_n = normalize(u_nmx * a_n);\n"
-"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n"
+static std::string s_untexturedVertexShader =
+"precision highp float;\n" 
++ s_textureShaderCommon +
 "}\n";
 
-#endif
-
-Utf8String s_untexturedFragShader =
-"precision highp float;\n"
+static std::string s_fragShaderCommon = 
 "varying vec3 v_n;\n"
-"uniform vec4 u_color;\n"
+"varying vec3 v_pos;\n"
+"uniform float u_specularExponent;\n"
+"uniform vec3 u_specularColor;\n"
 "void main(void) {\n"
 "vec3 n = normalize(v_n);\n"
-"gl_FragColor = vec4(u_color.rgb * n.z, u_color.a);\n"
+"vec3 toEye = normalize (-v_pos);\n"
+"n = faceforward(n, vec3(0.0, 0.0, 1.0), -n);\n"
+"float diffuseIntensity = .3 * n.z + .7 * czm_getLambertDiffuse(czm_sunDirectionEC, n);\n"
+"vec3 toReflectedLight = reflect(-czm_sunDirectionEC, n);\n"
+"float specular = max(dot(toReflectedLight, toEye), 0.0);\n"
+"float specularIntensity=pow (specular, u_specularExponent);\n";
+
+static std::string s_untexturedFragShader = 
+"precision highp float;\n"
+"uniform vec4 u_color;\n"
++ s_fragShaderCommon + 
+"vec3 color = (u_color.rgb * diffuseIntensity) + (u_specularColor * specularIntensity);\n"
+"gl_FragColor = vec4(color, u_color.a);\n"
+"}\n";
+
+
+
+static std::string s_texturedFragShader =
+"precision highp float;\n"
+"varying vec2 v_texc;\n"  
+"uniform sampler2D u_tex;\n" 
++ s_fragShaderCommon + 
+"vec4 textureColor = texture2D(u_tex, v_texc);\n"
+"if (0.0 == textureColor.a) discard;\n"
+"vec3 color = (textureColor.rgb * diffuseIntensity) + (u_specularColor * specularIntensity);\n"
+"gl_FragColor = vec4(color.rgb * diffuseIntensity, textureColor.a);\n"
 "}\n";
 
 // printf(s_viewHtml, dataDirectoryName, tilesetName)
@@ -207,6 +198,16 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
 </body>
 </html>)HTML";
 
+
+
+// From DgnViewMaterial.cpp
+static double const s_qvExponentMultiplier  = 48.0,
+                    s_qvAmbient             = 1.0,
+                    s_qvFinish              = 0.9,
+                    s_qvSpecular            = 0.4,
+                    s_qvReflect             = 0.0,
+                    s_qvRefract             = 1.0,
+                    s_qvDiffuse             = 0.6;
 
 
 
