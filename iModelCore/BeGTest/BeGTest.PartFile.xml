@@ -49,115 +49,31 @@
     <!-- This is also an example of how to lay out the directory structure for any BeGTest product. -->
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="CollectionProduct">
-        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Assemblies"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"            Deliver="false" LibType="static"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"            Path="Assemblies"/>
-        <ProductDirectory Name="LoggingNativeAssemblies"            Deliver="false" LibType="static"/>
-        <ProductDirectory Name="GeomNativeAssemblies"               Path="Assemblies"/>
-        <ProductDirectory Name="GeomNativeAssemblies"               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeOpenSSLAssemblies"                Path="Assemblies"/>
-        <ProductDirectory Name="BeOpenSSLAssemblies"                Deliver="false" LibType="static"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path="Assemblies"/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeCurlAssemblies"                   Path="Assemblies"/>
-        <ProductDirectory Name="BeCurlAssemblies"                   Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeHttpNativeAssemblies"             Path="Assemblies"/>
-        <ProductDirectory Name="BeHttpNativeAssemblies"             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeSecurityNativeAssemblies"         Path="Assemblies"/>
-        <ProductDirectory Name="BeSecurityNativeAssemblies"         Deliver="false" LibType="static"/>
-        <ProductDirectory Name="ConstructionAssemblies"             Path="Assemblies"/>
-        <ProductDirectory Name="ConstructionAssemblies"             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies"          Path="Assemblies"/>
-        <ProductDirectory Name="ECObjectsNativeAssemblies"          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Assemblies"/>
-        <ProductDirectory Name="UnitsNativeAssemblies"              Deliver="false" LibType="static"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Assemblies"/>
-        <ProductDirectory Name="GeoCoordNativeAssemblies"           Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PPNativeAssemblies"                 Path="Assemblies"/>
-        <ProductDirectory Name="PPNativeAssemblies"                 Deliver="false" LibType="static"/>
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Path="Assemblies"/>
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PlanningAssemblies"                 Path="Assemblies"/>
-        <ProductDirectory Name="PlanningAssemblies"                 Deliver="false" LibType="static"/>
-        <ProductDirectory Name="SmartSolidAssemblies"               Path="Assemblies"/>
-        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BePortableUiAssemblies"             Path="Assemblies"/>
-        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="DgnClientFxNativeAssemblies"          Path="Assemblies"/>
-        <ProductDirectory Name="DgnClientFxNativeAssemblies"          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="WSClientAssemblies"                 Path="Assemblies"/>
-        <ProductDirectory Name="WSClientAssemblies"                 Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BeCasablancaAssemblies"             Path="Assemblies"/>
-        <ProductDirectory Name="BeCasablancaAssemblies"             Deliver="false" LibType="static"/>
-        <ProductDirectory Name="ChakraCoreAssemblies"               Path="Assemblies"/>
-        <ProductDirectory Name="ChakraCoreAssemblies"               Deliver="false" LibType="static"/>
-
+        <ProductDirectory Name="Assemblies"            Path="Assemblies"/>
+        <ProductDirectory Name="Assemblies"            Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs"                               Path="Libs"/>
         <ProductDirectory Name="Libs"                               Path="Libs" LibType="static"/>
-        <ProductDirectory Name="BentleyLibs"                        Path="Libs"/>
-        <ProductDirectory Name="BentleyLibs"                        Path="Libs" LibType="static"/>
-        <ProductDirectory Name="BeSecurityLibs"                     Path="Libs"/>
-        <ProductDirectory Name="BeSecurityLibs"                     Path="Libs" LibType="static"/>
-        <ProductDirectory Name="WSClientLibs"                       Path="Libs"/>
-        <ProductDirectory Name="WSClientLibs"                       Path="Libs" LibType="static"/>
-        <ProductDirectory Name="BeHttpLibs"                         Path="Libs"/>
-        <ProductDirectory Name="BeHttpLibs"                         Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs"/>
         <ProductDirectory Name="BeStaticLibDir"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs"/>
         <ProductDirectory Name="BeJsonCppStaticLibDir"              Path="Libs" LibType="static"/>
-        <ProductDirectory Name="ConstructionLibs"                   Path="Libs"/>
-        <ProductDirectory Name="ConstructionLibs"                   Path="Libs" LibType="static"/>
-        <ProductDirectory Name="ECObjectsLibs"                      Path="Libs"/>
-        <ProductDirectory Name="ECObjectsLibs"                      Path="Libs" LibType="static"/>
-        <ProductDirectory Name="UnitsLibs"                          Path="Libs"/>
-        <ProductDirectory Name="UnitsLibs"                          Path="Libs" LibType="static"/>
-        <ProductDirectory Name="PromiseKitLibs"                     Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects"/>
         <ProductDirectory Name="UnitTests-Objects"                  Path="Objects" LibType="static"/>
+        <ProductDirectory Name="Assets"                          Path="Assets"/>
+        <ProductDirectory Name="Assets"                          Path="Assets"  LibType="static"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets"/>
         <ProductDirectory Name="UnitTests-Assets"                   Path="Assets" LibType="static"/>
-        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/http"/>
-        <ProductDirectory Name="BeHttpAssets"                       Path="Assets/http" LibType="static"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore"/>
         <ProductDirectory Name="UnitTests-IgnoreList"               Path="Assets/Ignore" LibType="static"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb"/>
         <ProductDirectory Name="UnitTests-Documents-DgnDb"          Path="Assets/Documents/DgnDb" LibType="static"/>
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" />
         <ProductDirectory Name="UnitTests-ECDbTestData"             Path="Assets/Documents/ECDb" LibType="static"/>
-        <ProductDirectory Name="ECSchemas"                          Path="Assets"/>
-        <ProductDirectory Name="ECSchemas"                          Path="Assets" LibType="static"/>
-        <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang"/>
-        <ProductDirectory Name="DgnPlatformSqlang"                  Path="Assets/sqlang" LibType="static"/>
-        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
-        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang" LibType="static"/>
-        <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts"/>
-        <ProductDirectory Name="DgnPlatformFont"                    Path="Assets/fonts" LibType="static"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts"         Path="Assets" LibType="static"/>
-        <ProductDirectory Name="BeIcu4cData"                        Path="Assets"/>
-        <ProductDirectory Name="BeIcu4cData"                        Path="Assets" LibType="static"/>
-        <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord"/>
-        <ProductDirectory Name="GeoCoordData"                       Path="Assets/DgnGeoCoord" LibType="static"/>
-        <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord"/>
-        <ProductDirectory Name="GeoCoordDataMinimal"                Path="Assets/DgnGeoCoord" LibType="static"/>
-        <ProductDirectory Name="PlanningLibs"                       Path="Libs"/>
-        <ProductDirectory Name="PlanningLibs"                       Path="Libs" LibType="static"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData"/>
         <ProductDirectory Name="UnitTests-GeomLibsTestData"         Path="Assets/GeomLibsTestData" LibType="static"/>
 
         <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData"/>
         <ProductDirectory Name="UnitTests-BeSQLiteTestData"         Path="Assets/BeSQLiteTestData" LibType="static"/>
-
-        <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/"/>
-        <ProductDirectory Name="DgnClientFxJavaScript"                Path="Assets/js/" LibType="static"/>
-        <ProductDirectory Name="DgnClientFxJavaScriptViewGroups"      Path="Assets/js/ViewGroups"/>
-        <ProductDirectory Name="DgnClientFxJavaScriptViewGroups"      Path="Assets/js/ViewGroups" LibType="static"/>
-        <ProductDirectory Name="DgnClientFxJavaScriptIcons"           Path="Assets/js/resources/icons"/>
-        <ProductDirectory Name="DgnClientFxJavaScriptIcons"           Path="Assets/js/resources/icons" LibType="static"/>
-        <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes"/>
-        <ProductDirectory Name="StdThemes"                          Path="Assets/std-themes" LibType="static"/>
-
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData"/>
         <ProductDirectory Name="ECObjectsTestSeedData"              Path="Assets/SeedData" LibType="static"/>
         <ProductDirectory Name="ECObjectsTestSeedDataPK"            Path="Assets/SeedData/ur-PK"/>
@@ -172,32 +88,10 @@
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets"/>
         <ProductDirectory Name="WSClientTestAssets"                 Path="Assets/WSClientTestAssets" LibType="static"/>
 
-        <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false"/>
-        <ProductDirectory Name="DgnClientSdkIncludeDirectory" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="DgnViewDecorators" Deliver="false"/>
-        <ProductDirectory Name="DgnViewDecorators" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false"/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI" Deliver="false"/>
-        <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI" Deliver="false"/>
-        <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false"/>
         <ProductDirectory Name="DgnClientFxSampleCode" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Deliver="false"/>
-        <ProductDirectory Name="MrSidAssemblies" Deliver="false"/>
-        <ProductDirectory Name="TbbAssemblies" Deliver="false"/>
-        <ProductDirectory Name="GdalData" Deliver="false"/>
-        <ProductDirectory Name="ImagePPAssemblies" Deliver="false"/>
-        <ProductDirectory Name="ImagePPAssemblies" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="RealityAssemblies" Deliver="false"/>
-        <ProductDirectory Name="RealityAssemblies" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PointCloudAssemblies" Deliver="false"/>
-        <ProductDirectory Name="PointCloudAssemblies" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PointoolsAssemblies"  Deliver="false"/>
-        <ProductDirectory Name="PointoolsAssemblies"  Deliver="false" LibType="static"/>
         <ProductDirectory Name="MavenDependencies" Deliver="false" LibType="static" />
         
     </ProductDirectoryList>
@@ -227,14 +121,10 @@
     <!-- *********************************************************************************************** -->
     <ProductDirectoryList ListName="GtestProduct">
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path=""/>
-        <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets" Path="Assets-g"/>
+        <ProductDirectory Name="Assets" Path="Assets-g" LibType="static"/>
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
-
-        <ProductDirectory Name="Libs" Deliver="false"/>
-        <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
-        <ProductDirectory Name="PublicAPI" Deliver="false"/>
-        <ProductDirectory Name="VendorAPI" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
     </ProductDirectoryList>
@@ -258,7 +148,7 @@
         <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
-        <ProductDirectory Name="BentleyNativeAssemblies" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assemblies" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
     <!-- *********************************************************************************************** -->
@@ -279,7 +169,7 @@
         <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
-        <ProductDirectory Name="BentleyNativeAssemblies" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assemblies" Deliver="false" LibType="static"/>
     </ProductDirectoryList>
 
   <!-- *********************************************************************************************** -->
@@ -300,7 +190,7 @@
     <ProductDirectory Name="PublicAPI" Deliver="false"/>
     <ProductDirectory Name="VendorAPI" Deliver="false"/>
     <ProductDirectory Name="VendorNotices" Deliver="false" />
-    <ProductDirectory Name="BentleyNativeAssemblies" Deliver="false"/>
+    <ProductDirectory Name="Assemblies" Deliver="false"/>
   </ProductDirectoryList>
 
 </BuildContext>
