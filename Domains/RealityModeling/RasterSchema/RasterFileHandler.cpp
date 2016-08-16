@@ -269,7 +269,7 @@ BentleyStatus RasterFileModel::_LoadQuadTree() const
     // Create RasterQuadTree
     RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
     if(pSource.IsValid())
-        m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
+        m_rasterTreeP = RasterQuadTree::Create(*pSource, const_cast<RasterFileModel&>(*this));
 
     return m_rasterTreeP.IsValid() ? SUCCESS : ERROR;
     }
