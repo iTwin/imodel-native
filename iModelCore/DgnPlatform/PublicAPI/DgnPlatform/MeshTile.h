@@ -336,12 +336,14 @@ public:
         : m_range(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent) { }
 
     DRange3dCR GetRange() const { return m_range; }
-    TileNodeList const& GetChildren() const { return m_children; }
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }
+
     TileNodeCP GetParent() const { return m_parent; } //!< The direct parent of this node
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
+    TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
+    TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
 
     DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;

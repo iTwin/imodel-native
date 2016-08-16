@@ -106,10 +106,8 @@ private:
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
-    Status              Setup();
-    Status              WriteWebApp();
-    Utf8String          GetViewString (ViewControllerR) const;
-
+    Status Setup();
+    Status WriteWebApp(TransformCR transform);
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
@@ -119,9 +117,10 @@ private:
     private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
+        uint32_t            m_lastNumCompleted = 0xffffffff;
         
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override { printf("%s: %u/%u\n", m_taskName.c_str(), completed, total); }
-        virtual void _SetTaskName(TileGenerator::TaskName task) override { m_taskName = TileGenerator::TaskName::CreatingTiles == task ? "Creating Tiles" : "Collecting Geometry"; }
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
+        virtual void _SetTaskName(TileGenerator::TaskName task) override;
         virtual bool _WasAborted() override { return TilesetPublisher::Status::Success != m_publisher.GetTileStatus(); }
     public:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
@@ -131,11 +130,12 @@ public:
 
     Status Publish();
 
-    Status              GetTileStatus() const { return m_acceptTileStatus; }
-    TextureCache&       GetTextureCache() { return m_textureCache; }
-    TileGeometryCacheP  GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
-    BeFileNameCR        GetDataDirectory() const { return m_dataDir; }
-    WStringCR           GetRootName() const { return m_rootName; }
+    Status GetTileStatus() const { return m_acceptTileStatus; }
+    TextureCache& GetTextureCache() { return m_textureCache; }
+    TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
+    BeFileNameCR GetDataDirectory() const { return m_dataDir; }
+    BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
+    WStringCR GetRootName() const { return m_rootName; }
 
     static Status ConvertStatus(TileGenerator::Status input);
     static TileGenerator::Status ConvertStatus(Status input);

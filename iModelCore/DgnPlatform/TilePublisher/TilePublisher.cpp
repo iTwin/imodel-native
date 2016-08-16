@@ -87,7 +87,7 @@ void BatchIdMap::ToJson(Json::Value& value) const
     {
     Json::Value elementIds(Json::arrayValue);
     for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
-        elementIds.append(elemIter->GetValueUnchecked());   // ###TODO: Convert to string...javascript doesn't support 64-bit integers...
+        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
 
     value["element"] = elementIds;
     }
@@ -884,61 +884,41 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilesetPublisher:: GetViewString (ViewControllerR viewController) const
-    {
-    DVec3d              xVector, yVector, zVector;
-
-    viewController.GetRotation().GetRows (xVector, yVector, zVector);
-
-    DPoint3d                destination;
-    CameraViewControllerCP  cameraController;
-    
-    if (NULL != (cameraController = (viewController.ToCameraViewP())) && cameraController->IsCameraOn())
-        {
-        destination = cameraController->GetEyePoint();
-        }
-    else
-        {
-        DPoint3d        center = viewController.GetCenter();
-        static double   s_zRatio = 1.5;
-
-
-
-        // Approximate with camera positioned back from the center of the view...
-        destination = DPoint3d::FromSumOf (center, zVector, MAX (viewController.GetDelta().x, viewController.GetDelta().y)  * s_zRatio);
-        }
-
-    Transform       dbToEcf = Transform::FromProduct (m_tileToEcef, m_dbToTile);
-
-    dbToEcf.Multiply (destination);
-    dbToEcf.MultiplyMatrixOnly (yVector);
-    dbToEcf.MultiplyMatrixOnly (zVector);
-
-    yVector.Normalize();
-    zVector.Normalize();
-    zVector.Negate ();      // Towards target.
-
-    return Utf8PrintfString ("destination : new Cesium.Cartesian3(%f,%f,%f),\n"
-                             "orientation : {direction : new Cesium.Cartesian3(%f,%f,%f),\n"
-                             "up : new Cesium.Cartesian3(%f,%f,%f)}", destination.x, destination.y, destination.z,
-                                                                      zVector.x, zVector.y, zVector.z,
-                                                                      yVector.x, yVector.y, yVector.z);
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp ()
+TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     {
-    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str());
+    // Set up initial view based on view controller settings
+    DVec3d xVec, yVec, zVec;
+    m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
+
+    auto cameraView = m_viewController._ToCameraView();
+    bool useCamera = nullptr != cameraView && cameraView->IsCameraOn();
+    DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
+    if (!useCamera)
+        {
+        static const double s_zRatio = 1.5;
+        DVec3d viewDelta = m_viewController.GetDelta();
+        viewDest = DPoint3d::FromSumOf(viewDest, zVec, std::max(viewDelta.x, viewDelta.y) * s_zRatio);
+        }
+
+    transform.Multiply(viewDest);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    // Produce the html file contents
+    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str(),
+            viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
-
-    html.ReplaceAll("$initialView", GetViewString (m_viewController).c_str());
 
     std::ofstream htmlFile;
     htmlFile.open(Utf8String(htmlFileName.c_str()).c_str(), std::ios_base::trunc);
@@ -980,6 +960,36 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     if (Status::Success != status)
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
-    return WriteWebApp ();
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint32_t total)
+    {
+    if (m_lastNumCompleted == completed)
+        {
+        printf("...");
+        }
+    else
+        {
+        m_lastNumCompleted = completed;
+        uint32_t pctComplete = static_cast<double>(completed)/total * 100;
+        printf("\n%s: %u%% (%u/%u)%s", m_taskName.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
+    {
+    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Collecting Geometry";
+    if (!m_taskName.Equals(newTaskName))
+        {
+        m_lastNumCompleted = 0xffffffff;
+        m_taskName = newTaskName;
+        }
     }
 
