@@ -842,8 +842,9 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
 
     auto cameraView = m_viewController._ToCameraView();
-    DPoint3d viewDest = nullptr != cameraView ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
-    if (nullptr == cameraView)
+    bool useCamera = nullptr != cameraView && cameraView->IsCameraOn();
+    DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
+    if (!useCamera)
         {
         static const double s_zRatio = 1.5;
         DVec3d viewDelta = m_viewController.GetDelta();
