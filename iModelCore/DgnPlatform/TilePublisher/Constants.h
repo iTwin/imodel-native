@@ -148,12 +148,9 @@ var viewerOptions = {
 
 var viewer = new Cesium.Viewer('cesiumContainer', {
 infoBox:true,
-scene3DOnly:true,
 shadows : false,
 contextOptions: viewerOptions,
-globe: false,
-skyBox: false,
-skyAtmosphere: false
+%s
 });
 
 viewer.extend(Cesium.viewerCesiumInspectorMixin);
@@ -175,7 +172,6 @@ var curPickedColor = null;
 
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
    var boundingSphere = tileset.boundingSphere;
-   viewer.camera.viewBoundingSphere(boundingSphere); 
    viewer.camera.setView({
         "destination": new Cesium.Cartesian3(%f,%f,%f),
         "orientation": {
