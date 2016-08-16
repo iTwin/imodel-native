@@ -59,7 +59,7 @@
     <ProductDirectoryList ListName="TestRunner">
         <ProductDirectory Name="VendorAPI"                  Deliver="false" />
         <ProductDirectory Name="PublicAPI"                  Deliver="false"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"    Deliver="false"/>
+        <ProductDirectory Name="Assemblies"    Deliver="false"/>
         <ProductDirectory Name="Libs"                       Deliver="false"/>
         <ProductDirectory Name="RmgrToolsNativeAssemblies"  Deliver="false"/>
         <ProductDirectory Name="TestBin"                    Deliver="false"/>
