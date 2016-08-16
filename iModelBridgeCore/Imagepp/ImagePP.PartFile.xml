@@ -51,7 +51,7 @@
 
     <Part Name="GdalData" BentleyBuildMakeFile="ext/gdal/GdalData.mke" OnlyPlatforms="x86,x64">
         <Bindings>
-            <Directory  ProductDirectoryName="GdalData"  SourceName="Delivery\GdalData"    />
+            <Directory ProductDirectoryName="Assets" ProductSubDirectory="Gdal" SourceName="Delivery\GdalData" Feature="GdalData" FeatureDefault="No"/>
         </Bindings>
     </Part>
     <!-- Why so many jpeg libs?
@@ -114,7 +114,7 @@
         <SubPart PartName="MatrixFromTiePtsLib" />
         <Bindings>
             <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ImagePPAssemblies">Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
+            <Assemblies Feature="ImagePP">Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
                 <!--TransKit SourceDirectory="Delivery/ImagePP/Transkit" /-->
             </Assemblies>
             <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">
@@ -130,8 +130,8 @@
         <SubPart PartName="ImagePPDll" />       
         <Bindings>
             <!-- For now, we build imaging client but we do not implicitly deliver it. -->
-            <Libs ProductDirectoryName="IppImagingLibs" Required="false">Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
-            <Assemblies ProductDirectoryName="IppImagingAssemblies" Required="false">Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
+            <Assemblies Feature="ImagePP">Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -181,7 +181,7 @@
     <Part Name="ImagePPSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/ImagePP/ImagePP_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="ImagePPDll" />
         <Bindings>
-            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/ImagePP_en.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/ImagePP_en.sqlang.db3</Files>
         </Bindings>
     </Part>
     
@@ -256,7 +256,6 @@
     <!--&&MM need to deliver file formats binaries.-->
     <ProductDirectoryList ListName="ImagePPGTestsDir" >
         <ProductDirectory Name="MrSidAssemblies"                Deliver="false" />
-        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Deliver="false" />
         <ProductDirectory Name="GDalData"                       Deliver="false"/>
         <ProductDirectory Name="GDalData"                       Deliver="false" LibType="static"/>
     </ProductDirectoryList>
