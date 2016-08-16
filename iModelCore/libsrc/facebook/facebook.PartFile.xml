@@ -8,7 +8,7 @@
             <VendorNotices>Delivery/folly-notice.txt</VendorNotices>
             <VendorAPI Domain="folly"/>
             <Libs>Delivery/$(libprefix)BeFolly$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(libprefix)BeFolly$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)BeFolly$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
