@@ -288,6 +288,20 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shape = GetShape(entity);
+    BeAssert(nullptr != shape);
+    return nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false;
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TopoDS_Shape* SolidKernelUtil::GetShapeP(ISolidKernelEntityR entity)

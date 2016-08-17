@@ -126,7 +126,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
+AxisAlignedBox3d DgnUnits::ComputeProjectExtents() const
     {
     Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rtree(?)");
     SpatialBounds bounds;
@@ -141,7 +141,7 @@ AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnUnits::LoadProjectExtents()
+void DgnUnits::LoadProjectExtents() const
     {
     Json::Value  jsonObj;
     Utf8String value;
@@ -160,7 +160,7 @@ void DgnUnits::LoadProjectExtents()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnUnits::GetProjectExtents()
+AxisAlignedBox3d DgnUnits::GetProjectExtents() const
     {
     if (m_extent.IsEmpty())
         LoadProjectExtents();
