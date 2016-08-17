@@ -10,6 +10,7 @@
 
 #include "Render.h"
 #include "DgnTexture.h"
+#include "SolidKernel.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -454,6 +455,17 @@ struct FacetCountUtil
     //! @return An approximation of the number of strokes/facets that will be generated from the surface
     static DGNPLATFORM_EXPORT size_t GetFacetCount (IGeometryCR geometry, IFacetOptionsR facetOptions);
 
+    //! Returns an approximation of the facet counts of an ISolidKernelEntity facetted according to the specified options
+    //! @param[in] solidEntity Solid entity to be inspected
+    //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
+    //! @return An approximation of the number of strokes/facets that will be generated from the solid entity
+    static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(ISolidKernelEntityCR solidEntity, IFacetOptionsR facetOptions);
+
+    //! Returns an approximation of the facet counts of an TopoDS_Shape facetted according to the specified options
+    //! @param[in] shape Shape to be inspected
+    //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
+    //! @return An approximation of the number of strokes/facets that will be generated from the shape
+    static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(TopoDS_Shape const& shape, IFacetOptionsR facetOptions);
 };
 
 END_BENTLEY_RENDER_NAMESPACE

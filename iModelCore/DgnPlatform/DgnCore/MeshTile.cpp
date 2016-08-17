@@ -763,11 +763,11 @@ void TileGeometry::Init(ISolidKernelEntityR solid, IFacetOptionsR options)
     m_solidEntity = &solid;
     m_type = Type::Solid;
 
-    m_facetCount = /* ###TODO SolidUtil::GetFacetCountApproximation(solid, options) */ 0;
+    m_facetCount = FacetCountUtil::GetFacetCountApproximation(solid, options);
 
     double rangeVolume = m_range.Volume();
     m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
-    m_isCurved = /* ###TODO T_HOST.GetSolidsKernelAdmin()._QueryEntityData(solid, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge) */ false;
+    m_isCurved = SolidKernelUtil::HasCurvedFaceOrEdge(solid);
     }
 
 /*---------------------------------------------------------------------------------**//**
