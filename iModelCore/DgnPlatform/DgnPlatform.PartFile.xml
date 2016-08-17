@@ -26,7 +26,7 @@
                 ECSchemas/Generic.01.00.ecschema.xml
                 ECSchemas/Markup.01.00.ecschema.xml
             </Files>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Documentation.01.00.ecschema.xml
                 ECSchemas/Functional.01.00.ecschema.xml
                 ECSchemas/Script.01.00.ecschema.xml
