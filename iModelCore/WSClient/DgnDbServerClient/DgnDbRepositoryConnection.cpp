@@ -80,35 +80,6 @@ void DgnDbRepositoryConnection::SetAzureClient(WebServices::IAzureBlobStorageCli
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-void RepositoryInfoParser (RepositoryInfoR repositoryInfo, Utf8StringCR repositoryUrl, Utf8StringCR repositoryId, JsonValueCR value)
-    {
-    DateTime createdDate = DateTime();
-    DateTime::FromString(createdDate, static_cast<Utf8CP>(value[ServerSchema::Property::CreatedDate].asCString()));
-    repositoryInfo = RepositoryInfo(repositoryUrl, repositoryId, value[ServerSchema::Property::RepositoryName].asString(),
-        value[ServerSchema::Property::RepositoryDescription].asString(), value[ServerSchema::Property::UserCreated].asString(), createdDate);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateRepositoryInfo (Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken)
-    {
-    ObjectId repositoryObject(ServerSchema::Schema::Repository, ServerSchema::Class::File, "");
-    return m_wsRepositoryClient->SendGetObjectRequest(repositoryObject, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>([=] (const WSObjectsResult& response)
-        {
-        if (response.IsSuccess())
-            {
-            JsonValueCR instance = response.GetValue().GetJsonValue()[ServerSchema::Instances][0];
-            RepositoryInfoParser(m_repositoryInfo, m_repositoryInfo.GetServerURL(), repositoryId, instance[ServerSchema::Properties]);
-            return DgnDbServerStatusResult::Success();
-            }
-        return DgnDbServerStatusResult::Error(response.GetError());
-        });
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             10/2015
-//---------------------------------------------------------------------------------------
 DgnDbRepositoryConnectionTaskPtr DgnDbRepositoryConnection::Create
 (
 RepositoryInfoCR         repository,
@@ -157,13 +128,55 @@ Json::Value CreateFileJson(FileInfoCR fileInfo)
 //---------------------------------------------------------------------------------------
 DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
     {
-    return m_wsRepositoryClient->SendCreateObjectRequest(CreateFileJson(fileInfo), BeFileName(), nullptr, cancellationToken)->Then<DgnDbServerFileResult>
+    std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
+    return m_wsRepositoryClient->SendCreateObjectRequest(CreateFileJson(fileInfo), BeFileName(), nullptr, cancellationToken)->Then
         ([=] (const WSCreateObjectResult& result)
         {
-        if (!result.IsSuccess())
-            return DgnDbServerFileResult::Error(result.GetError());
-        return DgnDbServerFileResult::Success(FileInfo::FromJson(result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange], fileInfo));
-        });
+        if (result.IsSuccess())
+            {
+            JsonValueCR instance = result.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            finalResult->SetSuccess(FileInfo::FromJson(instance, fileInfo));
+            return;
+            }
+
+        auto error = DgnDbServerError(result.GetError());
+        if (DgnDbServerError::Id::FileAlreadyExists != error.GetId())
+            {
+            finalResult->SetError(error);
+            return;
+            }
+
+        bool initialized = error.GetExtendedData()[ServerSchema::Property::FileInitialized].asBool();
+
+        if (initialized)
+            {
+            finalResult->SetError(error);
+            return;
+            }
+
+        WSQuery fileQuery(ServerSchema::Schema::Repository, ServerSchema::Class::File);
+        Utf8String filter;
+        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId(),
+                       ServerSchema::Property::MergedRevisionId, fileInfo.GetMergedRevisionId());
+        fileQuery.SetFilter(filter);
+        m_wsRepositoryClient->SendQueryRequest(fileQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
+            {
+            if (!queryResult.IsSuccess())
+                {
+                finalResult->SetError(queryResult.GetError());
+                return;
+                }
+            JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
+            if (repositoryInstances.isArray())
+                finalResult->SetSuccess(FileInfo::FromJson(repositoryInstances[0], fileInfo));
+            else
+                finalResult->SetError(error);
+            });
+
+        })->Then<DgnDbServerFileResult>([=] ()
+            {
+            return *finalResult;
+            });
     }
 
 //---------------------------------------------------------------------------------------
