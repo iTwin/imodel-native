@@ -121,7 +121,7 @@ HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
             {
             if (RASTER_FILE->m_ChannelCount == 3)
                 {
-                if (bytesPerPixel == 1) // 8 bits
+                if (bytesPerPixel == 3) // 8 bits
                     {
                     for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=3)
                         {
@@ -146,7 +146,7 @@ HSTATUS HRFxChEditor::ReadBlock(uint64_t pi_PosBlockX,
                 }
             else
                 {
-                if (bytesPerPixel == 1) // 8 bits
+                if (bytesPerPixel == 3) // 8 bits
                     {
                     for (uint32_t pos=0, bufPos=0; pos<BufferPixelLength; pos++, bufPos+=4)
                         {

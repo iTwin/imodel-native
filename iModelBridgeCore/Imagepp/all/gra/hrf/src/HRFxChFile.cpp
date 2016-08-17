@@ -1228,6 +1228,10 @@ void HRFxChFile::CreateDescriptors()
         pPage->SetListOfMetaDataContainer(pClonedMDContainerList);
         }
 
+    // Geocoding
+    if (NULL != pChannelPageDescriptor->GetGeocodingCP())
+        pPage->SetGeocoding(pChannelPageDescriptor->GetGeocodingCP());
+
     m_ListOfPageDescriptor.push_back(pPage);
     }
 
