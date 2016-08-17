@@ -740,7 +740,7 @@ static ISolidPrimitivePtr  solidPrimitiveFromTorusFace (gp_Ax3 const& position, 
         flipBoundaries (uvBoundaries, true, false);
         }
 
-    if (arcSweep >= msGeomConst_2pi && NULL == (uvBoundaries || !uvBoundaries->IsValid()))
+    if (arcSweep >= msGeomConst_2pi && (NULL == uvBoundaries || !uvBoundaries->IsValid()))
         return ISolidPrimitive::CreateDgnTorusPipe (DgnTorusPipeDetail (location, xVector, yVector, majorRadius, minorRadius, sweepAngle, false));
 
     DPoint3d    center;
