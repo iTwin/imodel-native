@@ -72,6 +72,7 @@
 #include "HRFMrSIDFile.h"
 #include "HRFGeoRasterFile.h"
 #include "HRFPDFFile.h"
+#include "HRFMapboxFile.h"
 
 #include <Imagepp/all/h/HRFPageFileFactory.h>
 #include <Imagepp/all/h/HRFTWFPageFile.h>
@@ -188,6 +189,10 @@
 #define HOST_REGISTER_VirtualEarth_FILEFORMAT   
 #endif
 
+//PROTOTYPE - NOT YET LEGAL TO USE IN COMMERCIAL APPLICATION
+//#define HOST_REGISTER_MapBox_FILEFORMAT   HOST_REGISTER_FILEFORMAT(HRFMapBoxCreator)
+#define HOST_REGISTER_MapBox_FILEFORMAT   
+
 #if !defined(PREVIEWHANDLER_FILE_FORMATS)
 #define HOST_REGISTER_ProjectWise_FILEFORMAT  HOST_REGISTER_FILEFORMAT(HRFPWCreator)              
 #else
@@ -265,7 +270,8 @@
     HOST_REGISTER_GeoRaster_FILEFORMAT                  \
     HOST_REGISTER_VirtualEarth_FILEFORMAT               \
     HOST_REGISTER_ProjectWise_FILEFORMAT                \
-    HOST_REGISTER_WebFile_FILEFORMAT             
+    HOST_REGISTER_WebFile_FILEFORMAT                    \
+    HOST_REGISTER_MapBox_FILEFORMAT
 
 
 
