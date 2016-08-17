@@ -18,13 +18,15 @@ DgnDbServerRevisionEvent::DgnDbServerRevisionEvent
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId, 
 Utf8String revisionId, 
-Utf8String revisionIndex
+Utf8String revisionIndex,
+Utf8String briefcaseId
 )
     {
     m_eventTopic = eventTopic;
     m_fromEventSubscriptionId = fromEventSubscriptionId;
     m_revisionId = revisionId;
     m_revisionIndex = revisionIndex;
+	m_briefcaseId = briefcaseId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -35,7 +37,8 @@ std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerRevisionEvent::Creat
 Utf8String eventTopic, 
 Utf8String fromEventSubscriptionId, 
 Utf8String revisionId, 
-Utf8String revisionIndex
+Utf8String revisionIndex,
+Utf8String briefcaseId
 )
     {
     return std::shared_ptr<struct DgnDbServerRevisionEvent>
@@ -44,7 +47,8 @@ Utf8String revisionIndex
                eventTopic,
                fromEventSubscriptionId,
                revisionId, 
-               revisionIndex));
+               revisionIndex,
+			   briefcaseId));
     }
 
 //---------------------------------------------------------------------------------------
@@ -78,6 +82,14 @@ Utf8String DgnDbServerRevisionEvent::GetRevisionIndex()
     {
     return m_revisionIndex;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Arvind.Venkateswaran             08/2016
+//---------------------------------------------------------------------------------------
+Utf8String DgnDbServerRevisionEvent::GetBriefcaseId()
+{
+	return m_briefcaseId;
+}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016

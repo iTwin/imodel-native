@@ -39,7 +39,7 @@
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)WebServicesClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -48,7 +48,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesClient.so</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesClient.so</Assemblies>
+            <Assemblies>Delivery/$(libprefix)WebServicesClient.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -76,7 +76,7 @@
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -85,7 +85,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache.so</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
+            <Assemblies>Delivery/$(libprefix)WebServicesCache.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -94,7 +94,7 @@
             <Directory
                 SourceName="Delivery/ECSchemas/WSClient/Cache"
                 SubPartDirectory="ECSchemas/WSClient/Cache"
-                ProductDirectoryName="ECSchemas"
+                ProductDirectoryName="Assets"
                 ProductSubDirectory="ECSchemas/WSClient/Cache" />
         </Bindings>
     </Part>
@@ -123,7 +123,7 @@
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)DgnDbServerClient$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)DgnDbServerClient$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)DgnDbServerClient$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -133,7 +133,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)DgnDbServerClient.so</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
+            <Assemblies>Delivery/$(libprefix)DgnDbServerClient.so</Assemblies>
         </Bindings>
     </Part>
 
@@ -159,7 +159,7 @@
         <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
@@ -167,7 +167,7 @@
         <SubPart PartName="DgnClientFxLibrary-Android"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)ConnectWebServicesClientC.so</Libs>
-            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
+            <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC.so</Assemblies>
         </Bindings>
     </Part>
 
