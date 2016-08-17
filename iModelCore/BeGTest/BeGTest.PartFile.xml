@@ -144,6 +144,7 @@
     <ProductDirectoryList ListName="AndroidJUnitProduct">
         <ProductDirectory Name="AndroidJUnit-Project" Path="project" LibType="static"/>
 
+        <ProductDirectory Name="Assets" Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
