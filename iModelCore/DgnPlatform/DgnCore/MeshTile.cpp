@@ -10,6 +10,10 @@
 #include <folly/BeFolly.h>
 #include <folly/futures/Future.h>
 
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
+
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
 #endif
@@ -859,7 +863,15 @@ PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode no
 
     if (nullptr != solid)
         {
-        // ###TODO: Solids...
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+        TopoDS_Shape const* shape = SolidKernelUtil::GetShape(*solid);
+        polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, *facetOptions) : nullptr;
+        if (polyface.IsValid())
+            {
+            polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != solid->GetEntityType());
+            polyface->Transform(Transform::FromProduct(m_transform, solid->GetEntityTransform()));
+            }
+#endif
         }
     else
         {
@@ -1028,7 +1040,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
-#ifdef TODO_SOLIDS
     ISolidKernelEntityPtr clone = solid.Clone();
     DRange3d range = clone->GetEntityRange();
 
@@ -1043,9 +1054,6 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
 
     return true;
-#else
-    return false;
-#endif
     }
 
 //=======================================================================================
