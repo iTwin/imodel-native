@@ -109,6 +109,15 @@ static std::string s_texturedFragShader =
 "gl_FragColor = vec4(color.rgb * diffuseIntensity, textureColor.a);\n"
 "}\n";
 
+// For non-geolocated models, set the camera's viewing transform 
+Utf8CP s_3dOnlyViewingFrameJs =
+"var boundingSphere = tileset.boundingSphere;"
+"var mtx = new Cesium.Matrix4();"
+"var tf = Cesium.Transforms.eastNorthUpToFixedFrame(boundingSphere.center, Cesium.Ellipsoid.WGS84, mtx);";
+
+// For geolocated models, don't set the camera's viewing transform explicitly
+Utf8CP s_geoLocatedViewingFrameJs = "var tf = undefined;";
+
 // printf(s_viewerHtml, dataDirectoryName, tilesetName,
 //        viewCenterX, viewCenterY, viewCenterZ,
 //        zVecX, zVecY, zVecZ,
@@ -130,8 +139,8 @@ R"HTML(<!DOCTYPE html>
 
 
 html, body, #cesiumContainer {
-width: 100%;
-height: 100%;
+width: 100%%;
+height: 100%%;
 margin: 0;
 padding: 0;
 overflow: hidden;
@@ -173,13 +182,14 @@ var curPickedObjects = null;
 var curPickedColor = null;
 
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
-   var boundingSphere = tileset.boundingSphere;
+   %s
    viewer.camera.setView({
         "destination": new Cesium.Cartesian3(%f,%f,%f),
         "orientation": {
             direction: new Cesium.Cartesian3(%f,%f,%f),
             up: new Cesium.Cartesian3(%f,%f,%f)
-        }
+        },
+        "endTransform": tf
     });
 
    var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);

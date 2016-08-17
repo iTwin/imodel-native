@@ -954,10 +954,12 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     zVec.Normalize();
     zVec.Negate();      // Towards target.
 
-    char*       viewOptionString = m_tileToEcef.IsIdentity() ? "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false" : "";
+    bool geoLocated = !m_tileToEcef.IsIdentity();
+    Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
+    Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
 
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, viewOptionString, m_rootName.c_str(), m_rootName.c_str(), viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+    Utf8PrintfString html(s_viewerHtml, viewOptionString, m_rootName.c_str(), m_rootName.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
 
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
