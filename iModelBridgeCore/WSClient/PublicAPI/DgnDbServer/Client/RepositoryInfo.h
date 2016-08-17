@@ -40,6 +40,7 @@ public:
     static DgnDbServerStatusResult ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db);
     static DgnDbServerStatusResult WriteRepositoryInfo(Dgn::DgnDbR db, RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId const& briefcaseId);
     bool operator==(RepositoryInfoCR rhs) const;
+    static RepositoryInfoPtr FromJson(JsonValueCR json, Utf8StringCR url);
     //__PUBLISH_SECTION_START__
 
     DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetDescription() const;
