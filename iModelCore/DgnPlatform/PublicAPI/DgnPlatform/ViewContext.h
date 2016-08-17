@@ -88,27 +88,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, RangeN
     friend struct ViewController;
     friend struct SimplifyGraphic;
 
-public:
-
-    //=======================================================================================
-    // @bsiclass                                                     Brien.Bastings  11/07
-    //=======================================================================================
-    struct  ClipStencil
-    {
-    private:
-        GeometrySourceCR    m_geomSource;
-        Render::GraphicPtr  m_tmpQvElem;
-        CurveVectorPtr      m_curveVector;
-
-    public:
-        DGNPLATFORM_EXPORT Render::GraphicPtr GetQvElem(ViewContextR);
-        DGNPLATFORM_EXPORT CurveVectorPtr GetCurveVector();
-        GeometrySourceCR GetGeomSource() {return m_geomSource;}
-
-        DGNPLATFORM_EXPORT explicit ClipStencil(GeometrySourceCR);
-        DGNPLATFORM_EXPORT ~ClipStencil();
-    };
-
 protected:
     DgnDbP m_dgndb = nullptr;
     bool m_is3dView = true;
@@ -135,7 +114,7 @@ protected:
     virtual Render::GraphicP _GetCachedGraphic(GeometrySourceCR, double pixelSize) {return nullptr;}
     DGNPLATFORM_EXPORT virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR source, double pixelSize);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns();
-    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(ClipStencil& boundary);
+    DGNPLATFORM_EXPORT virtual void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params);
     DGNPLATFORM_EXPORT virtual void _DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
     DGNPLATFORM_EXPORT virtual void _DrawStyledArc2d(DEllipse3dCR, bool isEllipse, double zDepth, DPoint2dCP range);
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth);
@@ -296,7 +275,7 @@ public:
 /** @} */
 
     bool WantAreaPatterns() {return _WantAreaPatterns();}
-    void DrawAreaPattern(ClipStencil& boundary) {_DrawAreaPattern(boundary);}
+    void DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) {_DrawAreaPattern(graphic, boundary, params);}
 
 /** @name Draw Geometry Using Current Linestyle */
 /** @{ */

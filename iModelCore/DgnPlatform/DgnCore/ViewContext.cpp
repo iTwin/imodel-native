@@ -809,7 +809,6 @@ void GraphicParams::Init()
     m_lineTexture       = nullptr;
     m_material          = nullptr;
     m_gradient          = nullptr;
-    m_patternParams     = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -924,9 +923,6 @@ bool GraphicParams::operator==(GraphicParamsCR rhs) const
     if (!(rhs.m_gradient == m_gradient))
         return false;
 
-    if (!(rhs.m_patternParams == m_patternParams))
-        return false;
-
     return true;
     }
 
@@ -946,7 +942,6 @@ GraphicParams::GraphicParams(GraphicParamsCR rhs)
     m_lineTexture       = rhs.m_lineTexture;
     m_material          = rhs.m_material;
     m_gradient          = rhs.m_gradient;
-    m_patternParams     = rhs.m_patternParams;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -965,7 +960,6 @@ GraphicParamsR GraphicParams::operator=(GraphicParamsCR rhs)
     m_lineTexture       = rhs.m_lineTexture;
     m_material          = rhs.m_material;
     m_gradient          = rhs.m_gradient;
-    m_patternParams     = rhs.m_patternParams;
 
     return *this;
     }

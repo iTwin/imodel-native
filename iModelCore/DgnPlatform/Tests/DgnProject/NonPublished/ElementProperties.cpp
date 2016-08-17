@@ -101,10 +101,10 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
     Render::GeometryParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
 
-    PatternParamsPtr pattern = PatternParams::Create(); 
+    // How about actually creating a valid PatternParams?!?
+    PatternParamsPtr pattern = PatternParams::Create();
     pattern->SetColor(ColorDef::Cyan());
     pattern->SetWeight(6);
-    pattern->SetStyle(1);
     ep.SetPatternParams(pattern.get());
     EXPECT_TRUE(NULL != ep.GetPatternParams());
 
@@ -127,7 +127,6 @@ TEST_F(ElementDisplayProperties, SetDisplayPattern)
         ASSERT_NE(nullptr, pattern );
         EXPECT_EQ(ColorDef::Cyan(), pattern->GetColor());
         EXPECT_EQ(6, pattern->GetWeight()); 
-        EXPECT_EQ(1, pattern->GetStyle());
         } 
     }
 

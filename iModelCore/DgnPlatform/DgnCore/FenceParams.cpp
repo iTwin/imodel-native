@@ -160,7 +160,7 @@ virtual bool _CheckStop() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawAreaPattern(ClipStencil& boundary) override
+virtual void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) override
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     FenceParamsP    fp = m_graphic->GetFenceParamsP ();
