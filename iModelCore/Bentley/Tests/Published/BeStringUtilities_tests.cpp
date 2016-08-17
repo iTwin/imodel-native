@@ -1336,3 +1336,30 @@ TEST(BeStringUtilitiesTests, SprintfSscanf)
     EXPECT_SPRINTF_SSCANF(12345, "12345", unsigned long long, "%llu", "%llu");
     EXPECT_SPRINTF_SSCANF(12345, "3039", unsigned long long, "%llx", "%llx");
     }
+
+//---------------------------------------------------------------------------------------
+// @betest                                     Sam.Wilson                   08/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, CharToPointer)
+    {
+    if (sizeof(void*) == 8)
+        {
+        void* ptr = BeStringUtilities::WCharToPointer(L"0x1122334455667788");
+        ASSERT_EQ(0x1122334455667788, (uintptr_t)ptr);
+
+        ptr = BeStringUtilities::Utf8ToPointer("0x1122334455667788");
+        ASSERT_EQ(0x1122334455667788, (uintptr_t)ptr);
+        }
+    else if (sizeof(void*) == 4)
+        {
+        void* ptr = BeStringUtilities::WCharToPointer(L"0x11223344");
+        ASSERT_EQ(0x11223344, (uintptr_t)ptr);
+
+        ptr = BeStringUtilities::Utf8ToPointer("0x11223344");
+        ASSERT_EQ(0x11223344, (uintptr_t)ptr);
+        }
+    else
+        {
+        FAIL() << "Unknown pointer size";
+        }
+    }

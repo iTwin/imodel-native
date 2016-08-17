@@ -2294,25 +2294,9 @@ void*   BeStringUtilities::WCharToPointer (WCharCP inWChar)
     if ( (nullptr == inWChar) || (0 == *inWChar) )
         return NULL;
 
-    if (8 == sizeof (void*))
-        {
-        int64_t output;
-        swscanf (inWChar, L"%llx", &output);
-        return (void*)output;
-        }
-    else if (4 == sizeof (void*))
-        {
-        void*   output = nullptr;
-        swscanf (inWChar, L"%x", (unsigned int*)&output);
-        return output;
-        }
-    else
-        {
-        // unexpected pointer size!
-        BeAssert (false);
-        }
-
-    return nullptr;
+    uintptr_t v;
+    swscanf (inWChar, L"%" SCNxPTR, &v);
+    return (void*)v;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2323,25 +2307,9 @@ void*   BeStringUtilities::Utf8ToPointer (Utf8CP inChar)
     if ( (nullptr == inChar) || (0 == *inChar) )
         return NULL;
 
-    if (8 == sizeof (void*))
-        {
-        int64_t output;
-        sscanf (inChar, "%llx", &output);
-        return (void*)output;
-        }
-    else if (4 == sizeof (void*))
-        {
-        void*   output = nullptr;
-        sscanf (inChar, "%x", (unsigned int*)&output);
-        return output;
-        }
-    else
-        {
-        // unexpected pointer size!
-        BeAssert (false);
-        }
-
-    return nullptr;
+    uintptr_t v;
+    sscanf(inChar, "%" SCNxPTR, &v);
+    return (void*)v;
     }
 
 /*---------------------------------------------------------------------------------**//**

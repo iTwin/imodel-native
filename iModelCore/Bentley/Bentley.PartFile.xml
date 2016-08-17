@@ -5,20 +5,20 @@
     <ProductDirectoryList ListName="Bentley">
         <ProductDirectory Name="PublicAPI"/>
         <ProductDirectory Name="VendorAPI"/>
-        <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="Libs"            Path="Libs"/>
         <ProductDirectory Name="TestBin"         Path="Dlls"/>
     </ProductDirectoryList>
 
-    <!-- This part is designed to be the "ToolsetPart" that is run by bb once, before any other part. 
-          The name of this part must match the ToolsetPart declaration in your buildstrategy. 
+    <!-- This part is designed to be the "ToolsetPart" that is run by bb once, before any other part.
+          The name of this part must match the ToolsetPart declaration in your buildstrategy.
           For example, see DgnClientSdk.BuildStrategy.xml -->
     <Part Name="BootStrapToolset" BentleyBuildMakeFile="BootStrapToolset.mke"/>
 
     <Part Name="BentleyLib" PrgOutputDir="BentleyLib">
         <SubPart PartName="BentleyDll" />
     </Part>
-  
+
     <Part Name="Base" BentleyBuildMakeFile="prewire.mke">
         <!-- BeTest.h includes <gtest/gtest.h> in some builds, and so Bentley depends on gtest, at least for include files. -->
         <SubPart PartName="BeGtest-Includes" Repository="BeGTest" PartFile="BeGTest" />
@@ -43,8 +43,8 @@
         <SubPart PartName="Base"/>
         <SubPart PartName="BeIcu4cLibrary" PartFile="BeIcu4cLibrary" Repository="Libsrc-Icu4c"/>
         <Bindings>
-            <Libs ProductDirectoryName="BentleyLibs" Required="false">Delivery/$(libprefix)Bentley$(libext)</Libs>
-            <Assemblies ProductDirectoryName="BentleyNativeAssemblies">Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)Bentley$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)Bentley$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -143,7 +143,7 @@
           <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/Bentley-AndroidJUnit.log</Files>
         </Bindings>
     </Part>
-    
+
     <!--                ********************** -->
     <!--                **** iOSXCTest **** -->
     <!--                ********************** -->
