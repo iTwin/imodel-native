@@ -7,13 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/QueryView.h>
-#include <ECDb/JsonAdapter.h>
 
 #define PROPNAME_Descr "Descr"
 #define PROPNAME_Source "Source"
 
-#define BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector "CategorySelector"
-#define BIS_CLASS_ViewDefinition3d_PROPNAME_ModelSelector "ModelSelector"
 #define BIS_CLASS_ModelSelector_PROPNAME_ModelIds "ModelIds"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -24,9 +21,9 @@ namespace dgn_ElementHandler
     HANDLER_DEFINE_MEMBERS(SheetViewDef);
     HANDLER_DEFINE_MEMBERS(OrthographicViewDef);
     HANDLER_DEFINE_MEMBERS(CameraViewDef);
-    HANDLER_DEFINE_MEMBERS(RedlineViewDef);
     HANDLER_DEFINE_MEMBERS(ModelSelectorDef);
     HANDLER_DEFINE_MEMBERS(CategorySelectorDef);
+    HANDLER_DEFINE_MEMBERS(DisplayStyleDef);
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -88,11 +85,20 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
+    {
+    BeAssert(false && "*** WIP_VIEW_DEFINITION");
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr SpatialViewDefinition::_SupplyController() const
+ViewControllerPtr CameraViewDefinition::_SupplyController() const
     {
-    return new DgnQueryView(GetDgnDb(), GetViewId());
+    return new DgnQueryView(const_cast<CameraViewDefinition&>(*this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,7 +106,7 @@ ViewControllerPtr SpatialViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr SheetViewDefinition::_SupplyController() const
     {
-    return new SheetViewController(GetDgnDb(), GetViewId());
+    return new SheetViewController(const_cast<SheetViewDefinition&>(*this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,7 +114,7 @@ ViewControllerPtr SheetViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     {
-    return new DrawingViewController(GetDgnDb(), GetViewId());
+    return new DrawingViewController(const_cast<DrawingViewDefinition&>(*this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,6 +343,8 @@ template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition::Entry::IsOrthographicView() const { return isEntryOfClass<OrthographicViewDefinition>(*this); }
+bool ViewDefinition::Entry::IsCameraView() const { return isEntryOfClass<CameraViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsSpatialView() const { return isEntryOfClass<SpatialViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<DrawingViewDefinition>(*this); }
 bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
@@ -346,26 +354,26 @@ bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetVie
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
     {
-    bvector<DgnModelId> models;
-    models.push_back(mid);
+    DgnModelIdSet models;
+    models.insert(mid);
     return SetModelIds(models);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::SetModelIds(bvector<DgnModelId> const& models)
+DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& models)
     {
-    SetPropertyValue(BIS_CLASS_ModelSelector_PROPNAME_ModelIds, JsonUtils::IdsToJsonString(models).c_str());
+    SetPropertyValue(BIS_CLASS_ModelSelector_PROPNAME_ModelIds, JsonUtils::IdSetToJsonString(models).c_str());
     return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DgnModelId> ModelSelector::GetModelIds() const
+DgnModelIdSet ModelSelector::GetModelIds() const
     {
-    return JsonUtils::IdsFromJsonString<DgnModelId>(GetPropertyValueString(BIS_CLASS_ModelSelector_PROPNAME_ModelIds));
+    return JsonUtils::IdSetFromJsonString<DgnModelId>(GetPropertyValueString(BIS_CLASS_ModelSelector_PROPNAME_ModelIds));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -373,12 +381,31 @@ bvector<DgnModelId> ModelSelector::GetModelIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ModelSelector::_RemapIds(DgnImportContext& context)
     {
-    auto ids = GetModelIds();
-    for (size_t i=0; i<ids.size(); ++i)
+    DgnModelIdSet remapped;
+    for (auto id: GetModelIds())
         {
-        ids[i] = context.FindModelId(ids[i]);
+        remapped.insert(context.FindModelId(id));
         }
-    SetModelIds(ids);
+    SetModelIds(remapped);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ModelSelector::ContainsModel(DgnModelId mid) const 
+    {
+#ifdef WIP_VIEW_DEFINITION
+    DgnModelIdSet mids;
+    return mids.find(mid) != mids.end();
+#else
+    auto modelIds = GetPropertyValueString(BIS_CLASS_ModelSelector_PROPNAME_ModelIds);
+    Utf8Char buf[64];
+    BeStringUtilities::FormatUInt64(buf+1, mid.GetValueUnchecked());
+    buf[0] = '\"';
+    strcat(buf, "\"");
+    return modelIds.find(buf) != Utf8String::npos;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -411,13 +438,17 @@ DgnCategoryIdSet CategorySelector::GetCategories() const
     {
     DgnCategoryIdSet categories;
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
+        {
+        BeAssert(false);
         return DgnCategoryIdSet();
-
+        }
     if (ECSqlStatus::Success != statement->BindId(1, GetElementId()))
+        {
+        BeAssert(false);
         return DgnCategoryIdSet();
-
+        }
     while (BE_SQLITE_ROW == statement->Step())
         {
         categories.insert(statement->GetValueId<DgnCategoryId>(0));
@@ -429,57 +460,15 @@ DgnCategoryIdSet CategorySelector::GetCategories() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ModelSelectorCPtr ViewDefinition3d::GetModelSelector() const
+bool CategorySelector::ContainsCategory(DgnCategoryId cid) const
     {
-    auto id = GetPropertyValueId<DgnElementId>(BIS_CLASS_ViewDefinition3d_PROPNAME_ModelSelector);
-    if (!id.IsValid())
-        return nullptr;
-    return GetDgnDb().Elements().Get<ModelSelector>(id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition3d::SetModelSelector(ModelSelectorCR modSel)
-    {
-    return SetPropertyValue(BIS_CLASS_ViewDefinition3d_PROPNAME_ModelSelector, modSel.GetElementId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-CategorySelectorCPtr ViewDefinition::GetCategorySelector() const
-    {
-    auto id = GetPropertyValueId<DgnElementId>(BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector);
-    if (!id.IsValid())
-        return nullptr;
-    return GetDgnDb().Elements().Get<CategorySelector>(id);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ViewDefinition::SetCategorySelector(CategorySelectorCR modSel)
-    {
-    return SetPropertyValue(BIS_CLASS_ViewDefinition_PROPNAME_CategorySelector, modSel.GetElementId());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::_ToJson(Utf8StringR jsonStr) const
-    {
-    auto formatter = ECPropertyFormatter::Create();
-
-    auto eclass = GetElementClass();
-    for (auto prop : eclass->GetProperties())
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    if (!statement.IsValid())
         {
-        ECN::ECValue value;
-        if (DgnDbStatus::Success != GetPropertyValue(value, prop->GetName().c_str()))
-            continue;
-        Utf8String str;
-        if (!formatter->FormattedStringFromECValue(str, value, *prop, false))
-            continue;
-        jsonStr.append(str);
+        BeAssert(false);
+        return false;
         }
+    statement->BindId(1, GetElementId());
+    statement->BindId(2, cid);
+    return (BE_SQLITE_ROW == statement->Step());
     }

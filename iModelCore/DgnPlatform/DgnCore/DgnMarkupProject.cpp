@@ -35,6 +35,7 @@ namespace dgn_ElementHandler
     {
     HANDLER_DEFINE_MEMBERS(MarkupExternalLinkHandler)
     HANDLER_DEFINE_MEMBERS(MarkupExternalLinkGroupHandler)
+    HANDLER_DEFINE_MEMBERS(RedlineViewDef);
     }
 
 //---------------------------------------------------------------------------------------
@@ -254,9 +255,9 @@ DgnViewId SpatialRedlineModel::GetFirstView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<SpatialRedlineModelP> const& otherRdlsToView) 
+SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, OrthographicViewController& redlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView)
     : 
-    SpatialViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
+    T_Super(redlineViewDef),
     m_subjectView(subjectView),
     m_otherRdlsInView(otherRdlsToView)
     {
@@ -518,9 +519,9 @@ void DgnMarkupProject::SavePropertyFromJson(DgnMarkupProjectProperty::ProjectPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineViewController::RedlineViewController(RedlineModel& rdlModel, DgnViewId viewId) 
+RedlineViewController::RedlineViewController(RedlineModel& rdlModel, RedlineViewDefinition& rdlViewDef)
     : 
-    SheetViewController(*rdlModel.GetDgnMarkupProject(), viewId.IsValid()? viewId: rdlModel.GetFirstView()),
+    SheetViewController(rdlViewDef),
     m_enableViewManipulation(false),
     m_drawBorder(true)
     {;}
@@ -1372,11 +1373,11 @@ void RedlineViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR project, DgnViewId viewId)
+ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, RedlineViewDefinition& rdlViewDef)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
 
-    auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
+    auto markupProject = dynamic_cast<DgnMarkupProject*>(&rdlViewDef.GetDgnDb());
 
     if (markupProject == nullptr)
         {
@@ -1390,18 +1391,11 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR 
         return nullptr;
         }
 
-    RefCountedCPtr<RedlineViewDefinition> rdlView = dynamic_cast<RedlineViewDefinition const*>(ViewDefinition::QueryView(viewId, *markupProject).get());
-    if (!rdlView.IsValid())
-        {
-        openStatus = DgnDbStatus::ViewNotFound;
-        return nullptr;
-        }
-
-    auto rdlModel = markupProject->OpenRedlineModel(&openStatus, rdlView->GetBaseModelId());
+    auto rdlModel = markupProject->OpenRedlineModel(&openStatus, rdlViewDef.GetBaseModelId());
     if (rdlModel == nullptr)
         return nullptr;
 
-    return new RedlineViewController(*rdlModel, viewId);
+    return new RedlineViewController(*rdlModel, rdlViewDef);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1423,7 +1417,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
-    auto controller = new RedlineViewController(rdlModel, view.GetViewId());
+    auto controller = new RedlineViewController(rdlModel, view);
 
     controller->m_enableViewManipulation = true; // *** TRICKY: Normally, RedlineViewController::SetDelta, Origin, Rotation are disabled (to prevent user from changing camera on sheet.)
 
@@ -1650,7 +1644,7 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, SpatialViewController& subjectView)
+SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, OrthographicViewController& subjectView)
     {
     DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName(), NULL, DgnViewSource::Generated);
 

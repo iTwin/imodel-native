@@ -350,7 +350,7 @@ static void IdToJson(JsonValueR outValue, T id)
 // @bsimethod                                                   Sam.Wilson     06/16
 //---------------------------------------------------------------------------------------
 template<typename T>
-static void IdsFromJson(bvector<T>& ids, JsonValueCR jsonArray)
+static void IdVectorFromJson(bvector<T>& ids, JsonValueCR jsonArray)
     {
     for (Json::ArrayIndex i=0; i<jsonArray.size(); ++i)
         {
@@ -362,7 +362,34 @@ static void IdsFromJson(bvector<T>& ids, JsonValueCR jsonArray)
 // @bsimethod                                                   Sam.Wilson     06/16
 //---------------------------------------------------------------------------------------
 template<typename T>
-static void IdsToJson(JsonValueR outValue, bvector<T> const& ids)
+static void IdVectorToJson(JsonValueR outValue, bvector<T> const& ids)
+    {
+    outValue = Json::arrayValue;
+    for (auto id : ids)
+        {
+        Json::Value member;
+        IdToJson(member, id);
+        outValue.append(member);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+template<typename T>
+static void IdSetFromJson(BeSQLite::IdSet<T>& ids, JsonValueCR jsonArray)
+    {
+    for (Json::ArrayIndex i = 0; i<jsonArray.size(); ++i)
+        {
+        ids.insert(IdFromJson<T>(jsonArray.get(i, "0")));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+template<typename T>
+static void IdSetToJson(JsonValueR outValue, BeSQLite::IdSet<T> const& ids)
     {
     outValue = Json::arrayValue;
     for (auto id : ids)
@@ -377,10 +404,10 @@ static void IdsToJson(JsonValueR outValue, bvector<T> const& ids)
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-static Utf8String IdsToJsonString(bvector<T> const& ids)
+static Utf8String IdVectorToJsonString(bvector<T> const& ids)
     {
     Json::Value jsonArray;
-    IdsToJson(jsonArray, ids);
+    IdVectorToJson(jsonArray, ids);
     return Json::FastWriter::ToString(jsonArray);
     }
 
@@ -388,12 +415,36 @@ static Utf8String IdsToJsonString(bvector<T> const& ids)
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T>
-static bvector<T> IdsFromJsonString(Utf8StringCR jsonString)
+static bvector<T> IdVectorFromJsonString(Utf8StringCR jsonString)
     {
     Json::Value jsonArray;
     Json::Reader::Parse(jsonString, jsonArray);
-    bvector<DgnModelId> ids;
-    IdsFromJson(ids, jsonArray);
+    bvector<T> ids;
+    IdVectorFromJson(ids, jsonArray);
+    return ids;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+static Utf8String IdSetToJsonString(BeSQLite::IdSet<T> const& ids)
+    {
+    Json::Value jsonArray;
+    IdSetToJson(jsonArray, ids);
+    return Json::FastWriter::ToString(jsonArray);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+static BeSQLite::IdSet<T> IdSetFromJsonString(Utf8StringCR jsonString)
+    {
+    Json::Value jsonArray;
+    Json::Reader::Parse(jsonString, jsonArray);
+    BeSQLite::IdSet<T> ids;
+    IdSetFromJson(ids, jsonArray);
     return ids;
     }
 

@@ -1690,7 +1690,9 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="ViewFlags" typeName="string" displayLabel="JSON string consisting of view flags, render mode, background color, lighting settings, etc."/>
+        <ECProperty propertyName="ViewFlags" typeName="string" displayLabel="JSON string consisting of view flags, render mode, lighting settings, etc."/>
+        <ECProperty propertyName="BackgroundColor" typeName="int" displayLable="Background color (RGB)"/>
+        <ECProperty propertyName="Environment" typeName="string" displayLabel="JSON string consisting of environment settings such as skybox."/>
     </ECEntityClass>
     <ECEntityClass typeName="ClipVolumeDefinition">
         <BaseClass>DefinitionElement</BaseClass>

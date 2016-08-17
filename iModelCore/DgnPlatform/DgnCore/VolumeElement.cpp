@@ -319,16 +319,23 @@ FenceParams VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialO
 DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
-    // TODO: Is it cool to assume the first view found can be used to create a CameraViewController?
-    auto viewIter = ViewDefinition::MakeIterator(project);
-    BeAssert(viewIter.begin() != viewIter.end());
-    if (viewIter.begin() == viewIter.end())
+    CameraViewDefinitionPtr cameraView;
+    for (auto view : ViewDefinition::MakeIterator(project))
+        {
+        if (!view.IsCameraView())
+            continue;
+        auto viewDef = ViewDefinition::QueryView(view.GetId(), project);
+        if (!viewDef.IsValid())
+            continue;
+        cameraView = const_cast<CameraViewDefinition*>(viewDef->ToCameraView());
+        if (cameraView.IsValid())
+            break;
+        }
+    if (!cameraView.IsValid())
         return nullptr;
 
-    DgnViewId viewId = (*viewIter.begin()).GetId(); 
-    DgnQueryViewP viewController = new DgnQueryView(project, viewId);
+    DgnQueryViewP viewController = new DgnQueryView(*cameraView);
     viewController->Load();
-    viewController->SetCameraOn (false); // Has to be done after Load()!!
 
     return new NonVisibleViewport (nullptr, *viewController);
     }
@@ -409,10 +416,12 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
+#ifdef WIP_VIEW_DEFINITION // *** Can't turn camera on/off
     // Turn camera off
     // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
     bool wasCameraOn = viewController->IsCameraOn();
     viewController->SetCameraOn (false); 
+#endif
     viewport.SynchWithViewController (false); 
     
     FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
@@ -447,8 +456,10 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     FindElements (elementIds, fence, stmt, dgnDb);
 
     // Turn camera back on
+#ifdef WIP_VIEW_DEFINITION // *** Can't turn camera on/off
     viewController->SetCameraOn (wasCameraOn);
     viewport.SynchWithViewController (false);
+#endif
     }
 
 //--------------------------------------------------------------------------------------

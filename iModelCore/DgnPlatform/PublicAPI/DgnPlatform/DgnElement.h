@@ -838,6 +838,8 @@ protected:
         }
     //! Return the value of a string ECProperty by name
     DGNPLATFORM_EXPORT Utf8String GetPropertyValueString(Utf8CP propertyName) const;
+    //! Get the 3 property values that back a YPR
+    YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
     //! @see SetPropertyValue
@@ -863,6 +865,8 @@ protected:
     //! Set a string ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value);
+    //! Set the three property values that back a YPR
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
     //! Invoked when loading an element from the database, to allow subclasses to extract their custom-handled property values
     //! from the SELECT statement. The parameters are those which are marked in the schema with the CustomHandledProperty CustomAttribute.

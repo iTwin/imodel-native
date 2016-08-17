@@ -2343,6 +2343,33 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, Utf8CP value)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+YawPitchRollAngles DgnElement::GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const
+    {
+    YawPitchRollAngles angles;
+    angles.SetYaw  (AngleInDegrees::FromDegrees(GetPropertyValueDouble(yawName)));
+    angles.SetPitch(AngleInDegrees::FromDegrees(GetPropertyValueDouble(pitchName)));
+    angles.SetRoll (AngleInDegrees::FromDegrees(GetPropertyValueDouble(rollName)));
+    return angles;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName)
+    {
+    DgnDbStatus status;
+    if (DgnDbStatus::Success != (status = SetPropertyValue(yawName, angles.GetYaw().Degrees())))
+        return status;
+    if (DgnDbStatus::Success != (status = SetPropertyValue(pitchName, angles.GetYaw().Degrees())))
+        return status;
+    if (DgnDbStatus::Success != (status = SetPropertyValue(rollName, angles.GetYaw().Degrees())))
+        return status;
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::Key const& DgnElement::ExternalKeyAspect::GetAppDataKey()

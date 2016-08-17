@@ -75,7 +75,7 @@ CameraViewController::Environment::GroundPlane CameraViewController::GetGroundPl
     JsonValueCR elevationJson = json[GroundPlaneJson::Elevation()];
     double elevation = elevationJson.isNull() ? -DgnUnits::OneCentimeter() : elevationJson.asDouble();
 
-    DgnUnits& units = m_dgndb.Units();
+    DgnUnits& units = GetDgnDb().Units();
     elevation += units.GetGlobalOrigin().z; // adjust for global origin
 
     DRay3d viewRay = {DPoint3d(), vp.GetZVector()};
@@ -433,7 +433,8 @@ void CameraViewController::Environment::SkyBox::Draw(TerrainContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 JsonValueCP CameraViewController::GetEnvironmentSetting(Utf8CP name) const
     {
-    JsonValueCR environment = m_settings[EnvironmentJson::Environment()];
+    Json::Value environment(Json::objectValue);
+    Json::Reader::Parse(m_definition->GetDisplayStyle()->GetEnvironment(), environment);
     if (environment.isNull() || !EnvironmentJson::IsDisplayed(environment))
         return nullptr;
 

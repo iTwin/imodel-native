@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<Utf8String> ViewStateStack;
+    typedef std::deque<ViewDefinitionCPtr> ViewStateStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -120,7 +120,7 @@ protected:
     bool            m_undoActive = false;
     Byte            m_dynamicsTransparency = 64;
     Byte            m_flashingTransparency = 100;
-    int             m_maxUndoSteps = 20;
+    size_t          m_maxUndoSteps = 20;
     uint32_t        m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded
     DVec3d          m_viewDelta;                // view delta, potentially expanded
@@ -138,7 +138,7 @@ protected:
     ProgressiveTasks m_elementProgressiveTasks;
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
-    Utf8String      m_currentBaseline;
+    ViewDefinitionCPtr m_currentBaseline;
     ViewStateStack  m_forwardStack;
     ViewStateStack  m_backStack;
     EventHandlerList<Tracker> m_trackers;
@@ -220,7 +220,7 @@ public:
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
 
-    void SetUndoActive(bool val, int numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
+    void SetUndoActive(bool val, size_t numsteps=20) {m_undoActive=val; m_maxUndoSteps=numsteps; SaveViewUndo();}
     bool IsUndoActive() {return m_undoActive;}
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);

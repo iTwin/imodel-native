@@ -488,7 +488,7 @@ ViewportStatus DgnViewport::SetupFromViewController()
             m_isCameraOn = false;
             if (cameraView)
                 {
-                m_isCameraOn = cameraView->IsCameraOn();
+                m_isCameraOn = true;
                 m_camera = cameraView->GetControllerCamera();
 
                 if (m_isCameraOn)
@@ -607,7 +607,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     delta.DifferenceOf(range.high, range.low);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView && cameraView->IsCameraOn())
+    if (cameraView)
         {
         DPoint3d npcPts[2];
         WorldToNpc(npcPts, worldPts, 2);
@@ -732,7 +732,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
     offset.Init(screenDist->x, screenDist->y, 0.0);
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView && cameraView->IsCameraOn())
+    if (cameraView)
         {
         // get current box in view coordinates
         Frustum frust = GetFrustum(DgnCoordSystem::View, false);
@@ -804,7 +804,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
         return ViewportStatus::InvalidViewport;
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
-    if (cameraView && cameraView->IsCameraOn())
+    if (cameraView)
         {
         DPoint3d centerNpc;          // center of view in npc coords
         centerNpc.Init(.5, .5, .5);
@@ -1146,18 +1146,18 @@ void DgnViewport::SaveViewUndo()
         return;
 
     m_viewController->SaveToSettings();
-    Utf8String curr = Json::FastWriter::ToString(m_viewController->GetSettings());
+    ViewDefinitionCPtr curr = m_viewController->GetViewDefinition();
 
-    if (m_currentBaseline.empty())
+    if (m_currentBaseline.IsNull())
         {
         m_currentBaseline = curr;
         return;
         }
 
-    if (curr.Equals(m_currentBaseline))
+    if (curr.get() == m_currentBaseline.get())
         return; // nothing changed
 
-    if ((int)m_backStack.size() >= m_maxUndoSteps)
+    if (m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();
 
     m_backStack.push_back(m_currentBaseline);
@@ -1181,7 +1181,7 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ClearUndo()
     {
-    m_currentBaseline.clear();
+    m_currentBaseline = nullptr;
     m_forwardStack.clear();
     m_backStack.clear();
     }

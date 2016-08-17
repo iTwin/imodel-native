@@ -49,7 +49,7 @@ Frustum::Frustum(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::DgnQueryView(DgnDbR db, DgnViewId id) : CameraViewController(db, id)
+DgnQueryView::DgnQueryView(CameraViewDefinition& def) : CameraViewController(def)
     {
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
@@ -136,7 +136,7 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnQueryView::_GetViewedExtents(DgnViewportCR vp) const
     {
-    AxisAlignedBox3d box = m_dgndb.Units().GetProjectExtents();
+    AxisAlignedBox3d box = GetDgnDb().Units().GetProjectExtents();
     box.Extend(GetGroundPlane(vp).m_extents);
     return box;
     }
@@ -148,7 +148,7 @@ void DgnQueryView::RequestAbort(bool wait)
     {
     DgnDb::VerifyClientThread();
 
-    auto& queue = m_dgndb.GetQueryQueue();
+    auto& queue = GetDgnDb().GetQueryQueue();
     queue.RemovePending(*this);
 
     SetAbortQuery(true);
@@ -185,9 +185,9 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
         return;
         }
 
-    m_dgndb.GetQueryQueue().Add(*query);
+    GetDgnDb().GetQueryQueue().Add(*query);
     if (plan.WantWait())
-        m_dgndb.GetQueryQueue().WaitFor(*this);
+        GetDgnDb().GetQueryQueue().WaitFor(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,7 +258,7 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         m_viewedModels.insert(modelId);
         //  Ensure the model is in the m_loadedModels list.  QueryModel
         //  must not do this in the query thread.
-        m_dgndb.Models().GetModel(modelId);
+        GetDgnDb().Models().GetModel(modelId);
         }
     else
         {
@@ -373,7 +373,7 @@ DgnQueryView::ProgressiveTask::ProgressiveTask(DgnQueryViewR view, DgnViewportCR
 void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
     {
     context.SetNoStroking(true); // tell the context to not create any graphics - just return existing ones
-    DgnElements& pool = m_dgndb.Elements();
+    DgnElements& pool = GetDgnDb().Elements();
 
     // first, run through the query results seeing if all of the elements are loaded and have their graphics ready
     // NOTE: This is not CheckStop'ed! It must be fast.
@@ -409,7 +409,7 @@ void DgnQueryView::_CreateTerrain(TerrainContextR context)
     T_Super::_CreateTerrain(context);
 
     m_copyrightMsgs.clear();
-    auto& models = m_dgndb.Models();
+    auto& models = GetDgnDb().Models();
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = models.GetModel(modelId);
@@ -463,7 +463,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     DEBUG_PRINTF("Done create quick time=%lf", watch.GetCurrentSeconds());
 
     // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
-    auto& models = m_dgndb.Models();
+    auto& models = GetDgnDb().Models();
     for (DgnModelId modelId : GetViewedModels())
         {
         DgnModelPtr model = models.GetModel(modelId);
@@ -475,7 +475,7 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     uint32_t missingCount = (uint32_t) missing.size();
     if (!missing.empty())
         {
-        DgnElements& pool = m_dgndb.Elements();
+        DgnElements& pool = GetDgnDb().Elements();
 
         DEBUG_PRINTF("Begin create scene with load, missing=%d", missingCount);
         BeAssert(false==m_loading);
@@ -847,7 +847,7 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
         };
 
     // make sure all of the elements are loaded.
-    DgnElements& pool = m_view.m_dgndb.Elements();
+    DgnElements& pool = m_view.GetDgnDb().Elements();
     for (auto it : m_results->m_scores)
         pool.GetElement(it.second);
 

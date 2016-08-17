@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectioningViewController::SectioningViewController(DgnDbR project, DgnViewId viewId) : SpatialViewController(project, viewId)
+SectioningViewController::SectioningViewController(SectionViewDe) : SpatialViewController(project, viewId)
     {
     m_hasAnalyzedCutPlanes = false;
     m_foremostCutPlaneIndex = 0;
@@ -131,8 +131,10 @@ void SectioningViewController::_SaveToSettings() const
     {
     T_Super::_SaveToSettings();
 
+#ifdef WIP_VIEW_DEFINITION
     if (m_clip.IsValid())
         IViewClipObject::Factory::ToJson(m_settings["dgn_SectioningView_clip"], *m_clip);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -141,7 +143,9 @@ void SectioningViewController::_SaveToSettings() const
 void SectioningViewController::_RestoreFromSettings() 
     {
     T_Super::_RestoreFromSettings();
-    m_clip = IViewClipObject::Factory::FromJson(m_settings["dgn_SectioningView_clip"]);
+#ifdef WIP_VIEW_DEFINITION
+        m_clip = IViewClipObject::Factory::FromJson(m_settings["dgn_SectioningView_clip"]);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,4 +246,27 @@ void SectioningViewController::SetOverrideGraphicParams(ViewContextR context) co
     overrideMatSymb->SetWidth(0);
     context.GetCurrentGraphicR().ActivateOverrideGraphicParams(overrideMatSymb);
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
+    {
+    auto sectionView = GetSectioningViewController();
+    if (!sectionView.IsValid())
+        return new ClipVector();
+    return sectionView->GetInsideForwardClipVector();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SectionDrawingViewController::GetSectionHasDogLeg() const
+    {
+    auto sectionView = GetSectioningViewController();
+    if (!sectionView.IsValid())
+        return false;
+
+    return sectionView->HasDogLeg();
     }

@@ -208,8 +208,8 @@ protected:
 
 public:
     //! @param dgndb  The DgnDb for the view
-    //! @param viewId Id of view to be displayed in this DgnQueryView
-    DGNPLATFORM_EXPORT DgnQueryView(DgnDbR dgndb, DgnViewId viewId);
+    //! @param definition the view definition
+    DGNPLATFORM_EXPORT DgnQueryView(CameraViewDefinition& definition);
     DGNPLATFORM_EXPORT ~DgnQueryView();
 
     //! Get the Level-of-Detail filtering size for scene creation for this DgnQueryView. This is the size, in pixels, of one side of a square. 
