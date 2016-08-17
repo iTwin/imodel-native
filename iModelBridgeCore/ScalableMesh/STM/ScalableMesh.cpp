@@ -870,12 +870,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
             if (isSingleFile && m_scmIndexPtr->IsTerrain())
                 {
-#ifndef VANCOUVER_API
-                BeFileName projectFilesPath(m_baseExtraFilesPath);
+
+                BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
                 bool result = dataStore->SetProjectFilesPath(projectFilesPath);
                 assert(result == true);
-#endif
+
                                                                  
                 ClipRegistry* registry = new ClipRegistry(dataStore);
                 m_scmIndexPtr->SetClipRegistry(registry);
