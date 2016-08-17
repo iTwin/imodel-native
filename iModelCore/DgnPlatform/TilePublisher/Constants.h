@@ -40,6 +40,8 @@ USING_NAMESPACE_BENTLEY
 #define JSON_Box "box"
 #define JSON_Children "children"
 #define JSON_Content "content"
+#define JSON_Transform "transform"
+
 
 
 //Shaders for display of mesh data

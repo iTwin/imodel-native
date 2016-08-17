@@ -707,11 +707,12 @@
     </Product>
 
     <ProductDirectoryList ListName="TilePublisherDirs" >
+        <ProductDirectory Name="Assets"                         Deliver="true" Path="Assets"/>
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
         <ProductDirectory Name="ApplicationAssemblies"          RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="ApplicationLibs"                RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
-        <ProductDirectory Name="Assemblies"        RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
 		<ProductDirectory Name="GeoCoordData"                   Path="DgnGeoCoord" Deliver="true"/>
 
