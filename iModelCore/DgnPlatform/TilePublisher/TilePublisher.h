@@ -137,6 +137,7 @@ public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
+    TransformCR  GetTileToEcef() const { return m_tileToEcef; }
 
     static Status ConvertStatus(TileGenerator::Status input);
     static TileGenerator::Status ConvertStatus(Status input);

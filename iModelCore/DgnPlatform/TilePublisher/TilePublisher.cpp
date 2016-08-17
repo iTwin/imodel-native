@@ -164,6 +164,16 @@ void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tole
     root[JSON_GeometricError] = tile.GetTolerance() * s_toleranceRatio;
     WriteBoundingVolume(root, tile);
 
+    if (0 == m_tile.GetDepth() && !m_context.GetTileToEcef().IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+        auto&       transformValue = val[JSON_Root][JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
     root[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(b3dmPath.c_str()).c_str()).c_str();
     if (!tile.GetChildren().empty())
         root[JSON_Children] = Json::arrayValue;
