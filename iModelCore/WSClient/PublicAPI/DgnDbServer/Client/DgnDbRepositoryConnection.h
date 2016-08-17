@@ -107,9 +107,6 @@ private:
     //! Sets the EventSubscription in the EventServiceClient
     bool SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Update repository info from the server.
-    DgnDbServerStatusTaskPtr UpdateRepositoryInfo (Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr);
-
     //! Acquire a new briefcase id for this repository.
     AsyncTaskPtr<WSCreateObjectResult> AcquireBriefcaseId (ICancellationTokenPtr cancellationToken = nullptr) const;
 

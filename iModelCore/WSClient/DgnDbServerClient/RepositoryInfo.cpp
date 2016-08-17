@@ -143,6 +143,23 @@ DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, Repo
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+RepositoryInfoPtr RepositoryInfo::FromJson(JsonValueCR json, Utf8StringCR url)
+    {
+    Utf8String repositoryInstanceId = json[ServerSchema::InstanceId].asString();
+    JsonValueCR properties = json[ServerSchema::Properties];
+    Utf8String name = properties[ServerSchema::Property::RepositoryName].asString();
+    Utf8String description = properties[ServerSchema::Property::RepositoryDescription].asString();
+    Utf8String userUploaded = properties[ServerSchema::Property::UserCreated].asString();
+    DateTime uploadedDate;
+    Utf8String dateStr = properties[ServerSchema::Property::UploadedDate].asString();
+    if (!dateStr.empty())
+        DateTime::FromString(uploadedDate, dateStr.c_str());
+    return std::make_shared<RepositoryInfo>(url, repositoryInstanceId, name, description, userUploaded, uploadedDate);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 bool RepositoryInfo::operator==(RepositoryInfoCR rhs) const

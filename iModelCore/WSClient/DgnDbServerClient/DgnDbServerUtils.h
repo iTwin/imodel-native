@@ -83,8 +83,8 @@ namespace ServerSchema
         static Utf8CP ConflictingLocks = "ConflictingLocks";
         static Utf8CP LocksRequiresPull = "LocksRequiresPull";
         static Utf8CP CodesRequiresPull = "CodesRequiresPull";
-		static Utf8CP EventServiceSASToken = "EventServiceSASToken";
-		static Utf8CP BaseAddress = "BaseAddress";
+        static Utf8CP EventServiceSASToken = "EventServiceSASToken";
+        static Utf8CP BaseAddress = "BaseAddress";
         static Utf8CP EventTypes = "EventTypes";
         static Utf8CP IsReadOnly = "IsReadOnly";
         static Utf8CP AuthorityId = "AuthorityId";
@@ -98,6 +98,9 @@ namespace ServerSchema
         static Utf8CP CodeStateInvalid = "CodeStateInvalid";
         static Utf8CP ConflictingCodes = "ConflictingCodes";
         static Utf8CP CodesNotFound = "CodesNotFound";
+        static Utf8CP Initialized = "Initialized";
+        static Utf8CP FileInitialized = "FileInitialized";
+        static Utf8CP RepositoryInitialized = "RepositoryInitialized";
         }
     static Utf8CP DeleteAllLocks = "DeleteAll";
     static Utf8CP DiscardReservedCodes = "DiscardReservedCodes";
