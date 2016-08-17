@@ -2293,6 +2293,26 @@ Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint3dCR pt)
+    {
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(pt));
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DPoint2dCR pt)
+    {
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(pt));
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, bool value)

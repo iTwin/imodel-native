@@ -381,7 +381,7 @@ void AnnotationTableTest::SetUpTestCase()
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    DrawingViewController viewController(*db, view.GetViewId());
+    DrawingViewController viewController(view);
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
     //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);

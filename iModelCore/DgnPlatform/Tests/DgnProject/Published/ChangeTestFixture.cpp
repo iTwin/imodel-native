@@ -205,7 +205,7 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     viewRow.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_testDb, "Default", defaultModelId));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
-    SpatialViewController viewController(*m_testDb, viewRow.GetViewId());
+    CameraViewController viewController(viewRow);
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 

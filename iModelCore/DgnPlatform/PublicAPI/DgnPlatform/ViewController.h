@@ -987,7 +987,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
 
 public:
-    DGNPLATFORM_EXPORT ViewController2d(ViewDefinition2d& def);// : ViewController(def) {}
+    DGNPLATFORM_EXPORT ViewController2d(ViewDefinition2d& def);
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
     DVec2d GetDelta2d() const {return m_delta;}

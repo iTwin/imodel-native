@@ -401,7 +401,7 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus SetOrigin(DPoint3dCR pt) {return SetPropertyValue("Origin", pt);} //!< Set the origin of the viewed volume on the lower, back, rear
     DGNPLATFORM_EXPORT DgnDbStatus SetExtents(DVec3dCR vec) {return SetPropertyValue("Extents", (DPoint3dCR)vec);} //!< Set the size of the view diagonal
-    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
     };
 
 //=======================================================================================
@@ -444,7 +444,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetEyePoint(DPoint3dCR pt) {return SetPropertyValue("EyePoint", pt);} //!< Set the camera eye point
     DGNPLATFORM_EXPORT DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
     DGNPLATFORM_EXPORT DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
-    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
 };
 
 //=======================================================================================

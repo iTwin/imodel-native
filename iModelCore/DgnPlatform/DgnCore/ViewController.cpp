@@ -2239,3 +2239,4 @@ DgnDbR ViewController::GetDgnDb() const {return m_definition->GetDgnDb();}
 DgnViewId ViewController::GetViewId() const {return m_definition->GetViewId();}
 DrawingViewController::DrawingViewController(DrawingViewDefinition& def) : ViewController2d(def) {}
 SheetViewController::SheetViewController(SheetViewDefinition& def) : ViewController2d(def) {}
+ViewController2d::ViewController2d(ViewDefinition2d& def) : ViewController(def) {}

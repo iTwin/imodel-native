@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnView.h>
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>

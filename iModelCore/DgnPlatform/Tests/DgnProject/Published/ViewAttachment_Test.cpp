@@ -73,6 +73,8 @@ public:
         EXPECT_EQ(attach.GetViewScale(), data.m_scale);
         }
 
+    DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
+
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
     void AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot=0.0);
     template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot=0.0);
@@ -135,7 +137,7 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
     annoElem->SetAnnotation(&anno);
     EXPECT_TRUE(annoElem->Insert().IsValid());
 
-    DrawingViewController viewController(db, m_viewId);
+    DrawingViewController viewController(GetDrawingViewDef(db));
     SetupAndSaveViewController(viewController, *annoElem, drawingId, viewRot);
     }
 
@@ -168,7 +170,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     EXPECT_EQ(SUCCESS, builder->Finish(*geomEl));
     EXPECT_TRUE(el->Insert().IsValid());
 
-    DrawingViewController viewController(db, m_viewId);
+    DrawingViewController viewController(GetDrawingViewDef(db));
     SetupAndSaveViewController(viewController, *geomEl, drawingId, viewRot);
     }
 
@@ -261,7 +263,7 @@ TEST_F(ViewAttachmentTest, Geom)
     SheetViewDefinition sheetView(db, "MySheetView", m_sheetId);
     sheetView.Insert();
 
-    SheetViewController viewController(db, sheetView.GetViewId());
+    SheetViewController viewController(sheetView);
     SetupAndSaveViewController(viewController, *cpAttach, m_sheetId);
 
     db.SaveChanges();

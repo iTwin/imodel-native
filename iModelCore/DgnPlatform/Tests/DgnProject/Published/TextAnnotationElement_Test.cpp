@@ -102,7 +102,7 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        DrawingViewController viewController(*db, view.GetViewId());
+        DrawingViewController viewController(view);
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
@@ -285,13 +285,13 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        CameraViewDefinition view(*db, "TextAnnotation3dTest-BasicCrud");
+        OrthographicViewDefinition view(*db, "TextAnnotation3dTest-BasicCrud");
         view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*db, "TextAnnotation3dTest-BasicCrud", modelId));
         EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        SpatialViewController viewController(*db, view.GetViewId());
+        OrthographicViewController viewController(view);
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);

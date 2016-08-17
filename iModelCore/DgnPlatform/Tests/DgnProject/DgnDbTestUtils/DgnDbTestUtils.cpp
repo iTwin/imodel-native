@@ -389,11 +389,8 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
         return DgnViewId();
         }
 
-    CategorySelectorCPtr catSel = InsertNewCategorySelector(db, "Default", nullptr);
-
     CameraViewDefinition view(db, name);
     view.SetModelSelector(*modSel);
-    view.SetCategorySelector(*catSel);
     ViewDefinitionCPtr newViewDef = view.Insert();
     if (!newViewDef.IsValid())
         {
@@ -401,11 +398,9 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
         return DgnViewId();
         }
 
-    DgnViewId viewId = view.GetViewId();
-    
     db.SaveChanges();
 
-    CameraViewController* viewController = new CameraViewController(db, viewId);
+    CameraViewController* viewController = new CameraViewController(view);
     if (nullptr == viewController)
         {
         EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController ctor failed in %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
@@ -414,8 +409,6 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
 
     for (auto const& categoryId : DgnCategory::QueryCategories(db))
         viewController->ChangeCategoryDisplay(categoryId, true);
-
-    viewController->SetCameraOn(false);
 
     viewController->SetOrigin(DPoint3d::From(-5,-5,-5));
     viewController->SetDelta(DVec3d::From(10,10,10));
@@ -435,7 +428,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
 
     viewController->Save();
 
-    return viewId;
+    return view.GetViewId();
     }
 
 //---------------------------------------------------------------------------------------

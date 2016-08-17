@@ -80,6 +80,6 @@ public:
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
 
-    static void SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
+    static void SetUpCameraView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId);
 };
 

@@ -272,7 +272,7 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
+void DgnDbTestFixture::SetUpCameraView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
     CameraViewDefinition view(dgnDb, "TestView");
     view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(dgnDb, "TestView", model.GetModelId()));
@@ -280,7 +280,7 @@ void DgnDbTestFixture::SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAl
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    SpatialViewController viewController (dgnDb, view.GetViewId());
+    CameraViewController viewController (view);
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
