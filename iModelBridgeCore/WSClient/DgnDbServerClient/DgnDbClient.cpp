@@ -149,11 +149,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
         bvector<RepositoryInfoPtr> repositories;
         for (const auto& repository : response.GetValue().GetJsonValue()[ServerSchema::Instances])
             {
-            Utf8String repositoryId = repository[ServerSchema::InstanceId].asString();
-            Utf8String name         = repository[ServerSchema::Properties][ServerSchema::Property::RepositoryName].asString();
-            Utf8String description  = repository[ServerSchema::Properties][ServerSchema::Property::Description].asString();
-
-            repositories.push_back(std::make_shared<RepositoryInfo>(m_serverUrl, repositoryId, name, description));
+            repositories.push_back(RepositoryInfo::FromJson(repository, m_serverUrl));
             }
         return DgnDbServerRepositoriesResult::Success(repositories);
         });
@@ -170,11 +166,75 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR des
     instance[ServerSchema::ClassName] = ServerSchema::Class::Repository;
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
     properties[ServerSchema::Property::RepositoryName] = repositoryName;
-    properties[ServerSchema::Property::Description] = description;
+    properties[ServerSchema::Property::RepositoryDescription] = description;
     properties[ServerSchema::Property::Published] = published;
     return repositoryCreation;
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
+                                                               bool published, ICancellationTokenPtr cancellationToken) const
+    {
+    std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
+    Utf8String project;
+    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
+    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description, published);
+    client->SetCredentials(m_credentials);
+    return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
+        ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
+        {
+        if (createRepositoryResult.IsSuccess())
+            {
+            JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            finalResult->SetSuccess(RepositoryInfo::FromJson(repositoryInstance, m_serverUrl));
+            return;
+            }
+
+        auto error = DgnDbServerError(createRepositoryResult.GetError());
+        if (DgnDbServerError::Id::RepositoryAlreadyExists != error.GetId())
+            {
+            finalResult->SetError(error);
+            return;
+            }
+
+        bool initialized = error.GetExtendedData()[ServerSchema::Property::RepositoryInitialized].asBool();
+
+        if (initialized)
+            {
+            finalResult->SetError(error);
+            return;
+            }
+
+        WSQuery repositoryQuery(ServerSchema::Schema::Project, ServerSchema::Class::Repository);
+        Utf8String filter;
+        filter.Sprintf("%s+eq+%s", ServerSchema::Property::RepositoryName, repositoryName.c_str());
+        repositoryQuery.SetFilter(filter);
+        client->SendQueryRequest(repositoryQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
+            {
+            if (!queryResult.IsSuccess())
+                {
+                finalResult->SetError(queryResult.GetError());
+                return;
+                }
+            JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
+            if (repositoryInstances.isArray())
+                finalResult->SetSuccess(RepositoryInfo::FromJson(repositoryInstances[0], m_serverUrl));
+            else
+                finalResult->SetError(error);
+            });
+
+        })->Then<DgnDbServerRepositoryResult>([=] ()
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             03/2016
+//---------------------------------------------------------------------------------------
 DgnDbPtr CleanDb(DgnDbCR db)
     {
     //NEEDSWORK: Make a clean copy for a server. This code should move to the server once we have long running services.
@@ -230,19 +290,17 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     DgnDbPtr tempdb = CleanDb(db);
     if (!tempdb.IsValid())
         CreateCompletedAsyncTask<DgnDbServerRepositoryResult>(DgnDbServerRepositoryResult::Error(DgnDbServerError::Id::FileNotFound));
+
     Utf8String dbFileName = tempdb->GetDbFileName();
     BeFileName fileName = tempdb->GetFileName();
     Utf8String dbFileId = tempdb->GetDbGuid().ToString();
+    FileInfo fileInfo = FileInfo(*tempdb, description);
+    BeFileName filePath = tempdb->GetFileName();
+    tempdb->CloseDb();
 
-    // Stage 1. Create repository.
-    Utf8String project;
-    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
-    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
-    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description, published);
-    client->SetCredentials(m_credentials);
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
-    return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), callback, cancellationToken)
-        ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
+    return CreateRepositoryInstance(repositoryName, description, published, cancellationToken)
+        ->Then([=] (DgnDbServerRepositoryResultCR createRepositoryResult)
         {
         if (!createRepositoryResult.IsSuccess())
             {
@@ -250,16 +308,10 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
             return;
             }
 
-        JsonValueCR repositoryInstance   = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-        Utf8String  repositoryInstanceId = repositoryInstance[ServerSchema::InstanceId].asString();
-
-        Utf8String name = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::RepositoryName].asString();
-        Utf8String description = repositoryInstance[ServerSchema::Properties][ServerSchema::Property::Description].asString();
-        auto repositoryInfo = std::make_shared<RepositoryInfo>(m_serverUrl, repositoryInstanceId, name, description);
+        auto repositoryInfo = createRepositoryResult.GetValue();
         finalResult->SetSuccess(repositoryInfo);
-
-        //NEEDSWORK: SetSuccess here
-        ConnectToRepository(repositoryInstanceId, cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
+        
+        ConnectToRepository(repositoryInfo->GetId(), cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
             {
             if (!connectionResult.IsSuccess())
                 {
@@ -267,7 +319,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
                 return;
                 }
             DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
-            connection->UploadNewFile(tempdb, description, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
+            connection->UploadNewFile(filePath, fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
                 {
                 if (!fileUploadResult.IsSuccess())
                     finalResult->SetError(fileUploadResult.GetError());

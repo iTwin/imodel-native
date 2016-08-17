@@ -10,43 +10,10 @@ DataSourceCacheUpgradeTests.Open_V1*
 # ECSchema update in ECDb does not support deletions yet
 DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable
 
-DgnDbServerEventParserTests.CodeEventTests
-    # DgnDb0601Dev, WinX64, DEBUG
-    [ RUN      ] DgnDbServerEventParserTests.CodeEventTests
-    F:\DgnDb0601Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(897): error: Expected: (nullptr) != (validPtr), actual: 8-byte object <00-00 00-00 00-00 00-00> vs 0000000000000000
-    unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
-    *********************** STACK TRACE ************************
-    [18] _C_specific_handler (0x7ffb53a3bff0)
-    [17] _chkstk (0x7ffb71429800)
-    [16] RtlImageNtHeaderEx (0x7ffb713c8250)
-    [15] KiUserExceptionDispatcher (0x7ffb71428a00)
-    [14] DgnDbServerEventParserTests_CodeEventTests_Test::TestBody (0x7ff61aaaf3e0)
-    [13] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void> (0x7ff61aec8630)
-    [12] testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void> (0x7ff61aec82d0)
-    [11] testing::Test::Run (0x7ff61aeea030)
-    [10] testing::TestInfo::Run (0x7ff61aeea290)
-    [9] testing::TestCase::Run (0x7ff61aeea120)
-    [8] testing::internal::UnitTestImpl::RunAllTests (0x7ff61aeea560)
-    [7] testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff61aec8810)
-    [6] testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool> (0x7ff61aec8550)
-    [5] testing::UnitTest::Run (0x7ff61aeea400)
-    [4] RUN_ALL_TESTS (0x7ff61a4237e0)
-    [3] main (0x7ff61a428110)
-    [2] __scrt_common_main_seh (0x7ff61af163cc)
-    [1] BaseThreadInitThunk (0x7ffb70be8350)
-    [0] RtlUserThreadStart (0x7ffb713e5e70)
+#DgnDbServerEventParserTests.CodeEventTests
+#DgnDbServerEventParserTests.InvalidEventTests
 
-    [  FAILED  ] DgnDbServerEventParserTests.CodeEventTests (3784 ms)
-
-DgnDbServerEventParserTests.InvalidEventTests
-    # DgnDb0601Dev, WinX64, DEBUG
-    [ RUN      ] DgnDbServerEventParserTests.InvalidEventTests
-    F:\DgnDb0601Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(985): error:       Expected: nullptr
-          Which is: 8-byte object <00-00 00-00 00-00 00-00>
-    To be equal to: DgnDbServerEventParser::ParseEvent(StubHttpResponseValidLocksDeletedContentType(), StubHttpResponseInvalidCodeEvent2())
-          Which is: 000001563D1AE450
-    F:\DgnDb0601Dev\src-staging\WSClient\Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp(996): error:       Expected: nullptr
-          Which is: 8-byte object <00-00 00-00 00-00 00-00>
-    To be equal to: DgnDbServerEventParser::ParseEvent(StubHttpResponseValidCodesDeletedContentType(), StubHttpResponseInvalidCodeEvent2())
-          Which is: 000001563D1ADE50
-    [  FAILED  ] DgnDbServerEventParserTests.InvalidEventTests (8 ms)
+CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
+    # DgnDb61-16Q2-Dev, WinX64, DEBUG
+    # [ RUN      ] CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
+    # <Crash, no output or stack printed>
