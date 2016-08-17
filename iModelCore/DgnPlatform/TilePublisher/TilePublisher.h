@@ -8,6 +8,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #include <iostream>
 #include <fstream>
 

@@ -693,6 +693,9 @@
     <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="DgnPlatformLib" />
         <SubPart PartName="DgnPlatformSqlang" />
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
+        <SubPart PartName="GeoCoordData"        PartFile="csmap"        Repository="libsrc-csmap"/>
+
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery/TilePublisher$(exeext)</Files>
         </Bindings>
@@ -710,5 +713,7 @@
         <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
         <ProductDirectory Name="Assemblies"        RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
+		<ProductDirectory Name="GeoCoordData"                   Path="DgnGeoCoord" Deliver="true"/>
+
     </ProductDirectoryList>
 </BuildContext>
