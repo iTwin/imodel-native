@@ -8,7 +8,7 @@
     <Part Name="ScalableMeshSchemaPublicAPI" BentleyBuildMakeFile="ScalableMeshSchema/ScalableMeshSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ScalableMeshSchema"/>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/ScalableMesh*.xml
             </Files>
         </Bindings>
@@ -22,7 +22,7 @@
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"          Repository="ScalableMesh" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
         </Bindings>
     </Part>  
@@ -33,7 +33,7 @@
     <Part Name="PointCloudSchemaPublicAPI" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="PointCloudSchema"/>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/PointCloud*.xml
             </Files>
         </Bindings>
@@ -48,7 +48,7 @@
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)PointCloudSchema$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)PointCloudSchema$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)PointCloudSchema$(libext)</Libs>
         </Bindings>
     </Part>
@@ -59,7 +59,7 @@
     <Part Name="RasterSchemaPublicAPI" BentleyBuildMakeFile="RasterSchema/RasterSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="RasterSchema"/>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Raster*.xml
             </Files>
         </Bindings>
@@ -72,7 +72,7 @@
         <!-- Need full data to decode EPSG code -->
         <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RasterSchema$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RasterSchema$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)RasterSchema$(libext)</Libs>
         </Bindings>
     </Part>    
@@ -83,7 +83,7 @@
     <Part Name="ThreeMxPublicAPI" BentleyBuildMakeFile="ThreeMxSchema/ThreeMx.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ThreeMx"/>
-            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/ThreeMx*.xml
             </Files>
         </Bindings>
@@ -93,7 +93,7 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="ThreeMxPublicAPI"/>
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies" Required="false">Delivery/$(shlibprefix)ThreeMx$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies Required="false">Delivery/$(shlibprefix)ThreeMx$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ThreeMx$(libext)</Libs> 
         </Bindings>
     </Part>

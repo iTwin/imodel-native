@@ -14,6 +14,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnGeoCoord.h>
