@@ -567,7 +567,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController
 
 protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
-    DVec3d m_delta;                    //!< The extent of the view frustum.
+    DVec3d m_delta;                    //!< The diagonal of the view frustum.
     RotMatrix m_rotation;              //!< Rotation of the view frustum.
     IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
 
@@ -874,10 +874,15 @@ public:
 
 /** @name Environment Display*/
 /** @{ */
+    //! Determine whether the Environment is displayed in this view. If false, neither Ground Plane nor SkyBox are displayed.
     bool IsEnvironmentEnabled() const {return m_environment.m_enabled;}
+    //! Determine whether the SkyBox is displayed in this view.
     bool IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled;}
+    //! Determine whether the Ground Plane is displayed in this view.
     bool IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled;}
+    //! Get the current values for the Environment Display for this view
     EnvironmentDisplay GetEnvironmentDisplay() const {return m_environment;}
+    //! Change the current values for the Environment Display for this view
     void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment=val; SaveEnvironment();}
 /** @} */
 
@@ -939,7 +944,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    DPoint2d m_origin;       //!< The lower left front corner of the view frustum.
+    DPoint2d m_origin;       //!< The lower left corner of the view frustum.
     DVec2d   m_delta;        //!< The extent of the view frustum.
     double   m_rotAngle;     //!< Rotation of the view frustum.
 

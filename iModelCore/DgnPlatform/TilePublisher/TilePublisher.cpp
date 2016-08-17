@@ -164,6 +164,16 @@ void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tole
     root[JSON_GeometricError] = tile.GetTolerance() * s_toleranceRatio;
     WriteBoundingVolume(root, tile);
 
+    if (0 == m_tile.GetDepth() && !m_context.GetTileToEcef().IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+        auto&       transformValue = val[JSON_Root][JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
     root[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(b3dmPath.c_str()).c_str()).c_str();
     if (!tile.GetChildren().empty())
         root[JSON_Children] = Json::arrayValue;
@@ -850,10 +860,41 @@ TilesetPublisher::Status TilesetPublisher::Setup()
         return Status::CantCreateSubDirectory;
 
     // For now use view center... maybe should use the DgnDb range center.
-    DPoint3d        center = m_viewController.GetCenter();
+    DPoint3d        origin = m_viewController.GetCenter ();
+
+    m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
+
+    DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+
+    if (nullptr == dgnGCS)
+        {
+        m_tileToEcef    = Transform::FromIdentity ();   
+        }
+    else
+        {
+        GeoPoint        originLatLong, northLatLong;
+        DPoint3d        ecfOrigin, ecfNorth, north = origin;
     
-    m_dbToTile      = Transform::From (-center.x, -center.y, -center.z);
-    m_tileToEcef    = Transform::FromIdentity ();       // Needs work - extract from GCS.
+        north.y += 100.0;
+
+        dgnGCS->LatLongFromUors (originLatLong, origin);
+        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
+
+        dgnGCS->LatLongFromUors (northLatLong, north);
+        dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+
+        DVec3d      zVector, yVector;
+        RotMatrix   rMatrix;
+
+        zVector.Normalize ((DVec3dCR) ecfOrigin);
+        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+        rMatrix.SetColumn (yVector, 1);
+        rMatrix.SetColumn (zVector, 2);
+        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+
+        m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
+        }
 
     return Status::Success;
     }
@@ -913,9 +954,10 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     zVec.Normalize();
     zVec.Negate();      // Towards target.
 
+    char*       viewOptionString = m_tileToEcef.IsIdentity() ? "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false" : "";
+
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str(),
-            viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+    Utf8PrintfString html(s_viewerHtml, viewOptionString, m_rootName.c_str(), m_rootName.c_str(), viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
 
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
