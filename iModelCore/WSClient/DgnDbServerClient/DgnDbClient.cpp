@@ -210,7 +210,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
 
         WSQuery repositoryQuery(ServerSchema::Schema::Project, ServerSchema::Class::Repository);
         Utf8String filter;
-        filter.Sprintf("%s+eq+%s", ServerSchema::Property::RepositoryName, repositoryName);
+        filter.Sprintf("%s+eq+%s", ServerSchema::Property::RepositoryName, repositoryName.c_str());
         repositoryQuery.SetFilter(filter);
         client->SendQueryRequest(repositoryQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
             {
