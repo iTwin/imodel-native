@@ -657,14 +657,14 @@ struct DgnUnits : NonCopyableClass
 private:
     friend struct DgnDb;
     DgnDbR          m_dgndb;
-    AxisAlignedBox3d m_extent;
+    mutable AxisAlignedBox3d m_extent;
     DPoint3d        m_globalOrigin;      //!< in meters
     mutable bool    m_hasCheckedForGCS;
     mutable DgnGCS* m_gcs;
     mutable IGeoCoordinateServicesP m_geoServices;
 
     DgnUnits(DgnDbR db);
-    void LoadProjectExtents();
+    void LoadProjectExtents() const;
 
 public:
     DGNPLATFORM_EXPORT void Save();
@@ -679,10 +679,10 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult SetProjectExtents(AxisAlignedBox3dCR newExtents);
 
     //! (Re-)compute the project extents by looking at the range tree.
-    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents();
+    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents() const;
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in this DgnDb
-    DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents();
+    DGNPLATFORM_EXPORT AxisAlignedBox3d GetProjectExtents() const;
 
     //! Convert a GeoPoint to an XYZ point
     //! @param[out] outXyz The output XYZ point

@@ -1544,6 +1544,8 @@ void CameraViewController::_RestoreFromSettings()
 
     VerifyFocusPlane();
 
+    LoadEnvironment();
+
 #if defined (NEEDS_WORK_REALTY_DATA)
     // if the view was saved with an invalid camera lens, just turn the camera off.
     double maxDelta = std::max(m_delta.x, m_delta.y);

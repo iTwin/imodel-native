@@ -1551,19 +1551,25 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct TransClip : RefCounted<NonCopyableClass>
+{
+    
+};
+
+//=======================================================================================
 //! An array of GraphicPtrs. 
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct GraphicBranch
 {
-    ClipPrimitiveCP m_clip = nullptr;
     bool m_hasFlags = false;
     ViewFlags m_viewFlags;
     bvector<GraphicPtr> m_entries;
 
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
-    void SetClip(ClipPrimitiveCP clip) {m_clip = clip;}
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
 };
 
@@ -1582,7 +1588,7 @@ struct System
 
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
-    virtual GraphicPtr _CreateBranch(Graphic::CreateParams const& params, GraphicBranch& branch) const = 0;
+    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element

@@ -247,7 +247,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
     BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
-    BeAssert (NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
+    BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
     BeStringUtilities::Initialize(m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory());
     ECDb::Initialize(m_knownLocationsAdmin->GetLocalTempDirectoryBaseName(),
@@ -255,7 +255,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
                       m_notificationAdmin->_GetLogSQLiteErrors() ? BeSQLiteLib::LogErrors::Yes : BeSQLiteLib::LogErrors::No);
     L10N::Initialize(_SupplySqlangFiles());
 
-    GeoCoordinates::BaseGCS::Initialize (GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
+    GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
 
     AdoptHost(*this);
     BeAssert(NULL != DgnPlatformLib::QueryHost());
@@ -363,8 +363,8 @@ DgnPlatformLib::Host::RepositoryAdmin&       DgnPlatformLib::Host::_SupplyReposi
 DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoordinationAdmin()
     {
     BeFileName path = GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath (L"DgnGeoCoord");
-    return *DgnGeoCoordinationAdmin::Create (path);
+    path.AppendToPath(L"DgnGeoCoord");
+    return *DgnGeoCoordinationAdmin::Create(path);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      07/14

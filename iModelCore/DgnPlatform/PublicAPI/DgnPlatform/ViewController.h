@@ -703,33 +703,30 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    struct Environment
+    struct EnvironmentDisplay
     {
         struct GroundPlane
         {
-            Byte m_edgeAlpha = 0xff;
-            Byte m_centerAlpha = 0x80;
-            Render::GradientSymb::Mode m_mode = Render::GradientSymb::Mode::Spherical;
-            AxisAlignedBox3d m_extents;
-            ColorDef m_color;
-            double GetElevation() const {return m_extents.low.z;}
-            bool IsValid() const {return m_extents.IsValid();}
-            void Draw(DecorateContextR);
+            bool m_enabled = false;
+            double m_elevation;
+            ColorDef m_aboveColor;
+            ColorDef m_belowColor;
         };
-
-        struct SkyBox : ViewController::AppData
+        struct SkyBox
         {
-            Render::MaterialPtr m_material;
-            SkyBox(JsonValueCR, Render::SystemCR system);
-            Render::TexturePtr LoadSkyBox(Utf8CP fileName, Render::SystemCR system);
-            void Draw(TerrainContextR);
+            bool m_enabled = false;
+            Utf8String m_jpegFile;
+            ColorDef m_zenithColor;
+            ColorDef m_nadirColor;
+            ColorDef m_groundColor;
+            ColorDef m_skyColor;
+            double m_groundExponent;
+            double m_skyExponent;
         };
+        bool m_enabled = false;
+        GroundPlane m_groundPlane;
+        SkyBox m_skybox;
 
-        enum class Projection
-        {
-            Cylindrical = 1,
-            Spherical = 2,
-        };
     };
 
 protected:
@@ -737,6 +734,8 @@ protected:
     DVec3d m_delta;                    //!< X,Y extents of focus plane; Z=depth
     RotMatrix m_rotation;              //!< View direction
     CameraInfo m_camera;  //!< Information about the camera lens used for the view.
+    Render::MaterialPtr m_skybox;
+    EnvironmentDisplay m_environment;
 
     virtual CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR) override;
@@ -746,7 +745,7 @@ protected:
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
-    DGNPLATFORM_EXPORT virtual void _CreateTerrain(TerrainContextR context) override;
+    virtual void _CreateTerrain(TerrainContextR context) override {DrawSkyBox(context);}
     DPoint3d _GetOrigin() const override { return m_origin; }
     DVec3d _GetDelta() const override { return m_delta; }
     RotMatrix _GetRotation() const override { return m_rotation; }
@@ -755,10 +754,14 @@ protected:
     void _SetRotation(RotMatrixCR rot) override { m_rotation = rot; }
     void _AdjustAspectRatio(double windowAspect, bool expandView) override { AdjustAspectRatio(m_origin, m_delta, m_rotation, windowAspect, expandView); }
 
-    JsonValueCP GetEnvironmentSetting(Utf8CP) const;
-    Environment::GroundPlane GetGroundPlane(DgnViewportCR vp) const;
-    RefCountedPtr<Environment::SkyBox> GetSkyBox(DgnViewportCR vp) const;
-    void DrawEnvironment(DecorateContextR context);
+    void LoadEnvironment();
+    DGNPLATFORM_EXPORT void SaveEnvironment();
+    void LoadSkyBox(Render::SystemCR system);
+    Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
+    double GetGroundElevation() const;
+    AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
+    void DrawGroundPlane(DecorateContextR);
+    DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR); 
 
 public:
     void VerifyFocusPlane();
@@ -893,7 +896,20 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
+/** @} */
 
+/** @name Environment Display*/
+/** @{ */
+    //! Determine whether the Environment is displayed in this view. If false, neither Ground Plane nor SkyBox are displayed.
+    bool IsEnvironmentEnabled() const {return m_environment.m_enabled;}
+    //! Determine whether the SkyBox is displayed in this view.
+    bool IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled;}
+    //! Determine whether the Ground Plane is displayed in this view.
+    bool IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled;}
+    //! Get the current values for the Environment Display for this view
+    EnvironmentDisplay GetEnvironmentDisplay() const {return m_environment;}
+    //! Change the current values for the Environment Display for this view
+    void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment=val; SaveEnvironment();}
 /** @} */
 
 };
@@ -956,7 +972,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
 
 protected:
     DgnModelId m_baseModelId;//!< The model in the view
-    DPoint2d m_origin;       //!< The lower left front corner of the view frustum.
+    DPoint2d m_origin;       //!< The lower left corner of the view frustum.
     DVec2d   m_delta;        //!< The extent of the view frustum.
     double   m_rotAngle;     //!< Rotation of the view frustum.
 

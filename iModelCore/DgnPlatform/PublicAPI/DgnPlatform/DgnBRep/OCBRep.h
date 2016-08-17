@@ -20,6 +20,7 @@
 #include <BRepLib.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <BRepTools.hxx>
+#include <BrepTools_WireExplorer.hxx>
 #include <IFSelect_ReturnStatus.hxx>
 #include <OSD_Parallel.hxx>
 #include <Poly_Triangulation.hxx>
@@ -49,6 +50,8 @@
 #include <Geom2d_BSplineCurve.hxx>
 #include <Geom2d_Line.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
+#include <Geom2d_Ellipse.hxx>
+#include <Geom2d_Circle.hxx>
 #include <Geom_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_Circle.hxx>
@@ -65,6 +68,7 @@
 #include <Geom_TrimmedCurve.hxx>
 #include <GeomAdaptor_HCurve.hxx>
 #include <GeomConvert.hxx>
+#include <Geom2dConvert.hxx>
 #include <GeomConvert_ApproxCurve.hxx>
 #include <GeomLProp_CLProps.hxx>
 #include <GeomLProp_SLProps.hxx>
@@ -78,6 +82,7 @@
 #include <BVH_RadixSorter.hxx>
 #include <BRep_Tool.hxx>
 #include <BRepAlgoAPI_BuilderAlgo.hxx>
+#include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
@@ -164,7 +169,18 @@ static DEllipse3d ToDEllipse3d(gp_Elips const& gpElips, double start, double end
 static DEllipse3d ToDEllipse3d(gp_Elips2d const& gpElips, double start, double end) {return DEllipse3d::FromScaledVectors(ToDPoint3d(gpElips.Location()), ToDVec3d(gpElips.XAxis().Direction()), ToDVec3d(gpElips.YAxis().Direction()), gpElips.MajorRadius(), gpElips.MinorRadius(), start, end - start);}
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_BSplineCurve) const&, double first, double last);
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom_Curve) const&, double first, double last);
+DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(Handle(Geom2d_Curve) const& curve, double first, double last);
 DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(TopoDS_Edge const&);
+DGNPLATFORM_EXPORT static ICurvePrimitivePtr ToCurvePrimitive(TopoDS_Edge const& edge, TopoDS_Face const& face);
+
+DGNPLATFORM_EXPORT static ISolidPrimitivePtr ToSolidPrimitive(CurveVectorPtr& boundaries, TopoDS_Face const& face);
+DGNPLATFORM_EXPORT static ISolidPrimitivePtr ToSolidPrimitive(CurveVectorPtr* boundaries, Handle(Geom_Surface) const& surface, DRange2dCR uvRange, bool reversed);
+
+DGNPLATFORM_EXPORT static CurveVectorPtr ToCurveVector(TopoDS_Face const& face);
+DGNPLATFORM_EXPORT static BentleyStatus CurveVectorFromPlanarFace(CurveVectorPtr& curveVector, TopoDS_Face const& face);
+DGNPLATFORM_EXPORT static BentleyStatus ParametricBoundaryCurveVectorFromFace(CurveVectorPtr& boundaries, TopoDS_Face const& face, DRange2dCR range);
+
+DGNPLATFORM_EXPORT static MSBsplineSurfacePtr ToBsplineSurface(CurveVectorPtr& boundaries, TopoDS_Face const& face, double tolerance=1.0E-6);
 
 DGNPLATFORM_EXPORT static bool HasCurvedFaceOrEdge(TopoDS_Shape const&);
 DGNPLATFORM_EXPORT static PolyfaceHeaderPtr IncrementalMesh(TopoDS_Shape const&, IFacetOptionsR, bool cleanShape=true); //! BRepTools::Clean is called after meshing when cleanShape is true

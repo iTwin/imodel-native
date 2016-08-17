@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<ViewDefinitionCPtr> ViewStateStack;
+    typedef std::deque<ViewDefinitionCPtr> ViewUndoStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -139,8 +139,8 @@ protected:
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     ViewDefinitionCPtr m_currentBaseline;
-    ViewStateStack  m_forwardStack;
-    ViewStateStack  m_backStack;
+    ViewUndoStack   m_forwardStack;
+    ViewUndoStack   m_backStack;
     EventHandlerList<Tracker> m_trackers;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
@@ -450,7 +450,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return m_viewController->GetViewFlags().m_grid;}
+    bool IsGridOn() const {return GetViewFlags().m_grid;}
 
     //! Determine whether this viewport is a 3d view.
     //! @remarks Will be true only for a physical views.

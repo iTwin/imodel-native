@@ -10,6 +10,7 @@
 
 #include "Render.h"
 #include "DgnTexture.h"
+#include "SolidKernel.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -103,6 +104,7 @@ public:
     XYZRangeTreeRoot& GetTree() const { return *m_tree; }
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     TransformCR GetTransformToDgn() const { return m_transformToDgn; }
+    TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
 
     void ResolveTexture(TileDisplayParamsCR params, DgnDbR db);
     DGNPLATFORM_EXPORT TextureImage const* GetTextureImage(TileDisplayParamsCR params) const;
@@ -335,12 +337,14 @@ public:
         : m_range(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent) { }
 
     DRange3dCR GetRange() const { return m_range; }
-    TileNodeList const& GetChildren() const { return m_children; }
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }
+
     TileNodeCP GetParent() const { return m_parent; } //!< The direct parent of this node
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
+    TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
+    TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
 
     DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
@@ -451,6 +455,17 @@ struct FacetCountUtil
     //! @return An approximation of the number of strokes/facets that will be generated from the surface
     static DGNPLATFORM_EXPORT size_t GetFacetCount (IGeometryCR geometry, IFacetOptionsR facetOptions);
 
+    //! Returns an approximation of the facet counts of an ISolidKernelEntity facetted according to the specified options
+    //! @param[in] solidEntity Solid entity to be inspected
+    //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
+    //! @return An approximation of the number of strokes/facets that will be generated from the solid entity
+    static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(ISolidKernelEntityCR solidEntity, IFacetOptionsR facetOptions);
+
+    //! Returns an approximation of the facet counts of an TopoDS_Shape facetted according to the specified options
+    //! @param[in] shape Shape to be inspected
+    //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
+    //! @return An approximation of the number of strokes/facets that will be generated from the shape
+    static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(TopoDS_Shape const& shape, IFacetOptionsR facetOptions);
 };
 
 END_BENTLEY_RENDER_NAMESPACE
