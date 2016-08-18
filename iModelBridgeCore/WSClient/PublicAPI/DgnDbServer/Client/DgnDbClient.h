@@ -79,6 +79,8 @@ private:
     DgnDbServerStatusTaskPtr DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                                ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description, bool published,
+                                                      ICancellationTokenPtr cancellationToken) const;
 
 //__PUBLISH_SECTION_START__
 public:

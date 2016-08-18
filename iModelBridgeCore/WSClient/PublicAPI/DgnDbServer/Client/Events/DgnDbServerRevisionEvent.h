@@ -20,13 +20,15 @@ struct DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
         Utf8String m_fromEventSubscriptionId;
         Utf8String m_revisionId;
         Utf8String m_revisionIndex;
+		Utf8String m_briefcaseId;
 
         DgnDbServerRevisionEvent
                                 (
                                 Utf8String eventTopic,
                                 Utf8String fromEventSubscriptionId,
                                 Utf8String revisionId, 
-                                Utf8String revisionIndex
+                                Utf8String revisionIndex,
+								Utf8String briefcaseId
                                 );
 
     public:
@@ -35,13 +37,15 @@ struct DgnDbServerRevisionEvent : public DgnDbServerEvent::GenericEvent
                                                                                                Utf8String eventTopic,
                                                                                                Utf8String fromEventSubscriptionId,
                                                                                                Utf8String revisionId, 
-                                                                                               Utf8String revisionIndex
+                                                                                               Utf8String revisionIndex,
+																							   Utf8String briefcaseId
                                                                                                );
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetEventTopic();
         DGNDBSERVERCLIENT_EXPORT virtual Utf8String GetFromEventSubscriptionId();
         DGNDBSERVERCLIENT_EXPORT virtual DgnDbServerEvent::DgnDbServerEventType GetEventType();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionId();
         DGNDBSERVERCLIENT_EXPORT Utf8String GetRevisionIndex();
+		DGNDBSERVERCLIENT_EXPORT Utf8String GetBriefcaseId();
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

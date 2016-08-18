@@ -48,7 +48,8 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    data.isMember(DgnDbServerEvent::EventTopic) &&
 			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
 			    data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionId) &&
-			    data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex)
+			    data.isMember(DgnDbServerEvent::RevisionEventProperties::RevisionIndex) &&
+				data.isMember(DgnDbServerEvent::RevisionEventProperties::BriefcaseId)
 			    )
 			    isSuccess = true;
 		    break;
@@ -78,7 +79,8 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    data.isMember(DgnDbServerEvent::FromEventSubscriptionId) &&
 			    data.isMember(DgnDbServerEvent::DeletedEventProperties::BriefcaseId) &&
 			    !CheckForEventProperties(jsonString, DgnDbServerEvent::LockEvent) &&
-			    !CheckForEventProperties(jsonString, DgnDbServerEvent::CodeEvent)
+			    !CheckForEventProperties(jsonString, DgnDbServerEvent::CodeEvent) &&
+				!CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionEvent)
 			    )
 			    isSuccess = true;
 		    break;
@@ -138,7 +140,8 @@ DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
 		(*data)[DgnDbServerEvent::EventTopic].asString(),
 		(*data)[DgnDbServerEvent::FromEventSubscriptionId].asString(),
 		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionId].asString(),
-		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString()
+		(*data)[DgnDbServerEvent::RevisionEventProperties::RevisionIndex].asString(),
+	    (*data)[DgnDbServerEvent::RevisionEventProperties::BriefcaseId].asString()
 	    );
     }
 

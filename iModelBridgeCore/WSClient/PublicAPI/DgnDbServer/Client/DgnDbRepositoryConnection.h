@@ -107,9 +107,6 @@ private:
     //! Sets the EventSubscription in the EventServiceClient
     bool SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
-    //! Update repository info from the server.
-    DgnDbServerStatusTaskPtr UpdateRepositoryInfo (Utf8StringCR repositoryId, ICancellationTokenPtr cancellationToken = nullptr);
-
     //! Acquire a new briefcase id for this repository.
     AsyncTaskPtr<WSCreateObjectResult> AcquireBriefcaseId (ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -117,7 +114,7 @@ private:
     DgnDbServerStatusResult WriteBriefcaseIdIntoFile (BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
 
     //! Creates a new file instance on the server. 
-    DgnDbServerFileTaskPtr   CreateNewServerFile(DgnDbPtr db, Utf8StringCR description, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerFileTaskPtr   CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Performs a file upload to on-premise server. 
     DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -195,7 +192,7 @@ public:
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the uploaded file information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(DgnDbPtr db, Utf8StringCR description, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
