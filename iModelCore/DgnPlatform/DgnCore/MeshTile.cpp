@@ -518,15 +518,16 @@ struct MeshBuilderKey
     TileDisplayParamsCP m_params;
     bool                m_hasNormals;
 
-    MeshBuilderKey() : MeshBuilderKey(nullptr, false) { }
-    MeshBuilderKey(TileDisplayParamsCP params, bool hasNormals) : m_params(params), m_hasNormals(hasNormals) { }
+    MeshBuilderKey() : m_params(nullptr), m_hasNormals(false) { }
+    MeshBuilderKey(TileDisplayParamsCR params, bool hasNormals) : m_params(&params), m_hasNormals(hasNormals) { }
 
     bool operator<(MeshBuilderKey const& rhs) const
         {
+        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
         if (m_hasNormals != rhs.m_hasNormals)
             return !m_hasNormals;
         else
-            return m_params < rhs.m_params;
+            return *m_params < *rhs.m_params;
         }
 };
 
@@ -605,7 +606,7 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
 
         TileDisplayParamsCP displayParams = &geometry->GetDisplayParams();
         TileMeshBuilderPtr meshBuilder;
-        MeshBuilderKey key(displayParams, nullptr != polyface->GetNormalIndexCP());
+        MeshBuilderKey key(*displayParams, nullptr != polyface->GetNormalIndexCP());
         auto found = builderMap.find(key);
         if (builderMap.end() != found)
             meshBuilder = found->second;
@@ -635,9 +636,7 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
         if (!builder.second->GetMesh()->IsEmpty())
             meshes.push_back(builder.second->GetMesh());
 
-    // ###TODO: statistics...
-    // if (meshes.empty())
-    //     statistics.m_emptyNodeCount++;
+    // ###TODO: statistics: record empty node...
 
     return meshes;
     }
