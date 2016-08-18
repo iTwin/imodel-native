@@ -32,6 +32,9 @@ typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRep
 typedef struct DgnDbRepositoryConnection const&                         DgnDbRepositoryConnectionCR;
 
 struct DgnDbCodeLockSetResultInfo;
+struct DgnDbCodeTemplate;
+struct DgnDbCodeTemplateSetResultInfo;
+typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
@@ -39,6 +42,7 @@ DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
+DEFINE_TASK_TYPEDEFS(DgnDbCodeTemplateSetResultInfo, DgnDbServerCodeTemplateSet);
 DEFINE_TASK_TYPEDEFS(Http::Response, DgnDbServerEventReponse);
 
 
@@ -70,6 +74,63 @@ struct DgnDbCodeLockSetResultInfo
         DGNDBSERVERCLIENT_EXPORT const DgnLockSet& GetLocks() const;
         //! Returns lock state information.
         DGNDBSERVERCLIENT_EXPORT const DgnLockInfoSet& GetLockStates() const;
+    };
+
+//=======================================================================================
+//! DgnDbCodeTemplate instance
+//@bsiclass                                    Algirdas.Mikoliunas              08/2016
+//=======================================================================================
+struct DgnDbCodeTemplate
+    {
+    enum Type : uint8_t
+        {
+        Maximum       = 0,  //!< Get maximum available code mathing given pattern
+        NextAvailable = 1,  //!< Get next available code value given pattern, starting index and increment by
+        };
+
+private:
+    DgnAuthorityId m_authorityId;
+    Utf8String   m_nameSpace;
+    Utf8String   m_valuePattern;
+    Utf8String   m_value;
+
+public:
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetValue() const { return m_value; }
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetValuePattern() const { return m_valuePattern; }
+    DGNDBSERVERCLIENT_EXPORT DgnAuthorityId GetAuthorityId() const { return m_authorityId; }
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetNamespace() const { return m_nameSpace; }
+
+    //! Determine if two DgnDbTemplates are equivalent
+    bool operator==(DgnDbCodeTemplate const& other) const { return m_authorityId == other.m_authorityId && m_value == other.m_value && m_nameSpace == other.m_nameSpace && m_valuePattern == other.m_valuePattern;}
+    //! Determine if two DgnDbTemplates are not equivalent
+    bool operator!=(DgnDbCodeTemplate const& other) const { return !(*this == other); }
+    //! Perform ordered comparison, e.g. for inclusion in associative containers
+    DGNDBSERVERCLIENT_EXPORT bool operator<(DgnDbCodeTemplate const& rhs) const;
+    
+    //! Creates DgnDbCodeTemplate instance.
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate() : m_value(""), m_nameSpace(""), m_valuePattern("") {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(DgnAuthorityId authorityId, Utf8StringCR nameSpace, Utf8StringCR valuePattern) : m_authorityId(authorityId), m_valuePattern(valuePattern), m_nameSpace(nameSpace), m_value("") {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(DgnAuthorityId authorityId, Utf8StringCR nameSpace, Utf8StringCR value, Utf8StringCR valuePattern) : m_authorityId(authorityId), m_value(value), m_nameSpace(nameSpace), m_valuePattern(valuePattern) {};
+    };
+
+//=======================================================================================
+//! DgnDbCodeTemplate results.
+//@bsiclass                                    Algirdas.Mikoliunas              08/2016
+//=======================================================================================
+struct DgnDbCodeTemplateSetResultInfo
+    {
+//__PUBLISH_SECTION_END__
+    private:
+        DgnDbCodeTemplateSet m_codeTemplates;
+
+    public:
+        DgnDbCodeTemplateSetResultInfo() {};
+        void AddCodeTemplate(const DgnDbCodeTemplate codeTemplate);
+
+//__PUBLISH_SECTION_START__
+    public:
+        //! Returns the set of code templates.
+        DGNDBSERVERCLIENT_EXPORT const DgnDbCodeTemplateSet& GetTemplates() const;
     };
 
 //=======================================================================================
@@ -285,6 +346,18 @@ public:
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
+    //! Returns maximum used code value by the given pattern.
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeMaximumIndex(DgnDbCodeTemplateSet codeTemplates, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns next available code by the given pattern, index start and increment by value.
+    //! @param[in] briefcaseId
+    //! @param[in] lastRevisionId
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Update the Event Subscription
     //! @param[in] eventTypes
     //! @param[in] cancellationToken
