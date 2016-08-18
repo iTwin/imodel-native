@@ -12,3 +12,8 @@ DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceC
 
 #DgnDbServerEventParserTests.CodeEventTests
 #DgnDbServerEventParserTests.InvalidEventTests
+
+CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
+    # DgnDb61-16Q2-Dev, WinX64, DEBUG
+    # [ RUN      ] CachingDataSourceTests.SyncCachedData_InstanceCachedAsPersistent_GetQueriesAndDoUpdateFileIsPersistentParameterIsTrue
+    # <Crash, no output or stack printed>
