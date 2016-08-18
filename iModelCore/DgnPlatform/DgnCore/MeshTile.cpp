@@ -27,10 +27,6 @@ END_UNNAMED_NAMESPACE
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
-// ###TODO: Statistics...
-#define BEGIN_DELTA_TIMER(TIMER)
-#define END_DELTA_TIMER(TIMER)
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     06/2016
 +===============+===============+===============+===============+===============+======*/
@@ -518,15 +514,16 @@ struct MeshBuilderKey
     TileDisplayParamsCP m_params;
     bool                m_hasNormals;
 
-    MeshBuilderKey() : MeshBuilderKey(nullptr, false) { }
-    MeshBuilderKey(TileDisplayParamsCP params, bool hasNormals) : m_params(params), m_hasNormals(hasNormals) { }
+    MeshBuilderKey() : m_params(nullptr), m_hasNormals(false) { }
+    MeshBuilderKey(TileDisplayParamsCR params, bool hasNormals) : m_params(&params), m_hasNormals(hasNormals) { }
 
     bool operator<(MeshBuilderKey const& rhs) const
         {
+        BeAssert(nullptr != m_params && nullptr != rhs.m_params);
         if (m_hasNormals != rhs.m_hasNormals)
             return !m_hasNormals;
         else
-            return m_params < rhs.m_params;
+            return *m_params < *rhs.m_params;
         }
 };
 
@@ -605,7 +602,7 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
 
         TileDisplayParamsCP displayParams = &geometry->GetDisplayParams();
         TileMeshBuilderPtr meshBuilder;
-        MeshBuilderKey key(displayParams, nullptr != polyface->GetNormalIndexCP());
+        MeshBuilderKey key(*displayParams, nullptr != polyface->GetNormalIndexCP());
         auto found = builderMap.find(key);
         if (builderMap.end() != found)
             meshBuilder = found->second;
@@ -635,9 +632,7 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
         if (!builder.second->GetMesh()->IsEmpty())
             meshes.push_back(builder.second->GetMesh());
 
-    // ###TODO: statistics...
-    // if (meshes.empty())
-    //     statistics.m_emptyNodeCount++;
+    // ###TODO: statistics: record empty node...
 
     return meshes;
     }
@@ -846,7 +841,7 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode normalMode)
     {
     auto geometry = GetGeometry();
-    auto solid = nullptr != geometry ? GetSolidEntity() : nullptr;
+    auto solid = nullptr == geometry ? GetSolidEntity() : nullptr;
     if (nullptr == geometry && nullptr == solid)
         return nullptr;
 
@@ -932,10 +927,6 @@ struct TileGeometryProcessor : IGeometryProcessor
 
     virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
 
-    // ###TODO: IGeometryProcessor changes...
-    // virtual bool _ProcessAsBody(bool isCurved) const override { return isCurved; }
-    // virtual bool _ProcessAsFacets(bool isPolyface) const override { return true; }
-
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
 
     virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
@@ -948,7 +939,7 @@ struct TileGeometryProcessor : IGeometryProcessor
 
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override
         {
-        return UnhandledPreference::Facet; // ###TODO: Solids...
+        return UnhandledPreference::Facet;
         }
 
     virtual void _OutputGraphics(ViewContextR context) override;
@@ -1045,6 +1036,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
+#if !defined(MESHTILE_FACET_BODIES)
     ISolidKernelEntityPtr clone = solid.Clone();
     DRange3d range = clone->GetEntityRange();
 
@@ -1059,6 +1051,9 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
 
     return true;
+#else
+    return false; // debugging discrepancies...
+#endif
     }
 
 //=======================================================================================
@@ -1136,9 +1131,11 @@ TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double t
     IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
     TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformFromDgn(), *facetOptions, m_progressMeter);
     
-    BEGIN_DELTA_TIMER(m_statistics.m_collectionTime);
+    StopWatch timer(true);
+
     GeometryProcessor::Process(processor, view.GetDgnDb());
-    END_DELTA_TIMER(m_statistics.m_collectionTime);
+
+    m_statistics.m_collectionTime = timer.GetCurrentSeconds();
 
     if (m_progressMeter._WasAborted())
         return Status::Aborted;
@@ -1168,6 +1165,9 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 
     // Enqueue all tiles for processing on the IO thread pool...
     bvector<TileNode*> tiles = root.GetTiles();
+    m_statistics.m_tileCount = tiles.size();
+    m_statistics.m_tileDepth = root.GetMaxDepth();
+
     auto numTotalTiles = static_cast<uint32_t>(tiles.size());
     BeAtomic<uint32_t> numCompletedTiles;
 
@@ -1181,12 +1181,10 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
                 return status;
                 });
 
-    static const uint32_t s_sleepMillis = 1000.0;
-
-    BEGIN_DELTA_TIMER(m_statistics.m_tileCreationTime);
-
     // Spin until all tiles complete, periodically notifying progress meter
     // Note that we cannot abort any tasks which may still be 'pending' on the thread pool...but we can skip processing them if the abort flag is set
+    static const uint32_t s_sleepMillis = 1000.0;
+    StopWatch timer(true);
     do
         {
         m_progressMeter._IndicateProgress(numCompletedTiles, numTotalTiles);
@@ -1194,7 +1192,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
         }
     while (numCompletedTiles < numTotalTiles);
 
-    END_DELTA_TIMER(m_statistics.m_tileCreationTime);
+    m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
 
     m_progressMeter._IndicateProgress(numTotalTiles, numTotalTiles);
 
