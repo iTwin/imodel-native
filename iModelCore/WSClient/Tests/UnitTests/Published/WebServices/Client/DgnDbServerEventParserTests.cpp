@@ -19,7 +19,6 @@ using namespace ::testing;
 using namespace ::std;
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-//USING_NAMESPACE_BENTLEY_DGNCLIENTFX_UTILS
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
 //---------------------------------------------------------------------------------------
@@ -46,14 +45,12 @@ Utf8String StubHttpResponseInvalid()
     return "abcd";
     }
 
-#ifdef WIP_MERGE
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Utf8String StubHttpResponseValidLockEvent()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "LockType":"SomeLockType",
@@ -73,13 +70,13 @@ Utf8String StubHttpResponseValidLockEvent()
 Utf8String StubHttpResponseValidRevisionEvent()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "EventTopic":"SomeEventTopic",
               "FromEventSubscriptionId":"SomeFromEventSubscriptionId",
               "RevisionId":"RevisionId",
-              "RevisionIndex":"SomeRevisionIndex"
+              "RevisionIndex":"SomeRevisionIndex",
+			  "BriefcaseId":"SomeBriefcaseId"
               }
              )";
     }
@@ -90,7 +87,6 @@ Utf8String StubHttpResponseValidRevisionEvent()
 Utf8String StubHttpResponseValidCodeEvent()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "CodeAuthorityId":"SomeCodeAuthorityId",
@@ -112,7 +108,6 @@ Utf8String StubHttpResponseValidCodeEvent()
 Utf8String StubHttpResponseValidDeletedEvent()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "EventTopic":"SomeEventTopic",
@@ -128,7 +123,6 @@ Utf8String StubHttpResponseValidDeletedEvent()
 Utf8String StubHttpResponseInvalidLockEvent1()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "BriefcaseId":"SomeBriefcaseId",
@@ -143,7 +137,6 @@ Utf8String StubHttpResponseInvalidLockEvent1()
 Utf8String StubHttpResponseInvalidLockEvent2()
 {
 	return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "LockType":"SomeLockType",
@@ -163,7 +156,6 @@ Utf8String StubHttpResponseInvalidLockEvent2()
 Utf8String StubHttpResponseInvalidRevisionEvent()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "RevisionIndex":"SomeRevisionIndex"
@@ -177,7 +169,6 @@ Utf8String StubHttpResponseInvalidRevisionEvent()
 Utf8String StubHttpResponseInvalidCodeEvent1()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "CodeAuthorityId":"SomeLockType",
@@ -192,7 +183,6 @@ Utf8String StubHttpResponseInvalidCodeEvent1()
 Utf8String StubHttpResponseInvalidCodeEvent2()
 {
 	return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "CodeAuthorityId":"SomeCodeAuthorityId",
@@ -214,540 +204,10 @@ Utf8String StubHttpResponseInvalidCodeEvent2()
 Utf8String StubHttpResponseInvalidDeletedEvent()
     {
     return R"(
-              @string3http://schemas.microsoft.com/2003/10/Serialization/™Ž
               {
               "Date":"SomeDate",
               "EventTopic":"SomeEventTopic"
               }
-             )";
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseValidEventSubscriptionWSObjectResponse()
-    {
-    return R"(
-             {
-             "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties":
-                                                                {
-                                                                "EventTypes":["LockEvent", "RevisionEvent"]
-                                                                }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseValidEventSubscriptionWSChangeSetResponse()
-    {
-    return R"(
-             {
-            "changedInstances":
-                              [
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties":
-                                                                {
-                                                                "EventTypes" : ["LockEvent", "RevisionEvent"]
-                                                                }
-                                                    }
-                              }
-                              ]
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseValidEventSASResponse()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeInstanceId",
-                                                    "schemaName" : "BIMCSRepository",
-                                                    "className" : "EventSAS",
-                                                    "properties" :
-                                                                 {
-                                                                 "EventServiceSASToken":"SomeSASToken",
-                                                                 "BaseAddress" : "SomeBaseAddress"
-                                                                 }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse1()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties" :
-                                                                 {
-                                                                 }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse2()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties" :
-                                                                 {
-                                                                 "Help":""
-                                                                 }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse3()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties" :
-                                                                 {
-                                                                 "EventTypes":"YoYo"
-                                                                 }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSObjectResponse4()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties" :
-                                                                 {
-                                                                 "EventTypes" : ["LockEvent", "RevisionEvent"]
-                                                                 }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse1()
-    {
-    return R"(
-             {
-            "changedInstances":
-                              [
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties":
-                                                                {
-                                                                }
-                                                    }
-                              }
-                              ]
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse2()
-    {
-    return R"(
-             {
-            "changedInstances":
-                              [
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties":
-                                                                {
-                                                                "Help":""
-                                                                }
-                                                    }
-                              }
-                              ]
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse3()
-    {
-    return R"(
-             {
-            "changedInstances":
-                              [
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeSubscriptionId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties":
-                                                                {
-                                                                "EventTypes":"YoYo"
-                                                                }
-                                                    }
-                              }
-                              ]
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSubscriptionWSChangeSetResponse4()
-    {
-    return R"(
-             {
-            "changedInstances":
-                              [
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSubscription",
-                                                    "properties":
-                                                                {
-                                                                "EventTypes" : ["LockEvent", "RevisionEvent"]
-                                                                }
-                                                    }
-                              }
-                              ]
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSASResponse1()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeInstanceId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSAS",
-                                                    "properties":
-                                                                {
-                                                                }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSASResponse2()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeInstanceId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSAS",
-                                                    "properties":
-                                                                {
-                                                                "Something1":"",
-                                                                "Something2":""                 
-                                                                }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSASResponse3()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeInstanceId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSAS",
-                                                    "properties":
-                                                                {
-                                                                "EventServiceSASToken":"",
-                                                                "BaseAddress":""            
-                                                                }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubHttpResponseInvalidEventSASResponse4()
-    {
-    return R"(
-             {
-            "changedInstance":
-                              {
-                              "change":"Created",
-                              "instanceAfterChange" :
-                                                    {
-                                                    "instanceId":"SomeInstanceId",
-                                                    "schemaName":"BIMCSRepository",
-                                                    "className":"EventSAS",
-                                                    "properties":
-                                                                {
-                                                                "EventServiceSASToken":"SomeSASToken",
-                                                                "BaseAddress":""                
-                                                                }
-                                                    }
-                              }
-             }
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateValidEventSASJson()
-    {
-    return R"(
-             {
-             "instance":
-                       {
-			           "instanceId":"",
-			           "schemaName":"BIMCSRepository",
-			           "className":"EventSAS",
-			           "properties":
-						           {
-						           "BaseAddress":"",
-						           "EventServiceSASToken":""
-						           }
-			            }
-             } 
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateInvalidEventSASJson()
-    {
-    return R"(
-             {
-             "instance":
-                       {
-			           "instanceId":"",
-			           "schemaName":"BIMCSRepository",
-			           "className":"EventSAS",
-			            "properties":
-						            {
-						            }
-			            }
-             } 
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateValidEventSubscriptionWSObjectJsonSingleEvent()
-    {
-    return R"(
-             {
-             "instance":
-                       {
-			           "instanceId":"",
-			           "schemaName":"BIMCSRepository",
-			           "className":"EventSubscription",
-			            "properties":
-						            {
-						            "EventTypes": ["LockEvent"] 
-						            }
-			            }
-             } 
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateValidEventSubscriptionWSObjectJsonNoEvent()
-    {
-    return R"(
-             {
-             "instance":
-                       {
-			           "instanceId":"",
-			           "schemaName":"BIMCSRepository",
-			           "className":"EventSubscription",
-			            "properties":
-						            {
-						            "EventTypes": []
-						            }
-			            }
-             } 
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonSingleEvent()
-    {
-    return R"(
-			 {
-			 "EventTypes": ["LockEvent"]
-			 }          
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateValidEventSubscriptionWSChangeSetJsonNoEvent()
-    {
-    return R"(
-			 {
-			 "EventTypes": [] 
-			 }                   
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateInvalidEventSubscriptionWSObjectJson()
-    {
-    return R"(
-             {
-             "instance":
-                       {
-			           "instanceId":"",
-			           "schemaName":"BIMCSRepository",
-			           "className":"EventSubscription",
-			           "properties":
-						           {
-						           }
-			           }
-             } 
-             )";
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod									Arvind.Venkateswaran            06/2016
-//---------------------------------------------------------------------------------------
-Utf8String StubGenerateInvalidEventSubscriptionWSChangeSetJson()
-    {
-    return R"(
-             {
-			 "properties":
-						 {
-						 }	           
-             } 
              )";
     }
 
@@ -858,8 +318,6 @@ void DgnDbServerEventParserTests::SetUp()
 //---------------------------------------------------------------------------------------
 //@bsimethod									Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-#ifdef WIP_MERGE
-
 TEST_F(DgnDbServerEventParserTests, LockEventTests)
     {
     //Check for valid values as Json
@@ -1039,4 +497,3 @@ TEST_F(DgnDbServerEventParserTests, InvalidContentTypeTests)
     EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidLocksDeletedContentType(), StubHttpResponseValidDeletedEvent()));
     EXPECT_EQ(nullptr, DgnDbServerEventParser::ParseEvent(StubHttpResponseInvalidCodesDeletedContentType(), StubHttpResponseValidDeletedEvent()));
     }
-#endif

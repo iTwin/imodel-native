@@ -24,20 +24,12 @@ FileInfo::FileInfo()
 //---------------------------------------------------------------------------------------
 FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(description)
     {
-    std::shared_ptr<DgnDbServerHost> host = nullptr;
-    if (nullptr == DgnPlatformLib::QueryHost())
-        {
-        host = std::make_shared<DgnDbServerHost>();
-        DgnDbServerHost::Adopt(host);
-        }
     BeFileName fileName = db.GetFileName();
     BeStringUtilities::WCharToUtf8(m_fileName, BeFileName::GetFileNameAndExtension(fileName).c_str());
     m_fileId = db.GetDbGuid();
     m_mergedRevisionId = db.Revisions().GetParentRevisionId();
     fileName.GetFileSize(m_fileSize);
     m_index = -1;
-    if (nullptr != host)
-        DgnDbServerHost::Forget(host);
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,7 +115,6 @@ DateTimeCR FileInfo::GetUploadedDate() const
     return m_uploadedDate;
     }
 
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
@@ -155,7 +146,7 @@ FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
     if (!mergedRevisionId.empty())
         info->m_mergedRevisionId = mergedRevisionId;
 
-    Utf8String description = properties[ServerSchema::Property::Description].asString();
+    Utf8String description = properties[ServerSchema::Property::FileDescription].asString();
     if (!description.empty())
         info->m_description = description;
 
@@ -185,7 +176,7 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
     if (0 <= GetIndex())
         json[ServerSchema::Property::Index] = GetIndex();
     json[ServerSchema::Property::FileId] = GetFileId().ToString();
-    json[ServerSchema::Property::Description] = GetDescription();
+    json[ServerSchema::Property::FileDescription] = GetDescription();
     json[ServerSchema::Property::FileName] = GetFileName();
     json[ServerSchema::Property::FileSize] = GetSize();
     json[ServerSchema::Property::MergedRevisionId] = GetMergedRevisionId();
