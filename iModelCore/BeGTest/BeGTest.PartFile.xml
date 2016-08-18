@@ -187,11 +187,10 @@
   <ProductDirectoryList ListName="UwpTestProduct">
     <ProductDirectory Name="UwpTestProject" Path=""/>
 
-    <ProductDirectory Name="Libs" Deliver="false"/>
-    <ProductDirectory Name="PublicAPI" Deliver="false"/>
-    <ProductDirectory Name="VendorAPI" Deliver="false"/>
     <ProductDirectory Name="VendorNotices" Deliver="false" />
     <ProductDirectory Name="Assemblies" Deliver="false"/>
+    <ProductDirectory Name="Assets" Deliver="false"/>
+    <ProductDirectory Name="Assets" LibType="static" Deliver="false"/>
   </ProductDirectoryList>
 
 </BuildContext>
