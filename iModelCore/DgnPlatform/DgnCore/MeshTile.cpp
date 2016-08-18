@@ -841,7 +841,7 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode normalMode)
     {
     auto geometry = GetGeometry();
-    auto solid = nullptr != geometry ? GetSolidEntity() : nullptr;
+    auto solid = nullptr == geometry ? GetSolidEntity() : nullptr;
     if (nullptr == geometry && nullptr == solid)
         return nullptr;
 
@@ -1036,6 +1036,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
+#if !defined(MESHTILE_FACET_BODIES)
     ISolidKernelEntityPtr clone = solid.Clone();
     DRange3d range = clone->GetEntityRange();
 
@@ -1050,6 +1051,9 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
 
     return true;
+#else
+    return false; // debugging discrepancies...
+#endif
     }
 
 //=======================================================================================
