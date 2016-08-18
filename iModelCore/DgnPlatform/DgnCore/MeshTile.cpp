@@ -7,7 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <Geom/XYZRangeTree.h>
-#include <Bentley/BeThread.h>
+#include <folly/BeFolly.h>
+#include <folly/futures/Future.h>
+
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 #if defined(BENTLEYCONFIG_OS_WINDOWS)
 #include <windows.h>
@@ -762,11 +767,16 @@ void TileGeometry::Init(ISolidKernelEntityR solid, IFacetOptionsR options)
     m_solidEntity = &solid;
     m_type = Type::Solid;
 
-    m_facetCount = /* ###TODO SolidUtil::GetFacetCountApproximation(solid, options) */ 0;
+#ifdef BENTLEYCONFIG_OPENCASCADE
+    m_facetCount = FacetCountUtil::GetFacetCountApproximation(solid, options);
+#else
+    BeAssert(false);
+    m_facetCount = 0;
+#endif
 
     double rangeVolume = m_range.Volume();
     m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
-    m_isCurved = /* ###TODO T_HOST.GetSolidsKernelAdmin()._QueryEntityData(solid, ISolidKernelEntity::EntityQuery_HasCurvedFaceOrEdge) */ false;
+    m_isCurved = SolidKernelUtil::HasCurvedFaceOrEdge(solid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -858,7 +868,15 @@ PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode no
 
     if (nullptr != solid)
         {
-        // ###TODO: Solids...
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+        TopoDS_Shape const* shape = SolidKernelUtil::GetShape(*solid);
+        polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, *facetOptions) : nullptr;
+        if (polyface.IsValid())
+            {
+            polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != solid->GetEntityType());
+            polyface->Transform(Transform::FromProduct(m_transform, solid->GetEntityTransform()));
+            }
+#endif
         }
     else
         {
@@ -925,6 +943,8 @@ struct TileGeometryProcessor : IGeometryProcessor
     virtual bool _ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) override;
     virtual bool _ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) override;
     virtual bool _ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) override;
+    virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override {return UnhandledPreference::Facet;}
+    virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override {return UnhandledPreference::Facet;}
 
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override
         {
@@ -938,6 +958,7 @@ struct TileGeometryProcessor : IGeometryProcessor
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
+
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
@@ -1024,7 +1045,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
-#ifdef TODO_SOLIDS
     ISolidKernelEntityPtr clone = solid.Clone();
     DRange3d range = clone->GetEntityRange();
 
@@ -1039,9 +1059,6 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
 
     return true;
-#else
-    return false;
-#endif
     }
 
 //=======================================================================================
@@ -1117,7 +1134,7 @@ TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double t
     m_progressMeter._IndicateProgress(0, 1);
 
     IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
-    TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformToDgn(), *facetOptions, m_progressMeter);
+    TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformFromDgn(), *facetOptions, m_progressMeter);
     
     BEGIN_DELTA_TIMER(m_statistics.m_collectionTime);
     GeometryProcessor::Process(processor, view.GetDgnDb());
@@ -1143,180 +1160,44 @@ TileGenerator::Status TileGenerator::GenerateTiles(TileNodeR root, DRange3dCR ra
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      10/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t getProcessorCount()
-    {
-    // ###TODO: Replace with folly...
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
-    SYSTEM_INFO siSysInfo;
-    GetSystemInfo(&siSysInfo); 
-    return (size_t) siSysInfo.dwNumberOfProcessors;
-#else
-    return 4;
-#endif
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileProcessor
-{
-    TileNodeP                       m_tile;
-    TileGenerator::ITileCollector*  m_collector;
-
-    TileProcessor(TileNodeR tile, TileGenerator::ITileCollector& collector) : m_tile(&tile), m_collector(&collector) { }
-
-    void ProcessTile() { m_collector->_AcceptTile(*m_tile); }
-    void Abort() { } // for now just let the tiles finish...
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileQueue
-{
-    BeMutex                     m_mutex;
-    bvector<TileProcessor*>     m_waiting;
-    bset<TileProcessor*>        m_processing;
-
-    void Add(TileProcessor& tile) { m_waiting.push_back(&tile); }
-
-    size_t GetNumRemainingTiles()
-        {
-        BeMutexHolder lock(m_mutex);
-        return m_waiting.size() + m_processing.size();
-        }
-    bool ProcessingRemains()
-        {
-        BeMutexHolder lock(m_mutex);
-        return !m_waiting.empty() || !m_processing.empty();
-        }
-
-    TileProcessor* BeginProcessingTile();
-    void CompleteProcessingTile(TileProcessor& tile);
-    void AbortProcessing();
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileProcessor* TileQueue::BeginProcessingTile()
-    {
-    BeMutexHolder lock(m_mutex);
-
-    TileProcessor* tile = nullptr;
-    if (!m_waiting.empty())
-        {
-        m_processing.insert(tile = m_waiting.back());
-        m_waiting.pop_back();
-        }
-
-    return tile;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileQueue::CompleteProcessingTile(TileProcessor& tile)
-    {
-    BeMutexHolder lock(m_mutex);
-
-    m_processing.erase(m_processing.find(&tile));
-    delete &tile;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileQueue::AbortProcessing()
-    {
-    BeMutexHolder lock(m_mutex);
-
-    for (auto& waiting : m_waiting)
-        delete waiting;
-
-    m_waiting.clear();
-
-    for (auto& processing : m_processing)
-        processing->Abort();
-    }
-
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     06/2016
-+===============+===============+===============+===============+===============+======*/
-struct TileWorker
-{
-    TileQueue&  m_queue;
-    size_t      m_index;
-
-    TileWorker(TileQueue& q, size_t index) : m_queue(q), m_index(index) { }
-
-    void Begin()
-        {
-        TileProcessor* tile;
-        while (nullptr != (tile = m_queue.BeginProcessingTile()))
-            {
-            tile->ProcessTile();
-            m_queue.CompleteProcessingTile(*tile);
-            }
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static THREAD_MAIN_IMPL tileThreadRunner(void* arg)
-    {
-    auto& worker = *reinterpret_cast<TileWorker*>(arg);
-    worker.Begin();
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector& collector)
     {
-    // ###TODO: Replace this threading stuff with folly....
-    static size_t s_maxThreadCount = getProcessorCount() - 2;
-    static int s_threadStackSize = 2 * 1024 * 1024;
-
     m_progressMeter._SetTaskName(TaskName::CreatingTiles);
 
-    TileQueue tileQueue;
+    // Enqueue all tiles for processing on the IO thread pool...
     bvector<TileNode*> tiles = root.GetTiles();
+    auto numTotalTiles = static_cast<uint32_t>(tiles.size());
+    BeAtomic<uint32_t> numCompletedTiles;
+
+    auto threadPool = &BeFolly::IOThreadPool::GetPool();
     for (auto& tile : tiles)
-        tileQueue.Add(*new TileProcessor(*tile, collector));
-
-    bvector<TileWorker*> tileWorkers;
-    for (size_t i = 0; i < s_maxThreadCount; i++)
-        tileWorkers.push_back(new TileWorker(tileQueue, i));
-
-    for (auto& tileWorker : tileWorkers)
-        BeThreadUtilities::StartNewThread(s_threadStackSize, tileThreadRunner, (void*)tileWorker);
+        folly::via(threadPool, [&]()
+                {
+                // Once the tile tasks are enqueued we must process them...do nothing if we've already aborted...
+                auto status = m_progressMeter._WasAborted() ? TileGenerator::Status::Aborted : collector._AcceptTile(*tile);
+                ++numCompletedTiles;
+                return status;
+                });
 
     static const uint32_t s_sleepMillis = 1000.0;
 
-    uint32_t numTotalTiles = static_cast<uint32_t>(tiles.size());
-
     BEGIN_DELTA_TIMER(m_statistics.m_tileCreationTime);
+
+    // Spin until all tiles complete, periodically notifying progress meter
+    // Note that we cannot abort any tasks which may still be 'pending' on the thread pool...but we can skip processing them if the abort flag is set
     do
         {
-        m_progressMeter._IndicateProgress(numTotalTiles - static_cast<uint32_t>(tileQueue.GetNumRemainingTiles()), numTotalTiles);
-        if (m_progressMeter._WasAborted())
-            tileQueue.AbortProcessing();
-
+        m_progressMeter._IndicateProgress(numCompletedTiles, numTotalTiles);
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
-    while (tileQueue.ProcessingRemains());
+    while (numCompletedTiles < numTotalTiles);
 
     END_DELTA_TIMER(m_statistics.m_tileCreationTime);
 
-    for (auto& tileWorker : tileWorkers)
-        delete tileWorker;
-
     m_progressMeter._IndicateProgress(numTotalTiles, numTotalTiles);
+
     return m_progressMeter._WasAborted() ? Status::Aborted : Status::Success;
     }
 

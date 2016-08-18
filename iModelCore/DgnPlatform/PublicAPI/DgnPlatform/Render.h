@@ -838,6 +838,7 @@ public:
 
     //! Get the area pattern params.
     PatternParamsCP GetPatternParams() const {return m_pattern.get();}
+    PatternParamsP GetPatternParamsP() {return m_pattern.get();}
 
     //! Get the geometry class.
     DgnGeometryClass GetGeometryClass() const {return m_geometryClass;}
@@ -859,6 +860,12 @@ public:
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
+
+    //! Get whether this GeometryParams contains information that needs to be transformed (ex. to apply local to world).
+    bool IsTransformable() const {return m_pattern.IsValid();} // NEEDSWORK: LineStyleInfo???
+
+    //! Transform GeometryParams data like PatternParams and LineStyleInfo.
+    void ApplyTransform(TransformCR transform) {if (m_pattern.IsValid()) m_pattern->ApplyTransform(transform);} // NEEDSWORK: LineStyleInfo???
 };
 
 //=======================================================================================
@@ -879,7 +886,6 @@ private:
     TexturePtr          m_lineTexture;
     MaterialPtr         m_material;
     GradientSymbPtr     m_gradient;
-    PatternParamsPtr    m_patternParams;
 
 public:
 
@@ -945,8 +951,6 @@ public:
     //! Get the render material.
     MaterialP GetMaterial() const {return m_material.get();}
 
-    //! Get the area pattern params.
-    PatternParamsCP GetPatternParams() const {return m_patternParams.get();}
     //@}
 
     //! @name Set Methods
@@ -992,8 +996,6 @@ public:
     //! Set the render material.
     void SetMaterial(MaterialP material) {m_material = material;}
 
-    //! Set area patterning parameters.
-    void SetPatternParams(PatternParamsP patternParams) {m_patternParams = patternParams;}
     //@}
 };
 
@@ -1034,7 +1036,6 @@ public:
     ColorDef GetFillColor() const {return m_matSymb.GetFillColor();}
     uint32_t GetWidth() const {return m_matSymb.GetWidth();}
     MaterialPtr GetMaterial() const {return m_matSymb.GetMaterial();}
-    PatternParamsCP GetPatternParams() const {return m_matSymb.GetPatternParams();}
 
     void Clear() {SetFlags(FLAGS_None); m_matSymb.Init();};
     void SetFlags(uint32_t flags) {m_flags = flags;}
@@ -1045,7 +1046,6 @@ public:
     void SetWidth(uint32_t width) {m_matSymb.SetWidth(width); m_flags |= FLAGS_RastWidth;}
     void SetLinePixels(GraphicParams::LinePixels pixels) {m_matSymb.SetLinePixels(pixels); m_flags |= FLAGS_Style;}
     void SetMaterial(Material* material) {m_matSymb.SetMaterial(material); m_flags |= FLAGS_RenderMaterial;}
-    void SetPatternParams(PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     void SetLineTexture(TextureP texture) {m_matSymb.SetLineTexture(texture); m_flags |= FLAGS_Style;}
     void SetTrueWidthStart(double width) {m_matSymb.SetTrueWidthStart(width); m_flags |= FLAGS_TrueWidth;}
     void SetTrueWidthEnd(double width) {m_matSymb.SetTrueWidthEnd(width); m_flags |= FLAGS_TrueWidth;}
@@ -1551,19 +1551,25 @@ public:
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct TransClip : RefCounted<NonCopyableClass>
+{
+    
+};
+
+//=======================================================================================
 //! An array of GraphicPtrs. 
 //! @note All entries are closed (and therefore may never change) when they're added to this array.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct GraphicBranch
 {
-    ClipPrimitiveCP m_clip = nullptr;
     bool m_hasFlags = false;
     ViewFlags m_viewFlags;
     bvector<GraphicPtr> m_entries;
 
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
-    void SetClip(ClipPrimitiveCP clip) {m_clip = clip;}
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
 };
 
@@ -1582,7 +1588,7 @@ struct System
 
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
-    virtual GraphicPtr _CreateBranch(Graphic::CreateParams const& params, GraphicBranch& branch) const = 0;
+    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element

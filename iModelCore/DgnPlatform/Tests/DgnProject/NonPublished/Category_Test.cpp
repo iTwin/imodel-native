@@ -469,7 +469,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // Can rename non-default sub-category if no name collisions
     cpSubcat2B = pSubcat2B->Update(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    EXPECT_EQ(cpSubcat2B->GetCode().GetValue().c_str(), "NewName");
+    EXPECT_EQ(0, strcmp(cpSubcat2B->GetCode().GetValue().c_str(), "NewName"));
 
     // Illegal characters in names
     pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();

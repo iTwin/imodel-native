@@ -19,259 +19,244 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct DwgHatchDefLine
 {
-    double          angle;
-    DPoint2d        through;
-    DPoint2d        offset;
-    short           nDashes;
-    double          dashes[MAX_DWG_HATCH_LINE_DASHES];
-};
-
-struct DwgHatchDef
-{
-    double                      pixelSize;
-    short                       islandStyle;
-    bvector<DwgHatchDefLine>    hatchLines;
-};
-
-//! PatternParams compare flags.
-enum PatternParamsCompareFlags
-{
-    PATTERNPARAMSCOMPAREFLAGS_RMatrix           = 0x0001,
-    PATTERNPARAMSCOMPAREFLAGS_Offset            = 0x0002,
-    PATTERNPARAMSCOMPAREFLAGS_Default           = 0x0004,
-    PATTERNPARAMSCOMPAREFLAGS_Origin            = 0x0010,
-    PATTERNPARAMSCOMPAREFLAGS_Symbology         = 0x0020,
-    PATTERNPARAMSCOMPAREFLAGS_Mline             = 0x0040,
-    PATTERNPARAMSCOMPAREFLAGS_Tolerance         = 0x0080,
-    PATTERNPARAMSCOMPAREFLAGS_HoleStyle         = 0x0100,
-    PATTERNPARAMSCOMPAREFLAGS_DwgHatch          = 0x0200,
-    PATTERNPARAMSCOMPAREFLAGS_AnnotationScale   = 0x0400,
-    PATTERNPARAMSCOMPAREFLAGS_All               = 0xffff,
-};
-
-//! Selects Pattern Hole Style.
-enum class PatternParamsHoleStyleType
-{
-    Normal = 0, //!< Normal rules....Hatch if in outer, but not hole.
-    Parity = 1, //!< Parity
-};
-
-//! @ingroup AreaPattern
-//! Flags indicating modification of corresponding field in PatternParams.                  
-enum class PatternParamsModifierFlags
-{
-    None                = 0,        //!< No flags set.
-    Space1              = 0x0001,   //!< patternParams.space1 present
-    Angle1              = 0x0002,   //!< patternParams.angle1 present
-    Space2              = 0x0004,   //!< patternParams.space2 present
-    Angle2              = 0x0008,   //!< patternParams.angle2 present
-    Scale               = 0x0010,   //!< patternParams.scale present
-    Cell                = 0x0020,   //!< patternParams.cellId present
-    Tolerance           = 0x0040,   //!< patternParams.tolerance present
-    Style               = 0x0080,   //!< patternParams.style present
-    Weight              = 0x0100,   //!< patternParams.weight present
-    Color               = 0x0200,   //!< patternParams.color present
-    Snap                = 0x0400,   //!< set if pattern is snappable
-    RotMatrix           = 0x0800,   //!< patternParams.rMatrix present
-    Offset              = 0x1000,   //!< patternParams.offset present
-    HoleStyle           = 0x2000,   //!< patternParams.holeStyle present
-    DwgHatchDef         = 0x4000,   //!< patternParams.dwgHatchDef present
-    Multiline           = 0x8000,   //!< patternParams.minLine, patternParams.maxLine present
-    Origin              = 0x10000,  //!< patternParams.origin present
-    PixelSize           = 0x20000,  //!< patternParams.dwgHatchDef.pixelSize set
-    IslandStyle         = 0x40000,  //!< patternParams.dwgHatchDef.islandStyle set
-    TrueScale           = 0x80000,  //!< set if pattern cell is true scaled
-    RawDwgLoops         = 0x100000, //!< pattern contains raw DWG loop data
-    DwgHatchOrigin      = 0x200000, //!< dwg hatch origin has been specified as pattern origin
-    AnnotationScale     = 0x400000, //!< PatternParams.annotationscale present
-};
-
-ENUM_IS_FLAGS(PatternParamsModifierFlags)
-
-//! Selects Pattern Placement Type.
-enum PatternPlacementTypes
-{
-    PATTERN_HATCH           = 0x0,
-    PATTERN_CROSSHATCH      = 0x1,
-    PATTERN_AREA            = 0x2,
+    double      m_angle;
+    DPoint2d    m_through;
+    DPoint2d    m_offset;
+    short       m_nDashes;
+    double      m_dashes[MAX_DWG_HATCH_LINE_DASHES];
 };
 
 //=======================================================================================
+//! The PatternParams structure defines a hatch, cross hatch, or area pattern.
 //! @ingroup AreaPattern
-//! Each member of the PatternParams structure has a corresponding bit in
-//! PatternParamsModifierFlags that indicates whether or not the member is used.
-//! For example, if "rMatrix" is to be used, set the appropriate bit in
-//! the modifiers member using the bitwise OR operator
-//! (.modifiers |= PatternParamsModifiers::RotMatrix). If the "rMatrix" member is to be ignored,
-//! clear the appropriate bit in "modifiers" (.modifiers &= ~PatternParamsModifierFlags::RotMatrix).
-// For in-memory use only! 
-// @bsiclass 
 //=======================================================================================
 struct PatternParams : RefCountedBase
 {
-    RotMatrix                   rMatrix;                        //!< The pattern coordinate system.
-    DPoint3d                    offset;                         //!< The offset from the element origin.
-    double                      space1;                         //!< The primary (row) spacing.
-    double                      angle1;                         //!< The angle of first hatch or pattern.
-    double                      space2;                         //!< The secondary (column) spacing.
-    double                      angle2;                         //!< The angle of second hatch.
-    double                      scale;                          //!< The pattern scale.
-    double                      tolerance;                      //!< The pattern tolerance.
-    double                      annotationscale;                //!< The annotation scale.
-    int64_t                     cellId;                         //!< The ID of shared cell definition.
-    PatternParamsModifierFlags  modifiers;                      //!< The pattern modifiers bit field.
-    int32_t                     minLine;                        //!< The min line of multi-line element.
-    int32_t                     maxLine;                        //!< The max line of multi-line element.
-    ColorDef                    color;                          //!< The pattern / hatch color.
-    uint32_t                    weight;                         //!< The pattern / hatch weight.
-    uint32_t                    style;                          //!< The pattern / hatch line style.
-    int16_t                     holeStyle;                      //!< The hole parity style.
-    DwgHatchDef                 dwgHatchDef;                    //!< The DWG style hatch definition.
-    DPoint3d                    origin;                         //!< The hatch origin.
+protected:
 
-    PatternParams() {Init();}
-    DGNPLATFORM_EXPORT void Init();
+    DPoint3d                    m_origin;               //!< Pattern origin (offset from to element's placement).
+    RotMatrix                   m_rMatrix;              //!< Pattern coordinate system (relative to element's placement).
+    double                      m_space1;               //!< Primary (row) spacing.
+    double                      m_space2;               //!< Secondary (column) spacing.
+    double                      m_angle1;               //!< Angle of first hatch or pattern.
+    double                      m_angle2;               //!< Angle of second hatch.
+    double                      m_scale;                //!< Pattern scale.
+    bool                        m_invisibleBoundary;    //!< Whether pattern boundary should not display (ignored when also filled)...
+    bool                        m_snappable;            //!< Whether pattern geometry can be snapped to.
+    bool                        m_useColor;             //!< Whether to use pattern color instead of inheriting current color.
+    bool                        m_useWeight;            //!< Whether to use pattern weight instead of inheriting current weight.
+    ColorDef                    m_color;                //!< The pattern / hatch color.
+    uint32_t                    m_weight;               //!< The pattern / hatch weight.
+    DgnGeometryPartId           m_symbolId;             //!< The id of the GeometryPart to use for an area pattern.
+    bvector<DwgHatchDefLine>    m_hatchLines;           //!< The DWG style hatch definition.
+
+    PatternParams()
+        {
+        m_origin.Zero();
+        m_rMatrix.InitIdentity();
+        m_space1 = m_space2 = m_angle1 = m_angle2 = 0.0;
+        m_scale = 1.0;
+        m_useColor = m_useWeight = m_invisibleBoundary = m_snappable = false;
+        m_weight = 0;
+        }
 
 public:
     //! Create an instance of a PatternParams.
     static PatternParamsPtr Create() {return new PatternParams();}
 
     //! Create an instance of a PatternParams from an existing PatternParams.
-    DGNPLATFORM_EXPORT static PatternParamsPtr CreateFromExisting(PatternParamsCR existing);
+    static PatternParamsPtr Create(PatternParamsCR params)
+        {
+        PatternParamsP newParams = new PatternParams();
 
-    //! Copy values from an existing PatternParams.
-    DGNPLATFORM_EXPORT void Copy(PatternParamsCR existing);
+        newParams->m_origin             = params.m_origin;
+        newParams->m_rMatrix            = params.m_rMatrix;
+        newParams->m_space1             = params.m_space1;
+        newParams->m_space2             = params.m_space2;
+        newParams->m_angle1             = params.m_angle1;
+        newParams->m_angle2             = params.m_angle2;
+        newParams->m_scale              = params.m_scale;
+        newParams->m_invisibleBoundary  = params.m_invisibleBoundary;
+        newParams->m_snappable          = params.m_snappable;
+        newParams->m_useColor           = params.m_useColor;
+        newParams->m_useWeight          = params.m_useWeight;
+        newParams->m_color              = params.m_color;
+        newParams->m_weight             = params.m_weight;
+        newParams->m_symbolId           = params.m_symbolId;
+        newParams->m_hatchLines         = params.m_hatchLines;
+
+        return newParams;
+        }
 
     //! Compare two PatternParams.
-    DGNPLATFORM_EXPORT bool IsEqual(PatternParamsCR params, PatternParamsCompareFlags compareFlags=PATTERNPARAMSCOMPAREFLAGS_Default);
+    bool operator==(PatternParamsCR rhs) const
+        {
+        if (this == &rhs)
+            return true;
 
-    //! Get the pattern modifiers bit field.
-    PatternParamsModifierFlags GetModifiers() const {return modifiers;}
+        if (!rhs.m_origin.IsEqual(m_origin, 1.0e-10))
+            return false;
 
-    //! Get pattern orientation. Used if PatternParamsModifierFlags::RotMatrix is set.
-    RotMatrixCR GetOrientation() const {return rMatrix;}
+        if (!rhs.m_rMatrix.IsEqual(m_rMatrix, 1.0e-10))
+            return false;
 
-    //! Get pattern offset from element origin. Used if PatternParamsModifierFlags::Offset is set.
-    DPoint3dCR GetOffset() const {return offset;}
+        if (!DoubleOps::WithinTolerance(rhs.m_space1, m_space1, 1.0e-10))
+            return false;
 
-    //! Get pattern hatch spacing or area pattern row spacing. Used if PatternParamsModifierFlags::Space1 is set.
-    double GetPrimarySpacing() const {return space1;}
+        if (!DoubleOps::WithinTolerance(rhs.m_space2, m_space2, 1.0e-10))
+            return false;
 
-    //! Get pattern hatch angle or area pattern angle. Used if PatternParamsModifierFlags::Angle1 is set.
-    double GetPrimaryAngle() const {return angle1;}
+        if (!DoubleOps::WithinTolerance(rhs.m_angle1, m_angle1, 1.0e-10))
+            return false;
 
-    //! Get pattern cross hatch spacing or area pattern column spacing. Used if PatternParamsModifierFlags::Space2 is set.
-    double GetSecondarySpacing() const {return space2;}
+        if (!DoubleOps::WithinTolerance(rhs.m_angle2, m_angle2, 1.0e-10))
+            return false;
 
-    //! Get pattern cross hatch angle. Used if PatternParamsModifierFlags::Angle2 is set.
-    double GetSecondaryAngle() const {return angle2;}
+        if (!DoubleOps::WithinTolerance(rhs.m_scale, m_scale, 1.0e-10))
+            return false;
 
-    //! Get pattern scale. Used if PatternParamsModifierFlags::Scale is set.
-    double GetScale() const {return scale;}
+        if (rhs.m_invisibleBoundary != m_invisibleBoundary)
+            return false;
 
-    //! Get pattern choord tolerance. Used if PatternParamsModifierFlags::Tolerance is set.
-    double GetTolerance() const {return tolerance;}
+        if (rhs.m_snappable != m_snappable)
+            return false;
 
-    //! Get pattern cell element id. Used if PatternParamsModifierFlags::Cell is set.
-    DgnElementId GetCellId() const {return DgnElementId((uint64_t)cellId);}
+        if (rhs.m_useColor != m_useColor)
+            return false;
+        else if (m_useColor && rhs.m_color != m_color)
+            return false;
 
-    //! Get pattern min multiline boundary index. Used if PatternParamsModifierFlags::Multiline is set.
-    int32_t GetMinLine() const {return minLine;}
+        if (rhs.m_useWeight != m_useWeight)
+            return false;
+        else if (m_useWeight && rhs.m_weight != m_weight)
+            return false;
 
-    //! Get pattern max multiline boundary index. Used if PatternParamsModifierFlags::Multiline is set.
-    int32_t GetMaxLine() const {return maxLine;}
+        if (rhs.m_symbolId.GetValueUnchecked() != m_symbolId.GetValueUnchecked())
+            return false;
 
-    //! Get pattern color. Used if PatternParamsModifierFlags::Color is set.
-    //! @note Uses element color if not set. Ignored for area pattern using a graphic cell not a point cell.
-    ColorDef GetColor() const {return color;}
+        if (rhs.m_hatchLines.size() != m_hatchLines.size())
+            return false;
 
-    //! Get pattern weight. Used if PatternParamsModifierFlags::Weight is set.
-    //! @note Uses element weight if not set. Ignored for area pattern using a graphic cell not a point cell.
-    uint32_t GetWeight() const {return weight;}
+        for (size_t iLine=0; iLine < m_hatchLines.size(); ++iLine)
+            {
+            DwgHatchDefLine rhsLine = rhs.m_hatchLines.at(iLine);
+            DwgHatchDefLine line = m_hatchLines.at(iLine);
 
-    //! Get pattern line style. Used if PatternParamsModifierFlags::Style is set.
-    //! @note Uses element line style if not set. Ignored for area pattern using a graphic cell not a point cell.
-    //! @note Only line styles 0-7 are supported.
-    int32_t GetStyle() const {return style;}
+            if (rhsLine.m_nDashes != line.m_nDashes)
+                return false;
 
-    //! Get pattern dwg hole style. Used if PatternParamsModifierFlags::HoleStyle is set.
-    PatternParamsHoleStyleType GetHoleStyle() const {return static_cast<PatternParamsHoleStyleType>(holeStyle);}
+            if (!DoubleOps::WithinTolerance(rhsLine.m_angle, line.m_angle, 1.0e-10))
+                return false;
 
-    //! Get pattern origin. Used if PatternParamsModifierFlags::Origin is set.
-    //! @note Not supported, pattern origin stored as offset from element origin.
-    DPoint3dCR GetOrigin() const {return origin;}
+            if (!rhsLine.m_through.IsEqual(line.m_through, 1.0e-10))
+                return false;
 
-    //! Get annotation scale. Used if PatternParamsModifierFlags::AnnotationScale is set.
-    //! @note If PatternParamsModifierFlags::AnnotationScale is set, this pattern is an 'annotative' element, which typically synchronizes its scale with model's annotation scale.
-    double GetAnnotationScale() const {return annotationscale;}
+            if (!rhsLine.m_offset.IsEqual(line.m_offset, 1.0e-10))
+                return false;
 
-    //! Set the pattern modifiers bit field.
-    void SetModifiers(PatternParamsModifierFlags value) {modifiers = value;}
+            for (int iDash=0; iDash < line.m_nDashes; ++iDash)
+                {
+                if (!DoubleOps::WithinTolerance(rhsLine.m_dashes[iDash], line.m_dashes[iDash], 1.0e-10))
+                    return false;
+                }
+            }
 
-    //! Set pattern orientation. Sets modifier bit for PatternParamsModifierFlags::RotMatrix.
-    void SetOrientation(RotMatrixCR value) {rMatrix = value; modifiers = modifiers |PatternParamsModifierFlags::RotMatrix;}
+        return true;
+        }
 
-    //! Set pattern offset from element origin. Sets modifier bit for PatternParamsModifierFlags::Offset.
-    void SetOffset(DPoint3dCR value) {offset = value; modifiers = modifiers |PatternParamsModifierFlags::Offset;}
+    //! Get pattern orientation relative to element's origin.
+    RotMatrixCR GetOrientation() const {return m_rMatrix;}
 
-    //! Set pattern hatch spacing or area pattern row spacing. Sets modifier bit for PatternParamsModifierFlags::Space1.
-    void SetPrimarySpacing(double value) {space1 = value; modifiers = modifiers |PatternParamsModifierFlags::Space1;}
+    //! Get pattern offset from element's origin.
+    DPoint3dCR GetOrigin() const {return m_origin;}
 
-    //! Set pattern hatch angle or area pattern angle. Sets modifier bit for PatternParamsModifierFlags::Angle1.
-    void SetPrimaryAngle(double value) {angle1 = value; modifiers = modifiers |PatternParamsModifierFlags::Angle1;}
+    //! Get pattern hatch spacing or area pattern row spacing.
+    double GetPrimarySpacing() const {return m_space1;}
 
-    //! Set pattern cross hatch spacing or area pattern column spacing. Sets modifier bit for PatternParamsModifierFlags::Space2.
-    void SetSecondarySpacing(double value) {space2 = value; modifiers = modifiers |PatternParamsModifierFlags::Space2;}
+    //! Get pattern cross hatch spacing or area pattern column spacing.
+    double GetSecondarySpacing() const {return m_space2;}
 
-    //! Set pattern cross hatch angle. Sets modifier bit for PatternParamsModifierFlags::Angle2.
-    void SetSecondaryAngle(double value) {angle2 = value; modifiers = modifiers |PatternParamsModifierFlags::Angle2;}
+    //! Get pattern hatch angle or area pattern angle.
+    double GetPrimaryAngle() const {return m_angle1;}
 
-    //! Set pattern pattern scale. Sets modifier bit for PatternParamsModifierFlags::Scale.
-    void SetScale(double value) {scale = value; modifiers = modifiers |PatternParamsModifierFlags::Scale;}
+    //! Get pattern cross hatch angle.
+    double GetSecondaryAngle() const {return m_angle2;}
 
-    //! Set pattern choord tolerance. Sets modifier bit for PatternParamsModifierFlags::Tolerance.
-    void SetTolerance(double value) {tolerance = value; modifiers = modifiers |PatternParamsModifierFlags::Tolerance;}
+    //! Get pattern scale.
+    double GetScale() const {return m_scale;}
 
-    //! Set pattern cell by supplying the element id of an existing shared cell definition. Sets modifier bit for PatternParamsModifierFlags::Cell.
-    void SetCellId(DgnElementId value) {cellId = value.GetValue(); modifiers = modifiers |PatternParamsModifierFlags::Cell;}
+    //! Get pattern symbol id.
+    DgnGeometryPartId GetSymbolId() const {return m_symbolId;}
 
-    //! Set pattern min multiline boundary index. Sets modifier bit for PatternParamsModifierFlags::Multiline. Valid only for multiline elements.
-    void SetMinLine(int32_t value) {minLine = value; modifiers = modifiers |PatternParamsModifierFlags::Multiline;}
+    //! Get DWG hatch definition.
+    bvector<DwgHatchDefLine> const& GetDwgHatchDef() const {return m_hatchLines;}
+    bvector<DwgHatchDefLine>& GetDwgHatchDefR() {return m_hatchLines;}
 
-    //! Set pattern max multiline boundary index. Sets modifier bit for PatternParamsModifierFlags::Multiline. Valid only for multiline elements.
-    void SetMaxLine(int32_t value) {maxLine = value; modifiers = modifiers |PatternParamsModifierFlags::Multiline;}
+    //! Get whether pattern boundary should not display (ignored when also filled)...
+    bool GetInvisibleBoundary() const {return m_invisibleBoundary;}
 
-    //! Set pattern color. Sets modifier bit for PatternParamsModifierFlags::Color.
-    //! @note Use to set a pattern color that is different than element color. Ignored for area pattern using a graphic cell not a point cell.
-    void SetColor(ColorDef value) {color = value; modifiers = modifiers |PatternParamsModifierFlags::Color;}
+    //! Get whether pattern boundary can be snapped to.
+    bool GetSnappable() const {return m_snappable;}
 
-    //! Set pattern weight. Sets modifier bit for PatternParamsModifierFlags::Weight.
-    //! @note Use to set a pattern weight that is different than element weight. Ignored for area pattern using a graphic cell not a point cell.
-    void SetWeight(uint32_t value) {weight = value; modifiers = modifiers |PatternParamsModifierFlags::Weight;}
+    //! Get whether pattern uses a fixed color.
+    bool GetUseColor() const {return m_useColor;}
 
-    //! Set pattern line style. Sets modifier bit for PatternParamsModifierFlags::Style.
-    //! @note Use to set a pattern line style that is different than element line style. Ignored for area pattern using a graphic cell not a point cell.
-    //! @note Only line styles 0-7 are supported.
-    void SetStyle(int32_t value) {style = value; modifiers = modifiers |PatternParamsModifierFlags::Style;}
+    //! Get whether pattern uses a fixed weight.
+    bool GetUseWeight() const {return m_useWeight;}
 
-    //! Set pattern dwg hole style. Sets modifier bit for PatternParamsModifierFlags::HoleStyle.
-    void SetHoleStyle(PatternParamsHoleStyleType value) {holeStyle = static_cast<int16_t>(value); modifiers = modifiers |PatternParamsModifierFlags::HoleStyle;}
+    //! Get pattern color. Used if m_useColor is set.
+    //! @note Uses element color if not set.
+    ColorDef GetColor() const {return m_color;}
 
-    //! Set pattern origin. Sets modifier bit for PatternParamsModifierFlags::Origin.
-    //! @note Not supported, define pattern origin relative to element origin using SetOffset instead.
-    void SetOrigin(DPoint3dCR value) {origin = value; modifiers = modifiers |PatternParamsModifierFlags::Origin;}
+    //! Get pattern weight. Used if m_useWeight is set.
+    //! @note Uses element weight if not set.
+    uint32_t GetWeight() const {return m_weight;}
 
-    //! Set annotation scale. Sets modifier bit for PatternParamsModifierFlags::AnnotationScale.
-    //! @note This is optional. Setting it makes the pattern an 'annotative' element, which typically synchronizes its scale with model's annotation scale.
-    void SetAnnotationScale(double value) {annotationscale = value; modifiers = modifiers |PatternParamsModifierFlags::AnnotationScale;}
+    //! Set pattern orientation.
+    void SetOrientation(RotMatrixCR value) {m_rMatrix = value;}
+
+    //! Set pattern offset from element origin.
+    void SetOrigin(DPoint3dCR value) {m_origin = value;}
+
+    //! Set pattern hatch spacing or area pattern row spacing.
+    void SetPrimarySpacing(double value) {m_space1 = value;}
+
+    //! Set pattern cross hatch spacing or area pattern column spacing.
+    void SetSecondarySpacing(double value) {m_space2 = value;}
+
+    //! Set pattern hatch angle or area pattern angle.
+    void SetPrimaryAngle(double value) {m_angle1 = value;}
+
+    //! Set pattern cross hatch angle.
+    void SetSecondaryAngle(double value) {m_angle2 = value;}
+
+    //! Set pattern pattern scale.
+    void SetScale(double value) {m_scale = value;}
+
+    //! Set pattern symbol id.
+    void SetSymbolId(DgnGeometryPartId value) {m_symbolId = value;}
+
+    //! Set DWG hatch definition.
+    void SetDwgHatchDef(bvector<DwgHatchDefLine> const& value) {m_hatchLines = value;}
+
+    //! Set whether pattern boundary should not display (ignored when also filled)...
+    void SetInvisibleBoundary(bool value) {m_invisibleBoundary = value;}
+
+    //! Set whether pattern boundary can be snapped to.
+    void SetSnappable(bool value) {m_snappable = value;}
+
+    //! Set pattern color.
+    //! @note Use to set a pattern color that is different than element color.
+    void SetColor(ColorDef value) {m_color = value; m_useColor = true;}
+
+    //! Set pattern weight.
+    //! @note Use to set a pattern weight that is different than element weight.
+    void SetWeight(uint32_t value) {m_weight = value; m_useWeight = true;}
+
+    //! Modify this PatternParams by the supplied transform.
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR transform);
+
 }; // PatternParams
-
-enum PatternPlacementFlags
-{
-PATTERN_FLAGS_OverideTrueScale  = (1<<0),       //!< If false ignore UseTrueScale flag, use active setting
-PATTERN_FLAGS_UseTrueScale      = (1<<1),       //!< Apply true scale
-PATTERN_FLAGS_Default           = (0),          //!< Use active setting by default
-};
 
 END_BENTLEY_DGN_NAMESPACE
 

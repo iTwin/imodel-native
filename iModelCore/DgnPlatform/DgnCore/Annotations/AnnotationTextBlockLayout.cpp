@@ -614,21 +614,46 @@ void AnnotationTextBlockLayout::JustifyLines()
             }
         }
 
-    for (auto& line : m_lines)
+    if (AnnotationTextBlock::HorizontalJustification::Left != m_doc->GetJustification())
         {
-        DVec2d offsetFromDocument = line->GetOffsetFromDocument();
-        
-        switch (m_doc->GetJustification())
+        double minOffset = numeric_limits<double>::max();
+
+        for (auto& line : m_lines)
             {
-            case AnnotationTextBlock::HorizontalJustification::Center: offsetFromDocument.x += ((effectiveDocumentWidth - line->GetJustificationRange().XLength()) / 2.0); break;
-            case AnnotationTextBlock::HorizontalJustification::Right: offsetFromDocument.x += (effectiveDocumentWidth - line->GetJustificationRange().XLength()); break;
+            DVec2d offsetFromDocument = line->GetOffsetFromDocument();
+        
+            switch (m_doc->GetJustification())
+                {
+                case AnnotationTextBlock::HorizontalJustification::Center:
+                    {
+                    double offset = ((effectiveDocumentWidth - line->GetJustificationRange().XLength()) / 2.0);
+                    offsetFromDocument.x += offset;
+                    if (offset < minOffset)
+                        minOffset = offset;
+                
+                    break;
+                    }
+
+                case AnnotationTextBlock::HorizontalJustification::Right:
+                    {
+                    double offset = (effectiveDocumentWidth - line->GetJustificationRange().XLength());
+                    offsetFromDocument.x += offset;
+                    if (offset < minOffset)
+                        minOffset = offset;
+
+                    break;
+                    }
             
-            default:
-                BeAssert(false); // Unknown/unexpected AnnotationTextBlock::HorizontalJustification.
-                break;
+                default:
+                    BeAssert(false); // Unknown/unexpected AnnotationTextBlock::HorizontalJustification.
+                    break;
+                }
+
+            line->SetOffsetFromDocument(offsetFromDocument);
             }
 
-        line->SetOffsetFromDocument(offsetFromDocument);
+        m_layoutRange.low.x += minOffset;
+        m_layoutRange.high.x += minOffset;
         }
     }
 

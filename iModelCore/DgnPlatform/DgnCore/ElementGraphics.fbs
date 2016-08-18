@@ -20,6 +20,7 @@ enum BRepType : byte {Solid, Sheet, Wire, Minimal}
 struct DPoint3d {x:double; y:double; z:double;}
 struct DPoint2d {x:double; y:double;}
 struct DVec3d {x:double; y:double; z:double;}
+struct RotMatrix {x00:double; x01:double; x02:double; x10:double; x11:double; x12:double; x20:double; x21:double; x22:double;}
 struct Transform {x00:double; x01:double; x02:double; tx:double; x10:double; x11:double; x12:double; ty:double; x20:double; x21:double; x22:double; tz:double;}
 struct FaceSymbology {useColor:ubyte; useMaterial:ubyte; color:uint; materialId:long; transparency:double; uv:DPoint2d;}
 struct FaceSymbologyIndex {faceIndex:uint; symbIndex:uint;}
@@ -166,3 +167,37 @@ table AreaFill
 
     } // AreaFill
 
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table DwgHatchDefLine
+    {
+    angle:double;
+    through:DPoint2d;
+    offset:DPoint2d;
+    dashes:[double];
+
+    } // DwgHatchDefLine
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table AreaPattern
+    {
+    origin:DPoint3d;
+    rotation:RotMatrix;
+    space1:double;
+    space2:double;
+    angle1:double;
+    angle2:double;
+    scale:double;
+    color:uint;
+    weight:uint;
+    useColor:ubyte;             // color overrides element color
+    useWeight:ubyte;            // weight overrides element weight
+    invisibleBoundary:ubyte;    // pattern boundary should not display
+    snappable:ubyte;            // pattern graphics are snappable
+    symbolId:long;
+    defLine:[DwgHatchDefLine];
+
+    } // AreaPattern
