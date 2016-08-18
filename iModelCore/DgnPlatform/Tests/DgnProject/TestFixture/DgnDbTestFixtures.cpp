@@ -287,7 +287,7 @@ void DgnDbTestFixture::SetUpCameraView(DgnDbR dgnDb, DgnModelR model, ElementAli
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(model.GetModelId(), true);
 
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+    EXPECT_EQ(DgnDbStatus::Success, viewController.Save());
     }
 
 

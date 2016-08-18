@@ -322,18 +322,16 @@ public:
     DgnViewSource GetSource() const { return (DgnViewSource)GetPropertyValueInt32("Source"); } //!< Get source
     DgnDbStatus SetSource(DgnViewSource value) { return SetPropertyValue("Source", (int32_t)value); } //!< Set source
     DgnElementId GetCategorySelectorId() const {return GetPropertyValueId<DgnElementId>("CategorySelector");} //!< Get the ID of the element that holds the list of Categories displayed in a view
-    CategorySelectorCPtr GetCategorySelector() const {return GetDgnDb().Elements().Get<CategorySelector>(GetCategorySelectorId());} //!< Get the list of Categories displayed in a view
     DgnDbStatus SetCategorySelectorId(DgnElementId id) {return SetPropertyValue("CategorySelector", id);} //!< Set the ID of the element that holds the list of Categories displayed in a view. Note that the category selector must be persistent
     DgnDbStatus SetCategorySelector(CategorySelectorCR catSel) {return SetCategorySelectorId(catSel.GetElementId());} //!< Set the list of Categories displayed in a view. Note that the category selector must be persistent
     DgnElementId GetDisplayStyleId() const {return GetPropertyValueId<DgnElementId>("DisplayStyle");} //!< Get the ID of the display style for a view
-    DisplayStyleCPtr GetDisplayStyle() const {return GetDgnDb().Elements().Get<DisplayStyle>(GetDisplayStyleId());} //!< Get the display style
     DgnDbStatus SetDisplayStyleId(DgnElementId value) {return SetPropertyValue("DisplayStyle", value);} //!< Set the ID of the display style for a view
 
     //! Query if the specified model is displayed in this view 
     bool ViewsModel(DgnModelId mid) const {return _ViewsModel(mid);}
     
     //! Query if the specified Category is displayed in this view
-    bool ViewsCategory(DgnCategoryId cid) const { auto catsel = GetCategorySelector(); return catsel.IsValid() ? catsel->ContainsCategory(cid) : false; }
+    DGNPLATFORM_EXPORT bool ViewsCategory(DgnCategoryId cid) const;
     };
 
 //=======================================================================================
@@ -344,18 +342,17 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition3d : ViewDefinition
 {
     DEFINE_T_SUPER(ViewDefinition);
 protected:
-    bool _ViewsModel(DgnModelId mid) const override {auto modsel = GetModelSelector(); return modsel.IsValid()? modsel->ContainsModel(mid): false;}
+    DGNPLATFORM_EXPORT bool _ViewsModel(DgnModelId mid) const override;
 
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
 public:
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d)); }
     DgnElementId GetModelSelectorId() const {return GetPropertyValueId<DgnElementId>("ModelSelector");} //!< Get the ID of the element that holds th ModelSelector used by this view
-    ModelSelectorCPtr GetModelSelector() const {return GetDgnDb().Elements().Get<ModelSelector>(GetModelSelectorId());} //!< Get the ModelSelector used by this view
     DgnElementId GetClipVolumeId() const {return GetPropertyValueId<DgnElementId>("ClipVolume");} //!< Get the ID of the element that holds the ClipVolume used by this view
     DgnDbStatus SetModelSelectorId(DgnElementId id) {return SetPropertyValue("ModelSelector", id);} //!< Set the ID of the element that holds the ModelSelector used by this view.
     DgnDbStatus SetModelSelector(ModelSelectorCR modSel) {return SetModelSelectorId(modSel.GetElementId());} //!< Set the ModelSelector used by this view. Note that the modelselector must be persistent.
     DgnDbStatus SetClipVolumeId(DgnElementId id) {return SetPropertyValue("ClipVolume", id);} //!< Set the ID of the element that holds the ClipVolume used by this view
-};
+    };
 
 //=======================================================================================
 //! Defines a view of one or more SpatialModels.

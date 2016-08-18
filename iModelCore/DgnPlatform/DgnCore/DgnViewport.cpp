@@ -1145,17 +1145,19 @@ void DgnViewport::SaveViewUndo()
     if (!m_undoActive)
         return;
 
-    m_viewController->SaveToSettings();
-    ViewDefinitionCPtr curr = m_viewController->GetViewDefinition();
+    m_viewController->StoreToDefinition();
+    DgnEditElementCollector curr = m_viewController->GetDefinitionR();
 
-    if (m_currentBaseline.IsNull())
+    if (0 == m_currentBaseline.size())
         {
         m_currentBaseline = curr;
         return;
         }
 
-    if (curr.get() == m_currentBaseline.get())
+#ifdef WIP_VIEW_DEFINITION // *** Need DgnElement::IsEqual
+    if (curr == m_currentBaseline)
         return; // nothing changed
+#endif
 
     if (m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();
@@ -1181,7 +1183,7 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ClearUndo()
     {
-    m_currentBaseline = nullptr;
+    m_currentBaseline = DgnEditElementCollector();
     m_forwardStack.clear();
     m_backStack.clear();
     }

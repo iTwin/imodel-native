@@ -136,10 +136,6 @@ void ViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         m_viewedModels.insert(modelId);
     else
         m_viewedModels.erase(modelId);
-
-#ifdef WIP_VIEW_DEFINITION // *** Shared things must be edited directly and immediately
-    // *** Update modelselector right here, right now!
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,10 +149,6 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
         m_viewedCategories.erase(categoryId);
 
     _OnCategoryChange(onOff);
-
-#ifdef WIP_VIEW_DEFINITION // *** Shared things must be edited directly and immediately
-    // *** Update categoryselector right here, right now!
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,8 +159,10 @@ GeometricModelP ViewController::_GetTargetModel() const { return GetDgnDb().Mode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController(ViewDefinition& def) : m_definition(&def)
+ViewController::ViewController(ViewDefinition const& def)
+    : m_dgndb(def.GetDgnDb())
     {
+    m_definitionElements.EditElement(def);
     m_viewFlags.InitDefaults();
     m_defaultDeviceOrientation.InitIdentity();
     m_defaultDeviceOrientationValid = false;
@@ -176,37 +170,11 @@ ViewController::ViewController(ViewDefinition& def) : m_definition(&def)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::SaveToSettings() const
-    {
-    _SaveToSettings();
-
-#ifdef WIP_VIEW_DEFINITION // AppData save
-    for (auto const& appdata : m_appData)
-        appdata.second->_SaveToSettings(m_settings);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::RestoreFromSettings()
-    {
-    _RestoreFromSettings();
-
-#ifdef WIP_VIEW_DEFINITION // AppData save
-    for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
-        appdata.second->_RestoreFromSettings(m_settings);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::LoadCategories()
     {
-    m_viewedCategories = m_definition->GetCategorySelector()->GetCategories();
+    m_viewedCategories = GetCategorySelector().GetCategories();
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(GetDgnDb()))
@@ -237,48 +205,51 @@ void ViewController::LoadCategories()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_RestoreFromSettings()
+void ViewController::_LoadFromDefinition()
     {
-    auto dstyle = m_definition->GetDisplayStyle();
-    m_viewFlags = dstyle->GetViewFlags();
-    m_backgroundColor = dstyle->GetBackgroundColor();
+    auto& dstyle = GetDisplayStyle();
+    m_viewFlags = dstyle.GetViewFlags();
+    m_backgroundColor = dstyle.GetBackgroundColor();
     LoadCategories();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewController::Load()
+void ViewController::LoadFromDefinition()
     {
     m_viewedModels.clear();
 
-    _RestoreFromSettings();
+    _LoadFromDefinition();
 
     // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
     // the model is not already loaded.
     for (auto& id : GetViewedModels())
         GetDgnDb().Models().GetModel(id);
 
-    return BE_SQLITE_OK;
+#ifdef WIP_VIEW_DEFINITION // AppData save
+    for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
+        appdata.second->_Load(m_settings);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_SaveToSettings() const
+void ViewController::_StoreToDefinition() const
     {
-#ifdef WIP_VIEW_DEFINITION // *** Shared things must be edited directly and immediately
-    auto dstyle = m_definition->GetDisplayStyle()->MakeCopy<DisplayStyle>();
-    dstyle->SetViewFlags(m_viewFlags);
-    dstyle->SetBackgroundColor(m_backgroundColor);
-    dstyle->Update();
+    auto& dstyle = GetDisplayStyle();
+    dstyle.SetViewFlags(m_viewFlags);
+    dstyle.SetBackgroundColor(m_backgroundColor);
 
-    auto catSel = m_definition->GetCategorySelector()->MakeCopy<CategorySelector>();
-    catSel->SetCategories(m_viewedCategories);
+    auto& catSel = GetCategorySelector();
+    catSel.SetCategories(m_viewedCategories);
+
     if (m_subCategoryOverrides.empty())
         return;
 
 #ifdef WIP_VIEW_DEFINITION // *** Set SubCategoryOverrides in CategorySelector
+    BeAssert(false && "WIP_VIEW_DEFINITION");
     JsonValueR ovrJson = m_settings[ViewFlagsJson::SubCategories()];
     int i=0;
     for (auto const& it : m_subCategoryOverrides)
@@ -288,18 +259,19 @@ void ViewController::_SaveToSettings() const
         ++i;
         }
 #endif
-
-    catSel->Update();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewController::Save()
+void ViewController::StoreToDefinition()
     {
-    _SaveToSettings();
-    return DbResult::BE_SQLITE_OK;
+    _StoreToDefinition();
+
+#ifdef WIP_VIEW_DEFINITION // AppData save
+    for (auto const& appdata : m_appData)
+        appdata.second->_Store(m_settings);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -307,14 +279,20 @@ DbResult ViewController::Save()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::SaveAs(Utf8CP newName)
     {
-    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(newName));
-    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(m_definition->Clone(nullptr, &params).get());
+    DgnElement::CreateParams params(GetDgnDb(), GetViewDefinition().GetModelId(), GetViewDefinition().GetElementClassId(), ViewDefinition::CreateCode(newName));
+    ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(GetViewDefinition().Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());
-    if (newView.IsNull() || newView->Insert().IsNull())
+    if (newView.IsNull())
         return BE_SQLITE_INTERNAL;
 
-    m_definition = newView;
-    return Save();
+    m_definitionElements.RemoveElement(GetViewDefinition());
+    m_definitionElements.AddElement(*newView);
+    newView = nullptr;
+
+    if (DgnDbStatus::Success != m_definitionElements.Write())
+        return BE_SQLITE_INTERNAL;
+
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,9 +300,9 @@ DbResult ViewController::SaveAs(Utf8CP newName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     {
-    auto wasDef = m_definition;
+    auto wasDef = m_definitionElements;
     DbResult rc = SaveAs(newName);
-    m_definition = wasDef;
+    m_definitionElements = wasDef;
     return rc;
     }
 
@@ -392,11 +370,6 @@ void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnSubCategory::Ov
     auto it = m_subCategories.find(id);
     if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
-
-#ifdef WIP_VIEW_DEFINITION // *** Shared things must be edited directly and immediately
-    // *** Update categoryselector right here, right now!
-#endif
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -406,10 +379,6 @@ void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
     {
     m_subCategoryOverrides.erase(id);
     ReloadSubCategory(id);
-
-#ifdef WIP_VIEW_DEFINITION // *** Shared things must be edited directly and immediately
-    // *** Update categoryselector right here, right now!
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -818,7 +787,7 @@ void ViewController::_FillModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialViewController::SpatialViewController(SpatialViewDefinition& def) : T_Super(def)
+SpatialViewController::SpatialViewController(SpatialViewDefinition const& def) : T_Super(def)
     {
     m_auxCoordSys = IACSManager::GetManager().CreateACS(); // Should always have an ACS...
     m_auxCoordSys->SetOrigin(def.GetDgnDb().Units().GetGlobalOrigin());
@@ -827,7 +796,7 @@ SpatialViewController::SpatialViewController(SpatialViewDefinition& def) : T_Sup
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrthographicViewController::OrthographicViewController(OrthographicViewDefinition& def) : T_Super(def)
+OrthographicViewController::OrthographicViewController(OrthographicViewDefinition const& def) : T_Super(def)
     {
     // not valid, but better than random
     m_origin.Zero();
@@ -901,7 +870,7 @@ SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewContr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraViewController::CameraViewController(CameraViewDefinition& def) : T_Super(def)
+CameraViewController::CameraViewController(CameraViewDefinition const& def) : T_Super(def)
     {
     // not valid, but better than random
     m_origin.Zero();
@@ -1489,7 +1458,7 @@ DPoint3d CameraViewController::_GetTargetPoint() const
 //---------------------------------------------------------------------------------------
 CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
     {
-    return dynamic_cast<CameraViewDefinition&>(*m_definition);
+    return dynamic_cast<CameraViewDefinition&>(GetViewDefinition());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1497,7 +1466,7 @@ CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
 //---------------------------------------------------------------------------------------
 OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefinition() const
     {
-    return dynamic_cast<OrthographicViewDefinition&>(*m_definition);
+    return dynamic_cast<OrthographicViewDefinition&>(GetViewDefinition());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1505,30 +1474,29 @@ OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefin
 //---------------------------------------------------------------------------------------
 SpatialViewDefinition& SpatialViewController::GetSpatialViewDefinition() const
     {
-    return dynamic_cast<SpatialViewDefinition&>(*m_definition);
+    return dynamic_cast<SpatialViewDefinition&>(GetViewDefinition());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      06/16
 //---------------------------------------------------------------------------------------
-void SpatialViewController::_RestoreFromSettings()
+void SpatialViewController::_LoadFromDefinition()
     {
-    T_Super::_RestoreFromSettings();
+    T_Super::_LoadFromDefinition();
 
-    SpatialViewDefinition& sdef = GetSpatialViewDefinition();
-    m_viewedModels = sdef.GetModelSelector()->GetModelIds();
+    m_viewedModels = GetModelSelector().GetModelIds();
 
 #ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
-    m_... = sdef.GetClipVolume().Get ...
+    m_... = GetClipVolume().Get ...
 #endif
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void CameraViewController::_RestoreFromSettings()
+void CameraViewController::_LoadFromDefinition()
     {
-    T_Super::_RestoreFromSettings();
+    T_Super::_LoadFromDefinition();
 
     auto& cdef = GetCameraViewDefinition();
 
@@ -1558,9 +1526,9 @@ void CameraViewController::_RestoreFromSettings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void CameraViewController::_SaveToSettings() const
+void CameraViewController::_StoreToDefinition() const
     {
-    T_Super::_SaveToSettings();
+    T_Super::_StoreToDefinition();
 
     auto& cdef = GetCameraViewDefinition();
     cdef.SetBackOrigin(m_origin);
@@ -1578,9 +1546,9 @@ void CameraViewController::_SaveToSettings() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      06/16
 //---------------------------------------------------------------------------------------
-void OrthographicViewController::_RestoreFromSettings()
+void OrthographicViewController::_LoadFromDefinition()
     {
-    T_Super::_RestoreFromSettings();
+    T_Super::_LoadFromDefinition();
 
     auto& odef = GetOrthographicViewDefinition();
     m_origin = odef.GetOrigin();
@@ -1593,9 +1561,9 @@ void OrthographicViewController::_RestoreFromSettings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      06/16
 //---------------------------------------------------------------------------------------
-void OrthographicViewController::_SaveToSettings() const
+void OrthographicViewController::_StoreToDefinition() const
     {
-    T_Super::_SaveToSettings();
+    T_Super::_StoreToDefinition();
 
     auto& def = GetOrthographicViewDefinition();
     def.SetOrigin(m_origin);
@@ -1603,13 +1571,6 @@ void OrthographicViewController::_SaveToSettings() const
     YawPitchRollAngles ypr;
     YawPitchRollAngles::TryFromRotMatrix(ypr, m_rotation);
     def.SetViewDirection(ypr);
-
-#ifdef WIP_VIEW_DEFINITION // *** Shared things must be edited directly and immediately
-    auto& sdef = GetSpatialViewDefinition().MakeCopy();
-    auto dstyle = sdef.GetDisplayStyle();
-    dstyle->SetViewFlags(m_viewFlags);
-    sdef->GetModelSelector()->SetModelIds(m_viewedModels);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1769,9 +1730,9 @@ void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void ViewController2d::_RestoreFromSettings()
+void ViewController2d::_LoadFromDefinition()
     {
-    T_Super::_RestoreFromSettings();
+    T_Super::_LoadFromDefinition();
 
     ViewDefinition2d& vdef = GetViewDefinition2d();
     m_origin = vdef.GetOrigin();
@@ -1782,9 +1743,9 @@ void ViewController2d::_RestoreFromSettings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void ViewController2d::_SaveToSettings() const
+void ViewController2d::_StoreToDefinition() const
     {
-    T_Super::_SaveToSettings();
+    T_Super::_StoreToDefinition();
 
     ViewDefinition2d& vdef = GetViewDefinition2d();
     vdef.SetOrigin(m_origin);
@@ -1797,7 +1758,7 @@ void ViewController2d::_SaveToSettings() const
 //---------------------------------------------------------------------------------------
 ViewDefinition2d& ViewController2d::GetViewDefinition2d() const
     {
-    return dynamic_cast<ViewDefinition2d&>(*m_definition);
+    return dynamic_cast<ViewDefinition2d&>(GetViewDefinition());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2235,8 +2196,135 @@ DgnDbStatus DisplayStyle::SetViewFlags(Render::ViewFlags const& flags)
     return SetPropertyValue("ViewFlags", Json::FastWriter::ToString(value).c_str());
     }
 
-DgnDbR ViewController::GetDgnDb() const {return m_definition->GetDgnDb();}
-DgnViewId ViewController::GetViewId() const {return m_definition->GetViewId();}
-DrawingViewController::DrawingViewController(DrawingViewDefinition& def) : ViewController2d(def) {}
-SheetViewController::SheetViewController(SheetViewDefinition& def) : ViewController2d(def) {}
-ViewController2d::ViewController2d(ViewDefinition2d& def) : ViewController(def) {}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId ViewController::GetViewId() const {return GetViewDefinition().GetViewId();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DrawingViewController::DrawingViewController(DrawingViewDefinition const& def) : ViewController2d(def) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetViewController::SheetViewController(SheetViewDefinition const& def) : ViewController2d(def) {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController2d::ViewController2d(ViewDefinition2d const& def) : ViewController(def)
+    {
+    m_origin.Zero();
+    m_delta.Zero();
+    m_rotAngle = 0.0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewDefinitionR ViewController::GetViewDefinition() const
+    {
+    return *m_definitionElements.FindByClass<ViewDefinition>(*GetViewDefinitionClass());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+CategorySelectorR ViewController::GetCategorySelector() const
+    {
+    auto catSel = m_definitionElements.FindByClass<CategorySelector>(*GetCategorySelectorClass());
+
+    if (!catSel.IsValid())
+        {
+        auto existingCatSel = GetDgnDb().Elements().Get<CategorySelector>(GetViewDefinition().GetCategorySelectorId());
+        if (existingCatSel.IsValid())
+            catSel = existingCatSel->MakeCopy<CategorySelector>();
+        else
+            catSel = new CategorySelector(GetDgnDb(), GetViewDefinition().GetName().c_str()); // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+
+        m_definitionElements.AddElement(*catSel);
+        }
+
+    return *catSel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayStyleR ViewController::GetDisplayStyle() const
+    {
+    auto dstyle = m_definitionElements.FindByClass<DisplayStyle>(*GetDisplayStyleClass());
+
+    if (!dstyle.IsValid())
+        {
+        auto existingDstyle = GetDgnDb().Elements().Get<DisplayStyle>(GetViewDefinition().GetDisplayStyleId());
+        if (existingDstyle.IsValid())
+            dstyle = existingDstyle->MakeCopy<DisplayStyle>();
+        else
+            dstyle = new DisplayStyle(GetDgnDb(), GetViewDefinition().GetName().c_str());     // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+
+        m_definitionElements.AddElement(*dstyle);
+        }
+
+    return *dstyle;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelSelectorR SpatialViewController::GetModelSelector() const
+    {
+    auto modSel = m_definitionElements.FindByClass<ModelSelector>(*GetModelSelectorClass());
+
+    if (!modSel.IsValid())
+        {
+        auto existingModSel = GetDgnDb().Elements().Get<ModelSelector>(GetSpatialViewDefinition().GetModelSelectorId());
+        if (existingModSel.IsValid())
+            modSel = existingModSel->MakeCopy<ModelSelector>();
+        else
+            modSel = new ModelSelector(GetDgnDb(), GetViewDefinition().GetName().c_str());    // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+
+        m_definitionElements.AddElement(*modSel);
+        }
+
+    return *modSel;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_FixUpDefinitionRelationships()
+    {
+    auto& vdef = GetViewDefinition();
+    vdef.SetDisplayStyleId(GetDisplayStyle().GetElementId());
+    vdef.SetCategorySelectorId(GetCategorySelector().GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_FixUpDefinitionRelationships()
+    {
+    T_Super::_FixUpDefinitionRelationships();
+    auto& vdef = GetSpatialViewDefinition();
+    vdef.SetModelSelectorId(GetModelSelector().GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewController::SaveDefinition()
+    {
+    bool anyInserts;
+    DgnDbStatus status = GetDefinitionR().Write(&anyInserts);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    if (anyInserts)
+        {
+        _FixUpDefinitionRelationships();
+        GetDefinitionR().Write();
+        }
+    return status;
+    }

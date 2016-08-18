@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<ViewDefinitionCPtr> ViewUndoStack;
+    typedef std::deque<DgnEditElementCollector> ViewUndoStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -138,7 +138,7 @@ protected:
     ProgressiveTasks m_elementProgressiveTasks;
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
-    ViewDefinitionCPtr m_currentBaseline;
+    DgnEditElementCollector m_currentBaseline;
     ViewUndoStack   m_forwardStack;
     ViewUndoStack   m_backStack;
     EventHandlerList<Tracker> m_trackers;

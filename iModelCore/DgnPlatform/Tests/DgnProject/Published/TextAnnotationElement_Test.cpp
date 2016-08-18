@@ -109,8 +109,7 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
+        EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
         }
 
     // Read the element back out, modify, and rewrite.
@@ -298,8 +297,7 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
+        EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
         }
 
     // Read the element back out, modify, and rewrite.

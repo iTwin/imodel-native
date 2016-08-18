@@ -188,8 +188,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
     viewController.ChangeModelDisplay(modelId, true);
 
-    EXPECT_EQ(BE_SQLITE_OK, viewController.Save());
-    GetDgnDb()->SaveSettings();
+    EXPECT_EQ(DgnDbStatus::Success, viewController.Save());
     }
 
 /*---------------------------------------------------------------------------------**//**

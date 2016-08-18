@@ -389,11 +389,10 @@ void AnnotationTableTest::SetUpTestCase()
     viewController.ChangeCategoryDisplay(category.GetCategoryId(), true);
     viewController.ChangeModelDisplay(model->GetModelId(), true);
 
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+    EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
 #endif
 
     // Save the customized seed for use by all the tests in this group
-    db->SaveSettings();
     db->SaveChanges();
     }
 

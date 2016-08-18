@@ -335,7 +335,7 @@ DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project)
         return nullptr;
 
     DgnQueryViewP viewController = new DgnQueryView(*cameraView);
-    viewController->Load();
+    viewController->LoadFromDefinition();
 
     return new NonVisibleViewport (nullptr, *viewController);
     }

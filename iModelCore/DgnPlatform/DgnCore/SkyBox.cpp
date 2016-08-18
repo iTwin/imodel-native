@@ -353,7 +353,7 @@ using namespace EnvironmentJson;
 void CameraViewController::LoadEnvironment()
     {
     Json::Value env(Json::objectValue);
-    Json::Reader::Parse(m_definition->GetDisplayStyle()->GetEnvironment(), env);
+    Json::Reader::Parse(GetDisplayStyle().GetEnvironment(), env);
 
     m_environment.m_enabled = env[Display()].asBool();
     

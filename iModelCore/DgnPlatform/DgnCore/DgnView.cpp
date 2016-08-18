@@ -75,8 +75,10 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
     if (controller.IsNull())
         controller = _SupplyController();
 
-    if (!controller.IsValid() || BE_SQLITE_OK != controller->Load())
+    if (!controller.IsValid())
         return nullptr;
+
+    controller->LoadFromDefinition();
 
     if (FillModels::Yes == fillModels)
         controller->_FillModels();
@@ -89,8 +91,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
     {
-    BeAssert(false && "*** WIP_VIEW_DEFINITION");
-    return nullptr;
+    return new OrthographicViewController(const_cast<OrthographicViewDefinition&>(*this));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,4 +472,22 @@ bool CategorySelector::ContainsCategory(DgnCategoryId cid) const
     statement->BindId(1, GetElementId());
     statement->BindId(2, cid);
     return (BE_SQLITE_ROW == statement->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition3d::_ViewsModel(DgnModelId mid) const 
+    {
+    auto modSel = GetDgnDb().Elements().Get<ModelSelector>(GetModelSelectorId());
+    return modSel.IsValid()? modSel->ContainsModel(mid): false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ViewDefinition::ViewsCategory(DgnCategoryId cid) const
+    {
+    auto catSel = GetDgnDb().Elements().Get<CategorySelector>(GetCategorySelectorId());
+    return catSel.IsValid()? catSel->ContainsCategory(cid): false;
     }

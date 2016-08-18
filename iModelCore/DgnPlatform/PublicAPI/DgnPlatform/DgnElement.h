@@ -2445,8 +2445,15 @@ public:
     bset<DgnElementP>::const_iterator end() const {return m_elements.end();}
 
     //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Elements with no ElementIds are inserted. 
+    //! @param[out] anyInserts  Optional. If not null, then true is returned if any element in the collection had to be inserted.
     //! @return non-zero error status if any insert or update fails. In that case some elements in the collection may not be written.
-    DGNPLATFORM_EXPORT DgnDbStatus Write();
+    DGNPLATFORM_EXPORT DgnDbStatus Write(bool* anyInserts = nullptr);
+
+    //! Find the first element in the collection that is-a instance of the specified class. @note This is an is-a test, not an exact test.
+    DGNPLATFORM_EXPORT DgnElementPtr FindElementByClass(ECN::ECClassCR ecclass);
+
+    //! Find an element in the collection by class
+    template<typename T> RefCountedPtr<T> FindByClass(ECN::ECClassCR ecclass) {return dynamic_cast<T*>(FindElementByClass(ecclass).get());}
 };
 
 //=======================================================================================

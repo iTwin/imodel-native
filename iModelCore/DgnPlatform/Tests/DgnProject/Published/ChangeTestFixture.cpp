@@ -219,9 +219,7 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
         viewController.ChangeModelDisplay(modelId, true);
         }
 
-    auto result = viewController.Save();
-    ASSERT_TRUE(BE_SQLITE_OK == result);
-    UNUSED_VARIABLE(result);
+    ASSERT_TRUE(DgnDbStatus::Success == viewController.Save());
 
     DgnViewId viewId = viewRow.GetViewId();
     m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
@@ -242,8 +240,5 @@ void ChangeTestFixture::UpdateDgnDbExtents()
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(physicalExtents);
-    DbResult result = viewController->Save();
-    ASSERT_TRUE(result == BE_SQLITE_OK);
-
-    m_testDb->SaveSettings();
+    ASSERT_TRUE(DgnDbStatus::Success == viewController->Save());
     }

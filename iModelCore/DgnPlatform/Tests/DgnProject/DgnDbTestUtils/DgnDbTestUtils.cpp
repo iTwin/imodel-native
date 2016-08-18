@@ -334,9 +334,7 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(db.Units().GetProjectExtents());
-    ASSERT_EQ(BE_SQLITE_OK, viewController->Save());
-
-    db.SaveSettings();
+    ASSERT_EQ(DgnDbStatus::Success, viewController->Save());
     }
 
 //---------------------------------------------------------------------------------------
@@ -382,38 +380,38 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     else
         name = nameIn;
 
-    ModelSelectorCPtr modSel = InsertNewModelSelector(db, "Default", model.GetModelId());
-    if (!modSel.IsValid())
+    CameraViewDefinitionCPtr newViewDef;
         {
-        EXPECT_TRUE(false) << "Failed to create a ModelSelector with name 'Default'";
-        return DgnViewId();
+        printf("InsertNewModelSelector\n");
+        ModelSelectorCPtr modSel = InsertNewModelSelector(db, name.c_str(), model.GetModelId());
+        printf("InsertNewModelSelector=%p\n", modSel.get());
+        if (!modSel.IsValid())
+            {
+            EXPECT_TRUE(false) << "Failed to create a ModelSelector with name 'Default'";
+            return DgnViewId();
+            }
+
+        printf("Insert CameraViewDefinition\n");
+        CameraViewDefinition view(db, name);
+        view.SetModelSelector(*modSel);
+        newViewDef = db.Elements().Insert(view);
+        printf("Insert CameraViewDefinition=%p\n", newViewDef.get());
+        if (!newViewDef.IsValid())
+            {
+            EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController insert into %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
+            return DgnViewId();
+            }
         }
 
-    CameraViewDefinition view(db, name);
-    view.SetModelSelector(*modSel);
-    ViewDefinitionCPtr newViewDef = view.Insert();
-    if (!newViewDef.IsValid())
-        {
-        EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController insert into %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
-        return DgnViewId();
-        }
-
-    db.SaveChanges();
-
-    CameraViewController* viewController = new CameraViewController(view);
-    if (nullptr == viewController)
-        {
-        EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController ctor failed in %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
-        return DgnViewId();
-        }
+    CameraViewController viewController(*newViewDef);
 
     for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        viewController->ChangeCategoryDisplay(categoryId, true);
+        viewController.ChangeCategoryDisplay(categoryId, true);
 
-    viewController->SetOrigin(DPoint3d::From(-5,-5,-5));
-    viewController->SetDelta(DVec3d::From(10,10,10));
+    viewController.SetOrigin(DPoint3d::From(-5,-5,-5));
+    viewController.SetDelta(DVec3d::From(10,10,10));
 
-    auto& viewFlags = viewController->GetViewFlagsR();
+    auto& viewFlags = viewController.GetViewFlagsR();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
     viewFlags.m_constructions = true;
     viewFlags.m_dimensions = true;
@@ -426,9 +424,11 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     viewFlags.m_grid = true;
     viewFlags.m_acsTriad = true;
 
-    viewController->Save();
+    printf("ViewController::Save\n");
+    viewController.Save();
+    printf("==========================\n");
 
-    return view.GetViewId();
+    return newViewDef->GetViewId();
     }
 
 //---------------------------------------------------------------------------------------

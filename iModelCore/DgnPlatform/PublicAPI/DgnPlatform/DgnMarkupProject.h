@@ -375,42 +375,42 @@ protected:
 
     bool                    m_targetModelIsInSubjectView;
 
-    virtual void _SaveToSettings() const override;
-    virtual void _RestoreFromSettings() override;
-    virtual void _DrawView(ViewContextR) override;
-    virtual DPoint3d _GetOrigin() const override;
-    virtual DVec3d _GetDelta() const override;
-    virtual RotMatrix _GetRotation() const override;
-    virtual void _SetOrigin(DPoint3dCR org) override;
-    virtual void _SetDelta(DVec3dCR delta) override;
-    virtual void _SetRotation(RotMatrixCR rot) override;
-    virtual GeometricModelP _GetTargetModel() const override;
-    virtual void _AdjustAspectRatio(double , bool expandView) override;
-    virtual DPoint3d _GetTargetPoint() const override;
-    virtual bool _Allow3dManipulations() const override;
+    void _StoreToDefinition() const override;
+    void _LoadFromDefinition() override;
+    void _DrawView(ViewContextR) override;
+    DPoint3d _GetOrigin() const override;
+    DVec3d _GetDelta() const override;
+    RotMatrix _GetRotation() const override;
+    void _SetOrigin(DPoint3dCR org) override;
+    void _SetDelta(DVec3dCR delta) override;
+    void _SetRotation(RotMatrixCR rot) override;
+    GeometricModelP _GetTargetModel() const override;
+    void _AdjustAspectRatio(double , bool expandView) override;
+    DPoint3d _GetTargetPoint() const override;
+    bool _Allow3dManipulations() const override;
     // WIP_MERGE_John_Patterns - virtual double _GetPatternZOffset (ViewContextR, ElementHandleCR) const override;
-    virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
-    virtual ColorDef _GetBackgroundColor() const override;
-    virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
-    virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
-    virtual void _OnViewOpened(DgnViewportR vp) override;
+    AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
+    ColorDef _GetBackgroundColor() const override;
+    bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
+    bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
+    void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnCategoryChange(bool singleEnabled) override;
-    virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
+    void _OnCategoryChange(bool singleEnabled) override;
+    void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
     //virtual ScanRange _ShowTxnSummary(TxnSummaryCR summary) override; -- we don't need to override this, because the subject view will never have changed elements that must be displayed
-    virtual void _OnAttachedToViewport(DgnViewportR) override;
-    virtual FitComplete _ComputeFitRange(FitContextR) override;
+    void _OnAttachedToViewport(DgnViewportR) override;
+    FitComplete _ComputeFitRange(FitContextR) override;
 
 #ifdef WIP_SpatialRedlineViewController
     // QueryView
-    virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
-    virtual bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
-    virtual Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
-    virtual int32_t _GetMaxElementFactor() override;
-    virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
-    virtual uint64_t _GetMaxElementMemory () override;
+    bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
+    bool _WantElementLoadStart (ViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum) override;
+    Utf8String _GetRTreeMatchSql (ViewportR viewport) override;
+    int32_t _GetMaxElementFactor() override;
+    double _GetMinimumSizePixels (DrawPurpose updateType) override;
+    uint64_t _GetMaxElementMemory () override;
     // END QueryView
 #endif
     // END QueryView

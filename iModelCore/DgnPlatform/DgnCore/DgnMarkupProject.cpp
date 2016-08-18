@@ -406,9 +406,9 @@ void SpatialRedlineViewController::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_SaveToSettings() const 
+void SpatialRedlineViewController::_StoreToDefinition() const 
     {
-    m_subjectView._SaveToSettings();
+    m_subjectView._StoreToDefinition();
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
@@ -447,9 +447,9 @@ AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_RestoreFromSettings()
+void SpatialRedlineViewController::_LoadFromDefinition()
     {
-    T_Super::_RestoreFromSettings();
+    T_Super::_LoadFromDefinition();
     SynchWithSubjectViewController();
     }
 
@@ -1024,7 +1024,10 @@ void DgnViewAssociationData::FromDgnProject(DgnDbCR dgnProject, ViewControllerCR
 
     m_viewId = projectView.GetViewId();
 
-    projectView.SaveToSettings();
+#ifdef WIP_VIEW_DEFINITION // ***  Calling SaveToDefinition here doesn't make sense. What are we trying to accomplish?
+    BeAssert(false);
+    projectView.SaveToDefinition();
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -1478,7 +1481,8 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
     // as the DgnDb view. That makes for a smoother transition from DgnDb vew to redline view. 
     controller->AdjustAspectRatio(projectViewRect.Aspect(), true);
 
-    controller->Save();
+    controller->StoreToDefinition();
+    controller->GetDefinitionR().Write();
 
     return controller;
     }
@@ -1665,8 +1669,8 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
     //  Note: we route the view settings through Json to avoid problems in the case where dgnView is not exactly the same type as this view controller.
     //  We know it's a sub-class of SpatialViewController, and so it has all of the properties that we care about. 
     Json::Value json;
-    subjectView._SaveToSettings(json);
-    controller->_RestoreFromSettings(json);
+    subjectView._StoreToDefinition(json);
+    controller->_LoadFromDefinition(json);
     controller->Save();
 
     return controller;
