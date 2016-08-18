@@ -991,7 +991,7 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     if (Status::Success != status)
         return status;
 
-    static const size_t s_maxPointsPerTile = 250000;
+    static const size_t s_maxPointsPerTile = 20000;
     TileNode rootNode;
     status = ConvertStatus(generator.GenerateTiles(rootNode, s_toleranceInMeters, s_maxPointsPerTile));
     if (Status::Success != status)
