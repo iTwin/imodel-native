@@ -68,6 +68,9 @@ namespace IndexECPlugin.Tests
             string overridenARD = "OverridenARD";
             overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
 
+            double overridenCC = 12.3;
+            overrideInstance["CloudCoverage"].DoubleValue = overridenCC;
+
             string overridenResolutionInMeters = "ResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
 
@@ -111,6 +114,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue);
                 Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
+                Assert.AreEqual(overridenCC, modifiedInstance["CloudCoverage"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
@@ -219,6 +223,9 @@ namespace IndexECPlugin.Tests
             string overridenSisterFiles = "OverridenSisterFiles";
             overrideInstance["SisterFiles"].StringValue = overridenSisterFiles;
 
+            string overridenNDV = "OverridenNDV";
+            overrideInstance["NoDataValue"].StringValue = overridenNDV;
+
             long overridenFileSize = 89274;
             overrideInstance["FileSize"].NativeValue = overridenFileSize;
 
@@ -252,11 +259,87 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenLocationInCompound, modifiedInstance["LocationInCompound"].StringValue);
                 Assert.AreEqual(overridenDataSourceType, modifiedInstance["DataSourceType"].StringValue);
                 Assert.AreEqual(overridenSisterFiles, modifiedInstance["SisterFiles"].StringValue);
+                Assert.AreEqual(overridenNDV, modifiedInstance["NoDataValue"].StringValue);
                 Assert.AreEqual(overridenFileSize, modifiedInstance["FileSize"].NativeValue);
 
                 Assert.AreEqual(overridenAlternateURL1, modifiedInstance["AlternateURL1"].StringValue);
                 Assert.AreEqual(overridenAlternateURL2, modifiedInstance["AlternateURL2"].StringValue);
 
+                }
+            }
+
+        [Test]
+        public void MultibandSourceTest ()
+            {
+
+            InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
+            SqlConnection sqlConnection = new SqlConnection();
+
+
+
+            List<IECInstance> instances = new List<IECInstance>() { SetupHelpers.CreateMultibandSource(m_schema) };
+            IECInstance overrideInstance = SetupHelpers.CreateMultibandSource(m_schema);
+
+            string overridenMainURL = "OverridenMainURL";
+            overrideInstance["MainURL"].StringValue = overridenMainURL;
+
+            string overridenCompoundType = "OverridenCompoundType";
+            overrideInstance["CompoundType"].StringValue = overridenCompoundType;
+
+            string overridenLocationInCompound = "OverridenLocationInCompound";
+            overrideInstance["LocationInCompound"].StringValue = overridenLocationInCompound;
+
+            string overridenDataSourceType = "OverridenDataSourceType";
+            overrideInstance["DataSourceType"].StringValue = overridenDataSourceType;
+
+            string overridenSisterFiles = "OverridenSisterFiles";
+            overrideInstance["SisterFiles"].StringValue = overridenSisterFiles;
+
+            string overridenNDV = "OverridenNDV";
+            overrideInstance["NoDataValue"].StringValue = overridenNDV;
+
+            long overridenFileSize = 89274;
+            overrideInstance["FileSize"].NativeValue = overridenFileSize;
+
+            string overridenRedBandURL = "OverridenRedBandURL";
+            overrideInstance["RedBandURL"].StringValue = overridenRedBandURL;
+
+            string overridenGreenBandURL = "OverridenGreenBandURL";
+            overrideInstance["GreenBandURL"].StringValue = overridenGreenBandURL;
+
+            string overridenBlueBandURL = "OverridenBlueBandURL";
+            overrideInstance["BlueBandURL"].StringValue = overridenBlueBandURL;
+
+            List<IECInstance> overrideInstances = new List<IECInstance>() { overrideInstance };
+
+            using ( m_mock.Record() )
+                {
+                Expect.Call(m_querierMock.QueryDbForInstances(Arg<string>.Is.Anything,
+                                                              Arg<DataReadingHelper>.Is.Anything,
+                                                              Arg<IParamNameValueMap>.Is.Anything,
+                                                              Arg<IECClass>.Is.Anything,
+                                                              Arg<IEnumerable<IECProperty>>.Is.Anything,
+                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<IEnumerable<string>>.Is.Anything,
+                                                              Arg<bool>.Is.Anything)).Repeat.Once().Return(overrideInstances);
+                }
+            using ( m_mock.Playback() )
+                {
+                IECInstance modifiedInstance = instances.First();
+
+                instanceOverrider.Modify(instances, DataSource.USGS, sqlConnection);
+
+                Assert.AreEqual(overridenMainURL, modifiedInstance["MainURL"].StringValue);
+                Assert.AreEqual(overridenCompoundType, modifiedInstance["CompoundType"].StringValue);
+                Assert.AreEqual(overridenLocationInCompound, modifiedInstance["LocationInCompound"].StringValue);
+                Assert.AreEqual(overridenDataSourceType, modifiedInstance["DataSourceType"].StringValue);
+                Assert.AreEqual(overridenSisterFiles, modifiedInstance["SisterFiles"].StringValue);
+                Assert.AreEqual(overridenNDV, modifiedInstance["NoDataValue"].StringValue);
+                Assert.AreEqual(overridenFileSize, modifiedInstance["FileSize"].NativeValue);
+
+                Assert.AreEqual(overridenRedBandURL, modifiedInstance["RedBandURL"].StringValue);
+                Assert.AreEqual(overridenGreenBandURL, modifiedInstance["GreenBandURL"].StringValue);
+                Assert.AreEqual(overridenBlueBandURL, modifiedInstance["BlueBandURL"].StringValue);
                 }
             }
 
@@ -380,6 +463,9 @@ namespace IndexECPlugin.Tests
             string overridenSisterFiles = "OverridenSisterFiles";
             overrideInstance["SisterFiles"].StringValue = overridenSisterFiles;
 
+            string overridenNDV = "OverridenNDV";
+            overrideInstance["NoDataValue"].StringValue = overridenNDV;
+
             long overridenFileSize = 89274;
             overrideInstance["FileSize"].NativeValue = overridenFileSize;
 
@@ -408,6 +494,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenLocationInCompound, modifiedInstance["LocationInCompound"].StringValue);
                 Assert.AreEqual(overridenDataSourceType, modifiedInstance["DataSourceType"].StringValue);
                 Assert.AreEqual(overridenSisterFiles, modifiedInstance["SisterFiles"].StringValue);
+                Assert.AreEqual(overridenNDV, modifiedInstance["NoDataValue"].StringValue);
                 Assert.AreEqual(overridenFileSize, modifiedInstance["FileSize"].NativeValue);
                 }
             }
@@ -504,6 +591,9 @@ namespace IndexECPlugin.Tests
             string overridenARD = "OverridenARD";
             overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
 
+            double overridenCC = 12.3;
+            overrideInstance["CloudCoverage"].DoubleValue = overridenCC;
+
             string overridenResolutionInMeters = "ResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
 
@@ -547,6 +637,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue);
                 Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
+                Assert.AreEqual(overridenCC, modifiedInstance["CloudCoverage"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
@@ -587,6 +678,9 @@ namespace IndexECPlugin.Tests
 
             string overridenARD = "OverridenARD";
             overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
+
+            double overridenCC = 12.3;
+            overrideInstance["CloudCoverage"].DoubleValue = overridenCC;
 
             string overridenResolutionInMeters = "ResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
@@ -633,6 +727,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue, "ProcessingDescriptions are not equal");
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue, "DataSourceTypesAvailables are not equal");
                 Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue, "AccuracyResolutionDensities are not equal");
+                Assert.AreEqual(overridenCC, modifiedInstance["CloudCoverage"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
@@ -927,6 +1022,9 @@ namespace IndexECPlugin.Tests
             string overridenSisterFiles = "OverridenSisterFiles";
             overrideInstance["SisterFiles"].StringValue = overridenSisterFiles;
 
+            string overridenNDV = "OverridenNDV";
+            overrideInstance["NoDataValue"].StringValue = overridenNDV;
+
             long overridenFileSize = 89274;
             overrideInstance["FileSize"].NativeValue = overridenFileSize;
 
@@ -964,6 +1062,7 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenLocationInCompound, modifiedInstance["LocationInCompound"].StringValue);
                 Assert.AreEqual(overridenDataSourceType, modifiedInstance["DataSourceType"].StringValue);
                 Assert.AreEqual(overridenSisterFiles, modifiedInstance["SisterFiles"].StringValue);
+                Assert.AreEqual(overridenNDV, modifiedInstance["NoDataValue"].StringValue);
                 Assert.AreEqual(overridenFileSize, modifiedInstance["FileSize"].NativeValue);
 
                 Assert.AreEqual(overridenLayers, modifiedInstance["Layers"].StringValue);

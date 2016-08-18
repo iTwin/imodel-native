@@ -80,9 +80,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\SetupHelpers.cs" />
     <Compile Include="Tests\ECQueryConverterTests.cs" />
     <Compile Include="Tests\IndexECPluginUSGSTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\InstanceComplementTests.cs" />
+    <Compile Include="Tests\InstanceOverriderTests.cs" />
     <Compile Include="Tests\MimicTableAccessorTests.cs" />
     <Compile Include="Tests\MimicTableWriterTests.cs" />
     <Compile Include="Tests\USGSDataExtractorsTests.cs" />

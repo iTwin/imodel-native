@@ -68,7 +68,7 @@
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="RealityPlatform"/>
-		<SubPart PartName="RealityPackage"/>
+        <SubPart PartName="RealityPackage"/>
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DownloadEngineExample.exe</Assemblies>
         </Bindings>
@@ -81,12 +81,12 @@
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/DataHandlerTool.exe</Assemblies>
         </Bindings>
     </Part>
-	
+    
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
-		<SubPart PartName="S3MXECPlugin"/>
+        <SubPart PartName="S3MXECPlugin"/>
         <SubPart PartName="CrawlerLibExample"/>
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
@@ -113,20 +113,20 @@
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
         </Bindings>
     </Part>
-	
-	<Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
-		<RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
-		<RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
-		<RequiredRepository>Microsoft.Data.OData</RequiredRepository>
-		<RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
-		<RequiredRepository>System.Spatial</RequiredRepository>
-		<RequiredRepository>WindowsAzure.Storage</RequiredRepository>
-	</Part>
-	
-	<Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="ECServices"      	PartFile="ecf"            Repository="ecf" />
-		<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-		<SubPart PartName="S3MXRequiredNuget" />
+    
+    <Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
+        <RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
+        <RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
+        <RequiredRepository>Microsoft.Data.OData</RequiredRepository>
+        <RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
+        <RequiredRepository>System.Spatial</RequiredRepository>
+        <RequiredRepository>WindowsAzure.Storage</RequiredRepository>
+    </Part>
+    
+    <Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
+        <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+        <SubPart PartName="S3MXRequiredNuget" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.S3MXECPlugin.dll</Assemblies>
         </Bindings>
@@ -236,7 +236,7 @@
         <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="RealityAssemblies"/>
         <ProductDirectory Name="RealityDbECPluginNuGetPackages" Path="Install" />
     </ProductDirectoryList>
-	
+    
     <Product Name="RealityModFramework">
         <SubPart PartName="Reality-Examples"/>
         <SubPart PartName="RealityDbECPluginCNuGet"/>
@@ -280,7 +280,7 @@
         <ProductDirectory Name="GeoCoordData"                   Path="GeoCoordinateData" />
         <ProductDirectory Name="GeoCoordNativeAssemblies"       Path="" />
         <ProductDirectory Name="MrSidAssemblies"                Path="" />
-        <ProductDirectory Name="TbbAssemblies"                  Path="" />		
+        <ProductDirectory Name="TbbAssemblies"                  Path="" />      
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="" />
         <ProductDirectory Name="BeOpenSSLAssemblies"            Path="" />
         <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
@@ -313,7 +313,9 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunRealityDbECPluginTests" BMakeFile="Tests\RealityDbECPlugin\RunRealityDbECPluginTests.mke" />
+    <Part Name="RunRealityDbECPluginTests" BMakeFile="Tests\RealityDbECPlugin\RunRealityDbECPluginTests.mke">
+        <SubPart PartName="RealityDbECPluginUnitTests"/>
+    </Part>
 
     <Product Name="RealityContextServicesTests" PrgOutputDir="RealityContextServicesTests">
         <SubProduct ProductName="RealityContextServices"/>
@@ -322,6 +324,26 @@
     </Product>
 
     <ProductDirectoryList ListName="RealityDbECPluginUnitTested">
+    
+        <ProductDirectory Name="PublicAPI"                      Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                      Deliver="false" />
+        <ProductDirectory Name="Libs"                           Deliver="false" />
+
+        <ProductDirectory Name="VendorNotices"                  Deliver="false"    LibType="dynamic"   Path="notices"/>
+        
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies"        Path=""/>
+        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path=""/>
+        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
+        <ProductDirectory Name="GeomNativeAssemblies"           Path=""/>
+        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
+        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
+        <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
+        <ProductDirectory Name="managedtests"                   Path=""/>
+        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
+        <ProductDirectory Name="RealityAssemblies"              Path=""/>
+        
     </ProductDirectoryList>
 
     <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServices">
@@ -381,7 +403,7 @@
         <ProductDirectory Name="PPNativeAssemblies"             Path="Assemblies" />
         <ProductDirectory Name="PdfLibInitNativeAssemblies"     Path="Assemblies" />
         <ProductDirectory Name="MrSidAssemblies"                Path="Assemblies" />
-        <ProductDirectory Name="TbbAssemblies"                  Path="Assemblies" />		
+        <ProductDirectory Name="TbbAssemblies"                  Path="Assemblies" />        
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies"     Path="Assemblies" />
         <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="Assemblies" />
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="Assemblies" />

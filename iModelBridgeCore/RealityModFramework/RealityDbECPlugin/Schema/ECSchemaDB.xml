@@ -193,6 +193,18 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="CloudCoverage" typeName="double">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>CloudCoverage</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>CloudCoverage</OverrideColumnName>
+                    <CacheColumnName>CloudCoverage</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <ECProperty propertyName="ResolutionInMeters" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -672,6 +684,18 @@
             </ECCustomAttributes>
         </ECProperty>
         
+        <ECProperty propertyName="NoDataValue" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>NoDataValue</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>NoDataValue</OverrideColumnName>
+                    <CacheColumnName>NoDataValue</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
         <ECProperty propertyName="FileSize" typeName="long">
             <ECCustomAttributes>
                 <DBColumn>
@@ -835,6 +859,67 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>   
+    
+    <ECClass typeName="MultibandSource" isDomainClass="true" baseClass="SpatialDataSource">
+        <ECCustomAttributes>
+            <QueryType>
+                <QueryType>index</QueryType>
+            </QueryType>
+            <SQLEntity>
+                <FromTableName>dbo.MultibandSources</FromTableName>
+                <InstanceIDProperty>Id</InstanceIDProperty>
+                <OverrideTableName>dbo.OverrideMultibandSources</OverrideTableName>
+                <ComplementTableName>dbo.ComplementMultibandSources</ComplementTableName>
+                <OverrideTableUniqueIdColumn>UniqueId</OverrideTableUniqueIdColumn>
+                <ComplementTableUniqueIdColumn>UniqueId</ComplementTableUniqueIdColumn>
+            </SQLEntity>
+        </ECCustomAttributes>    
+        
+        <ECProperty propertyName="Id" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>IdStr</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>IdStr</OverrideColumnName>
+                    <ComplementColumnName>IdStr</ComplementColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>   
+        
+        <ECProperty propertyName="RedBandURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>RedBandURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>RedBandURL</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="GreenBandURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>GreenBandURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>GreenBandURL</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+        <ECProperty propertyName="BlueBandURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>BlueBandURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>BlueBandURL</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
     
     <ECClass typeName="Server" isDomainClass="true">
         <ECCustomAttributes>
@@ -1525,7 +1610,7 @@
         </Target>
     </ECRelationshipClass>
     
-	<ECRelationshipClass 
+    <ECRelationshipClass 
       typeName="SpatialEntityDatasetToView" 
       description="Link between SpatialEntityDataset and the SpatialEntityBases (view version) it contains." 
       strength="embedding" 
@@ -1545,7 +1630,7 @@
             <Class class="SpatialEntityWithDetailsView" />
         </Target>
     </ECRelationshipClass>
-	
+    
 <!--    <ECRelationshipClass 
       typeName="SpatialEntityDatasetToChildrenView" 
       description="Link between SpatialEntityDataset and the SpatialEntityBases (view version) it contains." 

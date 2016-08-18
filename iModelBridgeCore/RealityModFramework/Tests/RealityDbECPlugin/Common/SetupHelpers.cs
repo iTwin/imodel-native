@@ -48,6 +48,7 @@ namespace IndexECPlugin.Tests.Common
             instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
             instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
             instance["DataSourceTypesAvailable"].StringValue = "IMG";
+            //instance["CloudCoverage"].DoubleValue = 0;
             instance["DataProvider"].StringValue = "USGS";
             instance["DataProviderName"].StringValue = "United States Geological Survey";
             instance["Classification"].StringValue = "Terrain";
@@ -71,6 +72,7 @@ namespace IndexECPlugin.Tests.Common
             instance["Name"].StringValue = "USGS NED one meter x24y459 IL 12-County-HenryCO 2009 IMG 2015";
             instance["Keywords"].StringValue = "elevation, Elevation, National Elevation Dataset, NED, Elevation, Light Detection and Ranging, LIDAR, High Resolution, Topographic Surface, Topography, Bare Earth, Hydro-Flattened, Terrain Elevation, Cartography, DEM, Digital Elevation Model, Digital Mapping, Digital Terrain Model, Geodata, GIS, Mapping, Raster, USGS, U.S. Geological Survey, 10,000 meter DEM, 1 meter DEM, Downloadable Data, Elevation, Digital Elevation Model (DEM) 1 meter, 10000 x 10000 meter, IMG, US, United States";
             instance["DataSourceTypesAvailable"].StringValue = "IMG";
+            //instance["CloudCoverage"].DoubleValue = 0;
             instance["DataProvider"].StringValue = "USGS";
             instance["DataProviderName"].StringValue = "United States Geological Survey";
             instance["Classification"].StringValue = "Terrain";
@@ -147,6 +149,7 @@ namespace IndexECPlugin.Tests.Common
             instance["LocationInCompound"].StringValue = "Unknown";
             instance["DataSourceType"].StringValue = "IMG";
             instance["FileSize"].StringValue = "256093";
+            //instance["NoDataValue"].StringValue = "0";
             instance["Metadata"].StringValue = "https://www.sciencebase.gov/catalog/file/get/553690bfe4b0b22a15807df2?f=__disk__d0%2F20%2Fa5%2Fd020a57f42c6a948f52f567a25858aa87b4e7f50";
 
             instance.ExtendedDataValueSetter.Add("IsFromCacheTest", "IsFromCacheTest");
@@ -173,6 +176,30 @@ namespace IndexECPlugin.Tests.Common
 
             instance["AlternateURL1"].StringValue = "AlternateURL1";
             instance["AlternateURL2"].StringValue = "AlternateURL2";
+
+            return instance;
+            }
+
+        static public IECInstance CreateMultibandSource (IECSchema schema)
+            {
+            IECClass ecClass = schema.GetClass("MultibandSource");
+            IECInstance instance = ecClass.CreateInstance();
+            instance.InstanceId = "553690bfe4b0b22a15807df2";
+
+            InitializePropertiesToNull(instance, ecClass);
+
+            instance["Id"].StringValue = "553690bfe4b0b22a15807df2";
+            instance["MainURL"].StringValue = "OSM_URL";
+            instance["CompoundType"].StringValue = "OSM";
+            instance["LocationInCompound"].StringValue = "";
+            instance["DataSourceType"].StringValue = "OSM";
+            instance["SisterFiles"].StringValue = "SisterFiles";
+            instance["FileSize"].NativeValue = (long) 0;
+            instance["Metadata"].StringValue = "Metadata";
+
+            instance["RedBandURL"].StringValue = "RedBandURL";
+            instance["GreenBandURL"].StringValue = "GreenBandURL";
+            instance["BlueBandURL"].StringValue = "BlueBandURL";
 
             return instance;
             }
