@@ -1004,7 +1004,26 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     if (Status::Success != status)
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
+    OutputStatistics(generator.GetStatistics());
+
     return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
+    {
+    printf("Statistics:\n"
+           "Tile count: %u\n"
+           "Tile depth: %u\n"
+           "Geometry collection time: %.4f seconds\n"
+           "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
+           static_cast<uint32_t>(stats.m_tileCount),
+           static_cast<uint32_t>(stats.m_tileDepth),
+           stats.m_collectionTime,
+           stats.m_tileCreationTime,
+           0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**

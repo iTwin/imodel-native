@@ -27,10 +27,6 @@ END_UNNAMED_NAMESPACE
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
-// ###TODO: Statistics...
-#define BEGIN_DELTA_TIMER(TIMER)
-#define END_DELTA_TIMER(TIMER)
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     06/2016
 +===============+===============+===============+===============+===============+======*/
@@ -926,10 +922,6 @@ struct TileGeometryProcessor : IGeometryProcessor
 
     virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
 
-    // ###TODO: IGeometryProcessor changes...
-    // virtual bool _ProcessAsBody(bool isCurved) const override { return isCurved; }
-    // virtual bool _ProcessAsFacets(bool isPolyface) const override { return true; }
-
     bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
 
     virtual bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
@@ -942,7 +934,7 @@ struct TileGeometryProcessor : IGeometryProcessor
 
     virtual UnhandledPreference _GetUnhandledPreference(ISolidKernelEntityCR, SimplifyGraphic&) const override
         {
-        return UnhandledPreference::Facet; // ###TODO: Solids...
+        return UnhandledPreference::Facet;
         }
 
     virtual void _OutputGraphics(ViewContextR context) override;
@@ -1130,9 +1122,11 @@ TileGenerator::Status TileGenerator::LoadGeometry(ViewControllerR view, double t
     IFacetOptionsPtr facetOptions = createTileFacetOptions(toleranceInMeters);
     TileGeometryProcessor processor(view, m_geometryCache, &m_geometryCache.GetTree(), m_geometryCache.GetTransformFromDgn(), *facetOptions, m_progressMeter);
     
-    BEGIN_DELTA_TIMER(m_statistics.m_collectionTime);
+    StopWatch timer(true);
+
     GeometryProcessor::Process(processor, view.GetDgnDb());
-    END_DELTA_TIMER(m_statistics.m_collectionTime);
+
+    m_statistics.m_collectionTime = timer.GetCurrentSeconds();
 
     if (m_progressMeter._WasAborted())
         return Status::Aborted;
@@ -1162,6 +1156,9 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
 
     // Enqueue all tiles for processing on the IO thread pool...
     bvector<TileNode*> tiles = root.GetTiles();
+    m_statistics.m_tileCount = tiles.size();
+    m_statistics.m_tileDepth = root.GetMaxDepth();
+
     auto numTotalTiles = static_cast<uint32_t>(tiles.size());
     BeAtomic<uint32_t> numCompletedTiles;
 
@@ -1175,12 +1172,10 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
                 return status;
                 });
 
-    static const uint32_t s_sleepMillis = 1000.0;
-
-    BEGIN_DELTA_TIMER(m_statistics.m_tileCreationTime);
-
     // Spin until all tiles complete, periodically notifying progress meter
     // Note that we cannot abort any tasks which may still be 'pending' on the thread pool...but we can skip processing them if the abort flag is set
+    static const uint32_t s_sleepMillis = 1000.0;
+    StopWatch timer(true);
     do
         {
         m_progressMeter._IndicateProgress(numCompletedTiles, numTotalTiles);
@@ -1188,7 +1183,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
         }
     while (numCompletedTiles < numTotalTiles);
 
-    END_DELTA_TIMER(m_statistics.m_tileCreationTime);
+    m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
 
     m_progressMeter._IndicateProgress(numTotalTiles, numTotalTiles);
 
