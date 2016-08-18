@@ -45,6 +45,41 @@ void DgnDbCodeLockSetResultInfo::AddCode(const DgnCode dgnCode, DgnCodeState dgn
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
+    {
+    if (GetAuthorityId().GetValueUnchecked() != rhs.GetAuthorityId().GetValueUnchecked())
+        return GetAuthorityId().GetValueUnchecked() < rhs.GetAuthorityId().GetValueUnchecked();
+
+    int cmp = GetValuePattern().CompareTo(rhs.GetValuePattern());
+    if (0 != cmp)
+        return cmp < 0;
+
+    cmp = GetValue().CompareTo(rhs.GetValue());
+    if (0 != cmp)
+        return cmp < 0;
+
+    return GetNamespace().CompareTo(rhs.GetNamespace()) < 0;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+void DgnDbCodeTemplateSetResultInfo::AddCodeTemplate(const DgnDbCodeTemplate codeTemplate)
+    {
+    m_codeTemplates.insert(codeTemplate);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+const DgnDbCodeTemplateSet& DgnDbCodeTemplateSetResultInfo::GetTemplates() const
+    {
+    return m_codeTemplates;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
 const DgnCodeSet& DgnDbCodeLockSetResultInfo::GetCodes() const { return m_codes; }
@@ -654,6 +689,54 @@ bool                            queryOnly = false
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+Json::Value CreateCodeTemplateJson
+(
+    const DgnDbCodeTemplate      codeTemplate,
+    DgnDbCodeTemplate::Type      templateType,
+    int                          startIndex,
+    int                          incrementBy
+)
+    {
+    Json::Value properties;
+
+    properties[ServerSchema::Property::AuthorityId] = codeTemplate.GetAuthorityId().GetValue();
+    properties[ServerSchema::Property::Namespace] = codeTemplate.GetNamespace();
+    properties[ServerSchema::Property::ValuePattern] = codeTemplate.GetValuePattern();
+    properties[ServerSchema::Property::Type] = (int)templateType;
+
+    if (startIndex >= 0 && incrementBy > 0)
+        {
+        properties[ServerSchema::Property::StartIndex] = startIndex;
+        properties[ServerSchema::Property::IncrementBy] = incrementBy;
+        }
+
+    return properties;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+void SetCodeTemplatesJsonRequestToChangeSet
+(
+    const DgnDbCodeTemplateSet      templates,
+    const DgnDbCodeTemplate::Type   templateType,
+    WSChangeset&                    changeset,
+    const WSChangeset::ChangeState& changeState,
+    int                             startIndex = -1,
+    int                             incrementBy = -1
+)
+    {
+    ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::CodeTemplate, "");
+    
+    for (auto& codeTemplate : templates)
+        {
+        JsonValueCR codeJson = CreateCodeTemplateJson(codeTemplate, templateType, startIndex, incrementBy);
+        changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
+        }
+    }
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
 std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& briefcaseId)
@@ -1080,6 +1163,101 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+Json::Value GetChangedInstances(Utf8String response)
+    {
+    Json::Reader reader;
+    Json::Value responseJson(Json::objectValue);
+    if (!reader.parse(response, responseJson) && !responseJson.isArray())
+        return nullptr;
+
+    if (responseJson.isNull() || responseJson.empty())
+        return nullptr;
+
+    if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
+        responseJson[ServerSchema::ChangedInstances].empty() ||
+        !responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
+        return nullptr;
+
+    Json::Value instance(Json::objectValue);
+    return responseJson[ServerSchema::ChangedInstances];
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumIndex
+(
+    DgnDbCodeTemplateSet codeTemplates,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+
+    SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
+    
+    auto requestString = changeset->ToRequestString();
+    HttpStringBodyPtr request = HttpStringBody::Create(requestString);
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateSetResult>
+        ([=](const WSChangesetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            DgnDbCodeTemplateSetResultInfo templates;
+            Json::Value ptr = GetChangedInstances(result.GetValue()->AsString().c_str());
+            
+            for (auto& value : ptr)
+                {
+                DgnDbCodeTemplate        codeTemplate;
+                if (GetCodeTemplateFromServerJson(value[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
+                    {
+                    templates.AddCodeTemplate(codeTemplate);
+                    }
+                //NEEDSWORK: log an error
+                }
+            return DgnDbServerCodeTemplateSetResult::Success(templates);
+            }
+        else
+            return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken) const
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+
+    SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created, startIndex, incrementBy);
+
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateSetResult>
+        ([=](const WSChangesetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            DgnDbCodeTemplateSetResultInfo templates;
+            Json::Value ptr = GetChangedInstances(result.GetValue()->AsString().c_str());
+
+            for (auto& value : ptr)
+                {
+                DgnDbCodeTemplate        codeTemplate;
+                if (GetCodeTemplateFromServerJson(value[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
+                    {
+                    templates.AddCodeTemplate(codeTemplate);
+                    }
+                //NEEDSWORK: log an error
+                }
+            return DgnDbServerCodeTemplateSetResult::Success(templates);
+            }
+        else
+            return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+        });
     }
 
 //---------------------------------------------------------------------------------------

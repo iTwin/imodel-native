@@ -1,5 +1,6 @@
 #include "DgnDbServerUtils.h"
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
@@ -214,6 +215,29 @@ bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeB
         return false;
 
     lock = DgnLock (LockableId (type, id), level);
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+bool GetCodeTemplateFromServerJson(JsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate)
+    {
+    BeInt64Id      authorityId;
+    Utf8String     nameSpace = "";
+    Utf8String     value = "";
+    Utf8String     valuePattern = "";
+
+    if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
+        !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]))
+        return false;
+
+    if (!StringFromJson(value, serverJson[ServerSchema::Property::Value]) &&
+        !StringFromJson(valuePattern, serverJson[ServerSchema::Property::ValuePattern]))
+        return false;
+    
+    codeTemplate = DgnDbCodeTemplate(DgnAuthorityId(authorityId.GetValue()), nameSpace, value, valuePattern);
 
     return true;
     }
