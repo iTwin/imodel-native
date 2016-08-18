@@ -154,7 +154,7 @@ public:
             if (!rhsLine.m_offset.IsEqual(line.m_offset, 1.0e-10))
                 return false;
 
-            for (size_t iDash=0; iDash < line.m_nDashes; ++iDash)
+            for (int iDash=0; iDash < line.m_nDashes; ++iDash)
                 {
                 if (!DoubleOps::WithinTolerance(rhsLine.m_dashes[iDash], line.m_dashes[iDash], 1.0e-10))
                     return false;
