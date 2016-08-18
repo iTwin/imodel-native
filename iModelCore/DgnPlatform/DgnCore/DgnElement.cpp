@@ -2792,6 +2792,19 @@ DgnElementPtr DgnEditElementCollector::FindElementById(DgnElementId eid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnEditElementCollector::FindElementByClass(ECN::ECClassCR ecclass)
+    {
+    for (auto el: m_elements)
+        {
+        if (el->GetElementClass()->Is(&ecclass))
+            return el;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnEditElementCollector::RemoveElement(DgnElementR el) 
     {
     if (0 == m_elements.erase(&el))
@@ -2823,14 +2836,30 @@ void DgnEditElementCollector::RemoveChildren(DgnElementCR el, size_t maxDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnEditElementCollector::Write()
+DgnDbStatus DgnEditElementCollector::Write(bool* anyInserts)
     {
+    if (anyInserts)
+        *anyInserts = false;
+
+    bmap<DgnElementP, DgnElementCPtr> inserted;
+
     for (auto el : m_elements)
         {
         DgnDbStatus status;
-        DgnElementCPtr updatedEl = el->GetElementId().IsValid()? el->Update(&status): el->Insert(&status);
+        bool needsInsert = !el->GetElementId().IsValid();
+        if (anyInserts)
+            *anyInserts |= needsInsert;
+        DgnElementCPtr updatedEl = !needsInsert? el->Update(&status): el->Insert(&status);
         if (!updatedEl.IsValid())
             return status;
+        if (needsInsert)
+            inserted[el] = updatedEl;
+        }
+
+    for (auto const& insert : inserted)
+        {
+        RemoveElement(*insert.first);
+        EditElement(*insert.second);
         }
     return DgnDbStatus::Success;
     }
