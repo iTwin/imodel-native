@@ -26,8 +26,8 @@
         <SubPart PartName="rapidjson"       PartFile="rapidjson" Repository="Libsrc-RapidJson"/>
         <SubPart PartName="UnitsNative"        PartFile="Units"        Repository="Units" />
         <Bindings>
-            <Libs ProductDirectoryName="ECObjectsLibs" Required="false">Delivery/$(libprefix)ECObjects$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ECObjectsNativeAssemblies">Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)ECObjects$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ECObjects$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="PresentationRulesXsds" Required="false">Delivery/PresentationRuleSetSchema.xsd</Files>
         </Bindings>
     </Part>
@@ -332,7 +332,6 @@
         <ProductDirectory Name="VendorAPI"                          Deliver="false" />
         <ProductDirectory Name="VendorNotices"                      Deliver="false" />
         <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
         <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
         <ProductDirectory Name="mergemodules"                       Deliver="false"/>
         <ProductDirectory Name="libs"                               Deliver="false"/>
@@ -341,7 +340,7 @@
         <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
         <ProductDirectory   Name="VendorNotices"                LibType="Static"    Deliver="false" />
         <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="Assemblies"      LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
@@ -350,12 +349,11 @@
 
         <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
         <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
-        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Runtime"/>
+        <ProductDirectory Name="Assemblies"            Path="Runtime"/>
         <ProductDirectory Name="GeomNativeAssemblies"               Path="Runtime"/>
         <ProductDirectory Name="ecobjectsnativeassemblies"          Path="Runtime"/>
         <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
-        <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
         <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
     </ProductDirectoryList>

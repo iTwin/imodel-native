@@ -1133,7 +1133,10 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
             if (!prop->GetName().Equals(thisProperty->GetName()))
                 {
                 if (!resolveConflicts)
+                    {
+                    LOG.errorv("Failed to add base class due to case-collision between %s:%s and %s:%s.", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
                     return ECObjectsStatus::CaseCollision;
+                    }
 
                 // Same type, different case, simply rename the second property to match the first
                 if (ECObjectsStatus::Success == status)
