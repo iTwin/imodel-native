@@ -347,14 +347,14 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Returns maximum used code value by the given pattern.
-    //! @param[in] briefcaseId
-    //! @param[in] lastRevisionId
+    //! @param[in] codeTemplates
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeMaximumIndex(DgnDbCodeTemplateSet codeTemplates, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns next available code by the given pattern, index start and increment by value.
-    //! @param[in] briefcaseId
-    //! @param[in] lastRevisionId
+    //! @param[in] codeTemplates
+    //! @param[in] startIndex
+    //! @param[in] incrementBy
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken = nullptr) const;
 
