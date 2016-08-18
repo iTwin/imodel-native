@@ -114,7 +114,7 @@
         <SubPart PartName="MatrixFromTiePtsLib" />
         <Bindings>
             <Libs>Delivery/$(shlibprefix)Imagepp$(libext)</Libs>
-            <Assemblies Feature="ImagePP">Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
+            <Assemblies>Delivery/$(shlibprefix)Imagepp$(ApiNumber)$(shlibext)
                 <!--TransKit SourceDirectory="Delivery/ImagePP/Transkit" /-->
             </Assemblies>
             <Files ProductDirectoryName="xliffs" Required="false" SubPartDirectory="xliffs">
@@ -131,7 +131,7 @@
         <Bindings>
             <!-- For now, we build imaging client but we do not implicitly deliver it. -->
             <Libs>Delivery/$(shlibprefix)IppImaging$(libext)</Libs>
-            <Assemblies Feature="ImagePP">Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)IppImaging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
