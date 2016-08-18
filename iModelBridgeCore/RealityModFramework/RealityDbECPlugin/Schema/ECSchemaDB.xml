@@ -193,18 +193,6 @@
             </ECCustomAttributes>
         </ECProperty>
         
-        <ECProperty propertyName="CloudCoverage" typeName="double">
-            <ECCustomAttributes>
-                <DBColumn>
-                    <ColumnName>CloudCoverage</ColumnName>
-                </DBColumn>
-                <MimicDBColumn>
-                    <OverrideColumnName>CloudCoverage</OverrideColumnName>
-                    <CacheColumnName>CloudCoverage</CacheColumnName>
-                </MimicDBColumn>
-            </ECCustomAttributes>
-        </ECProperty>
-        
         <ECProperty propertyName="ResolutionInMeters" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -291,6 +279,18 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
+		
+		<ECProperty propertyName="CloudCoverage" typeName="double">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>CloudCoverage</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>CloudCoverage</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
     </ECClass>
     
     <ECClass typeName="SpatialEntityDataset" isDomainClass="true" baseClass="SpatialEntityBase">

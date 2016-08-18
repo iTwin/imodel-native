@@ -68,9 +68,6 @@ namespace IndexECPlugin.Tests
             string overridenARD = "OverridenARD";
             overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
 
-            double overridenCC = 12.3;
-            overrideInstance["CloudCoverage"].DoubleValue = overridenCC;
-
             string overridenResolutionInMeters = "ResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
 
@@ -114,7 +111,6 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue);
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue);
                 Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue);
-                Assert.AreEqual(overridenCC, modifiedInstance["CloudCoverage"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
@@ -679,9 +675,6 @@ namespace IndexECPlugin.Tests
             string overridenARD = "OverridenARD";
             overrideInstance["AccuracyResolutionDensity"].StringValue = overridenARD;
 
-            double overridenCC = 12.3;
-            overrideInstance["CloudCoverage"].DoubleValue = overridenCC;
-
             string overridenResolutionInMeters = "ResolutionInMeters";
             overrideInstance["ResolutionInMeters"].StringValue = overridenResolutionInMeters;
 
@@ -727,7 +720,6 @@ namespace IndexECPlugin.Tests
                 Assert.AreEqual(overridenProcessingDescription, modifiedInstance["ProcessingDescription"].StringValue, "ProcessingDescriptions are not equal");
                 Assert.AreEqual(overridenDTA, modifiedInstance["DataSourceTypesAvailable"].StringValue, "DataSourceTypesAvailables are not equal");
                 Assert.AreEqual(overridenARD, modifiedInstance["AccuracyResolutionDensity"].StringValue, "AccuracyResolutionDensities are not equal");
-                Assert.AreEqual(overridenCC, modifiedInstance["CloudCoverage"].DoubleValue);
                 Assert.AreEqual(overridenResolutionInMeters, modifiedInstance["ResolutionInMeters"].StringValue);
                 Assert.AreEqual(overridenDataProvider, modifiedInstance["DataProvider"].StringValue);
                 Assert.AreEqual(overridenDataProviderName, modifiedInstance["DataProviderName"].StringValue);
