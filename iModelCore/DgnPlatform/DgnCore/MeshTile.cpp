@@ -767,7 +767,12 @@ void TileGeometry::Init(ISolidKernelEntityR solid, IFacetOptionsR options)
     m_solidEntity = &solid;
     m_type = Type::Solid;
 
+#ifdef BENTLEYCONFIG_OPENCASCADE
     m_facetCount = FacetCountUtil::GetFacetCountApproximation(solid, options);
+#else
+    BeAssert(false);
+    m_facetCount = 0;
+#endif
 
     double rangeVolume = m_range.Volume();
     m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
