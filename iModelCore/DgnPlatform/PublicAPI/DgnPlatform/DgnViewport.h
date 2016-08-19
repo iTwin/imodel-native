@@ -225,7 +225,7 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list);
     DGNVIEW_EXPORT void ChangeRenderPlan();
-    void ApplyViewState(Utf8StringCR val, int animationTime);
+    void ApplyViewState(DgnEditElementCollector const& val, int animationTime);
     DGNVIEW_EXPORT void Refresh();
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);

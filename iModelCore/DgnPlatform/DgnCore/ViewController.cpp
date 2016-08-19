@@ -218,8 +218,6 @@ void ViewController::_LoadFromDefinition()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::LoadFromDefinition()
     {
-    m_viewedModels.clear();
-
     _LoadFromDefinition();
 
     // The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
@@ -229,7 +227,7 @@ void ViewController::LoadFromDefinition()
 
 #ifdef WIP_VIEW_DEFINITION // AppData save
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
-        appdata.second->_Load(m_settings);
+        appdata.second->_RestoreFromSettings(m_settings);
 #endif
     }
 
@@ -270,7 +268,7 @@ void ViewController::StoreToDefinition()
 
 #ifdef WIP_VIEW_DEFINITION // AppData save
     for (auto const& appdata : m_appData)
-        appdata.second->_Store(m_settings);
+        appdata.second->_SaveToSettings(m_settings);
 #endif
     }
 
@@ -1454,7 +1452,7 @@ DPoint3d CameraViewController::_GetTargetPoint() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/16
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
     {
@@ -1462,7 +1460,7 @@ CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/16
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefinition() const
     {
@@ -1470,7 +1468,7 @@ OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefin
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/16
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 SpatialViewDefinition& SpatialViewController::GetSpatialViewDefinition() const
     {
@@ -1478,7 +1476,7 @@ SpatialViewDefinition& SpatialViewController::GetSpatialViewDefinition() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/16
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void SpatialViewController::_LoadFromDefinition()
     {
@@ -1486,13 +1484,30 @@ void SpatialViewController::_LoadFromDefinition()
 
     m_viewedModels = GetModelSelector().GetModelIds();
 
+    if (m_viewedModels.begin() != m_viewedModels.end())
+        m_targetModelId = *m_viewedModels.begin();
+
 #ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
     m_... = GetClipVolume().Get ...
 #endif
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      03/14
+// @bsimethod                                                   Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+void SpatialViewController::_StoreToDefinition() const
+    {
+    T_Super::_StoreToDefinition();
+
+    GetModelSelector().SetModelIds(m_viewedModels);
+
+#ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
+    GetClipVolume().Set ...
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void CameraViewController::_LoadFromDefinition()
     {
@@ -1524,7 +1539,7 @@ void CameraViewController::_LoadFromDefinition()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void CameraViewController::_StoreToDefinition() const
     {
@@ -1544,7 +1559,7 @@ void CameraViewController::_StoreToDefinition() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/16
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void OrthographicViewController::_LoadFromDefinition()
     {
@@ -1559,7 +1574,7 @@ void OrthographicViewController::_LoadFromDefinition()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      06/16
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void OrthographicViewController::_StoreToDefinition() const
     {
@@ -1728,26 +1743,28 @@ void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void ViewController2d::_LoadFromDefinition()
     {
     T_Super::_LoadFromDefinition();
 
     ViewDefinition2d& vdef = GetViewDefinition2d();
+    m_targetModelId = m_baseModelId = vdef.GetBaseModelId();
     m_origin = vdef.GetOrigin();
     m_delta = vdef.GetExtents();
     m_rotAngle = vdef.GetRotationAngle().Radians();
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
+// @bsimethod                                                   Sam.Wilson      08/16
 //---------------------------------------------------------------------------------------
 void ViewController2d::_StoreToDefinition() const
     {
     T_Super::_StoreToDefinition();
 
     ViewDefinition2d& vdef = GetViewDefinition2d();
+    vdef.SetBaseModelId(m_baseModelId);
     vdef.SetOrigin(m_origin);
     vdef.SetExtents(m_delta);
     vdef.SetRotationAngle(AngleInDegrees::FromRadians(m_rotAngle));
@@ -2216,6 +2233,7 @@ SheetViewController::SheetViewController(SheetViewDefinition const& def) : ViewC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController2d::ViewController2d(ViewDefinition2d const& def) : ViewController(def)
     {
+    m_baseModelId = m_targetModelId = def.GetBaseModelId();
     m_origin.Zero();
     m_delta.Zero();
     m_rotAngle = 0.0;

@@ -113,8 +113,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
-        virtual void _Save(JsonValueR) const  {}
-        virtual void _Restore(JsonValueCR) {}
+        virtual void _SaveToSettings(JsonValueR) const  {}
+        virtual void _RestoreFromSettings(JsonValueCR) {}
     };
 
 protected:
@@ -608,6 +608,7 @@ protected:
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
     DGNPLATFORM_EXPORT BentleyStatus _SetTargetModel(GeometricModelP target) override;
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override; // reads things like modelselector that is common to all 3d views
+    DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _FixUpDefinitionRelationships() override;
     virtual void _OnTransform(TransformCR) = 0;
 
@@ -1036,7 +1037,7 @@ public:
 
     DGNPLATFORM_EXPORT ViewDefinition2d& GetViewDefinition2d() const;
 
-    DGNPLATFORM_EXPORT void SetBaseModelId(DgnModelId id) { m_baseModelId = id; }
+    DGNPLATFORM_EXPORT void SetBaseModelId(DgnModelId id) { m_baseModelId = m_targetModelId = id; }
     DGNPLATFORM_EXPORT DgnModelId GetBaseModelId() const  { return m_baseModelId; }
 
 };
