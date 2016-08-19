@@ -1279,6 +1279,10 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
 
+    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
+    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
+    (*const_cast<DgnElementP>(&original)).m_autoHandledProperties = nullptr;
+
     original._OnUpdateFinished(); // this gives geometric elements a chance to clear their graphics
     }
 
