@@ -439,7 +439,7 @@ private:
         return (maxPerFace == 3) ? 2 : 1;
         }
 public:
-    explicit FacetCounter(IFacetOptionsCR options) : m_facetOptions(options), m_faceMultiplier(options.GetMaxPerFace()) { }
+    explicit FacetCounter(IFacetOptionsCR options) : m_facetOptions(options), m_faceMultiplier(ComputeFaceMultiplier(options.GetMaxPerFace())) { }
 
     size_t GetFacetCount(DgnTorusPipeDetailCR) const;
     size_t GetFacetCount(DgnConeDetailCR) const;
