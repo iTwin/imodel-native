@@ -423,48 +423,40 @@ public:
 };
 
 //=======================================================================================
-// Provides helper methods to approximate the number of facets a geometric primitive
-// will contain after facetting with specific facet options.
+//! Provides helper methods to approximate the number of facets a geometric primitive
+//! will contain after facetting with specific facet options.
 // @bsistruct                                                   Diego.Pinate    07/16
 //=======================================================================================
-struct FacetCountUtil
+struct FacetCounter
 {
-    //! Returns an approximation of the facet counts of a solid primitive given the facet options
-    //! @param [in] solidPrimitive The ISolidPrimitive to be inspected
-    //! @param [in] facetOptions The facet options: this takes into account chord tolerance and angle tolerance
-    static DGNPLATFORM_EXPORT size_t GetFacetCount (ISolidPrimitiveCR solidPrimitive, IFacetOptionsR facetOptions);
+private:
+    IFacetOptionsCR m_facetOptions;
+    int32_t         m_faceMultiplier;
 
-    //! Returns an approximation of the facet counts of a curve vector given the facet options
-    //! @param [in] curveVector The CurveVector to be inspected
-    //! @param [in] facetOptions The facet options: this takes into account chord tolerance and angle tolerance
-    //! @return An approximation of the number of strokes/facets that will be generated from the curve vector
-    static DGNPLATFORM_EXPORT size_t GetFacetCount (CurveVectorCR curveVector, IFacetOptionsR facetOptions);
+    static int32_t ComputeFaceMultiplier(int32_t maxPerFace)
+        {
+        // TO-DO: Come up with a general formula that works for faces with more than four faces
+        return (maxPerFace == 3) ? 2 : 1;
+        }
+public:
+    explicit FacetCounter(IFacetOptionsCR options) : m_facetOptions(options), m_faceMultiplier(options.GetMaxPerFace()) { }
 
-    //! Returns an approximation of the facet counts of a bspline surface given the facet options
-    //! @param [in] surface Bspline surface to be inspected
-    //! @param [in] facetOptions The facet options: this takes into account chord tolerance and angle tolerance
-    //! @param [in] useMax if true, the algorithm calculates the approximation using the max amount of possible facets instead of the average
-    //! @return An approximation of the number of strokes/facets that will be generated from the surface
-    static DGNPLATFORM_EXPORT size_t GetFacetCount (MSBsplineSurfaceCR surface, IFacetOptionsR facetOptions, bool useMax = false);
+    size_t GetFacetCount(DgnTorusPipeDetailCR) const;
+    size_t GetFacetCount(DgnConeDetailCR) const;
+    size_t GetFacetCount(DgnBoxDetailCR) const;
+    size_t GetFacetCount(DgnSphereDetailCR) const;
+    size_t GetFacetCount(DgnExtrusionDetailCR) const;
+    size_t GetFacetCount(DgnRotationalSweepDetailCR) const;
+    size_t GetFacetCount(DgnRuledSweepDetailCR) const;
 
-    //! Returns an approximation of the facet counts of an IGeometry the facet options
-    //! @param [in] geometry Geometry to be inspected
-    //! @param [in] facetOptions The facet options: this takes into account chord tolerance and angle tolerance
-    //! @return An approximation of the number of strokes/facets that will be generated from the surface
-    static DGNPLATFORM_EXPORT size_t GetFacetCount (IGeometryCR geometry, IFacetOptionsR facetOptions);
+    size_t GetFacetCount(ISolidPrimitiveCR) const;
+    size_t GetFacetCount(CurveVectorCR) const;
+    size_t GetFacetCount(MSBsplineSurfaceCR, bool useMax=false) const;
+    size_t GetFacetCount(IGeometryCR) const;
 
 #ifdef BENTLEYCONFIG_OPENCASCADE
-    //! Returns an approximation of the facet counts of an ISolidKernelEntity facetted according to the specified options
-    //! @param[in] solidEntity Solid entity to be inspected
-    //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
-    //! @return An approximation of the number of strokes/facets that will be generated from the solid entity
-    static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(ISolidKernelEntityCR solidEntity, IFacetOptionsR facetOptions);
-
-    //! Returns an approximation of the facet counts of an TopoDS_Shape facetted according to the specified options
-    //! @param[in] shape Shape to be inspected
-    //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
-    //! @return An approximation of the number of strokes/facets that will be generated from the shape
-    static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(TopoDS_Shape const& shape, IFacetOptionsR facetOptions);
+    size_t GetFacetCount(TopoDS_Shape const&) const;
+    size_t GetFacetCount(ISolidKernelEntityCR) const;
 #endif
 };
 

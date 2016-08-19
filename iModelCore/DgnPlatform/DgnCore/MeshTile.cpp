@@ -747,7 +747,7 @@ void TileGeometry::Init(IGeometryR geom, IFacetOptionsR options)
     geom.AddRef();
     m_geometry = &geom;
     m_type = Type::Geometry;
-    m_facetCount = FacetCountUtil::GetFacetCount(geom, options);
+    m_facetCount = FacetCounter(options).GetFacetCount(geom);
 
     double rangeVolume = m_range.Volume();
     m_facetCountDensity = (0.0 != rangeVolume) ? static_cast<double>(m_facetCount) / rangeVolume : 0.0;
@@ -763,7 +763,7 @@ void TileGeometry::Init(ISolidKernelEntityR solid, IFacetOptionsR options)
     m_type = Type::Solid;
 
 #ifdef BENTLEYCONFIG_OPENCASCADE
-    m_facetCount = FacetCountUtil::GetFacetCountApproximation(solid, options);
+    m_facetCount = FacetCounter(options).GetFacetCount(solid);
 #else
     BeAssert(false);
     m_facetCount = 0;
@@ -1037,7 +1037,11 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
 #if !defined(MESHTILE_FACET_BODIES)
+#if !defined(MESHTILE_NO_CLONE_SOLID_BODIES)
     ISolidKernelEntityPtr clone = solid.Clone();
+#else
+    ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
+#endif
     DRange3d range = clone->GetEntityRange();
 
     Transform localTo3mx = Transform::FromProduct(m_dgnToTarget, gf.GetLocalToWorldTransform());
@@ -1052,7 +1056,16 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 
     return true;
 #else
-    return false; // debugging discrepancies...
+    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(solid);
+    auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, *m_targetFacetOptions) : nullptr;
+    BeAssert(polyface.IsValid());
+    if (polyface.IsValid())
+        {
+        polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != solid.GetEntityType());
+        return _ProcessPolyface(*polyface, false, gf);
+        }
+    else
+        return false;
 #endif
     }
 
