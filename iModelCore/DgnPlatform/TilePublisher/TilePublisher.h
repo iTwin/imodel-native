@@ -109,6 +109,7 @@ private:
 
     Status Setup();
     Status WriteWebApp(TransformCR transform);
+    void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16

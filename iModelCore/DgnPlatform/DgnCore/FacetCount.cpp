@@ -294,6 +294,7 @@ size_t FacetCountUtil::GetFacetCount (IGeometryCR geometry, IFacetOptionsR facet
     return 0;
     }
 
+#ifdef BENTLEYCONFIG_OPENCASCADE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -342,4 +343,4 @@ size_t FacetCountUtil::GetFacetCountApproximation(ISolidKernelEntityCR entity, I
     scaledFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() / entity.GetEntityTransform().MatrixColumnMagnitude(0));
     return GetFacetCountApproximation(*shape, *scaledFacetOptions);
     }
-
+#endif
