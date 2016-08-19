@@ -12,7 +12,7 @@
 #include "DebugWriter.h"
 #include "ECDbSystemSchemaHelper.h"
 #include "ECSql/NativeSqlBuilder.h"
-
+#include "DbSchemaPersistenceManager.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 enum class TraversalFeedback
@@ -81,8 +81,6 @@ protected:
     Utf8String m_propertyAccessString; // We need to own this for nested property in embedded struct as they are dynamically generated
     std::vector<DbTable const*> m_mappedTables;
     PropertyMapCollection m_children;
-    mutable PropertyPathId m_propertyPathId;
-
 private:
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType, bool wrapInParentheses, DbTable const* tableFilter) const;
 
@@ -93,8 +91,8 @@ private:
     virtual void _GetColumns(std::vector<DbColumn const*>&) const;
 
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) { return SUCCESS; }
-    virtual BentleyStatus _Save(ClassDbMapping&) const;
-    virtual BentleyStatus _Load(ClassDbMapping const&) { return SUCCESS; }
+    virtual BentleyStatus _Save(DbClassMapSaveContext&) const;
+    virtual BentleyStatus _Load(DbClassMapLoadContext const&) { return SUCCESS; }
 
     virtual StructArrayJsonPropertyMap const* _GetAsStructArrayPropertyMap() const { return nullptr; }
     virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const { return nullptr; }
@@ -105,7 +103,7 @@ private:
 protected:
     PropertyMap(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) : m_ecProperty(ecProperty), m_propertyAccessString(propertyAccessString), m_parentPropertyMap(parentPropertyMap) {}
     PropertyMap(PropertyMapCR rhs, PropertyMapCP parentPropertyMap) : m_ecProperty(rhs.m_ecProperty), m_parentPropertyMap(parentPropertyMap), m_propertyAccessString(rhs.m_propertyAccessString),
-        m_mappedTables(rhs.m_mappedTables), m_propertyPathId(rhs.m_propertyPathId)
+        m_mappedTables(rhs.m_mappedTables)
         {}
 
     PropertyMapCR GetRoot() const;
@@ -114,14 +112,12 @@ protected:
 
 public:
     virtual ~PropertyMap() {}
-    PropertyPathId GetPropertyPathId() const { BeAssert(m_propertyPathId.IsValid()); return m_propertyPathId; }
     NavigationPropertyMap const* GetAsNavigationPropertyMap() const { return _GetAsNavigationPropertyMap(); }
     StructArrayJsonPropertyMap const* GetAsStructArrayPropertyMap() const { return _GetAsStructArrayPropertyMap(); }
     ECClassIdRelationshipConstraintPropertyMap const* GetAsECClassIdRelationshipConstraintPropertyMap() const { return _GetAsECClassIdRelationshipConstraintPropertyMapRelationship(); }
     ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
     Utf8CP GetPropertyAccessString() const { return m_propertyAccessString.c_str(); }
     PropertyMapCollection const& GetChildren() const { return m_children; }
-
     //! Gets a value indicating whether this property map is a virtual mapping, i.e. maps
     //! to a virtual DbColumn. A virtual DbColumn does not exist in a real table, but might
     //! be used as column aliases in views.
@@ -151,8 +147,8 @@ public:
     //! @return List of native SQL snippets, one snippet per column this PropertyMap maps to.
     NativeSqlBuilder::List ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses, DbTable const* tableFilter = nullptr) const;
 
-    BentleyStatus Save(ClassDbMapping& mapping) const { return _Save(mapping); }
-    BentleyStatus Load(ClassDbMapping const& mapping) { return _Load(mapping); }
+    BentleyStatus Save(DbClassMapSaveContext& ctx) const { return _Save(ctx); }
+    BentleyStatus Load(DbClassMapLoadContext const& mapping) { return _Load(mapping); }
     
     //! Make sure our table has the necessary columns, if any
     BentleyStatus FindOrCreateColumnsInTable(ClassMap const&);
@@ -182,7 +178,7 @@ private:
 
     virtual bool _IsVirtual () const override;
 
-    virtual BentleyStatus _Load(ClassDbMapping const& classMapInfo) override;
+    virtual BentleyStatus _Load(DbClassMapLoadContext const& classMapInfo) override;
     virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
     void SetColumn(DbColumn const&);
 
@@ -240,8 +236,8 @@ private:
 
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
     void _GetColumns(std::vector<DbColumn const*>& columns) const;
-    virtual BentleyStatus _Save(ClassDbMapping&) const override;
-    virtual BentleyStatus _Load(ClassDbMapping const&) override;
+    virtual BentleyStatus _Save(DbClassMapSaveContext&) const override;
+    virtual BentleyStatus _Load(DbClassMapLoadContext const&) override;
     virtual Utf8String _ToString() const override;
 
     BentleyStatus SetColumns(DbColumn const&, DbColumn const&, DbColumn const*);
@@ -270,8 +266,8 @@ private:
 
     virtual void _GetColumns(std::vector<DbColumn const*>& columns) const override;
     virtual BentleyStatus _FindOrCreateColumnsInTable(ClassMap const&) override;
-    virtual BentleyStatus _Load(ClassDbMapping const&) override;
-    virtual BentleyStatus _Save(ClassDbMapping&) const override;
+    virtual BentleyStatus _Load(DbClassMapLoadContext const&) override;
+    virtual BentleyStatus _Save(DbClassMapSaveContext&) const override;
 
     virtual Utf8String _ToString() const override;
 
@@ -357,8 +353,8 @@ private:
     virtual Utf8String _ToString() const override { return Utf8PrintfString("NavigationPropertyMap: ecProperty=%s.%s", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str()); }
 
     //nothing to do when loading/saving the prop map
-    virtual BentleyStatus _Load(ClassDbMapping const&) override { return SUCCESS; }
-    virtual BentleyStatus _Save(ClassDbMapping&) const override { return SUCCESS; }
+    virtual BentleyStatus _Load(DbClassMapLoadContext const&) override { return SUCCESS; }
+    virtual BentleyStatus _Save(DbClassMapSaveContext&) const override { return SUCCESS; }
     virtual NavigationPropertyMap const* _GetAsNavigationPropertyMap() const override { return this; }
 
     ECN::ECRelationshipEnd GetConstraintEnd(NavigationEnd end) const { return GetConstraintEnd(GetNavigationProperty(), end); }

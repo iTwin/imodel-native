@@ -99,6 +99,16 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
+    //Statement stmt;
+    //stmt.Prepare(ecdb, "SELECT NULL FROM sqlite_master WHERE Name = 'ix_ec_ClassMap_ClassId' AND type = 'index'");
+    //if (stmt->Step() == BE_SQLITE_DONE)
+    //    {
+    //    if (ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId)") != BE_SQLITE_OK)
+    //        {
+
+    //        }
+    //    }
+
     const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
     stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
@@ -407,7 +417,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap(ClassId, ParentId) WHERE ParentId IS NOT NULL;"
-                           "CREATE INDEX ix_ec_ClassMap_ParentId ON ec_ClassMap(ParentId)");
+                           "CREATE INDEX ix_ec_ClassMap_ParentId ON ec_ClassMap(ParentId);"
+                           "CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 

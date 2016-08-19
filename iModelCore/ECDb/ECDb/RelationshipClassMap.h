@@ -158,7 +158,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         BentleyStatus TryGetForeignKeyColumnInfoFromNavigationProperty(ForeignKeyColumnInfo&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
         BentleyStatus TryDetermineForeignKeyColumnPosition(int& position, DbTable const&, ForeignKeyColumnInfo const&) const;
 
-        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap) override;
+        virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
 
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
 
@@ -204,7 +204,7 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
 
         bool GetConstraintECInstanceIdColumnName(Utf8StringR columnName, ECN::ECRelationshipEnd relationshipEnd, DbTable const& table) const;
-        virtual BentleyStatus _Load(std::set<ClassMap const*>& loadGraph, ClassMapLoadContext&, ClassDbMapping const&, ClassMap const* parentClassMap) override;
+        virtual BentleyStatus _Load( ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(RelationshipMappingInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
