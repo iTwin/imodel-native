@@ -809,6 +809,7 @@ private:
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
+    virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) override;
 public:
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db)
         {
@@ -833,6 +834,7 @@ private:
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
+    virtual CurveVectorPtr _GetStrokedCurve(double) override { return nullptr; }
 public:
     static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db)
         {
@@ -895,7 +897,6 @@ PolyfaceHeaderPtr PrimitiveTileGeometry::_GetPolyface(IFacetOptionsR facetOption
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
         polyface->Transform(GetTransform());
-    CurveVectorPtr  curveVector = geometry->GetAsCurveVector();
 
     return polyface;
     }
@@ -903,14 +904,9 @@ PolyfaceHeaderPtr PrimitiveTileGeometry::_GetPolyface(IFacetOptionsR facetOption
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr  TileGeometry::GetStrokedCurve (double chordTolerance)
+CurveVectorPtr  PrimitiveTileGeometry::_GetStrokedCurve (double chordTolerance)
     {
-    auto    geometry = GetGeometry();
-
-    if (nullptr == geometry)
-        return nullptr;
-
-    CurveVectorPtr  curveVector = geometry->GetAsCurveVector();
+    CurveVectorPtr  curveVector = m_geometry->GetAsCurveVector();
 
     if (!curveVector.IsValid() || curveVector->IsAnyRegionType())
         return nullptr;
@@ -919,7 +915,7 @@ CurveVectorPtr  TileGeometry::GetStrokedCurve (double chordTolerance)
     CurveVectorPtr      strokedCurveVector = curveVector->Stroke (*facetOptions);
 
     if (strokedCurveVector.IsValid())
-        strokedCurveVector->TransformInPlace (m_transform);
+        strokedCurveVector->TransformInPlace (GetTransform());
             
     return strokedCurveVector;
     }
@@ -951,6 +947,17 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode normalMode)
     {
+    auto facetOptions = CreateFacetOptions(chordTolerance, normalMode);
+    auto polyface = _GetPolyface(*facetOptions);
+
+    return polyface.IsValid() && 0 != polyface->GetPointCount() ? polyface : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
+    {
     auto facetOptions = createTileFacetOptions(chordTolerance / m_transform.ColumnXMagnitude());
 
     bool normalsRequired = false;
@@ -963,9 +970,7 @@ PolyfaceHeaderPtr TileGeometry::GetPolyface(double chordTolerance, NormalMode no
     facetOptions->SetNormalsRequired(normalsRequired);
     facetOptions->SetParamsRequired(HasTexture());
 
-    auto polyface = _GetPolyface(*facetOptions);
-
-    return polyface.IsValid() && 0 != polyface->GetPointCount() ? polyface : nullptr;
+    return facetOptions;
     }
 
 //=======================================================================================

@@ -287,8 +287,10 @@ protected:
     TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db);
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
+    virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
 
     void SetFacetCount(size_t numFacets);
+    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 public:
     TileDisplayParamsCR GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
@@ -300,7 +302,7 @@ public:
 
     bool HasTexture() const;
     PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
-    CurveVectorPtr    GetStrokedCurve (double chordTolerance);
+    CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
