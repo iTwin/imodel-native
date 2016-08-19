@@ -4367,6 +4367,8 @@ bool BcDTM::IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint,
             return false;
 
         startPt = point;
+        intersectionPoint = startPt;
+        return true;
         }
 
     // TopView
@@ -4379,7 +4381,7 @@ bool BcDTM::IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint,
         return false;
         }
     startPt.z = elevation;
-
+    intersectionPoint = startPt;
     return true;
     }
 
