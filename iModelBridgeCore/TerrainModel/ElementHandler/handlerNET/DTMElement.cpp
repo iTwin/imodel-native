@@ -1343,12 +1343,12 @@ void DTMMaterialElement::SetMaterialInfo (System::String^ palette, System::Strin
         pin_ptr<const wchar_t> wPalette = PtrToStringChars (palette);
         pin_ptr<const wchar_t> wMaterial = PtrToStringChars (material);
         ElementId materialElementId = 0;
-        MaterialCP material;
+        MaterialCP material_local;
 
-        material = MaterialManager::GetManagerR().FindMaterial (nullptr, Bentley::DgnPlatform::MaterialId (wMaterial), *SymbologyDgnFile, *SymbologyDgnModelRef, true);
+        material_local = MaterialManager::GetManagerR().FindMaterial (nullptr, Bentley::DgnPlatform::MaterialId (wMaterial), *SymbologyDgnFile, *SymbologyDgnModelRef, true);
 
-        if (material)
-            materialElementId = material->GetElementId();
+        if (material_local)
+            materialElementId = material_local->GetElementId();
         else
             {
             MaterialList materials;
