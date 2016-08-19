@@ -158,6 +158,42 @@ DgnDbStatus ViewDefinition::DeleteReferences() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus lockElement(DgnElementCR ele)
+    {
+    LockRequest lockReq;
+    lockReq.Insert(ele, LockLevel::Exclusive);
+    return (RepositoryStatus::Success == ele.GetDgnDb().BriefcaseManager().AcquireLocks(lockReq).Result())? DgnDbStatus::Success: DgnDbStatus::LockNotHeld;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ViewDefinition2d::OnModelDelete(DgnDbR db, DgnModelId mid)
+    {
+    auto findViewsStmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition2d") " WHERE BaseModelId=?");
+    if (!findViewsStmt.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadRequest;
+        }
+    findViewsStmt->BindId(1, mid);
+    while (BE_SQLITE_ROW == findViewsStmt->Step())
+        {
+        auto viewId = findViewsStmt->GetValueId<DgnViewId>(0);
+        auto view = QueryView(viewId, db);
+        if (view.IsValid())
+            {
+            lockElement(*view);
+            view->Delete();
+            }
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition2d::IsBaseModelValid() const
@@ -426,11 +462,60 @@ DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
+    {
+    // Detect all ModelSelectors that include this model
+    auto statement = db.GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE TargetECInstanceId=?");
+    if (!statement.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadRequest;
+        }
+    statement->BindId(1, mid);
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        auto selId = statement->GetValueId<DgnElementId>(0);
+        auto selector = db.Elements().Get<ModelSelector>(selId);
+        if (!selector.IsValid())
+            continue;
+        //  If the this ModelSelector contains *ONLY* this model, it is about to become empty. Delete it.
+        if (selector->GetModelIds().size() == 1)
+            {
+            lockElement(*selector);
+            selector->Delete();
+            }
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::_OnDelete() const
+    {
+    // Delete all 3d views that are based on on this selector
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition3d") " WHERE ModelSelector=?");
+    statement->BindId(1, GetElementId());
+    if (BE_SQLITE_ROW == statement->Step())
+        {
+        auto view = ViewDefinition::QueryView(statement->GetValueId<DgnViewId>(0), GetDgnDb());
+        if (view.IsValid())
+            view->Delete();
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
     {
     // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorsReferToModels instances with Source = this
+
+    if (!GetElementId().IsValid())
+        return DgnDbStatus::InvalidId;
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
@@ -454,6 +539,12 @@ DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
 DgnModelIdSet ModelSelector::GetModelIds() const
     {
     DgnModelIdSet Models;
+
+    if (!GetElementId().IsValid())
+        {
+        BeAssert(false);
+        return DgnModelIdSet();
+        }
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())

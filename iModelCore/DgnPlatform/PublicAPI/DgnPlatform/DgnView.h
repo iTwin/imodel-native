@@ -81,24 +81,24 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
 protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
 public:
     //! Construct a new modelselector. You should then call SetModelIds.
     ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
-    //! Construct a new modelselector containing a list of models prior to inserting it.
-    ModelSelector(DgnDbR db, Utf8StringCR name, DgnModelIdSet const& models) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) { SetModelIds(models); }
-
-    //! Construct a new modelselector containing a single model prior to inserting it.
-    ModelSelector(DgnDbR db, Utf8StringCR name, DgnModelId model) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) { SetModelId(model); }
-
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
+    //! Define the selector to contain a single DgnModelId. @note this must be persistent. @note This writes to the bim directly.
     DGNPLATFORM_EXPORT DgnDbStatus SetModelId(DgnModelId mid);
-    DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(DgnModelIdSet const& models);
+    //! Define the selector to contain the specified DgnModelIds. @note this must be persistent. @note This writes to the bim directly.
+    DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(DgnModelIdSet const& models); //!< Define the selector to contain the specified DgnModelIds. @note this must be persistent.
+    //! Query the DgnModelIds that are in this selector
     DGNPLATFORM_EXPORT DgnModelIdSet GetModelIds() const;
-
+    //! Query if the specified DgnModelId is in this selector
     DGNPLATFORM_EXPORT bool ContainsModelId(DgnModelId mid) const;
+
+    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
 
     static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector); }
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector)); }
@@ -121,7 +121,7 @@ public:
 
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
-    //! Set the list of categories. Note that this element must be persisent in order for this function to succeed.
+    //! Set the list of categories. @note that this element must be persisent in order for this function to succeed. @note This writes to the bim directly.
     DGNPLATFORM_EXPORT DgnDbStatus SetCategoryIds(DgnCategoryIdSet const&);
     //! Get the list of categories.
     DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
@@ -471,6 +471,8 @@ public:
     DgnDbStatus SetExtents(DVec2dCR value) { return SetPropertyValue("Extents", DPoint2d::From(value.x,value.y)); } //!< Set size of the view diagonal
     AngleInDegrees GetRotationAngle() const { return AngleInDegrees::FromDegrees(GetPropertyValueDouble("RotationAngle")); } //!< Get rotation angle in degrees of the viewed area.
     DgnDbStatus SetRotationAngle(AngleInDegrees const& value) { return SetPropertyValue("RotationAngle", value.Degrees()); } //!< Set rotation angle in degrees of the viewed area.
+
+    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
     };
 
 //=======================================================================================

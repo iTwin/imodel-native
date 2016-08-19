@@ -136,6 +136,11 @@ void ViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         m_viewedModels.insert(modelId);
     else
         m_viewedModels.erase(modelId);
+
+    if (onOff && !m_targetModelId.IsValid())
+        m_targetModelId = modelId;
+    else if (!onOff && modelId == m_targetModelId && 0 != m_viewedModels.size())
+        m_targetModelId = *m_viewedModels.begin();
     }
 
 /*---------------------------------------------------------------------------------**//**
