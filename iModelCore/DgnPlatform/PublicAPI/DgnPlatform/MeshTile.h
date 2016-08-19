@@ -280,8 +280,8 @@ private:
     DgnElementId            m_elementId;
     size_t                  m_facetCount;
     double                  m_facetCountDensity;
-    DgnDbR                  m_dgndb;
     bool                    m_isCurved;
+    bool                    m_hasTexture;
 
 protected:
     TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db);
@@ -296,11 +296,13 @@ public:
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetRange() const { return m_range; }
     DgnElementId GetElementId() const { return m_elementId; } //!< The ID of the element from which this geometry was produced
+
     size_t GetFacetCount() const { return m_facetCount; }
     double GetFacetCountDensity() const { return m_facetCountDensity; }
-    bool IsCurved() const { return m_isCurved; }
 
-    bool HasTexture() const;
+    bool IsCurved() const { return m_isCurved; }
+    bool HasTexture() const { return m_hasTexture; }
+
     PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
     CurveVectorPtr    GetStrokedCurve (double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
     

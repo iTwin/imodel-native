@@ -778,7 +778,7 @@ TileNodePList TileNode::GetTiles()
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeometry::TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db)
-    : m_params(params), m_transform(tf), m_range(range), m_elementId(elemId), m_isCurved(isCurved), m_dgndb(db)
+    : m_params(params), m_transform(tf), m_range(range), m_elementId(elemId), m_isCurved(isCurved), m_hasTexture(params.QueryTexture(db).IsValid())
     {
     //
     }
@@ -856,14 +856,6 @@ TileGeometryPtr TileGeometry::Create(IGeometryR geometry, TransformCR tf, DRange
 TileGeometryPtr TileGeometry::Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db)
     {
     return SolidKernelTileGeometry::Create(solid, tf, range, elemId, params, facetOptions, db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometry::HasTexture() const
-    {
-    return m_params.QueryTexture(m_dgndb).IsValid();    // ###TODO: Avoid looking up the texture repeatedly...without introducing race condition...
     }
 
 /*---------------------------------------------------------------------------------**//**
