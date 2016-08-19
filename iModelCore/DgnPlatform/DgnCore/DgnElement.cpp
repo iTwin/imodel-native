@@ -2956,7 +2956,14 @@ DgnDbStatus DgnElement::UpdateAutoHandledProperties()
         m_autoHandledProperties->SetInstanceId(idStrBuffer);
         }
 
-    return (BSISUCCESS == updater->Update(*m_autoHandledProperties))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    DgnDbStatus status = (BSISUCCESS == updater->Update(*m_autoHandledProperties))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+
+    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
+    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
+    if (DgnDbStatus::Success == status)
+        m_autoHandledProperties = nullptr;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
