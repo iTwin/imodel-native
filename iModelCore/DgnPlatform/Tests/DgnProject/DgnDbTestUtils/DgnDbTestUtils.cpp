@@ -436,13 +436,14 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
 //---------------------------------------------------------------------------------------
 ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
     {
-    ModelSelector modSel(db, name, model);
+    ModelSelector modSel(db, name);
     auto modSelPersist = db.Elements().Insert(modSel);
     if (!modSelPersist.IsValid())
         {
         EXPECT_TRUE(false) << " Failed to insert model selector with name =" << name;
         return nullptr;
         }
+    modSel.SetModelId(model);
 
     auto models = modSelPersist->GetModelIds();
     EXPECT_EQ(1, models.size());
