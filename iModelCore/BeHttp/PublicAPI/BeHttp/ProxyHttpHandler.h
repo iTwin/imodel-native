@@ -18,7 +18,7 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ProxyHttpHandler : IHttpHandler
+struct EXPORT_VTABLE_ATTRIBUTE ProxyHttpHandler : IHttpHandler
 {
 private:
     IHttpHandlerPtr m_handler;
