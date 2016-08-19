@@ -616,10 +616,11 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
         if (rangePixels < s_minRangeBoxSize)
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
-        PolyfaceHeaderPtr   polyface        = geometry->GetPolyface(tolerance, normalMode);
-        CurveVectorPtr      strokes         = geometry->GetStrokedCurve (tolerance);
-
-        if (polyface.IsNull() && strokes.IsNull())
+        CurveVectorPtr      strokes;
+        PolyfaceHeaderPtr   polyface;
+        
+        if (!(strokes = geometry->GetStrokedCurve (tolerance)).IsValid() &&
+            !(polyface = geometry->GetPolyface(tolerance, normalMode)).IsValid())
             continue;
 
         TileDisplayParamsCP     displayParams = &geometry->GetDisplayParams();

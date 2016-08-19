@@ -77,7 +77,7 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
         found = m_map.insert(bmap<DgnElementId, uint16_t>::value_type(elemId, batchId)).first;
         }
 
-    return found->second;
+    return found->second; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -442,6 +442,7 @@ Json::Value     TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode
 
     auto&   techniqueStates = technique["states"];
     techniqueStates["enable"] = Json::arrayValue;
+    techniqueStates["enable"].append(GLTF_DEPTH_TEST);
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
@@ -659,8 +660,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     else if (!mesh.Polylines().empty())
         {
         for (auto const& polyline : mesh.Polylines())
-            for (auto& index : polyline.m_indices)
-                indices.push_back((unsigned int) index);
+            {
+            for (size_t i=0; i<polyline.m_indices.size()-1; i++)
+                {
+                indices.push_back (polyline.m_indices[i]);
+                indices.push_back (polyline.m_indices[i+1]);
+                }
+            }
         }
 
     bvector<float> uvs;
@@ -757,7 +763,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         attr["material"] = texNames[texId];
         }
 
-    attr["mode"] = mesh.Triangles().empty() ? GLTF_LINE_STRIP : GLTF_TRIANGLES;
+    attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
 
     rootNode["bufferViews"][bv_pos_id] = Json::objectValue;
@@ -1017,7 +1023,7 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
+TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<Utf8String>& viewedTileSetNames)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -1062,6 +1068,15 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TilesetPublisher
+::Status   TilesetPublisher::PublishViewedModel (Utf8String& tileSetName, DgnModelR model)
+    {
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetPublisher::Publish()
@@ -1086,6 +1101,20 @@ TilesetPublisher::Status TilesetPublisher::Publish()
 
     m_generator = &generator;
     status = ConvertStatus(generator.CollectTiles(rootNode, *this));
+
+    bvector<Utf8String>   viewedTileSetNames;
+#ifdef VIEWED_TILE_WIP
+    for (auto& modelId : m_viewController.GetViewedModels())
+        {
+        Utf8String      tileSetName;
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelID);
+
+        if (viewedModel.IsValid() &&
+            Status::Success == PublishViewedModel (tileSetName, *viewedModel))
+            viewedTileSetNames.push_back (tileSetName);
+        }
+#endif
+
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -1093,7 +1122,7 @@ TilesetPublisher::Status TilesetPublisher::Publish()
 
     OutputStatistics(generator.GetStatistics());
 
-    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames);
     }
 
 /*---------------------------------------------------------------------------------**//**
