@@ -458,7 +458,7 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
-        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
 
         HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
         EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
@@ -803,7 +803,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV1SkipTokenSuppliedAndSen
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse(HttpStatus::OK, StubInstances().ToJsonWebApiV1(),
         {{"SkipToken", "ServerSkipToken"}, {"Content-Type", "application/json"}});
         });
@@ -822,7 +822,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApi2SkipTokenEmpty_DoesNotSe
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
     GetHandler().ForRequest(2, [=] (HttpRequestCR request)
         {
-        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("SkipToken"));
         return StubHttpResponse();
         });
 
@@ -1509,7 +1509,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
         {
         EXPECT_STREQ("PUT", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
-        EXPECT_STREQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
+        EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
         EXPECT_STREQ("TestUploadId", request.GetHeaders().GetValue("Mas-Upload-Confirmation-Id"));
         return StubHttpResponse(HttpStatus::OK);
         });
