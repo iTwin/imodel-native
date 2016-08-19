@@ -250,13 +250,6 @@ public:
 //=======================================================================================
 struct TileGeometry : RefCountedBase
 {
-    enum class Type
-    {
-        Solid,      //!< This TileGeometry contains an ISolidKernelEntity
-        Geometry,   //!< This TileGeometry contains an IGeometry
-        Empty,      //!< This TileGeometry contains no geometry
-    };
-
     enum class NormalMode
     {
         Never,              //!< Never generate normals
@@ -264,43 +257,22 @@ struct TileGeometry : RefCountedBase
         CurvedSurfacesOnly, //!< Generate normals only for curved surfaces
     };
 private:
-    typedef bmap<double, PolyfaceHeaderPtr> Tesselations;
-
-    union
-        {
-        ISolidKernelEntityP m_solidEntity;
-        IGeometryP          m_geometry;
-        };
     TileDisplayParams       m_params;
     Transform               m_transform;
-    Tesselations            m_tesselations;
     DRange3d                m_range;
     DgnElementId            m_elementId;
     size_t                  m_facetCount;
     double                  m_facetCountDensity;
     DgnDbR                  m_dgndb;
-    Type                    m_type;
     bool                    m_isCurved;
-    bool                    m_isInstanced; // ###TODO: unused...?
 
+protected:
     TileGeometry(TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, bool isCurved, DgnDbR db);
 
-    void Init(IGeometryR geometry, IFacetOptionsR facetOptions);
-    void Init(ISolidKernelEntityR solid, IFacetOptionsR facetOptions);
+    virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) = 0;
 
-    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
+    void SetFacetCount(size_t numFacets);
 public:
-    ~TileGeometry();
-
-    //! Create a TileGeometry for an IGeometry
-    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
-    //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db);
-
-    Type GetType() const { return m_type; } //!< The type of geometry contained within
-    ISolidKernelEntityP GetSolidEntity() const { return Type::Solid == GetType() ? m_solidEntity : nullptr; } //!< The contained ISolidKernelEntity, if any
-    IGeometryP GetGeometry() const { return Type::Geometry == GetType() ? m_geometry : nullptr; } //!< The contained IGeometry, if any
-
     TileDisplayParamsCR GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetRange() const { return m_range; }
@@ -311,6 +283,11 @@ public:
 
     bool HasTexture() const;
     PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
+
+    //! Create a TileGeometry for an IGeometry
+    static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
+    //! Create a TileGeometry for an ISolidKernelEntity
+    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db);
 };
 
 //=======================================================================================
