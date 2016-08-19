@@ -108,7 +108,7 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
-    Status WriteWebApp(TransformCR transform);
+    Status WriteWebApp(TransformCR transform, bvector<Utf8String>& viewedTileSetNames);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -131,6 +131,7 @@ public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
     Status Publish();
+    Status PublishViewedModel (Utf8String& tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TextureCache& GetTextureCache() { return m_textureCache; }
