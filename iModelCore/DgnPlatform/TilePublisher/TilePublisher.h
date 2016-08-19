@@ -177,6 +177,8 @@ private:
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddShaders(Json::Value& value, bool isTextured);
     Json::Value AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent);
+    Json::Value AddPolylineShaderTechnique (Json::Value& rootNode);
+
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t id, uint32_t texId, TextureIdToNameMap& texNames);
     void AppendUInt32(uint32_t value);
     void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath);

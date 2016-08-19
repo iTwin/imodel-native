@@ -423,6 +423,63 @@ void TilePublisher::AddTextures(Json::Value& rootNode, TextureIdToNameMap& texNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
+    {
+    Json::Value     technique = Json::objectValue;
+
+    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
+    AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+    static char         *s_programName                    = "polylineProgram",
+                        *s_vertexShaderName               = "polylineVertexShader",
+                        *s_fragmentShaderName             = "polylineFragmentShader",
+                        *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
+                        *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+
+    technique["program"] = s_programName;
+
+    auto&   techniqueStates = technique["states"];
+    techniqueStates["enable"] = Json::arrayValue;
+
+    auto& techniqueAttributes = technique["attributes"];
+    techniqueAttributes["a_pos"] = "pos";
+    techniqueAttributes["a_batchId"] = "batch";
+
+    auto& techniqueUniforms = technique["uniforms"];
+    techniqueUniforms["u_mv"] = "mv";
+    techniqueUniforms["u_proj"] = "proj";
+
+    auto& rootProgramNode = (rootNode["programs"][s_programName] = Json::objectValue);
+    rootProgramNode["attributes"] = Json::arrayValue;
+    AppendProgramAttribute(rootProgramNode, "a_pos");
+    AppendProgramAttribute(rootProgramNode, "a_batchId");
+
+    rootProgramNode["vertexShader"]   = s_vertexShaderName;
+    rootProgramNode["fragmentShader"] = s_fragmentShaderName;
+
+    auto& shaders = rootNode["shaders"];
+    AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
+    AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
+
+    auto& bufferViews = rootNode["bufferViews"];
+
+    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_polylineVertexShader);
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+
+    AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+    techniqueUniforms["u_color"] = "color";
+
+    return technique;
+    
+
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value     TilePublisher::AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent)
     {
     Json::Value     technique = Json::objectValue;
@@ -535,14 +592,19 @@ Json::Value     TilePublisher::AddShaderTechnique (Json::Value& rootNode, bool t
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddShaders(Json::Value& rootNode, bool isTextured)
     {
+    bool        polylinesPresent       = true;
+
     rootNode["techniques"]["untexturedTechnique"] = AddShaderTechnique (rootNode, false, false);
     rootNode["techniques"]["untexturedTechniqueTransparent"] = AddShaderTechnique (rootNode, false, true);
 
-    if (true)
+    if (true) /* transparent geometry exists */
         {
         rootNode["techniques"]["texturedTechnique"] = AddShaderTechnique (rootNode, true, false);
         rootNode["techniques"]["texturedTechniqueTransparent"] = AddShaderTechnique (rootNode, true, true);
         }
+    
+    if (polylinesPresent)
+        rootNode["techniques"]["polylineTechnique"] = AddPolylineShaderTechnique (rootNode);
     }
 
 
@@ -581,12 +643,24 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         }
 
     bvector<unsigned int> indices;
-    indices.reserve(mesh.Triangles().size() * 3);
-    for (auto const& tri : mesh.Triangles())
+
+    BeAssert (mesh.Triangles().empty() || mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
+
+    if (!mesh.Triangles().empty())
         {
-        indices.push_back((unsigned int)tri.m_indices[0]);
-        indices.push_back((unsigned int)tri.m_indices[1]);
-        indices.push_back((unsigned int)tri.m_indices[2]);
+        indices.reserve(mesh.Triangles().size() * 3);
+        for (auto const& tri : mesh.Triangles())
+            {
+            indices.push_back((unsigned int)tri.m_indices[0]);
+            indices.push_back((unsigned int)tri.m_indices[1]);
+            indices.push_back((unsigned int)tri.m_indices[2]);
+            }
+        }
+    else if (!mesh.Polylines().empty())
+        {
+        for (auto const& polyline : mesh.Polylines())
+            for (auto& index : polyline.m_indices)
+                indices.push_back((unsigned int) index);
         }
 
     bvector<float> uvs;
@@ -594,7 +668,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     for (auto const& uv : mesh.Params())
         {
         uvs.push_back((float)uv.x);
-        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or are v- convention is mismatched.
+        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or our v- convention is mismatched.
         }
 
     bvector<float> normals;
@@ -614,10 +688,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
 #endif
 
     Json::Value attr = Json::objectValue;
+
     attr["attributes"]["POSITION"] = acc_pos_id;
-    if (texId != -1)
+
+    if (!uvs.empty())
         attr["attributes"]["TEXCOORD_0"] = acc_uv_id;
-    else
+
+    if (!normals.empty())
         attr["attributes"]["NORMAL"] = acc_n_id;
 
 #if USE_BATCH_TABLE
@@ -638,31 +715,40 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         materialColor.append(((uint8_t*)&rgb)[2]/255.0);
         double alpha = 1.0 - ((uint8_t*)&rgb)[3]/255.0;
         materialColor.append(alpha);
-        material["technique"] = (1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent";
+        material["technique"] = mesh.Triangles().empty() ? "polylineTechnique" : ((1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent");
 
-        double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-        RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
+        if (!mesh.Triangles().empty())
+            {
+            double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
+            RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
 
 #ifdef NEEDS_WORK_MATERIALS
-        if (NULL != mesh.GetDisplayParams() && 
-            NULL != mesh.GetDisplayParams()->GetMaterial())
-            {
-            MaterialSettingsCR  materialSettings = mesh.m_matSymb->GetMaterial()->GetSettings();
-            static double       s_finishScale = 15.0;
+            if (nullptr != mesh.GetDisplayParams() && mesh.GetDisplayParams().GetMaterialId().IsValid())
+                {
+            if (NULL != mesh.GetDisplayParams() && 
+                NULL != mesh.GetDisplayParams()->GetMaterial())
+                {
+                JsonRenderMaterial mat = 
 
-            if (materialSettings.HasSpecularColor())
-                specularColor = materialSettings.GetSpecularColor();
 
-            if (materialSettings.HasFinishScale())
-                specularExponent = materialSettings.GetFinishScaleForStorage() * s_finishScale;
-            }
+
+                MaterialSettingsCR  materialSettings = mesh.m_matSymb->GetMaterial()->GetSettings();
+                static double       s_finishScale = 15.0;
+
+                if (materialSettings.HasSpecularColor())
+                    specularColor = materialSettings.GetSpecularColor();
+
+                if (materialSettings.HasFinishScale())
+                    specularExponent = materialSettings.GetFinishScaleForStorage() * s_finishScale;
+                }
 #endif
 
-        material["values"]["specularExponent"] = specularExponent;
-        auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
-        materialSpecularColor.append (specularColor.red);
-        materialSpecularColor.append (specularColor.green);
-        materialSpecularColor.append (specularColor.blue);
+            material["values"]["specularExponent"] = specularExponent;
+            auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
+            materialSpecularColor.append (specularColor.red);
+            materialSpecularColor.append (specularColor.green);
+            materialSpecularColor.append (specularColor.blue);
+            }
 
         attr["material"] = matName.c_str();
         }
@@ -671,7 +757,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         attr["material"] = texNames[texId];
         }
 
-    attr["mode"] = GLTF_TRIANGLES;
+    attr["mode"] = mesh.Triangles().empty() ? GLTF_LINE_STRIP : GLTF_TRIANGLES;
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
 
     rootNode["bufferViews"][bv_pos_id] = Json::objectValue;
@@ -741,7 +827,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     rootNode["accessors"][acc_bat_id]["type"] = "SCALAR";
 #endif
 
-    if (texId != -1) //textured mesh
+    if (!uvs.empty())
         {
         rootNode["bufferViews"][bv_uv_id] = Json::objectValue;
         rootNode["bufferViews"][bv_uv_id]["buffer"] = "binary_glTF";
@@ -760,7 +846,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         rootNode["accessors"][acc_uv_id]["count"] = uvs.size();
         rootNode["accessors"][acc_uv_id]["type"] = "VEC2";
         }
-    else
+
+    if (!normals.empty())
         {
         rootNode["bufferViews"][bv_n_id] = Json::objectValue;
         rootNode["bufferViews"][bv_n_id]["buffer"] = "binary_glTF";
