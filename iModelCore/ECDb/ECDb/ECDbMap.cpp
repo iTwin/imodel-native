@@ -1231,7 +1231,7 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::LoadClassIdsPerTable(ECN:
             BeAssert(currentTable != nullptr);
             }
 
-        ECClassId id = stmt->GetValueId<ECClassId>(2);
+        /*ECClassId id = */stmt->GetValueId<ECClassId>(2);
         subSet.insert(currentTable);
         }
 
