@@ -1175,6 +1175,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     auto numTotalTiles = static_cast<uint32_t>(tiles.size());
     BeAtomic<uint32_t> numCompletedTiles;
 
+#if !defined(MESHTILE_SINGLE_THREADED)
     auto threadPool = &BeFolly::IOThreadPool::GetPool();
     for (auto& tile : tiles)
         folly::via(threadPool, [&]()
@@ -1195,6 +1196,14 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
         BeThreadUtilities::BeSleep(s_sleepMillis);
         }
     while (numCompletedTiles < numTotalTiles);
+#else
+    StopWatch timer(true);
+    for (auto& tile : tiles)
+        {
+        collector._AcceptTile(*tile);
+        ++numCompletedTiles;
+        }
+#endif
 
     m_statistics.m_tileCreationTime = timer.GetCurrentSeconds();
 
