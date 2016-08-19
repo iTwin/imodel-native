@@ -1020,8 +1020,7 @@ ICancellationTokenPtr cancellationToken
 
     if (!locksFilter.empty() && !codesFilter.empty())
         {
-        //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
-        filter.Sprintf("(%s)+and+(%s)", locksFilter.c_str(), codesFilter.c_str());
+        filter.Sprintf("(%s)+or+(%s)", locksFilter.c_str(), codesFilter.c_str());
         }
     else
         {
@@ -1081,15 +1080,14 @@ WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint6
     WSQuery query(ServerSchema::Schema::Repository, classes);
     Utf8String filter;
     Utf8String locksFilter, codesFilter;
-    locksFilter.Sprintf("%s+ne+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
+    locksFilter.Sprintf("%s+gt+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
                         ServerSchema::Property::ReleasedWithRevisionIndex, lastRevisionIndex);
 
     //NEEDSWORK: Make DgnCodeState::Type public
     codesFilter.Sprintf("%s+eq+%s+or+%s+eq+%s+or+%s+gt+%u", ServerSchema::Property::Reserved, BoolToString(true),
                         ServerSchema::Property::Used, BoolToString(true), ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
 
-    //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
-    filter.Sprintf("%s+ne+%u+and+((%s)+and+(%s))", ServerSchema::Property::BriefcaseId,
+    filter.Sprintf("%s+ne+%u+and+((%s)+or+(%s))", ServerSchema::Property::BriefcaseId,
                    briefcaseId.GetValue(), locksFilter.c_str(), codesFilter.c_str());
 
     query.SetFilter(filter);
