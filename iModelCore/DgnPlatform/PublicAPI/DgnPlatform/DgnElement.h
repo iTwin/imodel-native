@@ -450,16 +450,16 @@ public:
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
         DgnCode         m_code;
-        Utf8String      m_label;
+        Utf8String      m_userLabel;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
 
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent) {SetLabel(label);}
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent) {SetUserLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
-        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
+        void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
@@ -556,6 +556,8 @@ public:
         friend struct MultiAspectMux;
 
     protected:
+        BeSQLite::EC::ECInstanceId m_instanceId;
+
         enum class ChangeType{None, Write, Delete};
         ChangeType m_changeType;
 
@@ -593,6 +595,9 @@ public:
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
     public:
+        //! Get the Id of this aspect
+        BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
+
         Utf8CP GetECClassName() const {return _GetECClassName();}
         Utf8CP GetSuperECClassName() const {return _GetSuperECClassName();}
 
@@ -631,12 +636,7 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
-        BeSQLite::EC::ECInstanceId m_instanceId;
-
     public:
-        //! Get the Id of this aspect
-        BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
-
         //! Load the specified instance
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
@@ -687,7 +687,6 @@ public:
             BulkInsert,     //!< An application is creating a large number of Elements 
             Other           //!< An unspecified reason
         };
-
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
         //! @param aspect The new aspect to be adopted by the host.
@@ -777,7 +776,7 @@ protected:
     DgnModelId    m_modelId;
     DgnClassId    m_classId;
     DgnCode       m_code;
-    Utf8String    m_label;
+    Utf8String    m_userLabel;
     mutable ECN::IECInstancePtr m_autoHandledProperties;
     mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
@@ -1090,7 +1089,7 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return HasLabel() ? m_label : GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return HasUserLabel() ? m_userLabel : GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
@@ -1297,16 +1296,16 @@ public:
     DGNPLATFORM_EXPORT DateTime QueryTimeStamp() const;
 
     //! Return true if this DgnElement has a label.
-    bool HasLabel() const {return !m_label.empty();}
+    bool HasUserLabel() const {return !m_userLabel.empty();}
     //! Get the label of this DgnElement.
     //! @note may be nullptr
-    Utf8CP GetLabel() const {return m_label.c_str();}
+    Utf8CP GetUserLabel() const {return m_userLabel.c_str();}
     //! Set the label of this DgnElement.
-    void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+    void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);}
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.
-    //! @see GetLabel, GetCode, _GetDisplayLabel
+    //! @see GetUserLabel, GetCode, _GetDisplayLabel
     Utf8String GetDisplayLabel() const {return _GetDisplayLabel();}
 
     //! Query the DgnDb for the children of this DgnElement.

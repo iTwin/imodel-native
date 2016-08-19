@@ -237,7 +237,8 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Label" typeName="string">
+        <ECProperty propertyName="UserLabel" typeName="string">
+            <!-- The "name" given by the User vs. the official "name" which is the CodeValue -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>True</IsNullable>
@@ -408,10 +409,10 @@
                         </Properties>
                     </DbIndex>
                     <DbIndex>
-                        <Name>ix_bis_Element_Label</Name>
+                        <Name>ix_bis_Element_UserLabel</Name>
                         <IsUnique>False</IsUnique>
                         <Properties>
-                            <string>Label</string>
+                            <string>UserLabel</string>
                         </Properties>
                         <Where>IndexedColumnsAreNotNull</Where>
                     </DbIndex>
@@ -488,7 +489,8 @@
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty> 
-        <ECProperty propertyName="Label" typeName="string">
+        <ECProperty propertyName="UserLabel" typeName="string">
+            <!-- The "name" given by the User vs. the official "name" which is the CodeValue -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
                     <IsNullable>True</IsNullable>

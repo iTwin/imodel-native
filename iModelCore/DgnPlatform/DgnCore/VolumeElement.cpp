@@ -136,7 +136,7 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
 //+---------------+---------------+---------------+---------------+---------------+-----
 DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_VolumeElement) " WHERE UserLabel=? LIMIT 1"); // find first if label not unique
 
     if (label)
         stmt->BindText(1, label, IECSqlBinder::MakeCopy::No);

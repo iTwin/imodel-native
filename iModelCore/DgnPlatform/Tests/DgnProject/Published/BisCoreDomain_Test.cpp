@@ -47,7 +47,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedColumnNames.push_back("CodeValue");
         expectedColumnNames.push_back("ModelId");
         expectedColumnNames.push_back("ParentId");
-        expectedColumnNames.push_back("Label");
+        expectedColumnNames.push_back("UserLabel");
         expectedColumnNames.push_back("UserProperties");
         expectedColumnNames.push_back("LastMod");
 
@@ -165,7 +165,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ECClassId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ParentId]) WHERE ([ParentId] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([ModelId])");
-        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([Label]) WHERE ([Label] IS NOT NULL)");
+        expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_Element)            "]([UserLabel]) WHERE ([UserLabel] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([CategoryId])");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement2d) "]([ViewId]) WHERE ([ViewId] IS NOT NULL)");
         expectedSqlList.push_back("ON [" BIS_TABLE(BIS_CLASS_GeometricElement3d) "]([CategoryId])");

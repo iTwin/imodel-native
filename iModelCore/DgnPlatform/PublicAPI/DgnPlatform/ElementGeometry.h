@@ -544,7 +544,8 @@ public:
 
     //! Set symbology by supplying a fully qualified GeometryParams. Any subsequent Append of a GeometryPrimitive will display using this symbology.
     //! @note If no symbology is specifically set in a GeometryStream, the GeometricPrimitive display using the default DgnSubCategoryId for the GeometricElement's DgnCategoryId.
-    DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR);
+    //!       World vs. local affects PatternParams and LineStyleInfo that need to store an orientation and other "placement" relative information.
+    DGNPLATFORM_EXPORT bool Append (Render::GeometryParamsCR, CoordSystem coord = CoordSystem::Local);
 
     //! Append a DgnGeometryPartId with relative placement supplied as a Transform.
     //! @note Builder must be created with a known placement for relative location to be meaningful. Can't be called when creating a DgnGeometryPart, nested parts are not supported.

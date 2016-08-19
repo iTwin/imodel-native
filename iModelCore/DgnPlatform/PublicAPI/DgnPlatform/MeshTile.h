@@ -455,6 +455,7 @@ struct FacetCountUtil
     //! @return An approximation of the number of strokes/facets that will be generated from the surface
     static DGNPLATFORM_EXPORT size_t GetFacetCount (IGeometryCR geometry, IFacetOptionsR facetOptions);
 
+#ifdef BENTLEYCONFIG_OPENCASCADE
     //! Returns an approximation of the facet counts of an ISolidKernelEntity facetted according to the specified options
     //! @param[in] solidEntity Solid entity to be inspected
     //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
@@ -466,6 +467,7 @@ struct FacetCountUtil
     //! @param[in] facetOptions Options for facetting, e.g. chord and angle tolerances
     //! @return An approximation of the number of strokes/facets that will be generated from the shape
     static DGNPLATFORM_EXPORT size_t GetFacetCountApproximation(TopoDS_Shape const& shape, IFacetOptionsR facetOptions);
+#endif
 };
 
 END_BENTLEY_RENDER_NAMESPACE

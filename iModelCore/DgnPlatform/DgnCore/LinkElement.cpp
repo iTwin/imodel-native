@@ -14,7 +14,7 @@
 #define URLLINK_Description "Descr"
 
 #define EMBEDDEDFILELINK_Name "Name"
-#define EMBEDDEDFILELINK_Label "Label"
+#define EMBEDDEDFILELINK_UserLabel "UserLabel"
 #define EMBEDDEDFILELINK_Description "Descr"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -449,7 +449,7 @@ DgnElementIdSet EmbeddedFileLink::Query(DgnDbCR dgndb, Utf8CP name /* = nullptr 
         whereClause.append(EMBEDDEDFILELINK_Name "=?");
 
     if (label)
-        whereClause.empty() ? whereClause.append(EMBEDDEDFILELINK_Label "=?") : whereClause.append(" AND " EMBEDDEDFILELINK_Label "=?");
+        whereClause.empty() ? whereClause.append(EMBEDDEDFILELINK_UserLabel "=?") : whereClause.append(" AND " EMBEDDEDFILELINK_UserLabel "=?");
 
     if (description)
         whereClause.empty() ? whereClause.append(EMBEDDEDFILELINK_Description "=?") : whereClause.append(" AND " EMBEDDEDFILELINK_Description " =?");

@@ -13,7 +13,7 @@
 #define BIS_ELEMENT_PROP_CodeAuthorityId "CodeAuthorityId"
 #define BIS_ELEMENT_PROP_CodeNamespace "CodeNamespace"
 #define BIS_ELEMENT_PROP_CodeValue "CodeValue"
-#define BIS_ELEMENT_PROP_Label "Label"
+#define BIS_ELEMENT_PROP_UserLabel "UserLabel"
 #define BIS_ELEMENT_PROP_ParentId "ParentId"
 #define BIS_ELEMENT_PROP_LastMode "LastMod"
 
@@ -532,10 +532,10 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
         return DgnDbStatus::BadArg;
         }
 
-    if (HasLabel())
-        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_Label), GetLabel(), IECSqlBinder::MakeCopy::No);
+    if (HasUserLabel())
+        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
     else
-        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_Label));
+        statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel));
 
     if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId))
         {
@@ -840,7 +840,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* inStat, DgnElement::CreateParams c
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), DgnCode(), GetLabel()));
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), DgnCode(), GetUserLabel()));
     if (!cloneElem.IsValid())
         {
         stat = DgnDbStatus::BadRequest;
@@ -893,7 +893,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 
     // Copying between DgnDbs is allowed. Caller must do Id remapping.
     m_code      = other.m_code;
-    m_label     = other.m_label;
+    m_userLabel = other.m_userLabel;
     m_parentId  = other.m_parentId;
     
     if (other.m_autoHandledProperties.IsValid())
@@ -1382,7 +1382,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetLabel(), m_parentId);
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId);
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
@@ -1750,7 +1750,7 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
 DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ECInstanceId=?", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, m_instanceId);
     BeSQLite::DbResult status = stmt->Step();
     return (BeSQLite::BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1943,8 +1943,13 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ElementId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
-    DbResult status = stmt->Step();
-    return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+
+    ECInstanceKey key;
+    if (BeSQLite::BE_SQLITE_DONE != stmt->Step(key))
+        return DgnDbStatus::WriteError;
+
+    m_instanceId = key.GetECInstanceId();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1953,7 +1958,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE [ElementId]=?", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
     DbResult status = stmt->Step();
     return (BE_SQLITE_DONE == status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
@@ -1967,7 +1972,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
     DgnClassId classId = GetECClassId(el.GetDgnDb());
 
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE [ElementId]=?", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return ECInstanceKey();
@@ -2015,9 +2020,9 @@ DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) cons
         value.SetLong(GetParentId().GetValueUnchecked());
         return DgnDbStatus::Success;
         }
-    if (0 == strcmp(BIS_ELEMENT_PROP_Label, name))
+    if (0 == strcmp(BIS_ELEMENT_PROP_UserLabel, name))
         {
-        value.SetUtf8CP(GetLabel());
+        value.SetUtf8CP(GetUserLabel());
         return DgnDbStatus::Success;
         }
     if (0 == strcmp(BIS_ELEMENT_PROP_LastMode, name))
@@ -2092,9 +2097,9 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         {
         return SetParentId(DgnElementId((uint64_t)value.GetLong()));
         }
-    if (0 == strcmp(BIS_ELEMENT_PROP_Label, name))
+    if (0 == strcmp(BIS_ELEMENT_PROP_UserLabel, name))
         {
-        SetLabel(value.ToString().c_str());
+        SetUserLabel(value.ToString().c_str());
         return DgnDbStatus::Success;
         }
     if (0 == strcmp(BIS_ELEMENT_PROP_LastMode, name))
