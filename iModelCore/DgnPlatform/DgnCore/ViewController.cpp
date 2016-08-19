@@ -225,10 +225,10 @@ void ViewController::LoadFromDefinition()
     for (auto& id : GetViewedModels())
         GetDgnDb().Models().GetModel(id);
 
-#ifdef WIP_VIEW_DEFINITION // AppData save
     for (auto const& appdata : m_appData) // allow all appdata to restore from settings, if necessary
-        appdata.second->_RestoreFromSettings(m_settings);
-#endif
+        {
+        appdata.second->_SaveToUserProperties(GetViewDefinition());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -266,10 +266,10 @@ void ViewController::StoreToDefinition()
     {
     _StoreToDefinition();
 
-#ifdef WIP_VIEW_DEFINITION // AppData save
     for (auto const& appdata : m_appData)
-        appdata.second->_SaveToSettings(m_settings);
-#endif
+        {
+        appdata.second->_SaveToUserProperties(GetViewDefinition());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2190,7 +2190,7 @@ void ViewController::_DrawView(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::ViewFlags DisplayStyle::GetViewFlags() const
     {
@@ -2203,7 +2203,7 @@ Render::ViewFlags DisplayStyle::GetViewFlags() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DisplayStyle::SetViewFlags(Render::ViewFlags const& flags)
     {
@@ -2214,22 +2214,22 @@ DgnDbStatus DisplayStyle::SetViewFlags(Render::ViewFlags const& flags)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId ViewController::GetViewId() const {return GetViewDefinition().GetViewId();}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawingViewController::DrawingViewController(DrawingViewDefinition const& def) : ViewController2d(def) {}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SheetViewController::SheetViewController(SheetViewDefinition const& def) : ViewController2d(def) {}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController2d::ViewController2d(ViewDefinition2d const& def) : ViewController(def)
     {
@@ -2240,7 +2240,7 @@ ViewController2d::ViewController2d(ViewDefinition2d const& def) : ViewController
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinitionR ViewController::GetViewDefinition() const
     {
@@ -2248,7 +2248,7 @@ ViewDefinitionR ViewController::GetViewDefinition() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 CategorySelectorR ViewController::GetCategorySelector() const
     {
@@ -2269,7 +2269,7 @@ CategorySelectorR ViewController::GetCategorySelector() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayStyleR ViewController::GetDisplayStyle() const
     {
@@ -2290,7 +2290,7 @@ DisplayStyleR ViewController::GetDisplayStyle() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelSelectorR SpatialViewController::GetModelSelector() const
     {
@@ -2310,7 +2310,7 @@ ModelSelectorR SpatialViewController::GetModelSelector() const
     return *modSel;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_FixUpDefinitionRelationships()
     {
@@ -2320,7 +2320,7 @@ void ViewController::_FixUpDefinitionRelationships()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_FixUpDefinitionRelationships()
     {
@@ -2330,7 +2330,7 @@ void SpatialViewController::_FixUpDefinitionRelationships()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewController::SaveDefinition()
     {
@@ -2345,4 +2345,16 @@ DgnDbStatus ViewController::SaveDefinition()
         GetDefinitionR().Write();
         }
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
+    {
+    auto entry = m_appData.Insert(&key, obj);
+    if (entry.second)
+        return;
+    entry.first->second = obj;
+    obj->_LoadFromUserProperties(GetViewDefinition());
     }

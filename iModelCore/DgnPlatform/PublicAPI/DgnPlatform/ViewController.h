@@ -113,8 +113,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
-        virtual void _SaveToSettings(JsonValueR) const  {}
-        virtual void _RestoreFromSettings(JsonValueCR) {}
+        virtual void _SaveToUserProperties(ViewDefinitionR view) const {}
+        virtual void _LoadFromUserProperties(ViewDefinitionCR view) {}
     };
 
 protected:
@@ -584,7 +584,7 @@ public:
     DVec3d GetZVector() const {DVec3d v; GetRotation().GetRow(v,2); return v;}
 
     AppData* FindAppData(AppData::Key const& key) const {auto entry = m_appData.find(&key); return entry==m_appData.end() ? nullptr : entry->second.get();}
-    void AddAppData(AppData::Key const& key, AppData* obj) const {auto entry = m_appData.Insert(&key, obj); if (entry.second) return; entry.first->second = obj;}
+    DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* obj) const;
     StatusInt DropAppData(AppData::Key const& key) const {return 0==m_appData.erase(&key) ? ERROR : SUCCESS;}
 };
 

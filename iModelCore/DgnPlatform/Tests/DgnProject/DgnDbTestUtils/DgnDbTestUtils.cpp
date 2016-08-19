@@ -477,11 +477,11 @@ CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP
     if (!categories->empty())
         {
         CategorySelectorPtr catSelPersistW = catSelPersist->MakeCopy<CategorySelector>();
-        EXPECT_EQ(DgnDbStatus::Success, catSelPersistW->SetCategories(*categories));
+        EXPECT_EQ(DgnDbStatus::Success, catSelPersistW->SetCategoryIds(*categories));
         EXPECT_TRUE(catSelPersistW->Update().IsValid());
         EXPECT_EQ(catSelPersist.get(), db.Elements().GetElement(catSelPersistW->GetElementId()).get());
     
-        auto categoriesStored = catSelPersist->GetCategories();
+        auto categoriesStored = catSelPersist->GetCategoryIds();
         EXPECT_EQ(categoriesStored, *categories);
         }
     return catSelPersist;
