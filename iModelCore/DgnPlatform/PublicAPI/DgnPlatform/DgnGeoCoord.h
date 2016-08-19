@@ -130,11 +130,11 @@ DgnGCSCR sourceGcs
 (
 );
 
-void                                InitCacheParameters (DgnDbR cache, double paperScale);
-void                                SetDatumOrEllipsoidInUserLibrary ();
+void                                InitCacheParameters(DgnDbR cache, double paperScale);
+void                                SetDatumOrEllipsoidInUserLibrary();
 
 public:
-DGNPLATFORM_EXPORT bool           GetDatumOrEllipsoidInUserLibrary ();
+DGNPLATFORM_EXPORT bool           GetDatumOrEllipsoidInUserLibrary();
 
 public:
 
@@ -386,7 +386,7 @@ WStringR                outputBuffer
 * @param    dgnProject        IN      The model to write the GCS to.
 * @bsimethod       
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT  StatusInt Store (DgnDbR dgnProject);
+DGNPLATFORM_EXPORT  StatusInt Store(DgnDbR dgnProject);
 /*__PUBLISH_SECTION_START__*/
 
 /*---------------------------------------------------------------------------------**//**
@@ -421,7 +421,7 @@ DgnDbR            dgnProject
 *  makes measurements unreliable. Its use is not recommended.
 * @bsimethod                                                    Barry.Bentley   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT double                 GetPaperScale () const;
+DGNPLATFORM_EXPORT double                 GetPaperScale() const;
 
 /*---------------------------------------------------------------------------------**//**
 * Sets the Paper Scale for this GCS. The Paper Scale affects the Cartesian coordinates and
@@ -512,16 +512,14 @@ private:
     mutable BeFileName                  m_dataDirectory;
 
     void CompleteInitialization() const;
-    //void AddAuxCoordSystemProcessor(IACSManagerR mgr) const;
 
-    DgnGeoCoordinationAdmin (BeFileNameCR dataDirectory/*, IACSManagerR mgr*/);
+    DgnGeoCoordinationAdmin(BeFileNameCR dataDirectory);
 
-    virtual IGeoCoordinateServicesP _GetServices () const override;
-
-    virtual WString _GetDataDirectory () override {return m_dataDirectory.c_str();}
+    virtual IGeoCoordinateServicesP _GetServices() const override;
+    virtual BeFileName _GetDataDirectory() override {return m_dataDirectory;}
 
 public:
-    DGNPLATFORM_EXPORT static DgnGeoCoordinationAdmin* Create (BeFileNameCR dataDirectory/*, IACSManagerR mgr*/);
+    DGNPLATFORM_EXPORT static DgnGeoCoordinationAdmin* Create(BeFileNameCR dataDirectory/*, IACSManagerR mgr*/);
 };
 
 /*__PUBLISH_SECTION_START__*/

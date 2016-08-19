@@ -480,8 +480,7 @@ public:
         struct GeoCoordinationAdmin : IHostObject
             {
             //! Allows the host to provide a path to coordinate system definition files.
-            virtual WString _GetDataDirectory() {return L"";}
-
+            virtual BeFileName _GetDataDirectory() {return BeFileName();}
             virtual IGeoCoordinateServicesP _GetServices() const {return nullptr;}
             };
 
