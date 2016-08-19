@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <DgnDbServer/DgnDbServerCommon.h>
-#include <DgnDbServer/Client/DgnDbServerResult.h>
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/LocksManager.h>
+#include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -46,6 +46,7 @@ namespace ServerSchema
         static Utf8CP Lock = "Lock";
         static Utf8CP MultiLock = "MultiLock";
         static Utf8CP Code = "Code";
+        static Utf8CP CodeTemplate = "CodeTemplate";
         static Utf8CP MultiCode = "MultiCode";
         static Utf8CP EventSAS = "EventSAS";
         static Utf8CP EventSubscription = "EventSubscription";
@@ -91,6 +92,10 @@ namespace ServerSchema
         static Utf8CP Namespace = "Namespace";
         static Utf8CP Value = "Value";
         static Utf8CP Values = "Values";
+        static Utf8CP ValuePattern = "ValuePattern";
+        static Utf8CP Type = "Type";
+        static Utf8CP StartIndex = "StartIndex";
+        static Utf8CP IncrementBy = "IncrementBy";
         static Utf8CP StateRevision = "StateRevision";
         static Utf8CP StateRevisionIndex = "StateRevisionIndex";
         static Utf8CP Reserved = "Reserved";
@@ -192,5 +197,6 @@ bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeB
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
 bool GetCodeFromServerJson (JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId);
+bool GetCodeTemplateFromServerJson(JsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate);
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE
