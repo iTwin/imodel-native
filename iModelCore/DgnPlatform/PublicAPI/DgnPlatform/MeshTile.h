@@ -261,8 +261,7 @@ public:
 };
 
 //=======================================================================================
-//! Representation of geometry processed by a TileGenerator, consisting of an IGeometry,
-//! an ISolidKernelEntity, or nothing.
+//! Representation of geometry processed by a TileGenerator.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileGeometry : RefCountedBase
