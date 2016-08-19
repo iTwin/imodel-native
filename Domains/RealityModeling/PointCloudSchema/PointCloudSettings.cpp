@@ -44,8 +44,11 @@ PointCloudViewSettings& PointCloudViewSettings::FromView(SpatialViewController c
     PointCloudViewSettings* settings = (PointCloudViewSettings*) spatial.FindAppData(s_key);
     if (nullptr == settings)
         {
+#ifdef WIP_VIEW_DEFINITION // appdata
         settings = new PointCloudViewSettings(spatial.GetSettings());
         spatial.AddAppData(s_key, settings);
+#endif
+        BeAssert(false);
         }
     return *settings;
     }
@@ -180,8 +183,10 @@ PointCloudClassificationSettings& PointCloudClassificationSettings::FromView(Spa
     PointCloudClassificationSettings* settings = (PointCloudClassificationSettings*) spatial.FindAppData(s_key);
     if (nullptr == settings)
         {
+#ifdef WIP_VIEW_DEFINITION // appdata
         settings = new PointCloudClassificationSettings(spatial.GetSettings());
         spatial.AddAppData(s_key, settings);
+#endif
         }
     return *settings;
     }
