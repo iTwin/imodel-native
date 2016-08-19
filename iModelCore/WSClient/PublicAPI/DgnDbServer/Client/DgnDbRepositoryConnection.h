@@ -201,9 +201,6 @@ private:
     DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Download all revision files after revisionId
-    DgnDbServerRevisionsTaskPtr Pull (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -309,10 +306,19 @@ public:
     //! @param[in] revisions Set of revisions to download.
     //! @param[in] callback Download callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has the collection of revision information as the result.
+    //! @return Asynchronous task that has the collection of revisions metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Download all revision files after revisionId
+    //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
+    //! @param[in] callback Download callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of downloaded revisions metadata as the result.
+    //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionsTaskPtr DownloadRevisionsAfterId (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr,
+                                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the revision on the server.
     //! @param[in] cancellationToken

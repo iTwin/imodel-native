@@ -1400,24 +1400,24 @@ Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::D
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
     {
-	Json::Reader reader;
-	Json::Value responseJson(Json::objectValue);
-	if (!reader.parse(response, responseJson) && !responseJson.isArray())
-		return nullptr;
+    Json::Reader reader;
+    Json::Value responseJson(Json::objectValue);
+    if (!reader.parse(response, responseJson) && !responseJson.isArray())
+        return nullptr;
 
-	if(responseJson.isNull() || responseJson.empty())
-		return nullptr;
+    if(responseJson.isNull() || responseJson.empty())
+        return nullptr;
 
-	if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
-		responseJson[ServerSchema::ChangedInstances].empty() ||
-		!responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
-		return nullptr;
+    if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
+        responseJson[ServerSchema::ChangedInstances].empty() ||
+        !responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
+        return nullptr;
 
-	Json::Value instance(Json::objectValue);
-	instance = responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange];
+    Json::Value instance(Json::objectValue);
+    instance = responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange];
 
-	if (!instance.isMember(ServerSchema::InstanceId))
-		return nullptr;
+    if (!instance.isMember(ServerSchema::InstanceId))
+        return nullptr;
 
     Utf8String eventSubscriptionId = instance[ServerSchema::InstanceId].asString();
 
@@ -1428,9 +1428,9 @@ DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
         return nullptr;
 
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
-	for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
-		itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
-		eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
+    for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
+        itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
+        eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
 
     return DgnDbServerEventSubscription::Create(eventSubscriptionId, eventTypes);
     }
@@ -1457,15 +1457,15 @@ Json::Value GenerateEventSASJson()
 //---------------------------------------------------------------------------------------
 AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR responseJson)
     {
-	if(responseJson.isNull() || responseJson.empty())
-		return nullptr;
+    if(responseJson.isNull() || responseJson.empty())
+        return nullptr;
 
-	if (!responseJson.isMember(ServerSchema::ChangedInstance) ||
-		!responseJson[ServerSchema::ChangedInstance].isMember(ServerSchema::InstanceAfterChange))
-		return nullptr;
+    if (!responseJson.isMember(ServerSchema::ChangedInstance) ||
+        !responseJson[ServerSchema::ChangedInstance].isMember(ServerSchema::InstanceAfterChange))
+        return nullptr;
 
-	Json::Value instance(Json::objectValue);
-	instance = responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+    Json::Value instance(Json::objectValue);
+    instance = responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
 
     Utf8String sasToken = instance[ServerSchema::Properties][ServerSchema::Property::EventServiceSASToken].asString();
     Utf8String baseAddress = instance[ServerSchema::Properties][ServerSchema::Property::BaseAddress].asString();
@@ -1583,7 +1583,7 @@ AzureServiceBusSASDTOTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(
         {
         if (result.IsSuccess())
             {
-			AzureServiceBusSASDTOPtr ptr = CreateEventSAS(result.GetValue().GetObject());
+            AzureServiceBusSASDTOPtr ptr = CreateEventSAS(result.GetValue().GetObject());
             if (ptr == nullptr)
                 {
                 finalResult->SetError(DgnDbServerError::Id::NoSASFound);
@@ -1888,7 +1888,7 @@ ICancellationTokenPtr                  cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::Pull
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisionsAfterId
 (
 Utf8StringCR                    revisionId,
 Http::Request::ProgressCallbackCR callback,

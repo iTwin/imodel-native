@@ -58,7 +58,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
         return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult> (DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
     Utf8String lastRevisionId = GetLastRevisionPulled();
-    return m_repositoryConnection->Pull(lastRevisionId, callback, cancellationToken)->Then<DgnDbServerRevisionsResult>([=] (DgnDbServerRevisionsResultCR result)
+    return m_repositoryConnection->DownloadRevisionsAfterId(lastRevisionId, callback, cancellationToken)->Then<DgnDbServerRevisionsResult>([=] (DgnDbServerRevisionsResultCR result)
         {
         if (!result.IsSuccess())
             return DgnDbServerRevisionMergeResult::Error(result.GetError());
