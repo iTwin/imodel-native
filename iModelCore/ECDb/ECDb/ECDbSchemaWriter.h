@@ -81,6 +81,10 @@ public:
         m_customAttributeValidator.Reject("ECDbMap:*");
         }
 
-    BentleyStatus Import(ECSchemaCompareContext& ctx, ECSchemaCR);
+    BentleyStatus Import(ECSchemaCompareContext&, ECN::ECSchemaCR);
+
+    //! Rebuild fast access table for flattened baseClass hierarchy (ec_ClassHierarchy)
+    static DbResult RepopulateClassHierarchyTable(ECDbCR);
+
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

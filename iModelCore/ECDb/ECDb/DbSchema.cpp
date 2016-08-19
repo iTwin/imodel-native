@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 bool DbSchema::IsTableNameInUse(Utf8CP tableName) const
     {
     SyncTableCache();
-    return m_tables.find(tableName) != m_tables.end();
+    return m_tableMapByName.find(tableName) != m_tableMapByName.end();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -81,7 +81,8 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tab
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
     DbTable* tableP = table.get();
-    m_tables[tableP->GetName()] = std::move(table);
+    m_tableMapByName[tableP->GetName()] = std::move(table);
+    m_tableMapById[tableId] = tableP->GetName();
     return tableP;
     }
 
@@ -171,8 +172,8 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
 DbTable const* DbSchema::FindTable(Utf8CP name) const
     {
     SyncTableCache();
-    auto itor = m_tables.find(name);
-    if (itor != m_tables.end())
+    auto itor = m_tableMapByName.find(name);
+    if (itor != m_tableMapByName.end())
         {
         if (itor->second == nullptr)
             {
@@ -189,15 +190,28 @@ DbTable const* DbSchema::FindTable(Utf8CP name) const
 
     return nullptr;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+DbTable const* DbSchema::FindTable(DbTableId id) const
+    {
+    SyncTableCache();
+    auto itor = m_tableMapById.find(id);
+    if (itor != m_tableMapById.end())
+        {
+        return FindTable(itor->second.c_str());
+        }
 
+    return nullptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::FindTableP(Utf8CP name) const
     {
     SyncTableCache();
-    auto itor = m_tables.find(name);
-    if (itor != m_tables.end())
+    auto itor = m_tableMapByName.find(name);
+    if (itor != m_tableMapByName.end())
         {
         if (itor->second == nullptr)
             {
@@ -463,8 +477,11 @@ void DbSchema::SyncTableCache() const
 
     for (auto const& tableKey : GetPersistedTableMap())
         {
-        if (m_tables.find(tableKey.first) == m_tables.end())
-            m_tables.insert(std::make_pair(tableKey.first, std::unique_ptr<DbTable>()));
+        if (m_tableMapByName.find(tableKey.first) == m_tableMapByName.end())
+            {
+            m_tableMapByName.insert(std::make_pair(tableKey.first, std::unique_ptr<DbTable>()));
+            m_tableMapById.insert(std::make_pair(tableKey.second, tableKey.first));
+            }
         }
 
     m_syncTableCacheNames = true;
@@ -475,7 +492,8 @@ void DbSchema::SyncTableCache() const
 void DbSchema::Reset()
     {
     m_nullTable = nullptr;
-    m_tables.clear();
+    m_tableMapByName.clear();
+    m_tableMapById.clear();
     m_indexesLoaded = false;
     m_indexes.clear();
     m_usedIndexNames.clear();
@@ -488,7 +506,7 @@ void DbSchema::Reset()
 std::vector<DbTable const*> DbSchema::GetCachedTables() const
     {
     std::vector<DbTable const*> cachedTables;
-    for (auto const& tableKey : m_tables)
+    for (auto const& tableKey : m_tableMapByName)
         if (tableKey.second != nullptr)
             {
             if (tableKey.second->GetType() == DbTable::Type::Joined)

@@ -87,6 +87,7 @@ struct ECDbMap :NonCopyableClass
 
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
+        static DbResult RepopulateClassHasTable(ECDbCR);
 
         mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
         mutable LightweightCache m_lightweightCache;
