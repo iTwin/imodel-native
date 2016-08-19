@@ -27,14 +27,18 @@ size_t FacetCounter::GetFacetCount(DgnTorusPipeDetailCR data) const
 
     // Initialize the primary circle as an ellipse (might not be a closed loop), again, the center, orientation
     // and theta (parametric angle of start point) doesn't matter as we only care for the stroke count
-    // IMPORTANT NOTE: DEllipse3d::GetStrokeCount doesn't seem to take into account the sweep angle, assumes a full ellipse
+    // NOTE: The radius used is the sum of both radius to get the farthest point of the torus as a radius
     DEllipse3d primaryCircle;
-    primaryCircle.InitFromCenterNormalRadius(data.m_center, data.m_vectorX, data.m_majorRadius);
+    primaryCircle.InitFromCenterNormalRadius(data.m_center, data.m_vectorX, data.m_majorRadius + data.m_minorRadius);
     primaryCircle.SetSweep(0, data.m_sweepAngle);
     size_t primaryStrokes = m_facetOptions.EllipseStrokeCount(primaryCircle);
 
     // Assume that each stroke of the pipe section will be connected to each stroke of the primary circle
-    return pipeStrokes * primaryStrokes;
+    // Also, if the torus does not do a full sweep, add the faces if it's capped
+    double torusStrokes = m_faceMultiplier * (pipeStrokes * primaryStrokes);
+    double faceStrokes  = data.m_sweepAngle == msGeomConst_2pi || !data.m_capped ? 0 : pipeStrokes * 2;
+
+    return torusStrokes + faceStrokes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -56,7 +60,7 @@ size_t FacetCounter::GetFacetCount(DgnConeDetailCR data) const
     // That gives 2 * strokes facets for only the base and top, now add strokes amount of facets for the quads that connect the strokes from base to top
     // If the minimum radius is 0, we don't have a top or a base face, so don't take it into account
     // If it's not capped, only take the sides
-    return data.m_capped ? ((minRadius == 0.0 ? 2 : 3) * strokes) : strokes;
+    return data.m_capped ? ((minRadius == 0.0 ? 2 : 3) * (m_faceMultiplier * strokes)) : (m_faceMultiplier * strokes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -70,7 +74,7 @@ size_t FacetCounter::GetFacetCount(DgnBoxDetailCR data) const
     // Use the sizes to get an approximate facet count for a face of the box
     size_t faceFacets = m_facetOptions.DistanceStrokeCount(biggestX) * m_facetOptions.DistanceStrokeCount(biggestY);
     // 6 faces in a box, 2 triangles each
-    return (TRIANGLE_MULTIPLIER * 6 * faceFacets);
+    return (m_faceMultiplier * 6 * faceFacets);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -97,7 +101,7 @@ size_t FacetCounter::GetFacetCount(DgnSphereDetailCR data) const
     equator.InitFromCenterNormalRadius(center, unitX, radius2);
     size_t equatorFacetCount = m_facetOptions.FullEllipseStrokeCount(equator);
 
-    return equatorFacetCount * perimeterFacetCount;
+    return equatorFacetCount * m_faceMultiplier * perimeterFacetCount;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,10 +113,11 @@ size_t FacetCounter::GetFacetCount(DgnExtrusionDetailCR data) const
     size_t curveStrokes = GetFacetCount(*data.m_baseCurve);
     size_t extrusionStrokes = m_facetOptions.DistanceStrokeCount(data.m_extrusionVector.Magnitude());
 
-    // TO-DO: Right now, I'm using the curve strokes of the profile as a count of what should actually be the face's facet count
+    // To overstimate the amount of facets in each of the extrusion faces, add 2 times the strokes of the profile
+    //  when the extrusion profile is concave, there is no way of telling exactly the amount of facets, so only count the strokes
+    //  2 times per face to overstimate
     size_t extrusionFacets = curveStrokes * extrusionStrokes;
-    // Multiplying by the triangle multiplier (2) based on parasolid's output
-    return data.m_capped ? (TRIANGLE_MULTIPLIER * extrusionFacets + 2 * curveStrokes)  : TRIANGLE_MULTIPLIER * extrusionFacets;
+    return data.m_capped ? (m_faceMultiplier * extrusionFacets + 4 * curveStrokes) : m_faceMultiplier * extrusionFacets;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,8 +139,10 @@ size_t FacetCounter::GetFacetCount(DgnRotationalSweepDetailCR data) const
 
     size_t sweepFacets = curveStrokes * rotationStrokes;
 
-    // TO-DO: Right now, I'm using the curve strokes of the profile as a count of what should actually be the face's facet count
-    return data.m_capped ? (sweepFacets + 2 * curveStrokes) : sweepFacets;
+    // To overstimate the amount of facets in each of the rotational sweep end faces, add 2 times the strokes of the profile
+    //  when the profile is concave, there is no way of telling exactly the amount of facets, so only count the strokes
+    //  2 times per face to overstimate
+    return data.m_capped ? (m_faceMultiplier * sweepFacets + 4 * curveStrokes) : m_faceMultiplier * sweepFacets;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,8 +157,9 @@ size_t FacetCounter::GetFacetCount(DgnRuledSweepDetailCR data) const
         maxCurveFacets = std::max(maxCurveFacets, GetFacetCount(*curve));
 
     // TO-DO: We may need to multiply the facets by the distance facets between the curves instead
-    return maxCurveFacets * data.m_sectionCurves.size();
+    return m_faceMultiplier * maxCurveFacets * data.m_sectionCurves.size();
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -243,7 +251,7 @@ size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) con
             maxV = std::max(m_facetOptions.BsplineCurveStrokeCount(*curveV), maxV);
             }
 
-        facetCount = maxU * maxV;
+        facetCount = static_cast<size_t>(m_faceMultiplier) * maxU * maxV;
         }
     else
         {
@@ -262,7 +270,7 @@ size_t FacetCounter::GetFacetCount (MSBsplineSurfaceCR surface, bool useMax) con
         double avgU = ((double)sumU / s_numSteps);
         double avgV = ((double)sumV / s_numSteps);
 
-        facetCount = (size_t)(avgV * avgU);
+        facetCount = static_cast<size_t>(m_faceMultiplier * avgV * avgU);
         }
 
     return facetCount;
