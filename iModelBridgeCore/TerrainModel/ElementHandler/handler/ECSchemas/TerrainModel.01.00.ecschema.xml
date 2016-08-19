@@ -16,7 +16,7 @@
           <IsItemsSchema>False</IsItemsSchema>
         </ItemsSchemaIdentifier>
     </ECCustomAttributes>
-
+  
     <ECClass typeName="DTMInformation" isDomainClass="True">
         <ECCustomAttributes>
             <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
@@ -381,8 +381,12 @@
 
     </ECClass>
 
+  <ECClass typeName="DTMProperties" isDomainClass="True">
+  </ECClass>
     <ECClass typeName="DTMContourProperties" isDomainClass="True">
-        <ECCustomAttributes>
+      <BaseClass>DTMProperties</BaseClass>
+
+      <ECCustomAttributes>
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
                 <Hidden>True</Hidden>
             </DisplayOptions>
@@ -433,7 +437,8 @@
         </ECCustomAttributes>
     </ECClass>
     <ECClass typeName="DTMFeatureProperties" isDomainClass="True" displayLabel="Calculated Features">
-        <ECCustomAttributes>
+      <BaseClass>DTMProperties</BaseClass>
+      <ECCustomAttributes>
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
                 <Hidden>True</Hidden>
             </DisplayOptions>
@@ -560,7 +565,8 @@
         </ECProperty>
     </ECClass>
     <ECClass typeName="DTMSourceProperties" isDomainClass="True" displayLabel="Source Features">
-        <ECCustomAttributes>
+      <BaseClass>DTMProperties</BaseClass>
+      <ECCustomAttributes>
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
                 <Hidden>True</Hidden>
             </DisplayOptions>
@@ -871,7 +877,8 @@
         </ECProperty>
     </ECClass>
     <ECClass typeName="DTMSubElementDisplay" isDomainClass="True">
-        <ECCustomAttributes>
+      <BaseClass>DTMProperties</BaseClass>
+      <ECCustomAttributes>
             <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
                 <Hidden>True</Hidden>
             </DisplayOptions>
@@ -1760,10 +1767,10 @@
             </SearchOptions>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
-            <Class class="bsc:AnyClass" />
+          <Class class="DTMProperties" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="bsc:AnyClass" />
+          <Class class="DTMProperties" />
         </Target>
     </ECRelationshipClass>
 
