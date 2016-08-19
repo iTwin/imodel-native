@@ -1036,12 +1036,9 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
+#define MESHTILE_FACET_BODIES
 #if !defined(MESHTILE_FACET_BODIES)
-#if !defined(MESHTILE_NO_CLONE_SOLID_BODIES)
-    ISolidKernelEntityPtr clone = solid.Clone();
-#else
     ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
-#endif
     DRange3d range = clone->GetEntityRange();
 
     Transform localTo3mx = Transform::FromProduct(m_dgnToTarget, gf.GetLocalToWorldTransform());
@@ -1052,20 +1049,14 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
     m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
-    m_rangeTree->Add(new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb()), range);
+    auto rangeTreeNode = new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb());
+    m_rangeTree->Add(rangeTreeNode, range);
 
     return true;
 #else
-    TopoDS_Shape const* shape = SolidKernelUtil::GetShape(solid);
-    auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, *m_targetFacetOptions) : nullptr;
-    BeAssert(polyface.IsValid());
-    if (polyface.IsValid())
-        {
-        polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != solid.GetEntityType());
-        return _ProcessPolyface(*polyface, false, gf);
-        }
-    else
-        return false;
+    // ###TODO: There's a threading issue in OpenCascade - TileGeometry::GetPolyface() is going to produce access violations in EnsureNormalConsistency() when called from another thread.
+    // If we call it here on the main thread when creating the range tree, no such problems.
+    return false;
 #endif
     }
 
