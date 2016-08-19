@@ -430,6 +430,9 @@ TEST_F(RevisionTestFixture, Codes)
     expectedCodes.insert(DgnSubCategory::QuerySubCategory(defaultCat->GetDefaultSubCategoryId(), db)->GetCode());
     expectedCodes.insert(subCat.GetCode());
     expectedCodes.insert(ViewDefinition::CreateCode("Default"));
+    expectedCodes.insert(ModelSelector::CreateCode("Default"));
+    expectedCodes.insert(CategorySelector::CreateCode("Default"));
+    expectedCodes.insert(DisplayStyle::CreateCode("Default"));
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create some new elements with codes, and delete one with a code
