@@ -251,7 +251,7 @@ ECObjectsStatus ECXml::ParseMultiplicityString(uint32_t &lowerLimit, uint32_t &u
         return ECObjectsStatus::ParseError;
         }
 
-    // Otherwise, we just assume the upper limit is 'n' or 'N' and is unbounded
+    // Otherwise, we just assume the upper limit is '*' and is unbounded
     upperLimit = UINT_MAX;
     return status;
     }
