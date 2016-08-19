@@ -438,22 +438,22 @@ private:
 public:
     explicit FacetCounter(IFacetOptionsCR options) : m_facetOptions(options), m_faceMultiplier(ComputeFaceMultiplier(options.GetMaxPerFace())) { }
 
-    size_t GetFacetCount(DgnTorusPipeDetailCR) const;
-    size_t GetFacetCount(DgnConeDetailCR) const;
-    size_t GetFacetCount(DgnBoxDetailCR) const;
-    size_t GetFacetCount(DgnSphereDetailCR) const;
-    size_t GetFacetCount(DgnExtrusionDetailCR) const;
-    size_t GetFacetCount(DgnRotationalSweepDetailCR) const;
-    size_t GetFacetCount(DgnRuledSweepDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnTorusPipeDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnConeDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnBoxDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnSphereDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnExtrusionDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnRotationalSweepDetailCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(DgnRuledSweepDetailCR) const;
 
-    size_t GetFacetCount(ISolidPrimitiveCR) const;
-    size_t GetFacetCount(CurveVectorCR) const;
-    size_t GetFacetCount(MSBsplineSurfaceCR, bool useMax=false) const;
-    size_t GetFacetCount(IGeometryCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidPrimitiveCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(CurveVectorCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(MSBsplineSurfaceCR, bool useMax=false) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(IGeometryCR) const;
 
 #ifdef BENTLEYCONFIG_OPENCASCADE
-    size_t GetFacetCount(TopoDS_Shape const&) const;
-    size_t GetFacetCount(ISolidKernelEntityCR) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(TopoDS_Shape const&) const;
+    DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
 #endif
 };
 

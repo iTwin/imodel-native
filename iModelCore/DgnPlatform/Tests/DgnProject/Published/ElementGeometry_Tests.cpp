@@ -121,7 +121,7 @@ TEST_F(GeometricPrimitiveTests, FacetCounts)
 
     IFacetOptionsPtr opts = CreateFacetOptions(0.01);
     Render::FacetCounter facetCounter(*opts);
-    size_t facetCountApprox = facetCounter.GetFacetCount(*solidPrimitive, *opts);
+    size_t facetCountApprox = facetCounter.GetFacetCount(*solidPrimitive);
 
     IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(*opts);
     polyfaceBuilder->AddSolidPrimitive(*solidPrimitive);
