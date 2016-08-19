@@ -128,41 +128,42 @@ static void AdjustOrigin(PatternParamsR pattern, CurveVectorCR boundary)
     pattern.SetOrigin(origin);
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool GetCellTileInfo
+static bool GetSymbolTileInfo
 (
-VCClipStencil&  boundary,
-PatternSymbol&  symbCell,
-DRange3dR       cellRange,
-DPoint2dR       cellOrg,
-DPoint2dR       spacing,
-DPoint2dR       low,
-DPoint2dR       high,
-bool&           isPlanar,
-DPoint3dCR      origin,
-RotMatrixCR     rMatrix,
-double&         scale,
-double          rowSpacing,
-double          columnSpacing
+CurveVectorCR       boundary,
+DgnGeometryPartCR   symbol,
+DRange3dR           symbolRange,
+DPoint2dR           symbolOrg,
+DPoint2dR           spacing,
+DPoint2dR           low,
+DPoint2dR           high,
+bool&               isPlanar,
+DPoint3dCR          origin,
+RotMatrixCR         rMatrix,
+double&             scale,
+double              rowSpacing,
+double              columnSpacing
 )
     {
-    if (SUCCESS != symbCell._GetRange(cellRange))
+    symbolRange = symbol.GetBoundingBox();
+
+    if (symbolRange.IsNull())
         return false;
 
     if (columnSpacing < 0.0)
         spacing.x = -columnSpacing;
     else
-        spacing.x = columnSpacing + scale * (cellRange.high.x - cellRange.low.x);
+        spacing.x = columnSpacing + scale * (symbolRange.high.x - symbolRange.low.x);
 
     if (rowSpacing < 0.0)
         spacing.y = -rowSpacing;
     else
-        spacing.y = rowSpacing + scale * (cellRange.high.y - cellRange.low.y);
+        spacing.y = rowSpacing + scale * (symbolRange.high.y - symbolRange.low.y);
 
-    if (spacing.x < 0.5 || spacing.y < 0.5)
+    if (spacing.x < 1.0e-5 || spacing.y < 1.0e-5)
         return false;
 
     RotMatrix   invMatrix;
@@ -172,14 +173,9 @@ double          columnSpacing
     transform.InitFrom(invMatrix);
     transform.TranslateInLocalCoordinates(transform, -origin.x, -origin.y, -origin.z);
 
-    CurveVectorPtr  boundaryCurve = boundary.GetCurveVector();
+    DRange3d    localRange;
 
-    if (!boundaryCurve.IsValid())
-        return false;
-
-    DRange3d  localRange;
-
-    boundaryCurve->GetRange(localRange, transform);
+    boundary.GetRange(localRange, transform);
 
     low.x = localRange.low.x;
     low.y = localRange.low.y;
@@ -197,14 +193,14 @@ double          columnSpacing
     else
         low.y -= fmod(low.y, spacing.y);
 
-    cellOrg.x = cellRange.low.x * scale;
-    cellOrg.y = cellRange.low.y * scale;
+    symbolOrg.x = symbolRange.low.x * scale;
+    symbolOrg.y = symbolRange.low.y * scale;
 
-    low.x -= cellOrg.x;
-    low.y -= cellOrg.y;
+    low.x -= symbolOrg.x;
+    low.y -= symbolOrg.y;
 
-    high.x -= cellOrg.x;
-    high.y -= cellOrg.y;
+    high.x -= symbolOrg.x;
+    high.y -= symbolOrg.y;
 
     double  numTiles = ((high.x - low.x) / spacing.x) * ((high.y - low.y) / spacing.y);
 
@@ -218,7 +214,7 @@ double          columnSpacing
         }
 
     // Can't use a stencil for a non-planar pattern cell....
-    isPlanar = !symbCell.Is3dCellSymbol() || ((cellRange.high.z - cellRange.low.z) < 2.0);
+    isPlanar = ((symbolRange.high.z - symbolRange.low.z) < 1.0e-5);
 
     return true;
     }
@@ -226,11 +222,11 @@ double          columnSpacing
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void GetCellOrientationAndScale
+static void GetSymbolOrientationAndScale
 (
 RotMatrixR      rMatrix,
 double&         scale,
-RotMatrixR      patternRMatrix,
+RotMatrixCR     patternRMatrix,
 double          patternAngle,
 double          patternScale
 )
@@ -242,6 +238,7 @@ double          patternScale
     scale = patternScale ? patternScale : 1.0;
     }
 
+#if defined (NEEDSWORK_PATTERN_GEOMETRY_MAP)
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      05/2007
 +===============+===============+===============+===============+===============+======*/
@@ -429,92 +426,38 @@ double          scale
 
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2dCR low, DPoint2dCR high, DPoint2dCR spacing, double scale, TransformCR orgTrans, DPoint3dCP cellCorners, bool drawFiltered, CurveVectorCP boundaryToPush = NULL)
-    {
-    if (NULL != boundaryToPush)
-        {
-        ClipVectorPtr   clip = ClipVector::CreateFromCurveVector(*boundaryToPush, 0.0, TOLERANCE_ChoordAngle);
-
-        if (!clip.IsValid())
-            return false;
-
-        clip->ParseClipPlanes();
-        context.PushClip(*clip); // NOTE: Pop handled by context mark...
-        }
-
-    bool        wasAborted = false;
-    DPoint2d    patOrg;
-    DPoint3d    tileCorners[8];
-    Transform   cellTrans;
-
-    for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
-        {
-        for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
-            {
-            if (context.CheckStop())
-                {
-                wasAborted = true;
-                break;
-                }
-
-            cellTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentGeometryParams().GetNetDisplayPriority());
-            cellTrans.Multiply(tileCorners, cellCorners, 8);
-
-            if (ClipPlaneContainment_StronglyOutside == context.GetTransformClipStack().ClassifyPoints(tileCorners, 8))
-                continue;
-
-            if (drawFiltered)
-                {
-                DPoint3d    tmpPt;
-
-                cellTrans.GetTranslation(tmpPt);
-                context.GetCurrentGraphicR().AddPointString(1, &tmpPt, NULL);
-                }
-            else
-                {
-                context.DrawSymbol(&symbCell, &cellTrans, NULL);
-                }
-
-            wasAborted = context.WasAborted();
-            }
-        }
-
-    return wasAborted;
-    }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, CurveVectorCR boundary)
+static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
-    PatternParamsCR pattern = *params.GetPatternParams();
-    PatternSymbol symbCell(DgnElementId(params->cellId), context.GetDgnDb());
+    // NEEDSWORK_PATTERN_GEOMETRY_MAP: Need to draw using geometry map texture, this is just test code to verify pattern cell conversion by drawing un-clipped tiles...
+    static int s_testPatternTiles;
+    if (!s_testPatternTiles)
+        return;
 
-    if (!symbCell.GetElemHandle().IsValid())
+    PatternParamsCR pattern = *params.GetPatternParams();
+    DgnGeometryPartCPtr symbolGeometry = context.GetDgnDb().Elements().Get<DgnGeometryPart>(pattern.GetSymbolId());
+
+    if (!symbolGeometry.IsValid())
         return;
 
     double      scale;
+    DPoint3d    origin = pattern.GetOrigin();
     RotMatrix   rMatrix;
 
-    PatternHelper::GetCellOrientationAndScale(rMatrix, scale, params->rMatrix, params->angle1, params->scale);
+    PatternHelper::GetSymbolOrientationAndScale(rMatrix, scale, pattern.GetOrientation(), pattern.GetPrimaryAngle(), pattern.GetScale());
 
     bool        isPlanar;
-    DPoint2d    cellOrg, spacing, low, high;
-    DRange3d    cellRange;
+    DPoint2d    symbolOrg, spacing, low, high;
+    DRange3d    symbolRange;
 
-    // The contextScale value allows PlotContext to adjust the pattern scale to reduce
-    // the size of the QV display list and resulting plot output file.
-    scale *= contextScale;
-
-    if (!PatternHelper::GetCellTileInfo(boundary, symbCell, cellRange, cellOrg, spacing, low, high, isPlanar, origin, rMatrix, scale, params->space1, params->space2))
+    if (!PatternHelper::GetSymbolTileInfo(boundary, *symbolGeometry, symbolRange, symbolOrg, spacing, low, high, isPlanar, origin, rMatrix, scale, pattern.GetPrimarySpacing(), pattern.GetSecondarySpacing()))
         return;
 
+#if defined (NEEDSWORK_PATTERN_GEOMETRY_MAP)
     bool        isQVOutput = context.GetIViewDraw().IsOutputQuickVision();
     bool        useStencil = isQVOutput && isPlanar && !context.CheckICachedDraw(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
     QvElem*     qvElem = NULL;
@@ -524,71 +467,34 @@ static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR gra
 
     if (useStencil && !PatternHelper::PushBoundaryClipStencil(context, boundary, qvElem))
         return;
+#endif
 
-    // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
-    PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyGeometryParams(*context.GetCurrentGeometryParams());
-
-    bool        drawFiltered = false;
     Transform   orgTrans;
-    DPoint3d    cellCorners[8];
+    DPoint3d    symbolCorners[8];
 
     // Setup initial pattern instance transform
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear(&orgTrans, NULL, &rMatrix, &origin, scale, scale, 0.0);
-    cellRange.Get8Corners(cellCorners);
+    symbolRange.Get8Corners(symbolCorners);
 
-    if (isQVOutput)
+    bool        wasAborted = false;
+    DPoint2d    patOrg;
+    DPoint3d    tileCorners[8];
+    Transform   symbolTrans;
+
+    for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
         {
-        int     cellCmpns = symbCell.GetElemHandle().GetGraphicsCP ()->GetComplexComponentCount();
-        double  numTiles = ((high.x - low.x) / spacing.x) * ((high.y - low.y) / spacing.y);
-
-        if (numTiles * cellCmpns > 5000)
+        for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
             {
-            DPoint3d    viewPts[8];
-            DRange2d    viewRange;
+            if (context.CheckStop())
+                return;
 
-            orgTrans.Multiply(viewPts, cellCorners, 8);
-            context.LocalToView(viewPts, viewPts, 8);
-            viewRange.InitFrom(*viewPts, *8);
+            symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, params.GetNetDisplayPriority());
+            symbolTrans.Multiply(tileCorners, symbolCorners, 8);
 
-            if (symbCell.IsPointCellSymbol())
-                drawFiltered = (viewRange.extentSquared() < context.GetMinLOD ());
+            Render::GraphicPtr partGraphic = context.AddSubGraphic(graphic, pattern.GetSymbolId(), symbolTrans, params);
+            wasAborted = context.WasAborted();
             }
         }
-
-    if (useStencil)
-        {
-        DrawCellTiles(context, symbCell, low, high, spacing, scale, orgTrans, cellCorners, drawFiltered);
-        }
-    else
-        {
-        CurveVectorPtr  boundaryCurve = boundary.GetCurveVector();
-
-        // NOTE: Union regions aren't valid clip boundaries, need to push separate clip for each solid area...
-        if (boundaryCurve->IsUnionRegion())
-            {
-            for (ICurvePrimitivePtr curve: *boundaryCurve)
-                {
-                if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
-                    continue;
-
-                ViewContext::ContextMark mark(&context);
-
-                // NOTE: Cell tile exclusion check makes sending all tiles for each solid area less offensive (union regions also fairly rare)...
-                if (DrawCellTiles(context, symbCell, low, high, spacing, scale, orgTrans, cellCorners, drawFiltered, curve->GetChildCurveVectorCP ()))
-                    break; // Was aborted...
-                }
-            }
-        else
-            {
-            DrawCellTiles(context, symbCell, low, high, spacing, scale, orgTrans, cellCorners, drawFiltered, boundaryCurve.get());
-            }
-        }
-
-    PatternHelper::PopBoundaryClipStencil(context, qvElem);
-
-    context.DeleteSymbol(&symbCell); // Only needed if DrawSymbol has been called...i.e. early returns are ok!
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -767,7 +673,7 @@ static void ProcessHatchBoundary(ViewContextR context, Render::GraphicBuilderR g
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, CurveVectorCR boundary)
+static void ProcessHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
     PatternParamsCR pattern = *params.GetPatternParams();
     GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA(boundary, pattern.GetOrientation(), pattern.GetOrigin(), false));
@@ -898,7 +804,7 @@ static void ProcessDWGHatchBoundary(ViewContextR context, Render::GraphicBuilder
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessDWGHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, CurveVectorCR boundary)
+static void ProcessDWGHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
     PatternParamsCR pattern = *params.GetPatternParams();
     GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA(boundary, pattern.GetOrientation(), pattern.GetOrigin(), false));
@@ -978,10 +884,10 @@ bool ViewContext::_WantAreaPatterns()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params)
     {
-    // NEEDSWORK_PATTERNS: This is all just temporary to see if the PatternParams is being converted from V8 ok...
-    //                     We'll want display patterns as geometry maps all the time (at least in 3d), but I'm waiting
-    //                     to see what mesh-tiles/multi-threading QvElem creation does to drawing, ex. removal of ViewContext, etc.
-    //                     For now the "dropped" pattern geometry is just being added directly to the graphic.
+    // NEEDSWORK_PATTERN_GEOMETRY_MAP - This is all just temporary to see if the PatternParams is being converted from V8 ok...
+    // We'll want display patterns as geometry maps all the time (at least in 3d), but I'm waiting
+    // to see what mesh-tiles/multi-threading QvElem creation does to drawing, ex. removal of ViewContext, etc.
+    // For now the "dropped" pattern geometry is just being added directly to the graphic.
     if (_CheckStop() || !_WantAreaPatterns() || !boundary.IsAnyRegionType())
         return;
 

@@ -249,9 +249,11 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
     BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
-    BeStringUtilities::Initialize(m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory());
+    auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
+
+    BeStringUtilities::Initialize(assetDir);
     ECDb::Initialize(m_knownLocationsAdmin->GetLocalTempDirectoryBaseName(),
-                      &m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory(),
+                      &assetDir,
                       m_notificationAdmin->_GetLogSQLiteErrors() ? BeSQLiteLib::LogErrors::Yes : BeSQLiteLib::LogErrors::No);
     L10N::Initialize(_SupplySqlangFiles());
 
@@ -270,7 +272,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
-    ECN::ECSchemaReadContext::Initialize(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    ECN::ECSchemaReadContext::Initialize(assetDir);
     }
 
 /*---------------------------------------------------------------------------------**//**

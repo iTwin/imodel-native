@@ -3826,14 +3826,18 @@ bool GeometryBuilder::Append(DgnSubCategoryId subCategoryId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
     {
-    if (!m_elParams.GetCategoryId().IsValid())
-        return false;
+    // NOTE: Allow explicit symbology in GeometryPart's GeometryStream, sub-category won't be persisted...
+    if (!m_isPartCreate)
+        {
+        if (!m_elParams.GetCategoryId().IsValid())
+            return false;
 
-    if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
-        return false;
+        if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
+            return false;
 
-    if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
-        return false;
+        if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
+            return false;
+        }
 
     if (elParams.IsTransformable())
         {

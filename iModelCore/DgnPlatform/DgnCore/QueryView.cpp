@@ -434,8 +434,6 @@ void DgnQueryView::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
-    T_Super::_CreateScene(context);
-
 #if defined (DEBUG_LOGGING)
     StopWatch watch(true);
 #endif

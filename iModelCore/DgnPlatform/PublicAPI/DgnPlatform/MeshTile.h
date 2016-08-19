@@ -18,6 +18,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 
 BENTLEY_RENDER_TYPEDEFS(TileGeometryCache);
 BENTLEY_RENDER_TYPEDEFS(Triangle);
+BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
 BENTLEY_RENDER_TYPEDEFS(TileMeshBuilder);
 BENTLEY_RENDER_TYPEDEFS(TileNode);
@@ -132,6 +133,17 @@ struct Triangle
 };
 
 //=======================================================================================
+//! Represents a single polyline  of a TileMesh
+//! 
+// @bsistruct                                                   Paul.Connelly   07/16
+//=======================================================================================
+struct TilePolyline
+{
+     bvector <uint32_t>     m_indices;
+};  // TilePolyline
+
+
+//=======================================================================================
 //! Represents a single mesh of uniform symbology within a TileNode, consisting of
 //! vertex/normal/uv-param/elementID arrays indexed by an array of triangles.
 // @bsistruct                                                   Paul.Connelly   07/16
@@ -141,6 +153,7 @@ struct TileMesh : RefCountedBase
 private:
     TileDisplayParamsCP     m_displayParams;   // pointer into TileGeometryCache
     bvector<Triangle>       m_triangles;
+    bvector<TilePolyline>   m_polylines;
     bvector<DPoint3d>       m_points;
     bvector<DVec3d>         m_normals;
     bvector<DPoint2d>       m_uvParams;
@@ -158,6 +171,7 @@ public:
 
     TileDisplayParamsCP GetDisplayParams() const { return m_displayParams; } //!< The mesh symbology
     bvector<Triangle> const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
+    bvector<TilePolyline> const& Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
     bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
     bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
     bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
@@ -168,9 +182,10 @@ public:
     DVec3dCP GetNormal(uint32_t index) const { return GetMember(m_normals, index); }
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     DgnElementId GetElementId(uint32_t index) const { auto pId = GetMember(m_elementIds, index); return nullptr != pId ? *pId : DgnElementId(); }
-    bool IsEmpty() const { return m_triangles.empty(); }
+    bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
+    void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
     uint32_t AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param, DgnElementId elemId);
 };
 
@@ -235,6 +250,8 @@ public:
     static TileMeshBuilderPtr Create(TileDisplayParamsCP params, TransformCP transformToDgn, double tolerance) { return new TileMeshBuilder(params, transformToDgn, tolerance); }
 
     void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
+    void AddPolyline (bvector<DPoint3d>const& polyline, DgnElementId elemId, bool doVertexClustering);
+
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
     uint32_t AddClusteredVertex(VertexKey const& vertex);
@@ -283,7 +300,8 @@ public:
 
     bool HasTexture() const;
     PolyfaceHeaderPtr GetPolyface(double chordTolerance, NormalMode normalMode);
-
+    CurveVectorPtr    GetStrokedCurve (double chordTolerance);
+    
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an ISolidKernelEntity

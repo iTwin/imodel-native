@@ -338,6 +338,22 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, DgnElementId elemId, bool doVertexClustering)
+    {
+    TilePolyline    newPolyline;
+
+    for (auto& point : points)
+        {
+        VertexKey vertex(point, nullptr, nullptr, elemId);
+
+        newPolyline.m_indices.push_back (doVertexClustering ? AddClusteredVertex(vertex) : AddVertex(vertex));
+        }
+    m_mesh->AddPolyline (newPolyline);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(TriangleCR triangle, TileMeshCR mesh)
@@ -513,17 +529,21 @@ struct MeshBuilderKey
 {
     TileDisplayParamsCP m_params;
     bool                m_hasNormals;
+    bool                m_hasFacets;
 
-    MeshBuilderKey() : m_params(nullptr), m_hasNormals(false) { }
-    MeshBuilderKey(TileDisplayParamsCR params, bool hasNormals) : m_params(&params), m_hasNormals(hasNormals) { }
+    MeshBuilderKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets (false) { }
+    MeshBuilderKey(TileDisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets (hasFacets) { }
 
     bool operator<(MeshBuilderKey const& rhs) const
         {
         BeAssert(nullptr != m_params && nullptr != rhs.m_params);
         if (m_hasNormals != rhs.m_hasNormals)
             return !m_hasNormals;
-        else
-            return *m_params < *rhs.m_params;
+
+        if (m_hasFacets != rhs.m_hasFacets)
+            return !m_hasFacets;
+
+        return *m_params < *rhs.m_params;
         }
 };
 
@@ -596,14 +616,17 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
         if (rangePixels < s_minRangeBoxSize)
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
-        PolyfaceHeaderPtr polyface = geometry->GetPolyface(tolerance, normalMode);
-        if (polyface.IsNull())
+        PolyfaceHeaderPtr   polyface        = geometry->GetPolyface(tolerance, normalMode);
+        CurveVectorPtr      strokes         = geometry->GetStrokedCurve (tolerance);
+
+        if (polyface.IsNull() && strokes.IsNull())
             continue;
 
-        TileDisplayParamsCP displayParams = &geometry->GetDisplayParams();
-        TileMeshBuilderPtr meshBuilder;
-        MeshBuilderKey key(*displayParams, nullptr != polyface->GetNormalIndexCP());
-        auto found = builderMap.find(key);
+        TileDisplayParamsCP     displayParams = &geometry->GetDisplayParams();
+        TileMeshBuilderPtr      meshBuilder;
+        MeshBuilderKey          key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+        auto                    found = builderMap.find(key);
+
         if (builderMap.end() != found)
             meshBuilder = found->second;
         else
@@ -614,15 +637,36 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
 
         ++geometryCount;
         bool maxGeometryCountExceeded = geometryCount > s_maxGeometryIdCount;
-        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+        if (polyface.IsValid())
             {
-            if (isContained || m_range.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 {
+                if (isContained || m_range.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+                    {
+                    DgnElementId elemId;
+                    if (!maxGeometryCountExceeded)
+                        elemId = geometry->GetElementId();
+
+                    meshBuilder->AddTriangle (*visitor, elemId, doVertexClustering, twoSidedTriangles);
+                    }
+                }
+            }
+        if (strokes.IsValid())
+            {
+            for (auto& curvePrimitive : *strokes)
+                {
+                bvector<DPoint3d> const* lineString = curvePrimitive->GetLineStringCP ();
+
+                if (nullptr == lineString)
+                    {
+                    BeAssert (false);
+                    continue;
+                    }
                 DgnElementId elemId;
                 if (!maxGeometryCountExceeded)
                     elemId = geometry->GetElementId();
 
-                meshBuilder->AddTriangle(*visitor, elemId, doVertexClustering, twoSidedTriangles);
+                meshBuilder->AddPolyline (*lineString, elemId, doVertexClustering);
                 }
             }
         }
@@ -630,7 +674,7 @@ TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double t
     TileMeshList meshes;
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
-            meshes.push_back(builder.second->GetMesh());
+            meshes.push_back (builder.second->GetMesh());
 
     // ###TODO: statistics: record empty node...
 
@@ -851,8 +895,33 @@ PolyfaceHeaderPtr PrimitiveTileGeometry::_GetPolyface(IFacetOptionsR facetOption
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
         polyface->Transform(GetTransform());
+    CurveVectorPtr  curveVector = geometry->GetAsCurveVector();
 
     return polyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr  TileGeometry::GetStrokedCurve (double chordTolerance)
+    {
+    auto    geometry = GetGeometry();
+
+    if (nullptr == geometry)
+        return nullptr;
+
+    CurveVectorPtr  curveVector = geometry->GetAsCurveVector();
+
+    if (!curveVector.IsValid() || curveVector->IsAnyRegionType())
+        return nullptr;
+
+    IFacetOptionsPtr    facetOptions = CreateFacetOptions (chordTolerance, NormalMode::Never);
+    CurveVectorPtr      strokedCurveVector = curveVector->Stroke (*facetOptions);
+
+    if (strokedCurveVector.IsValid())
+        strokedCurveVector->TransformInPlace (m_transform);
+            
+    return strokedCurveVector;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -967,9 +1036,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
     {
-    if (!curves.IsAnyRegionType())
-        return true;    // ignore non-closed for now...
-    else if (!curves.ContainsNonLinearPrimitive())
+    if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
         return false;   // process as facets.
 
     CurveVectorPtr clone = curves.Clone();
