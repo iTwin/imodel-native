@@ -81,7 +81,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
 protected:
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
 public:
     //! Construct a new modelselector. You should then call SetModelIds.
@@ -99,7 +98,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(DgnModelIdSet const& models);
     DGNPLATFORM_EXPORT DgnModelIdSet GetModelIds() const;
 
-    DGNPLATFORM_EXPORT bool ContainsModel(DgnModelId mid) const;
+    DGNPLATFORM_EXPORT bool ContainsModelId(DgnModelId mid) const;
 
     static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector); }
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector)); }
@@ -123,11 +122,11 @@ public:
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
     //! Set the list of categories. Note that this element must be persisent in order for this function to succeed.
-    DGNPLATFORM_EXPORT DgnDbStatus SetCategories(DgnCategoryIdSet const&);
+    DGNPLATFORM_EXPORT DgnDbStatus SetCategoryIds(DgnCategoryIdSet const&);
     //! Get the list of categories.
-    DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategories() const;
+    DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
 
-    DGNPLATFORM_EXPORT bool ContainsCategory(DgnCategoryId cid) const;
+    DGNPLATFORM_EXPORT bool ContainsCategoryId(DgnCategoryId cid) const;
 
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector)); }
     static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector); }

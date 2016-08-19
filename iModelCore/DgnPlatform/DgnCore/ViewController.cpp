@@ -174,7 +174,7 @@ ViewController::ViewController(ViewDefinition const& def)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::LoadCategories()
     {
-    m_viewedCategories = GetCategorySelector().GetCategories();
+    m_viewedCategories = GetCategorySelector().GetCategoryIds();
 
     // load all SubCategories (even for categories not currently on)
     for (auto const& id : DgnSubCategory::QuerySubCategories(GetDgnDb()))
@@ -241,7 +241,7 @@ void ViewController::_StoreToDefinition() const
     dstyle.SetBackgroundColor(m_backgroundColor);
 
     auto& catSel = GetCategorySelector();
-    catSel.SetCategories(m_viewedCategories);
+    catSel.SetCategoryIds(m_viewedCategories);
 
     if (m_subCategoryOverrides.empty())
         return;

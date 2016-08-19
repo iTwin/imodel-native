@@ -857,13 +857,13 @@ DgnDbStatus DgnModel::DeleteAllViews()
         }
     else
         {
-#ifdef WIP_VIEW_DEFINITION // *** cascade model delete to modelselectors
+#ifdef WIP_VIEW_DEFINITION 
         // *** 3d models: models are in modelselectors, which are used by views and by other things
         // *** Select all modelselectors where this ID is in the selector
         // *** WIP_VIEW_DEFINITION If this is the only model in the selector, delete the selector ... which should cascade to deleting all views that use it.
         // *** WIP_VIEW_DEFINITION If this is only one model in the selector, remove it from the selector. *** NEEDS WORK: How to notify an open view that its selector has changed?
+        auto selectorsStmt = GetDgnDb().GetPreparedECSqlStatement();
 #endif
-        BeAssert(false && "*** WIP_VIEW_DEFINITION");
         }
 
     return DgnDbStatus::Success;

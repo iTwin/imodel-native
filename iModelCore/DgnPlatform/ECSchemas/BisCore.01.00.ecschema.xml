@@ -1670,19 +1670,27 @@
             <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="ModelSelectorsReferToModels" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="ModelSelector"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="Model"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="ModelSelector">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="ModelIds" typeName="string" displayLabel="JSON string consisting of array of DgnModelIds (as strings)"/>
+        <!-- Note: The Models in the selector are actually captured by the 1:N ModelSelectorsReferToModels ECRelationship -->
     </ECEntityClass>
     <ECEntityClass typeName="CategorySelector">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <!-- Note: The Categories in the selector are actually captured by a 1:N ECRelationship -->
+        <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorsReferToCategories -->
         <ECProperty propertyName="SubCategoryOverrides" typeName="string" displayLabel="JSON string consisting of array of SubCategoryOverrides"/>
     </ECEntityClass>
     <ECEntityClass typeName="DisplayStyle">

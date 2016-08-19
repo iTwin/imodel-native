@@ -353,68 +353,9 @@ bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetVie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
+DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
     {
-    DgnModelIdSet models;
-    models.insert(mid);
-    return SetModelIds(models);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& models)
-    {
-    SetPropertyValue(BIS_CLASS_ModelSelector_PROPNAME_ModelIds, JsonUtils::IdSetToJsonString(models).c_str());
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelIdSet ModelSelector::GetModelIds() const
-    {
-    return JsonUtils::IdSetFromJsonString<DgnModelId>(GetPropertyValueString(BIS_CLASS_ModelSelector_PROPNAME_ModelIds));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ModelSelector::_RemapIds(DgnImportContext& context)
-    {
-    DgnModelIdSet remapped;
-    for (auto id: GetModelIds())
-        {
-        remapped.insert(context.FindModelId(id));
-        }
-    SetModelIds(remapped);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ModelSelector::ContainsModel(DgnModelId mid) const 
-    {
-#ifdef WIP_VIEW_DEFINITION
-    DgnModelIdSet mids;
-    return mids.find(mid) != mids.end();
-#else
-    auto modelIds = GetPropertyValueString(BIS_CLASS_ModelSelector_PROPNAME_ModelIds);
-    Utf8Char buf[64];
-    BeStringUtilities::FormatUInt64(buf+1, mid.GetValueUnchecked());
-    buf[0] = '\"';
-    strcat(buf, "\"");
-    return modelIds.find(buf) != Utf8String::npos;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::SetCategories(DgnCategoryIdSet const& categories)
-    {
-    // *** WIP_VIEW_DEFINITION: Delete existing CategoryInSelector with Source = this
+    // *** WIP_VIEW_DEFINITION: Delete all existing CategorySelectorsReferToCategories instances with Source = this
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
@@ -435,7 +376,7 @@ DgnDbStatus CategorySelector::SetCategories(DgnCategoryIdSet const& categories)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryIdSet CategorySelector::GetCategories() const
+DgnCategoryIdSet CategorySelector::GetCategoryIds() const
     {
     DgnCategoryIdSet categories;
 
@@ -461,7 +402,7 @@ DgnCategoryIdSet CategorySelector::GetCategories() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CategorySelector::ContainsCategory(DgnCategoryId cid) const
+bool CategorySelector::ContainsCategoryId(DgnCategoryId cid) const
     {
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     if (!statement.IsValid())
@@ -477,10 +418,85 @@ bool CategorySelector::ContainsCategory(DgnCategoryId cid) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
+    {
+    DgnModelIdSet models;
+    models.insert(mid);
+    return SetModelIds(models);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
+    {
+    // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorsReferToModels instances with Source = this
+
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    if (!statement.IsValid())
+        return DgnDbStatus::WriteError;
+
+    for (auto id : Models)
+        {
+        statement->Reset();
+        statement->ClearBindings();
+        statement->BindId(1, GetElementId());
+        statement->BindId(2, id);
+        if (BE_SQLITE_DONE != statement->Step())
+            return DgnDbStatus::WriteError;
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelIdSet ModelSelector::GetModelIds() const
+    {
+    DgnModelIdSet Models;
+
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE SourceECInstanceId=?");
+    if (!statement.IsValid())
+        {
+        BeAssert(false);
+        return DgnModelIdSet();
+        }
+    if (ECSqlStatus::Success != statement->BindId(1, GetElementId()))
+        {
+        BeAssert(false);
+        return DgnModelIdSet();
+        }
+    while (BE_SQLITE_ROW == statement->Step())
+        {
+        Models.insert(statement->GetValueId<DgnModelId>(0));
+        }
+
+    return Models;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ModelSelector::ContainsModelId(DgnModelId mid) const
+    {
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    if (!statement.IsValid())
+        {
+        BeAssert(false);
+        return false;
+        }
+    statement->BindId(1, GetElementId());
+    statement->BindId(2, mid);
+    return (BE_SQLITE_ROW == statement->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewDefinition3d::_ViewsModel(DgnModelId mid) const 
     {
     auto modSel = GetDgnDb().Elements().Get<ModelSelector>(GetModelSelectorId());
-    return modSel.IsValid()? modSel->ContainsModel(mid): false;
+    return modSel.IsValid()? modSel->ContainsModelId(mid): false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,5 +505,5 @@ bool ViewDefinition3d::_ViewsModel(DgnModelId mid) const
 bool ViewDefinition::ViewsCategory(DgnCategoryId cid) const
     {
     auto catSel = GetDgnDb().Elements().Get<CategorySelector>(GetCategorySelectorId());
-    return catSel.IsValid()? catSel->ContainsCategory(cid): false;
+    return catSel.IsValid()? catSel->ContainsCategoryId(cid): false;
     }

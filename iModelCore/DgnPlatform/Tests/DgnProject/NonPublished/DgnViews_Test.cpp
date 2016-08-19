@@ -78,6 +78,20 @@ struct DgnViewElemTest : public DgnDbTestFixture
         Iter iter(*project, opts);
         ExpectViews(iter, names);
         }
+
+    void Make4Views()
+        {
+        auto m1 = AddModel("m1");
+        auto m2 = AddModel("m2");
+        auto m3 = AddModel("m3");
+        auto m4 = AddModel("m4");
+
+        ASSERT_TRUE(m1.IsValid() && m2.IsValid() && m3.IsValid() && m4.IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m1, "View 1").IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m2, "View 2").IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m3, "View 3").IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m4, "View 4").IsValid());
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,15 +101,7 @@ struct DgnViewElemTest : public DgnDbTestFixture
 TEST_F(DgnViewElemTest, WorkWithViewTable)
     {
     SetupTestProject();
-
-    auto m1 = AddModel("m1");
-    auto m2 = AddModel("m2");
-    auto m3 = AddModel("m3");
-    auto m4 = AddModel("m4");
-    auto v1 = DgnDbTestUtils::InsertCameraView(*m1, "View 1");
-    auto v2 = DgnDbTestUtils::InsertCameraView(*m2, "View 2");
-    auto v3 = DgnDbTestUtils::InsertCameraView(*m3, "View 3");
-    auto v4 = DgnDbTestUtils::InsertCameraView(*m4, "View 4");
+    Make4Views();
 
     //Get views
     auto iter = ViewDefinition::MakeIterator(*project);
@@ -121,6 +127,7 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 TEST_F(DgnViewElemTest, DeleteView)
     {
     SetupTestProject();
+    Make4Views();
 
     //Get views
     auto viewId = (*ViewDefinition::MakeIterator(*project).begin()).GetId();
@@ -140,6 +147,7 @@ TEST_F(DgnViewElemTest, DeleteView)
 TEST_F(DgnViewElemTest, SetViewName)
     {
     SetupTestProject();
+    Make4Views();
 
     //Get views
     auto viewId = (*ViewDefinition::MakeIterator(*project).begin()).GetId();
@@ -288,7 +296,7 @@ TEST_F(DgnViewElemTest, Iterate)
     // Custom
     ExpectViews(IterOpts("WHERE Descr='generated' ORDER BY [CodeValue] DESC"), { "B-G", "A-G" });
 
-    // Deleting a model deletes all views which use it as a base model
+    // Deleting a model deletes all views for which it is the *only* model in the ModelSelector
     EXPECT_EQ(DgnDbStatus::Success, models[0]->Delete());
     EXPECT_EQ(_countof(s_viewSources), ViewDefinition::QueryCount(*project));
     ExpectViews(IterOpts(), { "B-U", "B-G", "B-P" });
