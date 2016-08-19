@@ -91,7 +91,7 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides, FillMo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
     {
-    return new OrthographicViewController(const_cast<OrthographicViewDefinition&>(*this));
+    return new OrthographicViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,7 +99,7 @@ ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr CameraViewDefinition::_SupplyController() const
     {
-    return new DgnQueryView(const_cast<CameraViewDefinition&>(*this));
+    return new DgnQueryView(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -107,7 +107,7 @@ ViewControllerPtr CameraViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr SheetViewDefinition::_SupplyController() const
     {
-    return new SheetViewController(const_cast<SheetViewDefinition&>(*this));
+    return new SheetViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,7 +115,7 @@ ViewControllerPtr SheetViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     {
-    return new DrawingViewController(const_cast<DrawingViewDefinition&>(*this));
+    return new DrawingViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
