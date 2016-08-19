@@ -127,6 +127,7 @@ DLM_NOENTRY                 = 1
 
 LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)Units$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
@@ -134,9 +135,6 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
-
-
-#$(SYSTEM_LIBRARIES)
 
 
 %include $(sharedMki)LinkLibrary.mki
