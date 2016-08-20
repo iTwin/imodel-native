@@ -177,6 +177,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                               Dgn::RenderContextR                         context,
                               const DMatrix4d&                            storageToUors)
     {    
+#if 0 //NEEDS_WORK_SM_TEMP_OUT
 
 #ifdef PRINT_SMDISPLAY_MSG
     PRINT_MSG("ProgressiveDrawMeshNode2 meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
@@ -290,6 +291,8 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 
     auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);    
     context.OutputGraphic(*group, nullptr);    
+
+#endif
     }
 
 
@@ -326,7 +329,8 @@ public:
 // @bsimethod                                                      Mathieu.St-Pierre     02/2016
 //----------------------------------------------------------------------------------------
 ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {    
+    {   
+#if 0 //NEEDS_WORK_SM_TEMP_OUT
     uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
 
     if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
@@ -375,7 +379,8 @@ ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow
         m_nextShow = now + 1000; // once per second
         wantShow = WantShow::Yes;
         }
-                
+           
+#endif
     return Completion::Aborted;    
     }
 
@@ -425,7 +430,8 @@ static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
-    {            
+    {        
+#if 0 //NEEDS_WORK_SM_TEMP_OUT
     if (m_smPtr == 0 && !m_tryOpen)
         {
         //BeFileName smFileName(((this)->m_properties).m_fileId);
@@ -597,7 +603,7 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
         {
         ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context);
         }
-
+#endif
     }                 
 
 
