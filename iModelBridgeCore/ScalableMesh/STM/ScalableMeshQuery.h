@@ -1369,6 +1369,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
+
                 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {
