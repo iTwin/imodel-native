@@ -398,7 +398,10 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetOrigin(DPoint3dCR pt) {return SetPropertyValue("Origin", pt);} //!< Set the origin of the viewed volume on the lower, back, rear
     DGNPLATFORM_EXPORT DgnDbStatus SetExtents(DVec3dCR vec) {return SetPropertyValue("Extents", (DPoint3dCR)vec);} //!< Set the size of the view diagonal
     DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
-    };
+
+    //! Set the view direction to one of the standard rotations
+    DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
+};
 
 //=======================================================================================
 //! Defines a view of one or more SpatialModels, which supports a camera that displays
@@ -441,6 +444,9 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
     DGNPLATFORM_EXPORT DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
     DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
+
+                                                                                                                                                                          //! Set the view direction to one of the standard rotations
+    DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
 };
 
 //=======================================================================================

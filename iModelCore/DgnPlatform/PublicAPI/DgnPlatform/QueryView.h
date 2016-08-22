@@ -207,8 +207,7 @@ protected:
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
 public:
-    //! @param dgndb  The DgnDb for the view
-    //! @param definition the view definition
+    //! *** NEEDS WORK: merge into ViewDefinition3d or SpatialViewDefinition
     DGNPLATFORM_EXPORT DgnQueryView(CameraViewDefinition const& definition);
     DGNPLATFORM_EXPORT ~DgnQueryView();
 

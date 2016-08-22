@@ -598,3 +598,34 @@ bool ViewDefinition::ViewsCategory(DgnCategoryId cid) const
     auto catSel = GetDgnDb().Elements().Get<CategorySelector>(GetCategorySelectorId());
     return catSel.IsValid()? catSel->ContainsCategoryId(cid): false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static YawPitchRollAngles yprFromStandardRotation(StandardView standardView)
+    {
+    RotMatrix rMatrix;
+    if (!bsiRotMatrix_getStandardRotation(&rMatrix, static_cast<int>(standardView)))
+        return YawPitchRollAngles();
+
+    YawPitchRollAngles ypr;
+    YawPitchRollAngles::TryFromRotMatrix(ypr, rMatrix);
+    return ypr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus OrthographicViewDefinition::SetStandardViewDirection(StandardView standardView)
+    {
+    return SetViewDirection(yprFromStandardRotation(standardView));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CameraViewDefinition::SetStandardViewDirection(StandardView standardView)
+    {
+    return SetViewDirection(yprFromStandardRotation(standardView));
+    }
+

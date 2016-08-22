@@ -424,7 +424,7 @@ public:
     //! @param subjectView The view of the underlying physical coordinate space to overlay
     //! @param physicalRedlineViewDef The redline view definition
     //! @param otherRdlsToView Optional. Other SpatialRedlineModels to show in the view.
-    DGNPLATFORM_EXPORT SpatialRedlineViewController (SpatialRedlineModel& model, SpatialViewController& subjectView, OrthographicViewController& physicalRedlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView);
+    DGNPLATFORM_EXPORT SpatialRedlineViewController (SpatialRedlineModel& model, SpatialViewController& subjectView, OrthographicViewDefinition& physicalRedlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView);
 
     DGNPLATFORM_EXPORT ~SpatialRedlineViewController();
 
