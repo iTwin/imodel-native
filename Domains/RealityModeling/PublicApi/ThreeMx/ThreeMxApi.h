@@ -162,7 +162,6 @@ public:
     Utf8String GetChildFile () const;
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
     Utf8String GetFilePath(SceneR) const;
-    BentleyStatus LoadChildren(SceneR);
     void Draw(DrawArgsR, int depth);
     Dgn::ElementAlignedBox3d ComputeRange();
     ChildLoad GetChildLoadStatus() const {return (ChildLoad) m_childLoad.load();}
