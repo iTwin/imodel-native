@@ -108,7 +108,7 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
-    Status WriteWebApp(TransformCR transform, bvector<Utf8String>& viewedTileSetNames);
+    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -131,7 +131,7 @@ public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
     Status Publish();
-    Status PublishViewedModel (Utf8String& tileSetName, DgnModelR model);
+    TileGenerator::Status PublishViewedModel (WStringR tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TextureCache& GetTextureCache() { return m_textureCache; }
@@ -140,6 +140,7 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
+    DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
 
     static Status ConvertStatus(TileGenerator::Status input);
     static TileGenerator::Status ConvertStatus(Status input);
@@ -194,6 +195,7 @@ public:
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
     TileGeometryCacheR GetGeometryCache() { return *m_context.GetGeometryCache(); }
 };
+
 
 END_BENTLEY_DGN_TILE3D_NAMESPACE
 

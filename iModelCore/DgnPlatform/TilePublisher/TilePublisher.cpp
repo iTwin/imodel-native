@@ -104,7 +104,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, TilesetPublisher& context)
 #endif
 
     TileGeometryCacheR geomCache = GetGeometryCache();
-    m_meshes = m_tile.GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, true);
+    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, true);
     GetTextureCache().PrepareMeshTextures(m_meshes, m_textureIds, geomCache);
     }
 
@@ -713,48 +713,53 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         {
         Utf8String matName = Utf8String(WPrintfString(L"mat_%d", (int)id+baseMatId).c_str());
 
-        auto& material = rootNode["materials"][matName.c_str()] = Json::objectValue;
-        auto& materialColor = material["values"]["color"] = Json::arrayValue;
-        uint32_t rgb = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
-        materialColor.append(((uint8_t*)&rgb)[0]/255.0);
-        materialColor.append(((uint8_t*)&rgb)[1]/255.0);
-        materialColor.append(((uint8_t*)&rgb)[2]/255.0);
-        double alpha = 1.0 - ((uint8_t*)&rgb)[3]/255.0;
-        materialColor.append(alpha);
-        material["technique"] = mesh.Triangles().empty() ? "polylineTechnique" : ((1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent");
+        auto&           material = rootNode["materials"][matName.c_str()] = Json::objectValue;
+        uint32_t        rgbInt  = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
+        RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+        double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
+        double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
+        RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
+
 
         if (!mesh.Triangles().empty())
             {
-            double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-            RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
-
-#ifdef NEEDS_WORK_MATERIALS
-            if (nullptr != mesh.GetDisplayParams() && mesh.GetDisplayParams().GetMaterialId().IsValid())
+            if (nullptr != mesh.GetDisplayParams() && mesh.GetDisplayParams()->GetMaterialId().IsValid())
                 {
-            if (NULL != mesh.GetDisplayParams() && 
-                NULL != mesh.GetDisplayParams()->GetMaterial())
-                {
-                JsonRenderMaterial mat = 
+                JsonRenderMaterial  jsonMaterial;
 
+                if (SUCCESS == jsonMaterial.Load (mesh.GetDisplayParams()->GetMaterialId(), m_context.GetDgnDb()))
+                    {
+                    static double       s_finishScale = 15.0;
 
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
+                        specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
 
-                MaterialSettingsCR  materialSettings = mesh.m_matSymb->GetMaterial()->GetSettings();
-                static double       s_finishScale = 15.0;
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
+                        specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+                    
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
+                        rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
 
-                if (materialSettings.HasSpecularColor())
-                    specularColor = materialSettings.GetSpecularColor();
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
+                        alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
+                    }
+                material["values"]["specularExponent"] = specularExponent;
 
-                if (materialSettings.HasFinishScale())
-                    specularExponent = materialSettings.GetFinishScaleForStorage() * s_finishScale;
+                auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
+                materialSpecularColor.append (specularColor.red);
+                materialSpecularColor.append (specularColor.green);
+                materialSpecularColor.append (specularColor.blue);
                 }
-#endif
-
-            material["values"]["specularExponent"] = specularExponent;
-            auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
-            materialSpecularColor.append (specularColor.red);
-            materialSpecularColor.append (specularColor.green);
-            materialSpecularColor.append (specularColor.blue);
             }
+
+        auto&    materialColor = material["values"]["color"] = Json::arrayValue;
+
+        materialColor.append(rgb.red);
+        materialColor.append(rgb.green);
+        materialColor.append(rgb.blue);
+        materialColor.append(alpha);
+
+        material["technique"] = mesh.Triangles().empty() ? "polylineTechnique" : ((1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent");
 
         attr["material"] = matName.c_str();
         }
@@ -1023,7 +1028,7 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<Utf8String>& viewedTileSetNames)
+TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& viewedTileSetNames)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -1070,10 +1075,14 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher
-::Status   TilesetPublisher::PublishViewedModel (Utf8String& tileSetName, DgnModelR model)
+TileGenerator::Status   TilesetPublisher::PublishViewedModel (WStringR tileSetName, DgnModelR model)
     {
-    return Status::Success;
+    IPublishModelTiles*     publishTiles;
+
+    if (NULL == (publishTiles = dynamic_cast <IPublishModelTiles*> (&model)))
+        return TileGenerator::Status::NotImplemented;
+
+    return publishTiles->_PublishModelTiles (*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1088,32 +1097,42 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     ProgressMeter progressMeter(*this);
     TileGenerator generator (m_dbToTile, &progressMeter);
 
-    static double s_toleranceInMeters = 0.01;
-    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
-    if (Status::Success != status)
-        return status;
+    static double       s_toleranceInMeters = 0.01;
+    bvector<WString>    viewedTileSetNames;
 
-    static const size_t s_maxPointsPerTile = 20000;
-    TileNode rootNode;
-    status = ConvertStatus(generator.GenerateTiles(rootNode, s_toleranceInMeters, s_maxPointsPerTile));
-    if (Status::Success != status)
-        return status;
+    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
 
     m_generator = &generator;
-    status = ConvertStatus(generator.CollectTiles(rootNode, *this));
-
-    bvector<Utf8String>   viewedTileSetNames;
-#ifdef VIEWED_TILE_WIP
-    for (auto& modelId : m_viewController.GetViewedModels())
+    if (Status::Success == status)
         {
-        Utf8String      tileSetName;
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelID);
+        static const size_t     s_maxPointsPerTile = 20000;
+        TileNode                rootNode;
+
+        status = ConvertStatus(generator.GenerateTiles (rootNode, s_toleranceInMeters, s_maxPointsPerTile));
+        if (Status::Success == status)
+            {
+            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(rootNode, *this))))
+                viewedTileSetNames.push_back (m_rootName);
+
+            }
+        }
+
+#ifdef KEITH_FIX
+    for (auto& modelId : m_viewController.GetViewedModels())
+#else
+    for (auto const& model : m_viewController.GetDgnDb().Models().MakeIterator())
+#endif
+        {
+        if (model.GetModelId() == m_viewController.GetBaseModelId())
+            continue;
+
+        WString         tileSetName;
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (model.GetModelId());
 
         if (viewedModel.IsValid() &&
-            Status::Success == PublishViewedModel (tileSetName, *viewedModel))
+            TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel))
             viewedTileSetNames.push_back (tileSetName);
         }
-#endif
 
     m_generator = nullptr;
 

@@ -590,7 +590,7 @@ typedef bmap<MeshBuilderKey, TileMeshBuilderPtr> MeshBuilderMap;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+TileMeshList TileNode::_GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
     {
     static const double s_minRangeBoxSize = 0.5;
     static const double s_vertexToleranceRatio = 1.0;

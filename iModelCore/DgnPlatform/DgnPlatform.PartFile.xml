@@ -692,8 +692,9 @@
     <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="DgnPlatformLib" />
         <SubPart PartName="DgnPlatformSqlang" />
-        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
-        <SubPart PartName="GeoCoordData"        PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
+        <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
+		<SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>

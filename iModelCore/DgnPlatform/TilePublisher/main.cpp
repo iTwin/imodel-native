@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "TilePublisher.h"
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <ThreeMx/ThreeMxApi.h>
+
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
@@ -301,9 +303,12 @@ int wmain(int ac, wchar_t const** av)
     Host host;
     DgnPlatformLib::Initialize(host, false);
 
+    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain());
+
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
         return 1;
+
 
     ViewControllerPtr viewController = createParams.LoadViewController(*db);
     if (viewController.IsNull())
