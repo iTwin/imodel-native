@@ -1535,10 +1535,16 @@ namespace dgn_ModelHandler
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)
     };
 
-    //! The ModelHandler for PhysicalModel
-    struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
+    //! The ModelHandler for SpatialModel
+    struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for PhysicalModel
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Spatial
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalModel, PhysicalModel, Physical, Spatial, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for ComponentModel
