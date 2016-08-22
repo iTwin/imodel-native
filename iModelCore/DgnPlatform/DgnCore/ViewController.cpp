@@ -1489,7 +1489,8 @@ void SpatialViewController::_LoadFromDefinition()
 
     m_viewedModels = GetModelSelector().GetModelIds();
 
-    if (m_viewedModels.begin() != m_viewedModels.end())
+    m_targetModelId = GetSpatialViewDefinition().GetTargetModelId();
+    if (!m_targetModelId.IsValid() && (m_viewedModels.begin() != m_viewedModels.end()))
         m_targetModelId = *m_viewedModels.begin();
 
 #ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
@@ -1505,6 +1506,12 @@ void SpatialViewController::_StoreToDefinition() const
     T_Super::_StoreToDefinition();
 
     GetModelSelector().SetModelIds(m_viewedModels);
+
+    DgnModelId targetModelId = m_targetModelId;
+    if (!targetModelId.IsValid() && (m_viewedModels.begin() != m_viewedModels.end()))
+        targetModelId = *m_viewedModels.begin();
+    if (targetModelId.IsValid())
+        GetSpatialViewDefinition().SetTargetModelId(targetModelId);
 
 #ifdef WIP_VIEW_DEFINITION // *** TBD: ClipVolume
     GetClipVolume().Set ...

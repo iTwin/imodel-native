@@ -1618,7 +1618,7 @@
         </ECProperty>
     </ECEntityClass>
 
-      <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding">
+    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
@@ -1629,6 +1629,19 @@
         </Source>
         <Target cardinality="(0,N)" roleLabel="is used by N 2D views" polymorphic="true">
             <Class class="ViewDefinition2d"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TargetModelForView3d" strength="embedding">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                <OnDeleteAction>NoAction</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" roleLabel="is target model for 3D view" polymorphic="true">
+            <Class class="GeometricModel3d"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is used by N 3D views" polymorphic="true">
+            <Class class="ViewDefinition3d"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing">
@@ -1721,6 +1734,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="ViewDefinition3d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
+        <ECNavigationProperty propertyName="TargetModel" relationshipName="TargetModelForView3d" direction="Backward"/>
         <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward"/>
         <ECNavigationProperty propertyName="ClipVolume" relationshipName="ViewDefinition3dUsesClipVolume" direction="Forward"/>
     </ECEntityClass>
@@ -1760,7 +1774,7 @@
     <!-- A view of a 2D model that has its own local coordinate system. -->
     <ECEntityClass typeName="ViewDefinition2d" modifier="Abstract">
         <BaseClass>ViewDefinition</BaseClass>
-        <ECNavigationProperty propertyName="BaseModelId" relationshipName="BaseModelForView2d" direction="Backward"/>
+        <ECNavigationProperty propertyName="BaseModel" relationshipName="BaseModelForView2d" direction="Backward"/>
         <ECProperty propertyName="Origin" typeName="Point2d" displayLabel="Lower left corner of the viewed area."></ECProperty>
         <ECProperty propertyName="Extents" typeName="Point2d" displayLabel="Size of the view diagonal"></ECProperty>
         <ECProperty propertyName="RotationAngle" typeName="double" displayLabel="Rotation angle in degrees of the viewed area."></ECProperty>

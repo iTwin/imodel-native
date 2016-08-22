@@ -346,8 +346,10 @@ protected:
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
 public:
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d)); }
+    DgnModelId GetTargetModelId() const { return GetPropertyValueId<DgnModelId>("TargetModel"); } //!< Get the ID of the target model
     DgnElementId GetModelSelectorId() const {return GetPropertyValueId<DgnElementId>("ModelSelector");} //!< Get the ID of the element that holds th ModelSelector used by this view
     DgnElementId GetClipVolumeId() const {return GetPropertyValueId<DgnElementId>("ClipVolume");} //!< Get the ID of the element that holds the ClipVolume used by this view
+    DgnDbStatus SetTargetModelId(DgnModelId id) { return SetPropertyValue("TargetModel", id); } //!< Set the ID of the target model
     DgnDbStatus SetModelSelectorId(DgnElementId id) {return SetPropertyValue("ModelSelector", id);} //!< Set the ID of the element that holds the ModelSelector used by this view.
     DgnDbStatus SetModelSelector(ModelSelectorCR modSel) {return SetModelSelectorId(modSel.GetElementId());} //!< Set the ModelSelector used by this view. Note that the modelselector must be persistent.
     DgnDbStatus SetClipVolumeId(DgnElementId id) {return SetPropertyValue("ClipVolume", id);} //!< Set the ID of the element that holds the ClipVolume used by this view
@@ -469,8 +471,8 @@ public:
         SetBaseModelId(baseModelId);
         }
     DGNPLATFORM_EXPORT bool IsBaseModelValid() const;
-    DgnModelId GetBaseModelId() const { return GetPropertyValueId<DgnModelId>("BaseModelId"); } //!< Get ID of base model
-    DgnDbStatus SetBaseModelId(DgnModelId value) { return SetPropertyValue("BaseModelId", value); } //!< Set ID of base model
+    DgnModelId GetBaseModelId() const { return GetPropertyValueId<DgnModelId>("BaseModel"); } //!< Get ID of base model
+    DgnDbStatus SetBaseModelId(DgnModelId value) { return SetPropertyValue("BaseModel", value); } //!< Set ID of base model
     DPoint2d GetOrigin() const { return GetPropertyValueDPoint2d("Origin"); } //!< Get lower left corner of the viewed area.
     DgnDbStatus SetOrigin(DPoint2dCR value) { return SetPropertyValue("Origin", value); } //!< Set lower left corner of the viewed area.
     DVec2d GetExtents() const { return DVec2d::From(GetPropertyValueDPoint2d("Extents")); } //!< Get size of the view diagonal
