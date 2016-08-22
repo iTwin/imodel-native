@@ -2265,8 +2265,10 @@ CategorySelectorR ViewController::GetCategorySelector() const
         if (existingCatSel.IsValid())
             catSel = existingCatSel->MakeCopy<CategorySelector>();
         else
+            {
             catSel = new CategorySelector(GetDgnDb(), GetViewDefinition().GetName().c_str()); // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
-
+            DGNCORELOG->errorv("Missing CategorySelector for view %s - generating one", GetViewDefinition().GetName().c_str());
+            }
         m_definitionElements.AddElement(*catSel);
         }
 
@@ -2286,7 +2288,10 @@ DisplayStyleR ViewController::GetDisplayStyle() const
         if (existingDstyle.IsValid())
             dstyle = existingDstyle->MakeCopy<DisplayStyle>();
         else
+            {
             dstyle = new DisplayStyle(GetDgnDb(), GetViewDefinition().GetName().c_str());     // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+            DGNCORELOG->errorv("Missing DisplayStyle for view %s - generating one", GetViewDefinition().GetName().c_str());
+            }
 
         m_definitionElements.AddElement(*dstyle);
         }
@@ -2307,7 +2312,10 @@ ModelSelectorR SpatialViewController::GetModelSelector() const
         if (existingModSel.IsValid())
             modSel = existingModSel->MakeCopy<ModelSelector>();
         else
+            {
             modSel = new ModelSelector(GetDgnDb(), GetViewDefinition().GetName().c_str());    // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+            DGNCORELOG->errorv("Missing ModelSelector for view %s - generating one", GetViewDefinition().GetName().c_str());
+            }
 
         m_definitionElements.AddElement(*modSel);
         }

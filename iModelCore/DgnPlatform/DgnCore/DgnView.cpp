@@ -391,6 +391,9 @@ bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetVie
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
     {
+    if (!GetElementId().IsValid())
+        return DgnDbStatus::MissingId;
+
     // *** WIP_VIEW_DEFINITION: Delete all existing CategorySelectorsReferToCategories instances with Source = this
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
@@ -512,6 +515,9 @@ DgnDbStatus ModelSelector::_OnDelete() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
     {
+    if (!GetElementId().IsValid())
+        return DgnDbStatus::MissingId;
+
     // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorsReferToModels instances with Source = this
 
     if (!GetElementId().IsValid())
