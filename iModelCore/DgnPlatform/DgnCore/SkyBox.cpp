@@ -97,6 +97,15 @@ void CameraViewController::DrawGroundPlane(DecorateContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::TexturePtr CameraViewController::LoadTexture(Utf8CP fileName, Render::SystemCR system)
     {
+#if defined (NEEDS_WORK_GROUND_PLANE)
+    bool isHttp = (0 == strncmp("http:", fileName, 5) || 0 == strncmp("https:", fileName, 6));
+
+    if (isHttp)
+        {
+        m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
+        }
+#endif
+
     BeFile skyFile;
     if (BeFileStatus::Success != skyFile.Open(fileName, BeFileAccess::Read))
         return nullptr;
