@@ -734,6 +734,11 @@ bool IScalableMeshMesh::FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
     return _FindTriangleForProjectedPoint(outTriangle, point,use2d);
     }
 
+bool IScalableMeshMesh::IntersectRay(DPoint3d& pt, const DRay3d& ray) const
+    {
+    return _IntersectRay(pt,ray);
+    }
+
 bool IScalableMeshMesh::FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d) const
     {
     return _FindTriangleForProjectedPoint(outTriangle, point, use2d);
@@ -1559,6 +1564,31 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     assert(status == SUCCESS);
 
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
+    }
+
+bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
+    {
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+    double minParam = DBL_MAX;
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+        DPoint3d projectedPt;
+        DPoint3d bary;
+        double param;
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
+            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param < minParam;
+        if (intersectTri)
+            {
+            pt = projectedPt;
+            minParam = param;
+            }
+        }
+    return minParam < DBL_MAX;
     }
 
 bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const

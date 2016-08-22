@@ -326,6 +326,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const = 0;
 
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const = 0;
+
         virtual void _WriteToFile(WString& filePath) = 0;
 
     public: 
@@ -355,6 +357,8 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
+
+        BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT void WriteToFile(WString& filePath);
 

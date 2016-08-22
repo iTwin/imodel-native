@@ -613,6 +613,16 @@ bool MeshTraversalQueue::SetStartPoint(DPoint3d pt)
     return true;
     }
 
+bool IntersectRay3D(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint, IScalableMeshNodePtr& target)
+    {
+    DRay3d ray = DRay3d::FromOriginAndVector(testPoint, direction);
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+    auto meshP = target->GetMesh(flags);
+    if (meshP != nullptr) return meshP->IntersectRay(pointOnDTM, ray);
+    return false;
+    }
+
+
 bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
     DPoint3d transformedPt = testPoint;
@@ -621,7 +631,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
 
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
-    params->SetLevel(m_scmPtr->GetTerrainDepth());
+    if(m_scmPtr->IsTerrain()) params->SetLevel(m_scmPtr->GetTerrainDepth());
     bvector<IScalableMeshNodePtr> nodes;
     params->SetDirection(direction);
     m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
@@ -630,8 +640,16 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     bvector<bool> clips;
     for (auto& node : nodes)
         {
-        BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(pointOnDTM, direction, transformedPt))
+        if (m_scmPtr->IsTerrain())
+            {
+            BcDTMPtr dtmP = node->GetBcDTM();
+            if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(pointOnDTM, direction, transformedPt))
+                {
+                m_transform.Multiply(pointOnDTM);
+                return true;
+                }
+            }
+        else if (IntersectRay3D(pointOnDTM, direction, transformedPt, node))
             {
             m_transform.Multiply(pointOnDTM);
             return true;
