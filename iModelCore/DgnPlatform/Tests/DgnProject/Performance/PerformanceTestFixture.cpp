@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Performance/PerformanceTestFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PerformanceTestFixture.h"
@@ -25,11 +25,9 @@ void PerformanceTestFixture::ImportSchema
 (
 ECSchemaReadContextR schemaContext, 
 ECSchemaR testSchema,
-DgnDbTestDgnManager tdm
+DgnDbR project
 )
     {
-    DgnDbR project = *tdm.GetDgnProjectP();
-
     StopWatch stopwatch ("PerformanceTestFixture::ImportSchema", true);
     auto stat = project.Schemas ().ImportECSchemas (schemaContext.GetCache ());
     stopwatch.Stop();
@@ -47,14 +45,14 @@ DgnDbTestDgnManager tdm
 void PerformanceTestFixture::ImportComplexTestSchema
 (
 ECSchemaPtr& testSchema,
-DgnDbTestDgnManager tdm
+DgnDbR project
 )
     {
     ECSchemaReadContextPtr schemaReadContext = nullptr;
     testSchema = TestSchemaHelper::CreateComplexTestSchema (schemaReadContext);
     ASSERT_TRUE (schemaReadContext.IsValid ());
 
-    ImportSchema(*schemaReadContext, *testSchema, tdm);
+    ImportSchema(*schemaReadContext, *testSchema, project);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -63,7 +61,7 @@ DgnDbTestDgnManager tdm
 void PerformanceTestFixture::ImportTestSchema
 (
 ECN::ECSchemaPtr& testSchema,
-DgnDbTestDgnManager tdm,
+DgnDbR project,
 int numIntProperties,
 int numStringProperties
 )
@@ -72,7 +70,7 @@ int numStringProperties
     testSchema = TestSchemaHelper::CreateTestSchema (schemaReadContext, numIntProperties, numStringProperties);
     ASSERT_TRUE (schemaReadContext.IsValid ());
 
-    ImportSchema(*schemaReadContext, *testSchema, tdm);
+    ImportSchema(*schemaReadContext, *testSchema, project);
     }
 
 /*---------------------------------------------------------------------------------**//**
