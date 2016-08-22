@@ -194,16 +194,18 @@ private:
 struct RasterQuadTree : public RefCountedBase
 {
 public:
-    static RasterQuadTreePtr Create(RasterSourceR source, Dgn::DgnDbR dgnDb);
+    static RasterQuadTreePtr Create(RasterSourceR source, RasterModel& model);
 
     RasterTileR GetRoot() {return *m_pRoot;}
 
     RasterSourceR GetSource() {return *m_pSource;}
 
+    RasterModel& GetModel() { return m_model; }
+
     //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
     void QueryVisible(std::vector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
-    Dgn::DgnDbR GetDgnDb() {return m_dgnDb;}
+    Dgn::DgnDbR GetDgnDb() {return m_model.GetDgnDb();}
 
     void Draw (Dgn::RenderContextR context);
 
@@ -215,20 +217,20 @@ public:
 
     void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
 
-    DMatrix4dCR GetSourceToWorld() const { return m_sourceToWorld; }
+    DMatrix4dCR GetSourceToWorld() const { return m_model.GetPixelToWorld(); }
 
 private:
     
-    RasterQuadTree(RasterSourceR source, Dgn::DgnDbR dgnDb);
+    RasterQuadTree(RasterSourceR source, RasterModel& model);
 
     StatusInt ComputeSourceToWorldTransform(DMatrix4dR sourceToWorld);
 
-    Dgn::DgnDbR m_dgnDb;                 
+    RasterModel& m_model;               // The model to which this instance is associated.
     RasterSourcePtr m_pSource; 
     RasterTilePtr m_pRoot;              // The lowest/coarser resolution. 
     RasterTileCache& m_tileCache;
     double m_visibleQualityFactor;
-    DMatrix4d m_sourceToWorld;          // including units change and reprojection.
+    //&&MM DMatrix4d m_sourceToWorld;          // including units change and reprojection.
 };
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RasterSchema/RasterSchemaTypes.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,6 +28,6 @@ RASTERSCHEMA_REF_COUNTED_PTR(WmsSource)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterFileSource)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterFileModel)
 
-RASTERSCHEMA_TYPEDEFS(RasterQuadTree)
-RASTERSCHEMA_REF_COUNTED_PTR(RasterQuadTree)
+RASTERSCHEMA_TYPEDEFS(RasterClip)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterClip)
 

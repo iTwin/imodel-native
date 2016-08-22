@@ -15,11 +15,62 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct RasterModelHandler;
 
 //=======================================================================================
+// @bsiclass                                                    Mathieu.Marchand  7/2016
+//=======================================================================================
+struct RasterClip
+    {   
+public:
+    typedef bvector<CurveVectorPtr> MaskVector;
+
+private:
+    CurveVectorPtr  m_pBoundary;        // Of type CurveVector::BOUNDARY_TYPE_Outer
+    MaskVector      m_masks;            // Of type CurveVector::BOUNDARY_TYPE_Inner
+
+    mutable Dgn::ClipVectorPtr m_clipVector;       // optimized for display.
+public:
+    void ToBlob(bvector<uint8_t>& blob, Dgn::DgnDbR dgndb) const;
+    void FromBlob(void const* blob, size_t size, Dgn::DgnDbR dgndb);
+
+    void InitFrom(RasterClip const& other);
+
+    Dgn::ClipVectorCP GetClipVector() const;
+
+    //! Create an empty clip
+    RASTERSCHEMA_EXPORT RasterClip();
+    
+    RASTERSCHEMA_EXPORT ~RasterClip();
+
+    RASTERSCHEMA_EXPORT void Clear();
+
+    RASTERSCHEMA_EXPORT bool IsEmpty() const { return !HasBoundary() && GetMasks().empty(); }
+
+    RASTERSCHEMA_EXPORT bool HasBoundary() const { return GetBoundaryCP() != nullptr; }
+
+    //! Get the clip boundary.  Might be null.
+    RASTERSCHEMA_EXPORT CurveVectorCP GetBoundaryCP() const;
+
+    //! Set the clip boundary. Curve is not copied, its refcount will be incremented. Curve must be of outer type. Use null to remove.
+    RASTERSCHEMA_EXPORT StatusInt SetBoundary(CurveVectorP pBoundary);
+
+    //! Get the clip mask list.
+    RASTERSCHEMA_EXPORT MaskVector const& GetMasks() const;
+
+    //! Set the clip mask list.  Curve must be of inner type.
+    RASTERSCHEMA_EXPORT StatusInt SetMasks(MaskVector const&);
+
+    //! Add a single clip mask to the list. Curve is not copied, its refcount will be incremented. Curve must be of inner type.
+    RASTERSCHEMA_EXPORT StatusInt AddMask(CurveVectorR curve);
+    };
+
+//=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::SpatialModel
 {
     DGNMODEL_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, Dgn::SpatialModel)
+
+private:
+    Dgn::DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
     friend struct RasterModelHandler;
@@ -33,6 +84,8 @@ protected:
 
     mutable LoadRasterStatus  m_loadStatus;
     mutable RasterQuadTreePtr m_rasterTreeP;
+
+    RasterClip m_clips;
     
     //! Destruct a RasterModel object.
     ~RasterModel();
@@ -50,9 +103,31 @@ protected:
     
     virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
 
+    Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParamsCR params) override;
+    Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
+    void _InitFrom(Dgn::DgnModelCR other) override;
+
+    virtual DMatrix4dCR  _GetPixelToWorld() const
+        {
+        //&&MM I have to implement this method so we can RASTERMODELHANDLER_DECLARE_MEMBERS on RasterModelHandler. We are not expecting to 
+        // instantiate RasterModel directly so do we need to add RASTERMODELHANDLER_DECLARE_MEMBERS.
+        static DMatrix4d s_identity;
+        s_identity.InitIdentity();
+        return s_identity;
+        }
+
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
+    
+    DMatrix4dCR  GetPixelToWorld() const;
+
+    //! Get the clips of this RasterModel.
+    RASTERSCHEMA_EXPORT RasterClipCR GetClip() const;
+
+    //! Set the clips of this RasterModel.
+    RASTERSCHEMA_EXPORT void SetClip(RasterClipCR);
 };
 
 //=======================================================================================
@@ -63,6 +138,8 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Spatial
 {
     RASTERMODELHANDLER_DECLARE_MEMBERS(RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Spatial, RASTERSCHEMA_EXPORT)
+
+    virtual void _GetClassParams(Dgn::ECSqlClassParamsR params) override;
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

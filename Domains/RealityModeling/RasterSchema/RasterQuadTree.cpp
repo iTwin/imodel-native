@@ -217,7 +217,11 @@ void TileDataQuery::Run()
         }
 #endif         
     if (image.IsValid() && !IsCanceled())
-        m_pTile = m_target.CreateTexture(image);
+        {
+        Render::Texture::CreateParams params;
+        params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.
+        m_pTile = m_target.GetSystem()._CreateTexture(image, params);
+        }
         
     m_isFinished = true;
     }
@@ -234,7 +238,7 @@ struct DrawArgs
 
     DrawArgs(RenderContextR context) : m_context(context) {}
     void AddGraphic(Render::GraphicR gra) { m_graphics.Add(gra); }
-    void DrawGraphics(double zBias);
+    void DrawGraphics(double zBias, ClipVectorCP clip);
     RenderContextR GetContext(){return m_context;}
     };
 
@@ -302,11 +306,11 @@ RasterTilePtr RasterTile::CreateRoot(RasterQuadTreeR tree)
     TileId id(tree.GetSource().GetResolutionCount()-1,0,0);
 
     //&&MM REPROJECTION clip to gcs domain. For now, make sure we can compute the corners in UOR.
-    DPoint3d srcCorners[4];
-    DPoint3d uorCorners[4];
-    tree.GetSource().ComputeTileCorners(srcCorners, id); 
-    if(REPROJECT_Success != ReprojectCorners(uorCorners, srcCorners, tree))
-        return NULL;
+//     DPoint3d srcCorners[4];
+//     DPoint3d uorCorners[4];
+//     tree.GetSource().ComputeTileCorners(srcCorners, id); 
+//     if(REPROJECT_Success != ReprojectCorners(uorCorners, srcCorners, tree))
+//         return NULL;
 
     return new RasterTile(id, NULL, tree);
     }
@@ -323,13 +327,40 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
 
     RasterSourceR source = m_tree.GetSource();
 
-    DPoint3d srcCorners[4];
-    source.ComputeTileCorners(srcCorners, id); 
+//&&MM raster is flipped. Because transform(BIM) is bottom left and raster is top left.
+//     DPoint3d srcCorners2[4];
+//     source.ComputeTileCorners(srcCorners2, id);
+// 
+//     if(REPROJECT_Success != ReprojectCorners(m_corners, srcCorners2, tree))
+//         {
+//         memcpy(m_corners, srcCorners2, sizeof(m_corners));   // Assume coincident for now. We should an invalid reprojection or something.
+//         }
 
-    if(REPROJECT_Success != ReprojectCorners(m_corners, srcCorners, tree))
-        {
-        memcpy(m_corners, srcCorners, sizeof(m_corners));   // Assume coincident for now. We should an invalid reprojection or something.
-        }
+    uint32_t xMinInRes = id.x * source.GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMinInRes = id.y * source.GetResolution(id.resolution).GetTileSizeY();
+    uint32_t xMaxInRes = xMinInRes + source.GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMaxInRes = yMinInRes + source.GetResolution(id.resolution).GetTileSizeY();
+
+    uint32_t xMin = xMinInRes << id.resolution;
+    uint32_t yMin = yMinInRes << id.resolution;
+    uint32_t xMax = xMaxInRes << id.resolution;
+    uint32_t yMax = yMaxInRes << id.resolution;
+
+    // Limit the tile extent to the raster physical size 
+    if (xMax > source.GetWidth())
+        xMax = source.GetWidth();
+    if (yMax > source.GetHeight())
+        yMax = source.GetHeight();
+
+    DPoint3d srcCorners[4];
+
+    srcCorners[0].x = srcCorners[2].x = xMin;
+    srcCorners[1].x = srcCorners[3].x = xMax;
+    srcCorners[0].y = srcCorners[1].y = yMin;
+    srcCorners[2].y = srcCorners[3].y = yMax;
+    srcCorners[0].z = srcCorners[1].z = srcCorners[2].z = srcCorners[3].z = 0;
+
+    m_tree.GetSourceToWorld().MultiplyAndRenormalize(m_corners, srcCorners, 4);
     }
 
 //----------------------------------------------------------------------------------------
@@ -707,9 +738,9 @@ void RasterTile::OnItemRemoveFromCache(RasterTileCache::ItemId const& id)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-RasterQuadTreePtr RasterQuadTree::Create(RasterSourceR source, DgnDbR dgnDb)
+RasterQuadTreePtr RasterQuadTree::Create(RasterSourceR source, RasterModel& rasterModel)
     {
-    RasterQuadTreePtr pTree = new RasterQuadTree(source, dgnDb);
+    RasterQuadTreePtr pTree = new RasterQuadTree(source, rasterModel);
     // may occurs if we have reprojection errors
     if (pTree->m_pRoot.IsNull())
         return nullptr;
@@ -720,13 +751,15 @@ RasterQuadTreePtr RasterQuadTree::Create(RasterSourceR source, DgnDbR dgnDb)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
+RasterQuadTree::RasterQuadTree(RasterSourceR source, RasterModel& model)
 :m_pSource(&source), // increment ref count.
- m_dgnDb(dgnDb),
+ m_model(model),
  m_tileCache(s_GetSharedTileCache())
     {    
+    //&&MM debug...
+    DMatrix4d temp;
     // Compute reprojection matrix if any.
-    ComputeSourceToWorldTransform(m_sourceToWorld);  //&&MM detect error and do something about it.
+    ComputeSourceToWorldTransform(temp);  //&&MM detect error and do something about it.
     
     // Create the lowest LOD but do not load its data yet.
     m_pRoot = RasterTile::CreateRoot(*this);
@@ -1093,12 +1126,13 @@ void RasterProgressiveDisplay::Draw (RenderContextR context)
         BeAssert(pCoarserTile->HasCachedGraphic(context.GetViewportR()));
         pCoarserTile->Draw(coarserDrawArgs);
         }
-    coarserDrawArgs.DrawGraphics(DRAW_COARSER_BIAS);
+
+    coarserDrawArgs.DrawGraphics(DRAW_COARSER_BIAS, m_raster.GetModel().GetClip().GetClipVector());
 
     // Finer...
-    finerDrawArgs.DrawGraphics(DRAW_FINER_BIAS);
+    finerDrawArgs.DrawGraphics(DRAW_FINER_BIAS, m_raster.GetModel().GetClip().GetClipVector());
 
-    drawArgs.DrawGraphics(0.0);
+    drawArgs.DrawGraphics(0.0, m_raster.GetModel().GetClip().GetClipVector());
 
     if(!m_queriedTiles.empty())
         context.GetViewportR().ScheduleTerrainProgressiveTask(*this);
@@ -1145,7 +1179,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
             }
         }
 
-    drawArgs.DrawGraphics(0.0);
+    drawArgs.DrawGraphics(0.0, m_raster.GetModel().GetClip().GetClipVector());
 
     if (m_queriedTiles.empty())
         {
@@ -1165,7 +1199,7 @@ ProgressiveTask::Completion RasterProgressiveDisplay::_DoProgressive(Progressive
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
 //----------------------------------------------------------------------------------------
-void DrawArgs::DrawGraphics(double zBias)
+void DrawArgs::DrawGraphics(double zBias, ClipVectorCP clip)
     {
     if (m_graphics.m_entries.empty())
         return;
@@ -1174,6 +1208,6 @@ void DrawArgs::DrawGraphics(double zBias)
     //     That z-bias must be perpendicular to the view plane. Review when we will support raster plane et layerInModel(only for 2d top view?!?).
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, zBias));
-    auto group = m_context.CreateBranch(Render::Graphic::CreateParams(nullptr, biasTrans), m_graphics);
+    auto group = m_context.CreateBranch(m_graphics, &biasTrans, clip);
     m_context.OutputGraphic(*group, nullptr);
     }
