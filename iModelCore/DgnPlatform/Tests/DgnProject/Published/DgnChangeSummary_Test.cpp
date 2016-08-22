@@ -327,19 +327,19 @@ TEST_F(DgnChangeSummaryTestFixture, ValidateChangeSummaries)
     DgnChangeSummaryTestFixture::ChangedElements changedElements;
     
     CompareSessions(changedElements, 1, 1); // [1, 1]
-    EXPECT_EQ(changedElements.m_inserts.size(), 0+3); // category and sub-category...and view...
+    EXPECT_EQ(changedElements.m_inserts.size(), 0+6); // category and sub-category...and view, modsel, catsel, dstyle...
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     EXPECT_EQ(changedElements.m_geometryUpdates.size(), 0);
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 1, 2); // [1, 2]
-    EXPECT_EQ(changedElements.m_inserts.size(), 4+3); // category and sub-category...and view...
+    EXPECT_EQ(changedElements.m_inserts.size(), 4+6); // category and sub-category...and view, modsel, catsel, dstyle...
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     // NEEDSWORK: EXPECT_EQ(changedElements.m_geometryUpdates.size(), 4);
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
 
     CompareSessions(changedElements, 1, 6); // [1, 6]
-    EXPECT_EQ(changedElements.m_inserts.size(), 20+3); // category and sub-category...and view...
+    EXPECT_EQ(changedElements.m_inserts.size(), 20+6); // category and sub-category...and view, modsel, catsel, dstyle...
     EXPECT_EQ(changedElements.m_deletes.size(), 0);
     // NEEDSWORK: EXPECT_EQ(changedElements.m_geometryUpdates.size(), 20);
     EXPECT_EQ(changedElements.m_businessUpdates.size(), 0);
