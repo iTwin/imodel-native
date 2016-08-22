@@ -7567,11 +7567,11 @@ BENTLEYDTM_EXPORT int bcdtmObject_addVoidsToInternalDtmObject (BC_DTM_OBJ* dtmP)
         do
             {
             // Check if there is a valid link here
-            if (nodeAddrP (dtmP, pnt)->hPtr == linePnt)
+            if (nodeAddrP(dtmP, pnt)->hPtr == linePnt || nodeAddrP(dtmP, linePnt)->hPtr == pnt)
                 {
                 // Not this link.
                 }
-            else if (HasFeatureLinkSTM (dtmP, pnt, linePnt) == 1 && HasFeatureLink (dtmP, linePnt, pnt) == 1)
+            else if (HasFeatureLinkSTM(dtmP, pnt, linePnt) == 1 && HasFeatureLink(dtmP, linePnt, pnt) == 1 && bcdtmFlag_testInsertPoint(dtmP, pnt) == 0 && bcdtmFlag_testInsertPoint(dtmP, linePnt)== 0)
                 {
                 // if not then we need to create a void.
                 long endPnt = linePnt;

@@ -878,7 +878,7 @@ bool allowAdd
 ** This Function Scan From firstPnt To lastPnt And Swaps Lines That Intersect line firstPntlastPnt
 */
     {
-    int    ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE (0);
+    int    ret = DTM_SUCCESS, dbg =  DTM_TRACE_VALUE(0);
     int    sd1, sd2, sd3;
     long   startPnt, P1, P2, P3, P4;
     //long loop=0 ;
