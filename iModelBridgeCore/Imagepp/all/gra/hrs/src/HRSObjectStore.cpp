@@ -1294,7 +1294,8 @@ HFCPtr<HRAPyramidRaster> HRSObjectStore::LoadRaster (HPMObjectID* po_pRasterID)
                                              this,
                                              GetPool(),
                                              NULL,
-                                             m_pRasterFile->IsCompatibleWith(HRFFileId_VirtualEarth/*HRFVirtualEarthFile::CLASS_ID*/));
+                                             m_pRasterFile->IsCompatibleWith(HRFFileId_VirtualEarth/*HRFVirtualEarthFile::CLASS_ID*/) || 
+                                             m_pRasterFile->IsCompatibleWith(HRFFileId_MapBox));
         // Disable TilesFlags if VE
 
         // Tell the pyramid that the RasterFile supports the LookAhead mechanism.

@@ -918,7 +918,8 @@ void OnDemandMosaicExpressionNode::Calculate()
                 hasUnlimitedRasterSource = true;                
                 }
 #endif
-            else if (pRasterFileFactory->IsKindOfFile(HRFFileId_VirtualEarth/*HRFVirtualEarthFile::CLASS_ID*/, *urlIter))
+            else if (pRasterFileFactory->IsKindOfFile(HRFFileId_VirtualEarth/*HRFVirtualEarthFile::CLASS_ID*/, *urlIter) ||
+                     pRasterFileFactory->IsKindOfFile(HRFFileId_MapBox/*HRFVirtualEarthFile::CLASS_ID*/, *urlIter))
                 {
                 isDataChangingWithResolution = true;
                 }
