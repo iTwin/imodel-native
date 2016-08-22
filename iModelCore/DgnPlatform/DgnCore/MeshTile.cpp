@@ -830,8 +830,12 @@ private:
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
         FacetCounter counter(facetOptions);
         SetFacetCount(counter.GetFacetCount(solid));
+#else
+        SetFacetCount(0);
+#endif
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;
