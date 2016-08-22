@@ -52,21 +52,15 @@ struct ECDbMap :NonCopyableClass
                 mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
                 mutable RelationshipPerTable m_relationshipPerTable;
                 mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
-                mutable struct
-                    {
-                    bool m_horizontalPartitionsIsLoaded : 1;
-                    bool m_classIdsPerTableIsLoaded : 2;
-                    bool m_relationshipCacheIsLoaded : 3;
-                    bool m_relationshipPerTableLoaded : 4;
-                    } m_loadedFlags;
 
                 ECDbMapCR m_map;
-                void LoadHorizontalPartitions() const;
-                void LoadClassIdsPerTable() const;
-                void LoadRelationshipCache() const;
+
                 ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId classId)  const;
                 bset<DbTable const*> const& LoadClassIdsPerTable(ECN::ECClassId iid) const;
                 std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const& tbl) const;
+                bmap<ECN::ECClassId, RelationshipEnd> const& LoadRelationshipConstraintClasses(ECN::ECClassId relationshipId) const;
+                bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
+
             public:
                 explicit LightweightCache(ECDbMapCR map);
                 ~LightweightCache() {}
@@ -87,8 +81,9 @@ struct ECDbMap :NonCopyableClass
 
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
+#ifdef WIP_USE_PERSISTED_CACHE_TABLES
         static DbResult RepopulateClassHasTable(ECDbCR);
-
+#endif
         mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
         mutable LightweightCache m_lightweightCache;
         SchemaImportContext* m_schemaImportContext;

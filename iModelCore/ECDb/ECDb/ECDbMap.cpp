@@ -18,6 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECDbMap::ECDbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(*this)
     {}
 
+#ifdef WIP_USE_PERSISTED_CACHE_TABLES
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan   05/2015
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -48,6 +49,8 @@ DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
     LOG.debugv("Re-populated ec_ClassHasTable in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
+#endif
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -1184,9 +1187,10 @@ BentleyStatus ECDbMap::SaveDbSchema() const
             }
         }
 
-
+#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     if (BE_SQLITE_OK != RepopulateClassHasTable(GetECDb()))
         return ERROR;
+#endif
 
     m_lightweightCache.Reset();
     stopWatch.Stop();
@@ -1254,78 +1258,68 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::LoadClassIdsPerTable(ECN:
     return subSet;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadClassIdsPerTable() const
-    {
-    if (m_loadedFlags.m_classIdsPerTableIsLoaded)
-        return;
-
-    Utf8String sql = "SELECT TableId, ClassId FROM ec_ClassHasTable ORDER BY TableId";
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
-    DbTableId currentTableId;
-    DbTable const* currentTable = nullptr;
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        DbTableId tableId = stmt->GetValueId<DbTableId>(0);
-        ECClassId id = stmt->GetValueId<ECClassId>(1);
-
-        if (currentTableId != tableId)
-            {
-            currentTable = m_map.GetDbSchema().FindTable(tableId);
-            currentTableId = tableId;
-            BeAssert(currentTable != nullptr);
-            }
-
-        m_classIdsPerTable[currentTable].push_back(id);
-        m_tablesPerClassId[id].insert(currentTable);
-        }
-
-    m_loadedFlags.m_classIdsPerTableIsLoaded = true;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadRelationshipCache() const
+bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap::LightweightCache::LoadRelationshipConstraintClasses(ECN::ECClassId constraintClassId) const
     {
-    if (m_loadedFlags.m_relationshipCacheIsLoaded)
-        return;
+    auto itor = m_relationshipClassIdsPerConstraintClassIds.find(constraintClassId);
+    if (itor != m_relationshipClassIdsPerConstraintClassIds.end())
+        return itor->second;
 
-    //Utf8CP sql0 =
-    //    "WITH RECURSIVE DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-    //    "AS (SELECT RC.RelationshipClassId,RC.RelationshipEnd,RC.IsPolymorphic,RCC.ClassId,RCC.ClassId "
-    //    "FROM ec_RelationshipConstraintClass RCC INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
-    //    "UNION "
-    //    "SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-    //    "FROM DerivedClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.BaseClassId = DCL.DerivedClassId "
-    //    "WHERE IsPolymorphic = 1) "
-    //    "SELECT DerivedClassId, RelationshipClassId, RelationshipEnd FROM DerivedClassList";
-
+    bmap<ECN::ECClassId, RelationshipEnd>&  relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
     Utf8CP sql0 =
-        "SELECT  IFNULL(CH.ClassId, RCC.[ClassId]) ConstraintClassId, RC.RelationshipClassId, RC.RelationshipEnd"
+        "SELECT  RC.RelationshipClassId, RC.RelationshipEnd"
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1";
+        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
+        "    WHERE ConstraintClassId = ?";
 
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
+    stmt0->BindId(1, constraintClassId); //!This speed up query from 98ms to 28 ms by remove OR results that are not required in LEFT JOIN
+    stmt0->BindId(2, constraintClassId);
+
     while (stmt0->Step() == BE_SQLITE_ROW)
         {
-        ECClassId constraintClassId = stmt0->GetValueId<ECClassId>(0);
-        ECClassId relationshipId = stmt0->GetValueId<ECClassId>(1);
+        ECClassId relationshipId = stmt0->GetValueId<ECClassId>(0);
         BeAssert(!stmt0->IsColumnNull(2));
         RelationshipEnd end = stmt0->GetValueInt(2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
 
-        bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
         auto relIt = relClassIds.find(relationshipId);
         if (relIt == relClassIds.end())
             relClassIds[relationshipId] = end;
         else
             relClassIds[relationshipId] = static_cast<RelationshipEnd>((int) (relIt->second) | (int) (end));
+        }
 
+    return relClassIds;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap::LightweightCache::LoadConstraintClassesForRelationships(ECN::ECClassId relationshipId) const
+    {
+    auto itor = m_constraintClassIdsPerRelClassIds.find(relationshipId);
+    if (itor != m_constraintClassIdsPerRelClassIds.end())
+        return itor->second;
 
-        bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
+    bmap<ECN::ECClassId, RelationshipEnd>&  constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
+    Utf8CP sql0 =
+        "SELECT  IFNULL(CH.ClassId, RCC.[ClassId]) ConstraintClassId, RC.RelationshipEnd"
+        "    FROM ec_RelationshipConstraintClass RCC"
+        "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
+        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
+        "    WHERE RCC.RelationshipClassId = ?";
+
+    auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
+    stmt0->BindId(1, relationshipId);
+    while (stmt0->Step() == BE_SQLITE_ROW)
+        {
+        ECClassId constraintClassId = stmt0->GetValueId<ECClassId>(0);
+        BeAssert(!stmt0->IsColumnNull(1));
+        RelationshipEnd end = stmt0->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+
         auto constraintIt = constraintClassIds.find(constraintClassId);
         if (constraintIt == constraintClassIds.end())
             constraintClassIds[constraintClassId] = end;
@@ -1333,7 +1327,7 @@ void ECDbMap::LightweightCache::LoadRelationshipCache() const
             constraintClassIds[constraintClassId] = static_cast<RelationshipEnd>((int) (constraintIt->second) | (int) (end));
         }
 
-    m_loadedFlags.m_relationshipCacheIsLoaded = true;
+    return constraintClassIds;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1353,7 +1347,6 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
         "       INNER JOIN ec_Table ON ec_Table.Id = ec_ClassHasTable.TableId AND ec_Table.Type <> 1"
         "   WHERE  ec_ClassHierarchy.[BaseClassId] = ?";
         
-    //SELECT 
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1371,45 +1364,13 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
 
     return subset;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadHorizontalPartitions()  const
-    {
-    if (m_loadedFlags.m_horizontalPartitionsIsLoaded)
-        return;
-    Utf8String sql =
-        "SELECT ec_ClassHierarchy.[ClassId], ec_ClassHasTable.[TableId], ec_ClassHierarchy.[BaseClassId]"
-        "   FROM ec_ClassHasTable"
-        "       INNER JOIN ec_ClassHierarchy ON ec_ClassHierarchy.[ClassId] = ec_ClassHasTable.[ClassId]"
-        "       INNER JOIN ec_Table ON ec_Table.Id = ec_ClassHasTable.TableId AND ec_Table.Type <> 1";
-
-    CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        ECClassId derivedClassId = stmt->GetValueId<ECClassId>(0);
-        DbTableId tableId = stmt->GetValueId<DbTableId>(1);
-        ECClassId rootClassId = stmt->GetValueId<ECClassId>(2);
-        DbTable const* table = m_map.GetDbSchema().FindTable(tableId);
-
-        BeAssert(table != nullptr);
-        std::vector<ECClassId>& horizontalPartition = m_horizontalPartitions[rootClassId][table];
-        if (derivedClassId == rootClassId)
-            horizontalPartition.insert(horizontalPartition.begin(), derivedClassId);
-        else
-            horizontalPartition.insert(horizontalPartition.end(), derivedClassId);
-        }
-
-    m_loadedFlags.m_horizontalPartitionsIsLoaded = true;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 08/2015
 //---------------------------------------------------------------------------------------
 bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap::LightweightCache::GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const
     {
-    LoadRelationshipCache();
-    return m_constraintClassIdsPerRelClassIds[relClassId];
+    return LoadConstraintClassesForRelationships(relClassId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1417,12 +1378,7 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
 //---------------------------------------------------------------------------------------
 std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable(DbTable const& table) const
     {
-    //if (m_map.GetECDb().GetECSqlQueryOptimizationOption() == ECSqlQueryOptimizationOption::Interactive)
-        return LoadClassIdsPerTable(table);
- //   else
-    //    LoadClassIdsPerTable();
-
-    //return m_classIdsPerTable[&table];
+    return LoadClassIdsPerTable(table);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1430,12 +1386,7 @@ std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable(DbTa
 //---------------------------------------------------------------------------------------
 bset<DbTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
     {
-    //if (m_map.GetECDb().GetECSqlQueryOptimizationOption() == ECSqlQueryOptimizationOption::Interactive)
-        return LoadClassIdsPerTable(classId);
-    //else
-     //   LoadClassIdsPerTable();
-
-   // return m_tablesPerClassId[classId];
+    return LoadClassIdsPerTable(classId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1443,12 +1394,7 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::GetVerticalPartitionsForC
 //---------------------------------------------------------------------------------------
 ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache::GetHorizontalPartitionsForClass(ECN::ECClassId classId) const
     {
-    //if (m_map.GetECDb().GetECSqlQueryOptimizationOption() == ECSqlQueryOptimizationOption::Interactive)
-        return LoadHorizontalPartitions(classId);
-   // else
-     //   LoadHorizontalPartitions();
-
-   // return m_horizontalPartitions[classId];
+    return LoadHorizontalPartitions(classId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1456,11 +1402,6 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
 //---------------------------------------------------------------------------------------
 void ECDbMap::LightweightCache::Reset()
     {
-    m_loadedFlags.m_classIdsPerTableIsLoaded =
-        m_loadedFlags.m_relationshipPerTableLoaded =
-        m_loadedFlags.m_horizontalPartitionsIsLoaded =
-        m_loadedFlags.m_relationshipCacheIsLoaded = false;
-
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
     m_relationshipClassIdsPerConstraintClassIds.clear();

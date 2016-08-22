@@ -1657,6 +1657,7 @@ void SqlUpdater::Where(Utf8CP column, int64_t value)
     {
     m_whereMap[column] = ECN::ECValue(value);
     }
+#ifdef WIP_USE_PERSISTED_CACHE_TABLES
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1691,5 +1692,5 @@ DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     LOG.debugv("Re-populated ec_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
-
+#endif
 END_BENTLEY_SQLITE_EC_NAMESPACE

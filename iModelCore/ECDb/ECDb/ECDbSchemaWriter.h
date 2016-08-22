@@ -84,7 +84,8 @@ public:
     BentleyStatus Import(ECSchemaCompareContext&, ECN::ECSchemaCR);
 
     //! Rebuild fast access table for flattened baseClass hierarchy (ec_ClassHierarchy)
+#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     static DbResult RepopulateClassHierarchyTable(ECDbCR);
-
+#endif
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
