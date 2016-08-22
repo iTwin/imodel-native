@@ -30,9 +30,9 @@ DgnDbStatus viewControllerEdit(DgnViewportR viewport, DgnModelId newModel, DgnCa
     // You can turn display of a model on or off
     controller.ChangeModelDisplay(newModel, true);
 
-    // You can set up the view direction and extents using a single function.
+    // There are ViewController functions to set the view geometry. 
     // In this example, we set up the view to look at the entire project.
-    // Note that this particular example applies only to a 3D view.
+    // Note that this example applies only to a spatial view.
     controller.LookAtVolume(controller.GetDgnDb().Units().GetProjectExtents());
     
     // If this is a camera view, then you can also use specialized Camera functions

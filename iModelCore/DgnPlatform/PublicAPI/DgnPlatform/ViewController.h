@@ -654,6 +654,7 @@ struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : SpatialViewControlle
     {
     DEFINE_T_SUPER(SpatialViewController);
 
+protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
     DVec3d m_delta;                    //!< The extent of the view frustum.
     RotMatrix m_rotation;              //!< Rotation of the view frustum.
