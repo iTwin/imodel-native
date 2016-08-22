@@ -365,7 +365,7 @@ void AnnotationTableTest::SetUpTestCase()
     ASSERT_TRUE(textStyle->GetElementId().IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricModel2d)), DgnModel::CreateModelCode(TEST_MODEL_NAME)));
+    DgnModelPtr model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(TEST_MODEL_NAME)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     ASSERT_TRUE(model->GetModelId().IsValid());

@@ -1290,7 +1290,7 @@ static DgnClassId getComponentModelClassId(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ComponentModel::ComponentModel(DgnDbR db, DgnCode code, Utf8StringCR defName) : GeometricModel3d(CreateParams(db, getComponentModelClassId(db), code))
+ComponentModel::ComponentModel(DgnDbR db, DgnCode code, Utf8StringCR defName) : GeometricModel3d(CreateParams(db, getComponentModelClassId(db), DgnElementId() /* WIP: which element? */, code))
     {
     m_componentECClass = defName;
     BeAssert(!m_componentECClass.empty());

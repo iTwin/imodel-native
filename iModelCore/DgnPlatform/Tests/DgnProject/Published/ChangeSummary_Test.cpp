@@ -224,9 +224,13 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
     ChangeSummary changeSummary(*m_testDb);
 
     m_testDb->SaveChanges();
-    
-    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
-    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    EXPECT_TRUE(csModel.IsValid());
+
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
@@ -309,7 +313,7 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ElementChangesFromCurrentTransaction)
                 TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModelId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel, DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csModel->GetModelId().GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(csCategoryId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_CLASS_Category, DbOpcode::Insert));
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(elementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject, DbOpcode::Insert));
 
@@ -629,8 +633,12 @@ TEST_F(ChangeSummaryTestFixture, DISABLED_ValidateInstanceIterator)
     {
     CreateDgnDb();
 
-    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
-    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    EXPECT_TRUE(csModel.IsValid());
+
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId elementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
@@ -862,8 +870,12 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
     CreateDgnDb();
 
-    DgnModelId csModelId = InsertSpatialModel("ChangeSummaryModel");
-    SpatialModelPtr csModel = m_testDb->Models().Get<SpatialModel>(csModelId);
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr csModel = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("ChangeSummaryModel"));
+    EXPECT_TRUE(csModel.IsValid());
+
     DgnCategoryId csCategoryId = InsertCategory("ChangeSummaryCategory");
 
     DgnElementId parentElementId = InsertPhysicalElement(*csModel, csCategoryId, 0, 0, 0);
@@ -1000,7 +1012,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
+TEST_F(ChangeSummaryTestFixture, DISABLED_QueryMultipleSessions)
     {
     CreateDgnDb();
     m_testDb->SaveChanges();

@@ -162,6 +162,7 @@ public:
     ModelAuthority(CreateParams const& params) : T_Super(params) { }
 
     DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId);
 };
 
 //=======================================================================================

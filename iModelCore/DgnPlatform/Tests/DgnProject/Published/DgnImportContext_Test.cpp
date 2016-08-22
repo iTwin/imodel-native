@@ -137,14 +137,13 @@ static SpatialModelPtr copySpatialModelSameDb(SpatialModelCR model, Utf8CP newNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static SpatialModelPtr createSpatialModel(DgnDbR db, Utf8CP newName)
+static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP name)
 {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
-    if (!model.IsValid())
-        return nullptr;
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, name); // create a placeholder Subject for the DgnModel to describe
+    BeAssert(modelSubject.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode(name));
+    BeAssert(model.IsValid());
     return model;
 }
 
@@ -173,7 +172,7 @@ TEST_F(ImportTest, ImportGroups)
     // ******************************
     //  Create model1
 
-    SpatialModelPtr model1 = createSpatialModel(*m_db, "Model1");
+    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
@@ -419,7 +418,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     DgnSubCategoryId sourceSubCategory2Id = sourceSubCategory2->GetSubCategoryId();
 
     //  Create the source model
-    SpatialModelPtr sourcemod = createSpatialModel(*sourceDb, "sourcemod");
+    PhysicalModelPtr sourcemod = createPhysicalModel(*sourceDb, "sourcemod");
     ASSERT_TRUE( sourcemod.IsValid() );
 
     // Put elements in this category into the source model
@@ -450,7 +449,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
             ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i).c_str(), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
             }
 
-        SpatialModelPtr destmod = createSpatialModel(*destDb, "destmod");
+        PhysicalModelPtr destmod = createPhysicalModel(*destDb, "destmod");
         ASSERT_TRUE( destmod.IsValid() );
 
         DgnImportContext importContext(*sourceDb, *destDb);
@@ -515,9 +514,8 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
-    ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
+    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
+    ASSERT_TRUE(model1.IsValid());
 
     // Put an element with an Item into moddel1
     {
@@ -575,9 +573,8 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
-    ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
+    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
+    ASSERT_TRUE(model1.IsValid());
 
     // Create 2 elements and make the first depend on the second
     {

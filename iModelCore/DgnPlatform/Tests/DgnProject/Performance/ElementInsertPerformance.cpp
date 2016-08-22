@@ -77,7 +77,6 @@ struct PerformanceElementTestFixture : public DgnDbTestFixture
             "</ECSchema>";
 
         BentleyStatus ImportTestSchema() const;
-        SpatialModelPtr CreateSpatialModel() const;
     };
 
 //static
@@ -108,17 +107,6 @@ BentleyStatus PerformanceElementTestFixture::ImportTestSchema() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SpatialModelPtr PerformanceElementTestFixture::CreateSpatialModel() const
-    {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    SpatialModelPtr targetModel = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Instances")));
-    EXPECT_EQ(DgnDbStatus::Success, targetModel->Insert());       /* Insert the new model into the DgnDb */
-    return targetModel;
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -127,7 +115,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    SpatialModelPtr model = CreateSpatialModel();
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
     ASSERT_TRUE(model != nullptr);
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
@@ -192,7 +180,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    SpatialModelPtr model = CreateSpatialModel();
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
     ASSERT_TRUE(model != nullptr);
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());
@@ -264,7 +252,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachN
     SetupSeedProject();
     ASSERT_EQ(SUCCESS, ImportTestSchema());
 
-    SpatialModelPtr model = CreateSpatialModel();
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("Instances"));
     ASSERT_TRUE(model != nullptr);
     DgnModelId modelId = model->GetModelId();
     ASSERT_TRUE(modelId.IsValid());

@@ -144,9 +144,11 @@ protected:
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateDgnDbTables();
+    BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateAuthorities();
     BeSQLite::DbResult CreateRepositoryModel();
+    BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params);
+    BeSQLite::DbResult CreateRepositoryLink(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDictionaryModel();
     BeSQLite::DbResult CreateGroupInformationModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);

@@ -36,10 +36,10 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
+static DgnDbStatus createPhysicalModel(SpatialModelPtr& model, DgnDbR db, DgnCodeCR code)
     {
-    catalogModel = DgnDbTestUtils::InsertSpatialModel(db, code);
-    return catalogModel.IsValid()? DgnDbStatus::Success : DgnDbStatus::NotFound;
+    model = DgnDbTestUtils::InsertPhysicalModel(db, code);
+    return model.IsValid()? DgnDbStatus::Success : DgnDbStatus::NotFound;
     }
 
 /*=================================================================================**//**
@@ -436,7 +436,7 @@ void ComponentModelTest::Client_ImportComponentDef(Utf8CP componentName)
 
     SpatialModelPtr catalogModel = DgnDbTestUtils::GetModelByName<SpatialModel>(*m_clientDb, "Catalog");
     if (!catalogModel.IsValid())
-        createSpatialModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
+        createPhysicalModel(catalogModel, *m_clientDb, DgnModel::CreateModelCode("Catalog"));
 
     ASSERT_TRUE(catalogModel.IsValid());
 
@@ -534,7 +534,7 @@ void ComponentModelTest::SimulateDeveloper()
 
         //  Test the components
         SpatialModelPtr tmpModel;
-        createSpatialModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
+        createPhysicalModel(tmpModel, *m_componentDb, DgnModel::CreateModelCode("tmp"));
 
         DgnElementCPtr inst;
         m_wsln1.MakeUniqueInstance(inst, *tmpModel, 2);
@@ -551,7 +551,7 @@ void ComponentModelTest::SimulateDeveloper()
         //  Create catalogs
 
         SpatialModelPtr catalogModel;
-        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
+        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(catalogModel, *m_componentDb, DgnModel::CreateModelCode("Catalog")) );
 
         if (true)
             {
@@ -646,7 +646,7 @@ void ComponentModelTest::SimulateClient()
         AutoCloseClientDb closeClientDbAtEnd(*this);
         //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
         SpatialModelPtr targetModel;
-        ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+        ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
         //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
         for (int i=0; i<10; ++i)
@@ -814,7 +814,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNestingSingleton)
     Client_ImportComponentDef(TEST_THING_COMPONENT_NAME);
 
     SpatialModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     VariationSpec nparms = m_nsln1;
     nparms.m_params["A"].m_value.SetDouble(9999);
@@ -865,7 +865,7 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClientWithNesting)
     Client_ImportComponentDef(TEST_GADGET_COMPONENT_NAME);
 
     SpatialModelPtr targetModel;
-    ASSERT_EQ( DgnDbStatus::Success , createSpatialModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
+    ASSERT_EQ( DgnDbStatus::Success , createPhysicalModel(targetModel, *m_clientDb, DgnModel::CreateModelCode("Instances")) );
 
     DgnElementCPtr instanceElement;
     m_nsln1.MakeUniqueInstance(instanceElement, *targetModel, 1);

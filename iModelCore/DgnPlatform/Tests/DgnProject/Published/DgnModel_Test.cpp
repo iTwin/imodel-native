@@ -215,7 +215,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         //  Create a sheet
         DPoint2d sheetSize = DPoint2d::From(.100, .100);
         SheetModel::CreateParams params(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel)),
-                                DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
+                                DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(s_sheet1Name), sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
         sheet1->SetUserLabel("a sheet model (in mm)");
@@ -232,7 +232,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         //  Create a second sheet
         SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel)),
-                                DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
+                                DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(s_sheet2Name), sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE(sheet2.IsValid());
         sheet2->SetUserLabel("a second sheet model");

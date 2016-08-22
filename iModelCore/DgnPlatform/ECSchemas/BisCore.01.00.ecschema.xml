@@ -239,24 +239,32 @@
     <ECEntityClass typeName="GeometricModel3d" modifier="Abstract">
         <BaseClass>GeometricModel</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="GeometricModel2d">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
+    <ECEntityClass typeName="GeometricModel2d" modifier="Abstract">
         <BaseClass>GeometricModel</BaseClass>
         <ECProperty propertyName="GlobalOrigin" displayLabel="Global Origin" typeName="point2d"/>
     </ECEntityClass>
     <ECEntityClass typeName="GraphicalModel2d" modifier="Abstract">
         <BaseClass>GeometricModel2d</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="SpatialModel" displayLabel="Spatial Model">
+    <ECEntityClass typeName="SpatialModel" displayLabel="Spatial Model" modifier="Abstract">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GeometricModel3d</BaseClass>
     </ECEntityClass>
+    <ECEntityClass typeName="PhysicalModel" displayLabel="Physical Model">
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>SpatialModel</BaseClass>
+        <ECProperty propertyName="IsTemplate" typeName="boolean">
+        </ECProperty>
+    </ECEntityClass>
     <ECEntityClass typeName="DrawingModel" displayLabel="Drawing Model">
         <BaseClass>GraphicalModel2d</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="SectionDrawingModel" displayLabel="Section Drawing Model">
         <ECCustomAttributes>
@@ -349,6 +357,24 @@
         <Target cardinality="(0,1)" polymorphic="true">
             <!-- WIP: cardinality should be (1,1) -->
             <Class class="Element" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="DictionaryModelIsForSubject" strength="embedding" strengthDirection="Backward">
+        <BaseClass>ModelModelsElement</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="false">
+            <Class class="DictionaryModel"/>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="false">
+            <Class class="Subject" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="GroupInformationModelIsForSubject" strength="embedding" strengthDirection="Backward">
+        <BaseClass>ModelModelsElement</BaseClass>
+        <Source cardinality="(0,1)" polymorphic="false">
+            <Class class="GroupInformationModel"/>
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="false">
+            <Class class="Subject" />
         </Target>
     </ECRelationshipClass>
 
@@ -513,6 +539,18 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="PhysicalType" modifier="Abstract">
+        <BaseClass>DefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PhysicalElementIsOfType" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="PhysicalElement" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="PhysicalType"/>
+        </Target>
+    </ECRelationshipClass>
+
     <ECEntityClass typeName="Subject" modifier="Sealed">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
@@ -548,14 +586,26 @@
         </ECCustomAttributes>
         <BaseClass>LinkElement</BaseClass>
         <ECProperty propertyName="Url" displayLabel="URL" typeName="string">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="RepositoryLink" modifier="Sealed">
+        <BaseClass>UrlLink</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="RepositoryGuid" typeName="binary">
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
 
@@ -576,14 +626,14 @@
         </ECCustomAttributes>
         <BaseClass>LinkElement</BaseClass>
         <ECProperty propertyName="Name" typeName="string">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
+            <ECCustomAttributes>
+                <CustomHandledProperty/>
+            </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
 

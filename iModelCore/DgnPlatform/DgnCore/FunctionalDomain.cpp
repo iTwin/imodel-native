@@ -55,9 +55,10 @@ DgnDbStatus FunctionalDomain::ImportSchema(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    08/2016
 //---------------------------------------------------------------------------------------
-FunctionalModelPtr FunctionalModel::Create(DgnDbR db, DgnCode const& code)
+FunctionalModelPtr FunctionalModel::Create(DgnElementCR modeledElement)
     {
     ModelHandlerR handler = func_ModelHandler::Functional::GetHandler();
+    DgnDbR db = modeledElement.GetDgnDb();
     DgnClassId classId = db.Domains().GetClassId(handler);
     if (!classId.IsValid())
         {
@@ -65,7 +66,8 @@ FunctionalModelPtr FunctionalModel::Create(DgnDbR db, DgnCode const& code)
         return nullptr;
         }
 
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, code));
+    DgnCode code = DgnModel::CreateModelCode(FUNCTIONAL_SCHEMA(FUNC_CLASSNAME_FunctionalModel), modeledElement.GetElementId());
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
     if (!model.IsValid())
         {
         BeAssert(false);
