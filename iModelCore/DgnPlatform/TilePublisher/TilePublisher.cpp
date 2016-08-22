@@ -77,7 +77,7 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
         found = m_map.insert(bmap<DgnElementId, uint16_t>::value_type(elemId, batchId)).first;
         }
 
-    return found->second;
+    return found->second; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -87,7 +87,7 @@ void BatchIdMap::ToJson(Json::Value& value) const
     {
     Json::Value elementIds(Json::arrayValue);
     for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
-        elementIds.append(elemIter->GetValueUnchecked());   // ###TODO: Convert to string...javascript doesn't support 64-bit integers...
+        elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
 
     value["element"] = elementIds;
     }
@@ -152,7 +152,7 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tolerance, WStringCR b3dmPath, const bvector<WString>& childrenFilePaths)
+void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tolerance, WStringCR b3dmPath)
     {
     val["asset"]["version"] = "0.0";
     val[JSON_GeometricError] = tile.GetTolerance();
@@ -164,14 +164,24 @@ void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tole
     root[JSON_GeometricError] = tile.GetTolerance() * s_toleranceRatio;
     WriteBoundingVolume(root, tile);
 
+    if (0 == m_tile.GetDepth() && !m_context.GetTileToEcef().IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+        auto&       transformValue = val[JSON_Root][JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
     root[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(b3dmPath.c_str()).c_str()).c_str();
-    if (!childrenFilePaths.empty())
+    if (!tile.GetChildren().empty())
         root[JSON_Children] = Json::arrayValue;
 
-    for (auto& path : childrenFilePaths)
+    for (auto& childTile : tile.GetChildren())
         {
-        Json::Value child;
-        TileNodeCR childTile = tile.GetChildren()[&path - &childrenFilePaths.front()];
+        Json::Value         child;
+        WString             path = GetTileMetadataName(childTile);
 
         child[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(path.c_str()).c_str()).c_str();
         child[JSON_GeometricError] = childTile.GetTolerance();
@@ -233,15 +243,10 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilePublisher::Publish()
     {
-    BeFileName b3dmPath(nullptr, GetDataDirectory().c_str(), (GetPrefix() + GetNodeNameSuffix(m_tile)).c_str(), L"b3dm");
-
-    // .json file
-    bvector<WString> childrenPaths;
-    for (auto const& child : m_tile.GetChildren())
-        childrenPaths.push_back(GetTileMetadataName(child));
-
+    BeFileName  b3dmPath(nullptr, GetDataDirectory().c_str(), (GetPrefix() + GetNodeNameSuffix(m_tile)).c_str(), L"b3dm");
     Json::Value val;
-    WriteMetadata(val, m_tile, m_tile.GetTolerance(), b3dmPath, childrenPaths);
+
+    WriteMetadata(val, m_tile, m_tile.GetTolerance(), b3dmPath);
 
     Utf8String metadataStr = Json::FastWriter().write(val);
 
@@ -380,7 +385,7 @@ void TilePublisher::AddTextures(Json::Value& rootNode, TextureIdToNameMap& texNa
             Utf8String bvImageId = (std::string("bv_img_") + std::to_string(material_id)).c_str();
 
             rootNode["materials"][materialId] = Json::objectValue;
-            rootNode["materials"][materialId]["technique"] = "tech_1";
+            rootNode["materials"][materialId]["technique"] = "texturedTechnique";
             rootNode["materials"][materialId]["values"]["tex"] = textureId.c_str();
 
             rootNode["textures"][textureId] = Json::objectValue;
@@ -416,105 +421,193 @@ void TilePublisher::AddTextures(Json::Value& rootNode, TextureIdToNameMap& texNa
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
+* @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddShaders(Json::Value& rootNode, bool isTextured)
+Json::Value     TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     {
-    auto& tech0 = (rootNode["techniques"]["tech_0"] = Json::objectValue);
-    AddTechniqueParameter(tech0, "color", GLTF_FLOAT_VEC4, nullptr);
-    AddTechniqueParameter(tech0, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
-    AddTechniqueParameter(tech0, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
-    AddTechniqueParameter(tech0, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    AddTechniqueParameter(tech0, "n", GLTF_FLOAT_VEC3, "NORMAL");
-    AddTechniqueParameter(tech0, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
-#if USE_BATCH_TABLE
-    AddTechniqueParameter(tech0, "batch", GLTF_FLOAT, "BATCHID");
-#endif
-    tech0["program"] = "prog_0";
+    Json::Value     technique = Json::objectValue;
 
-    tech0["states"]["enable"] = Json::arrayValue;
-    tech0["states"]["enable"].append(GLTF_DEPTH_TEST);
-    tech0["states"]["enable"].append(GLTF_CULL_FACE);
+    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
+    AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    auto& tech0Attributes = tech0["attributes"];
-    tech0Attributes["a_pos"] = "pos";
-    tech0Attributes["a_n"] = "n";
-#if USE_BATCH_TABLE
-    tech0Attributes["a_batchId"] = "batch";
-#endif
+    static char         *s_programName                    = "polylineProgram",
+                        *s_vertexShaderName               = "polylineVertexShader",
+                        *s_fragmentShaderName             = "polylineFragmentShader",
+                        *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
+                        *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
 
-    auto& tech0Uniforms = tech0["uniforms"];
-    tech0Uniforms["u_color"] = "color";
-    tech0Uniforms["u_mv"] = "mv";
-    tech0Uniforms["u_proj"] = "proj";
-    tech0Uniforms["u_nmx"] = "nmx";
+    technique["program"] = s_programName;
 
-    auto& prog0 = (rootNode["programs"]["prog_0"] = Json::objectValue);
-    prog0["attributes"] = Json::arrayValue;
-    AppendProgramAttribute(prog0, "a_pos");
-    AppendProgramAttribute(prog0, "a_n");
-#if USE_BATCH_TABLE
-    AppendProgramAttribute(prog0, "a_batchId");
-#endif
+    auto&   techniqueStates = technique["states"];
+    techniqueStates["enable"] = Json::arrayValue;
+    techniqueStates["enable"].append(GLTF_DEPTH_TEST);
 
-    prog0["vertexShader"] = "vs";
-    prog0["fragmentShader"] = "fs";
+    auto& techniqueAttributes = technique["attributes"];
+    techniqueAttributes["a_pos"] = "pos";
+    techniqueAttributes["a_batchId"] = "batch";
+
+    auto& techniqueUniforms = technique["uniforms"];
+    techniqueUniforms["u_mv"] = "mv";
+    techniqueUniforms["u_proj"] = "proj";
+
+    auto& rootProgramNode = (rootNode["programs"][s_programName] = Json::objectValue);
+    rootProgramNode["attributes"] = Json::arrayValue;
+    AppendProgramAttribute(rootProgramNode, "a_pos");
+    AppendProgramAttribute(rootProgramNode, "a_batchId");
+
+    rootProgramNode["vertexShader"]   = s_vertexShaderName;
+    rootProgramNode["fragmentShader"] = s_fragmentShaderName;
 
     auto& shaders = rootNode["shaders"];
-    AddShader(shaders, "vs", GLTF_VERTEX_SHADER, "bv_vs");
-    AddShader(shaders, "fs", GLTF_FRAGMENT_SHADER, "bv_fs");
+    AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
+    AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
 
     auto& bufferViews = rootNode["bufferViews"];
-    AddBufferView(bufferViews, "bv_vs", s_untexturedVertexShader);
-    AddBufferView(bufferViews, "bv_fs", s_untexturedFragShader);
 
-    if (isTextured)
+    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_polylineVertexShader);
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+
+    AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+    techniqueUniforms["u_color"] = "color";
+
+    return technique;
+    
+
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     TilePublisher::AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent)
+    {
+    Json::Value     technique = Json::objectValue;
+
+    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
+    AddTechniqueParameter(technique, "n", GLTF_FLOAT_VEC3, "NORMAL");
+    AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
+    AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+    std::string         prefix = textured ? "textured" : "untextured";
+
+    if (transparent)
+        prefix = prefix + "Transparent";
+
+    std::string         programName               = prefix + "Program";
+    std::string         vertexShader              = prefix + "VertexShader";
+    std::string         fragmentShader            = prefix + "FragmentShader";
+    std::string         vertexShaderBufferView    = vertexShader + "BufferView";
+    std::string         fragmentShaderBufferView  = fragmentShader + "BufferView";
+
+    technique["program"] = programName.c_str();
+
+    auto&   techniqueStates = technique["states"];
+    techniqueStates["enable"] = Json::arrayValue;
+    techniqueStates["enable"].append(GLTF_DEPTH_TEST);
+    techniqueStates["disable"].append(GLTF_CULL_FACE);
+
+    auto& techniqueAttributes = technique["attributes"];
+    techniqueAttributes["a_pos"] = "pos";
+    techniqueAttributes["a_n"] = "n";
+    techniqueAttributes["a_batchId"] = "batch";
+
+    auto& techniqueUniforms = technique["uniforms"];
+    techniqueUniforms["u_mv"] = "mv";
+    techniqueUniforms["u_proj"] = "proj";
+    techniqueUniforms["u_nmx"] = "nmx";
+
+    auto& rootProgramNode = (rootNode["programs"][programName.c_str()] = Json::objectValue);
+    rootProgramNode["attributes"] = Json::arrayValue;
+    AppendProgramAttribute(rootProgramNode, "a_pos");
+    AppendProgramAttribute(rootProgramNode, "a_n");
+    AppendProgramAttribute(rootProgramNode, "a_batchId");
+
+    rootProgramNode["vertexShader"]   = vertexShader.c_str();
+    rootProgramNode["fragmentShader"] = fragmentShader.c_str();
+
+    auto& shaders = rootNode["shaders"];
+    AddShader(shaders, vertexShader.c_str(), GLTF_VERTEX_SHADER, vertexShaderBufferView.c_str());
+    AddShader(shaders, fragmentShader.c_str(), GLTF_FRAGMENT_SHADER, fragmentShaderBufferView.c_str());
+
+    auto& bufferViews = rootNode["bufferViews"];
+
+
+    AddBufferView(bufferViews, vertexShaderBufferView.c_str(), textured ? s_texturedVertexShader : s_untexturedVertexShader);
+    AddBufferView(bufferViews, fragmentShaderBufferView.c_str(), textured ? s_texturedFragShader   : s_untexturedFragShader); 
+
+    // Diffuse...
+    if (textured)
         {
+        AddTechniqueParameter(technique, "tex", GLTF_SAMPLER_2D, nullptr);
+        AddTechniqueParameter(technique, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
+
         rootNode["samplers"]["sampler_0"] = Json::objectValue;
         rootNode["samplers"]["sampler_0"]["minFilter"] = GLTF_LINEAR;
 
-        auto& tech1 = (rootNode["techniques"]["tech_1"] = Json::objectValue);
-        AddTechniqueParameter(tech1, "tex", GLTF_SAMPLER_2D, nullptr);
-        AddTechniqueParameter(tech1, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
-        AddTechniqueParameter(tech1, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
-        AddTechniqueParameter(tech1, "pos", GLTF_FLOAT_VEC3, "POSITION");
-        AddTechniqueParameter(tech1, "texc", GLTF_FLOAT_VEC2, "TEXCOORD_0");
-#if USE_BATCH_TABLE
-        AddTechniqueParameter(tech1, "batch", GLTF_FLOAT, "BATCHID");
-#endif
-        tech1["program"] = "prog_1";
-
-        tech1["states"]["enable"] = Json::arrayValue;
-        tech1["states"]["enable"].append(GLTF_DEPTH_TEST);
-        tech1["states"]["enable"].append(GLTF_CULL_FACE);
-
-        auto& tech1Attributes = tech1["attributes"];
-        tech1Attributes["a_pos"] = "pos";
-        tech1Attributes["a_texc"] = "texc";
-
-        auto& tech1Uniforms = tech1["uniforms"];
-        tech1Uniforms["u_tex"] = "tex";
-        tech1Uniforms["u_mv"] = "mv";
-        tech1Uniforms["u_proj"] = "proj";
-
-        auto& prog1 = (rootNode["programs"]["prog_1"] = Json::objectValue);
-        AppendProgramAttribute(prog1, "a_pos");
-        AppendProgramAttribute(prog1, "a_texc");
-#if USE_BATCH_TABLE
-        AppendProgramAttribute(prog1, "a_batchId");
-#endif
-
-        prog1["vertexShader"] = "vs_tex";
-        prog1["fragmentShader"] = "fs_tex";
-
-        auto& prog1Shaders = rootNode["shaders"];
-        AddShader(prog1Shaders, "vs_tex", GLTF_VERTEX_SHADER, "bv_vs_tex");
-        AddShader(prog1Shaders, "fs_tex", GLTF_FRAGMENT_SHADER, "bv_fs_tex");
-
-        AddBufferView(bufferViews, "bv_vs_tex", s_texturedVertexShader);
-        AddBufferView(bufferViews, "bv_fs_tex", s_texturedFragShader);
+        technique["uniforms"]["u_tex"] = "tex";
+        technique["attributes"]["a_texc"] = "texc";
+        AppendProgramAttribute(rootProgramNode, "a_texc");
         }
+    else
+        {
+        AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+        techniqueUniforms["u_color"] = "color";
+        }
+    // Specular...
+    AddTechniqueParameter(technique, "specularColor", GLTF_FLOAT_VEC3, nullptr);
+    techniqueUniforms["u_specularColor"] = "specularColor";
+
+    AddTechniqueParameter(technique, "specularExponent", GLTF_FLOAT, nullptr);
+    techniqueUniforms["u_specularExponent"] = "specularExponent";
+
+    // Transparency requires blending extensions...
+    if (transparent)
+        {
+        technique["states"]["enable"].append (3042);  // BLEND
+
+        auto&   techniqueFunctions =    technique["states"]["functions"] = Json::objectValue;
+
+        techniqueFunctions["blendEquationSeparate"] = Json::arrayValue;
+        techniqueFunctions["blendFuncSeparate"]     = Json::arrayValue;
+
+        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
+        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (aphla)
+    
+        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
+        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
+        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcAlpha)
+        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstAlpha)
+        
+        techniqueFunctions["depthMask"] = "false";
+        }
+
+    return technique;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::AddShaders(Json::Value& rootNode, bool isTextured)
+    {
+    bool        polylinesPresent       = true;
+
+    rootNode["techniques"]["untexturedTechnique"] = AddShaderTechnique (rootNode, false, false);
+    rootNode["techniques"]["untexturedTechniqueTransparent"] = AddShaderTechnique (rootNode, false, true);
+
+    if (true) /* transparent geometry exists */
+        {
+        rootNode["techniques"]["texturedTechnique"] = AddShaderTechnique (rootNode, true, false);
+        rootNode["techniques"]["texturedTechniqueTransparent"] = AddShaderTechnique (rootNode, true, true);
+        }
+    
+    if (polylinesPresent)
+        rootNode["techniques"]["polylineTechnique"] = AddPolylineShaderTechnique (rootNode);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     07/2016
@@ -551,12 +644,29 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         }
 
     bvector<unsigned int> indices;
-    indices.reserve(mesh.Triangles().size() * 3);
-    for (auto const& tri : mesh.Triangles())
+
+    BeAssert (mesh.Triangles().empty() || mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
+
+    if (!mesh.Triangles().empty())
         {
-        indices.push_back((unsigned int)tri.m_indices[0]);
-        indices.push_back((unsigned int)tri.m_indices[1]);
-        indices.push_back((unsigned int)tri.m_indices[2]);
+        indices.reserve(mesh.Triangles().size() * 3);
+        for (auto const& tri : mesh.Triangles())
+            {
+            indices.push_back((unsigned int)tri.m_indices[0]);
+            indices.push_back((unsigned int)tri.m_indices[1]);
+            indices.push_back((unsigned int)tri.m_indices[2]);
+            }
+        }
+    else if (!mesh.Polylines().empty())
+        {
+        for (auto const& polyline : mesh.Polylines())
+            {
+            for (size_t i=0; i<polyline.m_indices.size()-1; i++)
+                {
+                indices.push_back (polyline.m_indices[i]);
+                indices.push_back (polyline.m_indices[i+1]);
+                }
+            }
         }
 
     bvector<float> uvs;
@@ -564,7 +674,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     for (auto const& uv : mesh.Params())
         {
         uvs.push_back((float)uv.x);
-        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or are v- convention is mismatched.
+        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or our v- convention is mismatched.
         }
 
     bvector<float> normals;
@@ -584,10 +694,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
 #endif
 
     Json::Value attr = Json::objectValue;
+
     attr["attributes"]["POSITION"] = acc_pos_id;
-    if (texId != -1)
+
+    if (!uvs.empty())
         attr["attributes"]["TEXCOORD_0"] = acc_uv_id;
-    else
+
+    if (!normals.empty())
         attr["attributes"]["NORMAL"] = acc_n_id;
 
 #if USE_BATCH_TABLE
@@ -599,15 +712,50 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     if (texId == -1)
         {
         Utf8String matName = Utf8String(WPrintfString(L"mat_%d", (int)id+baseMatId).c_str());
-        rootNode["materials"][matName.c_str()] = Json::objectValue;
-        rootNode["materials"][matName.c_str()]["technique"] = "tech_0";
-        rootNode["materials"][matName.c_str()]["values"]["color"] = Json::arrayValue;
+
+        auto& material = rootNode["materials"][matName.c_str()] = Json::objectValue;
+        auto& materialColor = material["values"]["color"] = Json::arrayValue;
         uint32_t rgb = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
-        rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[0]/255.0);
-        rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[1]/255.0);
-        rootNode["materials"][matName.c_str()]["values"]["color"].append(((uint8_t*)&rgb)[2]/255.0);
+        materialColor.append(((uint8_t*)&rgb)[0]/255.0);
+        materialColor.append(((uint8_t*)&rgb)[1]/255.0);
+        materialColor.append(((uint8_t*)&rgb)[2]/255.0);
         double alpha = 1.0 - ((uint8_t*)&rgb)[3]/255.0;
-        rootNode["materials"][matName.c_str()]["values"]["color"].append(alpha);
+        materialColor.append(alpha);
+        material["technique"] = mesh.Triangles().empty() ? "polylineTechnique" : ((1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent");
+
+        if (!mesh.Triangles().empty())
+            {
+            double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
+            RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
+
+#ifdef NEEDS_WORK_MATERIALS
+            if (nullptr != mesh.GetDisplayParams() && mesh.GetDisplayParams().GetMaterialId().IsValid())
+                {
+            if (NULL != mesh.GetDisplayParams() && 
+                NULL != mesh.GetDisplayParams()->GetMaterial())
+                {
+                JsonRenderMaterial mat = 
+
+
+
+                MaterialSettingsCR  materialSettings = mesh.m_matSymb->GetMaterial()->GetSettings();
+                static double       s_finishScale = 15.0;
+
+                if (materialSettings.HasSpecularColor())
+                    specularColor = materialSettings.GetSpecularColor();
+
+                if (materialSettings.HasFinishScale())
+                    specularExponent = materialSettings.GetFinishScaleForStorage() * s_finishScale;
+                }
+#endif
+
+            material["values"]["specularExponent"] = specularExponent;
+            auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
+            materialSpecularColor.append (specularColor.red);
+            materialSpecularColor.append (specularColor.green);
+            materialSpecularColor.append (specularColor.blue);
+            }
+
         attr["material"] = matName.c_str();
         }
     else
@@ -615,7 +763,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         attr["material"] = texNames[texId];
         }
 
-    attr["mode"] = GLTF_TRIANGLES;
+    attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
 
     rootNode["bufferViews"][bv_pos_id] = Json::objectValue;
@@ -685,7 +833,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     rootNode["accessors"][acc_bat_id]["type"] = "SCALAR";
 #endif
 
-    if (texId != -1) //textured mesh
+    if (!uvs.empty())
         {
         rootNode["bufferViews"][bv_uv_id] = Json::objectValue;
         rootNode["bufferViews"][bv_uv_id]["buffer"] = "binary_glTF";
@@ -704,7 +852,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         rootNode["accessors"][acc_uv_id]["count"] = uvs.size();
         rootNode["accessors"][acc_uv_id]["type"] = "VEC2";
         }
-    else
+
+    if (!normals.empty())
         {
         rootNode["bufferViews"][bv_n_id] = Json::objectValue;
         rootNode["bufferViews"][bv_n_id]["buffer"] = "binary_glTF";
@@ -803,6 +952,43 @@ TilesetPublisher::Status TilesetPublisher::Setup()
     if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
         return Status::CantCreateSubDirectory;
 
+    // For now use view center... maybe should use the DgnDb range center.
+    DPoint3d        origin = m_viewController.GetCenter ();
+
+    m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
+
+    DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+
+    if (nullptr == dgnGCS)
+        {
+        m_tileToEcef    = Transform::FromIdentity ();   
+        }
+    else
+        {
+        GeoPoint        originLatLong, northLatLong;
+        DPoint3d        ecfOrigin, ecfNorth, north = origin;
+    
+        north.y += 100.0;
+
+        dgnGCS->LatLongFromUors (originLatLong, origin);
+        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
+
+        dgnGCS->LatLongFromUors (northLatLong, north);
+        dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+
+        DVec3d      zVector, yVector;
+        RotMatrix   rMatrix;
+
+        zVector.Normalize ((DVec3dCR) ecfOrigin);
+        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+        rMatrix.SetColumn (yVector, 1);
+        rMatrix.SetColumn (zVector, 2);
+        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+
+        m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
+        }
+
     return Status::Success;
     }
 
@@ -832,12 +1018,42 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
         }
     }
 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp()
+TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<Utf8String>& viewedTileSetNames)
     {
-    Utf8PrintfString html(s_viewerHtml, m_rootName.c_str(), m_rootName.c_str());
+    // Set up initial view based on view controller settings
+    DVec3d xVec, yVec, zVec;
+    m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
+
+    auto cameraView = m_viewController._ToCameraView();
+    bool useCamera = nullptr != cameraView && cameraView->IsCameraOn();
+    DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
+    if (!useCamera)
+        {
+        static const double s_zRatio = 1.5;
+        DVec3d viewDelta = m_viewController.GetDelta();
+        viewDest = DPoint3d::FromSumOf(viewDest, zVec, std::max(viewDelta.x, viewDelta.y) * s_zRatio);
+        }
+
+    transform.Multiply(viewDest);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    bool geoLocated = !m_tileToEcef.IsIdentity();
+    Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
+    Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
+
+    // Produce the html file contents
+    Utf8PrintfString html(s_viewerHtml, viewOptionString, m_rootName.c_str(), m_rootName.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
 
@@ -852,6 +1068,15 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TilesetPublisher
+::Status   TilesetPublisher::PublishViewedModel (Utf8String& tileSetName, DgnModelR model)
+    {
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetPublisher::Publish()
@@ -860,19 +1085,15 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     if (Status::Success != status)
         return status;
 
-    static bool s_convertToYUp = false;
-    RotMatrix rot = s_convertToYUp ? RotMatrix::From2Vectors(DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0)) : RotMatrix::FromIdentity();
-    Transform transformFromDgn = Transform::From(rot);
-
     ProgressMeter progressMeter(*this);
-    TileGenerator generator(transformFromDgn, &progressMeter);
+    TileGenerator generator (m_dbToTile, &progressMeter);
 
     static double s_toleranceInMeters = 0.01;
     status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
     if (Status::Success != status)
         return status;
 
-    static const size_t s_maxPointsPerTile = 250000;
+    static const size_t s_maxPointsPerTile = 20000;
     TileNode rootNode;
     status = ConvertStatus(generator.GenerateTiles(rootNode, s_toleranceInMeters, s_maxPointsPerTile));
     if (Status::Success != status)
@@ -880,11 +1101,74 @@ TilesetPublisher::Status TilesetPublisher::Publish()
 
     m_generator = &generator;
     status = ConvertStatus(generator.CollectTiles(rootNode, *this));
+
+    bvector<Utf8String>   viewedTileSetNames;
+#ifdef VIEWED_TILE_WIP
+    for (auto& modelId : m_viewController.GetViewedModels())
+        {
+        Utf8String      tileSetName;
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelID);
+
+        if (viewedModel.IsValid() &&
+            Status::Success == PublishViewedModel (tileSetName, *viewedModel))
+            viewedTileSetNames.push_back (tileSetName);
+        }
+#endif
+
     m_generator = nullptr;
 
     if (Status::Success != status)
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
-    return WriteWebApp();
+    OutputStatistics(generator.GetStatistics());
+
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
+    {
+    printf("Statistics:\n"
+           "Tile count: %u\n"
+           "Tile depth: %u\n"
+           "Geometry collection time: %.4f seconds\n"
+           "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
+           static_cast<uint32_t>(stats.m_tileCount),
+           static_cast<uint32_t>(stats.m_tileDepth),
+           stats.m_collectionTime,
+           stats.m_tileCreationTime,
+           0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint32_t total)
+    {
+    if (m_lastNumCompleted == completed)
+        {
+        printf("...");
+        }
+    else
+        {
+        m_lastNumCompleted = completed;
+        uint32_t pctComplete = static_cast<double>(completed)/total * 100;
+        printf("\n%s: %u%% (%u/%u)%s", m_taskName.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
+    {
+    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Collecting Geometry";
+    if (!m_taskName.Equals(newTaskName))
+        {
+        m_lastNumCompleted = 0xffffffff;
+        m_taskName = newTaskName;
+        }
     }
 

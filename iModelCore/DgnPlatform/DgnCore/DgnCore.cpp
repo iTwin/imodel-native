@@ -247,15 +247,17 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
     BeAssert(NULL == m_notificationAdmin); m_notificationAdmin = &_SupplyNotificationAdmin();
-    BeAssert (NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
+    BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
-    BeStringUtilities::Initialize(m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory());
+    auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
+
+    BeStringUtilities::Initialize(assetDir);
     ECDb::Initialize(m_knownLocationsAdmin->GetLocalTempDirectoryBaseName(),
-                      &m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory(),
+                      &assetDir,
                       m_notificationAdmin->_GetLogSQLiteErrors() ? BeSQLiteLib::LogErrors::Yes : BeSQLiteLib::LogErrors::No);
     L10N::Initialize(_SupplySqlangFiles());
 
-    GeoCoordinates::BaseGCS::Initialize (GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
+    GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
 
     AdoptHost(*this);
     BeAssert(NULL != DgnPlatformLib::QueryHost());
@@ -270,7 +272,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     BeAssert(NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
-    ECN::ECSchemaReadContext::Initialize(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    ECN::ECSchemaReadContext::Initialize(assetDir);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,8 +365,8 @@ DgnPlatformLib::Host::RepositoryAdmin&       DgnPlatformLib::Host::_SupplyReposi
 DgnPlatformLib::Host::GeoCoordinationAdmin& DgnPlatformLib::Host::_SupplyGeoCoordinationAdmin()
     {
     BeFileName path = GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath (L"DgnGeoCoord");
-    return *DgnGeoCoordinationAdmin::Create (path);
+    path.AppendToPath(L"DgnGeoCoord");
+    return *DgnGeoCoordinationAdmin::Create(path);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      07/14

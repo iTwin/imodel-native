@@ -43,8 +43,6 @@ public:
     //=======================================================================================
     struct TextureMap
     {
-
-
         enum class Type
         {
             None                    = 0,
@@ -79,7 +77,6 @@ public:
             SpecularFresnel         = 29,
             Geometry                = 30,
         };
-
 
         enum class Units
         {

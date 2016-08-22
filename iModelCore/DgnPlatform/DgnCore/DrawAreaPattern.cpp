@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-#define     VCClipStencil           ViewContext::ClipStencil
-
 #define     MAX_GPA_STROKES         1000
 #define     MAX_GPA_HATCH_LINES     10000
 #define     MAX_LINE_DASHES         100000  // NOTE: This used to be the limit for all the dashes, not just the dashes per line so I don't expect to hit it...
@@ -19,515 +17,88 @@
 #define     TOLERANCE_ChoordLen     1000
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/12
+* @bsimethod                                                    JimBartlett     02/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PatternParams::Init()
+static double transformPatternSpace(double oldSpace, RotMatrixCR patRot, double angle, TransformCR transform)
     {
-    rMatrix.InitIdentity();
-    offset.Zero();
-    space1 = 0.0;
-    angle1 = 0.0;
-    space2 = 0.0;
-    angle2 = 0.0;
-    scale = 1.0;
-    tolerance = 0.0;
-    annotationscale = 1.0;
-    cellId = 0;
-    modifiers = PatternParamsModifierFlags::None;
-    minLine = -1;
-    maxLine = -1;
-    color = ColorDef::Black();
-    weight = 0;
-    style = 0;
-    holeStyle = static_cast<int16_t>(PatternParamsHoleStyleType::Normal);
-    dwgHatchDef.pixelSize = 0.0;
-    dwgHatchDef.islandStyle = 0;
-    origin.Zero();
+    DVec3d      yDir;
+    RotMatrix   tmpRot, angRot;
+
+    if (0.0 != angle)
+        {
+        angRot.InitFromPrincipleAxisRotations(RotMatrix::FromIdentity(), 0.0, 0.0, angle);
+        tmpRot.InitProduct(patRot, angRot);
+        }
+    else
+        {
+        tmpRot = patRot;
+        }
+
+    tmpRot.GetColumn(yDir, 1);
+    yDir.Scale(yDir, oldSpace);
+    transform.MultiplyMatrixOnly(yDir, yDir);
+
+    return yDir.Magnitude();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  12/2012
+* @bsimethod                                                    JimBartlett     02/93
 +---------------+---------------+---------------+---------------+---------------+------*/
-PatternParamsPtr PatternParams::CreateFromExisting(PatternParamsCR params) 
+static double getTransformPatternScale(TransformCR transform)
     {
-    PatternParamsP newParams = new PatternParams();
-    newParams->Copy(params);
-    return newParams;
+    DVec3d xDir;
+
+    transform.GetMatrixColumn(xDir, 0);
+
+    double mag = xDir.Magnitude ();
+
+    return ((mag > 1.0e-5) ? mag : 1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  12/2012
+* @bsimethod                                                    BrienBastings   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PatternParams::Copy(PatternParamsCR params) 
+void PatternParams::ApplyTransform(TransformCR transform)
     {
-    rMatrix = params.rMatrix;
-    offset = params.offset;
-    space1 = params.space1;
-    angle1 = params.angle1;
-    space2 = params.space2;
-    angle2 = params.angle2;
-    scale = params.scale;
-    tolerance = params.tolerance;
-    annotationscale = params.annotationscale;
-    cellId = params.cellId;
-    modifiers = params.modifiers;
-    minLine = params.minLine;
-    maxLine = params.maxLine;
-    color = params.color;
-    weight = params.weight;
-    style = params.style;
-    holeStyle = params.holeStyle;
-    dwgHatchDef.pixelSize = params.dwgHatchDef.pixelSize;
-    dwgHatchDef.islandStyle = params.dwgHatchDef.islandStyle;
-    dwgHatchDef.hatchLines = params.dwgHatchDef.hatchLines;
-    origin = params.origin;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Bill.Steinbock                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PatternParams::IsEqual(PatternParamsCR params, PatternParamsCompareFlags compareFlags) 
-    {
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_RMatrix)
+    if (m_symbolId.IsValid())
         {
-        if ((params.modifiers & PatternParamsModifierFlags::RotMatrix) != (modifiers & PatternParamsModifierFlags::RotMatrix))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::RotMatrix))
-            {
-            if (!rMatrix.IsEqual(*(&params.rMatrix)))
-                return false;
-            }
+        m_space1 = transformPatternSpace(m_space1, m_rMatrix, m_angle1, transform);
+        m_space2 = transformPatternSpace(m_space2, m_rMatrix, m_angle2, transform);
+        m_scale *= getTransformPatternScale(transform);
         }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Offset)
+    else if (0 != m_hatchLines.size())
         {
-        if ((params.modifiers & PatternParamsModifierFlags::Offset) != (modifiers & PatternParamsModifierFlags::Offset))
-            return false;
+        double scale = getTransformPatternScale(transform);
 
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Offset))
+        if (!DoubleOps::WithinTolerance(1.0, scale, 1.0e-5))
             {
-            if (!offset.IsEqual(params.offset))
-                return false;
-            }
-        }
+            m_scale *= scale;
 
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Default)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::Space1) != (modifiers & PatternParamsModifierFlags::Space1))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Space1))
-            {
-            if (space1 != params.space1)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Space2) != (modifiers & PatternParamsModifierFlags::Space2))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Space2))
-            {
-            if (space2 != params.space2)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Angle1) != (modifiers & PatternParamsModifierFlags::Angle1))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Angle1))
-            {
-            if (angle1 != params.angle1)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Angle2) != (modifiers & PatternParamsModifierFlags::Angle2))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Angle2))
-            {
-            if (angle2 != params.angle2)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Scale) != (modifiers & PatternParamsModifierFlags::Scale))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Scale))
-            {
-            if (scale != params.scale)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Cell) != (modifiers & PatternParamsModifierFlags::Cell))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::Cell))
-            {
-            if (cellId != params.cellId)
-                return false;
-            }
-        }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Symbology)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::Color) != (modifiers & PatternParamsModifierFlags::Color))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Color))
-            {
-            if (color != params.color)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Weight) != (modifiers & PatternParamsModifierFlags::Weight))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Weight))
-            {
-            if (weight != params.weight)
-                return false;
-            }
-
-        if ((params.modifiers & PatternParamsModifierFlags::Style) != (modifiers & PatternParamsModifierFlags::Style))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Style))
-            {
-            if (style != params.style)
-                return false;
-            }
-        }
-  
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Mline)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::Multiline) != (modifiers & PatternParamsModifierFlags::Multiline))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Multiline))
-            {
-            if (minLine != params.minLine)
-                return false;
-
-            if (maxLine != params.maxLine)
-                return false;
-            }
-        }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Tolerance)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::Tolerance) != (modifiers & PatternParamsModifierFlags::Tolerance))
-            return false;
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Tolerance))
-            {
-            if (tolerance != params.tolerance)
-                return false;
-            }
-        }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_AnnotationScale)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::AnnotationScale) != (modifiers & PatternParamsModifierFlags::AnnotationScale))
-            return false;
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::AnnotationScale))
-            {
-            if (annotationscale != params.annotationscale)
-                return false;
-            }
-        }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_HoleStyle)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::HoleStyle) != (modifiers & PatternParamsModifierFlags::HoleStyle))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::HoleStyle))
-            {
-            if (holeStyle != params.holeStyle)
-                return false;
-            }
-        }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_DwgHatch)
-        {
-        if ((params.modifiers & PatternParamsModifierFlags::DwgHatchDef) != (modifiers & PatternParamsModifierFlags::DwgHatchDef))
-            return false;
-
-        if (PatternParamsModifierFlags::None != (params.modifiers  & PatternParamsModifierFlags::DwgHatchDef))
-            {
-            if (dwgHatchDef.pixelSize != params.dwgHatchDef.pixelSize)
-                return false;
-
-            if (dwgHatchDef.islandStyle != params.dwgHatchDef.islandStyle)
-                return false;
-
-            if (dwgHatchDef.hatchLines.size() != params.dwgHatchDef.hatchLines.size())
-                return false;
-
-            size_t  nHatchLines = dwgHatchDef.hatchLines.size();
-
-            for (size_t i=0; i<nHatchLines; ++i)
+            for (DwgHatchDefLine& line : m_hatchLines)
                 {
-                DwgHatchDefLine const* h1 = &dwgHatchDef.hatchLines.at(i);
-                DwgHatchDefLine const* h2 = &params.dwgHatchDef.hatchLines.at(i);
+                line.m_through.x *= scale;
+                line.m_through.y *= scale;
 
-                if (0 != memcmp(h1, h2, sizeof (*h1)))
-                    return false;
+                line.m_offset.x *= scale;
+                line.m_offset.y *= scale;
+
+                for (short iDash = 0; iDash < line.m_nDashes; iDash++)
+                    line.m_dashes[iDash] *= scale;
                 }
             }
         }
-
-    if (compareFlags & PATTERNPARAMSCOMPAREFLAGS_Origin)
+    else
         {
-        if ((params.modifiers & PatternParamsModifierFlags::Origin) != (modifiers & PatternParamsModifierFlags::Origin))
-            return false;
+        m_space1 = transformPatternSpace(m_space1, m_rMatrix, m_angle1, transform);
 
-        if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::Origin))
-            {
-            if (!origin.IsEqual(params.origin))
-                return false;
-            }
+        if (0.0 != m_space2)
+            m_space2 = transformPatternSpace(m_space2, m_rMatrix, m_angle2, transform);
         }
 
-    return true;
+    transform.Multiply(m_origin);
+    m_rMatrix.InitProduct(transform, m_rMatrix);
+    m_rMatrix.SquareAndNormalizeColumns(m_rMatrix, 0, 1);
     }
-
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct PatternBoundaryCollector : IGeometryProcessor
-{
-private:
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    GeometrySourceCR    m_stroker;
-#endif
-    CurveVectorPtr      m_boundary;
-    ViewContextP        m_context;
-    Transform           m_currentTransform;
-
-protected:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Brien.Bastings  11/13
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit PatternBoundaryCollector(GeometrySourceCR stroker) 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    : m_stroker(stroker) 
-#endif
-    {}
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Brien.Bastings  11/13
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool _ProcessAsFacets(bool isPolyface) const override {return false;}
-    virtual bool _ProcessAsBody(bool isCurved) const override {return false;}
-    virtual void _AnnounceContext(ViewContextR context) override {m_context = &context;}
-    virtual void _AnnounceTransform(TransformCP trans) override {if (trans) m_currentTransform = *trans; else m_currentTransform.InitIdentity();}
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    virtual void _OutputGraphics(ViewContextR context) override {m_stroker.Stroke(context);}
-#else
-    virtual void _OutputGraphics(ViewContextR context) override {}
-#endif
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Brien.Bastings  11/13
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual BentleyStatus _ProcessCurveVector(CurveVectorCR curves, bool isFilled) override
-        {
-        if (!curves.IsAnyRegionType() || m_boundary.IsValid())
-            {
-            BeAssert(false); // A valid boundary must be a closed, parity, or union region...
-
-            return SUCCESS;
-            }
-
-        m_boundary = curves.Clone();
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        if (NULL != m_context->GetCurrLocalToWorldTransformCP ())
-            m_boundary->TransformInPlace(*m_context->GetCurrLocalToWorldTransformCP ());
-#else
-        if (!m_currentTransform.IsIdentity())
-            m_boundary->TransformInPlace(m_currentTransform);
-#endif
-
-        return SUCCESS;
-        }
-
-public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Brien.Bastings  11/13
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    CurveVectorPtr GetBoundary() {return m_boundary;}
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Brien.Bastings  11/13
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static CurveVectorPtr Process(GeometrySourceCR stroker)
-        {
-        PatternBoundaryCollector  processor(stroker);
-
-    #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-        GeometryProcessor::Process(processor, stroker._GetDgnDb());
-    #endif
-
-        return processor.GetBoundary();
-        }
-}; // PatternBoundaryCollector
-#endif
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-ViewContext::ClipStencil::ClipStencil(GraphicStroker& stroker) : m_stroker(stroker) {m_tmpQvElem = nullptr;}
-ViewContext::ClipStencil::~ClipStencil() {if (m_tmpQvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_tmpQvElem);}
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-GraphicPtr ViewContext::ClipStencil::GetQvElem(ViewContextR context)
-    {
-    if (m_tmpQvElem.IsValid())
-        return m_tmpQvElem;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    m_tmpQvElem = context.GetGraphic(m_stroker);
-#endif
-    return m_tmpQvElem;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-CurveVectorPtr ViewContext::ClipStencil::GetCurveVector()
-    {
-#if defined (NEEDSWORK_RENDER_GRAPHIC)
-    if (m_curveVector.IsNull())
-        m_curveVector = PatternBoundaryCollector::Process(m_geomSource);
-#endif
-
-    return m_curveVector;
-    }
-
-
-/*=================================================================================**//**
-* @bsiclass                                                     BrienBastings   11/07
-+===============+===============+===============+===============+===============+======*/
-struct PatternSymbol
-{
-private:
-
-DgnGeometryPartId       m_partId;
-mutable DRange3d    m_range;
-
-public:
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _Draw(ViewContextR context) override
-    {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
-    // Pattern geometry will be a geom part...not an element...
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _GetRange(DRange3dR range) const override
-    {
-    range = m_range;
-    
-    return SUCCESS;
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-PatternSymbol(DgnGeometryPartId partId, DgnDbR project)
-    {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
-    DgnElementPtr edP;
-
-    // If pattern cell doesn't already exist in project...it should fail...
-    m_elementRef = project.Elements().FindElement(cellId);
-    if (NULL == m_elementRef)
-        return;
-
-    edP = m_elementRef->Duplicate();
-    if (!edP.IsValid())
-        return;
-
-    BeAssert(edP.IsValid());
-    m_eeh.SetDgnElement(edP.get());
-
-    // Match dimension of modelRef; otherwise pattern in 3D reference to 2D ends up at z=0, which may be outside of the range of the reference file.
-    if (modelRef->Is3d() && !DisplayHandler::Is3dElem(m_eeh.GetGraphicsCP ()))
-        {
-        m_eeh.GetHandler().ConvertTo3d(m_eeh, 0.0);
-        }
-    else if (!modelRef->Is3d() && DisplayHandler::Is3dElem(m_eeh.GetGraphicsCP ()))
-        {
-        DVec3d      flattenDir;
-        Transform   flattenTrans;
-
-        flattenDir.init(0.0, 0.0, 1.0);
-        flattenTrans.InitIdentity();              
-        flattenTrans.form3d[2][2] = 0.0;
-
-        m_eeh.GetHandler().ConvertTo2d(m_eeh, flattenTrans, flattenDir);
-        }
-
-    m_range = m_eeh.GetGeometricElement()->_CalculateRange3d();
-#else
-    m_partId = partId;
-    m_range  = DRange3d::NullRange();
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Is3dCellSymbol()
-    {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
-    return m_eeh.GetDgnModelP ()->Is3d();
-#else
-    return true;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ApplyGeometryParams(GeometryParamsCR elParams)
-    {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
-    ElementPropertiesSetter remapper;
-
-    remapper.SetCategory(elParams.GetCategoryId());
-    remapper.SetTransparency(elParams.GetTransparency());
-
-    if (IsPointCellSymbol())
-        {
-        remapper.SetColor(elParams.GetLineColor());
-        remapper.SetWeight(elParams.GetWeight());
-        remapper.SetLinestyle(elParams.GetLineStyle(), elParams.GetLineStyleParams());
-        }
-
-    remapper.Apply(m_eeh);
-#endif
-    }
-
-}; // PatternSymbol
 
 /*=================================================================================**//**
 * @bsiclass                                                     BrienBastings   11/07
@@ -537,93 +108,62 @@ struct PatternHelper
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
+static void AdjustOrigin(PatternParamsR pattern, CurveVectorCR boundary)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    GeometryParamsR elParams = context.GetCurrentGeometryParams();
+    DVec3d      planeNormal;
+    DPoint3d    planePt;
 
-    if (PatternParamsModifierFlags::None != ((PatternParamsModifierFlags::Color | PatternParamsModifierFlags::Weight | PatternParamsModifierFlags::Style) & params.modifiers))
-        {
-        if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Color))
-            elParams.SetLineColor(params.color);
-
-        if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Weight))
-            elParams.SetWeight(params.weight);
-
-        if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Style))
-            elParams->SetLineStyle(params.style, elParams->GetLineStyleParams());
-        }
-
-    // NOTE: Don't need to worry about overrides, context overrides CAN NOT look at m_currDisplayParams, so changing it doesn't affect them...
-    context.CookGeometryParams();
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool PushBoundaryClipStencil(ViewContextR context, VCClipStencil& boundary, GraphicPtr& qvElem)
-    {
-    qvElem = boundary.GetQvElem(context);
-    if (!qvElem.IsValid())
-        return false;
-
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetIViewDraw().PushClipStencil(qvElem.get());
-#endif
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void PopBoundaryClipStencil(ViewContextR context, Graphic* qvElem)
-    {
-    if (NULL == qvElem)
+    if (!boundary.GetStartPoint(planePt))
         return;
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    context.GetIViewDraw().PopClipStencil();
-#endif
+    double      t;
+    DVec3d      diff, rtmp;
+    DPoint3d    origin = pattern.GetOrigin();
+
+    pattern.GetOrientation().GetColumn(planeNormal, 2);
+    diff.DifferenceOf(planePt, origin);
+    t = diff.DotProduct(planeNormal);
+    rtmp.Scale(planeNormal, t);
+    origin.SumOf(rtmp, origin);
+    pattern.SetOrigin(origin);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool GetCellTileInfo
+static bool GetSymbolTileInfo
 (
-VCClipStencil&  boundary,
-PatternSymbol&  symbCell,
-DRange3dR       cellRange,
-DPoint2dR       cellOrg,
-DPoint2dR       spacing,
-DPoint2dR       low,
-DPoint2dR       high,
-bool&           isPlanar,
-DPoint3dCR      origin,
-RotMatrixCR     rMatrix,
-double&         scale,
-double          rowSpacing,
-double          columnSpacing
+CurveVectorCR       boundary,
+DgnGeometryPartCR   symbol,
+DRange3dR           symbolRange,
+DPoint2dR           symbolOrg,
+DPoint2dR           spacing,
+DPoint2dR           low,
+DPoint2dR           high,
+bool&               isPlanar,
+DPoint3dCR          origin,
+RotMatrixCR         rMatrix,
+double&             scale,
+double              rowSpacing,
+double              columnSpacing
 )
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (SUCCESS != symbCell._GetRange(cellRange))
+    symbolRange = symbol.GetBoundingBox();
+
+    if (symbolRange.IsNull())
         return false;
-#endif
 
     if (columnSpacing < 0.0)
         spacing.x = -columnSpacing;
     else
-        spacing.x = columnSpacing + scale * (cellRange.high.x - cellRange.low.x);
+        spacing.x = columnSpacing + scale * (symbolRange.high.x - symbolRange.low.x);
 
     if (rowSpacing < 0.0)
         spacing.y = -rowSpacing;
     else
-        spacing.y = rowSpacing + scale * (cellRange.high.y - cellRange.low.y);
+        spacing.y = rowSpacing + scale * (symbolRange.high.y - symbolRange.low.y);
 
-    if (spacing.x < 0.5 || spacing.y < 0.5)
+    if (spacing.x < 1.0e-5 || spacing.y < 1.0e-5)
         return false;
 
     RotMatrix   invMatrix;
@@ -633,14 +173,9 @@ double          columnSpacing
     transform.InitFrom(invMatrix);
     transform.TranslateInLocalCoordinates(transform, -origin.x, -origin.y, -origin.z);
 
-    CurveVectorPtr  boundaryCurve = boundary.GetCurveVector();
+    DRange3d    localRange;
 
-    if (!boundaryCurve.IsValid())
-        return false;
-
-    DRange3d  localRange;
-
-    boundaryCurve->GetRange(localRange, transform);
+    boundary.GetRange(localRange, transform);
 
     low.x = localRange.low.x;
     low.y = localRange.low.y;
@@ -658,14 +193,14 @@ double          columnSpacing
     else
         low.y -= fmod(low.y, spacing.y);
 
-    cellOrg.x = cellRange.low.x * scale;
-    cellOrg.y = cellRange.low.y * scale;
+    symbolOrg.x = symbolRange.low.x * scale;
+    symbolOrg.y = symbolRange.low.y * scale;
 
-    low.x -= cellOrg.x;
-    low.y -= cellOrg.y;
+    low.x -= symbolOrg.x;
+    low.y -= symbolOrg.y;
 
-    high.x -= cellOrg.x;
-    high.y -= cellOrg.y;
+    high.x -= symbolOrg.x;
+    high.y -= symbolOrg.y;
 
     double  numTiles = ((high.x - low.x) / spacing.x) * ((high.y - low.y) / spacing.y);
 
@@ -679,7 +214,7 @@ double          columnSpacing
         }
 
     // Can't use a stencil for a non-planar pattern cell....
-    isPlanar = !symbCell.Is3dCellSymbol() || ((cellRange.high.z - cellRange.low.z) < 2.0);
+    isPlanar = ((symbolRange.high.z - symbolRange.low.z) < 1.0e-5);
 
     return true;
     }
@@ -687,11 +222,11 @@ double          columnSpacing
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void GetCellOrientationAndScale
+static void GetSymbolOrientationAndScale
 (
 RotMatrixR      rMatrix,
 double&         scale,
-RotMatrixR      patternRMatrix,
+RotMatrixCR     patternRMatrix,
 double          patternAngle,
 double          patternScale
 )
@@ -703,7 +238,7 @@ double          patternScale
     scale = patternScale ? patternScale : 1.0;
     }
 
-#if defined (NEEDS_WORK_MATERIAL)
+#if defined (NEEDSWORK_PATTERN_GEOMETRY_MAP)
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      05/2007
 +===============+===============+===============+===============+===============+======*/
@@ -743,7 +278,6 @@ static MaterialPtr CreateGeometryMapMaterial(ViewContextR context, PatternSymbol
 
     return pMaterial;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2013
@@ -769,37 +303,6 @@ static void AddPatternParametersToPolyface(PolyfaceHeaderPtr& polyface, RotMatri
     }
  
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static size_t GetVertexCount(CurveVectorCR curveVector)
-    {
-    size_t  loopCount = 0;
-
-    for (ICurvePrimitivePtr curve: curveVector)
-        {
-        if (!curve.IsValid())
-            continue;
-
-        switch (curve->GetCurvePrimitiveType())
-            {
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                loopCount += curve->GetLineStringCP ()->size();
-                break;
-
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
-                loopCount += GetVertexCount(*curve->GetChildCurveVectorCP ());
-                break;
-
-            default:
-                loopCount += 2;
-                break;
-            }
-        }
-
-    return loopCount;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool ProcessAreaPatternAsGeometryMap  
@@ -814,7 +317,6 @@ DPoint2dCR      spacing,
 double          scale
 )
     {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
     static      DgnElementAppData::Key s_appDataKey;
 
     if (DrawPurpose::Plot == context.GetDrawPurpose())      // Opt for slower, higher quality when plotting.
@@ -923,104 +425,39 @@ double          scale
         }
 
     return true;
-#else
-    return false;
-#endif
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2dCR low, DPoint2dCR high, DPoint2dCR spacing, double scale, TransformCR orgTrans, DPoint3dCP cellCorners, bool drawFiltered, CurveVectorCP boundaryToPush = NULL)
+static void ProcessAreaPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (NULL != boundaryToPush)
-        {
-        ClipVectorPtr   clip = ClipVector::CreateFromCurveVector(*boundaryToPush, 0.0, TOLERANCE_ChoordAngle);
+    // NEEDSWORK_PATTERN_GEOMETRY_MAP: Need to draw using geometry map texture, this is just test code to verify pattern cell conversion by drawing un-clipped tiles...
+    static int s_testPatternTiles;
+    if (!s_testPatternTiles)
+        return;
 
-        if (!clip.IsValid())
-            return false;
+    PatternParamsCR pattern = *params.GetPatternParams();
+    DgnGeometryPartCPtr symbolGeometry = context.GetDgnDb().Elements().Get<DgnGeometryPart>(pattern.GetSymbolId());
 
-        clip->ParseClipPlanes();
-        context.PushClip(*clip); // NOTE: Pop handled by context mark...
-        }
-
-    bool        wasAborted = false;
-    DPoint2d    patOrg;
-    DPoint3d    tileCorners[8];
-    Transform   cellTrans;
-
-    for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
-        {
-        for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
-            {
-            if (context.CheckStop())
-                {
-                wasAborted = true;
-                break;
-                }
-
-            cellTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentGeometryParams().GetNetDisplayPriority());
-            cellTrans.Multiply(tileCorners, cellCorners, 8);
-
-            if (ClipPlaneContainment_StronglyOutside == context.GetTransformClipStack().ClassifyPoints(tileCorners, 8))
-                continue;
-
-            if (drawFiltered)
-                {
-                DPoint3d    tmpPt;
-
-                cellTrans.GetTranslation(tmpPt);
-                context.GetCurrentGraphicR().AddPointString(1, &tmpPt, NULL);
-                }
-            else
-                {
-                context.DrawSymbol(&symbCell, &cellTrans, NULL);
-                }
-
-            wasAborted = context.WasAborted();
-            }
-        }
-
-    return wasAborted;
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  11/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessAreaPattern
-(
-ViewContextR    context,
-VCClipStencil&  boundary,
-PatternParamsP  params,
-DPoint3dR       origin
-)
-    {
-#if defined (NEEDSWORK_REVISIT_PATTERN_SYMBOLS_SCDEF)
-    PatternSymbol symbCell(DgnElementId(params->cellId), context.GetDgnDb());
-
-    if (!symbCell.GetElemHandle().IsValid())
+    if (!symbolGeometry.IsValid())
         return;
 
     double      scale;
+    DPoint3d    origin = pattern.GetOrigin();
     RotMatrix   rMatrix;
 
-    PatternHelper::GetCellOrientationAndScale(rMatrix, scale, params->rMatrix, params->angle1, params->scale);
+    PatternHelper::GetSymbolOrientationAndScale(rMatrix, scale, pattern.GetOrientation(), pattern.GetPrimaryAngle(), pattern.GetScale());
 
     bool        isPlanar;
-    DPoint2d    cellOrg, spacing, low, high;
-    DRange3d    cellRange;
+    DPoint2d    symbolOrg, spacing, low, high;
+    DRange3d    symbolRange;
 
-    // The contextScale value allows PlotContext to adjust the pattern scale to reduce
-    // the size of the QV display list and resulting plot output file.
-    scale *= contextScale;
-
-    if (!PatternHelper::GetCellTileInfo(boundary, symbCell, cellRange, cellOrg, spacing, low, high, isPlanar, origin, rMatrix, scale, params->space1, params->space2))
+    if (!PatternHelper::GetSymbolTileInfo(boundary, *symbolGeometry, symbolRange, symbolOrg, spacing, low, high, isPlanar, origin, rMatrix, scale, pattern.GetPrimarySpacing(), pattern.GetSecondarySpacing()))
         return;
 
+#if defined (NEEDSWORK_PATTERN_GEOMETRY_MAP)
     bool        isQVOutput = context.GetIViewDraw().IsOutputQuickVision();
     bool        useStencil = isQVOutput && isPlanar && !context.CheckICachedDraw(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
     QvElem*     qvElem = NULL;
@@ -1030,87 +467,45 @@ DPoint3dR       origin
 
     if (useStencil && !PatternHelper::PushBoundaryClipStencil(context, boundary, qvElem))
         return;
+#endif
 
-    // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
-    PatternHelper::CookPatternSymbology(*params, context);
-    symbCell.ApplyGeometryParams(*context.GetCurrentGeometryParams());
-
-    bool        drawFiltered = false;
     Transform   orgTrans;
-    DPoint3d    cellCorners[8];
+    DPoint3d    symbolCorners[8];
 
     // Setup initial pattern instance transform
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear(&orgTrans, NULL, &rMatrix, &origin, scale, scale, 0.0);
-    cellRange.Get8Corners(cellCorners);
+    symbolRange.Get8Corners(symbolCorners);
 
-    if (isQVOutput)
+    bool        wasAborted = false;
+    DPoint2d    patOrg;
+    DPoint3d    tileCorners[8];
+    Transform   symbolTrans;
+
+    for (patOrg.x = low.x; patOrg.x < high.x && !wasAborted; patOrg.x += spacing.x)
         {
-        int     cellCmpns = symbCell.GetElemHandle().GetGraphicsCP ()->GetComplexComponentCount();
-        double  numTiles = ((high.x - low.x) / spacing.x) * ((high.y - low.y) / spacing.y);
-
-        if (numTiles * cellCmpns > 5000)
+        for (patOrg.y = low.y; patOrg.y < high.y && !wasAborted; patOrg.y += spacing.y)
             {
-            DPoint3d    viewPts[8];
-            DRange2d    viewRange;
+            if (context.CheckStop())
+                return;
 
-            orgTrans.Multiply(viewPts, cellCorners, 8);
-            context.LocalToView(viewPts, viewPts, 8);
-            viewRange.InitFrom(*viewPts, *8);
+            symbolTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, params.GetNetDisplayPriority());
+            symbolTrans.Multiply(tileCorners, symbolCorners, 8);
 
-            if (symbCell.IsPointCellSymbol())
-                drawFiltered = (viewRange.extentSquared() < context.GetMinLOD ());
+            Render::GraphicPtr partGraphic = context.AddSubGraphic(graphic, pattern.GetSymbolId(), symbolTrans, params);
+            wasAborted = context.WasAborted();
             }
         }
-
-    if (useStencil)
-        {
-        DrawCellTiles(context, symbCell, low, high, spacing, scale, orgTrans, cellCorners, drawFiltered);
-        }
-    else
-        {
-        CurveVectorPtr  boundaryCurve = boundary.GetCurveVector();
-
-        // NOTE: Union regions aren't valid clip boundaries, need to push separate clip for each solid area...
-        if (boundaryCurve->IsUnionRegion())
-            {
-            for (ICurvePrimitivePtr curve: *boundaryCurve)
-                {
-                if (curve.IsNull() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
-                    continue;
-
-                ViewContext::ContextMark mark(&context);
-
-                // NOTE: Cell tile exclusion check makes sending all tiles for each solid area less offensive (union regions also fairly rare)...
-                if (DrawCellTiles(context, symbCell, low, high, spacing, scale, orgTrans, cellCorners, drawFiltered, curve->GetChildCurveVectorCP ()))
-                    break; // Was aborted...
-                }
-            }
-        else
-            {
-            DrawCellTiles(context, symbCell, low, high, spacing, scale, orgTrans, cellCorners, drawFiltered, boundaryCurve.get());
-            }
-        }
-
-    PatternHelper::PopBoundaryClipStencil(context, qvElem);
-
-    context.DeleteSymbol(&symbCell); // Only needed if DrawSymbol has been called...i.e. early returns are ok!
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int DrawHatchGPA
-(
-GPArrayP        pGPA,
-ViewContextR    context
-)
+static int DrawHatchGPA(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, GPArrayP pGPA)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount();
     DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView();
-    double        priority = context.GetCurrentGeometryParams().GetNetDisplayPriority();
+    double        priority = params.GetNetDisplayPriority();
     GraphicsPoint gp;
 
     for (size_t i=0; i < sourceCount;)
@@ -1122,7 +517,7 @@ ViewContextR    context
         
         while (pGPA->GetGraphicsPoint(i, gp))
             {
-            gp.point.GetProjectedXYZ (localPoints[nGot++]);
+            gp.point.GetProjectedXYZ(localPoints[nGot++]);
 
             if (gp.IsCurveBreak())
                 {
@@ -1145,7 +540,7 @@ ViewContextR    context
 
         if (is3d)
             {
-            context.DrawStyledLineString3d((int) nGot, localPoints, NULL, false);
+            graphic.AddLineString((int) nGot, localPoints);
             }
         else
             {
@@ -1158,10 +553,9 @@ ViewContextR    context
                 localPoints2dBuf[iPoint].y = localPoints[iPoint].y;
                 }
 
-            context.DrawStyledLineString2d((int) nGot, &localPoints2dBuf[0], priority, NULL, false);
+            graphic.AddLineString2d((int) nGot, &localPoints2dBuf[0], priority);
             }
         }
-#endif
 
     return SUCCESS;
     }
@@ -1169,13 +563,7 @@ ViewContextR    context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void GetBoundaryShapePts
-(
-DPoint3dP       pts,
-CurveVectorCR   boundaryCurve,
-RotMatrixCR     rMatrix,
-DPoint3dCR      origin
-)
+static void GetBoundaryShapePts(DPoint3dP pts, CurveVectorCR boundary, RotMatrixCR rMatrix, DPoint3dCR origin)
     {
     RotMatrix   invMatrix;
     Transform   transform;
@@ -1185,7 +573,7 @@ DPoint3dCR      origin
 
     DRange3d    localRange;
 
-    boundaryCurve.GetRange(localRange, transform);
+    boundary.GetRange(localRange, transform);
 
     pts[0].x = pts[3].x = localRange.low.x;
     pts[1].x = pts[2].x = localRange.high.x;
@@ -1193,11 +581,11 @@ DPoint3dCR      origin
     pts[0].y = pts[1].y = localRange.low.y;
     pts[2].y = pts[3].y = localRange.high.y;
 
-    DPoint3d    stencilOrigin;
+    DPoint3d    shapeOrigin;
 
-    transform.Multiply(stencilOrigin, origin);
+    transform.Multiply(shapeOrigin, origin);
 
-    pts[0].z = pts[1].z = pts[2].z = pts[3].z = stencilOrigin.z;
+    pts[0].z = pts[1].z = pts[2].z = pts[3].z = shapeOrigin.z;
     pts[4] = pts[0];
 
     transform.MultiplyTranspose(pts, pts, 5);
@@ -1206,31 +594,20 @@ DPoint3dCR      origin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static GPArrayP GetBoundaryGPA
-(
-VCClipStencil&  boundary,
-RotMatrixCR     rMatrix,
-DPoint3dCR      origin,
-bool            useElmRange
-)
+static GPArrayP GetBoundaryGPA(CurveVectorCR boundary, RotMatrixCR rMatrix, DPoint3dCR origin, bool useRange)
     {
-    CurveVectorPtr boundaryCurve = boundary.GetCurveVector();
-
-    if (!boundaryCurve.IsValid())
-        return NULL;
-
     GPArrayP    gpa = GPArray::Grab();
 
-    if (!useElmRange)
+    if (!useRange)
         {
-        gpa->Add(*boundaryCurve);
+        gpa->Add(boundary);
 
         return gpa;
         }
 
     DPoint3d    shapePts[5];
 
-    GetBoundaryShapePts(shapePts, *boundaryCurve, rMatrix, origin);
+    GetBoundaryShapePts(shapePts, boundary, rMatrix, origin);
 
     gpa->Add(shapePts, 5);
     gpa->MarkBreak();
@@ -1242,12 +619,7 @@ bool            useElmRange
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void GetHatchLineLimitTransform
-(
-TransformR      scaledTransform,
-TransformCR     hatchTransform,
-GPArrayP        boundGpa
-)
+static void GetHatchLineLimitTransform(TransformR scaledTransform, TransformCR hatchTransform, GPArrayP boundGpa)
     {
     double      zScale;
 
@@ -1268,34 +640,21 @@ GPArrayP        boundGpa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void AddHatchLinesToGPA
-(
-GPArrayP        hatchGpa,
-GPArrayP        boundGpa,
-TransformR      scaledTransform
-)
+static void AddHatchLinesToGPA(GPArrayP hatchGpa, GPArrayP boundGpa, TransformR scaledTransform)
     {
-    jmdlGraphicsPointArray_addTransformedCrossHatchClipped(hatchGpa, boundGpa, &scaledTransform, NULL, NULL, 0);
+    jmdlGraphicsPointArray_addTransformedCrossHatchClipped(hatchGpa, boundGpa, &scaledTransform, nullptr, nullptr, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessHatchBoundary
-(
-GPArrayP        boundGpa,
-ViewContextR    context,
-TransformR      baseTransform,
-TransformR      hatchTransform,
-double          angle,
-double          space
-)
+static void ProcessHatchBoundary(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, GPArrayP boundGpa, TransformR baseTransform, TransformR hatchTransform, double angle, double space)
     {
     DVec3d      xVec,yVec, zVec;
     DPoint3d    origin;
 
     hatchTransform.GetOriginAndVectors(origin, xVec, yVec, zVec);
-    xVec.Init( cos(angle), sin(angle), 0.0);
+    xVec.Init(cos(angle), sin(angle), 0.0);
     zVec.CrossProduct(xVec, yVec);
     zVec.Scale(space);
     hatchTransform.InitFromOriginAndVectors(origin, xVec, yVec, zVec);
@@ -1304,83 +663,56 @@ double          space
     GPArraySmartP   hatchGpa;
 
     GetHatchLineLimitTransform(scaledTransform, hatchTransform, boundGpa);
-    AddHatchLinesToGPA (hatchGpa, boundGpa, scaledTransform);
+    AddHatchLinesToGPA(hatchGpa, boundGpa, scaledTransform);
 
     hatchGpa->Transform(&baseTransform);
 
-    PatternHelper::DrawHatchGPA (hatchGpa, context);
+    PatternHelper::DrawHatchGPA(context, graphic, params, hatchGpa);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessHatchPattern
-(
-ViewContextR    context,
-VCClipStencil&  boundary,
-PatternParams*  params,
-DPoint3dR       origin
-)
+static void ProcessHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-#if !defined (BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
-    bool            useStencil = context.GetRenderTarget().IsOutputQuickVision(); // Can't use stencil if creating QvElem...dimension terminators want patterns!
-#else
-    bool            useStencil = false;
-#endif
-#endif
-    bool useStencil = false;
-    GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
+    PatternParamsCR pattern = *params.GetPatternParams();
+    GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA(boundary, pattern.GetOrientation(), pattern.GetOrigin(), false));
 
-    if (NULL == boundGpa || 0 == boundGpa->GetCount())
+    if (nullptr == boundGpa || 0 == boundGpa->GetCount())
         return;
-
-    GraphicPtr qvElem;
-
-    if (useStencil && !PatternHelper::PushBoundaryClipStencil(context, boundary, qvElem))
-        return;
-
-    // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
-    PatternHelper::CookPatternSymbology(*params, context);
 
     Transform baseTransform, invBaseTransform;
     Transform hatchTransform;
 
     hatchTransform.InitFromRowValues(1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
-    baseTransform.InitFrom(params->rMatrix, origin);
+    baseTransform.InitFrom(pattern.GetOrientation(), pattern.GetOrigin());
     invBaseTransform.InverseOf(baseTransform);
 
     boundGpa->Transform(&invBaseTransform);
 
-    PatternHelper::ProcessHatchBoundary(boundGpa, context, baseTransform, hatchTransform, params->angle1, params->space1);
+    PatternHelper::ProcessHatchBoundary(context, graphic, params, boundGpa, baseTransform, hatchTransform, pattern.GetPrimaryAngle(), pattern.GetPrimarySpacing());
 
-    if (PatternParamsModifierFlags::None != (params->modifiers & PatternParamsModifierFlags::Space2))
-        PatternHelper::ProcessHatchBoundary(boundGpa, context, baseTransform, hatchTransform, params->angle2, params->space2);
-
-    PatternHelper::PopBoundaryClipStencil(context, qvElem.get());
+    if (0.0 != pattern.GetSecondarySpacing())
+        PatternHelper::ProcessHatchBoundary(context, graphic, params, boundGpa, baseTransform, hatchTransform, pattern.GetSecondaryAngle(), pattern.GetSecondarySpacing());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool IsValidPatternDefLine
-(
-DwgHatchDefLine*    lineP,
-double              rangeDiagonal
-)
+static bool IsValidPatternDefLine(DwgHatchDefLine const* lineP, double rangeDiagonal)
     {
-    double      offsetMagnitude = lineP->offset.Magnitude();
+    double      offsetMagnitude = lineP->m_offset.Magnitude();
 
     if (0.0 == offsetMagnitude || rangeDiagonal / offsetMagnitude > MAX_HATCH_ITERATIONS)
         return false;
 
-    if (0 == lineP->nDashes)
+    if (0 == lineP->m_nDashes)
         return true;
 
     double      totalDashLength = 0.0;
 
-    for (int i=0; i < lineP->nDashes; i++)
-        totalDashLength += fabs(lineP->dashes[i]);
+    for (int i=0; i < lineP->m_nDashes; i++)
+        totalDashLength += fabs(lineP->m_dashes[i]);
 
     return (!(0.0 == totalDashLength || rangeDiagonal / totalDashLength > MAX_HATCH_ITERATIONS));
     }
@@ -1388,24 +720,14 @@ double              rangeDiagonal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessDWGHatchBoundary
-(
-GPArrayP            boundGpa,
-ViewContextR        context,
-TransformR          baseTransform,
-TransformR          hatchTransform,
-double              annotationScale,
-DwgHatchDefLine*   hatchLines,
-int                 nDefLines,
-bool                is3d
-)
+static void ProcessDWGHatchBoundary(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsCR params, GPArrayP boundGpa, TransformR baseTransform, TransformR hatchTransform, DwgHatchDefLine const* hatchLines, int nDefLines)
     {
     DRange3d    boundRange;
 
     bsiDRange3d_init(&boundRange);
     jmdlDRange3d_extendByGraphicsPointArray(&boundRange, boundGpa);
 
-    if (!is3d)
+    if (!context.Is3dView())
         boundRange.low.z = boundRange.high.z = 0.0;
 
     StatusInt       status = SUCCESS;
@@ -1413,7 +735,7 @@ bool                is3d
     GPArraySmartP   hatchGpa, dashGpa;
 
     // NOTE: In ACAD hatch definitions both the base angle and scale have already been applied to the definitions and MUST not be applied again!
-    for (DwgHatchDefLine* lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
+    for (DwgHatchDefLine const* lineP = hatchLines; SUCCESS == status && lineP < &hatchLines[nDefLines]; lineP++)
         {
         if (!IsValidPatternDefLine(lineP, rangeDiagonal))
             continue;
@@ -1421,38 +743,24 @@ bool                is3d
         DVec3d      xVec, yVec, zVec;
         DPoint3d    origin;
 
-        // NOTE: Annotation scale isn't handled by CookPatternParams since we ignore scale for draw, need to apply to hatch lines directly...
         hatchTransform.GetOriginAndVectors(origin, xVec, yVec, zVec);
-        xVec.Init( cos(lineP->angle), sin(lineP->angle), 0.0);
-        zVec.Init( lineP->offset.x * annotationScale, lineP->offset.y * annotationScale, 0.0);
-        origin.Init( lineP->through.x * annotationScale, lineP->through.y * annotationScale, 0.0);
+        xVec.Init(cos(lineP->m_angle), sin(lineP->m_angle), 0.0);
+        zVec.Init(lineP->m_offset.x, lineP->m_offset.y, 0.0);
+        origin.Init(lineP->m_through.x, lineP->m_through.y, 0.0);
         hatchTransform.InitFromOriginAndVectors(origin, xVec, yVec, zVec);
 
-        Transform    scaledTransform;
+        Transform   scaledTransform;
 
         GetHatchLineLimitTransform(scaledTransform, hatchTransform, boundGpa);
-        AddHatchLinesToGPA (hatchGpa, boundGpa, scaledTransform);
+        AddHatchLinesToGPA(hatchGpa, boundGpa, scaledTransform);
 
-        if (0 != lineP->nDashes)
+        if (0 != lineP->m_nDashes)
             {
-            double*         dashesOut = lineP->dashes;
-            bvector<double> localDashes;
-
-            if (1.0 != annotationScale)
-                {
-                localDashes.insert(localDashes.begin(), dashesOut, dashesOut + lineP->nDashes);
-
-                for (double& dashLen: localDashes)
-                    dashLen *= annotationScale;
-
-                dashesOut = &localDashes.front();
-                }
-
             // NOTE: Copy of jmdlGraphicsPointArray_expandDashPattern to avoid s_maxCollectorPoint limit...
             int         i1;
             DPoint4d    point0, point1;
             int         curveType;
-            double      dashPeriod = jmdlGPA_computeDashPeriod(dashesOut, lineP->nDashes);
+            double      dashPeriod = jmdlGPA_computeDashPeriod(lineP->m_dashes, lineP->m_nDashes);
 
             for (int i0 = 0; SUCCESS == status && jmdlGraphicsPointArray_parseFragment(hatchGpa, &i1, &point0, &point1, &curveType, i0); i0 = i1 + 1)
                 {
@@ -1465,12 +773,10 @@ bool                is3d
                     for (int i = i0 + 1; SUCCESS == status && i <= i1; i++, gp0 = gp1)
                         {
                         jmdlGraphicsPointArray_getGraphicsPoint(hatchGpa, &gp1, i);
-                        jmdlGPA_expandSingleLineDashPattern(dashGpa, &gp0, &gp1, dashesOut, lineP->nDashes, dashPeriod, MAX_LINE_DASHES);
+                        jmdlGPA_expandSingleLineDashPattern(dashGpa, &gp0, &gp1, lineP->m_dashes, lineP->m_nDashes, dashPeriod, MAX_LINE_DASHES);
 
                         dashGpa->Transform(&baseTransform);
-
-                        status = PatternHelper::DrawHatchGPA (dashGpa, context);
-
+                        status = PatternHelper::DrawHatchGPA(context, graphic, params, dashGpa);
                         dashGpa->Empty();
                         }
                     }
@@ -1480,9 +786,7 @@ bool                is3d
                     jmdlGraphicsPointArray_markBreak(dashGpa);
 
                     dashGpa->Transform(&baseTransform);
-
-                    status = PatternHelper::DrawHatchGPA (dashGpa, context);
-
+                    status = PatternHelper::DrawHatchGPA(context, graphic, params, dashGpa);
                     dashGpa->Empty();
                     }
                 }
@@ -1490,8 +794,7 @@ bool                is3d
         else
             {
             hatchGpa->Transform(&baseTransform);
-
-            status = PatternHelper::DrawHatchGPA (hatchGpa, context);
+            status = PatternHelper::DrawHatchGPA(context, graphic, params, hatchGpa);
             }
 
         hatchGpa->Empty();
@@ -1501,74 +804,69 @@ bool                is3d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void ProcessDWGHatchPattern
-(
-ViewContextR        context,
-VCClipStencil&      boundary,
-PatternParamsP      params,
-DPoint3dR           origin
-)
+static void ProcessDWGHatchPattern(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params, CurveVectorCR boundary)
     {
-    // NOTE: Never use stencil for DWG patterns, boundary can be open elements...
-    GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, false));
+    PatternParamsCR pattern = *params.GetPatternParams();
+    GPArraySmartP   boundGpa(PatternHelper::GetBoundaryGPA(boundary, pattern.GetOrientation(), pattern.GetOrigin(), false));
 
-    if (NULL == boundGpa || 0 == boundGpa->GetCount())
+    if (nullptr == boundGpa || 0 == boundGpa->GetCount())
         return;
 
-    Transform   baseTransform, invBaseTransform;
-    Transform   hatchTransform;
-
-    // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
-    PatternHelper::CookPatternSymbology(*params, context);
+    Transform baseTransform, invBaseTransform;
+    Transform hatchTransform;
 
     hatchTransform.InitFromRowValues(1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
-
-    DPoint3d    hatchOrigin = origin;
-
-    if (PatternParamsModifierFlags::None == (params->modifiers & PatternParamsModifierFlags::DwgHatchOrigin))
-        {
-        // Old style DWG Hatch Definitions are implicitly about (0,0)
-        params->rMatrix.MultiplyTranspose(hatchOrigin);
-        hatchOrigin.x = hatchOrigin.y = 0.0;
-        params->rMatrix.Multiply(hatchOrigin);
-        }
-
-    baseTransform.InitFrom(params->rMatrix, hatchOrigin);
+    baseTransform.InitFrom(pattern.GetOrientation(), pattern.GetOrigin());
     invBaseTransform.InverseOf(baseTransform);
-
     boundGpa->Transform(&invBaseTransform);
 
-    double  annotationScale = PatternHelper::GetAnnotationScale(*params, context);
-
-    PatternHelper::ProcessDWGHatchBoundary(boundGpa, context, baseTransform, hatchTransform, annotationScale, &params->dwgHatchDef.hatchLines.front(), (int) params->dwgHatchDef.hatchLines.size(), context.Is3dView());
+    PatternHelper::ProcessDWGHatchBoundary(context, graphic, params, boundGpa, baseTransform, hatchTransform, &pattern.GetDwgHatchDef().front(), (int) pattern.GetDwgHatchDef().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sunand.Sandurkar 04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double GetAnnotationScale(PatternParamsCR params, ViewContextR context)
-    {
-    if (PatternParamsModifierFlags::None == (PatternParamsModifierFlags::AnnotationScale & params.GetModifiers()))
-        return 1.0;
-
-    double  annotationScale = params.GetAnnotationScale();
-
-    return (0.0 == annotationScale ? 1.0 : annotationScale);
-    }
+static double GetAnnotationScale(PatternParamsCR params, ViewContextR context) {return 1.0;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sunand.Sandurkar 04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PatternParamsPtr CookPatternParams(PatternParamsCR params, ViewContextR context)
+static bool Cook(ViewContextR context, Render::GraphicBuilderR graphic, Render::GeometryParamsR params)
     {
-    PatternParamsPtr  cookedParams = PatternParams::CreateFromExisting(params);
-    double            annotationScale = PatternHelper::GetAnnotationScale(*cookedParams, context);
+    PatternParamsR pattern = *params.GetPatternParamsP();
+    double annotationScale = PatternHelper::GetAnnotationScale(pattern, context);
 
-    cookedParams->scale  *= annotationScale;
-    cookedParams->space1 *= annotationScale;
-    cookedParams->space2 *= annotationScale;
+    if (!DoubleOps::WithinTolerance(1.0, annotationScale, 1.0e-5))
+        {
+        pattern.SetScale(pattern.GetScale() * annotationScale);
+        pattern.SetPrimarySpacing(pattern.GetPrimarySpacing() * annotationScale);
+        pattern.SetSecondarySpacing(pattern.GetSecondarySpacing() * annotationScale);
 
-    return cookedParams;
+        for (DwgHatchDefLine& line : pattern.GetDwgHatchDefR())
+            {
+            line.m_through.x *= annotationScale;
+            line.m_through.y *= annotationScale;
+
+            line.m_offset.x *= annotationScale;
+            line.m_offset.y *= annotationScale;
+
+            for (short iDash = 0; iDash < line.m_nDashes; iDash++)
+                line.m_dashes[iDash] *= annotationScale;
+            }
+        }
+
+    if (!pattern.GetUseColor() && !pattern.GetUseWeight())
+        return false;
+
+    if (pattern.GetUseColor())
+        params.SetLineColor(pattern.GetColor());
+
+    if (pattern.GetUseWeight())
+        params.SetWeight(pattern.GetWeight());
+
+    context.CookGeometryParams(params, graphic);
+
+    return true;
     }
 
 }; // PatternHelper
@@ -1581,155 +879,58 @@ bool ViewContext::_WantAreaPatterns()
     return GetViewFlags().m_patterns;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void correctPatternOffsetAndRotation(PatternParamsR params, DPoint3dR origin, ViewContext::ClipStencil& boundary)
-    {
-    if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Origin) ||
-        PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::DwgHatchOrigin))
-        return; // Explicit origin supplied, assume PatternParam information is good (ex. cut section). Normal patterns specify an offset, not an origin...
-
-    CurveVectorPtr  curves = boundary.GetCurveVector();
-
-    if (!curves.IsValid())
-        return;
-
-    // TR#261083 - We didn't store good pattern offsets for complex shapes, grouped holes, and assoc regions. Offset was from the
-    //             lower left corner of range and might not lie in the plane of the geometry. Getting the CurveVector now to check
-    //             the origin is ok (since it's cached) and even though we don't have the legacy complex element issue anymore, the
-    //             PatternParams could still be from an OvrGraphicParams where the offset/rotation aren't explicitly set per-boundary.
-    DVec3d      planeNormal;
-    DPoint3d    planePt;
-
-    if (!curves->GetStartPoint(planePt))
-        return;
-
-    if (PatternParamsModifierFlags::None == (params.modifiers & PatternParamsModifierFlags::RotMatrix))
-        {
-        Transform   localToWorld;
-
-        if (curves->GetAnyFrenetFrame(localToWorld))
-            {
-            localToWorld.GetMatrix(params.rMatrix);
-            params.rMatrix.SquareAndNormalizeColumns(params.rMatrix, 2, 0);
-            }
-        }
-
-    double      t;
-    DVec3d      diff, rtmp;
-
-    params.rMatrix.GetColumn(planeNormal, 2);
-    diff.DifferenceOf(planePt, origin);
-    t = diff.DotProduct(planeNormal);
-    rtmp.Scale(planeNormal, t);
-    origin.SumOf(rtmp, origin);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_DrawAreaPattern(ClipStencil& boundary)
+void ViewContext::_DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params)
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    if (_CheckStop())
+    // NEEDSWORK_PATTERN_GEOMETRY_MAP - This is all just temporary to see if the PatternParams is being converted from V8 ok...
+    // We'll want display patterns as geometry maps all the time (at least in 3d), but I'm waiting
+    // to see what mesh-tiles/multi-threading QvElem creation does to drawing, ex. removal of ViewContext, etc.
+    // For now the "dropped" pattern geometry is just being added directly to the graphic.
+    if (_CheckStop() || !_WantAreaPatterns() || !boundary.IsAnyRegionType())
         return;
 
-    if (!_WantAreaPatterns())
+    PatternParamsCP pattern;
+
+    if (nullptr == (pattern = params.GetPatternParams()))
         return;
-
-    PatternParamsCP params = m_ovrGraphicParams.GetPatternParams();
-
-    if (nullptr == params)
-        params = m_graphicParams.GetPatternParams();
-
-    if (nullptr == params)
-        return;
-
-    DPoint3d    origin = params->origin;
 
     // Can greatly speed up fit calculation by just drawing boundary...
     if (DrawPurpose::FitView == GetDrawPurpose())
-        return boundary.GetGeomSource().Stroke(*this);
+        {
+        graphic.AddCurveVector(boundary, false);
+        return;
+        }
 
-    IPickGeom*  pickGeom = GetIPickGeom();
-    GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : NULL;
     bool        wasSnappable = true;
+    IPickGeomP  pickGeom = GetIPickGeom();
+    GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail() : nullptr;
 
-    if (NULL != detail)
+    if (nullptr != detail)
         {
         wasSnappable = detail->IsSnappable();
-        detail->SetNonSnappable(PatternParamsModifierFlags::None == (params->modifiers & PatternParamsModifierFlags::Snap));
+        detail->SetNonSnappable(!pattern->GetSnappable());
         }
 
-    PatternParamsPtr cookedParams = PatternHelper::CookPatternParams(*params, *this);
+    Render::GeometryParams cookedParams(params);
+
+    bool changed = PatternHelper::Cook(*this, graphic, cookedParams);
 
     if (Is3dView())
-        correctPatternOffsetAndRotation(*cookedParams, origin, boundary);
+        PatternHelper::AdjustOrigin(*cookedParams.GetPatternParamsP(), boundary);
 
-    // Use mark to keep track of number of CoordSys to pop...
-    ViewContext::ContextMark mark(this);
-
-    /* NOTE: If parity isn't used then pattern won't match fill display. This means we can't use
-             a stencil. QV allows for parity or 0 winding rule, neither of which matches old pattern
-             display, which in gpa case made use of booleans to subtract holes.
-             useParity = (0 != (cookedParams->modifiers & PatternParamsModifierFlags::HoleStyle) && PatternParamsHoleStyleType::Parity == cookedParams->holeStyle) */
-
-    double      offsetDist = 0.0;
-    //  We do this to avoid the Z fighting that occurs when patterning a filled element after converting a 2D file with patterns into a physical model.
-    bool        pushOffset = DisplayHandler::Is3dElem(thisElm.GetElementCP()) && GetIViewDraw()->IsOutputQuickVision() && GetElemMatSymb()->IsFilled();
-    if (pushOffset)
-        {
-        offsetDist = GetViewport()->GetViewControllerCP()->GetPatternZOffset(*this, thisElm);
-        pushOffset = offsetDist != 0;
-        }
-
-    if (pushOffset)
-        {
-        DVec3d      offsetDir;
-
-        cookedParams->rMatrix.GetColumn(offsetDir, 2);
-
-        DVec3d      viewZDir, testDir;
-        DPoint3d    offsetPt, viewPt[2];
-        Transform   transform;
-
-        offsetPt.zero();
-        offsetDir.normalize();
-        testDir = offsetDir;
-
-        viewPt[0].zero();
-        viewPt[1].init(0.0, 0.0, 1.0);
-
-        NpcToFrustum(viewPt, viewPt, 2);
-        viewZDir.differenceOf(&viewPt[0], &viewPt[1]);
-
-        if (SUCCESS == GetCurrLocalToFrustumTrans(transform))
-            transform.multiplyMatrixOnly(&testDir, &testDir);
-
-        if (testDir.dotProduct(&viewZDir) > 0.0)
-            offsetDist *= -1.0;
-
-        offsetPt.sumOf(&offsetPt, &offsetDir, offsetDist);
-        transform.initFrom(&offsetPt);
-
-        PushTransform(transform);
-        }
-
-    if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::Cell))
-        PatternHelper::ProcessAreaPattern(*this, boundary, cookedParams.get(), origin);
-    else if (PatternParamsModifierFlags::None != (cookedParams->modifiers & PatternParamsModifierFlags::DwgHatchDef))
-        PatternHelper::ProcessDWGHatchPattern(*this, boundary, cookedParams.get(), origin);
+    if (pattern->GetSymbolId().IsValid())
+        PatternHelper::ProcessAreaPattern(*this, graphic, cookedParams, boundary);
+    else if (0 != pattern->GetDwgHatchDef().size())
+        PatternHelper::ProcessDWGHatchPattern(*this, graphic, cookedParams, boundary);
     else
-        PatternHelper::ProcessHatchPattern(*this, boundary, cookedParams.get(), origin);
+        PatternHelper::ProcessHatchPattern(*this, graphic, cookedParams, boundary);
 
-    if (pushOffset)
-        PopTransformClip();
+    if (changed)
+        CookGeometryParams(params, graphic); // Restore original symbology...
 
-    if (NULL != detail)
+    if (nullptr != detail)
         detail->SetNonSnappable(!wasSnappable);
-#endif
     }
 

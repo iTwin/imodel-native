@@ -17,6 +17,7 @@ namespace FB {
 struct DPoint3d;
 struct DPoint2d;
 struct DVec3d;
+struct RotMatrix;
 struct Transform;
 struct FaceSymbology;
 struct FaceSymbologyIndex;
@@ -30,6 +31,8 @@ struct BasicSymbology;
 struct LineStyleModifiers;
 struct Material;
 struct AreaFill;
+struct DwgHatchDefLine;
+struct AreaPattern;
 
 enum GradientMode {
   GradientMode_None = 0,
@@ -147,6 +150,34 @@ MANUALLY_ALIGNED_STRUCT(8) DVec3d {
   double z() const { return flatbuffers::EndianScalar(z_); }
 };
 STRUCT_END(DVec3d, 24);
+
+MANUALLY_ALIGNED_STRUCT(8) RotMatrix {
+ private:
+  double x00_;
+  double x01_;
+  double x02_;
+  double x10_;
+  double x11_;
+  double x12_;
+  double x20_;
+  double x21_;
+  double x22_;
+
+ public:
+  RotMatrix(double x00, double x01, double x02, double x10, double x11, double x12, double x20, double x21, double x22)
+    : x00_(flatbuffers::EndianScalar(x00)), x01_(flatbuffers::EndianScalar(x01)), x02_(flatbuffers::EndianScalar(x02)), x10_(flatbuffers::EndianScalar(x10)), x11_(flatbuffers::EndianScalar(x11)), x12_(flatbuffers::EndianScalar(x12)), x20_(flatbuffers::EndianScalar(x20)), x21_(flatbuffers::EndianScalar(x21)), x22_(flatbuffers::EndianScalar(x22)) { }
+
+  double x00() const { return flatbuffers::EndianScalar(x00_); }
+  double x01() const { return flatbuffers::EndianScalar(x01_); }
+  double x02() const { return flatbuffers::EndianScalar(x02_); }
+  double x10() const { return flatbuffers::EndianScalar(x10_); }
+  double x11() const { return flatbuffers::EndianScalar(x11_); }
+  double x12() const { return flatbuffers::EndianScalar(x12_); }
+  double x20() const { return flatbuffers::EndianScalar(x20_); }
+  double x21() const { return flatbuffers::EndianScalar(x21_); }
+  double x22() const { return flatbuffers::EndianScalar(x22_); }
+};
+STRUCT_END(RotMatrix, 72);
 
 MANUALLY_ALIGNED_STRUCT(8) Transform {
  private:
@@ -839,6 +870,169 @@ inline flatbuffers::Offset<AreaFill> CreateAreaFill(flatbuffers::FlatBufferBuild
   builder_.add_isBgColor(isBgColor);
   builder_.add_useColor(useColor);
   builder_.add_fill(fill);
+  return builder_.Finish();
+}
+
+struct DwgHatchDefLine : private flatbuffers::Table {
+  double angle() const { return GetField<double>(4, 0); }
+  const DPoint2d *through() const { return GetStruct<const DPoint2d *>(6); }
+  const DPoint2d *offset() const { return GetStruct<const DPoint2d *>(8); }
+  const flatbuffers::Vector<double> *dashes() const { return GetPointer<const flatbuffers::Vector<double> *>(10); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<double>(verifier, 4 /* angle */) &&
+           VerifyField<DPoint2d>(verifier, 6 /* through */) &&
+           VerifyField<DPoint2d>(verifier, 8 /* offset */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* dashes */) &&
+           verifier.Verify(dashes()) &&
+           verifier.EndTable();
+  }
+  bool has_angle() const { return CheckField(4); }
+  bool has_through() const { return CheckField(6); }
+  bool has_offset() const { return CheckField(8); }
+  bool has_dashes() const { return CheckField(10); }
+};
+
+struct DwgHatchDefLineBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_angle(double angle) { fbb_.AddElement<double>(4, angle, 0); }
+  void add_through(const DPoint2d *through) { fbb_.AddStruct(6, through); }
+  void add_offset(const DPoint2d *offset) { fbb_.AddStruct(8, offset); }
+  void add_dashes(flatbuffers::Offset<flatbuffers::Vector<double>> dashes) { fbb_.AddOffset(10, dashes); }
+  DwgHatchDefLineBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  DwgHatchDefLineBuilder &operator=(const DwgHatchDefLineBuilder &);
+  flatbuffers::Offset<DwgHatchDefLine> Finish() {
+    auto o = flatbuffers::Offset<DwgHatchDefLine>(fbb_.EndTable(start_, 4));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<DwgHatchDefLine> CreateDwgHatchDefLine(flatbuffers::FlatBufferBuilder &_fbb,
+   double angle = 0,
+   const DPoint2d *through = 0,
+   const DPoint2d *offset = 0,
+   flatbuffers::Offset<flatbuffers::Vector<double>> dashes = 0) {
+  DwgHatchDefLineBuilder builder_(_fbb);
+  builder_.add_angle(angle);
+  builder_.add_dashes(dashes);
+  builder_.add_offset(offset);
+  builder_.add_through(through);
+  return builder_.Finish();
+}
+
+struct AreaPattern : private flatbuffers::Table {
+  const DPoint3d *origin() const { return GetStruct<const DPoint3d *>(4); }
+  const RotMatrix *rotation() const { return GetStruct<const RotMatrix *>(6); }
+  double space1() const { return GetField<double>(8, 0); }
+  double space2() const { return GetField<double>(10, 0); }
+  double angle1() const { return GetField<double>(12, 0); }
+  double angle2() const { return GetField<double>(14, 0); }
+  double scale() const { return GetField<double>(16, 0); }
+  uint32_t color() const { return GetField<uint32_t>(18, 0); }
+  uint32_t weight() const { return GetField<uint32_t>(20, 0); }
+  uint8_t useColor() const { return GetField<uint8_t>(22, 0); }
+  uint8_t useWeight() const { return GetField<uint8_t>(24, 0); }
+  uint8_t invisibleBoundary() const { return GetField<uint8_t>(26, 0); }
+  uint8_t snappable() const { return GetField<uint8_t>(28, 0); }
+  int64_t symbolId() const { return GetField<int64_t>(30, 0); }
+  const flatbuffers::Vector<flatbuffers::Offset<DwgHatchDefLine>> *defLine() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<DwgHatchDefLine>> *>(32); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<DPoint3d>(verifier, 4 /* origin */) &&
+           VerifyField<RotMatrix>(verifier, 6 /* rotation */) &&
+           VerifyField<double>(verifier, 8 /* space1 */) &&
+           VerifyField<double>(verifier, 10 /* space2 */) &&
+           VerifyField<double>(verifier, 12 /* angle1 */) &&
+           VerifyField<double>(verifier, 14 /* angle2 */) &&
+           VerifyField<double>(verifier, 16 /* scale */) &&
+           VerifyField<uint32_t>(verifier, 18 /* color */) &&
+           VerifyField<uint32_t>(verifier, 20 /* weight */) &&
+           VerifyField<uint8_t>(verifier, 22 /* useColor */) &&
+           VerifyField<uint8_t>(verifier, 24 /* useWeight */) &&
+           VerifyField<uint8_t>(verifier, 26 /* invisibleBoundary */) &&
+           VerifyField<uint8_t>(verifier, 28 /* snappable */) &&
+           VerifyField<int64_t>(verifier, 30 /* symbolId */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 32 /* defLine */) &&
+           verifier.Verify(defLine()) &&
+           verifier.VerifyVectorOfTables(defLine()) &&
+           verifier.EndTable();
+  }
+  bool has_origin() const { return CheckField(4); }
+  bool has_rotation() const { return CheckField(6); }
+  bool has_space1() const { return CheckField(8); }
+  bool has_space2() const { return CheckField(10); }
+  bool has_angle1() const { return CheckField(12); }
+  bool has_angle2() const { return CheckField(14); }
+  bool has_scale() const { return CheckField(16); }
+  bool has_color() const { return CheckField(18); }
+  bool has_weight() const { return CheckField(20); }
+  bool has_useColor() const { return CheckField(22); }
+  bool has_useWeight() const { return CheckField(24); }
+  bool has_invisibleBoundary() const { return CheckField(26); }
+  bool has_snappable() const { return CheckField(28); }
+  bool has_symbolId() const { return CheckField(30); }
+  bool has_defLine() const { return CheckField(32); }
+};
+
+struct AreaPatternBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_origin(const DPoint3d *origin) { fbb_.AddStruct(4, origin); }
+  void add_rotation(const RotMatrix *rotation) { fbb_.AddStruct(6, rotation); }
+  void add_space1(double space1) { fbb_.AddElement<double>(8, space1, 0); }
+  void add_space2(double space2) { fbb_.AddElement<double>(10, space2, 0); }
+  void add_angle1(double angle1) { fbb_.AddElement<double>(12, angle1, 0); }
+  void add_angle2(double angle2) { fbb_.AddElement<double>(14, angle2, 0); }
+  void add_scale(double scale) { fbb_.AddElement<double>(16, scale, 0); }
+  void add_color(uint32_t color) { fbb_.AddElement<uint32_t>(18, color, 0); }
+  void add_weight(uint32_t weight) { fbb_.AddElement<uint32_t>(20, weight, 0); }
+  void add_useColor(uint8_t useColor) { fbb_.AddElement<uint8_t>(22, useColor, 0); }
+  void add_useWeight(uint8_t useWeight) { fbb_.AddElement<uint8_t>(24, useWeight, 0); }
+  void add_invisibleBoundary(uint8_t invisibleBoundary) { fbb_.AddElement<uint8_t>(26, invisibleBoundary, 0); }
+  void add_snappable(uint8_t snappable) { fbb_.AddElement<uint8_t>(28, snappable, 0); }
+  void add_symbolId(int64_t symbolId) { fbb_.AddElement<int64_t>(30, symbolId, 0); }
+  void add_defLine(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<DwgHatchDefLine>>> defLine) { fbb_.AddOffset(32, defLine); }
+  AreaPatternBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  AreaPatternBuilder &operator=(const AreaPatternBuilder &);
+  flatbuffers::Offset<AreaPattern> Finish() {
+    auto o = flatbuffers::Offset<AreaPattern>(fbb_.EndTable(start_, 15));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<AreaPattern> CreateAreaPattern(flatbuffers::FlatBufferBuilder &_fbb,
+   const DPoint3d *origin = 0,
+   const RotMatrix *rotation = 0,
+   double space1 = 0,
+   double space2 = 0,
+   double angle1 = 0,
+   double angle2 = 0,
+   double scale = 0,
+   uint32_t color = 0,
+   uint32_t weight = 0,
+   uint8_t useColor = 0,
+   uint8_t useWeight = 0,
+   uint8_t invisibleBoundary = 0,
+   uint8_t snappable = 0,
+   int64_t symbolId = 0,
+   flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<DwgHatchDefLine>>> defLine = 0) {
+  AreaPatternBuilder builder_(_fbb);
+  builder_.add_symbolId(symbolId);
+  builder_.add_scale(scale);
+  builder_.add_angle2(angle2);
+  builder_.add_angle1(angle1);
+  builder_.add_space2(space2);
+  builder_.add_space1(space1);
+  builder_.add_defLine(defLine);
+  builder_.add_weight(weight);
+  builder_.add_color(color);
+  builder_.add_rotation(rotation);
+  builder_.add_origin(origin);
+  builder_.add_snappable(snappable);
+  builder_.add_invisibleBoundary(invisibleBoundary);
+  builder_.add_useWeight(useWeight);
+  builder_.add_useColor(useColor);
   return builder_.Finish();
 }
 

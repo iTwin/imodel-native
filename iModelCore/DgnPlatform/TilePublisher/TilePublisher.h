@@ -8,6 +8,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 #include <iostream>
 #include <fstream>
 
@@ -101,11 +102,14 @@ private:
     TextureCache        m_textureCache;
     TileGeneratorP      m_generator = nullptr;
     Status              m_acceptTileStatus = Status::Success;
+    Transform           m_dbToTile;
+    Transform           m_tileToEcef;
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
-    Status WriteWebApp();
+    Status WriteWebApp(TransformCR transform, bvector<Utf8String>& viewedTileSetNames);
+    void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
@@ -115,9 +119,10 @@ private:
     private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
+        uint32_t            m_lastNumCompleted = 0xffffffff;
         
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override { printf("%s: %u/%u\n", m_taskName.c_str(), completed, total); }
-        virtual void _SetTaskName(TileGenerator::TaskName task) override { m_taskName = TileGenerator::TaskName::CreatingTiles == task ? "Creating Tiles" : "Collecting Geometry"; }
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
+        virtual void _SetTaskName(TileGenerator::TaskName task) override;
         virtual bool _WasAborted() override { return TilesetPublisher::Status::Success != m_publisher.GetTileStatus(); }
     public:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
@@ -126,12 +131,15 @@ public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
     Status Publish();
+    Status PublishViewedModel (Utf8String& tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TextureCache& GetTextureCache() { return m_textureCache; }
     TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
+    BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
+    TransformCR  GetTileToEcef() const { return m_tileToEcef; }
 
     static Status ConvertStatus(TileGenerator::Status input);
     static TileGenerator::Status ConvertStatus(Status input);
@@ -154,11 +162,11 @@ private:
     ByteStream              m_binaryData;
     TilesetPublisher&       m_context;
 
+
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
     static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
     static void WriteBoundingVolume(Json::Value&, TileNodeCR);
-    static void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath, bvector<WString> const& childPaths);
     static void AddTechniqueParameter(Json::Value&, Utf8CP name, int type, Utf8CP semantic);
     static void AppendProgramAttribute(Json::Value&, Utf8CP);
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
@@ -169,8 +177,12 @@ private:
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddShaders(Json::Value& value, bool isTextured);
+    Json::Value AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent);
+    Json::Value AddPolylineShaderTechnique (Json::Value& rootNode);
+
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t id, uint32_t texId, TextureIdToNameMap& texNames);
     void AppendUInt32(uint32_t value);
+    void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath);
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 public:
     TilePublisher(TileNodeCR tile, TilesetPublisher& context);
