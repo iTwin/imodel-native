@@ -92,7 +92,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         {
         Utf8String ddl = GetDDL(BIS_TABLE(BIS_CLASS_DefinitionElement));
         ASSERT_TRUE(ddl.Contains("FOREIGN KEY([ElementId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Element) "]([Id]) ON DELETE CASCADE"));
-        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([BaseModelId]) REFERENCES [" BIS_TABLE(BIS_CLASS_Model) "]([Id])"));
+        ASSERT_TRUE(ddl.Contains("FOREIGN KEY([BaseModel]) REFERENCES [" BIS_TABLE(BIS_CLASS_Model) "]([Id])"));
         ASSERT_FALSE(ddl.Contains("ON DELETE RESTRICT"));
         ASSERT_FALSE(ddl.Contains("ON UPDATE RESTRICT"));
         }

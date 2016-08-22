@@ -172,7 +172,7 @@ static DgnDbStatus lockElement(DgnElementCR ele)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition2d::OnModelDelete(DgnDbR db, DgnModelId mid)
     {
-    auto findViewsStmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition2d") " WHERE BaseModelId=?");
+    auto findViewsStmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition2d") " WHERE BaseModel=?");
     if (!findViewsStmt.IsValid())
         {
         BeAssert(false);
