@@ -357,7 +357,6 @@ enum ImagePPClassId
     HRFFileId_SpotDimap	                        =	1508,
     HRFFileId_PDF	                            =	1509,
     HRFFileId_ErdasImg	                        =	1510,
-    HRFFileId_MapBox	                        =	1511,
     HPMObjectStoreId_Base	                    =	1531,
     HPSObjectStoreId	                        =	1532,
     HPSWorldClusterId	                        =	1535,

@@ -182,10 +182,7 @@ HRAOnDemandRaster::HRAOnDemandRaster(BeXmlNode*                         pi_pOnDe
         while (relatedURLIter != relatedURLIterEnd)
         {    
             if (HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_VirtualEarth, *relatedURLIter) || 
-                HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_WMS, *relatedURLIter) ||
-                HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_MapBox, *relatedURLIter))
-
-
+                HRFRasterFileFactory::GetInstance()->IsKindOfFile(HRFFileId_WMS, *relatedURLIter))
             {
                 m_isDataChangingWithResolution = true;
                 break;
