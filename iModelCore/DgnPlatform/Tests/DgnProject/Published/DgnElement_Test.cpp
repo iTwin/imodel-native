@@ -933,7 +933,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ECN::ECValue v;
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyVakye(v, "UserLabel"));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
     ASSERT_STREQ("my label", v.ToString().c_str());
     ASSERT_STREQ("my label", ele->GetUserLabel());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_TestElementProperty));
