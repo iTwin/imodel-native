@@ -55,7 +55,7 @@ public:
             //! @param[in] fileId File Id of the raster file.
             //! @param[in] transformP Transform of the raster file. This parameter can be null.
             CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4d* transformP) :
-                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), code), m_fileId(fileId), m_transformP(transformP)
+                T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId), m_transformP(transformP)
                 {}
         };
 
