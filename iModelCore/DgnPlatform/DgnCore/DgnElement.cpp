@@ -297,6 +297,10 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
+    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
+    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
+    m_autoHandledProperties = nullptr;
+
     GetModel()->_OnInsertedElement(*this);
     GetDgnDb().BriefcaseManager().OnElementInserted(GetElementId());
     }
@@ -2717,14 +2721,7 @@ DgnDbStatus DgnElement::UpdateAutoHandledProperties()
         m_autoHandledProperties->SetInstanceId(idStrBuffer);
         }
 
-    DgnDbStatus status = (BSISUCCESS == updater->Update(*m_autoHandledProperties)) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
-
-    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
-    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
-    if (DgnDbStatus::Success == status)
-        m_autoHandledProperties = nullptr;
-
-    return status;
+    return (BSISUCCESS == updater->Update(*m_autoHandledProperties))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
