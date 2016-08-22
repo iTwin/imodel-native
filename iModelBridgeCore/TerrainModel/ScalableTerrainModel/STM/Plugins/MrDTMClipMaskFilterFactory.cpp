@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:04 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -27,7 +27,7 @@ template <typename PointT>
 struct IsPointClippedPred
     {
     const HVEClipShape& m_rShape;
-    mutable HGF2DLocation& m_rTmpPt; // NTERAY: this is bad if a threaded remove_copy_if algorithm is used
+    HGF2DLocation& m_rTmpPt; // NTERAY: this is bad if a threaded remove_copy_if algorithm is used
     explicit IsPointClippedPred (const HVEClipShape& pi_rShape, 
                             HGF2DLocation& po_rTmpPt) : m_rShape(pi_rShape), m_rTmpPt(po_rTmpPt) {}
 

@@ -38,8 +38,6 @@ PchCompiland = $(stmDir)ScalableTerrainModelPCH.cpp
 PchOutputDir = $(o)
 PchExtraOptions    = -Zm180
 
-#NEEDSWORK_VS2015: WIP, remove these warning suppress
-bmopts + -dBUILD_USING_VS2013=1
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki

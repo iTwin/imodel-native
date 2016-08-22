@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:37:01 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,7 +33,7 @@ public:
     typedef std::vector<CreatorPluginID>      
                                     CreatorIDList;
 
-    typedef std::vector<const PluginCreatorT>   
+    typedef std::vector<PluginCreatorT>   
                                     CreatorList;
     typedef std::pair<typename CreatorList::const_iterator, typename CreatorList::const_iterator> 
                                     CreatorListRange;
