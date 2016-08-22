@@ -14,6 +14,8 @@
 #include "ECDbLogger.h"
 #include <type_traits>
 
+#define WIP_USE_PERSISTED_CACHE_TABLES
+
 ECDB_TYPEDEFS(ECDbMap);
 ECDB_TYPEDEFS_PTR(ClassMap);
 ECDB_TYPEDEFS_PTR(PropertyMap);

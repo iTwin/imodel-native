@@ -52,6 +52,10 @@ struct ECDbMap :NonCopyableClass
                 mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
                 mutable RelationshipPerTable m_relationshipPerTable;
                 mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
+#ifndef WIP_USE_PERSISTED_CACHE_TABLES
+                mutable bool m_repopulateTempCache;
+                DbResult PopulateCacheTablesIfNecessary() const;
+#endif
 
                 ECDbMapCR m_map;
 
@@ -81,11 +85,9 @@ struct ECDbMap :NonCopyableClass
 
         ECDbCR m_ecdb;
         DbSchema m_dbSchema;
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
-        static DbResult RepopulateClassHasTable(ECDbCR);
-#endif
         mutable bmap<ECN::ECClassId, ClassMapPtr> m_classMapDictionary;
         mutable LightweightCache m_lightweightCache;
+
         SchemaImportContext* m_schemaImportContext;
 
         BentleyStatus TryGetClassMap(ClassMapPtr&, ClassMapLoadContext&, ECN::ECClassCR) const;
@@ -99,7 +101,6 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus EvaluateColumnNotNullConstraints() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
-
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
         BentleyStatus CreateClassIdColumnIfNecessary(DbTable&, bset<ClassMap*> const&) const;
 
@@ -114,6 +115,9 @@ struct ECDbMap :NonCopyableClass
         explicit ECDbMap(ECDbCR ecdb);
         ~ECDbMap() {}
 
+#ifdef WIP_USE_PERSISTED_CACHE_TABLES
+        static DbResult RepopulateClassHasTable(ECDbCR);
+#endif
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
         ClassMap const* GetClassMap(ECN::ECClassId) const;
 
