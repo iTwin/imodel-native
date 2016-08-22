@@ -108,10 +108,11 @@ public:
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
+    Utf8StringCR GetViewName() const { return m_viewName; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
-    ViewControllerPtr LoadViewController(DgnDbR db) const;
+    ViewControllerPtr LoadViewController(DgnDbR db);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,7 +145,7 @@ DgnViewId PublisherParams::GetViewId(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db) const
+ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db)
     {
     DgnViewId viewId = GetViewId(db);
     ViewDefinitionCPtr view = ViewDefinition::QueryView(viewId, db);
@@ -153,6 +154,8 @@ ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db) const
         printf("View not found\n");
         return false;
         }
+
+    m_viewName = view->GetName();
 
     ViewControllerPtr controller = view->LoadViewController();
     if (controller.IsNull())
@@ -307,6 +310,13 @@ int wmain(int ac, wchar_t const** av)
         return 1;
 
     TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName());
+
+    printf("Publishing:\n"
+           "\tInput: View %s from %ls\n"
+           "\tOutput: %ls%ls.html\n"
+           "\tData: %ls\n",
+            createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
+            
     auto status = publisher.Publish();
 
     printStatus(status);

@@ -654,10 +654,11 @@ void DrawArgs::DrawGraphics(double bias)
 
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, bias));
-    auto group = m_context.CreateBranch(Graphic::CreateParams(nullptr, biasTrans), m_graphics);
+
+    auto group = m_context.CreateBranch(m_graphics, &biasTrans);
     m_context.OutputGraphic(*group, nullptr);
 
-    BeAssert(m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
+    BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
     }
 
 /*---------------------------------------------------------------------------------**//**

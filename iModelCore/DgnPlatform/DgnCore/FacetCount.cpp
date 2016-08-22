@@ -6,6 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+#include <DgnPlatform/DgnBRep/OCBRep.h>
+#endif
 
 #define TRIANGLE_MULTIPLIER 2
 
@@ -291,3 +294,53 @@ size_t FacetCountUtil::GetFacetCount (IGeometryCR geometry, IFacetOptionsR facet
     return 0;
     }
 
+#ifdef BENTLEYCONFIG_OPENCASCADE
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCountUtil::GetFacetCountApproximation(TopoDS_Shape const& shape, IFacetOptionsR opts)
+    {
+    size_t facetCount = 0;
+
+    for (TopExp_Explorer faceExplorer (shape, TopAbs_FACE); faceExplorer.More(); faceExplorer.Next())
+        {
+        CurveVectorPtr boundaries;
+
+        ISolidPrimitivePtr solidPrimitive = OCBRep::ToSolidPrimitive(boundaries, (const TopoDS_Face&)faceExplorer.Current());
+        if (solidPrimitive.IsValid())
+            {
+            facetCount += GetFacetCount(*solidPrimitive, opts);
+            continue;
+            }
+
+        CurveVectorPtr curveVector = OCBRep::ToCurveVector((const TopoDS_Face&)faceExplorer.Current());
+        if (curveVector.IsValid())
+            {
+            facetCount += GetFacetCount(*curveVector, opts);
+            continue;
+            }
+
+        // WIP: Bspline fix needed. Approximation tend to be way over (1000+ ratio)
+        MSBsplineSurfacePtr bspline = OCBRep::ToBsplineSurface(boundaries, (const TopoDS_Face&)faceExplorer.Current());
+        if (bspline.IsValid())
+            facetCount += GetFacetCount(*bspline, opts);
+        }
+
+    return facetCount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t FacetCountUtil::GetFacetCountApproximation(ISolidKernelEntityCR entity, IFacetOptionsR facetOptions)
+    {
+    auto shape = SolidKernelUtil::GetShape(entity);
+    BeAssert(nullptr != shape);
+    if (nullptr == shape)
+        return 0;
+
+    IFacetOptionsPtr scaledFacetOptions = facetOptions.Clone();
+    scaledFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() / entity.GetEntityTransform().MatrixColumnMagnitude(0));
+    return GetFacetCountApproximation(*shape, *scaledFacetOptions);
+    }
+#endif

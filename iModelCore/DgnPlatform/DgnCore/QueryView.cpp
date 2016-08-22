@@ -69,7 +69,7 @@ DgnQueryView::~DgnQueryView()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_DrawDecorations(DecorateContextR context)
     {
-    DrawEnvironment(context);
+    DrawGroundPlane(context);
 
     if (m_copyrightMsgs.empty())
         return;
@@ -137,7 +137,7 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
 AxisAlignedBox3d DgnQueryView::_GetViewedExtents(DgnViewportCR vp) const
     {
     AxisAlignedBox3d box = m_dgndb.Units().GetProjectExtents();
-    box.Extend(GetGroundPlane(vp).m_extents);
+    box.Extend(GetGroundExtents(vp));
     return box;
     }
 
