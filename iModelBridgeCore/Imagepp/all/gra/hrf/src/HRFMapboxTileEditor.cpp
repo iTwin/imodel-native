@@ -19,7 +19,7 @@
 
 #include <ImagePP\all\h\HGF2DStretch.h>
 
-#define VE_MAP_RESOLUTION       18
+#define VE_MAP_RESOLUTION       19
 
 BEGIN_IMAGEPP_NAMESPACE
 
