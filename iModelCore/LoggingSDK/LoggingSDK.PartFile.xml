@@ -57,6 +57,7 @@
 
     <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
+        <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
           <Libs>Delivery\Bentley.Logging.interop-2.0$(libext)</Libs>
           <Assemblies>Delivery\Bentley.Logging.interop-2.0$(shlibext)</Assemblies>
