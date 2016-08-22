@@ -92,6 +92,7 @@ void Render::Queue::AddTask(Task& task)
 
     BeMutexHolder mux(m_cv.GetMutex());
 
+
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
@@ -392,7 +393,6 @@ void GraphicList::ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags)
             }
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16

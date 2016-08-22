@@ -108,7 +108,7 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
-    Status WriteWebApp(TransformCR transform);
+    Status WriteWebApp(TransformCR transform, bvector<Utf8String>& viewedTileSetNames);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -131,6 +131,7 @@ public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
     Status Publish();
+    Status PublishViewedModel (Utf8String& tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TextureCache& GetTextureCache() { return m_textureCache; }
@@ -177,6 +178,8 @@ private:
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddShaders(Json::Value& value, bool isTextured);
     Json::Value AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent);
+    Json::Value AddPolylineShaderTechnique (Json::Value& rootNode);
+
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t id, uint32_t texId, TextureIdToNameMap& texNames);
     void AppendUInt32(uint32_t value);
     void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath);

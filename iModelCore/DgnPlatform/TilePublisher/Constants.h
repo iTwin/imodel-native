@@ -12,6 +12,8 @@ USING_NAMESPACE_BENTLEY
 
 #define USE_BATCH_TABLE 1
 
+#define GLTF_LINES 1
+#define GLTF_LINE_STRIP 3
 #define GLTF_TRIANGLES 4
 #define GLTF_CULL_FACE 2884
 #define GLTF_DEPTH_TEST 2929
@@ -60,7 +62,6 @@ static std::string s_textureShaderCommon =
 "gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);\n";
 
 
-
 static std::string s_texturedVertexShader =
 "precision highp float;\n" 
 "attribute vec2 a_texc;\n"
@@ -96,8 +97,6 @@ static std::string s_untexturedFragShader =
 "gl_FragColor = vec4(color, u_color.a);\n"
 "}\n";
 
-
-
 static std::string s_texturedFragShader =
 "precision highp float;\n"
 "varying vec2 v_texc;\n"  
@@ -108,6 +107,22 @@ static std::string s_texturedFragShader =
 "vec3 color = (textureColor.rgb * diffuseIntensity) + (u_specularColor * specularIntensity);\n"
 "gl_FragColor = vec4(color.rgb * diffuseIntensity, textureColor.a);\n"
 "}\n";
+
+// Polyline shaders....
+static std::string s_polylineVertexShader =
+"precision highp float;\n" 
+"attribute vec3 a_pos;\n"
+"attribute float a_batchId;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"void main(void) {\n"
+"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
+
+static std::string s_polylineFragmentShader =
+"precision highp float;\n"
+"uniform vec4 u_color;\n"
+"void main(void) {gl_FragColor = vec4(u_color);}\n";
+
 
 // For non-geolocated models, set the camera's viewing transform 
 Utf8CP s_3dOnlyViewingFrameJs =
