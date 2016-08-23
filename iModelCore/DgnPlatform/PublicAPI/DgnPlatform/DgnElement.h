@@ -2396,8 +2396,13 @@ protected:
      bset<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them 
      bmap<DgnElementId,DgnElementP> m_ids; // The Elements in the set that have IDs. Child elements will always have IDs. Some top-level elements may not have an Id.
 
+     DGNPLATFORM_EXPORT void EmptyAll();
+     DGNPLATFORM_EXPORT void CopyFrom(DgnEditElementCollector const&);
+
 public:
     DGNPLATFORM_EXPORT DgnEditElementCollector();
+    DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
+    DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
     DGNPLATFORM_EXPORT ~DgnEditElementCollector();
 
     //! Add the specified editable copy of an element to the collection. 

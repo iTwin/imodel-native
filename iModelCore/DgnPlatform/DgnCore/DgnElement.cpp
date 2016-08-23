@@ -2757,8 +2757,48 @@ DgnEditElementCollector::DgnEditElementCollector()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnEditElementCollector::~DgnEditElementCollector() 
     {
+    EmptyAll();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnEditElementCollector::DgnEditElementCollector(DgnEditElementCollector const& rhs)
+    {
+    CopyFrom(rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnEditElementCollector& DgnEditElementCollector::operator=(DgnEditElementCollector const& rhs)
+    {
+    if (this != &rhs)
+        {
+        EmptyAll();
+        CopyFrom(rhs);
+        }
+    return *this;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::EmptyAll()
+    {
     for (auto el : m_elements)
         el->Release();
+    m_elements.clear();
+    m_ids.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::CopyFrom(DgnEditElementCollector const& rhs)
+    {
+    for (auto el : rhs.m_elements)
+        AddElement(*el);
     }
 
 /*---------------------------------------------------------------------------------**//**
