@@ -387,7 +387,7 @@ bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<Drawin
 bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
     {
@@ -413,7 +413,7 @@ DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryIdSet CategorySelector::GetCategoryIds() const
     {
@@ -442,7 +442,7 @@ DgnCategoryIdSet CategorySelector::GetCategoryIds() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/16
+* @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::ContainsCategoryId(DgnCategoryId cid) const
     {
@@ -455,6 +455,49 @@ bool CategorySelector::ContainsCategoryId(DgnCategoryId cid) const
     statement->BindId(1, GetElementId());
     statement->BindId(2, cid);
     return (BE_SQLITE_ROW == statement->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::GetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override>& overrides) const
+    {
+    auto jsonStr = GetPropertyValueString("SubCategoryOverrides");
+    if (0 == jsonStr.length())
+        return;
+
+    Json::Value arr(Json::arrayValue);
+    if (!Json::Reader::Parse(jsonStr, arr))
+        {
+        BeAssert(false && "invalid json");
+        return;
+        }
+
+    for (Json::ArrayIndex i = 0; i<arr.size(); ++i)
+        {
+        JsonValueCR val = arr[i];
+        DgnSubCategoryId subCategoryId(val["SubCategoryOverrides"].asUInt64());
+        if (!subCategoryId.IsValid())
+            continue;
+
+        overrides[subCategoryId] = DgnSubCategory::Override(val);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CategorySelector::SetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override> const& overrides)
+    {
+    Json::Value arr(Json::arrayValue);
+    for (auto const& ovr: overrides)
+        {
+        Json::Value entry(Json::objectValue);
+        entry["SubCategoryId"] = ovr.first.GetValue();
+        ovr.second.ToJson(entry);
+        arr.append(entry);
+        }
+    return SetPropertyValue("SubCategoryOverrides", Json::FastWriter::ToString(arr).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

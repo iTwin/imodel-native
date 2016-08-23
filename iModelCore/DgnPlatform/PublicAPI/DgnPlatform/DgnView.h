@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
+#include "DgnCategory.h"
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
@@ -125,9 +126,13 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetCategoryIds(DgnCategoryIdSet const&);
     //! Get the list of categories.
     DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
-
+    //! Query if the selector includes the specified category
     DGNPLATFORM_EXPORT bool ContainsCategoryId(DgnCategoryId cid) const;
-
+    //! Get the SubCategoryOverrides
+    DGNPLATFORM_EXPORT void GetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override>& overrides) const;
+    //! Set the SubCategoryOverrides
+    DGNPLATFORM_EXPORT DgnDbStatus SetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override> const& overrides);
+    
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector)); }
     static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector); }
     };

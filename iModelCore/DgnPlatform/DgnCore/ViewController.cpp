@@ -192,19 +192,12 @@ void ViewController::LoadCategories()
         m_subCategories.Insert(id, appearance);
         }
 
-#ifdef WIP_VIEW_DEFINITION // *** Get SubCategoryOverrides from CategorySelector
-    if (!m_settings.isMember(ViewFlagsJson::SubCategories()))
-        return;
-
-    JsonValueCR subcatJson = m_settings[ViewFlagsJson::SubCategories()];
-    for (Json::ArrayIndex i=0; i<subcatJson.size(); ++i)
+    bmap<DgnSubCategoryId, DgnSubCategory::Override> overrides;
+    GetCategorySelector().GetSubCategoryOverrides(overrides);
+    for (auto const& ovr : overrides)
         {
-        JsonValueCR val=subcatJson[i];
-        DgnSubCategoryId subCategoryId(val[ViewFlagsJson::SubCategoryId()].asUInt64());
-        if (subCategoryId.IsValid())
-            OverrideSubCategory(subCategoryId, DgnSubCategory::Override(val));
+        OverrideSubCategory(ovr.first, ovr.second);
         }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,21 +240,7 @@ void ViewController::_StoreToDefinition() const
 
     auto& catSel = GetCategorySelector();
     catSel.SetCategoryIds(m_viewedCategories);
-
-    if (m_subCategoryOverrides.empty())
-        return;
-
-#ifdef WIP_VIEW_DEFINITION // *** Set SubCategoryOverrides in CategorySelector
-    BeAssert(false && "WIP_VIEW_DEFINITION");
-    JsonValueR ovrJson = m_settings[ViewFlagsJson::SubCategories()];
-    int i=0;
-    for (auto const& it : m_subCategoryOverrides)
-        {
-        ovrJson[i][ViewFlagsJson::SubCategoryId()] = it.first.GetValue();
-        it.second.ToJson(ovrJson[i]);
-        ++i;
-        }
-#endif
+    catSel.SetSubCategoryOverrides(m_subCategoryOverrides);
     }
 
 /*---------------------------------------------------------------------------------**//**
