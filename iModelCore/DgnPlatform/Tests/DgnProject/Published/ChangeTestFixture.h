@@ -4,19 +4,19 @@
 //-------------------------------------------------------------------------------------- 
 
 #include "DgnHandlersTests.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeTestFixture : public testing::Test
+struct ChangeTestFixture : public DgnDbTestFixture
 {
 private:
     void CreateSeedDgnDb(BeFileNameR seedPathname);
 
 protected:
-    Dgn::ScopedDgnHost m_testHost;
     DgnDbPtr m_testDb;
-    WString m_testFileName;
+    BeFileName m_testFileName;
     bool    m_wantTestDomain;
 
     DgnModelId m_testModelId;
@@ -41,6 +41,8 @@ protected:
     void UpdateDgnDbExtents();
 
 public:
+    //static void SetUpTestCase();
+    //static void TearDownTestCase();
     ChangeTestFixture(WCharCP testFileName, bool wantTestDomain=false);
     virtual ~ChangeTestFixture() {}
     virtual void SetUp() override {}

@@ -12,16 +12,14 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SearchableTextTest : public GenericDgnModelTestFixture
+struct SearchableTextTest : public DgnDbTestFixture
 {
-    DgnDbR m_db;
     uint32_t m_curIdInt = 1;
 
     typedef DgnSearchableText ST;
 
-    SearchableTextTest() : m_db(*GetDgnDb(WString(BeTest::GetNameOfCurrentTest(),true).c_str())) // Create seed copy with the Test Name
+    SearchableTextTest()
         {
-        BeAssert(GetDgnDb().IsValid());
         }
 
     BeInt64Id PeekNextId() const { return BeInt64Id(m_curIdInt); }
@@ -41,7 +39,7 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
     void ExpectMatches(ST::Query const& query, IdList const& matchIds)
         {
         bset<BeInt64Id> foundIds;
-        for (auto const& entry : m_db.SearchableText().QueryRecords(query))
+        for (auto const& entry : m_db->SearchableText().QueryRecords(query))
             {
             EXPECT_TRUE(foundIds.end() == foundIds.find(entry.GetId()));
             EXPECT_TRUE(matchIds.end() != std::find_if(matchIds.begin(), matchIds.end(), [&](uint64_t arg) { return BeInt64Id(arg) == entry.GetId(); }));
@@ -58,13 +56,13 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
 
     void ExpectCount(size_t expectedCount, Utf8CP text, Utf8CP cat1=nullptr, Utf8CP cat2=nullptr)
         {
-        EXPECT_EQ(expectedCount, m_db.SearchableText().QueryCount(MakeQuery(text, cat1, cat2))) << text << "(" << (cat1?cat1:"null") << ") (" << (cat2?cat2:"null") << ")";
+        EXPECT_EQ(expectedCount, m_db->SearchableText().QueryCount(MakeQuery(text, cat1, cat2))) << text << "(" << (cat1?cat1:"null") << ") (" << (cat2?cat2:"null") << ")";
         }
 
     void Insert(Utf8CP category, Utf8CP text)
         {
         ST::Record record(category, UseNextId(), text);
-        EXPECT_EQ(BE_SQLITE_OK, m_db.SearchableText().Insert(record));
+        EXPECT_EQ(BE_SQLITE_OK, m_db->SearchableText().Insert(record));
         }
 };
 
@@ -73,6 +71,7 @@ struct SearchableTextTest : public GenericDgnModelTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SearchableTextTest, Query)
     {
+    SetupSeedProject();
     // Populate searchable text table
     struct Client { Utf8CP name; Utf8CP address; Utf8CP company; };
     Client clients[] =
@@ -83,7 +82,7 @@ TEST_F(SearchableTextTest, Query)
             { "Edd Good", "123 Frankfurt Ave", "Good Stuff Home Furnishings" },
         };
 
-    auto& st = m_db.SearchableText();
+    auto& st = m_db->SearchableText();
 
     for (auto const& client : clients)
         {
@@ -197,7 +196,8 @@ TEST_F(SearchableTextTest, Query)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SearchableTextTest, CategoryNames)
     {
-    auto& st = m_db.SearchableText();
+    SetupSeedProject();
+    auto& st = m_db->SearchableText();
     EXPECT_EQ(BE_SQLITE_OK, st.Insert(ST::Record("My Category", UseNextId(), "stuff")));
     EXPECT_EQ(BE_SQLITE_OK, st.Insert(ST::Record("My Category B", UseNextId(), "stuff")));
     EXPECT_EQ(BE_SQLITE_OK, st.Insert(ST::Record("Category", UseNextId(), "stuff")));
@@ -220,6 +220,7 @@ TEST_F(SearchableTextTest, CategoryNames)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SearchableTextTest, DropAndUpdate)
     {
+    SetupSeedProject();
     //     Cat     Text         ID
     Insert("CatA", "abc");      // 1
     Insert("CatA", "abc def");  // 2
@@ -247,7 +248,7 @@ TEST_F(SearchableTextTest, DropAndUpdate)
     //     "CatB"  "def"         4
     //     "CatB"  "xyz"         5
     //     "CatA"  "xyz"         6
-    auto& st = m_db.SearchableText();
+    auto& st = m_db->SearchableText();
     EXPECT_EQ(BE_SQLITE_OK, st.Update(ST::Record("CatA", BeInt64Id(1LL), "xyz"), nullptr));
     ExpectCount(2, abc);
     ExpectCount(3, xyz);

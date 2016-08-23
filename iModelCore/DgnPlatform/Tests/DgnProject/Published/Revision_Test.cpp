@@ -182,8 +182,10 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
 void RevisionTestFixture::BackupTestFile()
     {
     CloseDgnDb();
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
-    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    BeFileName originalFile = m_testFileName;// DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileName copyFile(originalFile.GetDirectoryName()); //DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    copyFile.AppendToPath(m_copyTestFileName);
+    //BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
@@ -196,8 +198,9 @@ void RevisionTestFixture::BackupTestFile()
 void RevisionTestFixture::RestoreTestFile()
     {
     CloseDgnDb();
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
-    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    BeFileName originalFile = m_testFileName;// DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileName copyFile(originalFile.GetDirectoryName()); //DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    copyFile.AppendToPath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);

@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ViewAttachmentTest : public GenericDgnModelTestFixture
+struct ViewAttachmentTest : public DgnDbTestFixture
 {
 protected:
     DgnModelId m_drawingId;
@@ -46,7 +46,7 @@ public:
         }
     ViewAttachment::CreateParams MakeParams(ViewAttachment::Data const& data, DgnModelId mid, DgnCategoryId cat, Placement2dCR placement=Placement2d())
         {
-        return ViewAttachment::CreateParams(*GetDgnDb(), mid, ViewAttachment::QueryClassId(*GetDgnDb()), cat, data, placement);
+        return ViewAttachment::CreateParams(GetDgnDb(), mid, ViewAttachment::QueryClassId(GetDgnDb()), cat, data, placement);
         }
     ViewAttachmentCPtr InsertAttachment(ViewAttachment::CreateParams const& params)
         {
@@ -119,7 +119,7 @@ void ViewAttachmentTest::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, double viewRot)
     {
-    auto& db = *GetDgnDb();
+    auto& db = GetDgnDb();
     if (!m_textStyleId.IsValid())
         {
         AnnotationTextStyle style(db);
@@ -156,7 +156,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
 
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(pts);
 
-    auto& db = *GetDgnDb();
+    auto& db = GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
@@ -196,7 +196,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ViewAttachmentTest, CRUD)
     {
-    auto& db = *GetDgnDb(L"CRUD");
+    auto& db = GetDgnDb();
 
     // Test some invalid CreateParams
 
@@ -239,7 +239,7 @@ TEST_F(ViewAttachmentTest, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ViewAttachmentTest, Geom)
     {
-    auto& db = *GetDgnDb(L"Geom");
+    auto& db = GetDgnDb();
 
     // Add some geometry to the drawing and regenerate attachment geometry
     static const double drawingViewRot = /*45.0*msGeomConst_piOver2*/ 0.0;

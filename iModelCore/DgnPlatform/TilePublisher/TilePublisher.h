@@ -108,7 +108,8 @@ private:
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
 
     Status Setup();
-    Status WriteWebApp(TransformCR transform);
+    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
+    void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
@@ -130,6 +131,7 @@ public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
     Status Publish();
+    TileGenerator::Status PublishViewedModel (WStringR tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TextureCache& GetTextureCache() { return m_textureCache; }
@@ -138,6 +140,7 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
+    DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
 
     static Status ConvertStatus(TileGenerator::Status input);
     static TileGenerator::Status ConvertStatus(Status input);
@@ -176,6 +179,8 @@ private:
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddShaders(Json::Value& value, bool isTextured);
     Json::Value AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent);
+    Json::Value AddPolylineShaderTechnique (Json::Value& rootNode);
+
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t id, uint32_t texId, TextureIdToNameMap& texNames);
     void AppendUInt32(uint32_t value);
     void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath);
@@ -190,6 +195,7 @@ public:
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
     TileGeometryCacheR GetGeometryCache() { return *m_context.GetGeometryCache(); }
 };
+
 
 END_BENTLEY_DGN_TILE3D_NAMESPACE
 

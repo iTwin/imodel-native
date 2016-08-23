@@ -62,6 +62,7 @@
 #include <DgnPlatform/DgnTrueColor.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/QueryView.h>
+#include <DgnPlatform/TileSet.h>
 #include "DgnCore/DgnCoreLog.h"
 
 #define ___DGNPLATFORM_SERIALIZED___ BeSystemMutexHolder ___holdBeSystemMutexInScope___

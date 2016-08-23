@@ -222,7 +222,7 @@ TxnManager::TxnId DgnChangeSummaryTestFixture::QueryLastTxnId(DgnDbR dgndb, uint
 //---------------------------------------------------------------------------------------
 void DgnChangeSummaryTestFixture::CreateSampleBuilding(WCharCP fileName)
     {
-    m_testFileName = fileName;
+    //m_testFileName = fileName;
     CreateDgnDb();
 
     for (int ii = 0; ii < 5; ii++)

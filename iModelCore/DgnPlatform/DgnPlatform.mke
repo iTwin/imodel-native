@@ -365,6 +365,8 @@ $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
+#$(CoreObjs)TileSet$(oext) :                         $(DgnCoreDir)TileSet.cpp $(DgnPlatformAPISrc)TileSet.h ${MultiCompileDepends}
+
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 
 $(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(DgnPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
@@ -709,4 +711,7 @@ $(BuildContext)Delivery/icons : $(DgnCoreDir)/icons
 # Last resort fonts that are required to be available to DgnPlatform.
 #----------------------------------------------------------------------
 $(BuildContext)Delivery/lastresortfonts : $(baseDir)LastResortFonts/lastresortfonts
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/SkyBox/SkyBox.jpg : $(baseDir)Assets/SkyBox.jpg
     $(LinkFirstDepToFirstTarget)

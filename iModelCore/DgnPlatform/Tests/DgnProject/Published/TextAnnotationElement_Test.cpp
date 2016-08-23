@@ -44,10 +44,12 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
-    
+
+    BeFileName fileName(TEST_FIXTURE_NAME, true);
+    fileName.AppendToPath(L"TextAnnotation2dTest-BasicCrud.bim");
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", L"TextAnnotation2dTest-BasicCrud.bim", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", fileName.c_str(), __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -232,9 +234,12 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
+
+    BeFileName fileName(TEST_FIXTURE_NAME, true);
+    fileName.AppendToPath(L"TextAnnotation3dTest-BasicCrud.bim");
     
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"TextAnnotation3dTest-BasicCrud.bim", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", fileName.c_str(), __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;

@@ -46,7 +46,7 @@ struct ScriptTest : ::testing::Test
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
 
     void SetupProject(WCharCP testFile, Db::OpenMode mode, bool needBriefcase = true);
-    WString GetTestFileName(WCharCP testname) {return WPrintfString(L"%ls.ibim",testname);}
+    WString GetTestFileName(WCharCP testname) {return WPrintfString(L"%ls.bim",testname);}
 
     void PopulateProperties(GeometricElement3d& el);
 };

@@ -83,7 +83,7 @@ struct ElementDependencyGraph : DgnDbTestFixture
     ECN::ECClassCR GetElementDrivesElementClass();
 
     CachedECSqlStatementPtr GetSelectElementDrivesElementById();
-    void SetUpForRelationshipTests(WCharCP testname);
+    void SetUpForRelationshipTests();
     ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
 
     void TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_t ntimes);
@@ -233,7 +233,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
+void ElementDependencyGraph::SetUpForRelationshipTests()
     {
     SetupSeedProject();
     ASSERT_TRUE(m_db->IsBriefcase());
@@ -414,7 +414,7 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, DeleteSource)
     {
-    SetUpForRelationshipTests(L"DeleteSource");
+    SetUpForRelationshipTests();
 
     TestElementDrivesElementHandler::GetHandler().Clear();
 
@@ -442,7 +442,7 @@ TEST_F(ElementDependencyGraph, DeleteSource)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, DiamondTest1)
     {
-    SetUpForRelationshipTests(L"DiamondTest1");
+    SetUpForRelationshipTests();
 
     ElementsAndRelationships g;
     g.e99 = InsertElement("E99");
@@ -465,7 +465,7 @@ TEST_F(ElementDependencyGraph, DiamondTest1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, DiamondTest2)
     {
-    SetUpForRelationshipTests(L"DiamondTest2");
+    SetUpForRelationshipTests();
 
     // This is the same as DiamondTest1, except that we create the elements and relationships in a different order.
     //  The hope is to catch things that only happen to work because of the order of the rows in the tables.
@@ -491,7 +491,7 @@ TEST_F(ElementDependencyGraph, DiamondTest2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
     {
-    SetUpForRelationshipTests(L"NonDependencyOrderTest");
+    SetUpForRelationshipTests();
     auto w1 = InsertElement("w1");
     auto c1 = InsertElement("c1");
     auto w2 = InsertElement("w2");
@@ -589,7 +589,7 @@ void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, ECInstanceK
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, OverlappingOutputOrderTest1)
     {
-    SetUpForRelationshipTests(L"NonDependencyOrderTest");
+    SetUpForRelationshipTests();
 
     auto r1 = InsertElement("r1");
     auto r2 = InsertElement("r2");
@@ -607,7 +607,7 @@ TEST_F(ElementDependencyGraph, OverlappingOutputOrderTest1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, OverlappingOutputOrderTest2)
     {
-    SetUpForRelationshipTests(L"NonDependencyOrderTest");
+    SetUpForRelationshipTests();
 
     auto r1 = InsertElement("r1");
     auto r2 = InsertElement("r2");
@@ -626,7 +626,7 @@ TEST_F(ElementDependencyGraph, OverlappingOutputOrderTest2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, FailureTest1)
     {
-    SetUpForRelationshipTests(L"FailureTest1");
+    SetUpForRelationshipTests();
 
     DgnElementCPtr e1 = InsertElement("E1");
     DgnElementCPtr e2 = InsertElement("E2");
@@ -654,7 +654,7 @@ TEST_F(ElementDependencyGraph, FailureTest1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, CycleTest1)
     {
-    SetUpForRelationshipTests(L"CycleTest1");
+    SetUpForRelationshipTests();
 
     //  Two Elements
     auto e1 = InsertElement("E1");
@@ -698,7 +698,7 @@ TEST_F(ElementDependencyGraph, CycleTest1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, CycleTest2)
     {
-    SetUpForRelationshipTests(L"CycleTest1");
+    SetUpForRelationshipTests();
 
     //  Two Elements
     DgnElementCPtr e1 = InsertElement("E1");
@@ -736,7 +736,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     {
-    SetUpForRelationshipTests(L"ModelDependenciesTest");
+    SetUpForRelationshipTests();
 
     //  Create models 1-4
     auto seedModelId = m_defaultModelId;
@@ -835,7 +835,7 @@ static int64_t countModelDrivesModelInstances(DgnDb& db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     {
-    SetUpForRelationshipTests(L"ModelDependenciesWithCycleTest");
+    SetUpForRelationshipTests();
 
     //  Create models 1-4
     auto seedModelId = m_defaultModelId;
@@ -896,7 +896,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     {
-    SetUpForRelationshipTests(L"ModelDependenciesInvalidDirectionTest");
+    SetUpForRelationshipTests();
 
     //  Create models 1 and 2
     auto seedModelId = m_defaultModelId;
@@ -967,7 +967,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, PersistentHandlerTest)
     {
-    SetUpForRelationshipTests(L"PersistentHandlerTest");
+    SetUpForRelationshipTests();
 
     {
     auto e1 = InsertElement("E1");
@@ -997,7 +997,7 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, ChangeDepTest)
     {
-    SetUpForRelationshipTests(L"ChangeDepTest");
+    SetUpForRelationshipTests();
 
     //  Create elements in first txn
     auto e1 = InsertElement("E1");
@@ -1070,7 +1070,7 @@ void TestEdgeProcessor::_OnValidationError(TxnManager::ValidationError const& er
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, WhatIfTest1)
     {
-    SetUpForRelationshipTests(L"WhatIfTest");
+    SetUpForRelationshipTests();
 
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
@@ -1122,7 +1122,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementDependencyGraph, TestPriority)
     {
-    SetUpForRelationshipTests(L"TestPriority");
+    SetUpForRelationshipTests();
 
     DgnElementCPtr e11 = InsertElement("E11");
     ASSERT_TRUE(e11 != nullptr);
