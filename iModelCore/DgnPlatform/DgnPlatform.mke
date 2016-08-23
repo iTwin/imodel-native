@@ -233,9 +233,11 @@ $(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $
 
 $(CoreObjs)ViewController$(oext) :                  $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
+%ifdef WIP_VIEW_DEFINITION
 $(CoreObjs)HypermodelingViewController$(oext) :     $(DgnCoreDir)HypermodelingViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
 
 $(CoreObjs)SectioningPhysicalViewController$(oext): $(DgnCoreDir)SectioningPhysicalViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
+%endif
 
 $(CoreObjs)DgnElements$(oext) :                     $(DgnCoreDir)DgnElements.cpp $(DgnPlatformAPISrc)DgnDb.h ${MultiCompileDepends}
 

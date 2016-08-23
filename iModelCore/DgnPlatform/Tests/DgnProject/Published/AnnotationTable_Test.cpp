@@ -374,15 +374,14 @@ void AnnotationTableTest::SetUpTestCase()
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
     //.........................................................................................
-    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "AnnotationTableTest",
-                ViewDefinition::Data(model->GetModelId(), DgnViewSource::Generated)));
+    DrawingViewDefinition view(*db, "AnnotationTableTest", model->GetModelId());
     EXPECT_TRUE(view.Insert().IsValid());
 
     DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    DrawingViewController viewController(*db, view.GetViewId());
+    DrawingViewController viewController(view);
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
     //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
@@ -390,11 +389,10 @@ void AnnotationTableTest::SetUpTestCase()
     viewController.ChangeCategoryDisplay(category.GetCategoryId(), true);
     viewController.ChangeModelDisplay(model->GetModelId(), true);
 
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+    EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
 #endif
 
     // Save the customized seed for use by all the tests in this group
-    db->SaveSettings();
     db->SaveChanges();
     }
 

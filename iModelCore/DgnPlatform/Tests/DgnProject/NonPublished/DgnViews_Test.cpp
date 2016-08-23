@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ColorUtil.h>
@@ -25,29 +26,26 @@ struct DgnViewElemTest : public DgnDbTestFixture
 {
     typedef ViewDefinition::Iterator Iter;
     typedef Iter::Options IterOpts;
-    DgnDbPtr        project;
 
     void SetupTestProject()
         {
-        WString testName(TEST_NAME, true);
-        testName.AppendUtf8(".ibim");
-        DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
-        project = m_db;
+        SetupSeedProject();
+        //WString testName(TEST_NAME, true);
+        //testName.AppendUtf8(".ibim");
+        //DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
         }
 
     PhysicalModelPtr AddModel(Utf8StringCR name)
         {
-        SubjectCPtr subject = Subject::CreateAndInsert(*project->Elements().GetRootSubject(), name.c_str());
-        EXPECT_TRUE(subject.IsValid());
-        PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*subject, DgnModel::CreateModelCode(name));
-        EXPECT_TRUE(model.IsValid());
-        return model;
+        return DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(name));
         }
 
     template<typename T> ViewDefinitionCPtr AddView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
-        typename T::CreateParams params(*project, name, ViewDefinition::Data(baseModelId, source, descr));
-        T view(params);
+        T view(*m_db, name);
+        view.SetDescr(descr);
+        view.SetSource(source);
+        view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, name.c_str(), baseModelId));
         auto cpView = view.Insert();
         EXPECT_TRUE(cpView.IsValid());
         return cpView;
@@ -71,8 +69,22 @@ struct DgnViewElemTest : public DgnDbTestFixture
 
     void ExpectViews(IterOpts const& opts, std::initializer_list<Utf8CP> names)
         {
-        Iter iter(*project, opts);
+        Iter iter(*m_db, opts);
         ExpectViews(iter, names);
+        }
+
+    void Make4Views()
+        {
+        auto m1 = AddModel("m1");
+        auto m2 = AddModel("m2");
+        auto m3 = AddModel("m3");
+        auto m4 = AddModel("m4");
+
+        ASSERT_TRUE(m1.IsValid() && m2.IsValid() && m3.IsValid() && m4.IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m1, "View 1").IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m2, "View 2").IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m3, "View 3").IsValid());
+        ASSERT_TRUE(DgnDbTestUtils::InsertCameraView(*m4, "View 4").IsValid());
         }
 };
 
@@ -83,13 +95,14 @@ struct DgnViewElemTest : public DgnDbTestFixture
 TEST_F(DgnViewElemTest, WorkWithViewTable)
     {
     SetupTestProject();
+    Make4Views();
 
     //Get views
-    auto iter = ViewDefinition::MakeIterator(*project);
-    EXPECT_EQ(4, ViewDefinition::QueryCount(*project));
+    auto iter = ViewDefinition::MakeIterator(*m_db);
+    EXPECT_EQ(4, ViewDefinition::QueryCount(*m_db));
 
     //Iterate through each view and make sure they have correct information
-    static const Utf8CP s_viewNames[] = { "Default - View 1", "Default - View 2", "Model2d Views - View 1", "Model2d Views - View 2" };
+    static const Utf8CP s_viewNames[] = { "View 1", "View 2", "View 3", "View 4" };
 
     int i = 0;
     for (auto const& entry : iter)
@@ -108,15 +121,16 @@ TEST_F(DgnViewElemTest, WorkWithViewTable)
 TEST_F(DgnViewElemTest, DeleteView)
     {
     SetupTestProject();
+    Make4Views();
 
     //Get views
-    auto viewId = (*ViewDefinition::MakeIterator(*project).begin()).GetId();
-    auto view = ViewDefinition::QueryView(viewId, *project);
+    auto viewId = (*ViewDefinition::MakeIterator(*m_db).begin()).GetId();
+    auto view = ViewDefinition::QueryView(viewId, *m_db);
     ASSERT_TRUE(view.IsValid());
 
     EXPECT_EQ(DgnDbStatus::Success, view->Delete());
     
-    view = ViewDefinition::QueryView(viewId, *project);
+    view = ViewDefinition::QueryView(viewId, *m_db);
     EXPECT_FALSE(view.IsValid());
     }
 
@@ -127,10 +141,11 @@ TEST_F(DgnViewElemTest, DeleteView)
 TEST_F(DgnViewElemTest, SetViewName)
     {
     SetupTestProject();
+    Make4Views();
 
     //Get views
-    auto viewId = (*ViewDefinition::MakeIterator(*project).begin()).GetId();
-    auto cpView = ViewDefinition::QueryView(viewId, *project);
+    auto viewId = (*ViewDefinition::MakeIterator(*m_db).begin()).GetId();
+    auto cpView = ViewDefinition::QueryView(viewId, *m_db);
     ASSERT_TRUE(cpView.IsValid());
     auto view = cpView->MakeCopy<ViewDefinition>();
     ASSERT_TRUE(view.IsValid());
@@ -141,7 +156,7 @@ TEST_F(DgnViewElemTest, SetViewName)
     
     EXPECT_TRUE(view->Update().IsValid());
     
-    cpView = ViewDefinition::QueryView(viewId, *project);
+    cpView = ViewDefinition::QueryView(viewId, *m_db);
     ASSERT_TRUE(view.IsValid());
     EXPECT_STREQ("TestView", view->GetName().c_str());
     }
@@ -155,10 +170,11 @@ TEST_F(DgnViewElemTest, CRUD)
     SetupTestProject();
 
     // Create a new view
-    CameraViewDefinition tempView(CameraViewDefinition::CreateParams(*project, "TestView",
-                                  CameraViewDefinition::Data(DgnModelId((uint64_t)2), DgnViewSource::User, "Test Description")));
-    DrawingViewDefinition tempView2(DrawingViewDefinition::CreateParams(*project, "TestDrawingView",
-                                    DrawingViewDefinition::Data(DgnModelId((uint64_t)1), DgnViewSource::Private, "TestDrawingView Description")));
+    CameraViewDefinition tempView(*m_db, "TestView");
+    tempView.SetDescr("Test Description");
+    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModelId((uint64_t)2)));
+    DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1));
+    tempView.SetDescr("TestDrawingView Description");
 
     // Insert 
     auto cpView = tempView.Insert();
@@ -175,18 +191,18 @@ TEST_F(DgnViewElemTest, CRUD)
     //
     auto viewId = tempView.GetViewId();
     auto viewId2 = tempView2.GetViewId();
-    EXPECT_TRUE( viewId == ViewDefinition::QueryViewId(ViewDefinition::CreateCode("TestView"), *project));
+    EXPECT_TRUE( viewId == ViewDefinition::QueryViewId(ViewDefinition::CreateCode("TestView"), *m_db));
 
     //  Iterate
     //
-    for (auto const& entry : ViewDefinition::MakeIterator(*project))
+    for (auto const& entry : ViewDefinition::MakeIterator(*m_db))
         {
-        auto toFind = ViewDefinition::QueryView(entry.GetId(), *project);
+        auto toFind = ViewDefinition::QueryView(entry.GetId(), *m_db);
         ASSERT_TRUE(toFind.IsValid());
         if (entry.GetId() == viewId)
             {
             EXPECT_TRUE(tempView.GetViewId() == toFind->GetViewId());
-            EXPECT_TRUE(tempView.GetBaseModelId() == toFind->GetBaseModelId());
+//            EXPECT_TRUE(tempView.GetBaseModelId() == toFind->GetBaseModelId()); WIP_VIEW_DEFINITION
             EXPECT_TRUE(tempView.GetElementClassId() == toFind->GetElementClassId());
             EXPECT_TRUE(tempView.GetSource() == toFind->GetSource());
             EXPECT_STREQ(tempView.GetName().c_str(), toFind->GetName().c_str());
@@ -195,7 +211,9 @@ TEST_F(DgnViewElemTest, CRUD)
         else if (entry.GetId() == viewId2)
             {
             EXPECT_TRUE(tempView2.GetViewId() == toFind->GetViewId());
-            EXPECT_TRUE(tempView2.GetBaseModelId() == toFind->GetBaseModelId());
+            auto dview = m_db->Elements().Get<DrawingViewDefinition>(tempView2.GetViewId());
+            auto dviewToFind = m_db->Elements().Get<DrawingViewDefinition>(toFind->GetViewId());
+            EXPECT_TRUE(dview->GetBaseModelId() == dviewToFind->GetBaseModelId());
             EXPECT_TRUE(tempView2.GetElementClassId() == toFind->GetElementClassId());
             EXPECT_TRUE(tempView2.GetSource() == toFind->GetSource());
             EXPECT_STREQ(tempView2.GetName().c_str(), toFind->GetName().c_str());
@@ -221,14 +239,14 @@ TEST_F(DgnViewElemTest, Iterate)
     static const Utf8CP s_viewDescriptions[] = { "", "generated", "hidden" };
 
     // Delete all existing views
-    for (auto const& entry : ViewDefinition::MakeIterator(*project))
+    for (auto const& entry : ViewDefinition::MakeIterator(*m_db))
         {
-        auto view = ViewDefinition::QueryView(entry.GetId(), *project);
+        auto view = ViewDefinition::QueryView(entry.GetId(), *m_db);
         ASSERT_TRUE(view.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, view->Delete());
         }
 
-    ASSERT_EQ(0, ViewDefinition::QueryCount(*project));
+    ASSERT_EQ(0, ViewDefinition::QueryCount(*m_db));
 
     // Create one new view of each source for each new model
     for (auto const& model : models)
@@ -237,14 +255,14 @@ TEST_F(DgnViewElemTest, Iterate)
             {
             Utf8String viewName(model->GetCode().GetValue());
             viewName.append(s_viewSourceNames[i]);
-            ViewDefinitionCPtr view = AddView<SpatialViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
+            ViewDefinitionCPtr view = AddView<CameraViewDefinition>(viewName, model->GetModelId(), s_viewSources[i], s_viewDescriptions[i]);
             ASSERT_TRUE(view.IsValid());
             ASSERT_TRUE(view->GetViewId().IsValid());
             }
         }
 
     size_t nExpectedViews = _countof(models) * _countof(s_viewSources);
-    EXPECT_EQ(nExpectedViews, ViewDefinition::QueryCount(*project));
+    EXPECT_EQ(nExpectedViews, ViewDefinition::QueryCount(*m_db));
 
     // All
     ExpectViews(IterOpts(), { "A-U", "A-G", "A-P", "B-U", "B-G", "B-P" });
@@ -253,23 +271,27 @@ TEST_F(DgnViewElemTest, Iterate)
     ExpectViews(IterOpts(IterOpts::Source::All, IterOpts::Order::Unordered), { "A-U", "A-G", "A-P", "B-U", "B-G", "B-P" });
     ExpectViews(IterOpts(IterOpts::Source::All, IterOpts::Order::Ascending), { "A-G", "A-P", "A-U", "B-G", "B-P", "B-U" });
 
+#ifdef WIP_VIEW_DEFINITION
     // Base model
     ExpectViews(IterOpts(models[0]->GetModelId()), { "A-U", "A-G", "A-P" });
     ExpectViews(IterOpts(models[1]->GetModelId()), { "B-U", "B-G", "B-P" });
     ExpectViews(IterOpts(models[1]->GetModelId(), IterOpts::Order::Ascending), { "B-G", "B-P", "B-U" });
+#endif
 
     // Source
     ExpectViews(IterOpts(IterOpts::Source::User), { "A-U", "B-U" });
     ExpectViews(IterOpts(IterOpts::Source::Generated | IterOpts::Source::Private), { "A-G", "A-P", "B-G", "B-P" });
 
     // Combo
+#ifdef WIP_VIEW_DEFINITION
     ExpectViews(IterOpts(IterOpts::Source::Generated | IterOpts::Source::User, IterOpts::Order::Ascending, models[0]->GetModelId()), { "A-G", "A-U" });
+#endif
 
     // Custom
     ExpectViews(IterOpts("WHERE Descr='generated' ORDER BY [CodeValue] DESC"), { "B-G", "A-G" });
 
-    // Deleting a model deletes all views which use it as a base model
+    // Deleting a model deletes all views for which it is the *only* model in the ModelSelector
     EXPECT_EQ(DgnDbStatus::Success, models[0]->Delete());
-    EXPECT_EQ(_countof(s_viewSources), ViewDefinition::QueryCount(*project));
+    EXPECT_EQ(_countof(s_viewSources), ViewDefinition::QueryCount(*m_db));
     ExpectViews(IterOpts(), { "B-U", "B-G", "B-P" });
     }

@@ -32,7 +32,7 @@ AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
             return extents; // view does not show ground plane
         }
 
-    extents = m_dgndb.Units().GetProjectExtents();
+    extents = GetDgnDb().Units().GetProjectExtents();
     extents.low.z = extents.high.z = elevation;
 
     DPoint3d center = DPoint3d::FromInterpolate(extents.low, 0.5, extents.high);
@@ -49,7 +49,7 @@ AxisAlignedBox3d CameraViewController::GetGroundExtents(DgnViewportCR vp) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double CameraViewController::GetGroundElevation() const
     {
-    return m_environment.m_groundPlane.m_elevation + m_dgndb.Units().GetGlobalOrigin().z; // adjust for global origin
+    return m_environment.m_groundPlane.m_elevation + GetDgnDb().Units().GetGlobalOrigin().z; // adjust for global origin
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,7 +331,6 @@ void CameraViewController::DrawSkyBox(TerrainContextR context)
 namespace EnvironmentJson
 {
     static Utf8CP Display()     {return "display";}
-    static Utf8CP Environment() {return "environment";}
     static Utf8CP Ground()      {return "ground";}
     static Utf8CP Sky()         {return "sky";}
 
@@ -362,7 +361,9 @@ using namespace EnvironmentJson;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CameraViewController::LoadEnvironment()
     {
-    JsonValueCR env = m_settings[Environment()];
+    Json::Value env(Json::objectValue);
+    Json::Reader::Parse(GetDisplayStyle().GetEnvironment(), env);
+
     m_environment.m_enabled = env[Display()].asBool();
     
     JsonValueCR ground = env[Ground()];
@@ -412,5 +413,7 @@ void CameraViewController::SaveEnvironment()
     sky[SkyBoxJson::SkyColor()] = m_environment.m_skybox.m_skyColor.GetValue();
     env[Sky()] = sky;
     
+#ifdef WIP_VIEW_DEFINITION
     m_settings[Environment()] = env;
+#endif
     }

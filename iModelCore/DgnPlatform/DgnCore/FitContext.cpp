@@ -199,7 +199,7 @@ ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
     // Allow models to participate in fit
     for (DgnModelId modelId : GetViewedModels())
         {
-        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
+        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
         auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
 
         if (nullptr != geomModel)

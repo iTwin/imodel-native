@@ -207,9 +207,8 @@ protected:
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
 public:
-    //! @param dgndb  The DgnDb for the view
-    //! @param viewId Id of view to be displayed in this DgnQueryView
-    DGNPLATFORM_EXPORT DgnQueryView(DgnDbR dgndb, DgnViewId viewId);
+    //! *** NEEDS WORK: merge into ViewDefinition3d or SpatialViewDefinition
+    DGNPLATFORM_EXPORT DgnQueryView(CameraViewDefinition const& definition);
     DGNPLATFORM_EXPORT ~DgnQueryView();
 
     //! Get the Level-of-Detail filtering size for scene creation for this DgnQueryView. This is the size, in pixels, of one side of a square. 

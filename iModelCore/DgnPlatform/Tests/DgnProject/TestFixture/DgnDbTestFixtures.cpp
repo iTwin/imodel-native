@@ -47,11 +47,11 @@ DgnDbStatus DgnDbTestFixture::GetSeedDbCopy(BeFileNameR actualName, WCharCP newN
 * Project file name is the name of the test, mode is ReadWrite and it is Briefcase
 * @bsimethod                                     Majd.Uddin                   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupSeedProject()
+void DgnDbTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool needBriefcase)
     {
     WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
     fileName.append(L".bim");
-    SetupSeedProject(fileName.c_str(), Db::OpenMode::ReadWrite);
+    SetupSeedProject(fileName.c_str(), mode, needBriefcase);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,21 +272,22 @@ DgnElementId DgnDbTestFixture::InsertElementUsingGeometryPart(DgnGeometryPartId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetUpSpatialView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
+void DgnDbTestFixture::SetUpCameraView(DgnDbR dgnDb, DgnModelR model, ElementAlignedBox3d elementBox, DgnCategoryId categoryId)
     {
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(dgnDb, "TestView", ViewDefinition::Data(model.GetModelId(), DgnViewSource::Generated)));
+    CameraViewDefinition view(dgnDb, "TestView");
+    view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(dgnDb, "TestView", model.GetModelId()));
     EXPECT_TRUE(view.Insert().IsValid());
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    SpatialViewController viewController (dgnDb, view.GetViewId());
+    CameraViewController viewController (view);
     viewController.SetStandardViewRotation(StandardView::Iso);
     viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
     viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
     viewController.ChangeCategoryDisplay(categoryId, true);
     viewController.ChangeModelDisplay(model.GetModelId(), true);
 
-    EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+    EXPECT_EQ(DgnDbStatus::Success, viewController.Save());
     }
 
 

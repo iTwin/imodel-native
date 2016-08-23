@@ -9,19 +9,29 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnDb.h"
+#include "DgnCategory.h"
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
-#include "DgnMarkupProject.h"
 
 #define BIS_CLASS_ViewDefinition "ViewDefinition"
+#define BIS_CLASS_ViewDefinition3d "ViewDefinition3d"
 #define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
+#define BIS_CLASS_OrthographicViewDefinition "OrthographicViewDefinition"
 #define BIS_CLASS_CameraViewDefinition "CameraViewDefinition"
 #define BIS_CLASS_DrawingViewDefinition "DrawingViewDefinition"
 #define BIS_CLASS_SheetViewDefinition "SheetViewDefinition"
-#define MARKUP_CLASSNAME_RedlineViewDefinition "RedlineViewDefinition"
+#define BIS_CLASS_ModelSelector "ModelSelector"
+#define BIS_CLASS_CategorySelector "CategorySelector"
+#define BIS_CLASS_DisplayStyle "DisplayStyle"
+#define BIS_CLASS_ClipVolume "ClipVolume"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
+
+namespace dgn_ElementHandler {
+    struct CameraViewDef; struct OrthographicViewDef; struct DrawingViewDef; struct SheetViewDef; 
+    struct ModelSelectorDef; struct CategorySelectorDef; struct DisplayStyleDef;
+}
 
 //=======================================================================================
 //! The source for the creation a ViewDefinition.
@@ -35,6 +45,99 @@ enum class DgnViewSource
 };
 
 //=======================================================================================
+//! A persistable display style
+// @bsiclass                                                      Sam.Wilson    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DisplayStyle : DefinitionElement
+    {
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DefinitionElement);
+    friend struct dgn_ElementHandler::DisplayStyleDef;
+protected:
+    explicit DisplayStyle(CreateParams const& params) : T_Super(params) {}
+public:
+    //! Construct a new modelselector. You should then call SetModelIds.
+    DisplayStyle(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+
+    Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewFlags(Render::ViewFlags const&); //!< Set the ViewFlags
+    DGNPLATFORM_EXPORT Render::ViewFlags GetViewFlags() const; //!< Get the ViewFlags
+
+    ColorDef GetBackgroundColor() const {return ColorDef((uint32_t)GetPropertyValueInt32("BackgroundColor"));} //!< Get background color
+    DgnDbStatus SetBackgroundColor(ColorDef const& cdef) {return SetPropertyValue("BackgroundColor", (int32_t)cdef.GetValue());} //!< Set background color
+
+    Utf8String GetEnvironment() const { return GetPropertyValueString("Environment"); } //!< Get Environment
+    DgnDbStatus SetEnvironment(Utf8StringCR value) { return SetPropertyValue("Environment", value.c_str()); } //!< Set Environment
+
+    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle)); }
+};
+
+//=======================================================================================
+//! A persistable list of DgnModelIds
+// @bsiclass                                                      Sam.Wilson    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
+    {
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
+    friend struct dgn_ElementHandler::ModelSelectorDef;
+protected:
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
+    explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
+public:
+    //! Construct a new modelselector. You should then call SetModelIds.
+    ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+
+    Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
+
+    //! Define the selector to contain a single DgnModelId. @note this must be persistent. @note This writes to the bim directly.
+    DGNPLATFORM_EXPORT DgnDbStatus SetModelId(DgnModelId mid);
+    //! Define the selector to contain the specified DgnModelIds. @note this must be persistent. @note This writes to the bim directly.
+    DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(DgnModelIdSet const& models); //!< Define the selector to contain the specified DgnModelIds. @note this must be persistent.
+    //! Query the DgnModelIds that are in this selector
+    DGNPLATFORM_EXPORT DgnModelIdSet GetModelIds() const;
+    //! Query if the specified DgnModelId is in this selector
+    DGNPLATFORM_EXPORT bool ContainsModelId(DgnModelId mid) const;
+
+    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
+
+    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector)); }
+    };
+
+//=======================================================================================
+//! A persistable list of DgnElementIds. Actually, the "list" is a 1:N ECRelationship 
+//! with this element at one end.
+// @bsiclass                                                      Sam.Wilson    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
+    {
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
+    friend struct dgn_ElementHandler::CategorySelectorDef;
+protected:
+    explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
+public:
+    //! Construct a new CategorySelector prior to inserting it.
+    CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+
+    Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
+
+    //! Set the list of categories. @note that this element must be persisent in order for this function to succeed. @note This writes to the bim directly.
+    DGNPLATFORM_EXPORT DgnDbStatus SetCategoryIds(DgnCategoryIdSet const&);
+    //! Get the list of categories.
+    DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
+    //! Query if the selector includes the specified category
+    DGNPLATFORM_EXPORT bool ContainsCategoryId(DgnCategoryId cid) const;
+    //! Get the SubCategoryOverrides
+    DGNPLATFORM_EXPORT void GetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override>& overrides) const;
+    //! Set the SubCategoryOverrides
+    DGNPLATFORM_EXPORT DgnDbStatus SetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override> const& overrides);
+    
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector)); }
+    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector); }
+    };
+
+//=======================================================================================
 //! Holds the definition of a view.
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                      Paul.Connelly   10/15
@@ -43,95 +146,49 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition : DefinitionElement
 {
     DEFINE_T_SUPER(DefinitionElement);
 public:
-    //! Holds the data which describes a view definition
-    struct Data
-    {
-    public:
-        DgnModelId      m_baseModelId;
-        Utf8String      m_descr;
-        DgnViewSource   m_source;
-
-        //! Constructor
-        explicit Data(DgnModelId baseModelId=DgnModelId(), DgnViewSource source=DgnViewSource::User, Utf8StringCR descr="")
-            {
-            Init(baseModelId, source, descr);
-            }
-
-        //! Initializer
-        void Init(DgnModelId baseModelId=DgnModelId(), DgnViewSource source=DgnViewSource::User, Utf8StringCR descr="")
-            {
-            m_baseModelId = baseModelId;
-            m_descr = descr;
-            m_source = source;
-            }
-
-        //! Calculate the number of bytes allocated to an instance of this class
-        uint32_t GetMemSize() const { return static_cast<uint32_t>(sizeof(*this) + m_descr.length()); }
-    };
 
     //! Parameters used to construct a ViewDefinition
     struct CreateParams : T_Super::CreateParams
     {
-    protected:
-        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Data const& data, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId())
-            : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId), m_data(data) {}
-
-        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data);
-    public:
         DEFINE_T_SUPER(ViewDefinition::T_Super::CreateParams);
+    public:
+        CreateParams(DgnDbR db, DgnClassId classId, DgnCode const& code, Utf8CP label=nullptr, DgnElementId parentId=DgnElementId())
+            : T_Super(db, DgnModel::DictionaryId(), classId, code, label, parentId) {}
 
-        Data m_data; //!< The view-specific data
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId);
 
         //! Constructor from base CreateParams. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params), m_data(data) { }
+        explicit CreateParams(DgnElement::CreateParams const& params) : T_Super(params) { }
     };
 private:
-    Data m_data;
-
-    DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     DgnDbStatus DeleteReferences() const;
     static bool IsValidCode(DgnCode const& code);
 protected:
-    explicit ViewDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
+    explicit ViewDefinition(CreateParams const& params) : T_Super(params) { }
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& stmt) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-
-    virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     virtual DgnDbStatus _SetParentId(DgnElementId) override { return DgnDbStatus::InvalidParent; }
     virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override { return DgnDbStatus::InvalidParent; }
     virtual DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override { return DgnDbStatus::InvalidParent; }
 
-    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
-
     virtual ViewControllerPtr _SupplyController() const = 0;
     virtual bool _IsValidBaseModel(DgnModelCR model) const { return true; }
 
+    virtual OrthographicViewDefinitionCP _ToOrthographicView() const { return nullptr; }
+    virtual CameraViewDefinitionCP _ToCameraView() const { return nullptr; }
     virtual SpatialViewDefinitionCP _ToSpatialView() const { return nullptr; }
     virtual DrawingViewDefinitionCP _ToDrawingView() const { return nullptr; }
     virtual SheetViewDefinitionCP _ToSheetView() const { return nullptr; }
+    virtual bool _ViewsModel(DgnModelId mid) const = 0;
 
-    bool IsBaseModelValid() const;
 public:
     DgnViewId GetViewId() const { return DgnViewId(GetElementId().GetValue()); } //!< This view definition's ID
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
-    Utf8StringCR GetDescr() const { return m_data.m_descr; } //!< This view definition's description
-    DgnViewSource GetSource() const { return m_data.m_source; } //!< This view definition's source
-    DgnModelId GetBaseModelId() const { return m_data.m_baseModelId; } //!< This view definition's base model ID
-
     DgnDbStatus SetName(Utf8StringCR name) { return SetCode(CreateCode(name)); } //!< Change this view definition's name
-    void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Change this view definition's description
-    void SetSource(DgnViewSource source) { m_data.m_source = source; } //!< Change this view definition's source
-    void SetBaseModelId(DgnModelId modelId) { m_data.m_baseModelId = modelId; } //!< Change the base model ID
 
     //! Inserts into the database and returns the new persistent copy.
     ViewDefinitionCPtr Insert(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Insert<ViewDefinition>(*this, status); }
@@ -165,20 +222,6 @@ public:
     //! Look up a view by name
     static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) { return QueryView(QueryViewId(name, db), db); }
 
-    //! Query the settings associated with the specified view as a JSON string
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult QuerySettings(Utf8StringR settings, DgnViewId viewId, DgnDbR db);
-    //! Save the settings associated with the specified view as a JSON string
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult SaveSettings(Utf8StringCR settings, DgnViewId viewId, DgnDbR db);
-    //! Delete the settings associated with the specified view
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteSettings(DgnViewId viewId, DgnDbR db);
-
-    //! Query this view's settings as a JSON string
-    BeSQLite::DbResult QuerySettings(Utf8StringR settings) const { return QuerySettings(settings, GetViewId(), GetDgnDb()); }
-    //! Save this view's settings as a JSON string
-    BeSQLite::DbResult SaveSettings(Utf8StringCR settings) const { return SaveSettings(settings, GetViewId(), GetDgnDb()); }
-    //! Delete this view's settings
-    BeSQLite::DbResult DeleteSettings() const { return DeleteSettings(GetViewId(), GetDgnDb()); }
-
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(int resolution, Render::RenderMode renderModeOverride) const;
 
     //! An entry in an iterator over the views in a DgnDb
@@ -192,10 +235,11 @@ public:
         DgnViewId GetId() const { return m_statement->GetValueId<DgnViewId>(0); } //!< The view ID
         Utf8CP GetName() const { return m_statement->GetValueText(1); } //!< The name of the view
         DgnViewSource GetSource() const { return static_cast<DgnViewSource>(m_statement->GetValueInt(2)); } //!< The view source
-        DgnModelId GetBaseModelId() const { return m_statement->GetValueId<DgnModelId>(3); } //!< The view's base model
-        Utf8CP GetDescr() const { return m_statement->GetValueText(4); } //!< The view's description
-        DgnClassId GetClassId() const { return m_statement->GetValueId<DgnClassId>(5); } //!< The view's ECClass ID
+        Utf8CP GetDescr() const { return m_statement->GetValueText(3); } //!< The view's description
+        DgnClassId GetClassId() const { return m_statement->GetValueId<DgnClassId>(4); } //!< The view's ECClass ID
 
+        DGNPLATFORM_EXPORT bool IsOrthographicView() const;
+        DGNPLATFORM_EXPORT bool IsCameraView() const;
         DGNPLATFORM_EXPORT bool IsSpatialView() const;
         DGNPLATFORM_EXPORT bool IsDrawingView() const;
         DGNPLATFORM_EXPORT bool IsSheetView() const;
@@ -224,31 +268,28 @@ public:
             };
         private:
             Utf8String m_customECSql;
-            DgnModelId m_baseModelId;
             Order m_order;
             Source m_source;
 
-            Options(DgnModelId baseModelId, Order order, Source source, Utf8StringCR ecsql)
-                : m_customECSql(ecsql), m_baseModelId(baseModelId), m_order(order), m_source(source) { }
+            Options(Order order, Source source, Utf8StringCR ecsql)
+                : m_customECSql(ecsql), m_order(order), m_source(source) { }
         public:
             //! Constructor
-            //! @param[in]      baseModelId Optional base model ID by which to filter
             //! @param[in]      order       Optional order in which to return results
             //! @param[in]      source      Optional view source(s) to include
-            explicit Options(DgnModelId baseModelId=DgnModelId(), Order order=Order::Unordered, Source source=Source::All) : Options(baseModelId, order, source, Utf8String()) { }
+            explicit Options(Order order=Order::Unordered, Source source=Source::All) : Options(order, source, Utf8String()) { }
 
             //! Constructor
             //! @param[in]      source      View source by which to filter
             //! @param[in]      order       Optional order in which to return results
-            //! @param[in]      baseModelId Optional base model ID by which to filter
-            explicit Options(Source source, Order order=Order::Unordered, DgnModelId baseModelId=DgnModelId()) : Options(baseModelId, order, source, Utf8String()) { }
+            explicit Options(Source source, Order order=Order::Unordered) : Options(order, source, Utf8String()) { }
 
             //! Constructor
             //! @param[in]      ecsql Custom ECSql which is to be appended to the SELECT statement
-            explicit Options(Utf8StringCR ecsql) : Options(DgnModelId(), Order::Unordered, Source::All, ecsql) { }
+            explicit Options(Utf8StringCR ecsql) : Options(Order::Unordered, Source::All, ecsql) { }
 
             //! Returns true if these options do not restrict the results
-            bool IsEmpty() const { return m_customECSql.empty() && !m_baseModelId.IsValid() && Order::Unordered == m_order && Source::All == m_source; }
+            bool IsEmpty() const { return m_customECSql.empty() && Order::Unordered == m_order && Source::All == m_source; }
 
             //! Convert these options to an ECSql string
             Utf8String ToString() const;
@@ -264,9 +305,13 @@ public:
     //! Return the number of view definitions in the specific DgnDb
     DGNPLATFORM_EXPORT static size_t QueryCount(DgnDbR db, Iterator::Options const& options=Iterator::Options());
 
+    bool IsCameraView() const { return nullptr != _ToCameraView(); }
+    bool IsOrthographicView() const { return nullptr != _ToOrthographicView(); }
     bool IsSpatialView() const { return nullptr != _ToSpatialView(); }
     bool IsDrawingView() const { return nullptr != _ToDrawingView(); }
     bool IsSheetView() const { return nullptr != _ToSheetView(); }
+    CameraViewDefinitionCP ToCameraView() const { return _ToCameraView(); }
+    OrthographicViewDefinitionCP ToOrthographicView() const { return _ToOrthographicView(); }
     SpatialViewDefinitionCP ToSpatialView() const { return _ToSpatialView(); }
     DrawingViewDefinitionCP ToDrawingView() const { return _ToDrawingView(); }
     SheetViewDefinitionCP ToSheetView() const { return _ToSheetView(); }
@@ -275,7 +320,23 @@ public:
     SheetViewDefinitionP ToSheetViewP() { return const_cast<SheetViewDefinitionP>(ToSheetView()); }
 
     ViewControllerPtr LoadViewController(bool allowOverrides, FillModels fillModels) const; //!< @private
-};
+
+    Utf8String GetDescr() const { return GetPropertyValueString("Descr"); } //!< Get description
+    DgnDbStatus SetDescr(Utf8StringCR value) { return SetPropertyValue("Descr", value.c_str()); } //!< Set description
+    DgnViewSource GetSource() const { return (DgnViewSource)GetPropertyValueInt32("Source"); } //!< Get source
+    DgnDbStatus SetSource(DgnViewSource value) { return SetPropertyValue("Source", (int32_t)value); } //!< Set source
+    DgnElementId GetCategorySelectorId() const {return GetPropertyValueId<DgnElementId>("CategorySelector");} //!< Get the ID of the element that holds the list of Categories displayed in a view
+    DgnDbStatus SetCategorySelectorId(DgnElementId id) {return SetPropertyValue("CategorySelector", id);} //!< Set the ID of the element that holds the list of Categories displayed in a view. Note that the category selector must be persistent
+    DgnDbStatus SetCategorySelector(CategorySelectorCR catSel) {return SetCategorySelectorId(catSel.GetElementId());} //!< Set the list of Categories displayed in a view. Note that the category selector must be persistent
+    DgnElementId GetDisplayStyleId() const {return GetPropertyValueId<DgnElementId>("DisplayStyle");} //!< Get the ID of the display style for a view
+    DgnDbStatus SetDisplayStyleId(DgnElementId value) {return SetPropertyValue("DisplayStyle", value);} //!< Set the ID of the display style for a view
+
+    //! Query if the specified model is displayed in this view 
+    bool ViewsModel(DgnModelId mid) const {return _ViewsModel(mid);}
+    
+    //! Query if the specified Category is displayed in this view
+    DGNPLATFORM_EXPORT bool ViewsCategory(DgnCategoryId cid) const;
+    };
 
 //=======================================================================================
 //! Defines a view of a 3d model.
@@ -285,8 +346,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition3d : ViewDefinition
 {
     DEFINE_T_SUPER(ViewDefinition);
 protected:
+    DGNPLATFORM_EXPORT bool _ViewsModel(DgnModelId mid) const override;
+
     explicit ViewDefinition3d(CreateParams const& params) : T_Super(params) {}
-};
+public:
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d)); }
+    DgnModelId GetTargetModelId() const { return GetPropertyValueId<DgnModelId>("TargetModel"); } //!< Get the ID of the target model
+    DgnElementId GetModelSelectorId() const {return GetPropertyValueId<DgnElementId>("ModelSelector");} //!< Get the ID of the element that holds th ModelSelector used by this view
+    DgnElementId GetClipVolumeId() const {return GetPropertyValueId<DgnElementId>("ClipVolume");} //!< Get the ID of the element that holds the ClipVolume used by this view
+    DgnDbStatus SetTargetModelId(DgnModelId id) { return SetPropertyValue("TargetModel", id); } //!< Set the ID of the target model
+    DgnDbStatus SetModelSelectorId(DgnElementId id) {return SetPropertyValue("ModelSelector", id);} //!< Set the ID of the element that holds the ModelSelector used by this view.
+    DgnDbStatus SetModelSelector(ModelSelectorCR modSel) {return SetModelSelectorId(modSel.GetElementId());} //!< Set the ModelSelector used by this view. Note that the modelselector must be persistent.
+    DgnDbStatus SetClipVolumeId(DgnElementId id) {return SetPropertyValue("ClipVolume", id);} //!< Set the ID of the element that holds the ClipVolume used by this view
+    };
 
 //=======================================================================================
 //! Defines a view of one or more SpatialModels.
@@ -296,29 +368,46 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SpatialViewDefinition : ViewDefinition3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, ViewDefinition3d);
-public:
-    //! Parameters for initializing a SpatialViewDefinition
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(SpatialViewDefinition::T_Super::CreateParams);
-    protected:
-        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
-    public:
-        //! Constructor from base CreateParams. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
-        //! Constructor
-        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), SpatialViewDefinition::QueryClassId(db), data) { }
-    };
+    DEFINE_T_SUPER(ViewDefinition3d);
 protected:
     virtual SpatialViewDefinitionCP _ToSpatialView() const override { return this; }
-    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
-public:
-    //! Construct a SpatialViewDefinition from the supplied params
     explicit SpatialViewDefinition(CreateParams const& params) : T_Super(params) { }
+};
 
-    //! Look up the ECClass ID used for SpatialViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition)); }
+//=======================================================================================
+//! Defines a view of one or more SpatialModels that displays
+//! world-coordinate geometry on the image plane using a parallel orthographic projection.
+// @bsiclass                                                      Sam.Wilson    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewDefinition : SpatialViewDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, SpatialViewDefinition);    
+    friend struct dgn_ElementHandler::OrthographicViewDef;
+protected:
+    //! Construct a new OrthographicViewDefinition prior to loading it
+    explicit OrthographicViewDefinition(CreateParams const& params) : T_Super(params) {}
+    OrthographicViewDefinitionCP _ToOrthographicView() const {return this;}
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+
+public:
+    //! Construct a new CameraViewDefinition prior to inserting it 
+    //! @param db   The DgnDb where the caller plans to insert this view definition
+    //! @param name A unique name for this view definition
+    OrthographicViewDefinition(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, CreateCode(name), QueryClassId(db))) {}
+
+    //! Look up the ECClass ID used for OrthographicViewDefinitions within the specified DgnDb
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition)); }
+
+    DGNPLATFORM_EXPORT DPoint3d GetOrigin() const {return GetPropertyValueDPoint3d("Origin");} //!< Get the origin of the viewed volume on the lower, back, rear
+    DGNPLATFORM_EXPORT DVec3d GetExtents() const {return (DVec3d const&)GetPropertyValueDPoint3d("Extents");} //!< Get the size of the view diagonal
+    DGNPLATFORM_EXPORT YawPitchRollAngles GetViewDirection() const {return GetPropertyValueYpr("DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Get the view direction
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetOrigin(DPoint3dCR pt) {return SetPropertyValue("Origin", pt);} //!< Set the origin of the viewed volume on the lower, back, rear
+    DGNPLATFORM_EXPORT DgnDbStatus SetExtents(DVec3dCR vec) {return SetPropertyValue("Extents", (DPoint3dCR)vec);} //!< Set the size of the view diagonal
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
+
+    //! Set the view direction to one of the standard rotations
+    DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
 };
 
 //=======================================================================================
@@ -329,25 +418,42 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewDefinition : SpatialViewDefinition
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, SpatialViewDefinition);
-public:
-    //! Parameters for initializing a CameraViewDefinition
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(CameraViewDefinition::T_Super::CreateParams);
-    protected:
-        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
-    public:
-        //! Constructor from base CreateParams. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
-        //! Constructor
-        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), CameraViewDefinition::QueryClassId(db), data) { }
-    };
-public:
-    //! Construct a CameraViewDefinition from the supplied params
+    friend struct dgn_ElementHandler::CameraViewDef;
+	
+protected:
     explicit CameraViewDefinition(CreateParams const& params) : T_Super(params) { }
+    DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
+    CameraViewDefinitionCP _ToCameraView() const {return this;}
+
+public:
+    //! Construct a new CameraViewDefinition prior to inserting it 
+    //! @param db   The DgnDb where the caller plans to insert this view definition
+    //! @param name A unique name for this view definition
+    CameraViewDefinition(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, CreateCode(name), QueryClassId(db))) {}
 
     //! Look up the ECClass ID used for CameraViewDefinitions within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition)); }
+    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
+
+    DGNPLATFORM_EXPORT DPoint3d GetBackOrigin() const {return GetPropertyValueDPoint3d("BackOrigin");} //!< Get the origin of the focus plane projected to the back plane
+    DGNPLATFORM_EXPORT double GetWidth() const {return GetPropertyValueDouble("Width");} //!< Get the extent in x on the focus plane in meters
+    DGNPLATFORM_EXPORT double GetHeight() const {return GetPropertyValueDouble("Height");} //!< Get the extent in y on the focus plane in meters
+    DGNPLATFORM_EXPORT double GetDepth() const {return GetPropertyValueDouble("Depth");} //!< Get the distance between front and back planes in meters
+    DGNPLATFORM_EXPORT DPoint3d GetEyePoint() const {return GetPropertyValueDPoint3d("EyePoint");}  //!< Get the camera eye point
+    DGNPLATFORM_EXPORT double GetLensAngle() const {return GetPropertyValueDouble("LensAngle");} //!< Get the camera lens angle in degrees
+    DGNPLATFORM_EXPORT double GetFocusDistance() const {return GetPropertyValueDouble("FocusDistance");} //!< Get the camera focus distance in meters
+    DGNPLATFORM_EXPORT YawPitchRollAngles GetViewDirection() const {return GetPropertyValueYpr("DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Get the view direction
+
+    DGNPLATFORM_EXPORT DgnDbStatus SetBackOrigin(DPoint3dCR pt) {return SetPropertyValue("BackOrigin", pt);} //!< Set the origin of the focus plane projected to the back plane
+    DGNPLATFORM_EXPORT DgnDbStatus SetWidth(double v) {return SetPropertyValue("Width", v);} //!< Set the extent in x on the focus plane in meters
+    DGNPLATFORM_EXPORT DgnDbStatus SetHeight(double v) {return SetPropertyValue("Height", v);} //!< Set the extent in y on the focus plane in meters
+    DGNPLATFORM_EXPORT DgnDbStatus SetDepth(double v) {return SetPropertyValue("Depth", v);} //!< Set the distance between front and back planes in meters
+    DGNPLATFORM_EXPORT DgnDbStatus SetEyePoint(DPoint3dCR pt) {return SetPropertyValue("EyePoint", pt);} //!< Set the camera eye point
+    DGNPLATFORM_EXPORT DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
+    DGNPLATFORM_EXPORT DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
+    DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
+
+                                                                                                                                                                          //! Set the view direction to one of the standard rotations
+    DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
 };
 
 //=======================================================================================
@@ -358,8 +464,29 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewDefinition2d : ViewDefinition
 {
     DEFINE_T_SUPER(ViewDefinition);
 protected:
-    explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) { }
-};
+    DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer) override;
+protected:
+    bool _ViewsModel(DgnModelId mid) const override {return mid == GetBaseModelId();}
+
+    explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
+public:
+    ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId) 
+        : T_Super(CreateParams(db, ViewDefinition::CreateCode(name), classId)) 
+        {
+        SetBaseModelId(baseModelId);
+        }
+    DGNPLATFORM_EXPORT bool IsBaseModelValid() const;
+    DgnModelId GetBaseModelId() const { return GetPropertyValueId<DgnModelId>("BaseModel"); } //!< Get ID of base model
+    DgnDbStatus SetBaseModelId(DgnModelId value) { return SetPropertyValue("BaseModel", value); } //!< Set ID of base model
+    DPoint2d GetOrigin() const { return GetPropertyValueDPoint2d("Origin"); } //!< Get lower left corner of the viewed area.
+    DgnDbStatus SetOrigin(DPoint2dCR value) { return SetPropertyValue("Origin", value); } //!< Set lower left corner of the viewed area.
+    DVec2d GetExtents() const { return DVec2d::From(GetPropertyValueDPoint2d("Extents")); } //!< Get size of the view diagonal
+    DgnDbStatus SetExtents(DVec2dCR value) { return SetPropertyValue("Extents", DPoint2d::From(value.x,value.y)); } //!< Set size of the view diagonal
+    AngleInDegrees GetRotationAngle() const { return AngleInDegrees::FromDegrees(GetPropertyValueDouble("RotationAngle")); } //!< Get rotation angle in degrees of the viewed area.
+    DgnDbStatus SetRotationAngle(AngleInDegrees const& value) { return SetPropertyValue("RotationAngle", value.Degrees()); } //!< Set rotation angle in degrees of the viewed area.
+
+    static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
+    };
 
 //=======================================================================================
 //! Defines a view of a DrawingModel.
@@ -368,26 +495,22 @@ protected:
 struct EXPORT_VTABLE_ATTRIBUTE DrawingViewDefinition : ViewDefinition2d
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, ViewDefinition2d);
-public:
-    //! Parameters used to construct a DrawingViewDefinition
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(DrawingViewDefinition::T_Super::CreateParams);
-    protected:
-        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
-    public:
-        //! Constructor from base params. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
-        //! Constructor
-        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), DrawingViewDefinition::QueryClassId(db), data) { }
-    };
+    friend struct dgn_ElementHandler::DrawingViewDef;
+
 protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
     virtual DrawingViewDefinitionCP _ToDrawingView() const override { return this; }
+
+    //! Construct a DrawingViewDefinition from the supplied params prior to loading
+    explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) {}
+    
 public:
-    //! Construct a DrawingViewDefinition from the supplied params
-    explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) { }
+    //! Construct a DrawingViewDefinition subclass prior to inserting it
+    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId) : T_Super(db, name, classId, baseModelId) { ; }
+
+    //! Construct a DrawingViewDefinition prior to inserting it
+    DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) {;}
 
     //! Look up the ECClass ID used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition)); }
@@ -400,108 +523,65 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SheetViewDefinition : ViewDefinition2d
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, ViewDefinition2d);
-public:
-    //! Parameters used to construct a SheetViewDefinition
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(SheetViewDefinition::T_Super::CreateParams);
-    protected:
-        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
-    public:
-        //! Constructor from base params. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
-        //! Constructor
-        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), SheetViewDefinition::QueryClassId(db), data) { }
-    };
+    friend struct dgn_ElementHandler::SheetViewDef;
+
 protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
     virtual SheetViewDefinitionCP _ToSheetView() const { return this; }
-public:
-    //! Construct a SheetViewDefinition from the supplied params
+    
+    //! Construct a SheetViewDefinition from the supplied params prior to loading it
     explicit SheetViewDefinition(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Construct a new SheetViewDefinition subclass prior to inserting it
+    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId) : T_Super(db, name, classId, baseModelId) { ; }
+
+    //! Construct a new SheetViewDefinition prior to inserting it
+    SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) {;}
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition)); }
 };
 
-//=======================================================================================
-//! Defines a view of a RedlineModel
-// @bsiclass                                                      Paul.Connelly   10/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RedlineViewDefinition : SheetViewDefinition
-{
-    DGNELEMENT_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, SheetViewDefinition);
-public:
-    //! Parameters used to construct a RedlineViewDefinition
-    struct CreateParams : T_Super::CreateParams
-    {
-        DEFINE_T_SUPER(RedlineViewDefinition::T_Super::CreateParams);
-    protected:
-        CreateParams(DgnDbR db, DgnCode const& code, DgnClassId classId, Data const& data) : T_Super(db, code, classId, data) { }
-    public:
-        //! Constructor from base params. Chiefly for internal use.
-        explicit CreateParams(DgnElement::CreateParams const& params, Data const& data=Data()) : T_Super(params, data) { }
-        //! Constructor
-        CreateParams(DgnDbR db, Utf8StringCR name, Data const& data) : CreateParams(db, ViewDefinition::CreateCode(name), RedlineViewDefinition::QueryClassId(db), data) { }
-    };
-
-    //! Construct a RedlineViewDefinition from the supplied params
-    explicit RedlineViewDefinition(CreateParams const& params) : T_Super(params) { }
-
-    //! Look up the ECClass ID used for RedlineViewDefinitions in the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_RedlineViewDefinition)); }
-};
-
 namespace dgn_ElementHandler
 {
-    //=======================================================================================
-    //! The handler for SpatialViewDefinition elements
-    // @bsiclass                                                      Paul.Connelly   10/15
-    //=======================================================================================
-    struct SpatialViewDef : Definition
+    struct OrthographicViewDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialViewDefinition, SpatialViewDefinition, SpatialViewDef, Definition, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_OrthographicViewDefinition, OrthographicViewDefinition, OrthographicViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
-    //=======================================================================================
-    //! The handler for CameraViewDefinition elements
-    // @bsiclass                                                      Paul.Connelly   10/15
-    //=======================================================================================
-    struct CameraViewDef : SpatialViewDef
+    struct CameraViewDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, CameraViewDefinition, CameraViewDef, SpatialViewDef, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CameraViewDefinition, CameraViewDefinition, CameraViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
-    //=======================================================================================
-    //! The handler for DrawingViewDefinition elements
-    // @bsiclass                                                      Paul.Connelly   10/15
-    //=======================================================================================
     struct DrawingViewDef : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingViewDefinition, DrawingViewDefinition, DrawingViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
-    //=======================================================================================
-    //! The handler for SheetViewDefinition elements
-    // @bsiclass                                                      Paul.Connelly   10/15
-    //=======================================================================================
     struct SheetViewDef : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetViewDefinition, SheetViewDefinition, SheetViewDef, Definition, DGNPLATFORM_EXPORT);
     };
 
-    //=======================================================================================
-    //! The handler for RedlineViewDefinition elements
-    // @bsiclass                                                      Paul.Connelly   10/15
-    //=======================================================================================
-    struct RedlineViewDef : SheetViewDef
+    struct ModelSelectorDef : Definition
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(MARKUP_CLASSNAME_RedlineViewDefinition, RedlineViewDefinition, RedlineViewDef, SheetViewDef, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, ModelSelector, ModelSelectorDef, Definition, DGNPLATFORM_EXPORT);
+    };
+
+    struct CategorySelectorDef : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, CategorySelector, CategorySelectorDef, Definition, DGNPLATFORM_EXPORT);
+    };
+    struct DisplayStyleDef : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DisplayStyle, DisplayStyle, DisplayStyleDef, Definition, DGNPLATFORM_EXPORT);
     };
 };
 
-typedef dgn_ElementHandler::SpatialViewDef SpatialViewHandler;
+typedef dgn_ElementHandler::CameraViewDef CameraViewHandler;
 typedef dgn_ElementHandler::DrawingViewDef DrawingViewHandler;
 typedef dgn_ElementHandler::SheetViewDef SheetViewHandler;
 

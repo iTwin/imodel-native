@@ -86,6 +86,8 @@
 #define BIS_REL_SolutionOfComponent         "SolutionOfComponent"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define BIS_REL_ModelDrivesModel            "ModelDrivesModel"
+#define BIS_REL_CategorySelectorsReferToCategories "CategorySelectorsReferToCategories"
+#define BIS_REL_ModelSelectorsReferToModels "ModelSelectorsReferToModels"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names

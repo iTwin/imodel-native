@@ -152,6 +152,6 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
 
     Placement3d placement = builder->GetPlacement3d();
 
-    SetUpSpatialView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
+    SetUpCameraView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
     m_db->SaveSettings();   
     }

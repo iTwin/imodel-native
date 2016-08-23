@@ -316,6 +316,22 @@ PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelC
     return model;
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                           Umar.Hayat             08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(DgnDbR db, DgnCode modelCode)
+    {
+    MUST_HAVE_HOST(nullptr);
+
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelCode.GetValueCP()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
+    SheetModelPtr catalogModel = new SheetModel(SheetModel::CreateParams(db, mclassId, modelSubject->GetElementId(), modelCode, DPoint2d::From(2.0, 2.0)));
+    DgnDbStatus status = catalogModel->Insert();
+    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
+    return catalogModel;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
@@ -336,9 +352,7 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
 
     ViewControllerPtr viewController = view->LoadViewController(ViewDefinition::FillModels::No);
     viewController->LookAtVolume(db.Units().GetProjectExtents());
-    ASSERT_EQ(BE_SQLITE_OK, viewController->Save());
-
-    db.SaveSettings();
+    ASSERT_EQ(DgnDbStatus::Success, viewController->Save());
     }
 
 //---------------------------------------------------------------------------------------
@@ -384,34 +398,38 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     else
         name = nameIn;
 
-    CameraViewDefinition view(CameraViewDefinition::CreateParams(db, name, ViewDefinition::Data(model.GetModelId())));
-    ViewDefinitionCPtr newViewDef = view.Insert();
-    if (!newViewDef.IsValid())
+    CameraViewDefinitionCPtr newViewDef;
         {
-        EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController insert into %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
-        return DgnViewId();
+        printf("InsertNewModelSelector\n");
+        ModelSelectorCPtr modSel = InsertNewModelSelector(db, name.c_str(), model.GetModelId());
+        printf("InsertNewModelSelector=%p\n", modSel.get());
+        if (!modSel.IsValid())
+            {
+            EXPECT_TRUE(false) << "Failed to create a ModelSelector with name 'Default'";
+            return DgnViewId();
+            }
+
+        printf("Insert CameraViewDefinition\n");
+        CameraViewDefinition view(db, name);
+        view.SetModelSelector(*modSel);
+        newViewDef = db.Elements().Insert(view);
+        printf("Insert CameraViewDefinition=%p\n", newViewDef.get());
+        if (!newViewDef.IsValid())
+            {
+            EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController insert into %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
+            return DgnViewId();
+            }
         }
 
-    DgnViewId viewId = view.GetViewId();
-    
-    CameraViewController* viewController = new CameraViewController(db, viewId);
-    if (nullptr == viewController)
-        {
-        EXPECT_TRUE(false) << WPrintfString(L"%ls - CameraViewController ctor failed in %ls", WString(name.c_str(),BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
-        return DgnViewId();
-        }
-
-    viewController->SetBaseModelId(model.GetModelId());
+    CameraViewController viewController(*newViewDef);
 
     for (auto const& categoryId : DgnCategory::QueryCategories(db))
-        viewController->ChangeCategoryDisplay(categoryId, true);
+        viewController.ChangeCategoryDisplay(categoryId, true);
 
-    viewController->SetCameraOn(false);
+    viewController.SetOrigin(DPoint3d::From(-5,-5,-5));
+    viewController.SetDelta(DVec3d::From(10,10,10));
 
-    viewController->SetOrigin(DPoint3d::From(-5,-5,-5));
-    viewController->SetDelta(DVec3d::From(10,10,10));
-
-    auto& viewFlags = viewController->GetViewFlagsR();
+    auto& viewFlags = viewController.GetViewFlagsR();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
     viewFlags.m_constructions = true;
     viewFlags.m_dimensions = true;
@@ -424,7 +442,66 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP nameIn)
     viewFlags.m_grid = true;
     viewFlags.m_acsTriad = true;
 
-    viewController->Save();
+    printf("ViewController::Save\n");
+    viewController.Save();
+    printf("==========================\n");
 
-    return viewId;
+    return newViewDef->GetViewId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/16
+//---------------------------------------------------------------------------------------
+ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name, DgnModelId model)
+    {
+    ModelSelector modSel(db, name);
+    auto modSelPersist = db.Elements().Insert(modSel);
+    if (!modSelPersist.IsValid())
+        {
+        EXPECT_TRUE(false) << " Failed to insert model selector with name =" << name;
+        return nullptr;
+        }
+    modSel.SetModelId(model);
+
+    auto models = modSelPersist->GetModelIds();
+    EXPECT_EQ(1, models.size());
+    EXPECT_EQ(model, *models.begin());
+
+    return modSelPersist;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/16
+//---------------------------------------------------------------------------------------
+CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categoriesIn)
+    {
+    CategorySelector catSel(db, name);
+
+    CategorySelectorCPtr catSelPersist = db.Elements().Insert(catSel);
+    if (!catSelPersist.IsValid())
+        {
+        EXPECT_TRUE(false) << " Insertion of CategorySelector with name " << name << " failed";
+        return nullptr;
+        }
+
+    DgnCategoryIdSet const* categories = categoriesIn;
+    DgnCategoryIdSet _categories;
+    if (nullptr == categories)
+        {
+        for (auto const& categoryId : DgnCategory::QueryCategories(db))
+            _categories.insert(categoryId);
+        categories = &_categories;
+        }
+
+    if (!categories->empty())
+        {
+        CategorySelectorPtr catSelPersistW = catSelPersist->MakeCopy<CategorySelector>();
+        EXPECT_EQ(DgnDbStatus::Success, catSelPersistW->SetCategoryIds(*categories));
+        EXPECT_TRUE(catSelPersistW->Update().IsValid());
+        EXPECT_EQ(catSelPersist.get(), db.Elements().GetElement(catSelPersistW->GetElementId()).get());
+    
+        auto categoriesStored = catSelPersist->GetCategoryIds();
+        EXPECT_EQ(categoriesStored, *categories);
+        }
+    return catSelPersist;
     }

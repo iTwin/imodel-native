@@ -44,10 +44,12 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
-    
+
+    BeFileName fileName(TEST_FIXTURE_NAME, true);
+    fileName.AppendToPath(L"TextAnnotation2dTest-BasicCrud.bim");
 
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", L"TextAnnotation2dTest-BasicCrud.bim", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"2dMetricGeneral.ibim", fileName.c_str(), __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -97,21 +99,19 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotation2dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        DrawingViewDefinition view(*db, "TextAnnotation2dTest-BasicCrud", modelId);
         EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        DrawingViewController viewController(*db, view.GetViewId());
+        DrawingViewController viewController(view);
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
+        EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
         }
 
     // Read the element back out, modify, and rewrite.
@@ -234,9 +234,12 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
     {
     // The goal of this is to exercise persistence into and out of the database.
     // To defeat element caching, liberally open and close the DB.
+
+    BeFileName fileName(TEST_FIXTURE_NAME, true);
+    fileName.AppendToPath(L"TextAnnotation3dTest-BasicCrud.bim");
     
     BeFileName dbPath;
-    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", L"TextAnnotation3dTest-BasicCrud.bim", __FILE__));
+    ASSERT_TRUE(SUCCESS == DgnDbTestDgnManager::GetTestDataOut(dbPath, L"3dMetricGeneral.ibim", fileName.c_str(), __FILE__));
 
     DgnModelId modelId;
     DgnElementId textStyleId;
@@ -288,21 +291,20 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "TextAnnotation3dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
+        OrthographicViewDefinition view(*db, "TextAnnotation3dTest-BasicCrud");
+        view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*db, "TextAnnotation3dTest-BasicCrud", modelId));
         EXPECT_TRUE(view.Insert().IsValid());
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        SpatialViewController viewController(*db, view.GetViewId());
+        OrthographicViewController viewController(view);
         viewController.SetStandardViewRotation(StandardView::Top);
         viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
         viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
         viewController.ChangeCategoryDisplay(categoryId, true);
         viewController.ChangeModelDisplay(modelId, true);
 
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
+        EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
         }
 
     // Read the element back out, modify, and rewrite.

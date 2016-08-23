@@ -21,13 +21,18 @@ protected:
     void VerifyInstanceCounts(WCharCP fileName, bmap<Utf8String, int>& benchMark, bvector<Utf8String>& schemasToCheck);
 };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  10/15
+//+---------------+---------------+---------------+---------------+---------------+------
 void ECInstanceSelectTests::VerifyInstanceCounts(WCharCP fileName, bmap<Utf8String, int>& benchMark, bvector<Utf8String>& schemasToCheck)
     {
-    WCharCP testProjFile = L"InstanceCountVerification.ibim";
+    BeFileName testProjFile(TEST_FIXTURE_NAME, true);
+    testProjFile.AppendToPath(L"InstanceCountVerification.ibim");
+
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::Readonly;
 
     BeFileName outFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, fileName, testProjFile, __FILE__));
+    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, fileName, testProjFile.c_str(), __FILE__));
 
     OpenDb(m_db, outFileName, mode);
     bvector<ECN::ECSchemaCP> schemaList = m_db->Schemas().GetECSchemas();
@@ -239,14 +244,7 @@ TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_04Plant)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECInstanceSelectTests, SelectQueriesOnDbGeneratedDuringBuild_79Main)
     {
-    WCharCP baseProjFile = L"79_Main.i.ibim";
-    WCharCP testProjFile = L"SelectQueriesOnDbGeneratedDuringBuild_79Main.ibim";
-    BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
-
-    BeFileName outFileName;
-    ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut (outFileName, baseProjFile, testProjFile, __FILE__));
-
-    OpenDb (m_db, outFileName, mode);
+    SetupWithPrePublishedFile(L"79_Main.i.ibim", L"SelectQueriesOnDbGeneratedDuringBuild_79Main.ibim", BeSQLite::Db::OpenMode::ReadWrite);
 
     ECSqlStatement stmt;
 

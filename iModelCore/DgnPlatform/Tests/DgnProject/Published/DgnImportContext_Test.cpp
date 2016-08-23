@@ -147,20 +147,31 @@ static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP name)
     return model;
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbPtr initDb(WCharCP fileName, Db::OpenMode mode = Db::OpenMode::ReadWrite, bool needBriefCase = true)
+    {
+    BeFileName dbName;
+    EXPECT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(dbName, fileName));
+    DgnDbPtr db;
+    DgnDbTestFixture::OpenDb(db, dbName, mode, needBriefCase);
+    return db;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMode mode, bool importDummySchemaFirst = true)
-{
+static DgnDbPtr openCopyOfDb(WCharCP destName, DgnDb::OpenMode mode = Db::OpenMode::ReadWrite, bool importDummySchemaFirst = true)
+    {
     DgnDbPtr db2;
-    DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(sourceName, destName), mode, true);
+    db2 = initDb(destName,mode,true);
     if (!db2.IsValid())
         return nullptr;
     if (importDummySchemaFirst)
         DgnPlatformTestDomain::ImportDummySchema(*db2);
     DgnPlatformTestDomain::ImportSchema(*db2);
     return db2;
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
@@ -215,7 +226,7 @@ TEST_F(ImportTest, ImportGroups)
     //  Import into separate db
     if (true)
     {
-        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
+        DgnDbPtr db2 = openCopyOfDb( L"3dMetricGeneralcc.bim");
         ASSERT_TRUE(db2.IsValid());
 
         DgnImportContext import3(*m_db, *db2);
@@ -440,7 +451,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     if (true)
     {
         //  Create a second Db
-        DgnDbPtr destDb = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"ImportTest/3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
+        DgnDbPtr destDb = openCopyOfDb(L"3dMetricGeneralcc.bim");
         ASSERT_TRUE(destDb.IsValid());
 
         for (int i=0; i<32; ++i)
@@ -540,7 +551,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     //  Import model1 into separate db
     if (true)
     {
-        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"ImportTest/3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
+        DgnDbPtr db2 = openCopyOfDb(L"3dMetricGeneralcc.bim");
         ASSERT_TRUE(db2.IsValid());
 
         DgnImportContext import3(*m_db, *db2);
@@ -610,7 +621,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     //  Import into separate db
     if (true)
     {
-        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.ibim", L"ImportTest/3dMetricGeneralcc.ibim", DgnDb::OpenMode::ReadWrite);
+        DgnDbPtr db2 = openCopyOfDb(L"ImportElementsWithDependencies_Destination.bim");
         ASSERT_TRUE(db2.IsValid());
 
         DgnImportContext import3(*m_db, *db2);
@@ -619,9 +630,10 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
-        db2->SaveChanges();
         ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
         TestElementDrivesElementHandler::GetHandler().Clear();
+
+        db2->SaveChanges();
     }
 }
 
@@ -634,7 +646,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     {
     //.............................................................................................
     DgnDbPtr db1;
-    DgnDbTestFixture::OpenDb(db1, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", L"ImportTest/ElementGeomIOCausesFontRemap-1.bim"), DgnDb::OpenMode::ReadWrite, true);
+    db1 = initDb(L"ElementGeomIOCausesFontRemap-1.bim");
     ASSERT_TRUE(db1.IsValid());
 
     DgnFontPtr db1_font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry("Arial");
@@ -669,7 +681,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
 
     //.............................................................................................
     DgnDbPtr db2;
-    DgnDbTestFixture::OpenDb(db2, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", L"ImportTest/ElementGeomIOCausesFontRemap-2.bim"), DgnDb::OpenMode::ReadWrite, true);
+    db2 = initDb(L"ElementGeomIOCausesFontRemap-2.bim");
     ASSERT_TRUE(db2.IsValid());
 
     ASSERT_TRUE(nullptr == db2->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));
@@ -689,7 +701,7 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
 
     //.............................................................................................
     DgnDbPtr db3;
-    DgnDbTestFixture::OpenDb(db3, DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", L"ImportTest/ElementGeomIOCausesFontRemap-3.bim"), DgnDb::OpenMode::ReadWrite, true);
+    db3 = initDb(L"ElementGeomIOCausesFontRemap-3.bim");
     ASSERT_TRUE(db3.IsValid());
 
     ASSERT_TRUE(nullptr == db3->Fonts().FindFontByTypeAndName(db1_font->GetType(), db1_font->GetName().c_str()));

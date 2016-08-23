@@ -341,9 +341,9 @@ Render::GraphicPtr HypermodelingViewController::_StrokeGeometry(ViewContextR con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-HypermodelingViewController::HypermodelingViewController (DgnViewId vid, SpatialViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
+HypermodelingViewController::HypermodelingViewController (SpatialViewDefinition& def, SpatialViewControllerR p, bvector<SectionDrawingViewControllerPtr> const& d)
     :
-    SpatialViewController (p.GetDgnDb(), vid),
+    SpatialViewController (def),
     m_drawings (d),
     m_physical (&p),
     m_currentViewController (&p),

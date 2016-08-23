@@ -290,7 +290,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
     {
-    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite, false, true);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
@@ -305,13 +305,17 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*m_db,DgnModel::CreateModelCode("TestModel2d"));
+    ASSERT_TRUE(sheetModel.IsValid());
+    DgnModelId modelId = sheetModel->GetModelId();
+
     //Add two elements using this GeometryPart
-    DgnElementId elementId1 = InsertElementUsingGeometryPart2d( geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId1 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId1.IsValid());
 
-    DgnElementId elementId2 = InsertElementUsingGeometryPart2d( geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId2 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId2.IsValid());
 
-    DgnElementId elementId3 = InsertElement2d( m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId3 = InsertElement2d(modelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId3.IsValid());
     }

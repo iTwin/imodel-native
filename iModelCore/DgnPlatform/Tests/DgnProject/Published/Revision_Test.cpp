@@ -182,8 +182,10 @@ DgnRevisionPtr RevisionTestFixture::CreateRevision()
 void RevisionTestFixture::BackupTestFile()
     {
     CloseDgnDb();
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
-    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    BeFileName originalFile = m_testFileName;// DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileName copyFile(originalFile.GetDirectoryName()); //DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    copyFile.AppendToPath(m_copyTestFileName);
+    //BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(originalFile.c_str(), copyFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
@@ -196,8 +198,9 @@ void RevisionTestFixture::BackupTestFile()
 void RevisionTestFixture::RestoreTestFile()
     {
     CloseDgnDb();
-    BeFileName originalFile = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
-    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    BeFileName originalFile = m_testFileName;// DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
+    BeFileName copyFile(originalFile.GetDirectoryName()); //DgnDbTestDgnManager::GetOutputFilePath(m_copyTestFileName);
+    copyFile.AppendToPath(m_copyTestFileName);
 
     BeFileNameStatus fileStatus = BeFileName::BeCopyFile(copyFile.c_str(), originalFile.c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
@@ -430,6 +433,9 @@ TEST_F(RevisionTestFixture, Codes)
     expectedCodes.insert(DgnSubCategory::QuerySubCategory(defaultCat->GetDefaultSubCategoryId(), db)->GetCode());
     expectedCodes.insert(subCat.GetCode());
     expectedCodes.insert(ViewDefinition::CreateCode("Default"));
+    expectedCodes.insert(ModelSelector::CreateCode("Default"));
+    expectedCodes.insert(CategorySelector::CreateCode("Default"));
+    expectedCodes.insert(DisplayStyle::CreateCode("Default"));
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create some new elements with codes, and delete one with a code

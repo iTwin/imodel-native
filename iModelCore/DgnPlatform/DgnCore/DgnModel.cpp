@@ -880,16 +880,12 @@ DgnDbStatus DgnModel::_OnDelete()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::DeleteAllViews()
     {
-    DgnDbStatus status = DgnDbStatus::Success;
-    for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
-        {
-        auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
-        status = view.IsValid() ? view->Delete() : DgnDbStatus::ViewNotFound;
-        if (DgnDbStatus::Success != status)
-            break;
-        }
+    if (Is3dModel())
+        return ModelSelector::OnModelDelete(GetDgnDb(), GetModelId());
+     
+    ViewDefinition2d::OnModelDelete(GetDgnDb(), GetModelId());
 
-    return status;
+    return DgnDbStatus::Success;
     }
 
 struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnDeleted(model);}};
@@ -934,8 +930,9 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                     }
                 }
 
+#ifdef WIP_VIEW_DEFINITION // *** Must handle 2D and 3D models differently
             // and we must delete all of its views
-            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options(GetModelId())))
+            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options()))
                 {
                 auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
                 if (view.IsValid())
@@ -945,6 +942,7 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                         return stat;
                     }
                 }
+#endif
 
             break;
             }
@@ -1682,6 +1680,11 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     timer.Start();
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, BIS_TABLE(BIS_REL_ElementDrivesElement), "SourceECInstanceId", "TargetECInstanceId", "ECClassId", {"Status", "Priority"});
     LogPerformance(timer, "Import ECRelationships %s", BIS_REL_ElementDrivesElement);
+
+#ifdef WIP_VIEW_DEFINITION
+    BIS_TABLE(BIS_REL_CategorySelectorsReferToCategories)
+    BIS_TABLE(BIS_REL_ModelSelectorsReferToModels)
+#endif
 
     // *** WIP_IMPORT *** ElementsHaveLinks -- should we deep-copy links?
 

@@ -263,7 +263,7 @@ void SetUp () override
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    SpatialViewController viewController(GetDgnDb(), view.GetViewId());
+    OrthographicViewController viewController(GetDgnDb(), view.GetViewId());
     viewController.SetStandardViewRotation(StandardView::Top);
     viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
     //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);

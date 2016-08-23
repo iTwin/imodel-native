@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnDb.h>
+#include <DgnPlatform/DgnView.h>
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>
@@ -85,8 +86,8 @@ protected:
     virtual Dgn::DgnDbStatus _InsertInDb() override;
     virtual Dgn::DgnDbStatus _UpdateInDb() override;
     virtual Dgn::DgnDbStatus _DeleteInDb() const override;
-    virtual Dgn::DgnDbStatus _SetProperty(Utf8CP, ECN::ECValueCR) override;
-    virtual Dgn::DgnDbStatus _GetProperty(ECN::ECValueR, Utf8CP) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR) override;
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP) const override;
 
     virtual Dgn::DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, Dgn::ECSqlClassParams const& selectParams) override;
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement& stmt) override;

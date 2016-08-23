@@ -103,7 +103,7 @@ TestBreakdownPtr TestBreakdown::Create(FunctionalModelR model, Utf8CP stringProp
         return nullptr;
 
     TestBreakdownPtr testBreakdown = new TestBreakdown(CreateParams(db, model.GetModelId(), classId));
-    if (DgnDbStatus::Success != testBreakdown->SetProperty("StringProp1", ECN::ECValue(stringProp1)))
+    if (DgnDbStatus::Success != testBreakdown->SetPropertyValue("StringProp1", ECN::ECValue(stringProp1)))
         return nullptr;
 
     return testBreakdown;
@@ -120,7 +120,7 @@ TestComponentPtr TestComponent::Create(FunctionalModelR model, double doubleProp
         return nullptr;
 
     TestComponentPtr testComponent = new TestComponent(CreateParams(db, model.GetModelId(), classId));
-    if (DgnDbStatus::Success != testComponent->SetProperty("DoubleProp1", ECN::ECValue(doubleProp1)))
+    if (DgnDbStatus::Success != testComponent->SetPropertyValue("DoubleProp1", ECN::ECValue(doubleProp1)))
         return nullptr;
 
     return testComponent;
