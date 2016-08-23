@@ -18,7 +18,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECDbMap::ECDbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(*this)
     {}
 
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan   05/2015
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -49,8 +48,6 @@ DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
     LOG.debugv("Re-populated ec_ClassHasTables in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
-#endif
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
 //---------------+---------------+---------------+---------------+---------------+--------
@@ -1187,10 +1184,8 @@ BentleyStatus ECDbMap::SaveDbSchema() const
             }
         }
 
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     if (BE_SQLITE_OK != RepopulateClassHasTable(GetECDb()))
         return ERROR;
-#endif
 
     m_lightweightCache.Reset();
     stopWatch.Stop();
@@ -1213,12 +1208,7 @@ std::vector<ECN::ECClassId> const& ECDbMap::LightweightCache::LoadClassIdsPerTab
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     Utf8String sql = "SELECT ClassId FROM ec_ClassHasTables WHERE TableId = ?";
-#else
-    PopulateCacheTablesIfNecessary();
-    Utf8String sql = "SELECT ClassId FROM TEMP.ec_ClassHasTables WHERE TableId = ?";
-#endif
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, tbl.GetId());
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1240,12 +1230,7 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::LoadClassIdsPerTable(ECN:
         return itor->second;
 
     bset<DbTable const*>& subSet = m_tablesPerClassId[iid];
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     Utf8String sql = "SELECT TableId FROM ec_ClassHasTables WHERE ClassId = ? ORDER BY TableId";
-#else
-    PopulateCacheTablesIfNecessary();
-    Utf8String sql = "SELECT TableId FROM TEMP.ec_ClassHasTables WHERE ClassId = ? ORDER BY TableId";
-#endif
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, iid);
     DbTableId currentTableId;
@@ -1267,81 +1252,6 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::LoadClassIdsPerTable(ECN:
     return subSet;
     }
 
-#ifndef WIP_USE_PERSISTED_CACHE_TABLES
-DbResult ECDbMap::LightweightCache::PopulateCacheTablesIfNecessary() const
-    {
-    if (!m_repopulateTempCache)
-        return BE_SQLITE_OK;
-
-    //ec_ClassHasTables
-    ECDbCR ecdb = m_map.GetECDb();
-    DbResult stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS TEMP.ec_ClassHasTables");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE TABLE TEMP.ec_ClassHasTables("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL,"
-                           "TableId INTEGER NOT NULL)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX TEMP.ix_ec_ClassHasTables_ClassId ON ec_ClassHasTables(ClassId);"
-                           "CREATE INDEX TEMP.ix_ec_ClassHasTables_TableId ON ec_ClassHasTables(TableId);");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    //ec_ClassHierarchy
-    stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS TEMP.ec_ClassHierarchy");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE TABLE TEMP.ec_ClassHierarchy("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL,"
-                           "BaseClassId INTEGER NOT NULL)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX TEMP.ix_ec_ClassHierarchy_ClassId ON ec_ClassHierarchy(ClassId);"
-                           "CREATE INDEX TEMP.ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);");
-
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("WITH RECURSIVE "
-                        "BaseClassList(ClassId, BaseClassId) AS "
-                        "("
-                        "   SELECT Id, Id FROM ec_Class"
-                        "   UNION"
-                        "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
-                        "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
-                        ")"
-                        "INSERT INTO TEMP.ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
-
-    if (stat != BE_SQLITE_OK)
-        return stat;
-
-    stat = ecdb.ExecuteSql(
-        "INSERT INTO TEMP.ec_ClassHasTables "
-        "    SELECT  NULL, ec_ClassMap.ClassId , ec_Table.Id "
-        "    FROM ec_PropertyMap "
-        "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "          INNER JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "    WHERE ec_ClassMap.MapStrategy <> 101 "
-        "          AND ec_ClassMap.MapStrategy <> 100 "
-        "          AND ec_Column.ColumnKind & 2 = 0 "
-        "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id; "
-    );
-
-    if (stat != BE_SQLITE_OK)
-        return stat;
-
-    m_repopulateTempCache = false;
-    return BE_SQLITE_OK;
-    }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1352,22 +1262,13 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>&  relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     Utf8CP sql0 =
         "SELECT  RC.RelationshipClassId, RC.RelationshipEnd"
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
         "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.ClassId  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
         "    WHERE RCC.ClassId = ?";
-#else
-    PopulateCacheTablesIfNecessary();
-    Utf8CP sql0 =
-        "SELECT  RC.RelationshipClassId, RC.RelationshipEnd"
-        "    FROM ec_RelationshipConstraintClass RCC"
-        "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-        "       LEFT JOIN TEMP.ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
-        "    WHERE RCC.ClassId = ?";
-#endif
+
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
     stmt0->BindId(1, constraintClassId); //!This speed up query from 98ms to 28 ms by remove OR results that are not required in LEFT JOIN
     stmt0->BindId(2, constraintClassId);
@@ -1397,22 +1298,13 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>&  constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     Utf8CP sql0 =
         "SELECT  IFNULL(CH.ClassId, RCC.[ClassId]) ConstraintClassId, RC.RelationshipEnd"
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
         "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
         "    WHERE RC.RelationshipClassId = ?";
-#else
-    PopulateCacheTablesIfNecessary();
-    Utf8CP sql0 =
-    "SELECT  IFNULL(CH.ClassId, RCC.[ClassId]) ConstraintClassId, RC.RelationshipEnd"
-        "    FROM ec_RelationshipConstraintClass RCC"
-        "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-        "       LEFT JOIN TEMP.ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
-        "    WHERE RC.RelationshipClassId = ?";
-#endif
+
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
     stmt0->BindId(1, relationshipId);
     while (stmt0->Step() == BE_SQLITE_ROW)
@@ -1441,22 +1333,13 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
         return itor->second;
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     Utf8CP sql =
         "SELECT CH.[ClassId], CT.[TableId]"
         "   FROM ec_ClassHasTables CT"
         "       INNER JOIN ec_ClassHierarchy CH ON CH.[ClassId] = CT.[ClassId]"
         "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId AND ec_Table.Type <> 1"
         "   WHERE  CH.[BaseClassId] = ?";
-#else
-    PopulateCacheTablesIfNecessary();
-    Utf8CP sql =
-    "SELECT CH.[ClassId], CT.[TableId]"
-        "   FROM TEMP.ec_ClassHasTables CT"
-        "       INNER JOIN TEMP.ec_ClassHierarchy CH ON CH.[ClassId] = CT.[ClassId]"
-        "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId AND ec_Table.Type <> 1"
-        "   WHERE  CH.[BaseClassId] = ?";
-#endif
+
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql);
     stmt->BindId(1, classId);
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1512,9 +1395,6 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
 //---------------------------------------------------------------------------------------
 void ECDbMap::LightweightCache::Reset()
     {
-#ifndef WIP_USE_PERSISTED_CACHE_TABLES
-    m_repopulateTempCache = true;
-#endif
     m_horizontalPartitions.clear();
     m_classIdsPerTable.clear();
     m_relationshipClassIdsPerConstraintClassIds.clear();

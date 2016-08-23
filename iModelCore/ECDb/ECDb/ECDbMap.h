@@ -52,11 +52,6 @@ struct ECDbMap :NonCopyableClass
                 mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
                 mutable RelationshipPerTable m_relationshipPerTable;
                 mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
-#ifndef WIP_USE_PERSISTED_CACHE_TABLES
-                mutable bool m_repopulateTempCache;
-                DbResult PopulateCacheTablesIfNecessary() const;
-#endif
-
                 ECDbMapCR m_map;
 
                 ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId classId)  const;
@@ -115,9 +110,7 @@ struct ECDbMap :NonCopyableClass
         explicit ECDbMap(ECDbCR ecdb);
         ~ECDbMap() {}
 
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
         static DbResult RepopulateClassHasTable(ECDbCR);
-#endif
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
         ClassMap const* GetClassMap(ECN::ECClassId) const;
 

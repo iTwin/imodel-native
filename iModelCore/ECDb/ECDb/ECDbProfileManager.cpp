@@ -99,16 +99,6 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
-    //Statement stmt;
-    //stmt.Prepare(ecdb, "SELECT NULL FROM sqlite_master WHERE Name = 'ix_ec_ClassMap_ClassId' AND type = 'index'");
-    //if (stmt->Step() == BE_SQLITE_DONE)
-    //    {
-    //    if (ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId)") != BE_SQLITE_OK)
-    //        {
-
-    //        }
-    //    }
-
     const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
     stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
@@ -169,10 +159,8 @@ DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& curr
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 0))
+    if (currentProfileVersion < SchemaVersion(3, 7, 0, 1))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3701()));
-#endif
 
     for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
         {
@@ -516,7 +504,6 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     //ec_ClassHasTables
     stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHasTables("
                            "Id INTEGER PRIMARY KEY,"
@@ -540,10 +527,6 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
 
     return ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassHierarchy_ClassId ON ec_ClassHierarchy(ClassId);"
                            "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);");
-#else
-    return stat;
-#endif
-
     }
 
 

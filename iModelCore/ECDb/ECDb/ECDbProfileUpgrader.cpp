@@ -12,7 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -55,7 +54,7 @@ DbResult ECDbProfileUpgrader_3701::_Upgrade(ECDbCR ecdb) const
 
     return BE_SQLITE_OK;
     }
-#endif
+
 //*************************************** ECProfileUpgrader *********************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2013

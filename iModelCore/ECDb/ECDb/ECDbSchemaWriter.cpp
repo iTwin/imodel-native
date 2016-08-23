@@ -1657,7 +1657,6 @@ void SqlUpdater::Where(Utf8CP column, int64_t value)
     {
     m_whereMap[column] = ECN::ECValue(value);
     }
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1668,23 +1667,7 @@ DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     DbResult stat = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
     if (stat != BE_SQLITE_OK)
         return stat;
-/* We do not required ordered list
-    r = ecdb.ExecuteSql (
-        "WITH RECURSIVE "
-        "BaseClassList(ClassId, BaseClassId, Level, Ordinal) AS "
-        "( "
-        "SELECT Id, Id, 1, 0 FROM ec_Class "
-        "UNION "
-        "SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1, COALESCE(NULLIF(BC.Ordinal, 0), DCL.Ordinal) "
-        "   FROM BaseClassList DCL "
-        "        INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
-        ") "
-        "INSERT INTO ec_ClassHierarchy "
-        "SELECT DISTINCT NULL Id, ClassId, BaseClassId "
-        "FROM BaseClassList "
-        "     ORDER BY Ordinal DESC, Level DESC;"
-    );
-*/
+
     stat = ecdb.ExecuteSql("WITH RECURSIVE "
                            "BaseClassList(ClassId, BaseClassId) AS "
                            "("
@@ -1701,5 +1684,5 @@ DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     LOG.debugv("Re-populated ec_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
-#endif
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

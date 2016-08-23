@@ -32,11 +32,7 @@ private:
 
 
     //! Expected version of the ECDb profile for this version of the ECDb API.
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 0, 1); }
-#else
-    static SchemaVersion GetExpectedVersion() { return SchemaVersion(3, 7, 0, 0); }
-#endif
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static SchemaVersion GetMinimumSupportedVersion() { return SchemaVersion(3, 7, 0, 0); }
 

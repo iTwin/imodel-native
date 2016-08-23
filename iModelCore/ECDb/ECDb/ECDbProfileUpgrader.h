@@ -55,7 +55,6 @@ public:
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
     };
 
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2016
 //+===============+===============+===============+===============+===============+======
@@ -65,7 +64,6 @@ struct ECDbProfileUpgrader_3701 : ECDbProfileUpgrader
     private:
         virtual DbResult _Upgrade(ECDbCR) const override;
     };
-#endif
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013

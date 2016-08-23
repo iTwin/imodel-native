@@ -293,10 +293,9 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
         }
 
-#ifdef WIP_USE_PERSISTED_CACHE_TABLES
     if (BE_SQLITE_OK != ECDbSchemaWriter::RepopulateClassHierarchyTable(m_ecdb))
         return ERROR;
-#endif
+
     return SUCCESS;
     }
 
