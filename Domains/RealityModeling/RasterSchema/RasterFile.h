@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterFile.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,15 +24,17 @@ private:
 
                                                             RasterFile(Utf8StringCR resolvedName);
             int                                             ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
-    static  ImagePP::HGF2DWorldCluster&                     GetWorldCluster();
+    
             StatusInt                                       GetSampleStatistics(double& minValue, double& maxValue);
             ImagePP::HFCPtr<ImagePP::HRFPageDescriptor>     GetPageDescriptor() const;
             ImagePP::HFCPtr<ImagePP::HRARaster>             DecorateRaster(ImagePP::HFCPtr<ImagePP::HRAStoredRaster>& pStoredRaster);
 
 public:
+    static  ImagePP::HGF2DWorldCluster&                     GetWorldCluster();
+
     static  RasterFilePtr                                   Create(Utf8StringCR resolvedName);
             ImagePP::HFCPtr<ImagePP::HRFRasterFile>         OpenRasterFile(Utf8StringCR resolvedName);
-            ImagePP::HRFRasterFile*                         GetHRFRasterFileP() const;
+            ImagePP::HRFRasterFile&                         GetHRFRasterFile() const;
             uint32_t                                        GetWidth() const;
             uint32_t                                        GetHeight() const;
             void                                            GetSize(Point2d* sizeP) const;
