@@ -214,20 +214,21 @@ int emulatedFutexWake(void* addr, int count, uint32_t waitMask) {
   std::unique_lock<std::mutex> bucketLock(bucket.mutex_);
 
   int numAwoken = 0;
-  for (auto iter = bucket.waiters_.begin();
-       numAwoken < count && iter != bucket.waiters_.end(); ) {
-    auto current = iter;
-    auto& node = *iter++;
+  for (auto iter = bucket.waiters_.begin(); numAwoken < count && iter != bucket.waiters_.end(); ) {
+    EmulatedFutexWaitNode* node = *iter;
     if (node->addr_ == addr && (node->waitMask_ & waitMask) != 0) {
       ++numAwoken;
 
       // we unlink, but waiter destroys the node
-      bucket.waiters_.erase(current);
+      iter = bucket.waiters_.erase(iter);
 
       std::unique_lock<std::mutex> nodeLock(node->mutex_);
       node->signaled_ = true;
       node->cond_.notify_one();
+    } else {
+      ++iter;
     }
+    
   }
   return numAwoken;
 }
