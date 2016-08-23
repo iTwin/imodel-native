@@ -77,12 +77,14 @@
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
-            <Files Required="false" ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
+            <Files ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="yes">Delivery/SkyBox/SkyBox.jpg</Files>
+            <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" />
+
             <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
             <Files Required="false" ProductDirectoryName="GeomJsApiTs" SubPartDirectory="Script/GeomJsApiTs">Delivery/GeomJsApi.d.ts</Files>
             <Directory Required="false" SubPartDirectory="DgnJsApiDoc" SourceName="Delivery/internal-docs/DgnJsApi" />
             <Directory Required="false" SubPartDirectory="GeomJsApiDoc" SourceName="Delivery/internal-docs/GeomJsApi" />
-            <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" Required="false" />
         </Bindings>
     </Part>
 
@@ -117,15 +119,15 @@
     <Part Name="DgnPlatformUnitTestHelpers" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"      PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
-            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
-            <Files Required="false" SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
         </Bindings>
     </Part>
 
     <Part Name="DgnPlatformSqlang" BentleyBuildMakeFile="${SrcRoot}bsicommon/sqlang/mki/XliffsToDb.mke" BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/DgnPlatform/DgnPlatform_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="DgnPlatformDLL" />
         <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang" Required="true">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/sqlang/DgnPlatform_en.sqlang.db3</Files>
         </Bindings>
     </Part>
 
@@ -682,9 +684,6 @@
 
     <ProductDirectoryList ListName="BimConsoleDirList" >
         <ProductDirectory Name="ApplicationRoot"                Path=""/>
-        <ProductDirectory Name="ApplicationAssemblies"          RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
-        <ProductDirectory Name="BeCurlAssemblies"               RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
         <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
@@ -698,11 +697,11 @@
     <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="DgnPlatformLib" />
         <SubPart PartName="DgnPlatformSqlang" />
-        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
-        <SubPart PartName="GeoCoordData"        PartFile="csmap"        Repository="libsrc-csmap"/>
-
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
+        <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
+		<SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <Bindings>
-            <Files ProductDirectoryName="ApplicationRoot">Delivery/TilePublisher$(exeext)</Files>
+            <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -712,14 +711,11 @@
     </Product>
 
     <ProductDirectoryList ListName="TilePublisherDirs" >
-        <ProductDirectory Name="Assets"                         Deliver="true" Path="Assets"/>
-        <ProductDirectory Name="ApplicationRoot"                Path=""/>
-        <ProductDirectory Name="ApplicationAssemblies"          RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ApplicationLibs"                RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="ApplicationSchema"              RelativeTo="ApplicationRoot" Path="ECSchemas/Domain"/>
-        <ProductDirectory Name="Assemblies"                     RelativeTo="ApplicationRoot"/>
-        <ProductDirectory Name="VendorNotices"                  RelativeTo="ApplicationRoot" Path="notices"/>
-		<ProductDirectory Name="GeoCoordData"                   Path="DgnGeoCoord" Deliver="true"/>
-
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <ProductDirectory Name="Assemblies" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot"/>
+        <ProductDirectory Name="Assets"  Path="Assets" RelativeTo="ApplicationRoot" LibType="static" />
+        <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
+
 </BuildContext>

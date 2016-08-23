@@ -77,7 +77,7 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
         found = m_map.insert(bmap<DgnElementId, uint16_t>::value_type(elemId, batchId)).first;
         }
 
-    return found->second;
+    return found->second; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,7 +104,7 @@ TilePublisher::TilePublisher(TileNodeCR tile, TilesetPublisher& context)
 #endif
 
     TileGeometryCacheR geomCache = GetGeometryCache();
-    m_meshes = m_tile.GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, true);
+    m_meshes = m_tile._GenerateMeshes(geomCache, m_tile.GetTolerance(), TileGeometry::NormalMode::Always, true);
     GetTextureCache().PrepareMeshTextures(m_meshes, m_textureIds, geomCache);
     }
 
@@ -423,6 +423,62 @@ void TilePublisher::AddTextures(Json::Value& rootNode, TextureIdToNameMap& texNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
+    {
+    Json::Value     technique = Json::objectValue;
+
+    AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
+    AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
+    AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
+    AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+
+    static char         *s_programName                    = "polylineProgram",
+                        *s_vertexShaderName               = "polylineVertexShader",
+                        *s_fragmentShaderName             = "polylineFragmentShader",
+                        *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
+                        *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+
+    technique["program"] = s_programName;
+
+    auto&   techniqueStates = technique["states"];
+    techniqueStates["enable"] = Json::arrayValue;
+    techniqueStates["enable"].append(GLTF_DEPTH_TEST);
+
+    auto& techniqueAttributes = technique["attributes"];
+    techniqueAttributes["a_pos"] = "pos";
+    techniqueAttributes["a_batchId"] = "batch";
+
+    auto& techniqueUniforms = technique["uniforms"];
+    techniqueUniforms["u_mv"] = "mv";
+    techniqueUniforms["u_proj"] = "proj";
+
+    auto& rootProgramNode = (rootNode["programs"][s_programName] = Json::objectValue);
+    rootProgramNode["attributes"] = Json::arrayValue;
+    AppendProgramAttribute(rootProgramNode, "a_pos");
+    AppendProgramAttribute(rootProgramNode, "a_batchId");
+
+    rootProgramNode["vertexShader"]   = s_vertexShaderName;
+    rootProgramNode["fragmentShader"] = s_fragmentShaderName;
+
+    auto& shaders = rootNode["shaders"];
+    AddShader (shaders, s_vertexShaderName, GLTF_VERTEX_SHADER, s_vertexShaderBufferViewName);
+    AddShader (shaders, s_fragmentShaderName, GLTF_FRAGMENT_SHADER, s_fragmentShaderBufferViewName);
+
+    auto& bufferViews = rootNode["bufferViews"];
+
+    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_polylineVertexShader);
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+
+    AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
+    techniqueUniforms["u_color"] = "color";
+
+    return technique;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value     TilePublisher::AddShaderTechnique (Json::Value& rootNode, bool textured, bool transparent)
     {
     Json::Value     technique = Json::objectValue;
@@ -535,14 +591,19 @@ Json::Value     TilePublisher::AddShaderTechnique (Json::Value& rootNode, bool t
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddShaders(Json::Value& rootNode, bool isTextured)
     {
+    bool        polylinesPresent       = true;
+
     rootNode["techniques"]["untexturedTechnique"] = AddShaderTechnique (rootNode, false, false);
     rootNode["techniques"]["untexturedTechniqueTransparent"] = AddShaderTechnique (rootNode, false, true);
 
-    if (true)
+    if (true) /* transparent geometry exists */
         {
         rootNode["techniques"]["texturedTechnique"] = AddShaderTechnique (rootNode, true, false);
         rootNode["techniques"]["texturedTechniqueTransparent"] = AddShaderTechnique (rootNode, true, true);
         }
+    
+    if (polylinesPresent)
+        rootNode["techniques"]["polylineTechnique"] = AddPolylineShaderTechnique (rootNode);
     }
 
 
@@ -581,12 +642,29 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         }
 
     bvector<unsigned int> indices;
-    indices.reserve(mesh.Triangles().size() * 3);
-    for (auto const& tri : mesh.Triangles())
+
+    BeAssert (mesh.Triangles().empty() || mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
+
+    if (!mesh.Triangles().empty())
         {
-        indices.push_back((unsigned int)tri.m_indices[0]);
-        indices.push_back((unsigned int)tri.m_indices[1]);
-        indices.push_back((unsigned int)tri.m_indices[2]);
+        indices.reserve(mesh.Triangles().size() * 3);
+        for (auto const& tri : mesh.Triangles())
+            {
+            indices.push_back((unsigned int)tri.m_indices[0]);
+            indices.push_back((unsigned int)tri.m_indices[1]);
+            indices.push_back((unsigned int)tri.m_indices[2]);
+            }
+        }
+    else if (!mesh.Polylines().empty())
+        {
+        for (auto const& polyline : mesh.Polylines())
+            {
+            for (size_t i=0; i<polyline.m_indices.size()-1; i++)
+                {
+                indices.push_back (polyline.m_indices[i]);
+                indices.push_back (polyline.m_indices[i+1]);
+                }
+            }
         }
 
     bvector<float> uvs;
@@ -594,7 +672,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     for (auto const& uv : mesh.Params())
         {
         uvs.push_back((float)uv.x);
-        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or are v- convention is mismatched.
+        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or our v- convention is mismatched.
         }
 
     bvector<float> normals;
@@ -614,10 +692,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
 #endif
 
     Json::Value attr = Json::objectValue;
+
     attr["attributes"]["POSITION"] = acc_pos_id;
-    if (texId != -1)
+
+    if (!uvs.empty())
         attr["attributes"]["TEXCOORD_0"] = acc_uv_id;
-    else
+
+    if (!normals.empty())
         attr["attributes"]["NORMAL"] = acc_n_id;
 
 #if USE_BATCH_TABLE
@@ -630,39 +711,53 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         {
         Utf8String matName = Utf8String(WPrintfString(L"mat_%d", (int)id+baseMatId).c_str());
 
-        auto& material = rootNode["materials"][matName.c_str()] = Json::objectValue;
-        auto& materialColor = material["values"]["color"] = Json::arrayValue;
-        uint32_t rgb = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
-        materialColor.append(((uint8_t*)&rgb)[0]/255.0);
-        materialColor.append(((uint8_t*)&rgb)[1]/255.0);
-        materialColor.append(((uint8_t*)&rgb)[2]/255.0);
-        double alpha = 1.0 - ((uint8_t*)&rgb)[3]/255.0;
-        materialColor.append(alpha);
-        material["technique"] = (1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent";
+        auto&           material = rootNode["materials"][matName.c_str()] = Json::objectValue;
+        uint32_t        rgbInt  = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
+        RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+        double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
 
-        double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-        RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
-
-#ifdef NEEDS_WORK_MATERIALS
-        if (NULL != mesh.GetDisplayParams() && 
-            NULL != mesh.GetDisplayParams()->GetMaterial())
+        if (!mesh.Triangles().empty())
             {
-            MaterialSettingsCR  materialSettings = mesh.m_matSymb->GetMaterial()->GetSettings();
-            static double       s_finishScale = 15.0;
+            double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
+            RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
 
-            if (materialSettings.HasSpecularColor())
-                specularColor = materialSettings.GetSpecularColor();
+            if (nullptr != mesh.GetDisplayParams() && mesh.GetDisplayParams()->GetMaterialId().IsValid())
+                {
+                JsonRenderMaterial  jsonMaterial;
 
-            if (materialSettings.HasFinishScale())
-                specularExponent = materialSettings.GetFinishScaleForStorage() * s_finishScale;
+                if (SUCCESS == jsonMaterial.Load (mesh.GetDisplayParams()->GetMaterialId(), m_context.GetDgnDb()))
+                    {
+                    static double       s_finishScale = 15.0;
+
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasSpecularColor, false))
+                        specularColor = jsonMaterial.GetColor (RENDER_MATERIAL_SpecularColor);
+
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasFinish, false))
+                        specularExponent = jsonMaterial.GetDouble (RENDER_MATERIAL_Finish, s_qvSpecular) * s_finishScale;
+                    
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasBaseColor, false))
+                        rgb = jsonMaterial.GetColor (RENDER_MATERIAL_Color);
+
+                    if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
+                        alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
+                    }
+                }
+            material["values"]["specularExponent"] = specularExponent;
+
+            auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
+            materialSpecularColor.append (specularColor.red);
+            materialSpecularColor.append (specularColor.green);
+            materialSpecularColor.append (specularColor.blue);
             }
-#endif
 
-        material["values"]["specularExponent"] = specularExponent;
-        auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
-        materialSpecularColor.append (specularColor.red);
-        materialSpecularColor.append (specularColor.green);
-        materialSpecularColor.append (specularColor.blue);
+        auto&    materialColor = material["values"]["color"] = Json::arrayValue;
+
+        materialColor.append(rgb.red);
+        materialColor.append(rgb.green);
+        materialColor.append(rgb.blue);
+        materialColor.append(alpha);
+
+        material["technique"] = mesh.Triangles().empty() ? "polylineTechnique" : ((1.0 == alpha) ? "untexturedTechnique" : "untexturedTechniqueTransparent");
 
         attr["material"] = matName.c_str();
         }
@@ -671,7 +766,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         attr["material"] = texNames[texId];
         }
 
-    attr["mode"] = GLTF_TRIANGLES;
+    attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
 
     rootNode["bufferViews"][bv_pos_id] = Json::objectValue;
@@ -741,7 +836,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
     rootNode["accessors"][acc_bat_id]["type"] = "SCALAR";
 #endif
 
-    if (texId != -1) //textured mesh
+    if (!uvs.empty())
         {
         rootNode["bufferViews"][bv_uv_id] = Json::objectValue;
         rootNode["bufferViews"][bv_uv_id]["buffer"] = "binary_glTF";
@@ -760,7 +855,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         rootNode["accessors"][acc_uv_id]["count"] = uvs.size();
         rootNode["accessors"][acc_uv_id]["type"] = "VEC2";
         }
-    else
+
+    if (!normals.empty())
         {
         rootNode["bufferViews"][bv_n_id] = Json::objectValue;
         rootNode["bufferViews"][bv_n_id]["buffer"] = "binary_glTF";
@@ -930,7 +1026,7 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
+TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& viewedTileSetNames)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -975,6 +1071,19 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp(TransformCR transform)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status   TilesetPublisher::PublishViewedModel (WStringR tileSetName, DgnModelR model)
+    {
+    IPublishModelTiles*     publishTiles;
+
+    if (NULL == (publishTiles = dynamic_cast <IPublishModelTiles*> (&model)))
+        return TileGenerator::Status::NotImplemented;
+
+    return publishTiles->_PublishModelTiles (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilesetPublisher::Status TilesetPublisher::Publish()
@@ -986,25 +1095,68 @@ TilesetPublisher::Status TilesetPublisher::Publish()
     ProgressMeter progressMeter(*this);
     TileGenerator generator (m_dbToTile, &progressMeter);
 
-    static double s_toleranceInMeters = 0.01;
-    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
-    if (Status::Success != status)
-        return status;
+    static double       s_toleranceInMeters = 0.01;
+    bvector<WString>    viewedTileSetNames;
 
-    static const size_t s_maxPointsPerTile = 20000;
-    TileNode rootNode;
-    status = ConvertStatus(generator.GenerateTiles(rootNode, s_toleranceInMeters, s_maxPointsPerTile));
-    if (Status::Success != status)
-        return status;
+    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
 
     m_generator = &generator;
-    status = ConvertStatus(generator.CollectTiles(rootNode, *this));
+    if (Status::Success == status)
+        {
+        static const size_t     s_maxPointsPerTile = 20000;
+        TileNode                rootNode;
+
+        status = ConvertStatus(generator.GenerateTiles (rootNode, s_toleranceInMeters, s_maxPointsPerTile));
+        if (Status::Success == status)
+            {
+            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(rootNode, *this))))
+                viewedTileSetNames.push_back (m_rootName);
+
+            }
+        }
+
+#ifdef KEITH_FIX
+    for (auto& modelId : m_viewController.GetViewedModels())
+#else
+    for (auto const& model : m_viewController.GetDgnDb().Models().MakeIterator())
+#endif
+        {
+        if (model.GetModelId() == m_viewController.GetBaseModelId())
+            continue;
+
+        WString         tileSetName;
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (model.GetModelId());
+
+        if (viewedModel.IsValid() &&
+            TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel))
+            viewedTileSetNames.push_back (tileSetName);
+        }
+
     m_generator = nullptr;
 
     if (Status::Success != status)
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
 
-    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
+    OutputStatistics(generator.GetStatistics());
+
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
+    {
+    printf("Statistics:\n"
+           "Tile count: %u\n"
+           "Tile depth: %u\n"
+           "Geometry collection time: %.4f seconds\n"
+           "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
+           static_cast<uint32_t>(stats.m_tileCount),
+           static_cast<uint32_t>(stats.m_tileDepth),
+           stats.m_collectionTime,
+           stats.m_tileCreationTime,
+           0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
