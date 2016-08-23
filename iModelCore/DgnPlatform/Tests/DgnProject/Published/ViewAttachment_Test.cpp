@@ -85,8 +85,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewAttachmentTest::SetUp()
     {
-    T_Super::SetUp();
-
+    SetupSeedProject();
     // Set up a sheet to hold attachments
     auto& db = *GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
