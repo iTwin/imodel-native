@@ -17,49 +17,6 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-struct Bitmap : RefCountedBase
-{
-    public: 
-    //! Possible format.
-    enum class PixelType
-        {
-        Rgba = 0,       // QV_RGBA_FORMAT
-        Bgra = 1,       // QV_BGRA_FORMAT
-        Rgb = 2,        // QV_RGB_FORMAT
-        Bgr = 3,        // QV_BGR_FORMAT
-        Gray = 4,       // QV_GRAY_FORMAT
-        };
-
-    static BitmapPtr Create(uint32_t width, uint32_t height, PixelType pixelType, bool isTopDown=true);
-
-    //! Get read-only access to the pixels
-    Byte const* GetBufferCP(size_t& pitch) const;
-
-    //! Get read-write access to the pixels
-    Byte* GetBufferP(size_t& pitch);
-
-    uint32_t GetWidth() const;
-    uint32_t GetHeight() const;
-    PixelType GetPixelType() const;
-    bool IsTopDown() const;
-
-private:
-    Bitmap(uint32_t width, uint32_t height, PixelType pixelType, bool isTopDown, Byte* pBuf, size_t pitch);
-
-    static size_t GetBytePerPixel(PixelType pixelType);
-
-    uint32_t m_width;
-    uint32_t m_height;
-    PixelType m_pixelType;
-    bool m_isTopDown;       // topDown(SLO 4) or bottomUp(SLO 6)
-    
-    std::unique_ptr<Byte []> m_pBuffer;
-    size_t m_pitch;     // size of one line in bytes    
-};
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
 struct TileId
     {
     TileId(uint32_t r, uint32_t tX, uint32_t tY) : resolution(r), x(tX), y(tY){}
@@ -74,39 +31,6 @@ struct TileId
     uint32_t x;
     uint32_t y;
     };
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-struct DisplayTile : RefCountedBase
-{
-    //! Possible tile format.
-    enum class PixelType
-        {
-        Rgba = 0,       // QV_RGBA_FORMAT
-        Bgra = 1,       // QV_BGRA_FORMAT
-        Rgb = 2,        // QV_RGB_FORMAT
-        Bgr = 3,        // QV_BGR_FORMAT
-        };
-
-    //! Create a new instance of a DisplayTile.
-    //! @param[in] width        The tile width
-    //! @param[in] height       The tile height
-    //! @param[in] pixelType    The pixeltype. Qv preferred type is: PixelType::Bgra
-    //! @param[in] alphaBlend   Blend transparent pixels. It is faster to turn it off if no transparency is present.
-    //! @param[in] pData        The pixel buffer.
-    //! @param[in] pitch        The size of a line in bytes or 0 if no line padding.
-    static DisplayTilePtr Create(Dgn::Render::TextureR tile);
-
-    //uintptr_t GetTextureId() const {BeAssert(TexturePtr); return (uintptr_t)this;} // We use our instance pointer value as a unique Id.
-
-    Dgn::Render::TexturePtr m_pTile;
-private:
-    DisplayTile(Dgn::Render::TextureR tile) {m_pTile = &tile;}
-
-    ~DisplayTile();
-    };
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -172,6 +96,9 @@ struct RasterSource : RefCountedBase
 
     //! Return the raster Gcs. Can be NULL.
     GeoCoordinates::BaseGCSP GetGcsP() { return m_pGcs.get(); }
+
+    //! Transform from source lower-left origin to physical(might be lower-left, upper-left ...) coordinate.
+    virtual TransformCR _PhysicalToSource() const = 0;
 
 protected:
     static void GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY);

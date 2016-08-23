@@ -307,7 +307,7 @@ RasterModel::~RasterModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  8/2016
 //----------------------------------------------------------------------------------------
-DMatrix4dCR  RasterModel::GetPixelToWorld() const { return _GetPixelToWorld(); }
+DMatrix4dCR  RasterModel::GetSourceToWorld() const { return _GetSourceToWorld(); }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
