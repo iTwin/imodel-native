@@ -417,6 +417,9 @@ DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryIdSet CategorySelector::GetCategoryIds() const
     {
+    if (!GetElementId().IsValid())
+        return DgnCategoryIdSet();
+
     DgnCategoryIdSet categories;
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId=?");
@@ -520,9 +523,6 @@ DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
 
     // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorsReferToModels instances with Source = this
 
-    if (!GetElementId().IsValid())
-        return DgnDbStatus::InvalidId;
-
     auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
@@ -548,7 +548,6 @@ DgnModelIdSet ModelSelector::GetModelIds() const
 
     if (!GetElementId().IsValid())
         {
-        BeAssert(false);
         return DgnModelIdSet();
         }
 
