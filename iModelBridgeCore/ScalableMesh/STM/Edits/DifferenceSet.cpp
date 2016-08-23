@@ -409,7 +409,11 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     if (dtmCreateStatus == 0)
         {
         BcDTMPtr bcDtmObjPtr;
+#ifdef VANCOUVER_API
         bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
+#else
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif
         dtmPtr = bcDtmObjPtr.get();
         }
     bcdtmObject_storeDtmFeatureInDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), DTMFeatureType::RandomSpots, dtmPtr->GetBcDTM()->GetTinHandle()->nullUserTag, 1, &dtmPtr->GetBcDTM()->GetTinHandle()->nullFeatureId, &allPoints[0], (long)allPoints.size());

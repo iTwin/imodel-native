@@ -593,7 +593,11 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     if (dtmCreateStatus == 0)
         {
         BcDTMPtr bcDtmObjPtr;
+#ifdef VANCOUVER_API
         bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
+#else
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif
         dtmPtr = bcDtmObjPtr.get();
         }
     else return;

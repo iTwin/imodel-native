@@ -478,8 +478,10 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
                          int   numberOfPoints,
                          bool  isClipMask)
     {
+#ifdef VANCOUVER_API
     if(HRFGeoCoordinateProvider::GetServices() == NULL)
         return ERROR;
+#endif
 
     // We first validate the clip shape being provided
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());       HArrayAutoPtr<double> tempBuffer(new double[numberOfPoints * 2]);
@@ -521,13 +523,16 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
     assert(m_sourceGCS.HasGeoRef());
     assert(m_targetGCS.HasGeoRef());
 
+#ifdef VANCOUVER_API
     IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_sourceGCS.GetGeoRef().GetBasePtr().get());
     IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_targetGCS.GetGeoRef().GetBasePtr().get());
 
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
     HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget,*pSource);
-
+#else
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*m_targetGCS.GetGeoRef().GetBasePtr(), *m_sourceGCS.GetGeoRef().GetBasePtr());
+#endif
     // We create two dummies coordinate systems linked using this geographic transformation
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys();
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, pSourceCS);
@@ -1484,7 +1489,11 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
         {
+#ifdef VANCOUVER_API
         bcdtm = BcDTM::CreateFromDtmHandle(*bcDtmP);
+#else
+        bcdtm = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif
         }
     else return DTM_ERROR;
 

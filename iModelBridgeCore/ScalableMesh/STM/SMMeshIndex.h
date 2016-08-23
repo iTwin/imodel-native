@@ -475,7 +475,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(
 #ifndef VANCOUVER_API            
-            new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMPoolDataTypeDesc::Display, (uint64_t)m_SMIndex)
+            new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex)
 #else
         SMMemoryPoolGenericBlobItem<SmCachedDisplayData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex)
 #endif

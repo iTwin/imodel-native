@@ -3164,6 +3164,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     memcpy(pixelBufferP + sizeof(int), &textureHeightInPixels, sizeof(int));
     int nOfChannels = 3;
     memcpy(pixelBufferP + 2 * sizeof(int), &nOfChannels, sizeof(int));
+#ifdef VANCOUVER_API
     pTextureBitmap = new HRABitmap(textureWidthInPixels,
                                    textureHeightInPixels,
                                    pTransfoModel.GetPtr(),
@@ -3172,6 +3173,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                                    8,
                                    HRABitmap::UPPER_LEFT_HORIZONTAL,
                                    pCodec);
+#else
+    pTextureBitmap = HRABitmap::Create(textureWidthInPixels,
+                                   textureHeightInPixels,
+                                   pTransfoModel.GetPtr(),
+                                   sourceRasterP->GetCoordSys(),
+                                   pPixelType,
+                                   8);
+#endif
     HGF2DExtent minExt, maxExt;
     sourceRasterP->GetPixelSizeRange(minExt, maxExt);
     minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
@@ -3197,10 +3206,14 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
     HRACopyFromOptions copyFromOptions;
 
     //Rasterlib set this option on the last tile of a row or a column to avoid black lines.     
-    copyFromOptions.SetGridShapeMode(true);
     copyFromOptions.SetAlphaBlend(true);
 
+#ifdef VANCOUVER_API
+    copyFromOptions.SetGridShapeMode(true);
     pTextureBitmap->CopyFrom(sourceRasterP, copyFromOptions);
+#else
+    pTextureBitmap->CopyFrom(*sourceRasterP, copyFromOptions);
+#endif
 #ifdef ACTIVATE_TEXTURE_DUMP
     WString fileName = L"file://";
     fileName.append(L"e:\\output\\scmesh\\2016-4-11\\texture_before_");

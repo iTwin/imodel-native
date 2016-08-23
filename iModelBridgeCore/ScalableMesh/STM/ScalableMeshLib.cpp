@@ -129,7 +129,11 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileName tempDir;
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
+#ifdef VANCOUVER_API
     BeSQLiteLib::Initialize(tempDir.GetNameUtf8().c_str());
+#else
+    BeSQLiteLib::Initialize(tempDir);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

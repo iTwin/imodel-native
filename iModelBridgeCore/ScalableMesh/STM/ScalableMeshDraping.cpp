@@ -48,10 +48,19 @@ struct SMDrapedLine : RefCounted<IDTMDrapedLine>
             ret = SMDrapedPoint::Create(m_linePts[index], DTMDrapedLinePtr((IDTMDrapedLine*)this));
             return DTMStatusInt::DTM_SUCCESS;
             }
+
+#ifdef VANCOUVER_API
         virtual DTMStatusInt _GetPointByIndex(DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const override
+#else
+        virtual DTMStatusInt _GetPointByIndex(DPoint3dP ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const override
+#endif
             {
             if (index >= m_linePts.size()) return DTMStatusInt::DTM_ERROR;
+#ifdef VANCOUVER_API
             ptP = m_linePts[index];
+#else
+           *ptP = m_linePts[index];
+#endif
             if (distanceP != nullptr) *distanceP = m_distancePts[index];
             if (codeP != nullptr) *codeP = DTMDrapedLineCode::Tin;
             return DTMStatusInt::DTM_SUCCESS;
@@ -675,8 +684,13 @@ bool ScalableMeshDraping::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap
     if (startPt.DistanceSquaredXY(endPt) < 1e-4)
         {
         double elevation = 0.0;
+        
+#ifdef VANCOUVER_API
         int drapedTypeP =0;
         if (DTM_SUCCESS != DrapePoint(&elevation, NULL, NULL, NULL, drapedTypeP, startPt, w2vMap))
+#else
+        if (DTM_SUCCESS != DrapePoint(&elevation, NULL, NULL, NULL, NULL, startPt, w2vMap))
+#endif
             {
             return false;
             }
@@ -800,7 +814,11 @@ size_t ScalableMeshDraping::ComputeLevelForTransform(const DMatrix4d& w2vMap)
     return  targetLevel;
     }
 
+#ifdef VANCOUVER_API
 DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap)
+#else
+DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap)
+#endif
     {
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
@@ -811,13 +829,21 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
     m_UorsToStorage.Multiply(transformedPt);
     if (query->Query(node, &transformedPt, NULL, 0, params) != SUCCESS)
         {
-        /*if (drapedTypeP != nullptr) **/drapedTypeP = 0;
+#ifdef VANCOUVER_API
+        drapedTypeP = 0;
+#else
+       *drapedTypeP = 0;
+#endif
         return DTM_SUCCESS;
         }
     BcDTMPtr bcdtm = node->GetBcDTM();
     if (bcdtm == nullptr)
         {
-        /*if (drapedTypeP != nullptr) **/drapedTypeP = 0;
+#ifdef VANCOUVER_API
+        drapedTypeP = 0;
+#else
+       *drapedTypeP = 0;
+#endif
         return DTM_SUCCESS;
         }
     DTMStatusInt result = bcdtm->GetDTMDraping()->DrapePoint(elevationP, slopeP, aspectP, triangle, drapedTypeP, transformedPt);
@@ -830,7 +856,11 @@ DTMStatusInt ScalableMeshDraping::DrapePoint(double* elevationP, double* slopeP,
     return result;
     }
 
+#ifdef VANCOUVER_API
 DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point)
+#else
+DTMStatusInt ScalableMeshDraping::_DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point)
+#endif
     {
     Transform t = Transform::FromIdentity();
     DMatrix4d identityTrans = DMatrix4d::From(t);

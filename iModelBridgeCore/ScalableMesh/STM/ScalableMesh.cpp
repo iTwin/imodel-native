@@ -1136,7 +1136,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         double flatAreaTile = 0;
         double slopeAreaTile = 0;
         BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP != nullptr) dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, &transPts[0], numPoints);
+        if (dtmP != nullptr) 
+#ifdef VANCOUVER_API
+            dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, &transPts[0], numPoints);
+#else
+            dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1203,7 +1208,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     {
                     if (dtmP != nullptr)
                         {
+#ifdef VANCOUVER_API
                         if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+#else
+                        if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+#endif
                             {
                             flatAreaTile += flat;
                             slopeAreaTile += slope;
@@ -1212,7 +1221,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     }
             }
         else
+#ifdef VANCOUVER_API
           if (dtmP != nullptr) dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile,  0, 0);
+#else
+            if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0, 0);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1268,7 +1281,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                             {
                             if (dtmP != nullptr)
                                 {
+                                #ifdef VANCOUVER_API
                                 if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+                                #else
+                                if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+                                #endif
                                     {
                                     retval = DTM_SUCCESS;
                                     flatAreaTile += flat;
@@ -1279,7 +1296,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     
                     }
                 else
+                #ifdef VANCOUVER_API
                 if (dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #else
+                if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #endif
                 
                 flatAreaFull += flatAreaTile;
                 slopeAreaFull += slopeAreaTile;

@@ -1661,7 +1661,11 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
             stmt->BindInt(6, pos);
             stmt->Step();
             }
+#ifdef VANCOUVER_API
         s.Save();
+#else
+        s.Save("newSource");
+#endif
    }
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");
