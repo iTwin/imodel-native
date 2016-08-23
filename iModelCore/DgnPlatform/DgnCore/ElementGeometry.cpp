@@ -2028,7 +2028,6 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     Writer writer(importer.GetDestinationDb());
-    Reader reader(importer.GetSourceDb());
     Collection collection(source.GetData(), source.GetSize());
 
     for (auto const& egOp : collection)
@@ -2060,15 +2059,40 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                DgnGeometryPartId geomPartId;
-                Transform     geomToElem;
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                if (reader.Get(egOp, geomPartId, geomToElem))
+                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->geomPartId())); // Trigger deep-copy if necessary
+                BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
+
+                FlatBufferBuilder remappedfbb;
+
+                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::GeometryPartInstance, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
+                break;
+                }
+
+            case OpCode::Pattern:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+
+                if (!ppfb->has_symbolId())
                     {
-                    DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(geomPartId); // Trigger deep-copy if necessary
-                    BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
-                    writer.Append(remappedGeometryPartId, &geomToElem);
+                    writer.Append(egOp);
+                    break;
                     }
+
+                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->symbolId())); // Trigger deep-copy if necessary
+                BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
+
+                FlatBufferBuilder remappedfbb;
+
+                auto mloc = FB::CreateAreaPattern(remappedfbb, ppfb->origin(), ppfb->rotation(), ppfb->space1(), ppfb->space2(), ppfb->angle1(), ppfb->angle2(), ppfb->scale(), 
+                                                  ppfb->color(), ppfb->weight(), ppfb->useColor(), ppfb->useWeight(), ppfb->invisibleBoundary(), ppfb->snappable(),
+                                                  remappedGeometryPartId.GetValueUnchecked()); 
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::Pattern, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
                 }
 

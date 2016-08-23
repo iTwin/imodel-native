@@ -49,7 +49,7 @@ private:
 public:
     TileDisplayParams() : TileDisplayParams(nullptr, nullptr) { }
     TileDisplayParams(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) : TileDisplayParams(&graphicParams, &geometryParams) { }
-    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0)
+    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff)
         {
         if (nullptr != geometryParams)
             m_materialId = geometryParams->GetMaterialId();
@@ -249,8 +249,8 @@ private:
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsCP params, TransformCP transformToDgn, double tolerance) { return new TileMeshBuilder(params, transformToDgn, tolerance); }
 
-    void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
-    void AddPolyline (bvector<DPoint3d>const& polyline, DgnElementId elemId, bool doVertexClustering);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnElementId elemId, bool doVertexClustering, bool duplicateTwoSidedTriangles);
+    DGNPLATFORM_EXPORT void AddPolyline (bvector<DPoint3d>const& polyline, DgnElementId elemId, bool doVertexClustering);
 
     void AddTriangle(TriangleCR triangle, TileMeshCR mesh);
     void AddTriangle(TriangleCR triangle);
@@ -258,11 +258,11 @@ public:
     uint32_t AddVertex(VertexKey const& vertex);
 
     TileMeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
+    double GetTolerance() const { return m_tolerance; }
 };
 
 //=======================================================================================
-//! Representation of geometry processed by a TileGenerator, consisting of an IGeometry,
-//! an ISolidKernelEntity, or nothing.
+//! Representation of geometry processed by a TileGenerator.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileGeometry : RefCountedBase
@@ -349,7 +349,7 @@ public:
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
 
     //! Generate a list of meshes from this tile's geometry.
-    DGNPLATFORM_EXPORT TileMeshList GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
+    DGNPLATFORM_EXPORT virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const;
     DGNPLATFORM_EXPORT TileMeshPtr GetDefaultMesh(TileGeometryCacheR geometryCache) const;
     DGNPLATFORM_EXPORT TileMeshPtr GetRangeMesh(TileGeometryCacheR geometryCache) const;
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
@@ -359,7 +359,7 @@ public:
 };
 
 //=======================================================================================
-//! Generates a HLOD tree of TileNodes from a set of elements.
+//! Generates a HLOD tree of TileNodes from a set of tiles.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
 struct TileGenerator
@@ -368,6 +368,7 @@ struct TileGenerator
     {
         Success = SUCCESS,
         NoGeometry,
+        NotImplemented,
         Aborted,
     };
 
@@ -458,6 +459,17 @@ public:
     DGNPLATFORM_EXPORT size_t GetFacetCount(ISolidKernelEntityCR) const;
 #endif
 };
+
+
+//=======================================================================================
+// Interface for models to generate HLOD tree of TileNodes 
+// @bsistruct                                                   Ray.Bentley     08/2016
+//=======================================================================================
+struct IPublishModelTiles
+{
+    virtual TileGenerator::Status _PublishModelTiles (TileGenerator::ITileCollector& collector) = 0;
+
+};  // IPublishModelMeshTiles
 
 END_BENTLEY_RENDER_NAMESPACE
 

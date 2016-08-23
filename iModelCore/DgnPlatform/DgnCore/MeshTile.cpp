@@ -590,7 +590,7 @@ typedef bmap<MeshBuilderKey, TileMeshBuilderPtr> MeshBuilderMap;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList TileNode::GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
+TileMeshList TileNode::_GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode, bool twoSidedTriangles) const
     {
     static const double s_minRangeBoxSize = 0.5;
     static const double s_vertexToleranceRatio = 1.0;
@@ -830,8 +830,12 @@ private:
     SolidKernelTileGeometry(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, IFacetOptionsR facetOptions, DgnDbR db)
         : TileGeometry(tf, range, elemId, params, SolidKernelUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
         {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
         FacetCounter counter(facetOptions);
         SetFacetCount(counter.GetFacetCount(solid));
+#else
+        SetFacetCount(0);
+#endif
         }
 
     virtual PolyfaceHeaderPtr _GetPolyface(IFacetOptionsR facetOptions) override;

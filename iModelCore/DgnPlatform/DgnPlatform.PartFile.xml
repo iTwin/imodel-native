@@ -73,6 +73,7 @@
             <Assemblies>Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="yes">Delivery/SkyBox/SkyBox.jpg</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" />
 
             <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
@@ -691,8 +692,9 @@
     <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="DgnPlatformLib" />
         <SubPart PartName="DgnPlatformSqlang" />
-        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
-        <SubPart PartName="GeoCoordData"        PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
+        <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
+		<SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>
