@@ -45,6 +45,41 @@ void DgnDbCodeLockSetResultInfo::AddCode(const DgnCode dgnCode, DgnCodeState dgn
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbCodeTemplate::operator<(DgnDbCodeTemplate const& rhs) const
+    {
+    if (GetAuthorityId().GetValueUnchecked() != rhs.GetAuthorityId().GetValueUnchecked())
+        return GetAuthorityId().GetValueUnchecked() < rhs.GetAuthorityId().GetValueUnchecked();
+
+    int cmp = GetValuePattern().CompareTo(rhs.GetValuePattern());
+    if (0 != cmp)
+        return cmp < 0;
+
+    cmp = GetValue().CompareTo(rhs.GetValue());
+    if (0 != cmp)
+        return cmp < 0;
+
+    return GetNamespace().CompareTo(rhs.GetNamespace()) < 0;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+void DgnDbCodeTemplateSetResultInfo::AddCodeTemplate(const DgnDbCodeTemplate codeTemplate)
+    {
+    m_codeTemplates.insert(codeTemplate);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas              08/2016
+//---------------------------------------------------------------------------------------
+const DgnDbCodeTemplateSet& DgnDbCodeTemplateSetResultInfo::GetTemplates() const
+    {
+    return m_codeTemplates;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                   Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
 const DgnCodeSet& DgnDbCodeLockSetResultInfo::GetCodes() const { return m_codes; }
@@ -156,7 +191,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
 
         WSQuery fileQuery(ServerSchema::Schema::Repository, ServerSchema::Class::File);
         Utf8String filter;
-        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId(),
+        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId().ToString().c_str(),
                        ServerSchema::Property::MergedRevisionId, fileInfo.GetMergedRevisionId().c_str());
         fileQuery.SetFilter(filter);
         m_wsRepositoryClient->SendQueryRequest(fileQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
@@ -177,6 +212,22 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
+    {
+    Json::Value properties = Json::objectValue;
+    fileInfo.ToPropertiesJson(properties);
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
+    ([=] (const WSUpdateObjectResult& result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(result.GetError());
+        return DgnDbServerStatusResult::Success();
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -243,7 +294,21 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+    {
+    FileInfo fileInfo = FileInfo(fileId);
+    return CreateNewServerFile(FileInfo(fileId), cancellationToken)->Then<DgnDbServerStatusResult>([=] (DgnDbServerFileResultCR result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(result.GetError());
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
     return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
@@ -254,17 +319,26 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(BeFileNameCR fil
             return;
             }
 
-        FileInfoPtr fileInfo = fileCreationResult.GetValue();
-        finalResult->SetSuccess(fileInfo);
+        FileInfoPtr createdFileInfo = fileCreationResult.GetValue();
+        if (!createdFileInfo->AreFileDetailsAvailable())
+            {
+            auto fileUpdateResult = UpdateServerFile(*createdFileInfo, cancellationToken)->GetResult();
+            if (!fileUpdateResult.IsSuccess())
+                {
+                finalResult->SetError(fileUpdateResult.GetError());
+                return;
+                }
+            }
+        finalResult->SetSuccess(createdFileInfo);
 
-        UploadServerFile(filePath, *fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR uploadResult)
+        UploadServerFile(filePath, *createdFileInfo, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR uploadResult)
             {
             if (!uploadResult.IsSuccess())
                 {
                 finalResult->SetError(uploadResult.GetError());
                 return;
                 }
-            InitializeServerFile(*fileInfo, cancellationToken)->Then([=] (DgnDbServerStatusResultCR initializationResult)
+            InitializeServerFile(*createdFileInfo, cancellationToken)->Then([=] (DgnDbServerStatusResultCR initializationResult)
                 {
                 if (!initializationResult.IsSuccess())
                     finalResult->SetError(initializationResult.GetError());
@@ -654,6 +728,54 @@ bool                            queryOnly = false
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             06/2016
+//---------------------------------------------------------------------------------------
+Json::Value CreateCodeTemplateJson
+(
+    const DgnDbCodeTemplate      codeTemplate,
+    DgnDbCodeTemplate::Type      templateType,
+    int                          startIndex,
+    int                          incrementBy
+)
+    {
+    Json::Value properties;
+
+    properties[ServerSchema::Property::AuthorityId] = codeTemplate.GetAuthorityId().GetValue();
+    properties[ServerSchema::Property::Namespace] = codeTemplate.GetNamespace();
+    properties[ServerSchema::Property::ValuePattern] = codeTemplate.GetValuePattern();
+    properties[ServerSchema::Property::Type] = (int)templateType;
+
+    if (startIndex >= 0 && incrementBy > 0)
+        {
+        properties[ServerSchema::Property::StartIndex] = startIndex;
+        properties[ServerSchema::Property::IncrementBy] = incrementBy;
+        }
+
+    return properties;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+void SetCodeTemplatesJsonRequestToChangeSet
+(
+    const DgnDbCodeTemplateSet      templates,
+    const DgnDbCodeTemplate::Type   templateType,
+    WSChangeset&                    changeset,
+    const WSChangeset::ChangeState& changeState,
+    int                             startIndex = -1,
+    int                             incrementBy = -1
+)
+    {
+    ObjectId codeObject(ServerSchema::Schema::Repository, ServerSchema::Class::CodeTemplate, "");
+    
+    for (auto& codeTemplate : templates)
+        {
+        JsonValueCR codeJson = CreateCodeTemplateJson(codeTemplate, templateType, startIndex, incrementBy);
+        changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
+        }
+    }
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
 std::shared_ptr<WSChangeset> LockDeleteAllJsonRequest (const BeBriefcaseId& briefcaseId)
@@ -937,8 +1059,7 @@ ICancellationTokenPtr cancellationToken
 
     if (!locksFilter.empty() && !codesFilter.empty())
         {
-        //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
-        filter.Sprintf("(%s)+and+(%s)", locksFilter.c_str(), codesFilter.c_str());
+        filter.Sprintf("(%s)+or+(%s)", locksFilter.c_str(), codesFilter.c_str());
         }
     else
         {
@@ -998,15 +1119,14 @@ WSQuery CreateUnavailableLocksQuery(const BeBriefcaseId briefcaseId, const uint6
     WSQuery query(ServerSchema::Schema::Repository, classes);
     Utf8String filter;
     Utf8String locksFilter, codesFilter;
-    locksFilter.Sprintf("%s+ne+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
+    locksFilter.Sprintf("%s+gt+%u+or+%s+gt+%u", ServerSchema::Property::LockLevel, LockLevel::None,
                         ServerSchema::Property::ReleasedWithRevisionIndex, lastRevisionIndex);
 
     //NEEDSWORK: Make DgnCodeState::Type public
     codesFilter.Sprintf("%s+eq+%s+or+%s+eq+%s+or+%s+gt+%u", ServerSchema::Property::Reserved, BoolToString(true),
                         ServerSchema::Property::Used, BoolToString(true), ServerSchema::Property::StateRevisionIndex, lastRevisionIndex);
 
-    //NEEDSWORK: EvaluationHelper defaults filters to true if properties are not found. Should be or instead of and.
-    filter.Sprintf("%s+ne+%u+and+((%s)+and+(%s))", ServerSchema::Property::BriefcaseId,
+    filter.Sprintf("%s+ne+%u+and+((%s)+or+(%s))", ServerSchema::Property::BriefcaseId,
                    briefcaseId.GetValue(), locksFilter.c_str(), codesFilter.c_str());
 
     query.SetFilter(filter);
@@ -1080,6 +1200,101 @@ DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryUnavailableCodesLo
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+Json::Value GetChangedInstances(Utf8String response)
+    {
+    Json::Reader reader;
+    Json::Value responseJson(Json::objectValue);
+    if (!reader.parse(response, responseJson) && !responseJson.isArray())
+        return nullptr;
+
+    if (responseJson.isNull() || responseJson.empty())
+        return nullptr;
+
+    if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
+        responseJson[ServerSchema::ChangedInstances].empty() ||
+        !responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
+        return nullptr;
+
+    Json::Value instance(Json::objectValue);
+    return responseJson[ServerSchema::ChangedInstances];
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeMaximumIndex
+(
+    DgnDbCodeTemplateSet codeTemplates,
+    ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+
+    SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
+    
+    auto requestString = changeset->ToRequestString();
+    HttpStringBodyPtr request = HttpStringBody::Create(requestString);
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateSetResult>
+        ([=](const WSChangesetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            DgnDbCodeTemplateSetResultInfo templates;
+            Json::Value ptr = GetChangedInstances(result.GetValue()->AsString().c_str());
+            
+            for (auto& value : ptr)
+                {
+                DgnDbCodeTemplate        codeTemplate;
+                if (GetCodeTemplateFromServerJson(value[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
+                    {
+                    templates.AddCodeTemplate(codeTemplate);
+                    }
+                //NEEDSWORK: log an error
+                }
+            return DgnDbServerCodeTemplateSetResult::Success(templates);
+            }
+        else
+            return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerCodeTemplateSetTaskPtr DgnDbRepositoryConnection::QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken) const
+    {
+    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+
+    SetCodeTemplatesJsonRequestToChangeSet(codeTemplates, DgnDbCodeTemplate::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created, startIndex, incrementBy);
+
+    HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerCodeTemplateSetResult>
+        ([=](const WSChangesetResult& result)
+        {
+        if (result.IsSuccess())
+            {
+            DgnDbCodeTemplateSetResultInfo templates;
+            Json::Value ptr = GetChangedInstances(result.GetValue()->AsString().c_str());
+
+            for (auto& value : ptr)
+                {
+                DgnDbCodeTemplate        codeTemplate;
+                if (GetCodeTemplateFromServerJson(value[ServerSchema::InstanceAfterChange][ServerSchema::Properties], codeTemplate))
+                    {
+                    templates.AddCodeTemplate(codeTemplate);
+                    }
+                //NEEDSWORK: log an error
+                }
+            return DgnDbServerCodeTemplateSetResult::Success(templates);
+            }
+        else
+            return DgnDbServerCodeTemplateSetResult::Error(result.GetError());
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -1222,24 +1437,24 @@ Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::D
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
     {
-	Json::Reader reader;
-	Json::Value responseJson(Json::objectValue);
-	if (!reader.parse(response, responseJson) && !responseJson.isArray())
-		return nullptr;
+    Json::Reader reader;
+    Json::Value responseJson(Json::objectValue);
+    if (!reader.parse(response, responseJson) && !responseJson.isArray())
+        return nullptr;
 
-	if(responseJson.isNull() || responseJson.empty())
-		return nullptr;
+    if(responseJson.isNull() || responseJson.empty())
+        return nullptr;
 
-	if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
-		responseJson[ServerSchema::ChangedInstances].empty() ||
-		!responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
-		return nullptr;
+    if (!responseJson.isMember(ServerSchema::ChangedInstances) ||
+        responseJson[ServerSchema::ChangedInstances].empty() ||
+        !responseJson[ServerSchema::ChangedInstances][0].isMember(ServerSchema::InstanceAfterChange))
+        return nullptr;
 
-	Json::Value instance(Json::objectValue);
-	instance = responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange];
+    Json::Value instance(Json::objectValue);
+    instance = responseJson[ServerSchema::ChangedInstances][0][ServerSchema::InstanceAfterChange];
 
-	if (!instance.isMember(ServerSchema::InstanceId))
-		return nullptr;
+    if (!instance.isMember(ServerSchema::InstanceId))
+        return nullptr;
 
     Utf8String eventSubscriptionId = instance[ServerSchema::InstanceId].asString();
 
@@ -1250,9 +1465,9 @@ DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
         return nullptr;
 
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
-	for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
-		itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
-		eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
+    for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
+        itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
+        eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
 
     return DgnDbServerEventSubscription::Create(eventSubscriptionId, eventTypes);
     }
@@ -1279,15 +1494,15 @@ Json::Value GenerateEventSASJson()
 //---------------------------------------------------------------------------------------
 AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR responseJson)
     {
-	if(responseJson.isNull() || responseJson.empty())
-		return nullptr;
+    if(responseJson.isNull() || responseJson.empty())
+        return nullptr;
 
-	if (!responseJson.isMember(ServerSchema::ChangedInstance) ||
-		!responseJson[ServerSchema::ChangedInstance].isMember(ServerSchema::InstanceAfterChange))
-		return nullptr;
+    if (!responseJson.isMember(ServerSchema::ChangedInstance) ||
+        !responseJson[ServerSchema::ChangedInstance].isMember(ServerSchema::InstanceAfterChange))
+        return nullptr;
 
-	Json::Value instance(Json::objectValue);
-	instance = responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+    Json::Value instance(Json::objectValue);
+    instance = responseJson[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
 
     Utf8String sasToken = instance[ServerSchema::Properties][ServerSchema::Property::EventServiceSASToken].asString();
     Utf8String baseAddress = instance[ServerSchema::Properties][ServerSchema::Property::BaseAddress].asString();
@@ -1405,7 +1620,7 @@ AzureServiceBusSASDTOTaskPtr DgnDbRepositoryConnection::GetEventServiceSASToken(
         {
         if (result.IsSuccess())
             {
-			AzureServiceBusSASDTOPtr ptr = CreateEventSAS(result.GetValue().GetObject());
+            AzureServiceBusSASDTOPtr ptr = CreateEventSAS(result.GetValue().GetObject());
             if (ptr == nullptr)
                 {
                 finalResult->SetError(DgnDbServerError::Id::NoSASFound);
@@ -1710,7 +1925,7 @@ ICancellationTokenPtr                  cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::Pull
+DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::DownloadRevisionsAfterId
 (
 Utf8StringCR                    revisionId,
 Http::Request::ProgressCallbackCR callback,
