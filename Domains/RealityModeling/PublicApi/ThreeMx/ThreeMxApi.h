@@ -74,6 +74,7 @@ public:
     void Draw(DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
     bool IsCached() const {return m_graphic.IsValid();}
+    bool IsEmpty() const {return m_points.empty(); }
 };
 
 /*=================================================================================**//**
@@ -179,8 +180,10 @@ public:
     int CountNodes() const;
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
     GeometryList const& GetGeometry() const {return m_geometry; }
+    GeometryList& GetGeometry() {return m_geometry; }
     NodeCP GetParent() const {return m_parent;}
-
+
+
 };
 
 /*=================================================================================**//**
@@ -228,6 +231,7 @@ public:
     int CountNodes() const {return m_rootNode->CountNodes();}
     bool UseFixedResolution()const {return m_useFixedResolution;}
     bool IsLocatable() const {return m_locatable;}
+    void SetLocatable(bool locatable) {m_locatable = locatable;}
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}

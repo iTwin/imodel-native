@@ -370,24 +370,25 @@ struct  PublishTileNode : Dgn::Render::TileNode
     Transform               m_transform;
     TileDisplayParamsR      m_tileDisplayParams;
 
-    PublishTileNode (NodePtr& node, TransformCR transform, TileDisplayParamsR tileDisplayParams, DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance) : 
-                     m_node (node), m_transform (transform), m_tileDisplayParams (tileDisplayParams), Dgn::Render::TileNode (range, depth, siblingIndex, tolerance, nullptr) { }
+    PublishTileNode (NodePtr& node, TransformCR transform, TileDisplayParamsR tileDisplayParams, DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, Dgn::Render::TileNodeP parent) : 
+                     m_node (node), m_transform (transform), m_tileDisplayParams (tileDisplayParams), Dgn::Render::TileNode (range, depth, siblingIndex, tolerance, parent) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual TileMeshList _GenerateMeshes( TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
     {
-    Node::GeometryList  geometryList = m_node->GetGeometry();
     TileMeshList        tileMeshes;
 
-    for (auto& geometry : geometryList)
+    for (auto& geometry : m_node->GetGeometry())
         {
-        PolyfaceHeaderPtr       polyface;
-
-        if (!geometry.IsValid() ||
-            !(polyface = geometry->GetPolyface()).IsValid())
+        if (!geometry->GetPolyface().IsValid())
             continue;
+
+        PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
+
+        if (0 == polyface->GetNormalCount())
+            polyface->BuildPerFaceNormals();
 
         TileMeshBuilderPtr  builder = TileMeshBuilder::Create (&m_tileDisplayParams, NULL, 0.0);
 
@@ -404,28 +405,40 @@ virtual TileMeshList _GenerateMeshes( TileGeometryCacheR geometryCache, double t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::Render::TileGenerator::Status  publishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector, SceneR scene, Dgn::Render::SystemR renderSystem, NodePtr& node, size_t depth, size_t siblingIndex) 
+Dgn::Render::TileGenerator::Status  publishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector, SceneR scene, Dgn::Render::SystemR renderSystem, NodePtr& node, size_t depth, size_t siblingIndex, Dgn::Render::TileNodeP parent) 
     {
     TileDisplayParams       tileDisplayParams;
-    double                  tolerance = node->GetMaxDiameter() / (2.0 * node->GetRadius());
-    PublishTileNode         tileNode (node, scene.GetLocation(), tileDisplayParams, node->GetRange(), depth, siblingIndex, tolerance);
+    double                  tolerance = (0.0 == node->GetMaxDiameter()) ? 1.0E6 : (node->GetMaxDiameter() / (2.0 * node->GetRadius()));
+    PublishTileNode         tileNode (node, scene.GetLocation(), tileDisplayParams, node->GetRange(), depth, siblingIndex, tolerance, parent);
 
-    if (0 != depth)
+   if (node->HasChildren() && node->AreChildrenNotLoaded())
         scene.RequestData (node.get(), true, NULL);
+
+    if (NULL != node->GetChildren())
+        {
+        size_t              childIndex = 0;
+
+        for (auto& child : *node->GetChildren())
+            tileNode.GetChildren().push_back (TileNode (child->GetRange(), depth+1, childIndex++, child->GetMaxDiameter() / (2.0 * child->GetRadius()), &tileNode));
+        }
 
     Dgn::Render::TileGenerator::Status status = collector._AcceptTile (tileNode);
 
     if (Dgn::Render::TileGenerator::Status::Success != status || !node->HasChildren())
         return status;
 
-    depth++;
-    Node::ChildNodes    children = *node->GetChildren();
+    if (node->HasChildren())
+        {
+        depth++;
+        Node::ChildNodes    children = *node->GetChildren();
+        size_t              childIndex = 0;
+        
+        node->GetGeometry().clear();        // Free memory so that all geometyr is not loaded at the same time.
 
-    node = nullptr;        // Free parent memory before processing children...
-
-    for (size_t iChild = 0; iChild < children.size(); iChild++)
-        if (Dgn::Render::TileGenerator::Status::Success != (status = publishModelTiles (collector, scene, renderSystem, children[iChild], depth, iChild)))
-            return status;
+        for (auto& child : children)
+            if (Dgn::Render::TileGenerator::Status::Success != (status = publishModelTiles (collector, scene, renderSystem, child, depth, childIndex++, &tileNode)))
+                return status;
+        }
 
     return Dgn::Render::TileGenerator::Status::Success;
     }
@@ -438,11 +451,15 @@ Dgn::Render::TileGenerator::Status ThreeMxModel::_PublishModelTiles (Dgn::Render
     PublishTileRenderSystem renderSystem;
     ScenePtr                scene  = new Scene (m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), &renderSystem);
     
-    if (SUCCESS != scene->LoadScene ())
-        return Dgn::Render::TileGenerator::Status::NoGeometry;
+    scene->SetLocatable (true);      // Else geometry is freed before we have a chance 
+    if (SUCCESS != scene->LoadScene ())                                                                                                                                                                
+                    return Dgn::Render::TileGenerator::Status::NoGeometry;
 
-    NodePtr rootNode = scene->GetRootNode();
-    return publishModelTiles (collector, *scene, renderSystem, rootNode, 0, 0);
+    NodePtr rootNode = scene->GetRootNode(), rootChild = rootNode->GetChildren()->front();
+
+    scene->RequestData (rootChild.get(), true, NULL);
+
+    return publishModelTiles (collector, *scene, renderSystem, rootChild, 0, 0, nullptr);
     }
 
 

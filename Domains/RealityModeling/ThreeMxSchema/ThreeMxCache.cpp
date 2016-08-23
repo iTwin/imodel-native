@@ -303,7 +303,7 @@ BentleyStatus Scene::RequestData(NodeP node, bool synchronous, MxStreamBuffer* o
 
     if (synchronous)
         {
-        result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
+        result.wait();  // std::chrono::seconds(2)); // only wait for 2 seconds
         return result.isReady() ? SUCCESS : ERROR;
         }
 
