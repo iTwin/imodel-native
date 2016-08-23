@@ -192,9 +192,7 @@ maximumNumberOfLoadedTiles: 1000,
 debugShowBoundingVolume:false
 }));
 
-var highlightColor = new Cesium.Color(0.5, 0.5, 0.5, 1);
 var curPickedObjects = null;
-var curPickedColor = null;
 
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
    %s
@@ -211,22 +209,25 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
    handler.setInputAction(function(movement) {
        var pickedObjects = viewer.scene.pick(movement.endPosition);
        if (pickedObjects !== curPickedObjects) {
-           if (Cesium.defined(curPickedObjects)) {
-               curPickedObjects.color = curPickedColor;
-           }
-
-           var elemId = "None";
+           var elemId = null;
            curPickedObjects = pickedObjects;
            if (Cesium.defined(curPickedObjects)) {
-               curPickedColor = curPickedObjects.color;
-               curPickedObjects.color = highlightColor;
                elemId = pickedObjects.getProperty("element");
-           } else {
-               curPickedColor = null;
            }
 
+           // Update field displaying ID of moused-over element
            var field = document.getElementById("field_elementId");
-           field.firstChild.nodeValue = elemId;
+           field.firstChild.nodeValue = null != elemId ? elemId : "None";
+
+           // Update tileset style to hilite moused-over element
+           var style = undefined;
+           if (null !== elemId) {
+           style = new Cesium.Cesium3DTileStyle({
+               "color": "(${element} === '" + elemId + "') ? color('#808080') : color('#ffffff')"
+               });
+           }
+
+           tileset.style = style;
        }
    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 });
