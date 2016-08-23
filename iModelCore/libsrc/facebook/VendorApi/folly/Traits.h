@@ -449,7 +449,7 @@ FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(boost::shared_ptr);
     constexpr static bool test(typename C::type_name*) { return true; } \
     template <typename> \
     constexpr static bool test(...) { return false; } \
-    constexpr static bool value = test<T>(nullptr); \
+    constexpr static bool value = test<T>(0/*BENTLEY_CHANGE - UWP compilation does not accept nullptr for ...; using 0.*/); \
   }
 
 #define FOLLY_CREATE_HAS_MEMBER_FN_TRAITS_IMPL(classname, func_name, cv_qual) \
@@ -464,7 +464,7 @@ FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(boost::shared_ptr);
     template <typename> \
     constexpr static bool test(...) { return false; } \
   public: \
-    constexpr static bool value = test<TTheClass_>(nullptr); \
+    constexpr static bool value = test<TTheClass_>(0/*BENTLEY_CHANGE - UWP compilation does not accept nullptr for ...; using 0.*/); \
   }
 
 /*

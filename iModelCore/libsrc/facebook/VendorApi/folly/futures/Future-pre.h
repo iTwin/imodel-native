@@ -77,7 +77,7 @@ struct callableWith {
     static constexpr std::false_type
     check(...) { return std::false_type{}; };
 
-    typedef decltype(check<F>(nullptr)) type;
+    typedef decltype(check<F>(0/*BENTLEY_CHANGE - UWP compilation does not accept nullptr for ...; using 0.*/)) type;
     static constexpr bool value = type::value;
 };
 
