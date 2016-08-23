@@ -77,10 +77,24 @@ void HTIFFFile::SetNoneAlgo()
 //                                               m_pUncompressFunc
 //-----------------------------------------------------------------------------
 
-void HTIFFFile::SetDeflateAlgo()
+void HTIFFFile::SetDeflateAlgo(uint32_t pi_BitsPerPixel, uint16_t pi_Predictor, uint32_t pi_SamplesPerPixel)
     {
     HFCMonitor Monitor(m_Key);
-    m_pPacket->SetCodec(new HCDCodecZlib(m_StripTileSize));
+
+    if (2 == pi_Predictor)
+        {
+        uint32_t Width;
+        uint32_t Height;
+        ExtractWidthHeight(&Width, &Height);
+
+        m_pPacket->SetCodec(new HCDCodecZlib(m_StripTileSize, Width, pi_BitsPerPixel, pi_Predictor, pi_SamplesPerPixel));
+        }
+    else
+        {
+        HASSERT(1 == pi_Predictor); // Strange, need investigation why we pass here.
+
+        m_pPacket->SetCodec(new HCDCodecZlib(m_StripTileSize));
+        }
 
     m_pCompressFunc     = &HTIFFFile::CompressBlock;
     m_pUncompressFunc   = &HTIFFFile::UncompressBlock;

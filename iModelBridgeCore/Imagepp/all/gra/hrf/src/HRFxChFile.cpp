@@ -29,8 +29,11 @@
 
 #include <Imagepp/all/h/HRPPixelTypeI8R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV8Gray8.h>
+#include <Imagepp/all/h/HRPPixelTypeV16Gray16.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
+#include <Imagepp/all/h/HRPPixelTypeV48R16G16B16.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <Imagepp/all/h/HRPPixelTypeV64R16G16B16A16.h>
 
 #include <Imagepp/all/h/HGF2DProjective.h>
 #include <Imagepp/all/h/HGF2DSimilitude.h>
@@ -177,6 +180,11 @@ HRFxChCapabilities::HRFxChCapabilities()
     // PixelTypeV32R8G8B8A8
     Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
                                    HRPPixelTypeV32R8G8B8A8::CLASS_ID,
+                                   new HRFxChCodecCapabilities()));
+
+    // PixelTypeV48R16G16B16
+    Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
+                                   HRPPixelTypeV48R16G16B16::CLASS_ID,
                                    new HRFxChCodecCapabilities()));
 
     // Scanline orientation capability
@@ -477,9 +485,10 @@ bool HRFxChCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
 
                             if (ChannelCount == 4)
                                 {
-                                // Validate Alpha node presence    
+                                // Validate Alpha or Panchromatic node presence    
                                 BeXmlNodeP pAlphaNode = pChannelNode->SelectSingleNode("ALPHA");
-                                if (!pAlphaNode)
+                                BeXmlNodeP pPanchromNode = pChannelNode->SelectSingleNode("PANCHROMATIC");
+                                if (!(pAlphaNode || pPanchromNode) || (pAlphaNode && pPanchromNode))
                                     bResult = false;
                                 }
                             }
@@ -511,11 +520,13 @@ bool HRFxChCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     WString GreenFileNameStr;
     WString BlueFileNameStr;
     WString AlphaFileNameStr;
+    WString PanChromaticFileNameStr;
 
     HFCPtr<HFCURL> pRedFileURL   = 0;
     HFCPtr<HFCURL> pGreenFileURL = 0;
     HFCPtr<HFCURL> pBlueFileURL  = 0;
     HFCPtr<HFCURL> pAlphaFileURL = 0;
+    HFCPtr<HFCURL> pPanChromaticFileURL = 0;
 
     // Extract the standard file name from the main URL
     XMLFileName = ((HFCPtr<HFCURLFile>&)pi_rpURL)->GetHost();
@@ -563,6 +574,28 @@ bool HRFxChCreator::GetRelatedURLs(const HFCPtr<HFCURL>& pi_rpURL,
     pio_rRelatedURLs.push_back(pRedFileURL);
     pio_rRelatedURLs.push_back(pGreenFileURL);
     pio_rRelatedURLs.push_back(pBlueFileURL);
+
+    // Alpha and panchromatic files
+    BeXmlNodeP pAlphaNode = pMainNode->SelectSingleNode("CHANNELS/ALPHA");
+    pAlphaNode->GetContent(AlphaFileNameStr);
+    if (AlphaFileNameStr != L"")
+        {
+        if (!(pAlphaFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)pi_rpURL, AlphaFileNameStr)))
+            return false;
+
+        pio_rRelatedURLs.push_back(pAlphaFileURL);
+        }
+
+    // Validate panchromatic node presence
+    BeXmlNodeP pPanchromNode = pMainNode->SelectSingleNode("CHANNELS/PANCHROMATIC");
+    pPanchromNode->GetContent(PanChromaticFileNameStr);
+    if (PanChromaticFileNameStr != L"")
+    {
+        if (!(pPanChromaticFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)pi_rpURL, PanChromaticFileNameStr)))
+            return false;
+
+        pio_rRelatedURLs.push_back(pPanChromaticFileURL);
+    }
 
     return true;
     }
@@ -704,7 +737,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
                                     pi_rpBlueFileURL->GetURL());
 
-    if (m_ChannelCount == 4) // 32 bits - there is an alpha channel!
+    if (m_ChannelCount == 4) // 32 or 64 bits - there is an alpha channel!
         {
         m_pAlphaFile = HRFRasterFileFactory::GetInstance()->OpenFile(pi_rpAlphaFileURL, true);
 
@@ -714,7 +747,7 @@ HRFxChFile::HRFxChFile(const HFCPtr<HFCURL>& pi_rpRedFileURL,
         }
 
     // Validate channel files
-    ValidateChannelFiles(m_pRedFile, m_pGreenFile, m_pBlueFile, m_pAlphaFile);
+    ValidateChannelFilesRGBA(m_pRedFile, m_pGreenFile, m_pBlueFile, m_pAlphaFile);
 
     m_IsOpen = true;
 
@@ -738,7 +771,7 @@ HRFxChFile::~HRFxChFile()
 /** ---------------------------------------------------------------------------
     Create wrapper editor for all channel data manipulation (read).
 
-       @param pi_Page        Page to create an editor for.
+    @param pi_Page        Page to create an editor for.
     @param pi_Resolution  Resolution.
     @param pi_AccessMode  Access and sharing mode.
 
@@ -756,7 +789,10 @@ HRFResolutionEditor* HRFxChFile::CreateResolutionEditor(uint32_t       pi_Page,
 
     HRFResolutionEditor* pEditor = 0;
 
-    pEditor = new HRFxChEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    if (m_pPanchromaticFile)
+        pEditor = new HRFxChEditorPanchromatic(this, pi_Page, pi_Resolution, pi_AccessMode);
+    else
+        pEditor = new HRFxChEditorRGBA(this, pi_Page, pi_Resolution, pi_AccessMode);
 
     return pEditor;
     }
@@ -813,15 +849,14 @@ Byte* HRFxChFile::GetGrayscalePalette (HFCPtr<HRPPixelType> pi_pPixelType)
 
 /** ---------------------------------------------------------------------------
     Channel files validation
-    All channels' pixel type must be HRPPixelTypeV8Gray8 or HRPPixelTypeI1R8G8B8
-    (with grayscale palette). Also, all channel files must be of the same type,
-    same compression, same block organization, same    resolution type (multi or single).
+    All channels' pixel type must be HRPPixelTypeV8Gray8, HRPPixelTypeV16Gray16
+    or HRPPixelTypeI1R8G8B8 (with grayscale palette). Also, all channel files must be of the same type,
+    same compression, same block organization, same resolution type (multi or single).
     ---------------------------------------------------------------------------
  */
-void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
-                                      const HFCPtr<HRFRasterFile>& pi_rpGreenFile,
-                                      const HFCPtr<HRFRasterFile>& pi_rpBlueFile,
-                                      const HFCPtr<HRFRasterFile>& pi_rpAlphaFile)
+void HRFxChFile::ValidateChannelFilesRGB (const HFCPtr<HRFRasterFile>& pi_rpRedFile,
+                                          const HFCPtr<HRFRasterFile>& pi_rpGreenFile,
+                                          const HFCPtr<HRFRasterFile>& pi_rpBlueFile)
     {
     // Rasters must be of the same format
     if (!((pi_rpRedFile->GetClassID() == pi_rpGreenFile->GetClassID()) &&
@@ -842,7 +877,8 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
     HFCPtr<HRPPixelType> pGreenChPixelType = pi_rpGreenFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
     HFCPtr<HRPPixelType> pBlueChPixelType  = pi_rpBlueFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
 
-    if (!(pRedChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
+    if (!( pRedChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+           pRedChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID) ) &&
         (pi_rpRedFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
@@ -856,7 +892,8 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
             throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpRedFile->GetURL()->GetURL());
         }
 
-    if (!(pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
+    if (!(pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+          pGreenChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)  ) &&
         (pi_rpGreenFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
@@ -870,7 +907,8 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
             throw HRFXCHChannelsIsNotAValidGrayscaleException( pi_rpGreenFile->GetURL()->GetURL());
         }
 
-    if (!(pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
+    if (!(pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+          pBlueChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)  ) &&
         (pi_rpBlueFile->GetClassID() != HRFHMRFile::CLASS_ID) )
         {
         // not a valid pixel type!
@@ -912,57 +950,118 @@ void HRFxChFile::ValidateChannelFiles(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
              && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight()
                  == pi_rpBlueFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
         throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
+    }
 
-    // Verify alpha channel
-    if (pi_rpAlphaFile)
-        {
+    void HRFxChFile::ValidateChannelFilesRGBA(const HFCPtr<HRFRasterFile>& pi_rpRedFile,
+                                              const HFCPtr<HRFRasterFile>& pi_rpGreenFile,
+                                              const HFCPtr<HRFRasterFile>& pi_rpBlueFile,
+                                              const HFCPtr<HRFRasterFile>& pi_rpAlphaFile)
+    {
+        ValidateChannelFilesRGB(pi_rpRedFile, pi_rpGreenFile, pi_rpBlueFile);
+
+        // Verify alpha channel
         // Rasters must be of the same format
         if (!(pi_rpRedFile->GetClassID() == pi_rpAlphaFile->GetClassID()))
-            throw HRFXCHChannelsAreNotOfTheSameFormatException( GetURL()->GetURL());
+            throw HRFXCHChannelsAreNotOfTheSameFormatException(GetURL()->GetURL());
 
         // ...and same compression type
         HCLASS_ID AlphaFileCodecClsid = pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec()->GetClassID();
+        HCLASS_ID RedFileCodecClsid = pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec()->GetClassID();
 
         if (!(RedFileCodecClsid == AlphaFileCodecClsid))
             throw HRFXCHChannelsDoNotHaveSameCompressionException(GetURL()->GetURL());
 
         // All files must be grayscale
-        HFCPtr<HRPPixelType> pAlphaChPixelType  = pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
+        HFCPtr<HRPPixelType> pAlphaChPixelType = pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
 
-        if (!(pAlphaChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID)) &&
-            (pi_rpAlphaFile->GetClassID() != HRFHMRFile::CLASS_ID) )
-            {
+        if (!(pAlphaChPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+            pAlphaChPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)) &&
+            (pi_rpAlphaFile->GetClassID() != HRFHMRFile::CLASS_ID))
+        {
             // not a valid pixel type!
             throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpAlphaFile->GetURL()->GetURL());
-            }
+        }
         else if (pi_rpAlphaFile->GetClassID() == HRFHMRFile::CLASS_ID)
-            {
+        {
             // OK but only for a grayscale palette
             if (!((pAlphaChPixelType->IsCompatibleWith(HRPPixelTypeI8R8G8B8::CLASS_ID)) &&
-                  (m_pAlphaMap = GetGrayscalePalette(pAlphaChPixelType))))
+                (m_pAlphaMap = GetGrayscalePalette(pAlphaChPixelType))))
                 throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpAlphaFile->GetURL()->GetURL());
-            }
+        }
 
         // All files must have same dimensions
-        if (! ( (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth()
-                 == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth())
-                && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight()
-                    == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())))
+        if (!((pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth()
+            == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth())
+            && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight()
+                == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())))
             throw HRFFXHChannelsDoNotHaveTheSameDimensionsException(GetURL()->GetURL());
 
         // All files must have same resolution number
-        if (! (pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
-               == pi_rpAlphaFile->GetPageDescriptor(0)->CountResolutions()))
+        if (!(pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
+            == pi_rpAlphaFile->GetPageDescriptor(0)->CountResolutions()))
             throw HRFFXHChannelsDoNotHaveTheSameResCountException(GetURL()->GetURL());
 
         // All files must have same block dimensions
-        if (! ( (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth()
-                 == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth())
-                && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight()
-                    == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
+        if (!((pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth()
+            == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth())
+            && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight()
+                == pi_rpAlphaFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
             throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
-        }
     }
+
+void HRFxChFile::ValidateChannelFilesPanchromatic(const HFCPtr<HRFRasterFile>& pi_rpPanchromaticFile,
+                                                  const HFCPtr<HRFRasterFile>& pi_rpRedFile,
+                                                  const HFCPtr<HRFRasterFile>& pi_rpGreenFile,
+                                                  const HFCPtr<HRFRasterFile>& pi_rpBlueFile)
+    {
+        ValidateChannelFilesRGB(pi_rpRedFile, pi_rpGreenFile, pi_rpBlueFile);
+
+        // Verify panchromatic channel
+        // Rasters must be of the same format
+        if (!(pi_rpRedFile->GetClassID() == pi_rpPanchromaticFile->GetClassID()))
+            throw HRFXCHChannelsAreNotOfTheSameFormatException(GetURL()->GetURL());
+
+        // ...and same compression type
+        HCLASS_ID FileCodecClsid = pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec()->GetClassID();
+        HCLASS_ID RedFileCodecClsid = pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetCodec()->GetClassID();
+        if (!(RedFileCodecClsid == FileCodecClsid))
+            throw HRFXCHChannelsDoNotHaveSameCompressionException(GetURL()->GetURL());
+
+        // All files must be grayscale
+        HFCPtr<HRPPixelType> pPixelType = pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetPixelType();
+        if (!(pPixelType->IsCompatibleWith(HRPPixelTypeV8Gray8::CLASS_ID) ||
+            pPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID)))
+        {
+            // not a valid pixel type!
+            throw HRFXCHChannelsIsNotAValidGrayscaleException(pi_rpPanchromaticFile->GetURL()->GetURL());
+        }
+
+        // Panchromatic resolution == 2x RGB files
+        if (!((((pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth()*2)-1)
+               == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth())
+             && (((pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight()*2)-1)
+                == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())))
+            throw HRFFXHChannelsDoNotHaveTheSameDimensionsException(GetURL()->GetURL());
+
+        // All files must have same resolution number
+        if (!(pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
+            == pi_rpPanchromaticFile->GetPageDescriptor(0)->CountResolutions()))
+            throw HRFFXHChannelsDoNotHaveTheSameResCountException(GetURL()->GetURL());
+
+        // All files must have same block dimensions
+        //if (!((pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth()
+        //    == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockWidth())
+        //    && (pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight()
+        //        == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
+        //    throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
+        
+        // Only strip input file supported for the moment.
+        if (pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::STRIP ||
+            pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() !=
+            pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType())
+            throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
+    }
+
 
 
 /** ---------------------------------------------------------------------------
@@ -985,11 +1084,13 @@ bool HRFxChFile::Open()
         WString GreenFileNameStr;
         WString BlueFileNameStr;
         WString AlphaFileNameStr;
+        WString PanchromaticFileNameStr;
 
         HFCPtr<HFCURL> pRedFileURL   = 0;
         HFCPtr<HFCURL> pGreenFileURL = 0;
         HFCPtr<HFCURL> pBlueFileURL  = 0;
         HFCPtr<HFCURL> pAlphaFileURL = 0;
+        HFCPtr<HFCURL> pPanchromaticFileURL = 0;
 
         // Extract the standard file name from the main URL
         XMLFileName = ((HFCPtr<HFCURLFile>&)GetURL())->GetHost();
@@ -1073,50 +1174,74 @@ bool HRFxChFile::Open()
         m_pBlueFile  = HRFRasterFileFactory::GetInstance()->OpenFile(pBlueFileURL, true);
 
         if (!m_pRedFile)
-            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
-                                        pRedFileURL->GetURL());
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),pRedFileURL->GetURL());
 
         if (!m_pGreenFile)
-            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
-                                        pGreenFileURL->GetURL());
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),pGreenFileURL->GetURL());
 
         if (!m_pBlueFile)
-            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
-                                        pBlueFileURL->GetURL());
+            throw HRFCannotOpenChildFileException(GetURL()->GetURL(),pBlueFileURL->GetURL());
 
-        if (m_ChannelCount == 4) // 32 bits - there is an alpha channel!
+        // there is an alpha channel or panchromatic file ?
+        if (m_ChannelCount == 4) 
             {
             // Validate Alpha node presence
             BeXmlNodeP pAlphaNode = pMainNode->SelectSingleNode ("CHANNELS/ALPHA");
             pAlphaNode->GetContent (AlphaFileNameStr);
 
+            // Validate panchromatic node presence
+            BeXmlNodeP pPanchromNode = pMainNode->SelectSingleNode("CHANNELS/PANCHROMATIC");
+            pPanchromNode->GetContent(PanchromaticFileNameStr);
+
             // Empty field ?
-            if (AlphaFileNameStr == L"")
-                throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                                L"ALPHA");
+            if (AlphaFileNameStr != L"")
+                {
+                // Compose URL
+                if (!(pAlphaFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), AlphaFileNameStr)))
+                    throw HRFInvalidParamValueException(GetURL()->GetURL(),
+                                                AlphaFileNameStr);
 
-            // Compose URL
-            if (!(pAlphaFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), AlphaFileNameStr)))
-                throw HRFInvalidParamValueException(GetURL()->GetURL(),
-                                            AlphaFileNameStr);
+                HFCStat AlphaFileStat(pAlphaFileURL);
 
-            HFCStat AlphaFileStat(pAlphaFileURL);
+                if (!AlphaFileStat.IsExistent())
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
+                                                AlphaFileNameStr);
 
-            if (!AlphaFileStat.IsExistent())
-                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
-                                            AlphaFileNameStr);
+                m_ListOfRelatedURLs.push_back(pAlphaFileURL);
 
-            m_ListOfRelatedURLs.push_back(pAlphaFileURL);
+                m_pAlphaFile = HRFRasterFileFactory::GetInstance()->OpenFile(pAlphaFileURL, true);
 
-            m_pAlphaFile = HRFRasterFileFactory::GetInstance()->OpenFile(pAlphaFileURL, true);
+                if (!m_pAlphaFile)
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
+                                                pAlphaFileURL->GetURL());
 
-            if (!m_pAlphaFile)
-                throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
-                                            pAlphaFileURL->GetURL());
+                ValidateChannelFilesRGBA(m_pRedFile, m_pGreenFile, m_pBlueFile, m_pAlphaFile);
+                }
+            else if(PanchromaticFileNameStr != L"")
+                {
+                // Compose URL
+                if (!(pPanchromaticFileURL = ComposeChannelURL((HFCPtr<HFCURLFile>&)GetURL(), PanchromaticFileNameStr)))
+                    throw HRFInvalidParamValueException(GetURL()->GetURL(),
+                        PanchromaticFileNameStr);
+
+                HFCStat AlphaFileStat(pPanchromaticFileURL);
+
+                if (!AlphaFileStat.IsExistent())
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(),
+                        PanchromaticFileNameStr);
+
+                m_ListOfRelatedURLs.push_back(pPanchromaticFileURL);
+
+                m_pPanchromaticFile = HRFRasterFileFactory::GetInstance()->OpenFile(pPanchromaticFileURL, true);
+
+                if (!m_pPanchromaticFile)
+                    throw HRFCannotOpenChildFileException(GetURL()->GetURL(), pPanchromaticFileURL->GetURL());
+
+                ValidateChannelFilesPanchromatic(m_pPanchromaticFile, m_pRedFile, m_pGreenFile, m_pBlueFile);
+                }
+            else
+                throw HRFInvalidParamValueException(GetURL()->GetURL(), L"Invalid channel 4");
             }
-
-        // Validate channel files
-        ValidateChannelFiles(m_pRedFile, m_pGreenFile, m_pBlueFile, m_pAlphaFile);
 
         m_IsOpen = true;
         }
@@ -1133,15 +1258,37 @@ void HRFxChFile::CreateDescriptors()
     {
     HPRECONDITION (m_IsOpen);
 
-    HFCPtr<HRFPageDescriptor> pChannelPageDescriptor = m_pRedFile->GetPageDescriptor(0);
-
-    // Create pixel type
+    HFCPtr<HRFPageDescriptor> pChannelPageDescriptor;
+    HFCPtr<HRPPixelType> pChannelPixelType;
     HFCPtr<HRPPixelType> pPixelType;
 
-    if (m_ChannelCount == 3) // 24bits
-        pPixelType = new HRPPixelTypeV24R8G8B8();
-    else // 32bits
-        pPixelType = new HRPPixelTypeV32R8G8B8A8();
+    if (m_pPanchromaticFile)
+        {
+        // use Panchromatic page descriptor, the resolution is 2x better.
+        pChannelPageDescriptor = m_pPanchromaticFile->GetPageDescriptor(0);
+        pChannelPixelType = pChannelPageDescriptor->GetResolutionDescriptor(0)->GetPixelType();
+        if (pChannelPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
+            pPixelType = new HRPPixelTypeV48R16G16B16();
+        else
+            pPixelType = new HRPPixelTypeV24R8G8B8();
+        HASSERT(m_ChannelCount == 4);
+        }
+    else
+        {
+        pChannelPageDescriptor = m_pRedFile->GetPageDescriptor(0);
+        pChannelPixelType = pChannelPageDescriptor->GetResolutionDescriptor(0)->GetPixelType();
+
+        if (m_ChannelCount == 3)
+            if (pChannelPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
+                pPixelType = new HRPPixelTypeV48R16G16B16();
+            else
+                pPixelType = new HRPPixelTypeV24R8G8B8();
+        else
+            if (pChannelPixelType->IsCompatibleWith(HRPPixelTypeV16Gray16::CLASS_ID))
+                pPixelType = new HRPPixelTypeV64R16G16B16A16();
+            else
+                pPixelType = new HRPPixelTypeV32R8G8B8A8();
+        }
 
     // Compose resolution descriptors
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
@@ -1210,6 +1357,10 @@ void HRFxChFile::CreateDescriptors()
         pPage->SetListOfMetaDataContainer(pClonedMDContainerList);
         }
 
+    // Geocoding
+    if (NULL != pChannelPageDescriptor->GetGeocodingCP())
+        pPage->SetGeocoding(pChannelPageDescriptor->GetGeocodingCP());
+
     m_ListOfPageDescriptor.push_back(pPage);
     }
 
@@ -1231,12 +1382,20 @@ void HRFxChFile::CreateChannelResolutionEditors()
         HASSERT(m_BlueFileResolutionEditor[i] != 0);
         }
 
-    if (m_ChannelCount == 4) // 32bits
+    if (m_ChannelCount == 4 && m_pAlphaFile)
         for (unsigned short i=0; i<m_pRedFile->GetPageDescriptor(0)->CountResolutions(); i++)
             {
             m_AlphaFileResolutionEditor.push_back(m_pAlphaFile->CreateResolutionEditor(0, i, HFC_READ_ONLY));
             HASSERT(m_AlphaFileResolutionEditor[i] != 0);
             }
+
+    if (m_ChannelCount == 4 && m_pPanchromaticFile)
+        for (unsigned short i = 0; i < m_pRedFile->GetPageDescriptor(0)->CountResolutions(); i++)
+        {
+            m_PanchromaticFileResolutionEditor.push_back(m_pPanchromaticFile->CreateResolutionEditor(0, i, HFC_READ_ONLY));
+            HASSERT(m_PanchromaticFileResolutionEditor[i] != 0);
+        }
+
     }
 
 
@@ -1261,12 +1420,15 @@ void HRFxChFile::Close()
         m_GreenFileResolutionEditor.clear();
         m_BlueFileResolutionEditor.clear();
 
-        if (m_ChannelCount == 4) // 32bits
+        if (m_ChannelCount == 4)
             {
             for (size_t i=0; i<m_AlphaFileResolutionEditor.size(); i++)
                 delete m_AlphaFileResolutionEditor[i];
-
             m_AlphaFileResolutionEditor.clear();
+
+            for (size_t i = 0; i < m_PanchromaticFileResolutionEditor.size(); i++)
+                delete m_PanchromaticFileResolutionEditor[i];
+            m_PanchromaticFileResolutionEditor.clear();
             }
 
         m_IsOpen = false;
@@ -1281,20 +1443,6 @@ void HRFxChFile::Save()
     {
 
     HASSERT(!"HRFxChFile::Save():xCh format is read only");
-    /*
-    HPRECONDITION(m_pRedFile != 0);
-    HPRECONDITION(m_pGreenFile != 0);
-    HPRECONDITION(m_pBlueFile != 0);
-
-    m_pRedFile->Save();
-    m_pGreenFile->Save();
-    m_pBlueFile->Save();
-
-    if (m_ChannelCount == 4) // 32 bits - there is an alpha channel!
-    {
-        m_pAlphaFile->Save();
-    }
-    */
     }
 
 /** ---------------------------------------------------------------------------

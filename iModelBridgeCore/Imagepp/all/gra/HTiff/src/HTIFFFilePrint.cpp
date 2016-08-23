@@ -299,6 +299,16 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             }
         }
 
+    if (m_pCurDir->TagIsPresent(PREDICTOR))
+        {
+        fprintf(po_pOutput, "  %s: ", GetTagNameString(PREDICTOR));
+        unsigned short   predict;
+
+        GetField(PREDICTOR, &predict);
+        fprintf(po_pOutput, "%u (0x%x)\n", predict, predict);
+        }
+
+
     if (m_pCurDir->TagIsPresent(PHOTOMETRIC))
         {
         fprintf(po_pOutput, "  %s: ", GetTagNameString(PHOTOMETRIC));
