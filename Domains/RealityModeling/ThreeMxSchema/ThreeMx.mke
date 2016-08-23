@@ -42,8 +42,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)ThreeMxReader$(oext)  : $(SrcThreeMx)ThreeMxReader.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxCache$(oext)   : $(SrcThreeMx)ThreeMxCache.cpp ${threeMxDepends}  ${MultiCompileDepends}
-
 $(o)ThreeMxNode$(oext)    : $(SrcThreeMx)ThreeMxNode.cpp ${threeMxDepends} ${MultiCompileDepends}
 
 $(o)ThreeMxModel$(oext)   : $(SrcThreeMx)ThreeMxModel.cpp ${threeMxDepends} ${MultiCompileDepends}

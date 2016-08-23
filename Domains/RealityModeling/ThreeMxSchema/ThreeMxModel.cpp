@@ -11,47 +11,18 @@
 DOMAIN_DEFINE_MEMBERS(ThreeMxDomain)
 HANDLER_DEFINE_MEMBERS(ModelHandler)
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Scene::Scene(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP renderSys) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(renderSys)
-    {
-    m_isHttp = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
-
-    if (m_isHttp)
-        m_rootDir = m_rootUrl.substr(0, m_rootUrl.find_last_of("/"));
-    else
-        {
-        BeFileName rootUrl(BeFileName::DevAndDir, BeFileName(m_rootUrl));
-        BeFileName::FixPathName(rootUrl, rootUrl, false);
-        m_rootDir = rootUrl.GetNameUtf8();
-        }
-
-    m_scale = location.ColumnXMagnitude();
-
-    m_localCacheName = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-    m_localCacheName.AppendToPath(BeFileName(realityCacheName));
-    m_localCacheName.AppendExtension(L"3MXcache");
-
-    CreateCache();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Scene::DeleteCacheFile()
-    {
-    m_cache = nullptr;
-    return BeFileNameStatus::Success == m_localCacheName.BeDeleteFile() ? SUCCESS : ERROR;
-    }
+USING_NAMESPACE_TILETREE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::ReadSceneFile(SceneInfo& sceneInfo)
     {
-    MxStreamBuffer rootStream;
-    return SUCCESS != RequestData(nullptr, true, &rootStream) ? ERROR : sceneInfo.Read(rootStream);
+    StreamBuffer rootStream;
+    auto result = _RequestFile(m_rootUrl, rootStream);
+
+    result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
+    return result.isReady() ? sceneInfo.Read(rootStream) : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,14 +30,29 @@ BentleyStatus Scene::ReadSceneFile(SceneInfo& sceneInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::LoadScene()
     {
+    CreateCache();
+
     SceneInfo sceneInfo;
     if (SUCCESS != ReadSceneFile(sceneInfo))
         return ERROR;
 
-    m_rootNode = new Node(nullptr);
-    m_rootNode->m_childPath = sceneInfo.m_rootNodePath;
+    Node* root = new Node(nullptr);
+    root->m_childPath = sceneInfo.m_rootNodePath;
+    m_rootTile = root;
 
-    return RequestData(m_rootNode.get(), true, nullptr);
+    auto result = _RequestTile(*root);
+    result.wait(std::chrono::seconds(2)); // only wait for 2 seconds
+    return result.isReady() ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Scene::LoadNodeSynchronous(NodeR node)
+    {
+    auto result = _RequestTile(node);
+    result.wait();
+    return result.isReady() ? SUCCESS : ERROR;
     }
 
 //----------------------------------------------------------------------------------------
@@ -95,7 +81,7 @@ BentleyStatus Scene::ReadGeoLocation(SceneInfo const& sceneInfo)
     double latitude, longitude;
     if (1 == sscanf(sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
         status = acute3dGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
-    else if (2 == sscanf (sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
+    else if (2 == sscanf(sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
         {
         // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
         // mimic the intent (North is Y positive, no offset)
@@ -161,19 +147,20 @@ struct ThreeMxProgressive : ProgressiveTask
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_scene, now, now-m_scene.GetNodeExpirationTime());
+    DrawArgs args(context, m_scene.GetLocation(), now, now-m_scene.GetExpirationTime());
 
     DEBUG_PRINTF("3MX progressive %d missing", m_missing.size());
 
     for (auto const& node: m_missing)
         {
-        auto stat = node.second->GetChildLoadStatus();
-        if (stat == Node::ChildLoad::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Node::ChildLoad::NotFound)
+        auto stat = node.second->GetLoadState();
+        if (stat == Tile::LoadState::Ready)
+            node.second->Visit(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
+        else if (stat != Tile::LoadState::NotFound)
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
+    args.RequestMissingTiles(m_scene);
     args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
@@ -195,33 +182,9 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics(ViewContextR context)
-    {
-    if (m_graphics.m_entries.empty())
-        return;
-
-    DEBUG_PRINTF("3MX drawing %d 3mx nodes", m_graphics.m_entries.size());
-
-    ViewFlags flags = context.GetViewFlags();
-    flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.m_textures = true;
-    flags.m_visibleEdges = false;
-    flags.m_shadows = false;
-    flags.m_ignoreLighting = true;
-    m_graphics.SetViewFlags(flags);
-
-    auto branch = m_context.CreateBranch(m_graphics, &m_scene.GetLocation());
-    
-    BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
-    m_context.OutputGraphic(*branch, nullptr);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::Load(Dgn::Render::SystemP renderSys) const
+void ThreeMxModel::Load(SystemP renderSys) const
     {
     if (m_scene.IsValid() && (nullptr==renderSys || m_scene->GetRenderSystem()==renderSys))
         return;
@@ -292,14 +255,17 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         }
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, *m_scene, now, now-m_scene->GetNodeExpirationTime());
+    DrawArgs args(context, m_scene->GetLocation(), now, now-m_scene->GetExpirationTime());
     m_scene->Draw(args);
-    DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->CountNodes(), args.m_missing.size());
+    DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->m_rootTile->CountTiles(), args.m_missing.size());
 
     args.DrawGraphics(context);
 
     if (!args.m_missing.empty())
+        {
+        args.RequestMissingTiles(*m_scene);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,8 +281,8 @@ void ThreeMxModel::_OnFitView(FitContextR context)
     context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
     }
 
-#define JSON_SCENE_FILE "SceneFile"
-#define JSON_LOCATION "Location"
+static Utf8CP JSON_SCENE_FILE() {return "SceneFile";}
+static Utf8CP JSON_LOCATION() {return "Location";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -324,59 +290,41 @@ void ThreeMxModel::_WriteJsonProperties(Json::Value& val) const
     {
     T_Super::_WriteJsonProperties(val);
 
-    val[JSON_SCENE_FILE] = m_sceneFile;
+    val[JSON_SCENE_FILE()] = m_sceneFile;
     if (!m_location.IsIdentity())
-        JsonUtils::TransformToJson(val[JSON_LOCATION], m_location);
+        JsonUtils::TransformToJson(val[JSON_LOCATION()], m_location);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_ReadJsonProperties(Json::Value const& val)
+void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
     {
     T_Super::_ReadJsonProperties(val);
-    m_sceneFile = val[JSON_SCENE_FILE].asString();
+    m_sceneFile = val[JSON_SCENE_FILE()].asString();
 
-    if (val.isMember(JSON_LOCATION))
-        JsonUtils::TransformFromJson(m_location, val[JSON_LOCATION]);
+    if (val.isMember(JSON_LOCATION()))
+        JsonUtils::TransformFromJson(m_location, val[JSON_LOCATION()]);
     else
         m_location.InitIdentity();
     }
 
-
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     08/2016
 //=======================================================================================
-struct  PublishTileRenderSystem : Dgn::Render::System
+struct  PublishTileNode : TileNode
 {
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const override                                                                                                                      { return nullptr; }
-    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override                                                                                                           { return nullptr; }
-    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override                                                                                                { return nullptr; }
-    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const override                                                                    { return nullptr; }
-    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const override                                                                                           { return nullptr; }
-    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const                                                                                                                     { return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const override                                                                { return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const override   { return nullptr; }
-    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override                                                  { return nullptr; }
-                                                                                                                                                    
-};  // PublishTileRenderSystem
+    NodePtr              m_node;
+    Transform            m_transform;
+    TileDisplayParamsR   m_tileDisplayParams;
 
-//=======================================================================================
-// @bsiclass                                                    Ray.Bentley     08/2016
-//=======================================================================================
-struct  PublishTileNode : Dgn::Render::TileNode
-{
-    NodePtr                 m_node;
-    Transform               m_transform;
-    TileDisplayParamsR      m_tileDisplayParams;
-
-    PublishTileNode (NodePtr& node, TransformCR transform, TileDisplayParamsR tileDisplayParams, DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, Dgn::Render::TileNodeP parent) : 
-                     m_node (node), m_transform (transform), m_tileDisplayParams (tileDisplayParams), Dgn::Render::TileNode (range, depth, siblingIndex, tolerance, parent) { }
+    PublishTileNode(NodeR node, TransformCR transform, TileDisplayParamsR tileDisplayParams, DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
+                     m_node(&node), m_transform(transform), m_tileDisplayParams(tileDisplayParams), TileNode(range, depth, siblingIndex, tolerance, parent) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes( TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
+virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
     {
     TileMeshList        tileMeshes;
 
@@ -390,76 +338,114 @@ virtual TileMeshList _GenerateMeshes( TileGeometryCacheR geometryCache, double t
         if (0 == polyface->GetNormalCount())
             polyface->BuildPerFaceNormals();
 
-        TileMeshBuilderPtr  builder = TileMeshBuilder::Create (&m_tileDisplayParams, NULL, 0.0);
+        TileMeshBuilderPtr  builder = TileMeshBuilder::Create(&m_tileDisplayParams, NULL, 0.0);
 
-        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*polyface); visitor->AdvanceToNextFace(); )
-            builder->AddTriangle (*visitor,DgnElementId(), false, twoSidedTriangles);
+        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
+            builder->AddTriangle(*visitor,DgnElementId(), false, twoSidedTriangles);
 
-        tileMeshes.push_back (builder->GetMesh());
+        tileMeshes.push_back(builder->GetMesh());
         }
     return tileMeshes;
     }
 
 };  //  PublishTileNode
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct Publish3mxGeometry : Geometry
+{
+    TexturePtr m_texture;
+
+    Publish3mxGeometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene)
+        {
+        m_texture = args.m_texture;
+
+        m_indices.resize(args.m_numIndices);
+        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
+
+        m_points.resize(args.m_numPoints);
+        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+
+        if (nullptr != args.m_normals)
+            {
+            m_normals.resize(args.m_numPoints);
+            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
+            }
+        }
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct Publish3mxTexture : Render::Texture
+{
+    ImageSource m_source;
+    Image::Format m_format;
+    Image::BottomUp m_bottomUp;
+    Publish3mxTexture(ImageSourceCR source, Image::Format format, Image::BottomUp bottomUp) : m_source(std::move(source)), m_format(format), m_bottomUp(bottomUp) {}
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct Publish3mxScene : Scene
+{
+    using Scene::Scene;
+
+    TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return new Publish3mxTexture(source, targetFormat, bottomUp);}
+    GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) override {return new Publish3mxGeometry(args, *this);}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::Render::TileGenerator::Status  publishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector, SceneR scene, Dgn::Render::SystemR renderSystem, NodePtr& node, size_t depth, size_t siblingIndex, Dgn::Render::TileNodeP parent) 
+TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent) 
     {
     TileDisplayParams       tileDisplayParams;
-    double                  tolerance = (0.0 == node->GetMaxDiameter()) ? 1.0E6 : (node->GetMaxDiameter() / (2.0 * node->GetRadius()));
-    PublishTileNode         tileNode (node, scene.GetLocation(), tileDisplayParams, node->GetRange(), depth, siblingIndex, tolerance, parent);
+    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (node.GetMaximumSize() / (2.0 * node.GetRadius()));
+    PublishTileNode tileNode(node, scene.GetLocation(), tileDisplayParams, node.GetRange(), depth, siblingIndex, tolerance, parent);
 
-   if (node->HasChildren() && node->AreChildrenNotLoaded())
-        scene.RequestData (node.get(), true, NULL);
+    if (node._HasChildren() && node.IsNotLoaded())
+        scene.LoadNodeSynchronous(node);
 
-    if (NULL != node->GetChildren())
+    if (nullptr != node._GetChildren())
         {
-        size_t              childIndex = 0;
+        size_t childIndex = 0;
 
-        for (auto& child : *node->GetChildren())
-            tileNode.GetChildren().push_back (TileNode (child->GetRange(), depth+1, childIndex++, child->GetMaxDiameter() / (2.0 * child->GetRadius()), &tileNode));
+        for (auto& child : *node._GetChildren())
+            tileNode.GetChildren().push_back(TileNode(child->GetRange(), depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
         }
 
-    Dgn::Render::TileGenerator::Status status = collector._AcceptTile (tileNode);
+    TileGenerator::Status status = collector._AcceptTile(tileNode);
 
-    if (Dgn::Render::TileGenerator::Status::Success != status || !node->HasChildren())
+    if (TileGenerator::Status::Success != status || !node._HasChildren())
         return status;
 
-    if (node->HasChildren())
-        {
-        depth++;
-        Node::ChildNodes    children = *node->GetChildren();
-        size_t              childIndex = 0;
-        
-        node->GetGeometry().clear();        // Free memory so that all geometyr is not loaded at the same time.
+    depth++;
+    Tile::ChildTiles children = *node._GetChildren();
+    size_t  childIndex = 0;
 
-        for (auto& child : children)
-            if (Dgn::Render::TileGenerator::Status::Success != (status = publishModelTiles (collector, scene, renderSystem, child, depth, childIndex++, &tileNode)))
-                return status;
+    node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
+
+    for (auto& child : children)
+        {
+        if (TileGenerator::Status::Success != (status = publishModelTiles(collector, scene, (NodeR) *child, depth, childIndex++, &tileNode)))
+            return status;
         }
 
-    return Dgn::Render::TileGenerator::Status::Success;
+    return TileGenerator::Status::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::Render::TileGenerator::Status ThreeMxModel::_PublishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector) 
+TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileCollector& collector) 
     {
-    PublishTileRenderSystem renderSystem;
-    ScenePtr                scene  = new Scene (m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), &renderSystem);
+    ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
     
-    scene->SetLocatable (true);      // Else geometry is freed before we have a chance 
-    if (SUCCESS != scene->LoadScene ())                                                                                                                                                                
-                    return Dgn::Render::TileGenerator::Status::NoGeometry;
+    if (SUCCESS != scene->LoadScene())                                                                                                                                                                
+        return TileGenerator::Status::NoGeometry;
 
-    NodePtr rootNode = scene->GetRootNode(), rootChild = rootNode->GetChildren()->front();
-
-    scene->RequestData (rootChild.get(), true, NULL);
-
-    return publishModelTiles (collector, *scene, renderSystem, rootChild, 0, 0, nullptr);
+    return publishModelTiles(collector, *scene, (NodeR) *scene->GetRoot(), 0, 0, nullptr);
     }
-
-
