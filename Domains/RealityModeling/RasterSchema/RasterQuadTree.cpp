@@ -305,13 +305,6 @@ RasterTilePtr RasterTile::CreateRoot(RasterQuadTreeR tree)
 
     TileId id(tree.GetSource().GetResolutionCount()-1,0,0);
 
-    //&&MM REPROJECTION clip to gcs domain. For now, make sure we can compute the corners in UOR.
-//     DPoint3d srcCorners[4];
-//     DPoint3d uorCorners[4];
-//     tree.GetSource().ComputeTileCorners(srcCorners, id); 
-//     if(REPROJECT_Success != ReprojectCorners(uorCorners, srcCorners, tree))
-//         return NULL;
-
     return new RasterTile(id, NULL, tree);
     }
 
@@ -326,15 +319,6 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     BeAssert(m_tree.GetSource().IsValidTileId(id));
 
     RasterSourceR source = m_tree.GetSource();
-
-//&&MM raster is flipped. Because transform(BIM) is bottom left and raster is top left.
-//     DPoint3d srcCorners2[4];
-//     source.ComputeTileCorners(srcCorners2, id);
-// 
-//     if(REPROJECT_Success != ReprojectCorners(m_corners, srcCorners2, tree))
-//         {
-//         memcpy(m_corners, srcCorners2, sizeof(m_corners));   // Assume coincident for now. We should an invalid reprojection or something.
-//         }
 
     uint32_t xMinInRes = id.x * source.GetResolution(id.resolution).GetTileSizeX();
     uint32_t yMinInRes = id.y * source.GetResolution(id.resolution).GetTileSizeY();
@@ -352,15 +336,13 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     if (yMax > source.GetHeight())
         yMax = source.GetHeight();
 
-    DPoint3d srcCorners[4];
-
-    srcCorners[0].x = srcCorners[2].x = xMin;
-    srcCorners[1].x = srcCorners[3].x = xMax;
-    srcCorners[0].y = srcCorners[1].y = yMin;
-    srcCorners[2].y = srcCorners[3].y = yMax;
-    srcCorners[0].z = srcCorners[1].z = srcCorners[2].z = srcCorners[3].z = 0;
-
-    m_tree.GetSourceToWorld().MultiplyAndRenormalize(m_corners, srcCorners, 4);
+    DPoint3d physicalCorners[4];
+    physicalCorners[0].x = physicalCorners[2].x = xMin;
+    physicalCorners[1].x = physicalCorners[3].x = xMax;
+    physicalCorners[0].y = physicalCorners[1].y = yMin;
+    physicalCorners[2].y = physicalCorners[3].y = yMax;
+    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
+    m_tree.GetPhysicalToWorld().MultiplyAndRenormalize(m_corners, physicalCorners, 4);
     }
 
 //----------------------------------------------------------------------------------------
@@ -377,6 +359,7 @@ RasterTile::~RasterTile()
         }
     }
 
+#if 0 //&&MM this is how we reproject 4 corners. 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
@@ -430,7 +413,7 @@ ReprojectStatus RasterTile::ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCa
         }
 
     return status;    
-    }
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -756,11 +739,13 @@ RasterQuadTree::RasterQuadTree(RasterSourceR source, RasterModel& model)
  m_model(model),
  m_tileCache(s_GetSharedTileCache())
     {    
-    //&&MM debug...
-    DMatrix4d temp;
-    // Compute reprojection matrix if any.
-    ComputeSourceToWorldTransform(temp);  //&&MM detect error and do something about it.
-    
+    // Init m_physicalToWorld transformation
+    DMatrix4d physicalToWorld;
+    physicalToWorld.InitProduct(model.GetSourceToWorld(), DMatrix4d::From(source._PhysicalToSource()));
+    DMatrix4d worldToPhysical; 
+    worldToPhysical.QrInverseOf(physicalToWorld);
+    m_physicalToWorld.InitFrom(physicalToWorld, worldToPhysical);
+
     // Create the lowest LOD but do not load its data yet.
     m_pRoot = RasterTile::CreateRoot(*this);
 
@@ -890,6 +875,7 @@ struct ReprojectionApproximater
     DgnGCSR                  m_destGCS;
     };
 
+#if 0 //&&MM This is how to compute a projection approx.
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  7/2016
 //----------------------------------------------------------------------------------------
@@ -957,7 +943,7 @@ StatusInt RasterQuadTree::ComputeSourceToWorldTransform(DMatrix4dR sourceToWorld
     
     return approx.ComputeProjective(sourceToWorld);    
     }
-
+#endif
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------

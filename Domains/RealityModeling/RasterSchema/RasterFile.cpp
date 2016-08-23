@@ -26,7 +26,7 @@ RasterFile::RasterFile(Utf8StringCR resolvedName)
 RasterFilePtr RasterFile::Create(Utf8StringCR resolvedName)
     {
     RasterFilePtr rasterFilePtr = new RasterFile(resolvedName);
-    if (rasterFilePtr->GetHRFRasterFileP() == nullptr)
+    if (rasterFilePtr->m_HRFRasterFilePtr.GetPtr() == nullptr)
         {
         // Could not open raster file
         return nullptr;
@@ -38,9 +38,9 @@ RasterFilePtr RasterFile::Create(Utf8StringCR resolvedName)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-HRFRasterFile*   RasterFile::GetHRFRasterFileP() const
+HRFRasterFile&   RasterFile::GetHRFRasterFile() const
     {
-    return m_HRFRasterFilePtr.GetPtr();
+    return *m_HRFRasterFilePtr;
     }
 
 //----------------------------------------------------------------------------------------
