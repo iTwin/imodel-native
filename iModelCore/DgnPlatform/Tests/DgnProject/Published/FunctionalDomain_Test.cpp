@@ -162,7 +162,7 @@ TEST_F(FunctionalDomainTests, FunctionalElementCRUD)
     importSchemaStatus = FunctionalTestDomain::ImportSchema(*m_db);
     ASSERT_EQ(DgnDbStatus::Success, importSchemaStatus);
 
-    FunctionalModelPtr model = FunctionalModel::Create(*m_db, DgnModel::CreateModelCode(TEST_NAME));
+    FunctionalModelPtr model = FunctionalModel::Create(*m_db->Elements().GetRootSubject());
     ASSERT_TRUE(model.IsValid());
     ASSERT_EQ(DgnDbStatus::Success, model->Insert());
 

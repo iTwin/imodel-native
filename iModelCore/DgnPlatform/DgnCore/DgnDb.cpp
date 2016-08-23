@@ -271,7 +271,7 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
 
     m_fileName = projectFile.GetNameUtf8();
 
-    rc = CreateDgnDbTables();
+    rc = CreateDgnDbTables(params);
     if (BE_SQLITE_OK != rc)
         return rc;
 

@@ -1011,7 +1011,7 @@ DgnDbStatus ScriptDefinitionElement::Execute(Utf8StringR result, std::initialize
 ScriptLibraryModelPtr ScriptLibraryModel::Create(DgnDbR db, DgnCode code, Utf8CP sourceUrl)
     {
     DgnClassId classId(db.Schemas().GetECClassId(SCRIPT_DOMAIN_NAME, SCRIPT_DOMAIN_CLASSNAME_ScriptLibraryModel));
-    CreateParams mcparams(db, classId, code);
+    CreateParams mcparams(db, classId, DgnElementId() /* WIP: Repository element? */, code);
     auto model = new ScriptLibraryModel(mcparams);
     if (nullptr == model)
         return nullptr;

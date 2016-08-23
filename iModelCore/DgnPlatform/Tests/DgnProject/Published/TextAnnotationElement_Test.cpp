@@ -71,7 +71,7 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
+        DgnModelPtr model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("2D Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
@@ -258,9 +258,11 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
-        ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
-
+        SubjectCPtr rootSubject = db->Elements().GetRootSubject();
+        SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+        ASSERT_TRUE(modelSubject.IsValid());
+        PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode(TEST_NAME));
+        ASSERT_TRUE(model.IsValid());
         modelId = model->GetModelId();
         ASSERT_TRUE(modelId.IsValid());
 

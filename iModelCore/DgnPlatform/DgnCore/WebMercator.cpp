@@ -915,6 +915,7 @@ DEFINE_REF_COUNTED_PTR(WebMercatorModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WebMercatorModel::CreateParams::CreateParams(DgnDbR dgndb, Properties const& props) : T_Super::CreateParams(dgndb, 
     DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, "StreetMapModel")), 
+    DgnElementId() /* WIP: which element? */,
     DgnModel::CreateModelCode(getStreetMapServerDescription(props.m_mapType))),
     m_properties(props)
     {

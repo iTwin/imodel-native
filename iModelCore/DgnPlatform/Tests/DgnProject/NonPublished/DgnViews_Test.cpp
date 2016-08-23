@@ -36,13 +36,12 @@ struct DgnViewElemTest : public DgnDbTestFixture
         project = m_db;
         }
 
-    SpatialModelPtr AddModel(Utf8StringCR name)
+    PhysicalModelPtr AddModel(Utf8StringCR name)
         {
-        DgnClassId classId(project->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-        DgnModel::CreateParams params(*project, classId, DgnModel::CreateModelCode(name));
-        SpatialModel* model = new SpatialModel(params);
-        EXPECT_EQ(DgnDbStatus::Success, model->Insert());
-
+        SubjectCPtr subject = Subject::CreateAndInsert(*project->Elements().GetRootSubject(), name.c_str());
+        EXPECT_TRUE(subject.IsValid());
+        PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*subject, DgnModel::CreateModelCode(name));
+        EXPECT_TRUE(model.IsValid());
         return model;
         }
 
@@ -239,7 +238,7 @@ TEST_F(DgnViewElemTest, Iterate)
     {
     SetupTestProject();
 
-    DgnModelPtr models[] = { AddModel("A"), AddModel("B") };
+    PhysicalModelPtr models[] = { AddModel("A"), AddModel("B") };
     static const DgnViewSource s_viewSources[] = { DgnViewSource::User, DgnViewSource::Generated, DgnViewSource::Private };
     static const Utf8CP s_viewSourceNames[] = { "-U", "-G", "-P" };
     static const Utf8CP s_viewDescriptions[] = { "", "generated", "hidden" };

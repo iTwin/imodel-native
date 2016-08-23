@@ -283,17 +283,19 @@ DgnDbStatus Subject::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SubjectPtr Subject::Create(DgnDbR db, Utf8CP label, Utf8CP description)
+SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
+    DgnDbR db = parentSubject.GetDgnDb();
+    DgnElementId parentId = parentSubject.GetElementId();
     DgnClassId classId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Subject);
 
-    if (!classId.IsValid() || !label || !*label)
+    if (!parentId.IsValid() || !classId.IsValid() || !label || !*label)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    SubjectPtr subject = new Subject(CreateParams(db, DgnModel::RepositoryModelId(), classId, DgnCode(), label));
+    SubjectPtr subject = new Subject(CreateParams(db, DgnModel::RepositoryModelId(), classId, DgnCode(), label, parentId));
 
     if (description && *description)
         {
@@ -302,6 +304,18 @@ SubjectPtr Subject::Create(DgnDbR db, Utf8CP label, Utf8CP description)
         }
 
     return subject;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr Subject::CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
+    {
+    SubjectPtr subject = Create(parentSubject, label, description);
+    if (!subject.IsValid())
+        return nullptr;
+
+    return parentSubject.GetDgnDb().Elements().Insert<Subject>(*subject);
     }
 
 struct OnInsertedCaller

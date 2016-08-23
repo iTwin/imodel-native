@@ -36,6 +36,8 @@ DGNPLATFORM_REF_COUNTED_PTR(GroupInformationModel)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace dgn_ModelHandler {struct Spatial; struct Physical;};
+
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
 // @bsiclass                                                    Keith.Bentley   04/15
@@ -136,24 +138,27 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase, ICodedEntity
     //=======================================================================================
     struct CreateParams
     {
-        DgnDbR      m_dgndb;
-        DgnClassId  m_classId;
-        DgnCode     m_code;
-        Utf8String  m_userLabel;
-        bool        m_inGuiList;
+        DgnDbR          m_dgndb;
+        DgnClassId      m_classId;
+        DgnElementId    m_modeledElementId;
+        DgnCode         m_code;
+        Utf8String      m_userLabel;
+        bool            m_inGuiList;
 
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
+        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The code for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
-            m_dgndb(dgndb), m_classId(classId), m_code(code), m_inGuiList(inGuiList)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
+            m_dgndb(dgndb), m_classId(classId), m_modeledElementId(modeledElementId), m_code(code), m_inGuiList(inGuiList)
             {
             SetUserLabel(label);
             }
 
+        void SetModeledElementId(DgnElementId modeledElementId) { m_modeledElementId = modeledElementId;} //!< Set the DgnElementId of the element that this DgnModel is describing/modeling.
         void SetCode(DgnCode code) { m_code = code; } //!< Set the DgnCode for models created with this CreateParams
         void SetUserLabel(Utf8CP label) { m_userLabel.AssignOrClear(label); } //!< Set the Label for models created with this CreateParams
         void SetInGuiList(bool inGuiList) { m_inGuiList = inGuiList; } //!< Set the visibility of models created with this CreateParams in model lists shown to the user
@@ -194,6 +199,7 @@ protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
+    DgnElementId    m_modeledElementId;
     DgnCode         m_code;
     Utf8String      m_userLabel;
     bool            m_inGuiList;
@@ -359,6 +365,7 @@ protected:
     virtual GeometricModel2dCP _ToGeometricModel2d() const {return nullptr;}
     virtual GeometricModel3dCP _ToGeometricModel3d() const {return nullptr;}
     virtual SpatialModelCP _ToSpatialModel() const {return nullptr;}
+    virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
     virtual GroupInformationModelCP _ToGroupInformationModel() const {return nullptr;}
@@ -464,6 +471,9 @@ public:
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
 
+    //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
+    DgnElementId GetModeledElementId() const {return m_modeledElementId;}
+
     //! Get the label of this DgnModel.
     //! @note may be nullptr
     Utf8CP GetUserLabel() const { return m_userLabel.c_str(); }
@@ -485,6 +495,7 @@ public:
     GeometricModel2dCP ToGeometricModel2d() const {return _ToGeometricModel2d();} //!< more efficient substitute for dynamic_cast<GeometricModel2dCP>(model)
     GeometricModel3dCP ToGeometricModel3d() const {return _ToGeometricModel3d();} //!< more efficient substitute for dynamic_cast<GeometricModel3dCP>(model)
     SpatialModelCP ToSpatialModel() const {return _ToSpatialModel();} //!< more efficient substitute for dynamic_cast<SpatialModelCP>(model)
+    PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
     GroupInformationModelCP ToGroupInformationModel() const {return _ToGroupInformationModel();} //!< more efficient substitute for dynamic_cast<GroupInformationModelCP>(model)
@@ -494,12 +505,14 @@ public:
     GeometricModel2dP ToGeometricModel2dP() {return const_cast<GeometricModel2dP>(_ToGeometricModel2d());} //!< more efficient substitute for dynamic_cast<GeometricModel2dP>(model)
     GeometricModel3dP ToGeometricModel3dP() {return const_cast<GeometricModel3dP>(_ToGeometricModel3d());} //!< more efficient substitute for dynamic_cast<GeometricModel3dP>(model)
     SpatialModelP ToSpatialModelP() {return const_cast<SpatialModelP>(_ToSpatialModel());} //!< more efficient substitute for dynamic_cast<SpatialModelP>(model)
+    PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
     GroupInformationModelP ToGroupInformationModelP() {return const_cast<GroupInformationModelP>(_ToGroupInformationModel());}//!< more efficient substitute for dynamic_cast<GroupInformationModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
     bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
+    bool IsPhysicalModel() const { return nullptr != ToPhysicalModel(); }
     bool Is2dModel() const { return nullptr != ToGeometricModel2d(); }
     bool Is3dModel() const { return nullptr != ToGeometricModel3d(); }
     bool IsInformationModel() const { return nullptr != ToInformationModel(); }
@@ -642,6 +655,9 @@ public:
     //! Creates a DgnCode for a model with the given name, associated with the default DgnAuthority for models.
     static DgnCode CreateModelCode(Utf8StringCR modelName, Utf8StringCR nameSpace="") { return ModelAuthority::CreateModelCode(modelName, nameSpace); }
 
+    //! Creates a DgnCode for a model with the given code value and a namespace derived from the modeled element.
+    static DgnCode CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId) { return ModelAuthority::CreateModelCode(codeValue, modeledElementId); }
+
     //! Disclose any locks which must be acquired and/or codes which must be reserved in order to perform the specified operation on this model.
     //! @param[in]      request  Request to populate
     //! @param[in]      opcode   The operation to be performed
@@ -763,12 +779,13 @@ public:
         //! Parameters to create a new instance of a GeometricModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
+        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The DgnCode for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo The DisplayInfo for the new DgnModel.
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
-            : T_Super(dgndb, classId, code, label, inGuiList), m_displayInfo(displayInfo)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, code, label, inGuiList), m_displayInfo(displayInfo)
             {}
 
         //! @private
@@ -861,8 +878,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricModel3d : GeometricModel
 protected:
     virtual GeometricModel3dCP _ToGeometricModel3d() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
-
-public:
     explicit GeometricModel3d(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -873,14 +888,12 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel2d : GeometricModel
 {
-    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel);
+    DEFINE_T_SUPER(GeometricModel);
 
 protected:
     GeometricModel2dCP _ToGeometricModel2d() const override final {return this;}
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::Local;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
-
-public:
     explicit GeometricModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params) {}
 };
 
@@ -907,12 +920,30 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE SpatialModel : GeometricModel3d
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, GeometricModel3d);
+    friend struct dgn_ModelHandler::Spatial;
+
 protected:
     SpatialModelCP _ToSpatialModel() const override final {return this;}
     CoordinateSpace _GetCoordinateSpace() const override final {return CoordinateSpace::World;}
+    explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnModel
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalModel : SpatialModel
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_PhysicalModel, SpatialModel);
+    friend struct dgn_ModelHandler::Physical;
+
+protected:
+    PhysicalModelCP _ToPhysicalModel() const override final {return this;}
+    explicit PhysicalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    explicit SpatialModel(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT static PhysicalModelPtr Create(DgnElementCR modeledElement, DgnCodeCR code);
+    DGNPLATFORM_EXPORT static PhysicalModelPtr CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code);
 };
 
 //=======================================================================================
@@ -1357,12 +1388,12 @@ public:
 // @bsiclass                                                    Shaun.Sewall    02/16
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingModel : GraphicalModel2d
-    {
-    DEFINE_T_SUPER(GraphicalModel2d);
+{
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, GraphicalModel2d);
 
-    public:
-        explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
-    };
+public:
+    explicit DrawingModel(CreateParams const& params) : T_Super(params) {}
+};
 
 //=======================================================================================
 //! A SectionDrawingModel is an infinite planar model that subdivides physical space into two halves.
@@ -1413,13 +1444,14 @@ public:
         //! Parameters for creating a new SheetModel.
         //! @param[in] dgndb the DgnDb into which the SheetModel will be created
         //! @param[in] classId the DgnClassId of thew new SheetModel (must be or derive from SheetModel)
+        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code the code of the new SheetModel
         //! @param[in] size the size of the SheetModel, in meters.
         //! @param[in] label Label of the new DgnModel
         //! @param[in] displayInfo the Properties of the new SheetModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnCode code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
-            T_Super(dgndb, classId, code, label, displayInfo, inGuiList), m_size(size)
+        CreateParams(DgnDbR dgndb, DgnClassId classId, DgnElementId modeledElementId, DgnCode code, DPoint2d size, Utf8CP label = nullptr, DisplayInfo displayInfo = DisplayInfo(), bool inGuiList = true) :
+            T_Super(dgndb, classId, modeledElementId, code, label, displayInfo, inGuiList), m_size(size)
             {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
@@ -1497,16 +1529,22 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
-    //! The ModelHandler for Geometric2d
-    struct EXPORT_VTABLE_ATTRIBUTE Geometric2d : Model
+    //! The ModelHandler for Drawing
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_GeometricModel2d, GeometricModel2d, Geometric2d, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingModel, DrawingModel, Drawing, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SpatialModel
     struct EXPORT_VTABLE_ATTRIBUTE Spatial : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SpatialModel, SpatialModel, Spatial, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for PhysicalModel
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Spatial
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalModel, PhysicalModel, Physical, Spatial, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for ComponentModel
@@ -1516,15 +1554,15 @@ namespace dgn_ModelHandler
     };
 
     //! The ModelHandler for SectionDrawingModel
-    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Geometric2d
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : Drawing
     {
-        MODELHANDLER_DECLARE_MEMBERS (BIS_CLASS_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Geometric2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS (BIS_CLASS_SectionDrawingModel, SectionDrawingModel, SectionDrawing, Drawing, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for SheetModel
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Geometric2d
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, SheetModel, Sheet, Geometric2d, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
     protected:
         DGNPLATFORM_EXPORT virtual void _GetClassParams(ECSqlClassParamsR params) override;
     };

@@ -33,7 +33,6 @@ protected:
     void OpenDgnDb();
     void CloseDgnDb();
         
-    DgnModelId InsertSpatialModel(Utf8CP modelName);
     DgnCategoryId InsertCategory(Utf8CP categoryName);
     DgnAuthorityId InsertNamespaceAuthority(Utf8CP authorityName);
     DgnElementId InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z);

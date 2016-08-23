@@ -161,7 +161,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace FROM " BIS_TABLE(BIS_CLASS_Model);
+        Utf8String sqlString = "SELECT Id,CodeValue,UserLabel,Visibility,ECClassId,CodeAuthorityId,CodeNamespace,ModeledElementId FROM " BIS_TABLE(BIS_CLASS_Model);
         bool hasWhere = false;
         if (ModelIterate::Gui == m_itType)
             {
@@ -189,6 +189,7 @@ bool            DgnModels::Iterator::Entry::GetInGuiList() const { Verify(); ret
 DgnClassId      DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(4);}
 Utf8CP          DgnModels::Iterator::Entry::GetCodeNamespace() const {Verify(); return m_sql->GetValueText(5);}
 DgnAuthorityId  DgnModels::Iterator::Entry::GetCodeAuthorityId() const {Verify(); return m_sql->GetValueId<DgnAuthorityId>(6);}
+DgnElementId    DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(7);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -227,7 +228,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_userLabel(params.m_userLabel),
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_code(params.m_code), m_inGuiList(params.m_inGuiList), m_userLabel(params.m_userLabel),
     m_dependencyIndex(-1), m_persistent(false), m_filled(false)
     {
     }
@@ -350,6 +351,45 @@ DgnDbStatus GeometricModel3d::_OnInsertElement(DgnElementR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::Create(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    DgnDbR db = modeledElement.GetDgnDb();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
+    if (!model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return model->ToPhysicalModelP();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalModelPtr PhysicalModel::CreateAndInsert(DgnElementCR modeledElement, DgnCodeCR code)
+    {
+    PhysicalModelPtr model = Create(modeledElement, code);
+    if (!model.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
@@ -386,7 +426,7 @@ GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const&
     {
     ModelHandlerR handler = dgn_ModelHandler::GroupInformation::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modelCode));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, modelCode));
 
     return dynamic_cast<GroupInformationModelP>(model.get());
     }
@@ -1080,7 +1120,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetCode(), model.GetUserLabel(), model.GetInGuiList());
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetModeledElementId(), model.GetCode(), model.GetUserLabel(), model.GetInGuiList());
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -1389,6 +1429,9 @@ void SheetModel::_InitFrom(DgnModelCR other)
 void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     {
     m_classId = importer.RemapClassId(m_classId);
+#if 0 // WIP: need something like...
+    m_modeledElementId = importer.RemapXxx(m_modeledElementId); 
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -1417,7 +1460,7 @@ static void LogPerformance(StopWatch& stopWatch, Utf8CP description, ...)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
     {
-    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetCode());
+    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModeledElementId(), GetCode());
     if (importer.IsBetweenDbs())
         {
         // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
@@ -1436,7 +1479,7 @@ DgnModelPtr DgnModel::Clone(DgnCode newCode) const
     if (GetModelHandler()._IsRestrictedAction(RestrictedAction::Clone))
         return nullptr;
 
-    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newCode));
+    DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, m_modeledElementId, newCode)); // WIP: Is this even valid?  Do we have to clone the modeled element?
     newModel->_InitFrom(*this);
     return newModel;
     }

@@ -519,6 +519,14 @@ DgnCode ModelAuthority::CreateModelCode(Utf8StringCR modelName, Utf8StringCR nam
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ModelAuthority::CreateModelCode(Utf8StringCR codeValue, DgnElementId modeledElementId)
+    {
+    return SystemAuthority::CreateCode(SystemAuthority::Model, codeValue, modeledElementId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode ComponentAuthority::CreateVariationCode(Utf8StringCR slnId, Utf8StringCR name)

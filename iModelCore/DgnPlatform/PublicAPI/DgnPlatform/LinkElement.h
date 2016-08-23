@@ -19,6 +19,7 @@
 #define BIS_CLASS_LinkModel             "LinkModel"
 #define BIS_CLASS_UrlLink               "UrlLink"
 #define BIS_CLASS_EmbeddedFileLink      "EmbeddedFileLink"
+#define BIS_CLASS_RepositoryLink        "RepositoryLink"
 #define BIS_REL_ElementsHaveLinks       "ElementsHaveLinks"
 
 #define LINK_ECSQL_PREFIX "link"
@@ -26,7 +27,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler { struct UrlLinkHandler; struct EmbeddedFileLinkHandler; }
+namespace dgn_ElementHandler { struct UrlLinkHandler; struct RepositoryLinkHandler; struct EmbeddedFileLinkHandler; }
 
 //=======================================================================================
 //! A model which contains only links - LinkElement-s and classes derived from it.
@@ -43,8 +44,8 @@ public:
     DEFINE_T_SUPER(Dgn::InformationModel::CreateParams);
 
     protected:
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true)
-            : T_Super(dgndb, classId, code, label, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, DgnElementId modeledElementId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, code, label, inGuiList)
             {}
 
     public:
@@ -54,11 +55,12 @@ public:
 
         //! Parameters to create a new instance of a LinkModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
+        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The Code for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
-            T_Super(dgndb, LinkModel::QueryClassId(dgndb), code, label, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, DgnElementId modeledElementId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
+            T_Super(dgndb, LinkModel::QueryClassId(dgndb), modeledElementId, code, label, inGuiList)
             {}
     };
 
@@ -381,6 +383,18 @@ public:
 };
 
 //=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RepositoryLink : UrlLink
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_RepositoryLink, UrlLink)
+    friend struct dgn_ElementHandler::RepositoryLinkHandler;
+
+protected:
+    explicit RepositoryLink(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! An element containing a link to an file embedded in the Db.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
@@ -468,30 +482,32 @@ public:
 
 namespace dgn_ModelHandler
 {
-
-//! The ModelHandler for LinkModel
-struct EXPORT_VTABLE_ATTRIBUTE Link : Model
-{
-    MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkModel, LinkModel, Link, Model, DGNPLATFORM_EXPORT)
-};
-
+    //! The ModelHandler for LinkModel
+    struct EXPORT_VTABLE_ATTRIBUTE Link : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkModel, LinkModel, Link, Model, DGNPLATFORM_EXPORT)
+    };
 }
 
 namespace dgn_ElementHandler
 {
-//! The handler for UrlLink elements
-struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Information
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, Information, DGNPLATFORM_EXPORT)
-};
+    //! The handler for UrlLink elements
+    struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Information
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, Information, DGNPLATFORM_EXPORT)
+    };
 
-//! The handler for EmbeddedFileLink elements
-struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Information
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Information, DGNPLATFORM_EXPORT)
-};
+    //! The handler for EmbeddedFileLink elements
+    struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Information
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Information, DGNPLATFORM_EXPORT)
+    };
 
+    //! The handler for RepositoryLink elements
+    struct EXPORT_VTABLE_ATTRIBUTE RepositoryLinkHandler : UrlLinkHandler
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryLink, RepositoryLink, RepositoryLinkHandler, UrlLinkHandler, DGNPLATFORM_EXPORT)
+    };
 }
 
 END_BENTLEY_DGN_NAMESPACE
-

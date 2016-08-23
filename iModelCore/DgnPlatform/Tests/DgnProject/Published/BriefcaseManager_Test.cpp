@@ -1128,8 +1128,13 @@ struct LocksManagerTest : RepositoryManagerTest
 
     DgnModelPtr CreateModel(Utf8CP name, DgnDbR db)
         {
-        DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-        SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, classId, DgnModel::CreateModelCode(name)));
+        SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+        SubjectPtr modelSubject = Subject::Create(*rootSubject, name); // create a placeholder Subject for the DgnModel to describe
+        EXPECT_TRUE(modelSubject.IsValid());
+        EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().AcquireForElementInsert(*modelSubject));
+        EXPECT_TRUE(db.Elements().Insert<Subject>(*modelSubject).IsValid());
+        PhysicalModelPtr model = PhysicalModel::Create(*modelSubject, DgnModel::CreateModelCode(name));
+        EXPECT_TRUE(model.IsValid());
         IBriefcaseManager::Request req;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForModelInsert(req, *model, IBriefcaseManager::PrepareAction::Acquire));
         auto status = model->Insert();
@@ -2207,22 +2212,23 @@ TEST_F(ExtractLocksTest, UsedLocks)
     DgnElementCPtr newElem = CreateElement(*newModel);
 
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(3, req.Size());
+    EXPECT_EQ(5, req.Size());
     EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
     EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newElem)));
     EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
+    // Should also have locks for the RepositoryModel + Subject for newModel
 
     // Delete the new element
     EXPECT_EQ(DgnDbStatus::Success, newElem->Delete());
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_EQ(2, req.Size());
+    EXPECT_EQ(4, req.Size());
     EXPECT_EQ(LockLevel::Exclusive, req.GetLockLevel(LockableId(*newModel)));
     EXPECT_EQ(LockLevel::Shared, req.GetLockLevel(LockableId(db)));
 
     // Delete the new model
     EXPECT_EQ(DgnDbStatus::Success, newModel->Delete());
     EXPECT_EQ(DgnDbStatus::Success, ExtractLocks(req));
-    EXPECT_TRUE(req.IsEmpty());
+    EXPECT_EQ(3, req.Size());
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -224,17 +224,6 @@ struct DgnScriptTest_DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptN
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus createSpatialModel(SpatialModelPtr& catalogModel, DgnDbR db, DgnCode const& code)
-    {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, code));
-    catalogModel->SetInGuiList(false);
-    return catalogModel->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnScriptTest, RunScripts)
@@ -254,11 +243,16 @@ TEST_F(DgnScriptTest, RunScripts)
 
     DgnModelPtr model = project->Models().GetModel(project->Models().QueryFirstModelId());
     model->FillModel();
-    SpatialModelPtr newmodel;
-    ASSERT_EQ(DgnDbStatus::Success, createSpatialModel(newmodel, *project, DgnModel::CreateModelCode("DgnScriptTest.RunScripts")));
+
+    SubjectCPtr rootSubject = project->Elements().GetRootSubject();
+    SubjectCPtr newModelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(newModelSubject.IsValid());
+    PhysicalModelPtr newModel = PhysicalModel::CreateAndInsert(*newModelSubject, DgnModel::CreateModelCode(TEST_NAME));
+    ASSERT_TRUE(newModel.IsValid());
+
     Json::Value parms = Json::objectValue;
     parms["modelName"] = model->GetCode().GetValueCP();
-    parms["newModelName"] = newmodel->GetCode().GetValueCP();
+    parms["newModelName"] = newModel->GetCode().GetValueCP();
     parms["categoryName"] = DgnCategory::QueryCategory(getFirstCategory(*project), *project)->GetCategoryName();
     project->SaveChanges(); // digest other schema imports ??!!
     int retstatus = 0;

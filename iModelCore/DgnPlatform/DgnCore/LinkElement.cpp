@@ -27,6 +27,7 @@ namespace dgn_ModelHandler
 namespace dgn_ElementHandler
 {
     HANDLER_DEFINE_MEMBERS(UrlLinkHandler)
+    HANDLER_DEFINE_MEMBERS(RepositoryLinkHandler)
     HANDLER_DEFINE_MEMBERS(EmbeddedFileLinkHandler)
 };
 

@@ -196,14 +196,15 @@ static void importBisCoreSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& modelCode)
+static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnElementId modeledElementId, DgnCode const& modelCode)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,CodeValue,UserLabel,ECClassId,Visibility,CodeAuthorityId,CodeNamespace) VALUES(?,?,'',?,0,?,?)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Visibility) VALUES(?,?,?,?,?,?,'',0)");
     stmt.BindId(1, modelId);
-    stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
-    stmt.BindId(3, classId);
+    stmt.BindId(2, classId);
+    stmt.BindId(3, modeledElementId);
     stmt.BindId(4, modelCode.GetAuthority());
     stmt.BindText(5, modelCode.GetNamespace().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(6, modelCode.GetValueCP(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -218,7 +219,7 @@ DbResult DgnDb::CreateDictionaryModel()
     DgnModelId modelId = DgnModel::DictionaryId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
     DgnCode modelCode = DgnModel::CreateModelCode("Dictionary", BIS_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,24 +230,66 @@ DbResult DgnDb::CreateGroupInformationModel()
     DgnModelId modelId = DgnModel::GroupInformationId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::GroupInformation::GetHandler());
     DgnCode modelCode = DgnModel::CreateModelCode("GroupInformation", BIS_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/16
+* @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRepositoryModel()
     {
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Repository::GetHandler());
     DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_RepositoryModel, BIS_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult insertIntoDgnElement(DgnDbR db, DgnElementId elementId, DgnClassId classId, DgnModelId modelId, DgnCode const& elementCode, Utf8CP label)
+    {
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Element) " (Id,ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?,?)");
+    stmt.BindId(1, elementId);
+    stmt.BindId(2, classId);
+    stmt.BindId(3, modelId);
+    stmt.BindId(4, elementCode.GetAuthority());
+    stmt.BindText(5, elementCode.GetNamespace().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(6, elementCode.GetValueCP(), Statement::MakeCopy::No);
+    stmt.BindText(7, label, Statement::MakeCopy::No);
+    DbResult result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
+    {
+    DgnElementId elementId = Elements().GetRootSubjectId();
+    DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    DgnCode elementCode(DgnAuthorityId((uint64_t)1LL), "Root", BIS_CLASS_Subject);
+    return insertIntoDgnElement(*this, elementId, classId, modelId, elementCode, params.m_name.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRepositoryLink(CreateDgnDbParams const& params)
+    {
+    DgnElementId elementId = Elements().GetRepositoryLinkId();
+    DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    DgnCode elementCode(DgnAuthorityId((uint64_t)1LL), "RootSubject", BIS_CLASS_RepositoryLink);
+    return insertIntoDgnElement(*this, elementId, classId, modelId, elementCode, params.m_name.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateDgnDbTables()
+DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     {
     CreateTable(DGN_TABLE_Domain,   "[Name] TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY,"
                                     "[Descr] TEXT,"
@@ -275,7 +318,11 @@ DbResult DgnDb::CreateDgnDbTables()
     CreateAuthorities();
 
     // Every DgnDb has a RepositoryModel, a DictionaryModel, and a default GroupInformationModel
+    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and primary Subject have foreign keys to each other
     CreateRepositoryModel();
+    CreateRootSubject(params);
+    ExecuteSql("PRAGMA defer_foreign_keys = false;");
+    CreateRepositoryLink(params);
     CreateDictionaryModel();
     CreateGroupInformationModel();
 
@@ -335,13 +382,6 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 
     SaveDgnDbSchemaVersion();
     SaveCreationDate();
-
-    SubjectPtr subject = Subject::Create(*this, params.m_name.c_str(), params.m_description.c_str());
-    if (!subject.IsValid() || !subject->Insert().IsValid())
-        {
-        BeAssert(false);
-        return BE_SQLITE_ERROR;
-        }
 
     Domains().OnDbOpened();
 

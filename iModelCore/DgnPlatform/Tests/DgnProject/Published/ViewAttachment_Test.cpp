@@ -90,7 +90,7 @@ void ViewAttachmentTest::SetUp()
     // Set up a sheet to hold attachments
     auto& db = *GetDgnDb();
     DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
-    SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
+    SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
     ASSERT_EQ(DgnDbStatus::Success, sheet->Insert());
     m_sheetId = sheet->GetModelId();
 
@@ -102,7 +102,7 @@ void ViewAttachmentTest::SetUp()
 
     // Set up a viewed model
     classId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionDrawingModel));
-    RefCountedPtr<SectionDrawingModel> drawing = new SectionDrawingModel(SectionDrawingModel::CreateParams(db, classId, DgnModel::CreateModelCode("MyDrawing")));
+    RefCountedPtr<SectionDrawingModel> drawing = new SectionDrawingModel(SectionDrawingModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MyDrawing")));
     ASSERT_EQ(DgnDbStatus::Success, drawing->Insert());
     m_drawingId = drawing->GetModelId();
 

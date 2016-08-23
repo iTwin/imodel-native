@@ -24,7 +24,11 @@ protected:
 //---------------------------------------------------------------------------------------
 LinkModelPtr LinkElementTest::InsertLinkModel(DgnDbR dgndb, Utf8CP modelName)
     {
-    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, DgnModel::CreateModelCode(modelName)));
+    SubjectCPtr rootSubject = dgndb.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelName); // create a placeholder Subject for the DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    LinkModelPtr model = new LinkModel(LinkModel::CreateParams(dgndb, modelSubject->GetElementId(), DgnModel::CreateModelCode(modelName)));
+    EXPECT_TRUE(model.IsValid());
     return (DgnDbStatus::Success != model->Insert()) ? nullptr : model;
     }
 

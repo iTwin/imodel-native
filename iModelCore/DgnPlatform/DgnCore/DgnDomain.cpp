@@ -688,7 +688,7 @@ template<> struct HandlerTraits<dgn_ModelHandler::Model>
     typedef DgnModel T_Instantiation;
 
     static DgnDomain::Handler* GetBaseHandler() { return &dgn_ModelHandler::Model::GetHandler(); }
-    static DgnModelPtr CreateInstance(dgn_ModelHandler::Model& handler, DgnDbR db) { return handler.Create(DgnModel::CreateParams(db, DgnClassId(), DgnCode())); }
+    static DgnModelPtr CreateInstance(dgn_ModelHandler::Model& handler, DgnDbR db) { return handler.Create(DgnModel::CreateParams(db, DgnClassId(), DgnElementId(), DgnCode())); }
     static Utf8CP GetECClassName(DgnModelCR model) { return model._GetHandlerECClassName(); }
     static Utf8CP GetSuperECClassName(DgnModelCR model) { return model._GetSuperHandlerECClassName(); }
     static Utf8CP GetCppClassName() { return "DgnModel"; }

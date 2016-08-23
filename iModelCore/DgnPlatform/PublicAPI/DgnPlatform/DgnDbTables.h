@@ -57,6 +57,7 @@
 #define BIS_CLASS_VolumeElement             "VolumeElement"
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
+#define BIS_CLASS_PhysicalModel             "PhysicalModel"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
@@ -298,19 +299,21 @@ public:
     private:
         DgnModelId m_id;
         DgnClassId m_classId;
+        DgnElementId m_modeledElementId;
         DgnCode m_code;
         Utf8String m_userLabel;
         bool m_inGuiList = true;
 
     public:
         Model() {}
-        Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
+        Model(DgnCode code, DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
 
         void SetCode(DgnCode code) {m_code = code;}
         void SetUserLabel(Utf8CP userLabel) {m_userLabel.AssignOrClear(userLabel);}
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
+        void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnCode const& GetCode() const {return m_code;}
@@ -318,6 +321,7 @@ public:
         bool GetInGuiList() const {return m_inGuiList;}
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
+        DgnElementId GetModeledElementId() const {return m_modeledElementId;}
     }; // Model
 
     struct Iterator : BeSQLite::DbTableIterator
@@ -342,6 +346,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
+            DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
 
             Entry const& operator*() const {return *this;}
         };

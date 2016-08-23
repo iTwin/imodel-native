@@ -59,7 +59,7 @@ protected:
     explicit FunctionalModel(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static FunctionalModelPtr Create(DgnDbR db, DgnCode const& code = DgnCode());
+    DGNPLATFORM_EXPORT static FunctionalModelPtr Create(DgnElementCR modeledElement);
 };
 
 //=======================================================================================

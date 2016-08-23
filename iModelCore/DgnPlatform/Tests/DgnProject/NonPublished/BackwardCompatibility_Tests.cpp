@@ -66,8 +66,7 @@ StatusInt BackwardsCompatibilityTests::CreateArbitraryElement(DgnElementPtr& out
 //+---------------+---------------+---------------+---------------+---------------+------
 CompatibilityStatus BackwardsCompatibilityTests::insertTestElement()
     {
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("newModel")));
+    PhysicalModelPtr model = PhysicalModel::Create(*m_db->Elements().GetRootSubject(), DgnModel::CreateModelCode("newModel"));
     if (DgnDbStatus::Success != model->Insert()) /* Insert the new model into the DgnDb */
         return CompatibilityStatus::ERROR_ModelInsertFailed;
 

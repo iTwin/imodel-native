@@ -68,8 +68,12 @@ void ChangeTestFixture::_CreateDgnDb()
 
     TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
 
-    m_testModelId = InsertSpatialModel("TestModel");
-    ASSERT_TRUE(m_testModelId.IsValid());
+    SubjectCPtr rootSubject = m_testDb->Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, "TestSubject"); // create a placeholder Subject for the DgnModel to describe
+    ASSERT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode("TestModel"));
+    ASSERT_TRUE(model.IsValid());
+    m_testModelId = model->GetModelId();
 
     m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
@@ -128,21 +132,6 @@ void ChangeTestFixture::CloseDgnDb()
     m_testDb = nullptr;
     m_testModel = nullptr;
     m_testAuthority = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-DgnModelId ChangeTestFixture::InsertSpatialModel(Utf8CP modelName)
-    {
-    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
-    DgnClassId classId = m_testDb->Domains().GetClassId(handler);
-    DgnModelPtr testModel = handler.Create(DgnModel::CreateParams(*m_testDb, classId, DgnModel::CreateModelCode(modelName)));
-
-    DgnDbStatus status = testModel->Insert();
-    BeAssert(status == DgnDbStatus::Success);
-
-    return testModel->GetModelId();
     }
 
 //---------------------------------------------------------------------------------------

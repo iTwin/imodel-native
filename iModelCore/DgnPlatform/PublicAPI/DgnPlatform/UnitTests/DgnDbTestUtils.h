@@ -119,8 +119,8 @@ public:
     //! @name Populating a DgnDb
     //! @{
 
-    //! Insert a SpatialModel 
-    static SpatialModelPtr InsertSpatialModel(DgnDbR, DgnCode modelCode);
+    //! Insert a PhysicalModel 
+    static PhysicalModelPtr InsertPhysicalModel(DgnDbR, DgnCodeCR modelCode);
     //! Create a Camera view of the specified SpatialModel 
     static DgnViewId InsertCameraView(SpatialModelR, Utf8CP viewName = nullptr);
     static void FitView(DgnDbR db, DgnViewId viewId);

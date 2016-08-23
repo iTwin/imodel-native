@@ -95,7 +95,8 @@ DgnDbTestUtils::SeedDbInfo DgnDbTestUtils::GetOneSpatialModelSeedDb(SeedDbOption
 
     //  First request for this seed file. Create it.
     DgnDbPtr db = CreateDgnDb(info.fileName, true, true);
-    SpatialModelPtr model = InsertSpatialModel(*db, info.modelCode);
+    PhysicalModelPtr model = InsertPhysicalModel(*db, info.modelCode);
+    EXPECT_TRUE(model.IsValid());
     InsertCategory(*db, info.categoryName.c_str());
     
     if (info.options.cameraView)
@@ -303,15 +304,16 @@ DgnDbPtr DgnDbTestUtils::OpenSeedDbCopy(WCharCP relSeedPathIn, WCharCP newName)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialModelPtr DgnDbTestUtils::InsertSpatialModel(DgnDbR db, DgnCode modelCode)
+PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelCode)
     {
     MUST_HAVE_HOST(nullptr);
 
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialModel));
-    SpatialModelPtr catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, modelCode));
-    DgnDbStatus status = catalogModel->Insert();
-    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
-    return catalogModel;
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelCode.GetValueCP()); // create a placeholder Subject for this DgnModel to describe
+    EXPECT_TRUE(modelSubject.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, modelCode);
+    EXPECT_TRUE(model.IsValid());
+    return model;
     }
 
 //---------------------------------------------------------------------------------------

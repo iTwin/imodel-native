@@ -2072,8 +2072,12 @@ protected:
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
 public:
-    //! Creates a new Subject element in the RepositoryModel
-    DGNPLATFORM_EXPORT static SubjectPtr Create(DgnDbR db, Utf8CP label, Utf8CP description=nullptr);
+    //! Creates a new child Subject of the specified parent Subject
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SubjectPtr Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+    //! Creates a new child Subject of the specified parent Subject
+    //! @see DgnElements::GetRootSubject
+    DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
 };
 
 //=======================================================================================
@@ -2280,6 +2284,14 @@ public:
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
     template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
+
+    //! Return the DgnElementId for the root Subject
+    DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
+    //! Return the root Subject
+    SubjectCPtr GetRootSubject() const {return Get<Subject>(GetRootSubjectId());}
+
+    //! Get the RepositoryLink for @b this DgnDb
+    DgnElementId GetRepositoryLinkId() const {return DgnElementId((uint64_t)16LL);}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.

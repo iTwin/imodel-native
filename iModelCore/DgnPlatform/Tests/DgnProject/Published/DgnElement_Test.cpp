@@ -1221,8 +1221,8 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
     EXPECT_TRUE(categoryId.IsValid());
 
-    SpatialModelPtr modelA = DgnDbTestUtils::InsertSpatialModel(*m_db, DgnModel::CreateModelCode("modelA"));
-    SpatialModelPtr modelB = DgnDbTestUtils::InsertSpatialModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    SpatialModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    SpatialModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
     EXPECT_TRUE(modelA.IsValid());
     EXPECT_TRUE(modelB.IsValid());
 

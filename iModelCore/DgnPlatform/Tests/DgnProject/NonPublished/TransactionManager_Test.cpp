@@ -265,12 +265,10 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void testModelUndoRedo(DgnDbR db)
     {
-    Utf8String name = db.Models().GetUniqueModelName("TestSpatial");
+    Utf8String name = db.Models().GetUniqueModelName("TestPhysical");
 
-    ModelHandlerR handler = dgn_ModelHandler::Spatial::GetHandler();
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), DgnModel::CreateModelCode(name)));
-    auto modelStatus = model->Insert();
-    ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*db.Elements().GetRootSubject(), DgnModel::CreateModelCode(name));
+    ASSERT_TRUE(model.IsValid());
 
     auto category = DgnCategory::QueryFirstCategoryId(db);
 
@@ -302,7 +300,7 @@ static void testModelUndoRedo(DgnDbR db)
     el1 = db.Elements().GetElement(el1->GetElementId());
     el2 = db.Elements().GetElement(el2->GetElementId());
     el3 = db.Elements().GetElement(el3->GetElementId());
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(el1->IsPersistent());
     ASSERT_TRUE(el2->IsPersistent());
     ASSERT_TRUE(el3->IsPersistent());
@@ -320,7 +318,7 @@ static void testModelUndoRedo(DgnDbR db)
     el1 = db.Elements().GetElement(el1->GetElementId());
     el2 = db.Elements().GetElement(el2->GetElementId());
     el3 = db.Elements().GetElement(el3->GetElementId());
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(el1->IsPersistent());
     ASSERT_TRUE(el2->IsPersistent());
     ASSERT_TRUE(el3->IsPersistent());
@@ -335,7 +333,7 @@ static void testModelUndoRedo(DgnDbR db)
 
     stat = txns.ReverseSingleTxn(); // undo delete
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(model->IsPersistent());
 
     auto& displayInfo = model->ToGeometricModelP()->GetDisplayInfoR();
