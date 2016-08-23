@@ -300,7 +300,7 @@ static void testModelUndoRedo(DgnDbR db)
     el1 = db.Elements().GetElement(el1->GetElementId());
     el2 = db.Elements().GetElement(el2->GetElementId());
     el3 = db.Elements().GetElement(el3->GetElementId());
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(el1->IsPersistent());
     ASSERT_TRUE(el2->IsPersistent());
     ASSERT_TRUE(el3->IsPersistent());
@@ -318,7 +318,7 @@ static void testModelUndoRedo(DgnDbR db)
     el1 = db.Elements().GetElement(el1->GetElementId());
     el2 = db.Elements().GetElement(el2->GetElementId());
     el3 = db.Elements().GetElement(el3->GetElementId());
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(el1->IsPersistent());
     ASSERT_TRUE(el2->IsPersistent());
     ASSERT_TRUE(el3->IsPersistent());
@@ -333,7 +333,7 @@ static void testModelUndoRedo(DgnDbR db)
 
     stat = txns.ReverseSingleTxn(); // undo delete
     ASSERT_TRUE(DgnDbStatus::Success == stat);
-    model = db.Models().GetModel(model->GetModelId());
+    model = db.Models().GetModel(model->GetModelId())->ToPhysicalModelP();
     ASSERT_TRUE(model->IsPersistent());
 
     auto& displayInfo = model->ToGeometricModelP()->GetDisplayInfoR();
