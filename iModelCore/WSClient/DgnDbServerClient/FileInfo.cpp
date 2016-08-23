@@ -14,15 +14,25 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileInfo::FileInfo()
+FileInfo::FileInfo() : m_areFileDetailsAvailable(false)
     {
     m_index = -1;
+    m_fileSize = 0;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(description)
+FileInfo::FileInfo(BeGuid fileId) : m_fileId(fileId), m_areFileDetailsAvailable(false)
+    {
+    m_index = -1;
+    m_fileSize = 0;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(description), m_areFileDetailsAvailable(false)
     {
     BeFileName fileName = db.GetFileName();
     BeStringUtilities::WCharToUtf8(m_fileName, BeFileName::GetFileNameAndExtension(fileName).c_str());
@@ -38,7 +48,7 @@ FileInfo::FileInfo(Dgn::DgnDbCR db, Utf8StringCR description) : m_description(de
 FileInfo::FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
                    Utf8StringCR description, Utf8StringCR url, uint64_t size, Utf8StringCR user, DateTimeCR date) :
     m_index(index), m_fileName(fileName), m_mergedRevisionId(mergedRevisionId), m_description(description),
-    m_fileUrl(url), m_fileSize(size), m_userUploaded(user), m_uploadedDate(date)
+    m_fileUrl(url), m_fileSize(size), m_userUploaded(user), m_uploadedDate(date), m_areFileDetailsAvailable(false)
     {
     m_fileId.FromString(fileId.c_str());
     }
@@ -154,8 +164,17 @@ FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
     if (!url.empty())
         info->m_fileUrl = url;
 
-    if (properties[ServerSchema::Property::FileSize].isUInt())
-        info->m_fileSize = properties[ServerSchema::Property::FileSize].asUInt64();
+    Utf8String sizeString = properties[ServerSchema::Property::FileSize].asString();
+    if (!sizeString.empty())
+        {
+        uint64_t size;
+        BeStringUtilities::ParseUInt64(size, sizeString.c_str());
+        if (size > 0)
+            {
+            info->m_fileSize = size;
+            info->m_areFileDetailsAvailable = true;
+            }
+        }
 
     Utf8String userUploaded = properties[ServerSchema::Property::UserUploaded].asString();
     if (!userUploaded.empty())
@@ -176,10 +195,13 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
     if (0 <= GetIndex())
         json[ServerSchema::Property::Index] = GetIndex();
     json[ServerSchema::Property::FileId] = GetFileId().ToString();
-    json[ServerSchema::Property::FileDescription] = GetDescription();
-    json[ServerSchema::Property::FileName] = GetFileName();
-    json[ServerSchema::Property::FileSize] = GetSize();
     json[ServerSchema::Property::MergedRevisionId] = GetMergedRevisionId();
+    if (m_description.size() > 0)
+        json[ServerSchema::Property::FileDescription] = m_description;
+    if (m_fileName.size() > 0)
+        json[ServerSchema::Property::FileName] = GetFileName();
+    if (m_fileSize > 0)
+        json[ServerSchema::Property::FileSize] = GetSize();
     }
 
 //---------------------------------------------------------------------------------------
@@ -191,4 +213,12 @@ WebServices::ObjectId FileInfo::GetObjectId() const
     if (-1 != GetIndex())
         index.Sprintf("%d", GetIndex());
     return WebServices::ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::File, index);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+bool FileInfo::AreFileDetailsAvailable() const
+    {
+    return m_areFileDetailsAvailable;
     }
