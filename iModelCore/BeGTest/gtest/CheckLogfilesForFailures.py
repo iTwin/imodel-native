@@ -22,7 +22,7 @@ def checkLogFileForFailures(logfilename):
     foundSummary = False
     failedTestsList = ""
     lastTestRun = ""
-    comma = ''
+    colon = ''
     anyFailures = False
     lineNo = 0
     summarystr = logfilename + '\n'
@@ -56,7 +56,8 @@ def checkLogFileForFailures(logfilename):
 
                 failed = failedpat.search(line)
                 if failed != None:
-                    failedTestsList = failedTestsList + comma + failed.group(1)
+                    failedTestsList = failedTestsList + colon + failed.group(1)
+                    colon = ':'
                     continue
 
     if not anyFailures and foundSummary:
