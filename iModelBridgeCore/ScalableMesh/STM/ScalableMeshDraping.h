@@ -156,4 +156,5 @@ struct MeshTraversalQueue
 
     };
 
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

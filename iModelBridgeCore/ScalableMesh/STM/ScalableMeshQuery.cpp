@@ -1588,6 +1588,10 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
         pts[0] = m_points[m_faceIndexes[i] - 1];
         pts[1] = m_points[m_faceIndexes[i + 1] - 1];
         pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
+            {
+            if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            }
 
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
             && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param < minParam;
@@ -2438,6 +2442,13 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
     {
     return _GetSkirtMeshes(meshes);
     }
+
+#ifdef WIP_MESH_IMPORT
+bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
+    {
+    return _IntersectRay(pt, ray, retrievedMetadata);
+    }
+#endif
 
 bool IScalableMeshNode::RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const
     {

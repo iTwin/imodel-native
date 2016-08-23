@@ -23,6 +23,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <random>
 #include <queue>
 #include "..\STM\ScalableMesh\ScalableMeshGraph.h"
+#include <json/json.h>
 
 void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
     {
@@ -705,10 +706,9 @@ void ParseNodeInfo(ScalableMesh::IScalableMeshNodePtr& node, bvector<size_t>& pt
     {
 
 
-    bvector<bool> clips;
     ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
     flags->SetLoadGraph(false);
-    ScalableMesh::IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
+    ScalableMesh::IScalableMeshMeshPtr mesh = node->GetMesh(flags);
     size_t ptCount = 0;
     if (mesh.get() == nullptr)
         {
@@ -758,6 +758,42 @@ void RunParseTree(WString& stmFileName)
         std::cout << " AT LEVEL " << i << " WE HAVE " << nPointsAtLevel[i] << " POINTS AND " << nNodesAtLevel[i] << " NODES " << std::endl;
         }
 
+
+    }
+
+void RunIntersectRayMetadata(WString& stmFileName)
+    {
+    StatusInt status;
+    ScalableMesh::IScalableMeshPtr meshP = ScalableMesh::IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+
+
+
+    DPoint3d tmpPoint = DPoint3d::From(19068292.12, 7531835.83, 3000000);
+
+    DVec3d direction = DVec3d::From(0,0,-1);
+    DRay3d ray = DRay3d::FromOriginAndVector(tmpPoint, direction);
+    DPoint3d intersectPoint_l;
+
+    //ScalableMesh::IScalableMeshNodeQueryParamsPtr params = ScalableMesh::IScalableMeshNodeQueryParams::CreateParams();
+    //ScalableMesh::IScalableMeshNodeRayQueryPtr query = meshP->GetNodeQueryInterface();
+    ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = meshP->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
+    ScalableMesh::IScalableMeshMeshQueryParamsPtr params = ScalableMesh::IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(meshP->GetTerrainDepth());
+    bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
+   // params->SetDirection(direction);
+    meshQueryInterface->Query(nodes, NULL, 0, params);
+    Json::Value val;
+    for (auto& node : nodes)
+        {
+        DSegment3d clipped;
+        DRange1d fraction;
+        if (!ray.ClipToRange(node->GetContentExtent(), clipped, fraction)) continue;
+        if (node->IntersectRay(intersectPoint_l, ray, val))
+            {
+            std::cout << val["elementId"].asInt64() << std::endl;
+            return;
+            }
+        }
 
     }
 
@@ -941,7 +977,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
    // RunSelectPointsTest();
     //RunIntersectRay();
     WString stmFileName(argv[1]);
-    RunParseTree(stmFileName);
+   // RunParseTree(stmFileName);
+    RunIntersectRayMetadata(stmFileName);
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;

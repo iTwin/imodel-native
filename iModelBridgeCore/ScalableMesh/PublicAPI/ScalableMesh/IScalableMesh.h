@@ -8,11 +8,13 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley\Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
-#include <ScalableMesh/ScalableMeshDefs.h>
+
 #include <Bentley/RefCounted.h>
+#undef static_assert
 
 #ifndef VANCOUVER_API // HIMMosaic apparently moved into the imagepp namespace in dgndb
 namespace BENTLEY_NAMESPACE_NAME

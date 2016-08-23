@@ -24,6 +24,7 @@
 //#include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HPMPooledVector.h>
 #include "Edits\\ClipUtilities.h"
+#include <json/json.h>
 //#include <QuickVision\qvision.h>
 
 // This define does not work when it is set to 10000 and a dataset of 120000 is used
@@ -2068,6 +2069,42 @@ template <class POINT>bvector<IScalableMeshNodePtr> ScalableMeshNode<POINT>::_Ge
 
     return children;
     }
+
+#ifdef WIP_MESH_IMPORT
+template <class POINT> bool ScalableMeshNode<POINT>::_IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
+    {
+    bvector<IScalableMeshMeshPtr> meshParts;
+    bvector<Utf8String> metadata;
+    bvector<bvector<uint8_t>> tex;
+    ((SMMeshIndexNode<POINT,Extent3dType>*)m_node.GetPtr())->GetMetadata();
+    ((SMMeshIndexNode<POINT,Extent3dType>*)m_node.GetPtr())->GetMeshParts();
+    ((SMMeshIndexNode<POINT,Extent3dType>*)m_node.GetPtr())->GetMeshParts(meshParts, metadata, tex);
+    volatile bool dbg = false;
+
+    for (auto& part : meshParts)
+        {
+        if (part.IsValid())
+            {
+            if(dbg)
+                {
+                WString str = L"e:\\output\\test_mesh.m";
+                part->WriteToFile(str);
+                }
+            if (part->IntersectRay(pt, ray))
+                {
+                size_t id = &part - &meshParts[0];
+                Json::Value val;
+                Json::Reader reader;
+                bool parsingSuccessful = reader.parse(metadata[id], val);
+                if (!parsingSuccessful) continue;
+                retrievedMetadata = val;
+                return true;
+                }
+            }
+        }
+    return false;
+    }
+#endif
 
 template <class POINT> size_t ScalableMeshNode<POINT>::_GetLevel() const
     {

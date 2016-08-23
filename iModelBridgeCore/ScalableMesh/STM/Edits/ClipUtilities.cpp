@@ -874,7 +874,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
-        bool applyClipPoly = metadata[&poly - &polygons[0]].second == 0;
+        bool applyClipPoly = true;//metadata[&poly - &polygons[0]].second == 0;
         if (!applyClipPoly)
             {
             if (metadata[&poly - &polygons[0]].second == 1)
