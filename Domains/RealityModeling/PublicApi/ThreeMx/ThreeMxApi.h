@@ -56,13 +56,12 @@ protected:
     GraphicPtr m_graphic;
 
 public:
-    Geometry(){}
-    Geometry(IGraphicBuilder::TriMeshArgs const&, SceneR);
+    Geometry();
+    THREEMX_EXPORT Geometry(IGraphicBuilder::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(TileTree::DrawArgsR);
     void ClearGraphic() {m_graphic = nullptr;}
-    bool IsCached() const {return m_graphic.IsValid();}
-    bool IsEmpty() const {return m_points.empty(); }
+    bool IsEmpty() const {return m_points.empty();}
 };
 
 /*=================================================================================**//**
@@ -82,7 +81,7 @@ struct SceneInfo
 * A node in the 3mx scene. Each node has a range (from which we store a center/radius) and a "maxScreenDiameter" value.
 *
 * It can optionally have:
-*  1) a Geometry object. If present, it is used to draw this node if the size of the node in pixels is less than maxScreenDiameter. The first few nodes in the scene
+*  1) a list of Geometry objects. If present, these are used to draw this node if the size of the node in pixels is less than maxScreenDiameter. The first few nodes in the scene
 *     are merely present to segregate the scene and do not have Geometry (that is, their maxScreenDiameter is 0, so they are not displayable)
 *  2) a list of child nodes. The child nodes are read from the "child file" whose name, relative to the parent of this node, is stored in the member "m_childPath". When a node
 *     is first created (by its parent), the list of child nodes is empty. Only when/if we determine that the geometry of a node is not fine enough
@@ -91,8 +90,8 @@ struct SceneInfo
 * Multi-threaded loading of children:
 * The loading of children of a node involves reading a file (and potentially downloading from an external reality server). We always do that asynchronously via the RealityCache service on
 * the reality cache thread(s). That means that sometimes we'll attempt to draw a node and discover that it is too coarse for the current view, but its children are not loaded yet. In that
-* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_childLoad". Only when the value
-* of m_childLoad==Ready is it safe to use the m_childNodes member.
+* case we draw the geometry of the parent and queue its children to be loaded. The inter-thread synchronization is via the BeAtomic member variable "m_loadState". Only when the value
+* of m_loadState==Ready is it safe to use the m_children member.
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
@@ -191,7 +190,7 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    THREEMX_EXPORT virtual TileGenerator::Status _PublishModelTiles (TileGenerator::ITileCollector& collector) override;
+    THREEMX_EXPORT TileGenerator::Status _PublishModelTiles(TileGenerator::ITileCollector& collector) override;
 
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
