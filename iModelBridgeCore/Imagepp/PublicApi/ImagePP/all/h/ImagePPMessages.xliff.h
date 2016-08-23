@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ImagePP/all/h/ImagePPMessages.xliff.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -98,6 +98,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(FILEFORMAT_FLI)                          // =="FLI Animation Format"==
     L10N_STRING(FILEFORMAT_GeoTiff)                      // =="GEOTIFF"==
     L10N_STRING(FILEFORMAT_GIF)                          // =="Gif"==
+    L10N_STRING(FILEFORMAT_Hgt)                          // =="Hgt"==
     L10N_STRING(FILEFORMAT_HMR)                          // =="Bentley HMR"==
     L10N_STRING(FILEFORMAT_ImgMapped)                    // =="Img"==
     L10N_STRING(FILEFORMAT_ImgRGB)                       // =="Image RGB"==
