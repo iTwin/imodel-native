@@ -24,12 +24,12 @@ ECDbMap::ECDbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportCo
 DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHasTables");
+    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_cache_ClassHasTables");
     if (r != BE_SQLITE_OK)
         return r;
 
     r = ecdb.ExecuteSql(
-        "INSERT INTO ec_ClassHasTables "
+        "INSERT INTO ec_cache_ClassHasTables "
         "    SELECT  NULL, ec_ClassMap.ClassId , ec_Table.Id "
         "    FROM ec_PropertyMap "
         "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
@@ -45,7 +45,7 @@ DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
         return r;
 
     timer.Stop();
-    LOG.debugv("Re-populated ec_ClassHasTables in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Re-populated ec_cache_ClassHasTables in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
 //----------------------------------------------------------------------------------------
@@ -1208,7 +1208,7 @@ std::vector<ECN::ECClassId> const& ECDbMap::LightweightCache::LoadClassIdsPerTab
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-    Utf8String sql = "SELECT ClassId FROM ec_ClassHasTables WHERE TableId = ?";
+    Utf8String sql = "SELECT ClassId FROM ec_cache_ClassHasTables WHERE TableId = ?";
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, tbl.GetId());
     while (stmt->Step() == BE_SQLITE_ROW)
@@ -1230,7 +1230,7 @@ bset<DbTable const*> const& ECDbMap::LightweightCache::LoadClassIdsPerTable(ECN:
         return itor->second;
 
     bset<DbTable const*>& subSet = m_tablesPerClassId[iid];
-    Utf8String sql = "SELECT TableId FROM ec_ClassHasTables WHERE ClassId = ? ORDER BY TableId";
+    Utf8String sql = "SELECT TableId FROM ec_cache_ClassHasTables WHERE ClassId = ? ORDER BY TableId";
     CachedStatementPtr stmt = m_map.GetECDb().GetCachedStatement(sql.c_str());
     stmt->BindId(1, iid);
     DbTableId currentTableId;
@@ -1266,7 +1266,7 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         "SELECT  RC.RelationshipClassId, RC.RelationshipEnd"
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.ClassId  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
+        "       LEFT JOIN ec_cache_ClassHierarchy CH ON CH.BaseClassId = RCC.ClassId  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
         "    WHERE RCC.ClassId = ?";
 
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
@@ -1302,7 +1302,7 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         "SELECT  IFNULL(CH.ClassId, RCC.[ClassId]) ConstraintClassId, RC.RelationshipEnd"
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
+        "       LEFT JOIN ec_cache_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
         "    WHERE RC.RelationshipClassId = ?";
 
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
@@ -1335,8 +1335,8 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
     Utf8CP sql =
         "SELECT CH.[ClassId], CT.[TableId]"
-        "   FROM ec_ClassHasTables CT"
-        "       INNER JOIN ec_ClassHierarchy CH ON CH.[ClassId] = CT.[ClassId]"
+        "   FROM ec_cache_ClassHasTables CT"
+        "       INNER JOIN ec_cache_ClassHierarchy CH ON CH.[ClassId] = CT.[ClassId]"
         "       INNER JOIN ec_Table ON ec_Table.Id = CT.TableId AND ec_Table.Type <> 1"
         "   WHERE  CH.[BaseClassId] = ?";
 

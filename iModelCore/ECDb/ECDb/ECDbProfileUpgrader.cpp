@@ -18,28 +18,28 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 DbResult ECDbProfileUpgrader_3701::_Upgrade(ECDbCR ecdb) const
     {
     //Get ECSchemaId of MetaSchema
-    DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHasTables("
+    DbResult stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHasTables("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassHasTables_ClassId ON ec_ClassHasTables(ClassId);"
-                           "CREATE INDEX ix_ec_ClassHasTables_TableId ON ec_ClassHasTables(TableId);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId ON ec_cache_ClassHasTables(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON ec_cache_ClassHasTables(TableId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    //ec_ClassHierarchy
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
+    //ec_cache_ClassHierarchy
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHierarchy("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat= ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassHierarchy_ClassId ON ec_ClassHierarchy(ClassId);"
-                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);");
+    stat= ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 

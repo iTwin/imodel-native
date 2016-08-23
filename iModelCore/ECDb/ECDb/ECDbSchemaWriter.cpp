@@ -1664,7 +1664,7 @@ void SqlUpdater::Where(Utf8CP column, int64_t value)
 DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    DbResult stat = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
+    DbResult stat = ecdb.ExecuteSql("DELETE FROM ec_cache_ClassHierarchy");
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -1676,12 +1676,12 @@ DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
                            "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
                            "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
                            ")"
-                           "INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
+                           "INSERT INTO ec_cache_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
     if (stat != BE_SQLITE_OK)
         return stat;
 
     timer.Stop();
-    LOG.debugv("Re-populated ec_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    LOG.debugv("Re-populated ec_cache_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;
     }
 
