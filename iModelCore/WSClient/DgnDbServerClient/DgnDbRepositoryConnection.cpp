@@ -191,7 +191,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
 
         WSQuery fileQuery(ServerSchema::Schema::Repository, ServerSchema::Class::File);
         Utf8String filter;
-        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId(),
+        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId().ToString(),
                        ServerSchema::Property::MergedRevisionId, fileInfo.GetMergedRevisionId().c_str());
         fileQuery.SetFilter(filter);
         m_wsRepositoryClient->SendQueryRequest(fileQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
@@ -212,6 +212,22 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
             {
             return *finalResult;
             });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken) const
+    {
+    Json::Value properties = Json::objectValue;
+    fileInfo.ToPropertiesJson(properties);
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
+    ([=] (const WSUpdateObjectResult& result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(result.GetError());
+        return DgnDbServerStatusResult::Success();
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -278,7 +294,21 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken) const
+    {
+    FileInfo fileInfo = FileInfo(fileId);
+    return CreateNewServerFile(FileInfo(fileId), cancellationToken)->Then<DgnDbServerStatusResult>([=] (DgnDbServerFileResultCR result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(result.GetError());
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     std::shared_ptr<DgnDbServerFileResult> finalResult = std::make_shared<DgnDbServerFileResult>();
     return CreateNewServerFile(fileInfo, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileCreationResult)
@@ -289,17 +319,26 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewFile(BeFileNameCR fil
             return;
             }
 
-        FileInfoPtr fileInfo = fileCreationResult.GetValue();
-        finalResult->SetSuccess(fileInfo);
+        FileInfoPtr createdFileInfo = fileCreationResult.GetValue();
+        if (!createdFileInfo->AreFileDetailsAvailable())
+            {
+            auto fileUpdateResult = UpdateServerFile(*createdFileInfo, cancellationToken)->GetResult();
+            if (!fileUpdateResult.IsSuccess())
+                {
+                finalResult->SetError(fileUpdateResult.GetError());
+                return;
+                }
+            }
+        finalResult->SetSuccess(createdFileInfo);
 
-        UploadServerFile(filePath, *fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR uploadResult)
+        UploadServerFile(filePath, *createdFileInfo, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR uploadResult)
             {
             if (!uploadResult.IsSuccess())
                 {
                 finalResult->SetError(uploadResult.GetError());
                 return;
                 }
-            InitializeServerFile(*fileInfo, cancellationToken)->Then([=] (DgnDbServerStatusResultCR initializationResult)
+            InitializeServerFile(*createdFileInfo, cancellationToken)->Then([=] (DgnDbServerStatusResultCR initializationResult)
                 {
                 if (!initializationResult.IsSuccess())
                     finalResult->SetError(initializationResult.GetError());

@@ -177,6 +177,9 @@ private:
     //! Creates a new file instance on the server. 
     DgnDbServerFileTaskPtr   CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Updates existing file instance on the server. 
+    DgnDbServerStatusTaskPtr UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Performs a file upload to on-premise server. 
     DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -244,14 +247,6 @@ public:
     static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
                                                    ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
-    //! Create an instance of a BIM file on the server and upload it.
-    //! @param[in] db The BIM file to upload.
-    //! @param[in] description Description of the changes in the uploaded file.
-    //! @param[in] callback
-    //! @param[in] cancellationToken
-    //! @return Asynchronous task that has the uploaded file information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
@@ -285,6 +280,22 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
+    //! Lock repository for master file replacement.
+    //! @param[in] fileId The db guid for the file that will be created.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the status of acquiring repository lock as result.
+    //! @note Part of master file replacement. Should be used only if repository should be locked while the new file is created. See UploadNewFile.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Replace a master file on the server.
+    //! @param[in] filePath The path to the BIM file to upload.
+    //! @param[in] fileInfo Details of the file.
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the uploaded file information as the result.
+    //! @note Part of master file replacement. See LockRepository.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all revisions available in the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.

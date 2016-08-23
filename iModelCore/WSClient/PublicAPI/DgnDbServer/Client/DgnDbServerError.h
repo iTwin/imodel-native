@@ -38,6 +38,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             RepositoryAlreadyExists,
             RepositoryDoesNotExist,
             LockDoesNotExist,
+            LocksExist,
             LockOwnedByAnotherBriefcase,
             UserAlreadyExists,
             UserDoesNotExist,
@@ -46,6 +47,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             CodeReservedByAnotherBriefcase,
             CodeAlreadyExists,
             CodeDoesNotExist,
+            CodesExist,
             FileDoesNotExist,
 
             //WebServices Errors
