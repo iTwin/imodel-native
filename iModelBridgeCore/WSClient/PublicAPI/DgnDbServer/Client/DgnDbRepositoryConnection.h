@@ -32,6 +32,9 @@ typedef std::shared_ptr<struct DgnDbRepositoryConnection>               DgnDbRep
 typedef struct DgnDbRepositoryConnection const&                         DgnDbRepositoryConnectionCR;
 
 struct DgnDbCodeLockSetResultInfo;
+struct DgnDbCodeTemplate;
+struct DgnDbCodeTemplateSetResultInfo;
+typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
 DEFINE_TASK_TYPEDEFS(DgnDbServerRevisionPtr, DgnDbServerRevision);
@@ -39,6 +42,7 @@ DEFINE_TASK_TYPEDEFS(AzureServiceBusSASDTOPtr, AzureServiceBusSASDTO);
 DEFINE_TASK_TYPEDEFS(bvector<DgnDbServerRevisionPtr>, DgnDbServerRevisions);
 DEFINE_TASK_TYPEDEFS(uint64_t, DgnDbServerUInt64);
 DEFINE_TASK_TYPEDEFS(DgnDbCodeLockSetResultInfo, DgnDbServerCodeLockSet);
+DEFINE_TASK_TYPEDEFS(DgnDbCodeTemplateSetResultInfo, DgnDbServerCodeTemplateSet);
 DEFINE_TASK_TYPEDEFS(Http::Response, DgnDbServerEventReponse);
 
 
@@ -70,6 +74,63 @@ struct DgnDbCodeLockSetResultInfo
         DGNDBSERVERCLIENT_EXPORT const DgnLockSet& GetLocks() const;
         //! Returns lock state information.
         DGNDBSERVERCLIENT_EXPORT const DgnLockInfoSet& GetLockStates() const;
+    };
+
+//=======================================================================================
+//! DgnDbCodeTemplate instance
+//@bsiclass                                    Algirdas.Mikoliunas              08/2016
+//=======================================================================================
+struct DgnDbCodeTemplate
+    {
+    enum Type : uint8_t
+        {
+        Maximum       = 0,  //!< Get maximum available code mathing given pattern
+        NextAvailable = 1,  //!< Get next available code value given pattern, starting index and increment by
+        };
+
+private:
+    DgnAuthorityId m_authorityId;
+    Utf8String   m_nameSpace;
+    Utf8String   m_valuePattern;
+    Utf8String   m_value;
+
+public:
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetValue() const { return m_value; }
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetValuePattern() const { return m_valuePattern; }
+    DGNDBSERVERCLIENT_EXPORT DgnAuthorityId GetAuthorityId() const { return m_authorityId; }
+    DGNDBSERVERCLIENT_EXPORT Utf8StringCR GetNamespace() const { return m_nameSpace; }
+
+    //! Determine if two DgnDbTemplates are equivalent
+    bool operator==(DgnDbCodeTemplate const& other) const { return m_authorityId == other.m_authorityId && m_value == other.m_value && m_nameSpace == other.m_nameSpace && m_valuePattern == other.m_valuePattern;}
+    //! Determine if two DgnDbTemplates are not equivalent
+    bool operator!=(DgnDbCodeTemplate const& other) const { return !(*this == other); }
+    //! Perform ordered comparison, e.g. for inclusion in associative containers
+    DGNDBSERVERCLIENT_EXPORT bool operator<(DgnDbCodeTemplate const& rhs) const;
+    
+    //! Creates DgnDbCodeTemplate instance.
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate() : m_value(""), m_nameSpace(""), m_valuePattern("") {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(DgnAuthorityId authorityId, Utf8StringCR nameSpace, Utf8StringCR valuePattern) : m_authorityId(authorityId), m_valuePattern(valuePattern), m_nameSpace(nameSpace), m_value("") {};
+    DGNDBSERVERCLIENT_EXPORT DgnDbCodeTemplate(DgnAuthorityId authorityId, Utf8StringCR nameSpace, Utf8StringCR value, Utf8StringCR valuePattern) : m_authorityId(authorityId), m_value(value), m_nameSpace(nameSpace), m_valuePattern(valuePattern) {};
+    };
+
+//=======================================================================================
+//! DgnDbCodeTemplate results.
+//@bsiclass                                    Algirdas.Mikoliunas              08/2016
+//=======================================================================================
+struct DgnDbCodeTemplateSetResultInfo
+    {
+//__PUBLISH_SECTION_END__
+    private:
+        DgnDbCodeTemplateSet m_codeTemplates;
+
+    public:
+        DgnDbCodeTemplateSetResultInfo() {};
+        void AddCodeTemplate(const DgnDbCodeTemplate codeTemplate);
+
+//__PUBLISH_SECTION_START__
+    public:
+        //! Returns the set of code templates.
+        DGNDBSERVERCLIENT_EXPORT const DgnDbCodeTemplateSet& GetTemplates() const;
     };
 
 //=======================================================================================
@@ -116,6 +177,9 @@ private:
     //! Creates a new file instance on the server. 
     DgnDbServerFileTaskPtr   CreateNewServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Updates existing file instance on the server. 
+    DgnDbServerStatusTaskPtr UpdateServerFile(FileInfoCR fileInfo, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Performs a file upload to on-premise server. 
     DgnDbServerStatusTaskPtr OnPremiseFileUpload(BeFileNameCR filePath, ObjectIdCR objectId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
@@ -139,9 +203,6 @@ private:
     //! Push this revision file to server.
     DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Download all revision files after revisionId
-    DgnDbServerRevisionsTaskPtr Pull (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query.
     DgnDbServerRevisionsTaskPtr RevisionsFromQuery (const WSQuery& query, ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -186,14 +247,6 @@ public:
     static DgnDbRepositoryConnectionTaskPtr Create(RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo,
                                                    ICancellationTokenPtr cancellationToken = nullptr, AuthenticationHandlerPtr authenticationHandler = nullptr);
 
-    //! Create an instance of a BIM file on the server and upload it.
-    //! @param[in] db The BIM file to upload.
-    //! @param[in] description Description of the changes in the uploaded file.
-    //! @param[in] callback
-    //! @param[in] cancellationToken
-    //! @return Asynchronous task that has the uploaded file information as the result.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
-
     //! Acquire the requested set of locks.
     //! @param[in] locks Set of locks to acquire
     //! @param[in] codes Set of codes to acquire
@@ -227,6 +280,22 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
+    //! Lock repository for master file replacement.
+    //! @param[in] fileId The db guid for the file that will be created.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the status of acquiring repository lock as result.
+    //! @note Part of master file replacement. Should be used only if repository should be locked while the new file is created. See UploadNewFile.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(BeGuid fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Replace a master file on the server.
+    //! @param[in] filePath The path to the BIM file to upload.
+    //! @param[in] fileInfo Details of the file.
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the uploaded file information as the result.
+    //! @note Part of master file replacement. See LockRepository.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all revisions available in the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
@@ -248,10 +317,19 @@ public:
     //! @param[in] revisions Set of revisions to download.
     //! @param[in] callback Download callback.
     //! @param[in] cancellationToken
-    //! @return Asynchronous task that has the collection of revision information as the result.
+    //! @return Asynchronous task that has the collection of revisions metadata as the result.
     //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DownloadRevisions (const bvector<DgnDbServerRevisionPtr>& revisions, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                        ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Download all revision files after revisionId
+    //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.
+    //! @param[in] callback Download callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the collection of downloaded revisions metadata as the result.
+    //! @note This is used to download the files in order to revert or inspect them. To update a briefcase DgnDbBriefcase methods should be used.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionsTaskPtr DownloadRevisionsAfterId (Utf8StringCR revisionId, Http::Request::ProgressCallbackCR callback = nullptr,
+                                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Verify the access to the revision on the server.
     //! @param[in] cancellationToken
@@ -285,6 +363,18 @@ public:
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeLockSetTaskPtr QueryUnavailableCodesLocks(const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR lastRevisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
+    //! Returns maximum used code value by the given pattern.
+    //! @param[in] codeTemplates
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeMaximumIndex(DgnDbCodeTemplateSet codeTemplates, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns next available code by the given pattern, index start and increment by value.
+    //! @param[in] codeTemplates
+    //! @param[in] startIndex
+    //! @param[in] incrementBy
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Update the Event Subscription
     //! @param[in] eventTypes
     //! @param[in] cancellationToken
