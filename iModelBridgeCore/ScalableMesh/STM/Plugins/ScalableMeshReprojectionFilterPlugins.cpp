@@ -17,11 +17,13 @@
 #include "ScalableMeshIDTMFileTraits.h"
 
 #include <ScalableMesh/Import/Exceptions.h>
+#include "../Stores/SMStoreUtils.h"
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 namespace { // BEGIN UNAMED NAMESPACE
 
@@ -81,8 +83,8 @@ public:
         { 
         DPoint3d pt(pi_pt.x, pi_pt.y, pi_pt.z);
 
-        const Reprojection::Status status = m_rReprojection.Reproject(pt, pt);
-        if (Reprojection::S_SUCCESS != status)
+        const SMStatus status = m_rReprojection.Reproject(pt, pt);
+        if (SMStatus::S_SUCCESS != status)
                 throw ReprojectionException(status);
 
         return SrcT(pt);
@@ -183,8 +185,8 @@ class IDTMDPoint3dDimReprojector : public DimensionFilter
         DPoint3d* const pTargetPts = m_dstPacket.Edit();
 
 
-        Reprojection::Status status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
-        if (Reprojection::S_SUCCESS != status)
+        SMStatus status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
+        if (SMStatus::S_SUCCESS != status)
             throw ReprojectionException(status);
 
         m_dstPacket.SetSize(sourcePtCount);
@@ -244,8 +246,8 @@ class IDTMPoint3d64fDimReprojector : public DimensionFilter
         DPoint3d* const pTargetPts = m_dstPacket.Edit();
 
 
-        Reprojection::Status status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
-        if (Reprojection::S_SUCCESS != status)
+        SMStatus status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
+        if (SMStatus::S_SUCCESS != status)
             throw ReprojectionException(status);
 
         m_dstPacket.SetSize(sourcePtCount);

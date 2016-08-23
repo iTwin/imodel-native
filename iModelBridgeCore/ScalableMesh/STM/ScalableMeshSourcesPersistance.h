@@ -18,7 +18,7 @@
 
 
 // External forward declarations
-namespace IDTMFile { class SourcesDir; }
+namespace ISMStore { class SourcesDir; }
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 

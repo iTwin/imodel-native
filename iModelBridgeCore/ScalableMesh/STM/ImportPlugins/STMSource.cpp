@@ -74,7 +74,7 @@ class STMElementSourceDecorator : public SourceBase
              contentConfig.SetGCSConfig(gcsConfig);
             }
 
-        if (ContentDescriptor::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
+        if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
             throw CustomError(L"Error configuring descriptor!");
 
         return descriptor;
@@ -114,14 +114,14 @@ class STMElementSourceDecorator : public SourceBase
                                                GetModelLocalToGlobalTransfoModel(elHandle.GetModelRef(), stmInModelGCS.GetUnit(), stmInModelGCS.GetUnit())));
 
 
-            if (GCS::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
+            if (SMStatus::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
                 throw CustomError(L"Error appending tranform");
             }
         else
             {
             const TransfoModel localToGlobal(GetModelLocalToGlobalTransfoModel(elHandle.GetModelRef(), storageGCS.GetUnit(), stmInModelGCS.GetUnit()));
 
-            if (GCS::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
+            if (SMStatus::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
                 throw CustomError(L"Error appending tranform");
             }
 

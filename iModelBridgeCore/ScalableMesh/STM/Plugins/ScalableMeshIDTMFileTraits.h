@@ -35,6 +35,14 @@ template <> struct PointTypeCreatorTrait<DPoint3d>                      { typede
 * @bsiclass                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename PointT> 
+struct MeshTypeCreatorTrait                                            { /* Default: Fail*/ };
+template <> struct MeshTypeCreatorTrait<DPoint3d>                      { typedef MeshType3d64fCreator type; };
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+* @bsiclass                                                  Raymond.Gauthier   10/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+template <typename PointT> 
 struct LinearTypeCreatorTrait                            { /* Default: Fail*/ };
 template <> 
 struct LinearTypeCreatorTrait<DPoint3d>                  { typedef LinearTypeTi32Pi32Pq32Gi32_3d64fCreator type; };

@@ -71,6 +71,9 @@ int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                   const DRange3d&                spatialIndexRange,
                   const HVE2DShape&              shape);
 
+int AddClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
+                 const HVE2DShape& shape);
+
 struct PtToPtConverter
     {        
     DPoint3d operator () (const DPoint3d& inputPt) const;

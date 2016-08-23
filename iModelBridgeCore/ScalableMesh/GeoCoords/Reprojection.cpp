@@ -50,11 +50,11 @@ struct ReprojectionWarning : public WarningMixinBase<ReprojectionWarning>
 const ReprojectionWarning DEFAULT_REPROJECTION_WARNING(BSIERROR);
 
 
-static_assert(Reprojection::S_QTY == TransfoModel::S_QTY, "Reprojection status must correspond transfo model status");
+static_assert(SMStatus::S_QTY == SMStatus::S_QTY, "Reprojection status must correspond transfo model status");
 
-inline Reprojection::Status GetReprojectionStatusFor (TransfoModel::Status status)
+inline SMStatus GetReprojectionStatusFor(SMStatus status)
     {
-    return static_cast<Reprojection::Status>(status);
+    return status;
     }
 } // END unnamed namespace
 
@@ -128,18 +128,18 @@ private:
         CSMAPCONV_S_ERR = 4096,
         };
 
-    TransfoModel::Status                    HandleError                (StatusInt                       csMapStatus) const
+    SMStatus                    HandleError(StatusInt                       csMapStatus) const
         {
 
         switch (csMapStatus)
             {
         case CSMAPCONV_S_USFL: // TDORAY: Find meaning of that. Ask Alain Robert.
             m_warningLog.Add(DEFAULT_REPROJECTION_WARNING);
-            return TransfoModel::S_SUCCESS;
+            return SMStatus::S_SUCCESS;
         case CSMAPCONV_S_DOMN:
-            return TransfoModel::S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN;
+            return SMStatus::S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN;
         default:
-            return TransfoModel::S_ERROR;
+            return SMStatus::S_ERROR;
             }
         }
 
@@ -205,16 +205,16 @@ private:
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d&                 sourcePt,
+    virtual SMStatus        _Transform(const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt) const override
         {
         GeoPoint sourceLatLong, targetLatLong;
         const StatusInt baseStatus = Reproject(sourcePt, targetPt, sourceLatLong, targetLatLong, BSISUCCESS);
-        return (BSISUCCESS != baseStatus) ? HandleError(baseStatus) : TransfoModel::S_SUCCESS;
+        return (BSISUCCESS != baseStatus) ? HandleError(baseStatus) : SMStatus::S_SUCCESS;
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d*                 sourcePtP,
+    virtual SMStatus        _Transform(const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP) const override
         {
@@ -230,7 +230,7 @@ private:
             ++targetPtP;
             }
         
-        return (BSISUCCESS != baseStatus) ? HandleError(baseStatus) : TransfoModel::S_SUCCESS;
+        return (BSISUCCESS != baseStatus) ? HandleError(baseStatus) : SMStatus::S_SUCCESS;
         }
 
     virtual TransfoModelBase*           _CreateInverse                 () const override
@@ -330,7 +330,7 @@ struct ReprojectionFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
         }                       m_policy;
 
 
-    void                            OnUnhandledStatus                  (Status                          status)
+    void                            OnUnhandledStatus(SMStatus                          status)
         {
         assert(BSISUCCESS != status);
 
@@ -357,7 +357,7 @@ struct ReprojectionFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     Reprojection                Create                     (const GCS&                      sourceGCS,
                                                             const GCS&                      targetGCS,
                                                             const DRange3d*                 sourceExtentP,
-                                                            Status&                         status) const;
+                                                            SMStatus&                         status) const;
 
     };
 
@@ -405,7 +405,7 @@ ReprojectionFactory::ReprojectionFactory (const ReprojectionFactory& rhs)
 Reprojection ReprojectionFactory::Impl::Create (const GCS&      sourceGCS,
                                                 const GCS&      targetGCS,
                                                 const DRange3d* sourceExtentP,
-                                                Status&         status) const
+                                                SMStatus&         status) const
     {
     status = S_SUCCESS;
 
@@ -461,11 +461,11 @@ namespace {
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetLocalToBaseFor (const LocalTransform& sourceLTransform, TransfoModel::Status& status)
+    TransfoModel GetLocalToBaseFor(const LocalTransform& sourceLTransform, SMStatus& status)
     {
     if (sourceLTransform.HasToGlobal())
         {
-        status = TransfoModel::S_SUCCESS;
+        status = SMStatus::S_SUCCESS;
         return sourceLTransform.GetToGlobal();
         }
 
@@ -477,11 +477,11 @@ TransfoModel GetLocalToBaseFor (const LocalTransform& sourceLTransform, TransfoM
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetBaseToLocalFor (const LocalTransform& targetLTransform, TransfoModel::Status& status)
+TransfoModel GetBaseToLocalFor(const LocalTransform& targetLTransform, SMStatus& status)
     {
     if (targetLTransform.HasToLocal())
         {
-        status = TransfoModel::S_SUCCESS;
+        status = SMStatus::S_SUCCESS;
         return targetLTransform.GetToLocal();
         }
 
@@ -496,23 +496,23 @@ TransfoModel GetBaseToLocalFor (const LocalTransform& targetLTransform, TransfoM
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel DecoratesWithSourceLTransform     (const LocalTransform&           sourceLTransform,
                                                 const Reprojection&             reprojection,
-                                                ReprojectionFactory::Status&    status)
+                                                SMStatus&    status)
     {
-    TransfoModel::Status localToBaseStatus(TransfoModel::S_SUCCESS);
+    SMStatus localToBaseStatus(SMStatus::S_SUCCESS);
     TransfoModel sourceLocalToTargetLocal(GetLocalToBaseFor(sourceLTransform, localToBaseStatus));
 
-    if (TransfoModel::S_SUCCESS != localToBaseStatus)
+    if (SMStatus::S_SUCCESS != localToBaseStatus)
         {
-        status = ReprojectionFactory::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
     if (reprojection.IsNull())
         return sourceLocalToTargetLocal;
 
-    if (TransfoModel::S_SUCCESS != sourceLocalToTargetLocal.Append(AsTransfoModel(reprojection)))
+    if (SMStatus::S_SUCCESS != sourceLocalToTargetLocal.Append(AsTransfoModel(reprojection)))
         {
-        status = ReprojectionFactory::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
@@ -525,25 +525,25 @@ TransfoModel DecoratesWithSourceLTransform     (const LocalTransform&           
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel DecoratesWithTargetLTransform (const Reprojection&             reprojection,
                                             const LocalTransform&           targetLTransform,
-                                            ReprojectionFactory::Status&    status)
+                                            SMStatus&    status)
     {
-    TransfoModel::Status baseToLocalStatus(TransfoModel::S_SUCCESS);
+    SMStatus baseToLocalStatus(SMStatus::S_SUCCESS);
     const TransfoModel baseToLocal(GetBaseToLocalFor(targetLTransform, baseToLocalStatus));
 
-    if (TransfoModel::S_SUCCESS != baseToLocalStatus)
+    if (SMStatus::S_SUCCESS != baseToLocalStatus)
         {
-        status = ReprojectionFactory::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
     if (reprojection.IsNull())
         return baseToLocal;
 
-    TransfoModel::Status combineStatus(TransfoModel::S_SUCCESS);
+    SMStatus combineStatus(SMStatus::S_SUCCESS);
     TransfoModel sourceLocalToTargetLocal(Combine(AsTransfoModel(reprojection), baseToLocal, combineStatus));
-    if (TransfoModel::S_SUCCESS != combineStatus)
+    if (SMStatus::S_SUCCESS != combineStatus)
         {
-        status = ReprojectionFactory::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
@@ -557,23 +557,23 @@ TransfoModel DecoratesWithTargetLTransform (const Reprojection&             repr
 TransfoModel DecoratesWithSourceAndTargetLTransform    (const LocalTransform&           sourceLTransform,
                                                         const Reprojection&             reprojection,
                                                         const LocalTransform&           targetLTransform,
-                                                        ReprojectionFactory::Status&    status)
+                                                        SMStatus&    status)
     {
-    TransfoModel::Status sourceLocalToBaseStatus(TransfoModel::S_SUCCESS);
-    TransfoModel::Status targetBaseToLocalStatus(TransfoModel::S_SUCCESS);
+    SMStatus sourceLocalToBaseStatus(SMStatus::S_SUCCESS);
+    SMStatus targetBaseToLocalStatus(SMStatus::S_SUCCESS);
 
     const TransfoModel sourceLocalToBase(GetLocalToBaseFor(sourceLTransform, sourceLocalToBaseStatus));
     const TransfoModel targetBaseToLocal(GetBaseToLocalFor(targetLTransform, targetBaseToLocalStatus));
 
-    if (TransfoModel::S_SUCCESS != sourceLocalToBaseStatus ||
-        TransfoModel::S_SUCCESS != targetBaseToLocalStatus)
+    if (SMStatus::S_SUCCESS != sourceLocalToBaseStatus ||
+        SMStatus::S_SUCCESS != targetBaseToLocalStatus)
         {
-        status = ReprojectionFactory::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
-    TransfoModel::Status append0Status(TransfoModel::S_SUCCESS);
-    TransfoModel::Status append1Status(TransfoModel::S_SUCCESS);
+    SMStatus append0Status(SMStatus::S_SUCCESS);
+    SMStatus append1Status(SMStatus::S_SUCCESS);
 
     TransfoModel sourceLocalToTargetLocal(sourceLocalToBase);
 
@@ -582,10 +582,10 @@ TransfoModel DecoratesWithSourceAndTargetLTransform    (const LocalTransform&   
 
     append1Status = sourceLocalToTargetLocal.Append(targetBaseToLocal);
 
-    if (TransfoModel::S_SUCCESS != append0Status ||
-        TransfoModel::S_SUCCESS != append1Status)
+    if (SMStatus::S_SUCCESS != append0Status ||
+        SMStatus::S_SUCCESS != append1Status)
         {
-        status = ReprojectionFactory::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
@@ -601,7 +601,7 @@ TransfoModel DecoratesWithSourceAndTargetLTransform    (const LocalTransform&   
 Reprojection ReprojectionFactory::Create   (const GCS&      sourceGCS,
                                             const GCS&      targetGCS,
                                             const DRange3d* sourceExtentP,
-                                            Status&         status) const
+                                            SMStatus&         status) const
     {
     enum LocalTransformCase
         {
@@ -616,7 +616,7 @@ Reprojection ReprojectionFactory::Create   (const GCS&      sourceGCS,
 
     const Reprojection reprojection(m_implP->Create(sourceGCS, targetGCS, sourceExtentP, status));
 
-    if (ReprojectionFactory::S_SUCCESS != status)
+    if (SMStatus::S_SUCCESS != status)
         return reprojection;
 
     switch(localTransformCase)
@@ -647,7 +647,7 @@ Reprojection ReprojectionFactory::Create   (const GCS&      sourceGCS,
                                             const GCS&      targetGCS,
                                             const DRange3d* sourceExtentP) const
     {
-    Status status;
+    SMStatus status;
     Reprojection reprojection(Create(sourceGCS, targetGCS, sourceExtentP, status));
     if (S_SUCCESS != status) m_implP->OnUnhandledStatus(status);
     return reprojection;
@@ -727,7 +727,7 @@ bool Reprojection::IsNull () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-Reprojection::Status Reprojection::Reproject   (const DPoint3d& sourcePt,
+SMStatus Reprojection::Reproject(const DPoint3d& sourcePt,
                                                 DPoint3d&       targetPt) const
     {
     return GetReprojectionStatusFor(BaseHandler::Transform(*m_implP, sourcePt, targetPt));
@@ -737,7 +737,7 @@ Reprojection::Status Reprojection::Reproject   (const DPoint3d& sourcePt,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Reprojection::Status Reprojection::Reproject   (const DPoint3d* sourcePtP,
+SMStatus Reprojection::Reproject(const DPoint3d* sourcePtP,
                                                 size_t          sourcePtQty,
                                                 DPoint3d*       targetPtP) const
     {

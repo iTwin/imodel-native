@@ -23,8 +23,18 @@
 #include <ScalableMesh/IScalableMeshTime.h>
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
-#include <ImagePP\all\h\HIMMosaic.h>
 
+#ifndef VANCOUVER_API
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace ImagePP
+        {
+#endif
+        class HIMMosaic;
+#ifndef VANCOUVER_API
+        }
+    }
+#endif
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct IScalableMeshCreator;
@@ -64,7 +74,7 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt               Create                     (bool isSingleFile = true);    
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
@@ -138,5 +148,6 @@ public:
         BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
 #endif                           
     };
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

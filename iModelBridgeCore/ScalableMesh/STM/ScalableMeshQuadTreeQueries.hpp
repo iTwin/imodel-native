@@ -477,10 +477,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {
         // If this is the appropriate level or it is a higher level and progressive is set.
-        if (/*node->IsLeaf()
-            7744xx..
-            
-            || */ //NEEDS_WORK_SM : Why leaf, this is the given level that we wants?
+        if (
             m_requestedLevel == node->GetLevel() || (!node->m_nodeHeader.m_balanced && node->IsLeaf()) /*||
                                                  (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {         
@@ -551,7 +548,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
     if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
         {            
         // If this is the appropriate level or it is a higher level and progressive is set.
-        if (/*node->IsLeaf() || */ //NEEDS_WORK_SM : Why leaf, this is the given level that we wants?
+        if (
             m_requestedLevel == node->GetLevel() /*|| 
             (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel())*/)
             {
@@ -562,87 +559,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
 
                 if (s_clipMesh == true)
                     {   
-                    status = AddVisibleMesh<POINT, EXTENT>(node, visibleExtent, mesh);
-                    /*
-                    vector<DPoint3d> dataPoints;
-                    vector<int32_t>    faceIndexes;
-
-                    ToBcPtConverter converter; 
-
-                    struct PointVisibility
-                        {
-                        PointVisibility()
-                            {
-                            m_isVisible = false;
-                            m_mappedIndex = -1;
-                            }
-
-                        bool  m_isVisible; 
-                        int32_t m_mappedIndex;
-                        };
-
-                    vector<PointVisibility> pointVisibilities(node->size() + 1); 
-
-                    for (size_t pointInd = 0; pointInd < node->size(); pointInd++)
-                        {
-                        if (ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(visibleExtent, node->operator[](pointInd)))      
-                            {
-                            pointVisibilities[pointInd].m_isVisible = true;                            
-                            dataPoints.push_back(converter.operator()(node->operator[](pointInd)));
-                            pointVisibilities[pointInd].m_mappedIndex = (int32_t)dataPoints.size();                            
-                            }                                                                                           
-                        }
-
-                    int32_t* nodeFaceIndexes = (int32_t*)&node->operator[](node->size());
-
-                    for (size_t faceVerticeInd = 0; faceVerticeInd < node->m_nodeHeader.m_nbFaceIndexes; faceVerticeInd += 3)
-                        {                        
-                        if (pointVisibilities[nodeFaceIndexes[faceVerticeInd]].m_isVisible ||
-                            pointVisibilities[nodeFaceIndexes[faceVerticeInd + 1]].m_isVisible ||
-                            pointVisibilities[nodeFaceIndexes[faceVerticeInd + 2]].m_isVisible) 
-                            {
-                            if (pointVisibilities[nodeFaceIndexes[faceVerticeInd]].m_mappedIndex == -1)
-                                {                                
-                                dataPoints.push_back(converter.operator()(node->operator[](nodeFaceIndexes[faceVerticeInd] - 1)));                                
-                                pointVisibilities[nodeFaceIndexes[faceVerticeInd]].m_mappedIndex = (int32_t)dataPoints.size();
-                                }
-
-                            faceIndexes.push_back(pointVisibilities[nodeFaceIndexes[faceVerticeInd]].m_mappedIndex);
-
-                            if (pointVisibilities[nodeFaceIndexes[faceVerticeInd + 1]].m_mappedIndex == -1)
-                                {                                
-                                dataPoints.push_back(converter.operator()(node->operator[](nodeFaceIndexes[faceVerticeInd + 1] - 1)));                                                                
-                                pointVisibilities[nodeFaceIndexes[faceVerticeInd + 1]].m_mappedIndex = (int32_t)dataPoints.size();
-                                }
-
-                            faceIndexes.push_back(pointVisibilities[nodeFaceIndexes[faceVerticeInd + 1]].m_mappedIndex);
-
-                            if (pointVisibilities[nodeFaceIndexes[faceVerticeInd + 2]].m_mappedIndex == -1)
-                                {                                
-                                dataPoints.push_back(converter.operator()(node->operator[](nodeFaceIndexes[faceVerticeInd + 2] - 1)));                                                                                                
-                                pointVisibilities[nodeFaceIndexes[faceVerticeInd + 2]].m_mappedIndex = (int32_t)dataPoints.size();
-                                }
-
-                            faceIndexes.push_back(pointVisibilities[nodeFaceIndexes[faceVerticeInd + 2]].m_mappedIndex);
-                            }                                                
-                        }
-
-                    assert(dataPoints.size() > 0 || faceIndexes.size() == 0);
-
-                    if (dataPoints.size() > 0)
-                        {                    
-                        status = mesh->AppendMesh(dataPoints.size(), &dataPoints[0], faceIndexes.size(), &faceIndexes[0], 0, 0, 0);
-                        }
-                    else
-                        {
-                        status = SUCCESS;
-                        }
-                        */
+                    status = AddVisibleMesh<POINT, EXTENT>(node, visibleExtent, mesh);                
                     }
                 else
-                    {
-                    //size_t nbPointsForFaceInd = (size_t)ceil((node->m_nodeHeader.m_nbFaceIndexes * (double)sizeof(int32_t)) / (double)sizeof(POINT));                  
-                    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(node);
+                    {                    
+                    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(node);
 
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());                    
                     vector<DPoint3d> dataPoints(pointsPtr->size());
@@ -653,12 +574,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery
                         {
                         dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));                                            
                         }
-                    //int32_t* faceIndexes = node->GetIndicePtr();
-                    //status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&node->operator[](node->size()), 0, 0, 0);
-                    // NEEDS_WORK_SM : texture logique !
-/*                    std::ofstream file_s;
-                    file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
-                    file_s << "PushIndices etc... -- shit 7" << endl;*/
+
                     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
 
                     status = mesh->AppendMesh(pointsPtr->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
@@ -839,9 +755,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                     status = AddVisibleMesh<POINT, EXTENT>(node, visibleExtent, mesh);
                     }
                 else
-                    {
-                    //size_t nbPointsForFaceInd = (size_t)ceil((node->m_nodeHeader.m_nbFaceIndexes * (double)sizeof(int32_t)) / (double)sizeof(POINT));                  
-                    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(node);
+                    {                    
+                    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(node);
 
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
                     vector<DPoint3d> dataPoints(pointsPtr->size());
@@ -851,13 +766,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                     for (size_t pointInd = 0; pointInd < pointsPtr->size(); pointInd++)
                         {
                         dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));                                            
-                        }
-                    
-                    //status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&node->operator[](node->size()), 0, 0, 0);
-                    // NEEDS_WORK_SM : texture logique !
- /*                   std::ofstream file_s;
-                    file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
-                    file_s << "PushIndices etc... -- shit 8" << endl;*/
+                        }                     
 
                     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
 
@@ -905,12 +814,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                 {
                 dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));                                            
                 }
-            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, YProtPtExtentType>, SMPointIndexNode<POINT, YProtPtExtentType>>(node);
-            //int status = mesh->AppendMesh(node->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, (int32_t*)&node->operator[](node->size()), 0, 0, 0);
-            // NEEDS_WORK_SM : texture logique !
- /*           std::ofstream file_s;
-            file_s.open("C:\\dev\\ContextCapture\\_log.txt", ios_base::app);
-            file_s << "PushIndices etc... -- shit 9" << endl;*/
+            auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(node);
 
             RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
 
@@ -1317,8 +1221,8 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         // sometimes the value is slightly greater than 1 by a minuscule amount. A 1 percent tolerance is quite acceptable
         // for our purpose and will not result in any ill effect.
 
-        //NEEDS_WORK_SM : Stitching triangles usually cross the tile boundary.
-        assert((visibleExtentToNodeExtentScale > 0) /*&& (visibleExtentToNodeExtentScale <= 1.01)*/);
+
+        assert((visibleExtentToNodeExtentScale > 0));
 
         EXTENT contentExtent = node->GetContentExtent();
                         
@@ -1798,4 +1702,109 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
         }
     else return false; //don't do subnodes, this is not the right extent
     return true;
+    }
+
+struct AppendClippedToMesh : public PolyfaceQuery::IClipToPlaneSetOutput
+    {
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* m_targetMesh;
+    ClipVectorCP m_clipVec;
+
+    virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override;
+    virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override;
+
+    AppendClippedToMesh(BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh, ClipVectorCP clip) : m_targetMesh(mesh), m_clipVec(clip) {};
+    };
+
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<POINT,EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
+                                                                                                          HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
+                                                                                                          size_t                                   numSubNodes,
+                                                                                                          BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh*               mesh)
+
+    {
+    bool result = true;
+
+
+    if (node->IsEmpty() || node->m_nodeHeader.m_level > 3)
+        {
+        return false;
+        }
+
+
+    assert(m_viewClipVector != 0);
+
+    //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
+    double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
+    double tolerance = maxDimension / cos(PI / 4);
+
+    DPoint3d center;
+
+    center.Init(ExtentOp<EXTENT>::GetXMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()) / 2,
+                ExtentOp<EXTENT>::GetYMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetHeight(node->GetContentExtent()) / 2,
+                ExtentOp<EXTENT>::GetZMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetThickness(node->GetContentExtent()) / 2);
+    if (node->m_nodeHeader.m_level == 3 || node->m_nodeHeader.m_IsLeaf)
+        {
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(node);
+
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+        vector<DPoint3d> dataPoints(pointsPtr->size());
+
+        PtToPtConverter converter;
+
+        for (size_t pointInd = 0; pointInd < pointsPtr->size(); pointInd++)
+            {
+            dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));
+            }
+
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
+
+        if (m_viewClipVector->PointInside(center, tolerance))
+            {
+            AppendClippedToMesh meshOutput(mesh, m_viewClipVector.get());
+            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(node.GetPtr())));
+            IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+            new ScalableMeshNode<POINT>(nodePtr)
+#else
+            ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+            );
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+
+            if (meshP.get() != nullptr)
+                m_viewClipVector->ClipPolyface(*(meshP->GetPolyfaceQuery()), meshOutput, false);
+
+            }
+        else
+            {
+            bvector<int> indices(node->m_nodeHeader.m_nbFaceIndexes);
+            if (!indices.empty())
+                {
+                memcpy(indices.data(), &(*ptIndices)[0], indices.size()*sizeof(int));
+                for (auto& i : indices) i += (int)mesh->GetNbPoints();
+                mesh->AppendMesh(pointsPtr->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, indices.data(), 0, 0, 0, 0, 0, 0);
+                }
+            }
+        }
+    return result;
+    }
+
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
+                                                                                                          HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
+                                                                                                          size_t                                   numSubNodes,
+                                                                                                          vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
+    {
+    bool result = false;
+
+    return result;
+    }
+
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<POINT,EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT >> node,
+                                                                                                          HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
+                                                                                                          size_t                                  numSubNodes,
+                                                                                                          ProducedNodeContainer<POINT, EXTENT>&   foundNodes)
+    {
+    bool result = false;
+
+    return result;
     }

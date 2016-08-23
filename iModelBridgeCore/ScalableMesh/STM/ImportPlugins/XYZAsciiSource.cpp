@@ -334,7 +334,7 @@ private:
         m_inFile = _wfopen(filePath.c_str(), L"r");
             
         if (m_inFile == 0)
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
 
         // Compute column count and get data preview
         StatusInt status;
@@ -490,7 +490,7 @@ class XYZAsciiSourceFileCreator : public LocalFileSourceCreatorBase
             // Rethrow as "could not open" (this kind of exception
             // is expected to be thrown by device/streambuf constructors
             // when used directly.
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
             }
 
         //return 0;

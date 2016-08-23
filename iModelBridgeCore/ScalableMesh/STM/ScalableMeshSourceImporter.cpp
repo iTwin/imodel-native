@@ -309,7 +309,7 @@ int IScalableMeshSourceImporter::Impl::Import()
 
     if ((m_writePointsCallbackFP != 0) || (m_writeFeatureCallbackFP != 0))
         {
-        using namespace IDTMFile;
+        using namespace ISMStore;
         
         //MS : Some cleanup needs to be done here.
         try
@@ -347,7 +347,7 @@ StatusInt IScalableMeshSourceImporter::Impl::SyncWithSources ()
     {         
 
 #if 0 //NEEDS_WORK_SM_IMPORTER : ?
-    std::list<IDTMFile::Extent3d64f> listRemoveExtent;
+    std::list<ISMStore::Extent3d64f> listRemoveExtent;
     IDTMSourceCollection::const_iterator it = m_sources.Begin();
 
     for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.EndEdit(); it++)
@@ -358,7 +358,7 @@ StatusInt IScalableMeshSourceImporter::Impl::SyncWithSources ()
         if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
             {
             DRange3d sourceRange = data.GetExtentByLayer(0);
-            IDTMFile::Extent3d64f removeExtent;
+            ISMStore::Extent3d64f removeExtent;
             removeExtent.xMin = sourceRange.low.x;
             removeExtent.xMax = sourceRange.high.x;
             removeExtent.yMin = sourceRange.low.y;
@@ -461,11 +461,11 @@ StatusInt IScalableMeshSourceImporter::Impl::SetPointsCallback(WritePointsCallba
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if 0 //NEEDS_WORK_SM_IMPORTER
 template <typename PointIndex>       
-StatusInt IScalableMeshSourceImporter::Impl::RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const
+StatusInt IScalableMeshSourceImporter::Impl::RemoveSourcesFrom(PointIndex& pointIndex, list<ISMStore::Extent3d64f> listRemoveExtent) const
     {
     //NEEDS_WORK_SM : Logic for determining the extent to remove should be here.  
-    std::list<IDTMFile::Extent3d64f>::const_iterator it = listRemoveExtent.begin();
-    for (std::list<IDTMFile::Extent3d64f>::const_iterator it = listRemoveExtent.begin(); it != listRemoveExtent.end(); it++)
+    std::list<ISMStore::Extent3d64f>::const_iterator it = listRemoveExtent.begin();
+    for (std::list<ISMStore::Extent3d64f>::const_iterator it = listRemoveExtent.begin(); it != listRemoveExtent.end(); it++)
         {
             {
             pointIndex.RemovePoints(*it);
@@ -506,7 +506,7 @@ StatusInt IScalableMeshSourceImporter::Impl::ImportSourcesTo (Sink* sinkP)
 
     if (BSISUCCESS == status)
         {
-        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
+        if (SMStatus::S_SUCCESS != sourcesImporter.Import())
             {
             status = BSIERROR;
             }
@@ -521,9 +521,9 @@ StatusInt IScalableMeshSourceImporter::Impl::ImportSourcesTo (Sink* sinkP)
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if 0
-IDTMFile::File::Ptr IScalableMeshSourceImporter::Impl::SetupFileForCreation ()
+ISMStore::File::Ptr IScalableMeshSourceImporter::Impl::SetupFileForCreation ()
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     
     //NEEDS_WORK_SM_IMPORTER : Where to put those?
@@ -576,7 +576,7 @@ int IScalableMeshSourceImporter::Impl::UpdateLastModified()
 
             //NEEDS_WORK_SM_IMPORTER : Where to put those?
             ScalableMeshData data = conf.GetReplacementSMData();
-			            
+
             const IDTMLocalFileSource& localFileSource(static_cast<const IDTMLocalFileSource&>(*sourceIt));
             const WChar*  localFileNameTemp = localFileSource.GetPath();
 
@@ -615,27 +615,14 @@ int IScalableMeshSourceImporter::Impl::UpdateLastModified()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int IScalableMeshSourceImporter::Impl::LoadSources (IScalableMeshSourceImporterStoragePtr& sourceImporterStoragePtr)
     {
-        /*
-    using namespace IDTMFile;
 
-    if (!file.GetRootDir()->HasSourcesDir())
-        return BSISUCCESS; // No sources were added to the STM.
-
-    const IDTMFile::SourcesDir* sourceDirPtr = file.GetRootDir()->GetSourcesDir();
-    if (0 == sourceDirPtr)
-        return BSIERROR; // Could not load existing sources dir
-*/
     bool success = true;
 
     //NEEDS_WORK_SM_IMPORTER : ??
     DocumentEnv dummyDocumentEnv(L"");
 
     success &= BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(m_sources, sourceImporterStoragePtr, dummyDocumentEnv);
-    /*
-    m_lastSourcesModificationCheckTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedCheckTime());
-    m_lastSourcesModificationTime = CreateTimeFrom(sourceDirPtr->GetLastModifiedTime());
-    m_lastSyncTime = CreateTimeFrom(sourceDirPtr->GetLastSyncTime());
-    */
+
     return (success) ? BSISUCCESS : BSIERROR;
     }
 
@@ -648,24 +635,6 @@ int IScalableMeshSourceImporter::Impl::SaveSources (IScalableMeshSourceImporterS
     if (!m_sourcesDirty)
         return BSISUCCESS;
 
-    /*
-    SourcesDir* sourceDirPtr = 0;
-
-    if (file.GetRootDir()->HasSourcesDir())
-        {
-        sourceDirPtr = file.GetRootDir()->GetSourcesDir();
-        if (0 == sourceDirPtr)
-            return BSIERROR; // Error loading existing source dir
-
-        sourceDirPtr->ClearAll(); // Clear existing data
-        }
-    else
-        {
-        sourceDirPtr = file.GetRootDir()->CreateSourcesDir();
-        if (0 == sourceDirPtr)
-            return BSIERROR; // Error creating source dir
-        }
-        */
 
     bool success = true;
 
@@ -698,9 +667,8 @@ StatusInt IScalableMeshSourceImporter::Impl::LoadGCS (IScalableMeshSourceImporte
     {    
     WString wktStr;
 
-    /*StatusInt status =*/ sourceImporterStoragePtr->ReadGcs(wktStr);
+     sourceImporterStoragePtr->ReadGcs(wktStr);
 
-    //assert(status == SUCCESS);   
 
     if (wktStr.size() == 0)
         {
@@ -709,7 +677,7 @@ StatusInt IScalableMeshSourceImporter::Impl::LoadGCS (IScalableMeshSourceImporte
         return BSISUCCESS;
         }
 
-    IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
 
     BaseGCS::WktFlavor wktFlavor;
 
@@ -717,9 +685,9 @@ StatusInt IScalableMeshSourceImporter::Impl::LoadGCS (IScalableMeshSourceImporte
 
     assert(result);    
 
-    GCSFactory::Status gcsFromWKTStatus = GCSFactory::S_SUCCESS;
+    SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
     GCS fileGCS(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsFromWKTStatus));
-    if (GCSFactory::S_SUCCESS != gcsFromWKTStatus)
+    if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
         return BSIERROR;
 
     assert(!m_gcsDirty);
@@ -735,7 +703,6 @@ StatusInt IScalableMeshSourceImporter::Impl::LoadGCS (IScalableMeshSourceImporte
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshSourceImporter::Impl::SaveGCS(IScalableMeshSourceImporterStoragePtr& sourceImporterStoragePtr)
     {
-    //using namespace IDTMFile;
 
     if (!m_gcsDirty)
         return BSISUCCESS;
@@ -748,16 +715,16 @@ StatusInt IScalableMeshSourceImporter::Impl::SaveGCS(IScalableMeshSourceImporter
         return BSIERROR;
         }
 
-    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
+    SMStatus wktCreateStatus = SMStatus::S_SUCCESS;
     const WKT wkt(newSourceGCS.GetWKT(wktCreateStatus));
-    if (GCS::S_SUCCESS != wktCreateStatus)
+    if (SMStatus::S_SUCCESS != wktCreateStatus)
         return BSIERROR;   
 
     WString extendedWktStr(wkt.GetCStr());    
 
     if (WKTKeyword::TYPE_UNKNOWN == GetWktType(extendedWktStr))
         {
-        wchar_t wktFlavor[2] = {(wchar_t)IDTMFile::WktFlavor_Autodesk, L'\0'};
+        wchar_t wktFlavor[2] = {(wchar_t)ISMStore::WktFlavor_Autodesk, L'\0'};
 
         extendedWktStr += WString(wktFlavor);            
         }      
@@ -924,8 +891,8 @@ int IScalableMeshSourceImporter::Impl::ImportClipMaskSource  (const IDTMSource& 
             return BSIERROR;
 
         // Import
-        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
-        if(importStatus != Importer::S_SUCCESS)
+        const SMStatus importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
+        if (importStatus != SMStatus::S_SUCCESS)
             return BSIERROR;
 
         return BSISUCCESS;

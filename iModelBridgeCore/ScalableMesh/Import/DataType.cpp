@@ -391,9 +391,12 @@ size_t DataType::GetDimensionOrgCount () const
 size_t DataType::GetDimensionCount () const
     {
     size_t count = 0;
-    std::transform(GetOrgGroup().begin(), GetOrgGroup().end(), ImagePP::AccumulateIter(count), 
-                   mem_fun_ref(&DimensionOrg::GetSize));
 
+    for (auto& orgGroup : GetOrgGroup())
+        {
+        count += orgGroup.GetSize();
+        }
+    
     return count;
     }
 

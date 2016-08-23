@@ -125,7 +125,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64   </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -x64    </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -218,15 +218,18 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <NMakeForcedIncludes>$(ProjectDir)STM\ScalableMeshPCH.h</NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64  </NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -p ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 </NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ ScalableMesh.dll</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 -c</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 -c
+BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -p  ScalableMesh -f  ScalableMesh -r  ScalableMesh re  ScalableMesh -ax64 -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)STM;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\ScalableTerrainModel\PublicAPI\ScalableTerrainModel</NMakeIncludeSearchPath>
     <IncludePath>C:\dev\ConceptStation\out\release\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\release\Winx64\BuildContexts\TerrainModel\PublicAPI;$(IncludePath)</IncludePath>
     <SourcePath>$(SourcePath)</SourcePath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseProduct|Win32'">
     <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f TerrainModel -r TerrainModel re ScalableTerrainModel </NMakeBuildCommandLine>
@@ -335,7 +338,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Reprojection.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp" />
-    <ClInclude Include="PublicAPI\ScalableMesh\Import\Attachment.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h" />
@@ -442,20 +444,22 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\CGAL_BentleyKernel.h" />
     <ClInclude Include="stm\ComputeMemoryUseTraits.h" />
     <ClInclude Include="STM\Edits\Skirts.h" />
+    <ClInclude Include="STM\ISMDataStore.h" />
+    <ClInclude Include="STM\ISMDataStore.hpp" />
     <ClInclude Include="stm\ScalableMeshDb.h" />
     <ClInclude Include="STM\ScalableMeshFileMoniker.h" />
     <ClInclude Include="STM\DrapeOnGraph.h" />
+    <ClInclude Include="STM\SMDataSourceParams.h" />
     <ClInclude Include="STM\SMMemoryPool.h" />
+    <ClInclude Include="STM\SMNodeGroup.h" />
     <ClInclude Include="STM\SMSQLiteClipDefinitionsTileStore.h" />
     <ClInclude Include="STM\SMSQLiteDiffsetTileStore.h" />
     <ClInclude Include="STM\SMSQLiteFeatureTileStore.h" />
     <ClInclude Include="STM\SMSQLiteFile.h" />
-    <ClInclude Include="STM\DTMGraphTileStore.h" />
     <ClInclude Include="STM\Edits\ClipRegistry.h" />
     <ClInclude Include="STM\Edits\ClipUtilities.h" />
     <ClInclude Include="STM\Edits\ClipUtilities.hpp" />
     <ClInclude Include="STM\Edits\DifferenceSet.h" />
-    <ClInclude Include="STM\Edits\DiffSetTileStore.h" />
     <ClInclude Include="STM\HGF3DFilterCoord.h" />
     <ClInclude Include="STM\HGF3DFilterCoord.hpp" />
     <ClInclude Include="STM\ImagePPHeaders.h" />
@@ -485,7 +489,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\ScalableMeshMoniker.h" />
     <ClInclude Include="STM\ScalableMeshNodeCreator.h" />
     <ClInclude Include="STM\ScalableMeshProgressiveQuery.h" />
-    <ClInclude Include="STM\ScalableMeshProgressiveQuery.hpp" />
     <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.h" />
     <ClInclude Include="STM\ScalableMeshQuadTreeBCLIBFilters.hpp" />
     <ClInclude Include="STM\ScalableMeshQuadTreeQueries.h" />
@@ -523,7 +526,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\ScalableMesh\Garland\Vec3.h" />
     <ClInclude Include="STM\ScalableMesh\Garland\Vec4.h" />
     <ClInclude Include="STM\ScalableMesh\ScalableMeshGraph.h" />
-    <ClInclude Include="STM\ScalableMesh\Streaming\AzureStorage.h" />
     <ClInclude Include="STM\ScalableMeshPCH.h" />
     <ClInclude Include="STM\SMSQLiteGraphTileStore.h" />
     <ClInclude Include="STM\SMSQLiteIndiceTileStore.h" />
@@ -540,6 +542,14 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClInclude Include="STM\SMStreamingTextureTileStore.h" />
     <ClInclude Include="STM\SMStreamingTileStore.h" />
     <ClInclude Include="STM\SMTextureTileStore.h" />
+    <ClInclude Include="STM\Stores\ISMDataStore.h" />
+    <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
+    <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
+    <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
+    <ClInclude Include="STM\Stores\SMStoreUtils.h" />
+    <ClInclude Include="STM\Stores\SMStoreUtils.hpp" />
+    <ClInclude Include="STM\Stores\SMStreamingDataStore.h" />
+    <ClInclude Include="STM\Stores\SMStreamingDataStore.hpp" />
     <ClInclude Include="STM\Threading\LightThreadPool.h" />
     <ClInclude Include="STM\Threading\ScalableMeshScheduler.h" />
   </ItemGroup>
@@ -547,7 +557,6 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <Xml Include="ScalableMesh.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="transkit\transkit.xml" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AutomaticGroundDetection\AutomaticGroundDetectionInternalConfig.cpp" />
@@ -606,13 +615,14 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\3dDelaunay\gDel3d\PredWrapper.cpp" />
     <ClCompile Include="STM\3dDelaunay\gDel3d\splaying.cpp" />
     <ClCompile Include="STM\3dDelaunay\gDel3d\Star.cpp" />
-    <ClCompile Include="STM\3dDelaunay\MeshData.cpp" />
     <ClCompile Include="STM\3dDelaunay\ScalableMeshCao.cpp" />
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgen.cpp" />
     <ClCompile Include="STM\3dDelaunay\tetGen\tetgenPredicates.cpp" />
     <ClCompile Include="STM\3dDelaunay\TrimHull.cpp" />
     <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
+    <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
+    <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
@@ -680,26 +690,19 @@ python.exe $(SrcBsiCommon)build\BentleyBuild.py -p ScalableTerrainModel -f Terra
     <ClCompile Include="STM\Plugins\ScalableMeshPointTypes.cpp" />
     <ClCompile Include="STM\Plugins\ScalableMeshReprojectionFilterPlugins.cpp" />
     <ClCompile Include="STM\Plugins\ScalableMeshTINTypes.cpp" />
-    <ClCompile Include="STM\Plugins\ScalableMeshTypeConversionFilterPlugins.cpp" />
     <ClCompile Include="STM\ScalableMeshDraping.cpp" />
     <ClCompile Include="STM\ScalableMeshVolume.cpp" />
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
     <ClCompile Include="STM\SMStreamingTileStore.cpp" />
+    <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
+    <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
+    <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Import\Import.mke.realOrig" />
-    <None Include="mki\AssertScalableTerrainModelPolicy.mki" />
-    <None Include="PrivateAPI\STMInternal\Foundations\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Foundations\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\GeoCoords\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Import\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\Memory\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\_Description.mki" />
-    <None Include="PublicAPI\ScalableMesh\__BENTLEY_INTERNAL_ONLY__" />
     <None Include="ScalableMesh.mke" />
     <None Include="ScalableMesh.mki" />
   </ItemGroup>

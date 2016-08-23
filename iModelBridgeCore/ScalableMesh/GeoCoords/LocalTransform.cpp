@@ -6,7 +6,7 @@
 |       $Date: 2011/11/23 21:47:17 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -136,10 +136,10 @@ LocalTransform LocalTransform::CreateFromToLocal (const TransfoModel& globalToLo
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalTransform LocalTransform::CreateDuplexFromToGlobal (const TransfoModel& localToGlobal)
     {
-    TransfoModel::Status inverseOfStatus;
+    SMStatus inverseOfStatus;
     TransfoModel globalToLocal(InverseOf(localToGlobal, inverseOfStatus));
 
-    if (TransfoModel::S_SUCCESS != inverseOfStatus)
+    if (SMStatus::S_SUCCESS != inverseOfStatus)
         throw CustomException(L"Error computing inverse transformation model!");
 
     return LocalTransform(new Impl(localToGlobal, globalToLocal, STATE_DUPLEX));
@@ -151,10 +151,10 @@ LocalTransform LocalTransform::CreateDuplexFromToGlobal (const TransfoModel& loc
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalTransform LocalTransform::CreateDuplexFromToLocal (const TransfoModel& globalToLocal)
     {
-    TransfoModel::Status inverseOfStatus;
+    SMStatus inverseOfStatus;
     TransfoModel localToGlobal(InverseOf(globalToLocal, inverseOfStatus));
 
-    if (TransfoModel::S_SUCCESS != inverseOfStatus)
+    if (SMStatus::S_SUCCESS != inverseOfStatus)
         throw CustomException(L"Error computing inverse transformation model!");
 
     return LocalTransform(new Impl(localToGlobal, globalToLocal, STATE_DUPLEX));
@@ -165,12 +165,12 @@ LocalTransform LocalTransform::CreateDuplexFromToLocal (const TransfoModel& glob
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalTransform LocalTransform::CreateDuplexFromToGlobal (const TransfoModel& localToGlobal,
-                                                            Status&             status)
+                                                         SMStatus&             status)
     {
-    TransfoModel::Status inverseOfStatus;
+    SMStatus inverseOfStatus;
     TransfoModel globalToLocal(InverseOf(localToGlobal, inverseOfStatus));
 
-    status = (TransfoModel::S_SUCCESS == inverseOfStatus) ? S_SUCCESS : S_ERROR;
+    status = (SMStatus::S_SUCCESS == inverseOfStatus) ? S_SUCCESS : S_ERROR;
     return LocalTransform(new Impl(localToGlobal, globalToLocal, STATE_DUPLEX));
     }
 
@@ -179,12 +179,12 @@ LocalTransform LocalTransform::CreateDuplexFromToGlobal (const TransfoModel& loc
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalTransform LocalTransform::CreateDuplexFromToLocal (const TransfoModel& globalToLocal,
-                                                            Status&             status)
+                                                        SMStatus&             status)
     {
-    TransfoModel::Status inverseOfStatus;
+    SMStatus inverseOfStatus;
     TransfoModel localToGlobal(InverseOf(globalToLocal, inverseOfStatus));
 
-    status = (TransfoModel::S_SUCCESS == inverseOfStatus) ? S_SUCCESS : S_ERROR;
+    status = (SMStatus::S_SUCCESS == inverseOfStatus) ? S_SUCCESS : S_ERROR;
     return LocalTransform(new Impl(localToGlobal, globalToLocal, STATE_DUPLEX));
     }
 
@@ -280,10 +280,10 @@ bool LocalTransform::Impl::IsEquivalent (const Impl& rhs) const
         globalToLocalSideP = &m_localToGlobal;
         }
 
-    TransfoModel::Status inverseStatus;
+    SMStatus inverseStatus;
     const TransfoModel globalToLocalSideInverse(InverseOf(*globalToLocalSideP, inverseStatus));
     
-    return TransfoModel::S_SUCCESS == inverseStatus && 
+    return SMStatus::S_SUCCESS == inverseStatus &&
            localToGlobalSideP->IsEquivalent(globalToLocalSideInverse);
     }
 
@@ -314,7 +314,7 @@ const TransfoModel& LocalTransform::GetToGlobal () const
     if (m_implP->HasLocalToGlobal())
         return m_implP->m_localToGlobal;
 
-    Status status = const_cast<LocalTransform&>(*this).ComputeDuplex();
+    SMStatus status = const_cast<LocalTransform&>(*this).ComputeDuplex();
     assert(S_SUCCESS == status);
 
     return m_implP->m_localToGlobal;
@@ -338,7 +338,7 @@ const TransfoModel& LocalTransform::GetToLocal () const
     if (m_implP->HasGlobalToLocal())
         return m_implP->m_globalToLocal;
 
-    Status status = const_cast<LocalTransform&>(*this).ComputeDuplex();
+    SMStatus status = const_cast<LocalTransform&>(*this).ComputeDuplex();
     assert(S_SUCCESS == status);
     
     return m_implP->m_globalToLocal;
@@ -348,7 +348,7 @@ const TransfoModel& LocalTransform::GetToLocal () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-LocalTransform::Status LocalTransform::ComputeDuplex ()
+SMStatus LocalTransform::ComputeDuplex()
     {
     if (STATE_DUPLEX == m_implP->m_state)
         return S_SUCCESS;
@@ -356,14 +356,14 @@ LocalTransform::Status LocalTransform::ComputeDuplex ()
 
     Impl::UpdateForEdit(m_implP);
 
-    TransfoModel::Status status;
+    SMStatus status;
 
     if (STATE_SIMPLEX_TO_GLOBAL == m_implP->m_state)
         m_implP->m_globalToLocal = InverseOf(m_implP->m_localToGlobal, status);
     else
         m_implP->m_localToGlobal = InverseOf(m_implP->m_globalToLocal, status);
 
-    return (TransfoModel::S_SUCCESS == status) ? S_SUCCESS : S_ERROR;
+    return (SMStatus::S_SUCCESS == status) ? S_SUCCESS : S_ERROR;
     }
 
 
@@ -371,9 +371,9 @@ LocalTransform::Status LocalTransform::ComputeDuplex ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-LocalTransform::Status LocalTransform::Append (const LocalTransform& rhs)
+SMStatus LocalTransform::Append(const LocalTransform& rhs)
     {
-    Status status;
+    SMStatus status;
     LocalTransform result(Combine(*this, rhs, status));
     
     if (S_SUCCESS != status)
@@ -402,9 +402,9 @@ LocalTransform::Status LocalTransform::Append (const LocalTransform& rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalTransform Combine     (const LocalTransform&       lhs,
                             const LocalTransform&       rhs,
-                            LocalTransform::Status&     status)
+                            SMStatus&     status)
     {
-    status = LocalTransform::S_SUCCESS;
+    status = SMStatus::S_SUCCESS;
 
     const State lhsState = lhs.m_implP->m_state;
     const State rhsState = rhs.m_implP->m_state;
@@ -430,12 +430,12 @@ LocalTransform Combine     (const LocalTransform&       lhs,
         {
         assert(STATE_SIMPLEX_TO_LOCAL == rhsState);
         
-        TransfoModel::Status inverseStatus;
+        SMStatus inverseStatus;
         TransfoModel rhsLocalToGlobal = InverseOf(rhs.GetToLocal(), inverseStatus);
         
-        if (TransfoModel::S_SUCCESS != inverseStatus)
+        if (SMStatus::S_SUCCESS != inverseStatus)
             {
-            status = LocalTransform::S_ERROR;
+            status = SMStatus::S_ERROR;
             return LocalTransform::GetIdentity();
             }
 
@@ -446,12 +446,12 @@ LocalTransform Combine     (const LocalTransform&       lhs,
         assert(STATE_SIMPLEX_TO_GLOBAL == rhsState);
         assert(STATE_SIMPLEX_TO_LOCAL == lhsState);
 
-        TransfoModel::Status inverseStatus;
+        SMStatus inverseStatus;
         TransfoModel lhsLocalToGlobal = InverseOf(lhs.GetToLocal(), inverseStatus);
         
-        if (TransfoModel::S_SUCCESS != inverseStatus)
+        if (SMStatus::S_SUCCESS != inverseStatus)
             {
-            status = LocalTransform::S_ERROR;
+            status = SMStatus::S_ERROR;
             return LocalTransform::GetIdentity();
             }
 
@@ -466,9 +466,9 @@ LocalTransform Combine     (const LocalTransform&       lhs,
 LocalTransform Combine (const LocalTransform&   lhs,
                         const LocalTransform&   rhs)
     {
-    LocalTransform::Status status;
+    SMStatus status;
     LocalTransform result(Combine(lhs, rhs, status));
-    if (LocalTransform::S_SUCCESS != status)
+    if (SMStatus::S_SUCCESS != status)
         throw CustomException(L"Error combining local transforms!");
     
     return result;

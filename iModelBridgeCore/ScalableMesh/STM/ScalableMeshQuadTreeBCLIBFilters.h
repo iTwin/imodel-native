@@ -20,38 +20,7 @@
 
 #include "SMMeshIndex.h"
 #include "ScalableMeshRelevanceDistribution.h"
-
-
-template <> class SpatialOp<HGF3DFilterCoord<double,double>, HGF3DFilterCoord<double,double>, HGF3DExtent<double> >
-{
-
-    public:
-    static  HGF3DExtent<double> GetExtent(const HGF3DFilterCoord<double,double> spatialObject)
-    {
-    return  HGF3DExtent<double>(spatialObject.GetX(), spatialObject.GetY(), spatialObject.GetZ(), spatialObject.GetX(), spatialObject.GetY(), spatialObject.GetZ());
-    }
-
-    static bool IsPointIn2D(const HGF3DFilterCoord<double,double> spatialObject, HGF3DFilterCoord<double,double> pi_rCoord)
-    {
-    return spatialObject.IsEqualTo2D (pi_rCoord);
-    }
-
-    static bool IsSpatialInExtent2D (const HGF3DFilterCoord<double,double>& spatial, const  HGF3DExtent<double>& extent)
-    {
-        return extent.IsPointIn2D (spatial);
-    }
-
-    static bool IsSpatialInExtent3D (const HGF3DFilterCoord<double,double>& spatial, const  HGF3DExtent<double>& extent)
-    {
-        return extent.IsPointIn (spatial);
-    }
-
-};
-
-
-
-
-
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
 
 extern bool   GET_HIGHEST_RES;
 
@@ -126,6 +95,30 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_CGALMeshFilt
         virtual bool        IsProgressiveFilter() const { return false; }        
     };
 
-//#include "ScalableMeshQuadTreeBCLIBFilters.hpp"
+#ifdef WIP_MESH_IMPORT
+template<class POINT, class EXTENT> class ScalableMeshQuadTreeBCLIB_UserMeshFilter : public ISMMeshIndexFilter<POINT, EXTENT>
+    {
+    public:
+
+        // Primary methods
+        ScalableMeshQuadTreeBCLIB_UserMeshFilter() : m_callback(nullptr){};
+        virtual             ~ScalableMeshQuadTreeBCLIB_UserMeshFilter() {};
+
+        // IHGFPointFilter implementation
+        virtual bool        Filter(HFCPtr<SMPointIndexNode<POINT, EXTENT> > parentNode,
+                                    std::vector<HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& subNodes,
+                                    size_t numSubNodes) const;
+
+        virtual bool        IsProgressiveFilter() const { return false; }
+
+        void   SetCallback(MeshUserFilterCallback callback)
+            {
+            m_callback = callback;
+            }
+
+    private:
+        MeshUserFilterCallback     m_callback;
+    };
+#endif
 
 

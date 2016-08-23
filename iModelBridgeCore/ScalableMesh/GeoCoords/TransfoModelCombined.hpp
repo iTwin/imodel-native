@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:27:00 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,23 +42,23 @@ private:
         return BaseHandler::ConvertToMatrix(*m_1P) * BaseHandler::ConvertToMatrix(*m_0P);
         }
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d&                 sourcePt,
+    virtual SMStatus        _Transform(const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt) const override
         {
-        return (TransfoModel::S_SUCCESS == BaseHandler::Transform(*m_0P, sourcePt, targetPt) &&
-                TransfoModel::S_SUCCESS == BaseHandler::Transform(*m_1P, targetPt, targetPt)) ? 
-                    TransfoModel::S_SUCCESS : TransfoModel::S_ERROR;
+        return (SMStatus::S_SUCCESS == BaseHandler::Transform(*m_0P, sourcePt, targetPt) &&
+                SMStatus::S_SUCCESS == BaseHandler::Transform(*m_1P, targetPt, targetPt)) ?
+                SMStatus::S_SUCCESS : SMStatus::S_ERROR;
 
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d*                 sourcePtP,
+    virtual SMStatus        _Transform(const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP) const override
         {
-        return (TransfoModel::S_SUCCESS == BaseHandler::Transform(*m_0P, sourcePtP, sourcePtQty, targetPtP) &&
-                TransfoModel::S_SUCCESS == BaseHandler::Transform(*m_1P, targetPtP, sourcePtQty, targetPtP)) ? 
-                    TransfoModel::S_SUCCESS : TransfoModel::S_ERROR;
+        return (SMStatus::S_SUCCESS == BaseHandler::Transform(*m_0P, sourcePtP, sourcePtQty, targetPtP) &&
+                SMStatus::S_SUCCESS == BaseHandler::Transform(*m_1P, targetPtP, sourcePtQty, targetPtP)) ?
+                SMStatus::S_SUCCESS : SMStatus::S_ERROR;
         }
 
     virtual TransfoModelBase*           _CreateInverse                 () const override

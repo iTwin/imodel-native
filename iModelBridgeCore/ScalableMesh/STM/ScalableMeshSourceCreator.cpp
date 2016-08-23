@@ -34,6 +34,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "../Import/Sink.h"
 #include "ScalableMeshSourcesImport.h"
 
+#include "ScalableMeshMesher.h"
 
 #include <ScalableMesh/IScalableMeshPolicy.h>
 #include "ScalableMeshSources.h"
@@ -46,14 +47,19 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include "ScalableMeshQuery.h"
 #include "Edits/ClipUtilities.hpp"
-#include "SMSQLiteFeatureTileStore.h"
-using namespace IDTMFile;
+#include "ScalableMeshQuadTreeBCLIBFilters.h"
+#ifdef MAPBOX_PROTOTYPE
+    #include <ImagePP\all\h\HRFMapboxFile.h>
+#endif
+
+using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 extern bool s_inEditing;
 bool s_useThreadsInStitching = false;
 bool s_useThreadsInMeshing = false;
 bool s_useThreadsInFiltering = false;
 bool s_useThreadsInTexturing = false;
+ScalableMeshExistingMeshMesher<DPoint3d,DRange3d> s_ExistingMeshMesher;
 size_t s_nCreatedNodes = 0;
 bool s_useSpecialTriangulationOnGrids = false;
 
@@ -68,7 +74,7 @@ StatusInt&      status)
     {
     RegisterDelayedImporters();
 
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     IScalableMeshSourceCreatorPtr pCreator = new IScalableMeshSourceCreator(new Impl(filePath));
 
@@ -83,7 +89,7 @@ StatusInt&      status)
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const IScalableMeshPtr&    scmPtr,
                                                      StatusInt&          status)
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     RegisterDelayedImporters();
 
@@ -116,6 +122,13 @@ void IScalableMeshSourceCreator::SetSourceImportExtent(const DRange2d& ext)
     {
     dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_extent = ext;
     }
+
+void IScalableMeshSourceCreator::SetSourceImportPolygon(const DPoint3d* polygon, size_t nPts)
+    {
+    if (nPts > 0 && polygon != nullptr)
+        dynamic_cast<IScalableMeshSourceCreator::Impl*>(m_implP.get())->m_filterPolygon.assign(polygon, polygon + nPts);
+    }
+
 
 void IScalableMeshSourceCreator::SetSourcesDirty()
     {
@@ -238,7 +251,7 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile)
 
 void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
 {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     //File::Ptr filePtr;
     bool bAllRemoved = true;
@@ -266,6 +279,14 @@ void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
     m_sourcesDirty = true;
     //return filePtr;
 }
+
+void IScalableMeshSourceCreator::SetUserFilterCallback(MeshUserFilterCallback callback)
+    {
+#ifdef WIP_MESH_IMPORT
+    if (s_filter == nullptr) s_filter = new ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>();
+    ((ScalableMeshQuadTreeBCLIB_UserMeshFilter<DPoint3d, PointIndexExtentType>*)s_filter)->SetCallback(callback);
+#endif
+    }
 
 
 //NEEDS_WORK_SM : To be removed
@@ -330,7 +351,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     )
     {
-    using namespace IDTMFile;
+    using namespace ISMStore;
 
     HFCPtr<MeshIndexType>          pDataIndex;
 
@@ -359,7 +380,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
 
 
-   // std::list<IDTMFile::Extent3d64f> listRemoveExtent;
+   // std::list<ISMStore::Extent3d64f> listRemoveExtent;
     std::list<DRange3d> listRemoveExtent;
     IDTMSourceCollection::const_iterator it = m_sources.Begin();
 
@@ -375,7 +396,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (data.GetUpToDateState() == UpToDateState::REMOVE || data.GetUpToDateState() == UpToDateState::MODIFY)
             {
             DRange3d sourceRange = data.GetExtentByLayer(0);
-            /*IDTMFile::Extent3d64f removeExtent;
+            /*ISMStore::Extent3d64f removeExtent;
             removeExtent.xMin = sourceRange.low.x;
             removeExtent.xMax = sourceRange.high.x;
             removeExtent.yMin = sourceRange.low.y;
@@ -428,23 +449,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             }
         }
 
-
-
-    typedef SMPointTaggedTileStore<int32_t,
-        PointIndexExtentType>             TileStoreType;
-    typedef SMPointTileStore<int32_t,
-        PointIndexExtentType>             GenericTileStoreType;
-    WString name = m_scmFileName;
-    WString featureFilePath = name.append(L"_feature"); //temporary file, deleted after generation
-    _wremove(featureFilePath.c_str());
-    //IDTMFile::File::Ptr featureFilePtr = IDTMFile::File::Create(featureFilePath.c_str());
-    SMSQLiteFilePtr sqliteFeatureFile = new SMSQLiteFile();
-    sqliteFeatureFile->Create(featureFilePath);
-    HFCPtr<GenericTileStoreType>  pFeatureTileStore = new SMSQLiteFeatureTileStore<PointIndexExtentType>(sqliteFeatureFile);//new TileStoreType(featureFilePtr, (SCM_COMPRESSION_DEFLATE == m_compressionType));
-    //pFeatureTileStore->StoreMasterHeader(NULL, 0);
-    pDataIndex->SetFeatureStore(pFeatureTileStore);
-    auto pool = ScalableMeshMemoryPools<PointType>::Get()->GetFeaturePool();
-    pDataIndex->SetFeaturePool(pool);
+           
     // Remove sources which have been removed or modified
 
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
@@ -454,9 +459,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
-
-
-
+        
+#ifndef VANCOUVER_API
+//apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
+    if (!PolygonOps::IsConvex(m_filterPolygon))
+        {
+            pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
+        }
+#endif
 
 #ifdef SCALABLE_MESH_ATP
     s_getImportPointsDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -554,18 +564,15 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #ifdef SCALABLE_MESH_ATP    
             startClock = clock();
 #endif
-            //if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
-            //    return BSIERROR;
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
+                return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
-            if (level == (int)depth)
-                {
-                if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
-                    return BSIERROR;
-                }
+            if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
+                return BSIERROR;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;
@@ -627,17 +634,10 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         }
 #endif
 
-//    auto& store = pDataIndex->GetClipStore();
     pDataIndex = 0;
-    //store->Close();
+
     if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
-    //featureFilePtr->Close();
-   // featureFilePtr = 0;
-    sqliteFeatureFile->Close();
-    sqliteFeatureFile = 0;
-    char* outPath = new char[featureFilePath.GetMaxLocaleCharBytes()];
-    std::remove(featureFilePath.ConvertToLocaleChars(outPath));
-    delete[] outPath;
+            
     return BSISUCCESS;
     }
 
@@ -755,7 +755,7 @@ int IScalableMeshSourceCreator::Impl::ApplyEditsFromSources(HFCPtr<MeshIndexType
 
     if (BSISUCCESS == status)
         {
-        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
+        if (SMStatus::S_SUCCESS != sourcesImporter.Import())
             {
             status = BSIERROR;
             }
@@ -781,16 +781,40 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
     auto cluster = new HGFHMRStdWorldCluster();
     pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
     HIMMosaic::RasterList rasterList;
+    
     for (auto& source : filteredSources)
         {
-
-        WString path = WString(L"file://") + source->GetPath();
+        WString path;
+        
+        if (source->GetPath().StartsWith(L"http://"))
+            {
+            path = source->GetPath();
+            }
+        else
+            {
+            path = WString(L"file://") + source->GetPath();
+            }
+            
+            
         HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
         HFCPtr<HRSObjectStore> pObjectStore;
         HFCPtr<HRFRasterFile>  pRasterFile;
         HFCPtr<HRARaster>      pRaster;
         // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+
+#ifdef MAPBOX_PROTOTYPE
+        HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
+
+        if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+            {
+            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+            }
+        else
+#endif
+            {
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            }
+                                                                                                                            
         pLogicalCoordSys = cluster->GetWorldReference(pRasterFile->GetPageWorldIdentificator(0));
         pObjectStore = new HRSObjectStore(s_rasterMemPool,
                                           pRasterFile,
@@ -864,6 +888,19 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
         clip = new HVEShape(m_extent.low.x, m_extent.low.y, m_extent.high.x, m_extent.high.y, resultingClipShapePtr->GetCoordSys());
         resultingClipShapePtr->AddClip(clip, false);
         }
+    if (!m_filterPolygon.empty())
+        {
+        bvector<double> vecOfPtCoordinates;
+        for (auto& pt : m_filterPolygon)
+            {
+            vecOfPtCoordinates.push_back(pt.x);
+            vecOfPtCoordinates.push_back(pt.y);
+            }
+        size_t size = m_filterPolygon.size() * 2;
+        clip = new HVEShape(&size, &vecOfPtCoordinates[0], resultingClipShapePtr->GetCoordSys());
+        resultingClipShapePtr->AddClip(clip, false);
+        }
+
     int status;
 
     status = TraverseSourceCollection(sourcesImporter,
@@ -874,7 +911,7 @@ StatusInt IScalableMeshSourceCreator::Impl::ImportSourcesTo(Sink* sinkP)
 
     if (BSISUCCESS == status)
         {
-        if (SourcesImporter::S_SUCCESS != sourcesImporter.Import())
+        if (SMStatus::S_SUCCESS != sourcesImporter.Import())
             {
             status = BSIERROR;
             }
@@ -1061,8 +1098,8 @@ int IScalableMeshSourceCreator::Impl::ImportClipMaskSource(const IDTMSource&    
             return BSIERROR;
 
         // Import
-        const Importer::Status importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
-        if(importStatus != Importer::S_SUCCESS)
+        const SMStatus importStatus = importerPtr->Import(dataSource.GetConfig().GetSequence(), *dataSource.GetConfig().GetConfig());
+        if (importStatus != SMStatus::S_SUCCESS)
             return BSIERROR;
 
         return BSISUCCESS;
@@ -1080,7 +1117,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
                                           const GCS&                                               targetGCS,
                                           const ScalableMeshData&                    targetScalableMeshData) const
     {
-    StatusInt status = BSISUCCESS;
+    int status = S_SUCCESS;
     try
         {
         const SourceImportConfig& sourceImportConfig = dataSource.GetConfig();
@@ -1132,7 +1169,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
         }
     catch (...)
         {
-        status = BSIERROR;
+        status = S_ERROR;
         }
 
     return status;
@@ -1145,7 +1182,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollection(SourcesImporter& 
                                                     const ScalableMeshData&                        targetScalableMeshData)
 
     {
-    int status = BSISUCCESS;
+    int status = S_SUCCESS;
 
     ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
 
@@ -1154,7 +1191,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollection(SourcesImporter& 
 
     //The sources need to be parsed in the reverse order.
     for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
-        sourceIt != sourcesEnd && BSISUCCESS == status;
+        sourceIt != sourcesEnd && S_SUCCESS == status;
         ++sourceIt)
         {
         IDTMSource& source = *sourceIt;
@@ -1203,7 +1240,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionEditsOnly(SourcesI
                                                                const ScalableMeshData&                        targetScalableMeshData)
 
     {
-    int status = BSISUCCESS;
+    int status = S_SUCCESS;
 
     ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
 
@@ -1212,7 +1249,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionEditsOnly(SourcesI
 
     //The sources need to be parsed in the reverse order.
     for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
-         sourceIt != sourcesEnd && BSISUCCESS == status;
+         sourceIt != sourcesEnd && S_SUCCESS == status;
          ++sourceIt)
         {
         IDTMSource& source = *sourceIt;
@@ -1264,7 +1301,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionRasters(bvector<ID
                                                                         const ScalableMeshData&                        targetScalableMeshData)
 
     {
-    int status = BSISUCCESS;
+    int status = S_SUCCESS;
 
     ClipShapeStoragePtr clipShapeStoragePtr = new ClipShapeStorage(totalClipShapePtr, targetGCS);
 
@@ -1273,7 +1310,7 @@ int IScalableMeshSourceCreator::Impl::TraverseSourceCollectionRasters(bvector<ID
 
     //The sources need to be parsed in the reverse order.
     for (RevSourceIter sourceIt = sources.rBeginEdit(), sourcesEnd = sources.rEndEdit();
-         sourceIt != sourcesEnd && BSISUCCESS == status;
+         sourceIt != sourcesEnd && S_SUCCESS == status;
          ++sourceIt)
         {
         IDTMSource& source = *sourceIt;

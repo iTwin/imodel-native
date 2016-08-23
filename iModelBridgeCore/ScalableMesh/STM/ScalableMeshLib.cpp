@@ -15,6 +15,8 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"
 #include "ScalableMeshFileMoniker.h"
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
+#include "SMMemoryPool.h"
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -36,8 +38,10 @@ void RegisterPODImportPlugin();
 void ScalableMeshLib::Host::Initialize()
     {
     BeAssert (NULL == m_scalableTerrainModelAdmin);   
+    SMMemoryPool::GetInstance();
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     InitializeProgressiveQueries();
+    RegisterPODImportPlugin();
         BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
         GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
@@ -112,6 +116,8 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     static const RegisterTINAsIDTMLinearToPointConverter                                   s_tinToPtTypeConv0;
     // Register TIN to linear converters
     static const RegisterTINAsIDTMLinearToIDTMLinearConverter                              s_tinToLinTypeConv0;
+
+    static const RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
 
     
     // Register Moniker

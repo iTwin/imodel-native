@@ -396,10 +396,9 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
     private: 
 
         size_t        m_maxNumberOfPoints;
-        ClipVectorPtr m_viewClipVector;
                  
     protected: 
-
+        ClipVectorPtr m_viewClipVector;
     public:
 
         // Primary methods
@@ -490,6 +489,34 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                                           const EXTENT&                           i_visibleExtent,                                                          
                                                           double                                  i_RootToViewMatrix[][4]) const;
         
+};
+
+
+template<class POINT, class EXTENT> class ScalableMeshQuadTreeContextMeshQuery : public ScalableMeshQuadTreeViewDependentMeshQuery<POINT,EXTENT>
+{
+public:
+    ScalableMeshQuadTreeContextMeshQuery(const EXTENT& extent,
+                                         const double         rootToViewMatrix[][4],
+                                         const double         viewportRotMatrix[][3],
+                                         const ClipVectorPtr& viewClipVector)
+                                         :ScalableMeshQuadTreeViewDependentMeshQuery(extent, rootToViewMatrix, viewportRotMatrix, false, viewClipVector)
+        {
+        }
+
+    virtual             ~ScalableMeshQuadTreeContextMeshQuery() {};
+
+    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                              size_t numSubNodes,
+                              BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
+    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                              size_t numSubNodes,
+                              vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
+    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                              size_t numSubNodes,
+                              ProducedNodeContainer<POINT, EXTENT>& foundNodes);
 };
 
 //#include "ScalableMeshQuadTreeQueries.hpp"

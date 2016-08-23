@@ -14,8 +14,11 @@
 
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <deque>
-#ifndef VANCOUVER_API
-namespace IDTMFile
+
+//NEEDS_WORK_SM : Might be better if put in D:\BSI\DgnDb06SM\src\ScalableMesh\PrivateAPI
+#include "../../../STM/Stores/SMStoreUtils.h"
+
+namespace ISMStore
     {
 
 
@@ -26,7 +29,7 @@ namespace IDTMFile
         WktFlavor_End,
         };
     }
-#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
 
@@ -70,11 +73,11 @@ const WKTKeyword&                       GetWKTKeyword                           
 const WKTKeyword&                       GetWKTKeyword                              (WKTKeyword::Type    type);
 
 
-IDTMFile::WktFlavor                     GetWKTFlavor                       (WString* wktWithoutFlavorStr, const WString& wktStr);
+ISMStore::WktFlavor                     GetWKTFlavor                       (WString* wktWithoutFlavorStr, const WString& wktStr);
 
 WKTKeyword::Type                        GetWktType                         (WString wkt);
 
-bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor);
+bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, ISMStore::WktFlavor fileWktFlavor);
 
 
 END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE

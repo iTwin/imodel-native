@@ -47,14 +47,17 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "SMPointIndex.h"
 #include "SMMeshIndex.h"
-#include "SMPointTileStore.h"
 
-#include "SMStreamingTileStore.h"
 #include <ScalableMesh/GeoCoords/Reprojection.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include "ScalableMeshMemoryPools.h"
 
+#include "Stores/SMSQLiteStore.h"
+
 #include "ScalableMeshVolume.h"
+
+#include <CloudDataSource/DataSourceManager.h>
+
 /*__PUBLISH_SECTION_START__*/
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
@@ -62,8 +65,8 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 extern bool s_useSQLFormat;
-//typedef IDTMFile::Extent3d64f        YProtPtExtentType;
-typedef DRange3d YProtPtExtentType;
+//typedef ISMStore::Extent3d64f        Extent3dType;
+typedef DRange3d Extent3dType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 /*----------------------------------------------------------------------------+
@@ -85,9 +88,12 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     WString                             m_baseExtraFilesPath;
 
+    static DataSourceManager            s_dataSourceManager;
+    DataSourceAccount               *   m_dataSourceAccount;
+
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
-    const WString                  m_path; 
+    const WString                        m_path; 
 
 
     explicit                            ScalableMeshBase(SMSQLiteFilePtr& smSQLiteFile, const WString&             filePath);
@@ -105,7 +111,13 @@ public:
 
     const SMSQLiteFilePtr&              GetDbFile() const;
 
-    const WChar*                      GetPath                    () const;
+    const WChar*                        GetPath                 () const;
+
+    static DataSourceManager &          GetDataSourceManager    (void)                                  {return s_dataSourceManager;}
+    void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
+    DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
+    
+    DataSourceStatus                    InitializeAzureTest     (void);
 
     };
 
@@ -131,7 +143,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual bool _GetTransformation(TransformR transformation) override;
     virtual IDTMVolumeP _GetDTMVolume() override;
 
-    virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override { return DTM_ERROR; }
+    virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) override;
 
     public:
         ScalableMeshDTM(IScalableMeshPtr scMesh)
@@ -174,31 +186,11 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
              
         friend struct IScalableMesh;        
         friend class auto_ptr<ScalableMesh>;
-        friend class ScalableMeshProgressiveQueryEngine;
-/*#ifndef SM_BESQL_FORMAT
-        typedef SMPointTaggedTileStore<INDEXPOINT, YProtPtExtentType >
-            TileStoreType;
-
-#else
-        typedef SMSQLitePointTileStore<INDEXPOINT, YProtPtExtentType>             TileStoreType;
-#endif*/
-        typedef SMPointTileStore<INDEXPOINT, YProtPtExtentType >
-            TileStoreType;
-
-
-        typedef SMStreamingPointTaggedTileStore<
-            INDEXPOINT,
-            YProtPtExtentType >        StreamingPointStoreType;
-        typedef SMStreamingPointTaggedTileStore<
-            int32_t,
-            YProtPtExtentType >        StreamingIndiceStoreType;
-        typedef SMStreamingPointTaggedTileStore<
-            DPoint2d,
-            YProtPtExtentType >        StreamingUVStoreType;
-
-        typedef SMMeshIndex<INDEXPOINT, YProtPtExtentType>
+        friend class ScalableMeshProgressiveQueryEngine;        
+                
+        typedef SMMeshIndex<INDEXPOINT, Extent3dType>
                                         MeshIndexType;
-
+        
 
         bool                            m_areDataCompressed; 
         bool                            m_computeTileBoundary;
@@ -227,8 +219,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         int                             Close                          ();
 
   
-        unsigned __int64                CountPointsInExtent(YProtPtExtentType&  extent, 
-                                                            HFCPtr<SMPointIndexNode<INDEXPOINT, YProtPtExtentType>> nodePtr,
+        unsigned __int64                CountPointsInExtent(Extent3dType&  extent, 
+                                                            HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> nodePtr,
                                                             const unsigned __int64& maxNumberCountedPoints) const;
 
         unsigned __int64                CountLinearsInExtent(YProtFeatureExtentType& extent, unsigned __int64 maxFeatures) const;
@@ -237,12 +229,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         static DRange3d                 ComputeTotalExtentFor          (const MeshIndexType*           pointIndexP);
 
         bool                            AreDataCompressed              ();
-#if 0
-        void                            AddBreaklineSet                (list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
-                                                                        BC_DTM_OBJ*                         po_ppBcDtmObj);
 
-        ISMPointIndexFilter<INDEXPOINT, YProtPtExtentType>* CreatePointIndexFilter(IDTMFile::UniformFeatureDir* pointDirPtr) const;
-#endif
         void CreateSpatialIndexFromExtents(list<HVE2DSegment>& pi_rpBreaklineList, 
                                            BC_DTM_OBJ**        po_ppBcDtmObj);
         
@@ -252,8 +239,8 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
     protected : 
 
-        HFCPtr<SMPointIndexNode<INDEXPOINT, YProtPtExtentType>> GetRootNode();                    
-        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
+        HFCPtr<SMPointIndexNode<INDEXPOINT, Extent3dType>> GetRootNode();                    
+        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity()) override;
  
         virtual __int64          _GetPointCount() override;
 
@@ -313,10 +300,13 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override;
+        virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override;
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override;
 #endif
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override;
+
+        virtual IScalableMeshNodePtr               _GetRootNode() override;
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
@@ -347,19 +337,19 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
     private : 
                 
-        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmIndexPtr;
+        HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
         int                                             m_resolutionIndex;
         GeoCoords::GCS                                  m_sourceGCS;
         
     protected : 
 
-        ScalableMeshSingleResolutionPointIndexView(HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> scmPointIndexPtr, 
+        ScalableMeshSingleResolutionPointIndexView(HFCPtr<SMPointIndex<POINT, Extent3dType>> scmPointIndexPtr, 
                                                    int                                             resolutionIndex, 
                                                    GeoCoords::GCS                             sourceGCS);
 
         virtual ~ScalableMeshSingleResolutionPointIndexView();
 
-        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP) override;
+        virtual void                               _TextureFromRaster(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity()) override;
 
         // Inherited from IDTM   
         virtual __int64          _GetPointCount() override;
@@ -421,9 +411,20 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual int                    _ConvertToCloud(const WString& pi_pOutputDirPath) const override { return ERROR; }
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) override { assert(false); };
+        virtual IScalableMeshNodePtr               _GetRootNode() override
+            {
+            assert(false);
+            auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
+           #ifndef VANCOUVER_API
+            return new ScalableMeshNode<POINT>(ptr);
+            #else
+            return ScalableMeshNode<POINT>::CreateItem(ptr);
+            #endif
+            }
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                    _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const override {return ERROR;}
+        virtual int                    _LoadAllNodeData(size_t& nbLoadedNodes, int level) const override { return ERROR; }
         virtual int                    _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const override { return ERROR; }
 #endif
            

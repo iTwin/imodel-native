@@ -26,11 +26,6 @@ IScalableMeshNodeCreatorPtr IScalableMeshNodeCreator::GetFor(const WChar*  fileP
 StatusInt&      status)
     {
 
-    /*if (!fileExist(filePath))
-        {
-        status = BSISUCCESS;
-        return new IScalableMeshNodeCreator(new Impl(filePath)); // Return early. File does not exist.
-        }*/
 
     IScalableMeshNodeCreatorPtr pCreator = new IScalableMeshNodeCreator(new Impl(filePath));
 

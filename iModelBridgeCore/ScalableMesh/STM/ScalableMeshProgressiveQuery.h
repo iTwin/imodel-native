@@ -44,8 +44,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 
-//typedef IDTMFile::Extent3d64f YProtPtExtentType;
-typedef DRange3d YProtPtExtentType;
+//typedef ISMStore::Extent3d64f Extent3dType;
+typedef DRange3d Extent3dType;
 typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
@@ -73,7 +73,7 @@ struct RequestedQuery
     int                                                          m_queryId;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_overviewMeshNodes;
     bvector<IScalableMeshCachedDisplayNodePtr>                                m_requiredMeshNodes;
-    //ISMPointIndexQuery<IDTMFile::Point3d64f, YProtPtExtentType>* m_queryObjectP;    
+    //ISMPointIndexQuery<ISMStore::Point3d64f, Extent3dType>* m_queryObjectP;    
     bool                                                         m_isQueryCompleted;
     bool                                                         m_fetchLastCompletedNodes;
     bool                                                         m_loadTexture;
@@ -89,7 +89,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
         bset<uint64_t> m_activeClips;
 
-        void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, YProtPtExtentType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
+        void StartNewQuery(RequestedQuery& newQuery, ISMPointIndexQuery<DPoint3d, Extent3dType>* queryObjectP, const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes);
 
     protected:                                        
 

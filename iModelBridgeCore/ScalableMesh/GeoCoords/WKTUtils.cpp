@@ -109,7 +109,7 @@ WKTRoot::WKTRoot   (const WChar* wktBegin,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKTRoot::Status WKTRoot::Parse ()
+SMStatus WKTRoot::Parse()
     {
     const WChar* keywordBegin = FindWKTSectionKeyword(m_begin, m_end);
     if (m_end == keywordBegin)
@@ -125,7 +125,7 @@ WKTRoot::Status WKTRoot::Parse ()
 
     WKTSection section(keywordBegin, keywordEnd, sectionBegin);
 
-    if (WKTSection::S_SUCCESS != section.Parse(*this, m_end))
+    if (SMStatus::S_SUCCESS != section.Parse(*this, m_end))
         return S_ERROR;
 
     if (m_end != (section.strEnd() + 1))
@@ -157,7 +157,7 @@ WKTParameter::WKTParameter (const WChar* parameterBegin)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKTParameter::Status WKTParameter::Parse   (WKTRoot&        root,
+SMStatus WKTParameter::Parse(WKTRoot&        root,
                                             const WChar*     wktSectionEnd)
     {
     struct IsParameterEndOrSection : std::unary_function<WChar, bool>
@@ -190,7 +190,7 @@ WKTParameter::Status WKTParameter::Parse   (WKTRoot&        root,
 
     WKTSection section(m_begin, parameterEnd, sectionBegin);
 
-    if (WKTSection::S_SUCCESS != section.Parse(root, wktSectionEnd))
+    if (SMStatus::S_SUCCESS != section.Parse(root, wktSectionEnd))
         return S_ERROR;
     
     root.m_sections.push_back(section);
@@ -224,7 +224,7 @@ WKTSection::WKTSection (const WChar*     keywordBegin,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WKTSection::Status WKTSection::Parse   (WKTRoot&        root,
+SMStatus WKTSection::Parse(WKTRoot&        root,
                                         const WChar*     sectionEnd)
     {
     assert(m_begin <= sectionEnd);
@@ -235,7 +235,7 @@ WKTSection::Status WKTSection::Parse   (WKTRoot&        root,
         {
         WKTParameter parameter(parameterBegin);
 
-        if (WKTParameter::S_SUCCESS != parameter.Parse(root, sectionEnd))
+        if (SMStatus::S_SUCCESS != parameter.Parse(root, sectionEnd))
             return S_ERROR;
 
         m_parameters.push_back(parameter);
@@ -374,10 +374,10 @@ const WKTKeyword& GetWKTKeyword (WKTKeyword::Type type)
 * @description  
 * @bsimethod                                                  Mathieu.St-Pierre   12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMFile::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wktStr)
+ISMStore::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wktStr)
     {
     assert(wktStr.size() > 0);
-    IDTMFile::WktFlavor fileWktFlavor = IDTMFile::WktFlavor_Oracle9;
+    ISMStore::WktFlavor fileWktFlavor = ISMStore::WktFlavor_Oracle9;
 
     size_t charInd;    
 
@@ -388,9 +388,9 @@ IDTMFile::WktFlavor GetWKTFlavor(WString* wktStrWithoutFlavor, const WString& wk
             break;
             }
         else
-        if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < IDTMFile::WktFlavor_End))
+        if (((short)wktStr[charInd] >= 1) || ((short)wktStr[charInd] < ISMStore::WktFlavor_End))
             {
-            fileWktFlavor = (IDTMFile::WktFlavor)wktStr[charInd];            
+            fileWktFlavor = (ISMStore::WktFlavor)wktStr[charInd];            
             }
         }
 
@@ -427,16 +427,16 @@ WKTKeyword::Type GetWktType(WString wkt)
 /*----------------------------------------------------------------------------+
 |
 +----------------------------------------------------------------------------*/ 
-bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor)
+bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, ISMStore::WktFlavor fileWktFlavor)
     {
     //Temporary use numeric value until the basegcs enum match the csmap's one.
     switch(fileWktFlavor)
         {
-        case IDTMFile::WktFlavor_Oracle9 :
+        case ISMStore::WktFlavor_Oracle9 :
             baseGcsWktFlavor = (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor)7;
             break;
 
-        case IDTMFile::WktFlavor_Autodesk :
+        case ISMStore::WktFlavor_Autodesk :
             baseGcsWktFlavor = (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor)8;
             break;
 
