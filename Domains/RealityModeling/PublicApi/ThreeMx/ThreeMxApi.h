@@ -10,6 +10,7 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/RealityDataCache.h>
+#include <DgnPlatform/MeshTile.h>
 #include <forward_list>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
@@ -135,6 +136,7 @@ struct Node : RefCountedBase, NonCopyableClass
 {
     friend struct Scene;
     typedef bvector<NodePtr> ChildNodes;
+    typedef std::forward_list<GeometryPtr> GeometryList;
     enum ChildLoad {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
 
 private:
@@ -162,7 +164,6 @@ public:
     Utf8String GetChildFile () const;
     BentleyStatus Read3MXB(MxStreamBuffer&, SceneR);
     Utf8String GetFilePath(SceneR) const;
-    BentleyStatus LoadChildren(SceneR);
     void Draw(DrawArgsR, int depth);
     Dgn::ElementAlignedBox3d ComputeRange();
     ChildLoad GetChildLoadStatus() const {return (ChildLoad) m_childLoad.load();}
@@ -177,7 +178,9 @@ public:
     void UnloadChildren(TimePoint olderThan);
     int CountNodes() const;
     ChildNodes const* GetChildren() const {return AreChildrenValid() ? &m_childNodes : nullptr;}
+    GeometryList const& GetGeometry() const {return m_geometry; }
     NodeCP GetParent() const {return m_parent;}
+
 };
 
 /*=================================================================================**//**
@@ -210,8 +213,6 @@ private:
     Dgn::Render::SystemP m_renderSystem = nullptr;
 
     BentleyStatus ReadGeoLocation(SceneInfo const&);
-    BentleyStatus LoadScene(); // synchronous
-    BentleyStatus RequestData(Node* node, bool synchronous, MxStreamBuffer*);
     void CreateCache();
 
 public:
@@ -230,6 +231,10 @@ public:
     double GetFixedResolution() const {return m_fixedResolution;}
     TransformCR GetLocation() const {return m_location;}
     double GetScale() const {return m_scale;}
+    NodePtr GetRootNode() {return m_rootNode; }
+    BentleyStatus LoadScene(); // synchronous
+    BentleyStatus RequestData(Node* node, bool synchronous, MxStreamBuffer*);
+
     Dgn::RealityData::CachePtr GetCache() const {return m_cache;}
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
     THREEMX_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
@@ -255,7 +260,7 @@ public:
 // and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : Dgn::SpatialModel
+struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IPublishModelTiles
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -268,6 +273,7 @@ private:
     DRange3d GetSceneRange();
     void Load(Dgn::Render::SystemP) const;
 
+
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
@@ -277,12 +283,14 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
+    THREEMX_EXPORT virtual Dgn::Render::TileGenerator::Status _PublishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector) override;
 
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
 
     //! Set the location transform (from scene coordinates to BIM coordinates)
     void SetLocation(TransformCR trans) {m_location = trans;}
+
 };
 
 //=======================================================================================
@@ -293,5 +301,6 @@ struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
     THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
 };
+
 
 END_BENTLEY_THREEMX_NAMESPACE

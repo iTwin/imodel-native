@@ -174,7 +174,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
 
-    args.DrawGraphics(context);  // the nodes that newly arrived drew into the GraphicsArray in the DrawArgs. Add them to the context in a GroupNode
+    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
@@ -342,4 +342,107 @@ void ThreeMxModel::_ReadJsonProperties(Json::Value const& val)
     else
         m_location.InitIdentity();
     }
+
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     08/2016
+//=======================================================================================
+struct  PublishTileRenderSystem : Dgn::Render::System
+{
+    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const override                                                                                                                      { return nullptr; }
+    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override                                                                                                           { return nullptr; }
+    virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override                                                                                                { return nullptr; }
+    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const override                                                                    { return nullptr; }
+    virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const override                                                                                           { return nullptr; }
+    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const                                                                                                                     { return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageCR image, Texture::CreateParams const& params=Texture::CreateParams()) const override                                                                { return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params=Texture::CreateParams()) const override   { return nullptr; }
+    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override                                                  { return nullptr; }
+                                                                                                                                                    
+};  // PublishTileRenderSystem
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     08/2016
+//=======================================================================================
+struct  PublishTileNode : Dgn::Render::TileNode
+{
+    NodePtr                 m_node;
+    Transform               m_transform;
+    TileDisplayParamsR      m_tileDisplayParams;
+
+    PublishTileNode (NodePtr& node, TransformCR transform, TileDisplayParamsR tileDisplayParams, DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance) : 
+                     m_node (node), m_transform (transform), m_tileDisplayParams (tileDisplayParams), Dgn::Render::TileNode (range, depth, siblingIndex, tolerance, nullptr) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual TileMeshList _GenerateMeshes( TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
+    {
+    Node::GeometryList  geometryList = m_node->GetGeometry();
+    TileMeshList        tileMeshes;
+
+    for (auto& geometry : geometryList)
+        {
+        PolyfaceHeaderPtr       polyface;
+
+        if (!geometry.IsValid() ||
+            !(polyface = geometry->GetPolyface()).IsValid())
+            continue;
+
+        TileMeshBuilderPtr  builder = TileMeshBuilder::Create (&m_tileDisplayParams, NULL, 0.0);
+
+        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*polyface); visitor->AdvanceToNextFace(); )
+            builder->AddTriangle (*visitor,DgnElementId(), false, twoSidedTriangles);
+
+        tileMeshes.push_back (builder->GetMesh());
+        }
+    return tileMeshes;
+    }
+
+};  //  PublishTileNode
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::Render::TileGenerator::Status  publishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector, SceneR scene, Dgn::Render::SystemR renderSystem, NodePtr& node, size_t depth, size_t siblingIndex) 
+    {
+    TileDisplayParams       tileDisplayParams;
+    double                  tolerance = node->GetMaxDiameter() / (2.0 * node->GetRadius());
+    PublishTileNode         tileNode (node, scene.GetLocation(), tileDisplayParams, node->GetRange(), depth, siblingIndex, tolerance);
+
+    if (0 != depth)
+        scene.RequestData (node.get(), true, NULL);
+
+    Dgn::Render::TileGenerator::Status status = collector._AcceptTile (tileNode);
+
+    if (Dgn::Render::TileGenerator::Status::Success != status || !node->HasChildren())
+        return status;
+
+    depth++;
+    Node::ChildNodes    children = *node->GetChildren();
+
+    node = nullptr;        // Free parent memory before processing children...
+
+    for (size_t iChild = 0; iChild < children.size(); iChild++)
+        if (Dgn::Render::TileGenerator::Status::Success != (status = publishModelTiles (collector, scene, renderSystem, children[iChild], depth, iChild)))
+            return status;
+
+    return Dgn::Render::TileGenerator::Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::Render::TileGenerator::Status ThreeMxModel::_PublishModelTiles (Dgn::Render::TileGenerator::ITileCollector& collector) 
+    {
+    PublishTileRenderSystem renderSystem;
+    ScenePtr                scene  = new Scene (m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), &renderSystem);
+    
+    if (SUCCESS != scene->LoadScene ())
+        return Dgn::Render::TileGenerator::Status::NoGeometry;
+
+    NodePtr rootNode = scene->GetRootNode();
+    return publishModelTiles (collector, *scene, renderSystem, rootNode, 0, 0);
+    }
+
 
