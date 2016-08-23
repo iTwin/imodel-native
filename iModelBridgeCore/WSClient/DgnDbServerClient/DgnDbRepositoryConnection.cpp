@@ -191,7 +191,7 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::CreateNewServerFile(FileInfoCR
 
         WSQuery fileQuery(ServerSchema::Schema::Repository, ServerSchema::Class::File);
         Utf8String filter;
-        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId().ToString(),
+        filter.Sprintf("(%s+eq+'%s')+and+(%s+eq+'%s')", ServerSchema::Property::FileId, fileInfo.GetFileId().ToString().c_str(),
                        ServerSchema::Property::MergedRevisionId, fileInfo.GetMergedRevisionId().c_str());
         fileQuery.SetFilter(filter);
         m_wsRepositoryClient->SendQueryRequest(fileQuery, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& queryResult)
