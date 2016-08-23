@@ -1041,8 +1041,7 @@ void HRFxChFile::ValidateChannelFilesPanchromatic(const HFCPtr<HRFRasterFile>& p
                == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth())
              && (((pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight()*2)-1)
                 == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight())))
-            HASSERT(false);
-//DMx            throw HRFFXHChannelsDoNotHaveTheSameDimensionsException(GetURL()->GetURL());
+            throw HRFFXHChannelsDoNotHaveTheSameDimensionsException(GetURL()->GetURL());
 
         // All files must have same resolution number
         if (!(pi_rpRedFile->GetPageDescriptor(0)->CountResolutions()
