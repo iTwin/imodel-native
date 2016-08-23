@@ -788,7 +788,7 @@ public:
 * available, or loaded only on demand.
 * @bsistruct                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IECInstanceInterface
+struct EXPORT_VTABLE_ATTRIBUTE IECInstanceInterface
     {
 protected:
     virtual ECObjectsStatus         _GetInstanceValue (ECValueR v, Utf8CP managedAccessor) const = 0;
@@ -819,7 +819,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECInstanceInterface : IECInstanceInterface
+struct EXPORT_VTABLE_ATTRIBUTE ECInstanceInterface : IECInstanceInterface
     {
 private:
     IECInstanceCR           m_instance;
