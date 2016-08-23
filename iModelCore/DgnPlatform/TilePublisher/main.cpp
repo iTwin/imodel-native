@@ -23,6 +23,7 @@ enum class ParamId
     View,
     Output,
     Name,
+    Compress,
     Invalid
 };
 
@@ -35,6 +36,7 @@ struct CommandParam
     WCharCP     m_verbose;
     WCharCP     m_descr;
     bool        m_required;
+    bool        m_boolean;  // True => arg is true if param specified. False => expect 'arg=value'.
 };
 
 //=======================================================================================
@@ -46,6 +48,7 @@ static CommandParam s_paramTable[] =
         { L"v", L"view", L"Name of the view to publish. If omitted, the default view is used", false },
         { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
         { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
+        { L"c", L"compress", L"If specified, .b3dm files will be compressed using gzip.", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -69,12 +72,10 @@ struct CommandArg
             ++raw;
 
         WCharCP equalPos = wcschr(raw, '=');
-        if (nullptr == equalPos)
-            return;
+        bool haveArgValue = nullptr != equalPos;
+        WCharCP argValue = haveArgValue ? equalPos+1 : nullptr;
+        auto paramNameLen = haveArgValue ? equalPos - raw : wcslen(raw);
 
-        WCharCP argValue = equalPos+1;
-
-        auto paramNameLen = equalPos - raw;
         if (0 == paramNameLen || (!verboseParamName && 1 != paramNameLen))
             return;
 
@@ -85,10 +86,18 @@ struct CommandArg
             if (0 != wcsncmp(raw, paramName, paramNameLen) || paramNameLen != wcslen(paramName))
                 continue;
 
+            if ((nullptr == equalPos) != (param.m_boolean))
+                return;
+
             m_paramId = static_cast<ParamId>(i);
-            m_value = argValue;
-            m_value.Trim(L"\"");
-            m_value.Trim();
+
+            if (!param.m_boolean)
+                {
+                m_value = argValue;
+                m_value.Trim(L"\"");
+                m_value.Trim();
+                }
+
             break;
             }
         }
@@ -104,6 +113,7 @@ private:
     Utf8String      m_viewName;         //!< Name of the view definition from which to publish
     BeFileName      m_outputDir;        //!< Directory in which to place the output
     WString         m_tilesetName;      //!< Root name of the output tileset files
+    bool            m_compress=false;   //!< If true, compress .b3dm files
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -111,6 +121,7 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
     Utf8StringCR GetViewName() const { return m_viewName; }
+    bool WantCompressed() const { return m_compress; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -208,6 +219,9 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 break;
             case ParamId::Name:
                 m_tilesetName = arg.m_value.c_str();
+                break;
+            case ParamId::Compress:
+                m_compress = true;
                 break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
@@ -319,8 +333,9 @@ int wmain(int ac, wchar_t const** av)
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"
            "\tOutput: %ls%ls.html\n"
-           "\tData: %ls\n",
-            createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
+           "\tData: %ls\n"
+           "\tCompressed: %s\n",
+            createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str(), createParams.WantCompressed() ? "true" : "false");
             
     auto status = publisher.Publish();
 
