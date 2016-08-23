@@ -73,16 +73,10 @@
     <ClCompile Include="Published\DgnECNavigator_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\RealityDataCache_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\NamedVolume_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\DgnSqlTest.cpp">
@@ -209,9 +203,6 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\FullTextSearch_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\LocksManager_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\MemoryManager_Test.cpp">

@@ -335,8 +335,8 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     {
-    //SetupSeedProject();
-    SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", L"LineCodeComponentAsJson.ibim", Db::OpenMode::ReadWrite);
+    SetupSeedProject();
+
     DgnDbPtr      project = m_db;
     DgnLineStyles& styleTable = project->Styles().LineStyles();
     LsCacheP cache = styleTable.GetLsCacheP();

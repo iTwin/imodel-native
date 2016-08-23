@@ -968,6 +968,9 @@ void RepositoryManager::MarkRevision(DgnCodeSet const& codes, bool discarded, Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::RepositoryAdmin
 {
+public: 
+    static void SetUpTestCase();
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
     typedef IRepositoryManager::Request Request;
     typedef IRepositoryManager::Response Response;
     typedef IBriefcaseManager::ResponseOptions ResponseOptions;
@@ -1016,6 +1019,15 @@ struct RepositoryManagerTest : public ::testing::Test, DgnPlatformLib::Host::Rep
         return db;
         }
 };
+DgnDbTestUtils::SeedDbInfo RepositoryManagerTest::s_seedFileInfo;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Umar.Hayat             08/2016
+//---------------------------------------------------------------------------------------
+void RepositoryManagerTest::SetUpTestCase()
+    {
+    ScopedDgnHost tempHost;
+    RepositoryManagerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
@@ -1458,7 +1470,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
         }
 
     static WCharCP SeedFileName() { return L"ElementsSymbologyByLevel.ibim"; }
-
+    
     DgnModelId Model3dId() { return m_modelIds[0]; }
     DgnModelId Model2dId() { return m_modelIds[1]; }
 
@@ -1486,6 +1498,7 @@ struct DoubleBriefcaseTest : LocksManagerTest
 
     void SetupDbs(uint32_t baseBcId=2)
         {
+        //ScopedDgnHost tempHost;
         m_dbA = SetupDb(L"DbA.bim", BeBriefcaseId(baseBcId), SeedFileName());
         m_dbB = SetupDb(L"DbB.bim", BeBriefcaseId(baseBcId+1), SeedFileName());
 

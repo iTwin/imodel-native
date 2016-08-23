@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Performance/DgnECPerformanceTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,8 +23,8 @@ struct PerformanceDgnECTests : public PerformanceTestFixture
 
     protected:
         PerformanceDgnECTests() : PerformanceTestFixture() {} 
-        void RunInsertTests(ECN::ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName);
-        void RunQueryTests(ECN::ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName);
+        void RunInsertTests(ECN::ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName);
+        void RunQueryTests(ECN::ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName);
     };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE
