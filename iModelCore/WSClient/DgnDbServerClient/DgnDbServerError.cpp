@@ -42,6 +42,7 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["DgnDbServer.RepositoryAlreadyExists"]                   = Id::RepositoryAlreadyExists;
         map["DgnDbServer.RepositoryDoesNotExist"]                    = Id::RepositoryDoesNotExist;
         map["DgnDbServer.LockDoesNotExist"]                          = Id::LockDoesNotExist;
+        map["DgnDbServer.LocksExist"]                                = Id::LocksExist;
         map["DgnDbServer.LockOwnedByAnotherBriefcase"]               = Id::LockOwnedByAnotherBriefcase;
         map["DgnDbServer.BriefcaseDoesNotBelongToUser"]              = Id::BriefcaseDoesNotBelongToUser;
         map["DgnDbServer.UserAlreadyExists"]                         = Id::UserAlreadyExists;
@@ -50,8 +51,10 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["DgnDbServer.CodeReservedByAnotherBriefcase"]            = Id::CodeReservedByAnotherBriefcase;
         map["DgnDbServer.CodeAlreadyExists"]                         = Id::CodeAlreadyExists;
         map["DgnDbServer.CodeDoesNotExist"]                          = Id::CodeDoesNotExist;
+        map["DgnDbServer.CodesExist"]                                = Id::CodesExist;
         map["DgnDbServer.UserDoesNotExist"]                          = Id::UserDoesNotExist;
         map["DgnDbServer.FileDoesNotExist"]                          = Id::FileDoesNotExist;
+        map["DgnDbServer.FileAlreadyExists"]                         = Id::FileAlreadyExists;
         }
 
     auto it = map.find(errorIdString);
