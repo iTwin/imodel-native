@@ -144,6 +144,7 @@
     <ProductDirectoryList ListName="AndroidJUnitProduct">
         <ProductDirectory Name="AndroidJUnit-Project" Path="project" LibType="static"/>
 
+        <ProductDirectory Name="Assets" Deliver="false" LibType="static"/>
         <ProductDirectory Name="Libs" Deliver="false" LibType="static"/>
         <ProductDirectory Name="PublicAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
@@ -170,27 +171,28 @@
         <ProductDirectory Name="VendorAPI" Deliver="false" LibType="static"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
         <ProductDirectory Name="Assemblies" Deliver="false" LibType="static"/>
+        <ProductDirectory Name="Assets" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="static" Deliver="false"/>
     </ProductDirectoryList>
 
-  <!-- *********************************************************************************************** -->
-  <!-- This part should be used by any part that wants to build and/or run a UWP project -->
-  <!-- *********************************************************************************************** -->
-  <Part Name="UwpTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
-    <SubPart PartName="Base"/>
-    <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite"/>
-  </Part>
+    <!-- *********************************************************************************************** -->
+    <!-- This part should be used by any part that wants to build and/or run a UWP project -->
+    <!-- *********************************************************************************************** -->
+    <Part Name="UwpTest-Tools" BentleyBuildMakeFile="prewire.mke" OnlyPlatforms="WinRT*">
+        <SubPart PartName="Base"/>
+        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite"/>
+    </Part>
 
-  <!-- *********************************************************************************************** -->
-  <!-- ProductDirectory used by all UWP test products -->
-  <!-- *********************************************************************************************** -->
-  <ProductDirectoryList ListName="UwpTestProduct">
-    <ProductDirectory Name="UwpTestProject" Path=""/>
+    <!-- *********************************************************************************************** -->
+    <!-- ProductDirectory used by all UWP test products -->
+    <!-- *********************************************************************************************** -->
+    <ProductDirectoryList ListName="UwpTestProduct">
+        <ProductDirectory Name="UwpTestProject" Path=""/>
 
-    <ProductDirectory Name="Libs" Deliver="false"/>
-    <ProductDirectory Name="PublicAPI" Deliver="false"/>
-    <ProductDirectory Name="VendorAPI" Deliver="false"/>
-    <ProductDirectory Name="VendorNotices" Deliver="false" />
-    <ProductDirectory Name="Assemblies" Deliver="false"/>
-  </ProductDirectoryList>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="Assets" Deliver="false"/>
+        <ProductDirectory Name="Assets" LibType="static" Deliver="false"/>
+    </ProductDirectoryList>
 
 </BuildContext>
