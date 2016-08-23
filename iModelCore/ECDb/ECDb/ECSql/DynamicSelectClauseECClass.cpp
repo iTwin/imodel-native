@@ -80,7 +80,7 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize()
     if (m_schema != nullptr)
         return ECSqlStatus::Success;
 
-    if (ECObjectsStatus::Success != ECSchema::CreateSchema(m_schema, SCHEMANAME, 1, 0))
+    if (ECObjectsStatus::Success != ECSchema::CreateSchema(m_schema, SCHEMANAME, SCHEMANAME, 1, 0, 0))
         return ECSqlStatus::Error;
 
     if (ECObjectsStatus::Success != m_schema->CreateEntityClass(m_class, CLASSNAME))

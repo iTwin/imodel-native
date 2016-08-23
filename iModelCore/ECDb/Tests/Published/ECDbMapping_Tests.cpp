@@ -5223,9 +5223,15 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                                     "    <ECProperty propertyName='Name' typeName='string' />"
                                     "  </ECEntityClass>"
                                     "  <ECEntityClass typeName='B' modifier='None'>"
+                                    "    <ECCustomAttributes>"
+                                    "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                    "        </ClassMap>"
+                                    "    </ECCustomAttributes>"
                                     "    <ECProperty propertyName='BName' typeName='string' />"
                                     "  </ECEntityClass>"
                                     "  <ECEntityClass typeName='C' modifier='None'>"
+                                    "    <BaseClass>B</BaseClass>"
                                     "    <ECProperty propertyName='CName' typeName='string' />"
                                     "  </ECEntityClass>"
                                     "  <ECRelationshipClass typeName='ARelB' modifier='Abstract' strength='referencing'>"
@@ -8623,10 +8629,9 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     auto ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestCompatible);
     ASSERT_TRUE(ecdbmapSchema.IsValid());
 
-    ECSchema::CreateSchema(testSchema, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 0);
     ASSERT_TRUE(testSchema.IsValid());
 
-    testSchema->SetAlias("ts");
     testSchema->AddReferencedSchema(*ecdbmapSchema);
 
     testSchema->CreateEntityClass(foo, "Foo");

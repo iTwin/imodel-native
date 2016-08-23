@@ -438,9 +438,8 @@ void SetupTestECDb(BeFileNameCR filePath)
 ECSchemaPtr CreateTestSchema()
     {
     ECSchemaPtr testSchema = nullptr;
-    auto stat = ECSchema::CreateSchema(testSchema, TEST_SCHEMA_NAME, 1, 0);
+    auto stat = ECSchema::CreateSchema(testSchema, TEST_SCHEMA_NAME, "test", 1, 0, 0);
     EXPECT_EQ(ECObjectsStatus::Success, stat);
-    testSchema->SetAlias("test");
     if (testSchema == nullptr)
         return nullptr;
 

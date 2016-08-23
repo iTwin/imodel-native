@@ -109,7 +109,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
     }
 
     {
-    SchemaItem testItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"

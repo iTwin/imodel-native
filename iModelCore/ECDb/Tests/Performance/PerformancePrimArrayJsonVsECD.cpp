@@ -799,7 +799,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 //static
 BentleyStatus PerformancePrimArrayJsonVsECDTests::CreateECDClass(ECSchemaPtr& schema, ECN::ECEntityClassCP& ecdClass, uint32_t& propIndex, ECN::PrimitiveType arrayType)
     {
-    if (ECObjectsStatus::Success != ECSchema::CreateSchema(schema, "ECDSchema", 1, 0))
+    if (ECObjectsStatus::Success != ECSchema::CreateSchema(schema, "ECDSchema", "ts", 1, 0, 0))
         return ERROR;
 
     ECEntityClassP ecdClassP = nullptr;

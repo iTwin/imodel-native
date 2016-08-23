@@ -60,9 +60,8 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
     if (NumberOfCustomAttributes > 4)
         NumberOfCustomAttributes = 4;
 
-    ECSchema::CreateSchema(testSchema, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 0);
     EXPECT_TRUE(testSchema.IsValid());
-    testSchema->SetAlias("ts");
     testSchema->SetDescription("Dynamic Test Schema");
     testSchema->SetDisplayLabel("Test Schema");
 

@@ -23,9 +23,8 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTable_SharedColumnsForSu
     ECDbR ecdb = SetupECDb("CRUDPerformance_SharedTable_SharedColumnsForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "testSchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0);
     ASSERT_TRUE(testSchema.IsValid());
-    testSchema->SetAlias("ts");
 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(ecdb.GetSchemaLocater());
@@ -98,9 +97,8 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_SharedTableForSubClasses)
     ECDbR ecdb = SetupECDb("CRUDPerformance_SharedTableForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "testSchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0);
     ASSERT_TRUE(testSchema.IsValid());
-    testSchema->SetAlias("ts");
 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(ecdb.GetSchemaLocater());
@@ -171,9 +169,8 @@ TEST_F(PerformanceECDbMapCATests, CRUDPerformance_DefaultClasses)
     ECDbR ecdb = SetupECDb("CRUDPerformance_DefaultClasses.ecdb");
 
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "testSchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0);
     ASSERT_TRUE(testSchema.IsValid());
-    testSchema->SetAlias("ts");
 
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchema(*testSchema);

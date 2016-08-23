@@ -559,8 +559,7 @@ TEST_F(ECDbSchemaTests, CreateCloseOpenImport)
 ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema()
     {
     ECSchemaPtr testSchema = nullptr;
-    ECSchema::CreateSchema(testSchema, "test", 1, 0);
-    testSchema->SetAlias("t");
+    ECSchema::CreateSchema(testSchema, "test", "t", 1, 0, 0);
     ECEntityClassP fooClass = nullptr;
     testSchema->CreateEntityClass(fooClass, "Foo");
     PrimitiveECPropertyP prop = nullptr;
@@ -744,9 +743,8 @@ TEST_F(ECDbSchemaTests, ImportSchemaWithRelationshipAgainstExistingTable)
 void CreateCustomAttributeTestSchema(ECSchemaPtr& testSchema, ECSchemaCachePtr& testSchemaCache)
     {
     ECSchemaPtr schema = nullptr;
-    ECObjectsStatus stat = ECSchema::CreateSchema(schema, "foo", 1, 0);
+    ECObjectsStatus stat = ECSchema::CreateSchema(schema, "foo", "f", 1, 0, 0);
     ASSERT_EQ(ECObjectsStatus::Success, stat) << "Creating test schema failed";
-    schema->SetAlias("f");
 
     ECEntityClassP domainClass = nullptr;
     stat = schema->CreateEntityClass(domainClass, "domain1");
@@ -1044,7 +1042,7 @@ TEST_F(ECDbSchemaTests, ArrayPropertyTest)
 TEST_F(ECDbSchemaTests, DynamicSchemaTest)
     {
     ECSchemaPtr testSchema;
-    ASSERT_EQ(ECSchema::CreateSchema(testSchema, "TestSchema", 1, 1), ECObjectsStatus::Success);
+    ASSERT_EQ(ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 1), ECObjectsStatus::Success);
     ASSERT_EQ(testSchema->IsDynamicSchema(), false);
     ASSERT_EQ(testSchema->SetIsDynamicSchema(true), ECObjectsStatus::DynamicSchemaCustomAttributeWasNotFound);
     //reference BCSA, DynamicSchema CA introduce in 1.6

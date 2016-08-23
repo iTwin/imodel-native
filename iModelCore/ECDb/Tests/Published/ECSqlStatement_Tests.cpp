@@ -3510,8 +3510,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
 
     {
     ECN::ECSchemaPtr schema;
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", 0, 0));
-    schema->SetAlias("tir");
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ECN::ECSchema::CreateSchema(schema, "ImportTwoInARow", "tir", 0, 0, 0));
 
     ECN::ECEntityClassP ecclass;
     ASSERT_EQ(ECN::ECObjectsStatus::Success, schema->CreateEntityClass(ecclass, "C1"));

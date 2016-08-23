@@ -414,10 +414,8 @@ ECRelatedInstanceDirection ECDbRelationshipsIntegrityTests::GetRelationDirection
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbRelationshipsIntegrityTests::CreateSchema(Utf8CP schemaName, Utf8CP schemaNameAlias)
     {
-    ECSchema::CreateSchema(testSchema, schemaName, 1, 0);
+    ECSchema::CreateSchema(testSchema, schemaName, schemaNameAlias, 1, 0, 0);
     ASSERT_TRUE(testSchema.IsValid());
-
-    testSchema->SetAlias(schemaNameAlias);
     }
 
 //---------------------------------------------------------------------------------------

@@ -574,9 +574,8 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb (ECDbR ecdb, Utf8String destFileN
         ECSchemaPtr testSchema;
         ECEntityClassP baseClass = nullptr;
 
-        ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
+        ECSchema::CreateSchema (testSchema, "testSchema", "ts", 1, 0, 0);
         ASSERT_TRUE (testSchema.IsValid ());
-        testSchema->SetAlias ("ts");
 
         ASSERT_EQ (ECObjectsStatus::Success, testSchema->CreateEntityClass (baseClass, "BaseClass"));
         CreatePrimitiveProperties (*baseClass);

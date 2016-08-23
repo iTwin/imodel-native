@@ -243,9 +243,6 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId const& ecClassId) 
     schemaKey->m_loadedTypeCount++;
     m_ecClassCache[ecClassId] = std::unique_ptr<DbECClassEntry>(new DbECClassEntry(*ecClass));
 
-    if (SUCCESS != LoadBaseClassesFromDb(ecClass, ctx, ecClassId))
-        return nullptr;
-
     if (SUCCESS != LoadECPropertiesFromDb(ecClass, ctx, ecClassId))
         return nullptr;
 
@@ -261,6 +258,9 @@ ECClassP ECDbSchemaReader::GetECClass(Context& ctx, ECClassId const& ecClassId) 
         if (SUCCESS != LoadECRelationshipConstraintFromDb(relClass, ctx, ecClassId, ECRelationshipEnd_Target))
             return nullptr;
         }
+
+    if (SUCCESS != LoadBaseClassesFromDb(ecClass, ctx, ecClassId))
+        return nullptr;
 
     return ecClass;
     }

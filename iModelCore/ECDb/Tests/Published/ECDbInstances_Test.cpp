@@ -319,8 +319,7 @@ TEST_F(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     EXPECT_EQ(BE_SQLITE_OK, stat);
 
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", 1, 2);
-    schema->SetAlias("ts");
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 2);
     schema->SetDescription("Schema for testing nested struct arrays");
     schema->SetDisplayLabel("Display Label");
 
