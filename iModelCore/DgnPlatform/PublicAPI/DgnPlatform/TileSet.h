@@ -115,7 +115,7 @@ public:
     DGNPLATFORM_EXPORT Root(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName);
 
     DGNPLATFORM_EXPORT folly::Future<BentleyStatus> RequestRoot(StreamBuffer&);
-    DGNPLATFORM_EXPORT folly::Future<BentleyStatus> RequestTile(Node& node);
+    DGNPLATFORM_EXPORT folly::Future<BentleyStatus> RequestTile(Tile& node);
 };
 
 //=======================================================================================
