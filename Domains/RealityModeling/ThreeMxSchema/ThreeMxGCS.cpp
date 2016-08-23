@@ -72,8 +72,15 @@ BentleyStatus ThreeMxGCS::GetProjectionTransform (TransformR transform, S3SceneI
 
     // 0 == SUCCESS, 1 == Wajrning, 2 == Severe Warning,  Negative values are severe errors.
     if (status == 0 || status == 1)
-        {
+        {        
         transform = Transform::FromProduct (localTransform, transform);
+
+        DPoint3d uorScales(DPoint3d::From(1, 1, 1));
+        databaseGCS->UorsFromCartesian(uorScales, uorScales);
+        Transform uorsTransform(Transform::FromScaleFactors(uorScales.x, uorScales.y, uorScales.z));        
+
+        transform = Transform::FromProduct (uorsTransform, transform);        
+
         return SUCCESS;
         }
 
