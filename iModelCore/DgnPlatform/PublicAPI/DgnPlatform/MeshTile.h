@@ -49,7 +49,7 @@ private:
 public:
     TileDisplayParams() : TileDisplayParams(nullptr, nullptr) { }
     TileDisplayParams(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) : TileDisplayParams(&graphicParams, &geometryParams) { }
-    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0)
+    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) : m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff)
         {
         if (nullptr != geometryParams)
             m_materialId = geometryParams->GetMaterialId();

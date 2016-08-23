@@ -473,8 +473,6 @@ Json::Value     TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode
     techniqueUniforms["u_color"] = "color";
 
     return technique;
-    
-
     }
 
 
@@ -717,12 +715,12 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
         uint32_t        rgbInt  = (NULL == mesh.GetDisplayParams()) ? 0 : mesh.GetDisplayParams()->GetFillColor();
         RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
         double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
-        double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
-        RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
-
 
         if (!mesh.Triangles().empty())
             {
+            double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
+            RgbFactor       specularColor    = { 1.0, 1.0, 1.0 };
+
             if (nullptr != mesh.GetDisplayParams() && mesh.GetDisplayParams()->GetMaterialId().IsValid())
                 {
                 JsonRenderMaterial  jsonMaterial;
@@ -743,13 +741,13 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t id, ui
                     if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
                         alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
                     }
-                material["values"]["specularExponent"] = specularExponent;
-
-                auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
-                materialSpecularColor.append (specularColor.red);
-                materialSpecularColor.append (specularColor.green);
-                materialSpecularColor.append (specularColor.blue);
                 }
+            material["values"]["specularExponent"] = specularExponent;
+
+            auto& materialSpecularColor = material["values"]["specularColor"] = Json::arrayValue;
+            materialSpecularColor.append (specularColor.red);
+            materialSpecularColor.append (specularColor.green);
+            materialSpecularColor.append (specularColor.blue);
             }
 
         auto&    materialColor = material["values"]["color"] = Json::arrayValue;
