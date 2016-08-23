@@ -72,7 +72,6 @@ struct ScriptLibraryModelHandler : dgn_ModelHandler::Definition
 //=======================================================================================
 struct ScriptDefinitionElement : DefinitionElement
     {
-    DEFINE_T_SUPER(DefinitionElement);
     DGNELEMENT_DECLARE_MEMBERS(SCRIPT_DOMAIN_CLASSNAME_Script, DefinitionElement)
 
 public:
