@@ -29,7 +29,6 @@ ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
 ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does not element import aspects
-TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
 
@@ -74,9 +73,11 @@ ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 CategoryTests.SubCategoryInvariants
-ElementGeomPartTests.ElementUsesGeometryParts
 TransactionManagerTests.UndoRedo
 ImportTest.ImportElementsWithAuthorities
 ImportTest.ImportElementsWithDependencies
+ChangeSummaryTestFixture.QueryMultipleSessions
+DgnChangeSummaryTestFixture.ValidateChangeSummaries
+RevisionTestFixture.Codes
 
 DgnScriptTest.TestEga

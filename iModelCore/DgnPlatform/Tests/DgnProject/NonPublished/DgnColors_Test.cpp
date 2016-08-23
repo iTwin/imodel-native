@@ -21,6 +21,7 @@ struct DgnColorTests : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorTests, TrueColors)
     {
+    SetupSeedProject();
     DgnDbR db = GetDgnDb();
 
     DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
