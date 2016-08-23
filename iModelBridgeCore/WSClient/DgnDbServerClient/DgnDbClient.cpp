@@ -319,7 +319,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
                 return;
                 }
             DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
-            connection->UploadNewFile(filePath, fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
+            connection->UploadNewMasterFile(filePath, fileInfo, callback, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileUploadResult)
                 {
                 if (!fileUploadResult.IsSuccess())
                     finalResult->SetError(fileUploadResult.GetError());

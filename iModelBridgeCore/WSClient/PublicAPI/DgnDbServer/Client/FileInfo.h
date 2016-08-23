@@ -37,9 +37,13 @@ private:
     uint64_t    m_fileSize;
     Utf8String  m_userUploaded;
     DateTime    m_uploadedDate;
+    bool        m_areFileDetailsAvailable;
 //__PUBLISH_SECTION_START__
 public:
+    //__PUBLISH_SECTION_END__
     FileInfo();
+    FileInfo(BeGuid fileId);
+    //__PUBLISH_SECTION_START__
     DGNDBSERVERCLIENT_EXPORT FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
     DGNDBSERVERCLIENT_EXPORT FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
         Utf8StringCR description, Utf8StringCR url, uint64_t size, Utf8StringCR user, DateTimeCR date);
@@ -48,6 +52,7 @@ public:
     static FileInfoPtr FromJson(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
     void ToPropertiesJson(JsonValueR json) const;
     WebServices::ObjectId GetObjectId() const;
+    bool AreFileDetailsAvailable() const;
     //__PUBLISH_SECTION_START__
 
     DGNDBSERVERCLIENT_EXPORT int32_t      GetIndex() const; //!< Index of the file.
