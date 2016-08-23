@@ -1357,8 +1357,8 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         "SELECT  RC.RelationshipClassId, RC.RelationshipEnd"
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
-        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
-        "    WHERE ConstraintClassId = ?";
+        "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.ClassId  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
+        "    WHERE RCC.ClassId = ?";
 #else
     PopulateCacheTablesIfNecessary();
     Utf8CP sql0 =
@@ -1366,7 +1366,7 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
         "       LEFT JOIN TEMP.ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1 AND CH.ClassId = ?"
-        "    WHERE ConstraintClassId = ?";
+        "    WHERE RCC.ClassId = ?";
 #endif
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
     stmt0->BindId(1, constraintClassId); //!This speed up query from 98ms to 28 ms by remove OR results that are not required in LEFT JOIN
@@ -1403,7 +1403,7 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
         "       LEFT JOIN ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
-        "    WHERE RCC.RelationshipClassId = ?";
+        "    WHERE RC.RelationshipClassId = ?";
 #else
     PopulateCacheTablesIfNecessary();
     Utf8CP sql0 =
@@ -1411,7 +1411,7 @@ bmap<ECN::ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& ECDbMap:
         "    FROM ec_RelationshipConstraintClass RCC"
         "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
         "       LEFT JOIN TEMP.ec_ClassHierarchy CH ON CH.BaseClassId = RCC.[ClassId]  AND RC.IsPolymorphic = 1"
-        "    WHERE RCC.RelationshipClassId = ?";
+        "    WHERE RC.RelationshipClassId = ?";
 #endif
     auto stmt0 = m_map.GetECDb().GetCachedStatement(sql0);
     stmt0->BindId(1, relationshipId);

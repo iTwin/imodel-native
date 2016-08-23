@@ -1665,10 +1665,10 @@ void SqlUpdater::Where(Utf8CP column, int64_t value)
 DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
-    if (r != BE_SQLITE_OK)
-        return r;
-
+    DbResult stat = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
+    if (stat != BE_SQLITE_OK)
+        return stat;
+/* We do not required ordered list
     r = ecdb.ExecuteSql (
         "WITH RECURSIVE "
         "BaseClassList(ClassId, BaseClassId, Level, Ordinal) AS "
@@ -1684,9 +1684,18 @@ DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
         "FROM BaseClassList "
         "     ORDER BY Ordinal DESC, Level DESC;"
     );
-
-    if (r != BE_SQLITE_OK)
-        return r;
+*/
+    stat = ecdb.ExecuteSql("WITH RECURSIVE "
+                           "BaseClassList(ClassId, BaseClassId) AS "
+                           "("
+                           "   SELECT Id, Id FROM ec_Class"
+                           "   UNION"
+                           "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
+                           "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
+                           ")"
+                           "INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
+    if (stat != BE_SQLITE_OK)
+        return stat;
 
     timer.Stop();
     LOG.debugv("Re-populated ec_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
