@@ -55,7 +55,7 @@ struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryCache::TileGeometryCache(TransformCR tfFromDgn) : m_tree(XYZRangeTreeRoot::Allocate()), m_transformFromDgn(tfFromDgn), m_nextTextureId(0)
+TileGeometryCache::TileGeometryCache(TransformCR tfFromDgn) : m_tree(XYZRangeTreeRoot::Allocate()), m_transformFromDgn(tfFromDgn)
     {
     m_transformToDgn.InverseOf(m_transformFromDgn);
     }
@@ -99,7 +99,7 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Image TileGeometryCache::TextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
+Image TileTextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
     {
     DgnTextureCPtr tex = params.QueryTexture(db);
     return tex.IsValid() ? Image(tex->GetImageSource()) : Image();
@@ -108,29 +108,18 @@ Image TileGeometryCache::TextureImage::Load(TileDisplayParamsCR params, DgnDbR d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryCache::ResolveTexture(TileDisplayParamsCR params, DgnDbR db)
+void TileTextureImage::ResolveTexture(TileDisplayParamsR params, DgnDbR db)
     {
-    if (m_textures.end() != m_textures.find(params))
+    if (params.TextureImage().IsValid())
         return;
 
-    TextureImagePtr image;
-    Image renderImage = TextureImage::Load(params, db);
+    TileTextureImagePtr image;
+    Image           renderImage = TileTextureImage::Load(params, db);
+
     if (renderImage.IsValid())
-        image = new TextureImage(std::move(renderImage), m_nextTextureId++);
-
-    m_textures.Insert(params, image);
+        params.TextureImage() = new TileTextureImage(std::move(renderImage));
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGeometryCache::TextureImage const* TileGeometryCache::GetTextureImage(TileDisplayParamsCR params) const
-    {
-    auto found = m_textures.find(params);
-    BeAssert(m_textures.end() != found);
-
-    return m_textures.end() != found ? found->second.get() : nullptr;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -1027,7 +1016,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     m_range.Extend(range);
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
+    TileTextureImage::ResolveTexture(displayParams, m_view.GetDgnDb());
     m_rangeTree->Add(new RangeTreeNode(geom, tf, range, m_curElemId, displayParams, *m_targetFacetOptions, isCurved, m_view.GetDgnDb()), range);
 
     return true;
@@ -1088,7 +1077,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
     m_range.Extend(range);
 
     TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
+    TileTextureImage::ResolveTexture(displayParams, m_view.GetDgnDb());
 
     IGeometryPtr geom = IGeometry::Create(clone);
     m_rangeTree->Add(new RangeTreeNode(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, *m_targetFacetOptions, false, m_view.GetDgnDb()), range);
