@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/ColorUtil.h>
@@ -34,22 +35,17 @@ struct DgnViewElemTest : public DgnDbTestFixture
         //DgnDbTestFixture::SetupWithPrePublishedFile(L"ElementsSymbologyByLevel.ibim", testName.c_str(), Db::OpenMode::ReadWrite);
         }
 
-    DgnModelPtr AddModel(Utf8StringCR name)
+    PhysicalModelPtr AddModel(Utf8StringCR name)
         {
-        DgnClassId classId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-        DgnModel::CreateParams params(*m_db, classId, DgnModel::CreateModelCode(name));
-        DgnModelPtr model = new SpatialModel(params);
-        EXPECT_EQ(DgnDbStatus::Success, model->Insert());
-
-        return model;
+        return DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode(name));
         }
 
     template<typename T> ViewDefinitionCPtr AddView(Utf8StringCR name, DgnModelId baseModelId, DgnViewSource source, Utf8StringCR descr="")
         {
-        T view(*project, name);
+        T view(*m_db, name);
         view.SetDescr(descr);
         view.SetSource(source);
-        view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*project, name.c_str(), baseModelId));
+        view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, name.c_str(), baseModelId));
         auto cpView = view.Insert();
         EXPECT_TRUE(cpView.IsValid());
         return cpView;
@@ -174,10 +170,10 @@ TEST_F(DgnViewElemTest, CRUD)
     SetupTestProject();
 
     // Create a new view
-    CameraViewDefinition tempView(*project, "TestView");
+    CameraViewDefinition tempView(*m_db, "TestView");
     tempView.SetDescr("Test Description");
-    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*project, "TestView", DgnModelId((uint64_t)2)));
-    DrawingViewDefinition tempView2(*project, "TestDrawingView", DgnModelId((uint64_t)1));
+    tempView.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_db, "TestView", DgnModelId((uint64_t)2)));
+    DrawingViewDefinition tempView2(*m_db, "TestDrawingView", DgnModelId((uint64_t)1));
     tempView.SetDescr("TestDrawingView Description");
 
     // Insert 
@@ -215,8 +211,8 @@ TEST_F(DgnViewElemTest, CRUD)
         else if (entry.GetId() == viewId2)
             {
             EXPECT_TRUE(tempView2.GetViewId() == toFind->GetViewId());
-            auto dview = project->Elements().Get<DrawingViewDefinition>(tempView2.GetViewId());
-            auto dviewToFind = project->Elements().Get<DrawingViewDefinition>(toFind->GetViewId());
+            auto dview = m_db->Elements().Get<DrawingViewDefinition>(tempView2.GetViewId());
+            auto dviewToFind = m_db->Elements().Get<DrawingViewDefinition>(toFind->GetViewId());
             EXPECT_TRUE(dview->GetBaseModelId() == dviewToFind->GetBaseModelId());
             EXPECT_TRUE(tempView2.GetElementClassId() == toFind->GetElementClassId());
             EXPECT_TRUE(tempView2.GetSource() == toFind->GetSource());
