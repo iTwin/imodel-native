@@ -326,7 +326,7 @@ SheetModelPtr DgnDbTestUtils::InsertSheetModel(DgnDbR db, DgnCode modelCode)
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
     SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelCode.GetValueCP()); // create a placeholder Subject for this DgnModel to describe
     EXPECT_TRUE(modelSubject.IsValid());
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
+        DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
     SheetModelPtr catalogModel = new SheetModel(SheetModel::CreateParams(db, mclassId, modelCode, DPoint2d::From(2.0, 2.0)));
     DgnDbStatus status = catalogModel->Insert();
     EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
