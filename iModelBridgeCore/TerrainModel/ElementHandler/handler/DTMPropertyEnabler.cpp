@@ -3543,7 +3543,7 @@ void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRec
     RefCountedPtr<DTMElementDataCache> dataCache;
     ElementHandle eh (txnInfo.GetChangedElement ());
 
-    if (eh.IsValid ())
+    if (eh.IsValid () && txnInfo.GetElementTxn().GetBeforeElement().IsValid())
         {
         ElementHandle dtmEh (txnInfo.GetChangedElement ());
 
