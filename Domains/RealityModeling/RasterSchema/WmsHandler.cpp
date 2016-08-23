@@ -203,7 +203,7 @@ DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap c
     if(!mapInfo.HasValidParameters())
         return DgnModelId();  // Can't create model, Return an invalid model id.
 
-    WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, DgnModel::CreateModelCode(modelName)), mapInfo);
+    WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(modelName)), mapInfo);
 
     modelP->Insert();
     return modelP->GetModelId();
