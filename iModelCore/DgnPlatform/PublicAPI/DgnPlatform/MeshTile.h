@@ -258,6 +258,7 @@ public:
     uint32_t AddVertex(VertexKey const& vertex);
 
     TileMeshP GetMesh() { return m_mesh.get(); } //!< The mesh under construction
+    double GetTolerance() const { return m_tolerance; }
 };
 
 //=======================================================================================
