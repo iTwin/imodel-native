@@ -13,6 +13,52 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                     Affan.Khan e    08/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+DbResult ECDbProfileUpgrader_3731::_Upgrade(ECDbCR ecdb) const
+    {
+    //Get ECSchemaId of MetaSchema
+    DbResult stat = ecdb.ExecuteSql("DROP TABLE ec_ClassHierarchy");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHasTables("
+                            "Id INTEGER PRIMARY KEY,"
+                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId ON ec_cache_ClassHasTables(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON ec_cache_ClassHasTables(TableId);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //ec_cache_ClassHierarchy
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHierarchy("
+                           "Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+
+    stat = ECDbSchemaWriter::RepopulateClassHierarchyTable(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ECDbMap::RepopulateClassHasTable(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    return BE_SQLITE_OK;
+    }
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3730::_Upgrade(ECDbCR ecdb) const

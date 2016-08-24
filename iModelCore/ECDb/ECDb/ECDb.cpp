@@ -185,6 +185,21 @@ void ECDb::RemoveIssueListener()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                08/2016
+//---------------+---------------+---------------+---------------+---------------+------
+void ECDb::SetECSqlQueryOptimizationOption(ECSqlQueryOptimizationOption mode)
+    {
+    m_pimpl->SetECSqlQueryOptimizationOption(mode);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                08/2016
+//---------------+---------------+---------------+---------------+---------------+------
+ECSqlQueryOptimizationOption ECDb::GetECSqlQueryOptimizationOption() const
+    {
+    return m_pimpl->GetECSqlQueryOptimizationOption();
+    }
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                03/2016
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const
