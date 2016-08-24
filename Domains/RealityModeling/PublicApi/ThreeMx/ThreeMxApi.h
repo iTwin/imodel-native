@@ -52,6 +52,7 @@ struct Geometry : RefCountedBase, NonCopyableClass
 protected:
     bvector<FPoint3d> m_points;
     bvector<FPoint3d> m_normals;
+    bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
     GraphicPtr m_graphic;
 

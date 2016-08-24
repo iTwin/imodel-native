@@ -331,6 +331,13 @@ struct Publish3mxGeometry : Geometry
             m_normals.resize(args.m_numPoints);
             memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
             }
+
+        if (nullptr != args.m_textureUV)
+            {
+            m_textureUV.resize(args.m_numPoints);
+            memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numPoints * sizeof(FPoint2d));
+            }
+            
         }
 };
 
@@ -369,13 +376,15 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
             continue;
 
         PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
+        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighing (it is baked into the capture).
 
-        if (0 == polyface->GetNormalCount())
+        if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
             polyface->BuildPerFaceNormals();
 
         Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
         Publish3mxTexture*      publishTexture;
         TileTextureImagePtr     tileTexture;
+        static bool             s_ignoreLighting = true;           // Acute3d models use the lighing at time of capture...
 
         if (nullptr != publishGeometry &&
             nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
@@ -384,7 +393,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
             tileTexture = new TileTextureImage (std::move(image), false);
             }
 
-        TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture);
+        TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
         TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
 
         for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
@@ -430,7 +439,9 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 
     TileGenerator::Status status = collector._AcceptTile(tileNode);
 
-    if (TileGenerator::Status::Success != status || !node._HasChildren())
+    static size_t s_depthLimit = 4;
+
+    if (TileGenerator::Status::Success != status || !node._HasChildren() || depth > s_depthLimit)
         return status;
 
     depth++;
@@ -461,3 +472,17 @@ TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileColle
 
     return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                          
