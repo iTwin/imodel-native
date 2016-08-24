@@ -310,6 +310,7 @@ BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene)
 
     if (SUCCESS != DoRead(in, scene))
         {
+        SetNotFound();
         BeAssert(false);
         return ERROR;
         }

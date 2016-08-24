@@ -56,7 +56,7 @@ protected:
     GraphicPtr m_graphic;
 
 public:
-    Geometry();
+    Geometry() {}
     THREEMX_EXPORT Geometry(IGraphicBuilder::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(TileTree::DrawArgsR);
@@ -146,17 +146,15 @@ public:
     BentleyStatus LoadScene(); // synchronous
     
     THREEMX_EXPORT BentleyStatus ReadSceneFile(SceneInfo& sceneInfo); //! Read the scene file synchronously
-    Scene(DgnDbR db, TransformCR location, Utf8CP cacheName, Utf8CP sceneFile, Dgn::Render::SystemP system) : Root(db, location, cacheName, sceneFile), m_renderSystem(system) {}
+    Scene(DgnDbR db, TransformCR location, Utf8CP cacheName, Utf8CP sceneFile, SystemP system) : Root(db, location, cacheName, sceneFile), m_renderSystem(system) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Ray.Bentley     09/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
+struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(ThreeMxDomain, THREEMX_EXPORT)
-
-public:
     THREEMX_EXPORT ThreeMxDomain();
 };
 
@@ -185,11 +183,11 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
+    THREEMX_EXPORT void _AddTerrainGraphics(TerrainContextR) const override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
-    THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
-    THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
+    THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
+    THREEMX_EXPORT void _OnFitView(FitContextR) override;
     THREEMX_EXPORT TileGenerator::Status _PublishModelTiles(TileGenerator::ITileCollector& collector) override;
 
     //! Set the name of the scene file for this 3MX model
@@ -205,7 +203,7 @@ public:
 struct ModelHandler :  dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
+    THREEMX_EXPORT static DgnModelId CreateModel(DgnDbR db, Utf8CP modelName, Utf8CP sceneFile, TransformCP);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE
