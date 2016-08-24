@@ -1186,6 +1186,10 @@ $(o)HRFVirtualEarthEditor$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthEditor.cpp
 $(o)HRFVirtualEarthFile$(oext) : $(ippGraDir)hrf/src/HRFVirtualEarthFile.cpp $(ippAllInc)HRFVirtualEarthFile.h $(ippGraDir)hrf/src/HRFVirtualEarthEditor.h ${MultiCompileDepends}
 %endif
 
+$(o)HRFMapBoxTileEditor$(oext) : $(ippGraDir)hrf/src/HRFMapBoxTileEditor.cpp $(ippAllInc)HRFMapBoxTileEditor.h ${MultiCompileDepends}
+
+$(o)HRFMapBoxFile$(oext) : $(ippGraDir)hrf/src/HRFMapBoxFile.cpp $(ippAllInc)HRFMapBoxFile.h $(ippAllInc)HRFMapBoxFile.h ${MultiCompileDepends}
+
 $(o)HRFWbmpFile$(oext) : $(ippGraDir)hrf/src/HRFWbmpFile.cpp $(ippAllInc)HRFWbmpFile.h ${MultiCompileDepends}
 
 $(o)HRFWbmpLineEditor$(oext) : $(ippGraDir)hrf/src/HRFWbmpLineEditor.cpp $(ippAllInc)HRFWbmpLineEditor.h ${MultiCompileDepends}

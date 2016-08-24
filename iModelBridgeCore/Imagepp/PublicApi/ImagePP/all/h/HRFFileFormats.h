@@ -73,6 +73,7 @@
 #include "HRFMrSIDFile.h"
 #include "HRFGeoRasterFile.h"
 #include "HRFPDFFile.h"
+#include "HRFMapboxFile.h"
 
 #include <Imagepp/all/h/HRFPageFileFactory.h>
 #include <Imagepp/all/h/HRFTWFPageFile.h>
@@ -184,6 +185,10 @@
     #define HOST_REGISTER_Remote_FILEFORMAT
 #endif
 
+//PROTOTYPE - NOT YET LEGAL TO USE IN COMMERCIAL APPLICATION
+//#define HOST_REGISTER_MapBox_FILEFORMAT   HOST_REGISTER_FILEFORMAT(HRFMapBoxCreator)
+#define HOST_REGISTER_MapBox_FILEFORMAT   
+
 //----------------------------------------------------------------------------------------
 //              Disabled
 //----------------------------------------------------------------------------------------
@@ -269,5 +274,6 @@
     HOST_REGISTER_PDF_FILEFORMAT                        \
     HOST_REGISTER_GeoRaster_FILEFORMAT                  \
     HOST_REGISTER_Remote_FILEFORMAT                     \
-    HOST_REGISTER_ProjectWise_FILEFORMAT
+    HOST_REGISTER_ProjectWise_FILEFORMAT                \
+    HOST_REGISTER_MapBox_FILEFORMAT
 
