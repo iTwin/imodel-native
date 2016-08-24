@@ -825,7 +825,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
                     auto position = m_path.find_last_of(L".stm");
-                    auto filenameWithoutExtension = m_path.substr(0, position - 3);
+                    //auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
                     WString azureDatasetName(L"marseille\\");
                     //WString azureDatasetName(L"quebeccity2\\");
