@@ -21,9 +21,9 @@
 //#include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecJpeg.h>
-#include <ImagePP\all\h\HCDCodecIJG.h>
+#include <ImagePP/all/h/HCDCodecIJG.h>
 
-#include <ImagePP\all\h\HGF2DStretch.h>
+#include <ImagePP/all/h/HGF2DStretch.h>
 
 #include <Imagepp/all/h/HRPPixelTypeFactory.h>
 #include <Imagepp/all/h/HRFUtility.h>
