@@ -42,18 +42,15 @@ struct LightweightCache final: NonCopyableClass
         mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
         mutable RelationshipPerTable m_relationshipPerTable;
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
-        mutable struct
-            {
-            bool m_horizontalPartitionsIsLoaded : 1;
-            bool m_classIdsPerTableIsLoaded : 2;
-            bool m_relationshipCacheIsLoaded : 3;
-            bool m_relationshipPerTableLoaded : 4;
-            } m_loadedFlags;
 
         ECDbMap const& m_map;
-        void LoadHorizontalPartitions() const;
-        void LoadClassIdsPerTable() const;
-        void LoadRelationshipCache() const;
+        ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId classId)  const;
+        bset<DbTable const*> const& LoadClassIdsPerTable(ECN::ECClassId iid) const;
+        std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const& tbl) const;
+        bmap<ECN::ECClassId, RelationshipEnd> const& LoadRelationshipConstraintClasses(ECN::ECClassId relationshipId) const;
+        bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
+        std::vector<ECN::ECClassId> const& LoadNonAbstractClassIdsPerTable(DbTable const& tbl) const;
+
     public:
         explicit LightweightCache(ECDbMap const& map);
         ~LightweightCache() {}

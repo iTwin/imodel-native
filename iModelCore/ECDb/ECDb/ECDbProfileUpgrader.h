@@ -55,6 +55,17 @@ public:
     DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
     };
 
+
+//=======================================================================================
+// @bsiclass                                                 Affan.Khan      08/2016
+//+===============+===============+===============+===============+===============+======
+struct ECDbProfileUpgrader_3731 : ECDbProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        virtual DbResult _Upgrade(ECDbCR) const override;
+    };
+
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2016
 //+===============+===============+===============+===============+===============+======

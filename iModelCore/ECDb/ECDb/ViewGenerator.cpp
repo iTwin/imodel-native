@@ -625,6 +625,9 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
         if (basePropMap->GetType() == PropertyMap::Type::ECClassId)
             {
+            if (generateDebugView)
+                m_viewAccessStringList->push_back(basePropMap->GetPropertyAccessString());
+
             ECClassIdPropertyMap const* ecclassIdPropertyMap = static_cast<ECClassIdPropertyMap  const*>(actualPropMap);
             if (second)
                 viewSql.AppendComma();

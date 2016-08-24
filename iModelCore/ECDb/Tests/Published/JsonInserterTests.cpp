@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -203,6 +204,433 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
     EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
     EXPECT_EQ(1, statement.GetValueId <ECInstanceId>(0).GetValue());
+    }
+
+#define JSONTABLE_NAME "testjson"
+
+#define BOOLVALUE true
+#define INTVALUE 1000
+#define INT64VALUE INT64_C(123456791234)
+#define DOUBLEVALUE 6.123123123123
+#define STRINGVALUE "Hello, world!!"
+#define POINTXVALUE 3.3314134314134
+#define POINTYVALUE -133.3314134314134
+#define POINTZVALUE 100.3314134314
+
+#define rowCount 10
+#define arraySize 3
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PrimArrayJsonInserterTests : public ECDbTestFixture
+    {
+    private:
+        DateTime m_testDate;
+        DPoint2d m_testPoint2d;
+        DPoint3d m_testPoint3d;
+        IGeometryPtr m_testGeometry;
+        static const size_t s_testBlobSize = 128;
+        Byte m_testBlob[s_testBlobSize];
+
+    protected:
+
+        PrimArrayJsonInserterTests()
+            : m_testDate(DateTime::GetCurrentTimeUtc()), m_testPoint2d(DPoint2d::From(POINTXVALUE, POINTYVALUE)),
+            m_testPoint3d(DPoint3d::From(POINTXVALUE, POINTYVALUE, POINTZVALUE)),
+            m_testGeometry(IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))))
+            {
+            for (size_t i = 0; i < 128; i++)
+                {
+                m_testBlob[i] = static_cast<Byte> (i + 32);
+                }
+            }
+
+        BentleyStatus SetupTest(Utf8CP fileName);
+
+        BentleyStatus RunInsertJson(ECN::PrimitiveType arrayType);
+        BentleyStatus RunSelectJson(ECN::PrimitiveType arrayType);
+
+        static Utf8CP PrimitiveTypeToString(ECN::PrimitiveType);
+
+        DateTime const& GetTestDate() const { return m_testDate; }
+        DPoint2d const& GetTestPoint2d() const { return m_testPoint2d; }
+        DPoint3d const& GetTestPoint3d() const { return m_testPoint3d; }
+        IGeometryCR GetTestGeometry() const { return *m_testGeometry; }
+        Byte const* GetTestBlob() const { return m_testBlob; }
+        size_t GetTestBlobSize() const { return s_testBlobSize; }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PrimArrayJsonInserterTests::SetupTest(Utf8CP fileName)
+    {
+    ECDbR ecdb = SetupECDb(fileName);
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE testjson(Id INTEGER PRIMARY KEY, val TEXT);"))
+        return ERROR;
+
+    ecdb.SaveChanges();
+    BeFileName testFilePath;
+    testFilePath.AssignUtf8(ecdb.GetDbFileName());
+    ecdb.CloseDb();
+
+    return m_ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "INSERT INTO " JSONTABLE_NAME "(val) VALUES(?)"))
+        return ERROR;
+
+    for (int i = 0; i < rowCount; i++)
+        {
+        rapidjson::Document json;
+        json.SetArray();
+        for (uint32_t j = 0; j < arraySize; j++)
+            {
+            rapidjson::Value arrayElementJson;
+            switch (arrayType)
+                {
+                    case PRIMITIVETYPE_Binary:
+                    {
+                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, GetTestBlob(), GetTestBlobSize(), json.GetAllocator()))
+                        return ERROR;
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Boolean:
+                    {
+                    arrayElementJson.SetBool(BOOLVALUE);
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Double:
+                    {
+                    arrayElementJson.SetDouble(DOUBLEVALUE);
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_IGeometry:
+                    {
+                    bvector<Byte> fb;
+                    BackDoor::IGeometryFlatBuffer::GeometryToBytes(fb, GetTestGeometry());
+
+                    if (ECRapidJsonUtilities::BinaryToJson(arrayElementJson, fb.data(), fb.size(), json.GetAllocator()))
+                        return ERROR;
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Integer:
+                    {
+                    arrayElementJson.SetInt(INTVALUE);
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Long:
+                    {
+                    ECRapidJsonUtilities::Int64ToStringJsonValue(arrayElementJson, INT64VALUE, json.GetAllocator());
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Point2D:
+                    {
+                    if (ECRapidJsonUtilities::Point2DToJson(arrayElementJson, GetTestPoint2d(), json.GetAllocator()))
+                        return ERROR;
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Point3D:
+                    {
+                    if (ECRapidJsonUtilities::Point3DToJson(arrayElementJson, GetTestPoint3d(), json.GetAllocator()))
+                        return ERROR;
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_String:
+                    {
+                    arrayElementJson.SetString(STRINGVALUE);
+                    break;
+                    }
+
+                    default:
+                        return ERROR;
+                }
+
+            json.PushBack(arrayElementJson, json.GetAllocator());
+            }
+
+        rapidjson::StringBuffer stringBuffer;
+        rapidjson::Writer<rapidjson::StringBuffer> writer(stringBuffer);
+        json.Accept(writer);
+
+        if (BE_SQLITE_OK != stmt.BindText(1, stringBuffer.GetString(), Statement::MakeCopy::No))
+            return ERROR;
+
+        if (BE_SQLITE_DONE != stmt.Step())
+            return ERROR;
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    stmt.Finalize();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT val FROM " JSONTABLE_NAME))
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rapidjson::Document arrayJson;
+        if (arrayJson.Parse<0>(stmt.GetValueText(0)).HasParseError())
+            return ERROR;
+
+        for (auto it = arrayJson.Begin(); it != arrayJson.End(); ++it)
+            {
+            switch (arrayType)
+                {
+                    case PRIMITIVETYPE_Binary:
+                    {
+                    if (!it->IsString())
+                        return ERROR;
+
+                    bvector<Byte> blob;
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(blob, *it))
+                        return ERROR;
+
+                    if (blob.size() != GetTestBlobSize() ||
+                        memcmp(GetTestBlob(), blob.data(), GetTestBlobSize()) != 0)
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Boolean:
+                    {
+                    if (!it->IsBool())
+                        return ERROR;
+
+                    if (BOOLVALUE != it->GetBool())
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Double:
+                    {
+                    if (!it->IsDouble())
+                        return ERROR;
+
+                    if (it->GetDouble() < 0)
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_IGeometry:
+                    {
+                    if (!it->IsString())
+                        return ERROR;
+
+                    bvector<Byte> fb;
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToBinary(fb, *it))
+                        return ERROR;
+
+                    IGeometryPtr actualGeom = BackDoor::IGeometryFlatBuffer::BytesToGeometry(fb);
+                    if (actualGeom == nullptr || !actualGeom->IsSameStructureAndGeometry(GetTestGeometry()))
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Integer:
+                    {
+                    if (!it->IsInt())
+                        return ERROR;
+
+                    if (INTVALUE != it->GetInt())
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Long:
+                    {
+                    if (!it->IsString())
+                        return ERROR;
+
+                    const int64_t val = ECRapidJsonUtilities::Int64FromJson(*it);
+                    if (INT64VALUE != val)
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Point2D:
+                    {
+                    DPoint2d pt;
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint2D(pt, *it))
+                        return ERROR;
+
+                    if (!pt.AlmostEqual(GetTestPoint2d()))
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_Point3D:
+                    {
+                    DPoint3d pt;
+                    if (SUCCESS != ECRapidJsonUtilities::JsonToPoint3D(pt, *it))
+                        return ERROR;
+
+                    if (!pt.AlmostEqual(GetTestPoint3d()))
+                        return ERROR;
+
+                    break;
+                    }
+
+                    case PRIMITIVETYPE_String:
+                    {
+                    if (!it->IsString())
+                        return ERROR;
+
+                    if (strcmp(it->GetString(), STRINGVALUE) != 0)
+                        return ERROR;
+
+                    break;
+                    }
+
+                    default:
+                        return ERROR;
+                }
+            }
+        }
+
+    stmt.Finalize();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8CP PrimArrayJsonInserterTests::PrimitiveTypeToString(ECN::PrimitiveType primType)
+    {
+    switch (primType)
+        {
+            case PRIMITIVETYPE_Binary: return "Binary";
+            case PRIMITIVETYPE_Boolean: return "Boolean";
+            case PRIMITIVETYPE_Double: return "Double";
+            case PRIMITIVETYPE_IGeometry: return "IGeometry";
+            case PRIMITIVETYPE_Integer: return "Integer";
+            case PRIMITIVETYPE_Long: return "Long";
+            case PRIMITIVETYPE_Point2D: return "Point2D";
+            case PRIMITIVETYPE_Point3D: return "Point3D";
+            case PRIMITIVETYPE_String: return "String";
+            default:
+                BeAssert(false);
+                return nullptr;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Integer)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Integer));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Integer));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Double)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Double));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Long)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Long));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_string)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_String));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_String));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Point2D)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point2D));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point2D));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Point3D)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Point3D));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3D));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_Binary)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_Binary));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PrimArrayJsonInserterTests, InsertJsonArray_IGeometry)
+    {
+    ASSERT_EQ(SUCCESS, SetupTest("primitivearrayjsoninsertertests.ecdb"));
+
+    ASSERT_EQ(SUCCESS, RunInsertJson(PrimitiveType::PRIMITIVETYPE_IGeometry));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
