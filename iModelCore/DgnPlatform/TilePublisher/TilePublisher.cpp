@@ -629,16 +629,16 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     {
     Utf8String idStr(std::to_string(index).c_str());
 
-    Utf8String bv_pos_id    = Concat("bv_pos_", idStr),
-               bv_ind_id    = Concat("bv_ind_", idStr),
-               bv_uv_id     = Concat("bv_uv_", idStr),
-               bv_n_id      = Concat("bv_n_", idStr),
-               bv_bat_id    = Concat("bv_bat_", idStr),
-               acc_pos_id   = Concat("acc_pos_", idStr),
-               acc_ind_id   = Concat("acc_ind_", idStr),
-               acc_uv_id    = Concat("acc_uv_", idStr),
-               acc_n_id     = Concat("acc_n_", idStr)
-               ,acc_bat_id  = Concat("acc_bat_", idStr);
+    Utf8String bvPositionId     = Concat("bvPosition_", idStr),
+               bvIndexId        = Concat("bvIndex_", idStr),
+               bvParamId        = Concat("bvParam_", idStr),
+               bvNormalId       = Concat("bvNormal_", idStr),
+               bvBatchId        = Concat("bvBatch_", idStr),
+               accPositionId    = Concat("accPosition_", idStr),
+               accIndexId       = Concat("accIndex_", idStr),
+               accParamId       = Concat("accParam_", idStr),
+               accNormalId      = Concat("accNormal_", idStr),
+               accBatchId       = Concat("accBatch_", idStr);
 
     bvector<float> ptsVal;
     ptsVal.reserve(mesh.Points().size() * 3);
@@ -682,16 +682,19 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     for (auto const& uv : mesh.Params())
         {
         uvs.push_back((float)uv.x);
-        uvs.push_back((float)(1.0 - uv.y));         // Ick... Either our images are flipped or our v- convention is mismatched.
+        uvs.push_back((float)uv.y);         // Needs work - Flip - based on image orientation.
         }
 
     bvector<float> normals;
-    normals.reserve(mesh.Normals().size() * 3);
-    for (auto const& norm : mesh.Normals())
+    if (nullptr != mesh.GetDisplayParams() || !mesh.GetDisplayParams()->GetIgnoreLighting())
         {
-        normals.push_back((float)norm.x);
-        normals.push_back((float)norm.y);
-        normals.push_back((float)norm.z);
+        normals.reserve(mesh.Normals().size() * 3);
+        for (auto const& norm : mesh.Normals())
+            {
+            normals.push_back((float)norm.x);
+            normals.push_back((float)norm.y);
+            normals.push_back((float)norm.z);
+            }
         }
 
     bvector<uint16_t> batchIds;
@@ -701,55 +704,55 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     Json::Value attr = Json::objectValue;
 
-    attr["attributes"]["POSITION"] = acc_pos_id;
+    attr["attributes"]["POSITION"] = accPositionId;
 
     if (!uvs.empty())
-        attr["attributes"]["TEXCOORD_0"] = acc_uv_id;
+        attr["attributes"]["TEXCOORD_0"] = accParamId;
 
     if (!normals.empty())
-        attr["attributes"]["NORMAL"] = acc_n_id;
+        attr["attributes"]["NORMAL"] = accNormalId;
 
-    attr["attributes"]["BATCHID"] = acc_bat_id;
-    attr["indices"] = acc_ind_id;
+    attr["attributes"]["BATCHID"] = accBatchId;
+    attr["indices"] = accIndexId;
 
     attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh.Triangles().empty(), idStr.c_str());
 
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
     rootNode["meshes"]["mesh_0"]["primitives"].append(attr);
 
-    rootNode["bufferViews"][bv_pos_id] = Json::objectValue;
-    rootNode["bufferViews"][bv_pos_id]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bv_pos_id]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bv_pos_id]["byteLength"] = ptsVal.size() * sizeof(float);
-    rootNode["bufferViews"][bv_pos_id]["target"] = GLTF_ARRAY_BUFFER;
+    rootNode["bufferViews"][bvPositionId] = Json::objectValue;
+    rootNode["bufferViews"][bvPositionId]["buffer"] = "binary_glTF";
+    rootNode["bufferViews"][bvPositionId]["byteOffset"] = m_binaryData.size();
+    rootNode["bufferViews"][bvPositionId]["byteLength"] = ptsVal.size() * sizeof(float);
+    rootNode["bufferViews"][bvPositionId]["target"] = GLTF_ARRAY_BUFFER;
 
     size_t current_buffer_size = m_binaryData.size();
     m_binaryData.resize(m_binaryData.size() + ptsVal.size() *sizeof(float));
     memcpy(m_binaryData.data() + current_buffer_size, ptsVal.data(), ptsVal.size() * sizeof(float));
 
-    rootNode["bufferViews"][bv_ind_id] = Json::objectValue;
-    rootNode["bufferViews"][bv_ind_id]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bv_ind_id]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bv_ind_id]["byteLength"] = indices.size() * sizeof(unsigned int);
-    rootNode["bufferViews"][bv_ind_id]["target"] = GLTF_ELEMENT_ARRAY_BUFFER;
+    rootNode["bufferViews"][bvIndexId] = Json::objectValue;
+    rootNode["bufferViews"][bvIndexId]["buffer"] = "binary_glTF";
+    rootNode["bufferViews"][bvIndexId]["byteOffset"] = m_binaryData.size();
+    rootNode["bufferViews"][bvIndexId]["byteLength"] = indices.size() * sizeof(unsigned int);
+    rootNode["bufferViews"][bvIndexId]["target"] = GLTF_ELEMENT_ARRAY_BUFFER;
 
     current_buffer_size = m_binaryData.size();
     m_binaryData.resize(m_binaryData.size() + indices.size() *  sizeof(unsigned int));
     memcpy(m_binaryData.data() + current_buffer_size, indices.data(), indices.size() *sizeof(unsigned int));
 
-    rootNode["accessors"][acc_pos_id] = Json::objectValue;
-    rootNode["accessors"][acc_pos_id]["bufferView"] = bv_pos_id;
-    rootNode["accessors"][acc_pos_id]["byteOffset"] = 0;
-    rootNode["accessors"][acc_pos_id]["componentType"] = GLTF_FLOAT;
-    rootNode["accessors"][acc_pos_id]["count"] = ptsVal.size();
-    rootNode["accessors"][acc_pos_id]["type"] = "VEC3";
+    rootNode["accessors"][accPositionId] = Json::objectValue;
+    rootNode["accessors"][accPositionId]["bufferView"] = bvPositionId;
+    rootNode["accessors"][accPositionId]["byteOffset"] = 0;
+    rootNode["accessors"][accPositionId]["componentType"] = GLTF_FLOAT;
+    rootNode["accessors"][accPositionId]["count"] = ptsVal.size();
+    rootNode["accessors"][accPositionId]["type"] = "VEC3";
 
     auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-    rootNode["bufferViews"][bv_bat_id] = Json::objectValue;
-    rootNode["bufferViews"][bv_bat_id]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bv_bat_id]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bv_bat_id]["byteLength"] = nBatchIdBytes;
-    rootNode["bufferViews"][bv_bat_id]["target"] = GLTF_ARRAY_BUFFER;
+    rootNode["bufferViews"][bvBatchId] = Json::objectValue;
+    rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
+    rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
+    rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
+    rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
 
     current_buffer_size = m_binaryData.size();
     m_binaryData.resize(m_binaryData.size() + nBatchIdBytes);
@@ -757,67 +760,67 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     DRange3d range = DRange3d::From(mesh.Points().data(), (int)mesh.Points().size());
 
-    rootNode["accessors"][acc_pos_id]["min"] = Json::arrayValue;
-    rootNode["accessors"][acc_pos_id]["min"].append(range.low.x);
-    rootNode["accessors"][acc_pos_id]["min"].append(range.low.y);
-    rootNode["accessors"][acc_pos_id]["min"].append(range.low.z);
-    rootNode["accessors"][acc_pos_id]["max"] = Json::arrayValue;
-    rootNode["accessors"][acc_pos_id]["max"].append(range.high.x);
-    rootNode["accessors"][acc_pos_id]["max"].append(range.high.y);
-    rootNode["accessors"][acc_pos_id]["max"].append(range.high.z);
+    rootNode["accessors"][accPositionId]["min"] = Json::arrayValue;
+    rootNode["accessors"][accPositionId]["min"].append(range.low.x);
+    rootNode["accessors"][accPositionId]["min"].append(range.low.y);
+    rootNode["accessors"][accPositionId]["min"].append(range.low.z);
+    rootNode["accessors"][accPositionId]["max"] = Json::arrayValue;
+    rootNode["accessors"][accPositionId]["max"].append(range.high.x);
+    rootNode["accessors"][accPositionId]["max"].append(range.high.y);
+    rootNode["accessors"][accPositionId]["max"].append(range.high.z);
 
-    rootNode["accessors"][acc_ind_id] = Json::objectValue;
-    rootNode["accessors"][acc_ind_id]["bufferView"] = bv_ind_id;
-    rootNode["accessors"][acc_ind_id]["byteOffset"] = 0;
-    rootNode["accessors"][acc_ind_id]["componentType"] = GLTF_UINT32;
-    rootNode["accessors"][acc_ind_id]["count"] = indices.size();
-    rootNode["accessors"][acc_ind_id]["type"] = "SCALAR";
+    rootNode["accessors"][accIndexId] = Json::objectValue;
+    rootNode["accessors"][accIndexId]["bufferView"] = bvIndexId;
+    rootNode["accessors"][accIndexId]["byteOffset"] = 0;
+    rootNode["accessors"][accIndexId]["componentType"] = GLTF_UINT32;
+    rootNode["accessors"][accIndexId]["count"] = indices.size();
+    rootNode["accessors"][accIndexId]["type"] = "SCALAR";
 
-    rootNode["accessors"][acc_bat_id] = Json::objectValue;
-    rootNode["accessors"][acc_bat_id]["bufferView"] = bv_bat_id;
-    rootNode["accessors"][acc_bat_id]["byteOffset"] = 0;
-    rootNode["accessors"][acc_bat_id]["componentType"] = GLTF_UNSIGNED_SHORT;
-    rootNode["accessors"][acc_bat_id]["count"] = batchIds.size();
-    rootNode["accessors"][acc_bat_id]["type"] = "SCALAR";
+    rootNode["accessors"][accBatchId] = Json::objectValue;
+    rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
+    rootNode["accessors"][accBatchId]["byteOffset"] = 0;
+    rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
+    rootNode["accessors"][accBatchId]["count"] = batchIds.size();
+    rootNode["accessors"][accBatchId]["type"] = "SCALAR";
 
     if (!uvs.empty())
         {
-        rootNode["bufferViews"][bv_uv_id] = Json::objectValue;
-        rootNode["bufferViews"][bv_uv_id]["buffer"] = "binary_glTF";
-        rootNode["bufferViews"][bv_uv_id]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bv_uv_id]["byteLength"] = uvs.size() * sizeof(float);
-        rootNode["bufferViews"][bv_uv_id]["target"] = GLTF_ARRAY_BUFFER;
+        rootNode["bufferViews"][bvParamId] = Json::objectValue;
+        rootNode["bufferViews"][bvParamId]["buffer"] = "binary_glTF";
+        rootNode["bufferViews"][bvParamId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvParamId]["byteLength"] = uvs.size() * sizeof(float);
+        rootNode["bufferViews"][bvParamId]["target"] = GLTF_ARRAY_BUFFER;
 
         current_buffer_size = m_binaryData.size();
         m_binaryData.resize(m_binaryData.size() + uvs.size() * sizeof(float));
         memcpy(m_binaryData.data() + current_buffer_size, uvs.data(), uvs.size() * sizeof(float));
 
-        rootNode["accessors"][acc_uv_id] = Json::objectValue;
-        rootNode["accessors"][acc_uv_id]["bufferView"] = bv_uv_id;
-        rootNode["accessors"][acc_uv_id]["byteOffset"] = 0;
-        rootNode["accessors"][acc_uv_id]["componentType"] = GLTF_FLOAT;
-        rootNode["accessors"][acc_uv_id]["count"] = uvs.size();
-        rootNode["accessors"][acc_uv_id]["type"] = "VEC2";
+        rootNode["accessors"][accParamId] = Json::objectValue;
+        rootNode["accessors"][accParamId]["bufferView"] = bvParamId;
+        rootNode["accessors"][accParamId]["byteOffset"] = 0;
+        rootNode["accessors"][accParamId]["componentType"] = GLTF_FLOAT;
+        rootNode["accessors"][accParamId]["count"] = uvs.size();
+        rootNode["accessors"][accParamId]["type"] = "VEC2";
         }
 
     if (!normals.empty())
         {
-        rootNode["bufferViews"][bv_n_id] = Json::objectValue;
-        rootNode["bufferViews"][bv_n_id]["buffer"] = "binary_glTF";
-        rootNode["bufferViews"][bv_n_id]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bv_n_id]["byteLength"] = normals.size() * sizeof(float);
-        rootNode["bufferViews"][bv_n_id]["target"] = GLTF_ARRAY_BUFFER;
+        rootNode["bufferViews"][bvNormalId] = Json::objectValue;
+        rootNode["bufferViews"][bvNormalId]["buffer"] = "binary_glTF";
+        rootNode["bufferViews"][bvNormalId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvNormalId]["byteLength"] = normals.size() * sizeof(float);
+        rootNode["bufferViews"][bvNormalId]["target"] = GLTF_ARRAY_BUFFER;
 
         current_buffer_size = m_binaryData.size();
         m_binaryData.resize(m_binaryData.size() + normals.size() * sizeof(float));
         memcpy(m_binaryData.data() + current_buffer_size, normals.data(), normals.size() *  sizeof(float));
 
-        rootNode["accessors"][acc_n_id] = Json::objectValue;
-        rootNode["accessors"][acc_n_id]["bufferView"] = bv_n_id;
-        rootNode["accessors"][acc_n_id]["byteOffset"] = 0;
-        rootNode["accessors"][acc_n_id]["componentType"] = GLTF_FLOAT;
-        rootNode["accessors"][acc_n_id]["count"] = normals.size();
-        rootNode["accessors"][acc_n_id]["type"] = "VEC3";
+        rootNode["accessors"][accNormalId] = Json::objectValue;
+        rootNode["accessors"][accNormalId]["bufferView"] = bvNormalId;
+        rootNode["accessors"][accNormalId]["byteOffset"] = 0;
+        rootNode["accessors"][accNormalId]["componentType"] = GLTF_FLOAT;
+        rootNode["accessors"][accNormalId]["count"] = normals.size();
+        rootNode["accessors"][accNormalId]["type"] = "VEC3";
         }
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }
@@ -970,7 +973,7 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& viewedTileSetNames)
+TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& tileSetNames)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -998,8 +1001,13 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
     Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
     Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
 
+    Utf8String       tileSetHtml;
+
+    for (auto& tileSetName : tileSetNames)
+        tileSetHtml = tileSetHtml + Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), tileSetName.c_str());
+
     // Produce the html file contents
-    Utf8PrintfString html(s_viewerHtml, viewOptionString, m_rootName.c_str(), m_rootName.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
 
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
@@ -1017,9 +1025,10 @@ TilesetPublisher::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status   TilesetPublisher::PublishViewedModel (WStringR tileSetName, DgnModelR model)
+TileGenerator::Status   TilesetPublisher::PublishViewedModel (WStringCR tileSetName, DgnModelR model)
     {
-    IPublishModelTiles*     publishTiles;
+    IPublishModelTiles*         publishTiles;
+    AutoRestore <WString>       saveRootName (&m_rootName, tileSetName);
 
     if (NULL == (publishTiles = dynamic_cast <IPublishModelTiles*> (&model)))
         return TileGenerator::Status::NotImplemented;
@@ -1066,12 +1075,17 @@ TilesetPublisher::Status TilesetPublisher::Publish()
         if (modelId == m_viewController.GetBaseModelId())
             continue;
 
-        WString         tileSetName;
         DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
 
-        if (viewedModel.IsValid() &&
-            TilesetPublisher::Status::Success == (status = ConvertStatus (PublishViewedModel (tileSetName, *viewedModel))))
-            viewedTileSetNames.push_back (tileSetName);
+        if (viewedModel.IsValid())
+            {
+            WString tileSetName;
+            
+            tileSetName.AssignA (viewedModel->GetName().c_str());
+
+            if (TilesetPublisher::Status::Success == (status = ConvertStatus (PublishViewedModel (tileSetName, *viewedModel))))
+                viewedTileSetNames.push_back (tileSetName);
+            }
         }
 
     m_generator = nullptr;
