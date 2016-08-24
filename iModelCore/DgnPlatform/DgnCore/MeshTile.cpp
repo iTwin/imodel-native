@@ -929,7 +929,7 @@ PolyfaceHeaderPtr SolidKernelTileGeometry::_GetPolyface(IFacetOptionsR facetOpti
     auto polyface = nullptr != shape ? OCBRep::IncrementalMesh(*shape, facetOptions) : nullptr;
     if (polyface.IsValid())
         {
-        polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != m_entity->GetEntityType());
+        polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != m_entity->GetEntityType());
         polyface->Transform(Transform::FromProduct(GetTransform(), m_entity->GetEntityTransform()));
         }
 
