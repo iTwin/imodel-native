@@ -29,16 +29,20 @@ DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
         return r;
 
     r = ecdb.ExecuteSql(
-        "INSERT INTO ec_cache_ClassHasTables "
-        "    SELECT  NULL, ec_ClassMap.ClassId , ec_Table.Id "
-        "    FROM ec_PropertyMap "
-        "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "          INNER JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "    WHERE ec_ClassMap.MapStrategy <> 101 "
-        "          AND ec_ClassMap.MapStrategy <> 100 "
-        "          AND ec_Column.ColumnKind & 2 = 0 "
-        "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id; "
+        SqlPrintfString(
+            "INSERT INTO ec_cache_ClassHasTables "
+            "    SELECT  NULL, ec_ClassMap.ClassId , ec_Table.Id "
+            "    FROM ec_PropertyMap "
+            "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+            "          INNER JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+            "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+            "    WHERE ec_ClassMap.MapStrategy <> %d "
+            "          AND ec_ClassMap.MapStrategy <> %d "
+            "          AND ec_Column.ColumnKind & %d = 0 ",
+            Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
+            Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable),
+            Enum::ToInt(DbColumn::Kind::ECClassId)
+        ).GetUtf8CP()
     );
 
     if (r != BE_SQLITE_OK)

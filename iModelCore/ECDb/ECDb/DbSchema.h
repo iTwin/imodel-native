@@ -527,7 +527,6 @@ public:
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;
     DbTable const* FindTable(DbTableId id) const;
-
     DbTable* FindTableP(Utf8CP name) const;
     DbSchemaNameGenerator& GetNameGenerator() { return m_nameGenerator; }
     bool IsTableNameInUse(Utf8CP tableName) const;
