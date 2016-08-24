@@ -453,7 +453,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 
     TileGenerator::Status status = collector._AcceptTile(tileNode);
 
-    static size_t s_depthLimit = 3;
+    static size_t s_depthLimit = 0xffff;
 
     if (TileGenerator::Status::Success != status || !node._HasChildren() || depth > s_depthLimit)
         return status;
