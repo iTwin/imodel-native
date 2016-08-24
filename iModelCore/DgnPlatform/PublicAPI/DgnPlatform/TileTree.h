@@ -36,8 +36,8 @@ typedef std::chrono::steady_clock::time_point TimePoint;
 struct StreamBuffer : ByteStream
     {
     uint32_t m_currPos = 0;
-    Dgn::ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
-    Dgn::ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
+    ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
+    ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
     void SetPos(uint32_t pos) {m_currPos=pos;}
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}
@@ -80,6 +80,7 @@ public:
     bool IsAbandoned() const {return m_loadState.load() == LoadState::Abandoned;}
     bool IsReady() const {return m_loadState.load() == LoadState::Ready;}
     bool IsNotLoaded() const {return m_loadState.load() == LoadState::NotLoaded;}
+    bool IsNotFound() const {return m_loadState.load() == LoadState::NotFound;}
     bool IsDisplayable() const {return m_maxSize > 0.0;}
     TileCP GetParent() const {return m_parent;}
     DGNPLATFORM_EXPORT int CountTiles() const;

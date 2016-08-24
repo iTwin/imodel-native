@@ -351,11 +351,8 @@ Root::Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP root
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::SetAbandoned() const
     {
-    if (LoadState::Ready == m_loadState.load()) // if this node's children are loaded, set them as abandoned too (recursively)
-        {
-        for (auto const& child : m_children)
-            child->SetAbandoned();
-        }
+    for (auto const& child : m_children)
+        child->SetAbandoned();
 
     // this is actually a race condition, but it doesn't matter. If the loading thread misses the abandoned flag, the only consequence is we waste a little time.
     m_loadState.store(LoadState::Abandoned);
@@ -369,7 +366,7 @@ void Tile::SetAbandoned() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
     {
-    if (LoadState::Ready != m_loadState.load()) // children aren't loaded, nothing to do
+    if (!IsReady())
         return;
 
     if (m_childrenLastUsed > olderThan) // have we used this node's children recently?
@@ -399,7 +396,7 @@ Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        args.m_location.Multiply(box.GetPtsP(), box.GetPts(), 8);
+        box.TransformBy(args.m_location);
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
@@ -443,9 +440,10 @@ Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
         return VisitComplete::Yes;
         }
 
-    // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded
-    if (IsNotLoaded())
-        args.m_missing.Insert(depth, this);
+    // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
+    // NOTE: add all missing tiles, even if they're already queued.
+    if (!IsNotFound())
+        args.m_missing.Insert(depth, this); 
 
     return completed;
     }
