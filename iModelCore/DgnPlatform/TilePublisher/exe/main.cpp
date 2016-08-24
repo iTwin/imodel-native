@@ -449,7 +449,10 @@ PublisherContext::Status TilesetPublisher::Publish()
             tileSetName.AssignA (viewedModel->GetName().c_str());
 
             if (TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel, *this))
+                {
                 viewedTileSetNames.push_back (tileSetName);
+                status = Status::Success;       // Override NoGeometry (empty model with reality attachment).
+                }
             }
         }
 
