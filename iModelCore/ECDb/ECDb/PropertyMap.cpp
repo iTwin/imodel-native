@@ -922,7 +922,7 @@ BentleyStatus PointPropertyMap::_Load(DbClassMapLoadContext const& dbClassMapLoa
     BeAssert(m_yColumn == nullptr);
     BeAssert(m_zColumn == nullptr);
 
-    const ECPropertyId rootPropertyId = GetRoot().GetProperty().GetId();
+    /*const ECPropertyId rootPropertyId = */GetRoot().GetProperty().GetId();
     Utf8String accessString(GetPropertyAccessString());
     std::vector<DbColumn const*> const*  xPropMapping = dbClassMapLoadContext.FindColumnByAccessString((accessString + ".X").c_str());
     if (xPropMapping == nullptr)
