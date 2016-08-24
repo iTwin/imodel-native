@@ -38,7 +38,8 @@ DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
             "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
             "    WHERE ec_ClassMap.MapStrategy <> %d "
             "          AND ec_ClassMap.MapStrategy <> %d "
-            "          AND ec_Column.ColumnKind & %d = 0 ",
+            "          AND ec_Column.ColumnKind & %d = 0 "
+            "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id; ",
             Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
             Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable),
             Enum::ToInt(DbColumn::Kind::ECClassId)
