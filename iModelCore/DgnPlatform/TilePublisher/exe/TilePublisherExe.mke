@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: TilePublisher/TilePublisherExe.mke $
+#  $Source: TilePublisher/exe/TilePublisherExe.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -9,6 +9,7 @@
 %include mdl.mki
 
 SrcDir              = $(_MakeFilePath)
+LibDir              = $(SrcDir)../lib/
 SubpartLibs         = $(BuildContext)SubParts/Libs/
 o                   = $(OutputRootDir)Build/TilePublisher/
 ContextDeliveryDir  = $(BuildContext)Delivery/
@@ -20,7 +21,7 @@ always:
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)TilePublisher.h $(SrcDir)Constants.h ${MultiCompileDepends}
+$(o)main$(oext) : $(SrcDir)main.cpp $(LibDir)TilePublisher.h $(SrcDir)Constants.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

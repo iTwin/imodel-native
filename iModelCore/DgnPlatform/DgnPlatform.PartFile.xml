@@ -689,7 +689,7 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/TilePublisherLib.mke">
+    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="DgnPlatformLib" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
@@ -700,7 +700,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="TilePublisherLib" />
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
