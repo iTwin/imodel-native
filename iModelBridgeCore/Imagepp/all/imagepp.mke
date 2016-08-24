@@ -1033,6 +1033,10 @@ $(o)HRFGifImageEditor$(oext) : $(ippGraDir)hrf/src/HRFGifImageEditor.cpp $(ippAl
 
 $(o)HRFGifLineEditor$(oext) : $(ippGraDir)hrf/src/HRFGifLineEditor.cpp $(ippAllInc)HRFGifLineEditor.h ${MultiCompileDepends}
 
+$(o)HRFSRTMEditor$(oext) : $(ippGraDir)hrf/src/HRFSRTMEditor.cpp $(ippAllInc)HRFSRTMEditor.h ${MultiCompileDepends}
+
+$(o)HRFSRTMFile$(oext) : $(ippGraDir)hrf/src/HRFSRTMFile.cpp $(ippAllInc)HRFSRTMFile.h ${MultiCompileDepends}
+
 $(o)HRFHMRFile$(oext) : $(ippGraDir)hrf/src/HRFHMRFile.cpp $(ippAllInc)HRFHMRFile.h ${MultiCompileDepends}
 
 $(o)HRFHMRTileEditor$(oext) : $(ippGraDir)hrf/src/HRFHMRTileEditor.cpp $(ippAllInc)HRFHMRTileEditor.h ${MultiCompileDepends}
