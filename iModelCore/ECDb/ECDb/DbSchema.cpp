@@ -10,6 +10,8 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+#define EC_INDEX_TableName "ec_Index"
+#define EC_INDEXCOLUMN_TableName "ec_IndexColumn"
 
 //****************************************************************************************
 //ExistingColumn
@@ -122,6 +124,11 @@ struct ExistingColumn
 //****************************************************************************************
 //DbSchema
 //****************************************************************************************
+bool DbSchema::IsTableNameInUse(Utf8CP tableName) const
+    {
+    SyncTableCache();
+    return m_tableMapByName.find(tableName) != m_tableMapByName.end();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -145,7 +152,7 @@ DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, Persistence
     Utf8String finalName;
     if (!Utf8String::IsNullOrEmpty(name))
         {
-        if (FindTable(name))
+        if (IsTableNameInUse(name))
             {
             BeAssert(false && "Table with same name already exists");
             return nullptr;
@@ -158,12 +165,11 @@ DbTable* DbSchema::CreateTable(Utf8CP name, DbTable::Type tableType, Persistence
         do
             {
             m_nameGenerator.Generate(finalName);
-            } while (FindTable(finalName.c_str()));
+            } while (IsTableNameInUse(finalName.c_str()));
         }
 
     BeBriefcaseBasedId tableId;
     m_ecdb.GetECDbImplR().GetTableIdSequence().GetNextValue(tableId);
-
     return CreateTable(DbTableId(tableId.GetValue()), finalName.c_str(), tableType, persType, primaryTable);
     }
 
@@ -183,7 +189,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tab
         table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
 
     DbTable* tableP = table.get();
-    m_tables[tableP->GetName().c_str()] = std::move(table);
+    m_tableMapByName[tableP->GetName()] = std::move(table);
     return tableP;
     }
 
@@ -192,17 +198,17 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tab
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::SynchronizeExistingTables()
     {
-    std::vector<DbTable*> tables;
-    for (auto& tableKey : GetTables())
-        {
-        if (tableKey.second->IsOwnedByECDb())
-            continue;
+    SyncTableCache();
 
-        DbTable* table = tableKey.second.get();
+    std::vector<DbTable*> tables;
+    for (auto& tableKey : GetExistingTableMap())
+        {
+        Utf8CP tableName = tableKey.first.c_str();
+        DbTable* table = FindTableP(tableName);
         std::set<Utf8CP, CompareIUtf8Ascii> oldColumnList;
         std::map<Utf8CP, ExistingColumn*, CompareIUtf8Ascii> newColumnList;
         std::vector<ExistingColumn> dbColumnList;
-        if (ExistingColumn::GetColumns(dbColumnList, m_ecdb, tableKey.first) == ERROR)
+        if (ExistingColumn::GetColumns(dbColumnList, m_ecdb, tableName) == ERROR)
             {
             BeAssert(false && "Failed to get column informations");
             return ERROR;
@@ -254,9 +260,13 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
                 return ERROR;
                 }
             }
+
         table->GetEditHandleR().EndEdit();
+        if (UpdateTable(*table) != SUCCESS)
+            return SUCCESS;
         }
 
+   
     return SUCCESS;
     }
 
@@ -318,21 +328,60 @@ DbTable* DbSchema::CreateTableAndColumnsForExistingTableMapStrategy(Utf8CP exist
 //---------------------------------------------------------------------------------------
 DbTable const* DbSchema::FindTable(Utf8CP name) const
     {
-    auto itor = m_tables.find(name);
-    if (itor != m_tables.end())
+    SyncTableCache();
+    auto itor = m_tableMapByName.find(name);
+    if (itor != m_tableMapByName.end())
+        {
+        if (itor->second == nullptr)
+            {
+            //OnDemand loading
+            DbTable* table;
+            if (LoadTable(itor->first, table) == ERROR)
+                return nullptr;
+
+            return table;
+            }
+
         return itor->second.get();
+        }
 
     return nullptr;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+DbTable const* DbSchema::FindTable(DbTableId id) const
+    {
+    SyncTableCache();
+    auto itor = m_tableMapById.find(id);
+    if (itor != m_tableMapById.end())
+        {
+        return FindTable(itor->second.c_str());
+        }
 
+    return nullptr;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 DbTable* DbSchema::FindTableP(Utf8CP name) const
     {
-    auto itor = m_tables.find(name);
-    if (itor != m_tables.end())
+    SyncTableCache();
+    auto itor = m_tableMapByName.find(name);
+    if (itor != m_tableMapByName.end())
+        {
+        if (itor->second == nullptr)
+            {
+            //OnDemand loading
+            DbTable* table;
+            if (LoadTable(itor->first, table) == ERROR)
+                return nullptr;
+
+            return table;
+            }
+
         return itor->second.get();
+        }
 
     return nullptr;
     }
@@ -341,7 +390,7 @@ DbTable* DbSchema::FindTableP(Utf8CP name) const
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 DbIndex* DbSchema::CreateIndex(DbTable& table, Utf8CP indexName, bool isUnique, std::vector<DbColumn const*> const& columns, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId classId, bool applyToSubclassesIfPartial)
-    {
+    {    
     if (columns.empty())
         {
         BeAssert(false && "Index must have at least one column defined.");
@@ -395,10 +444,80 @@ DbIndex* DbSchema::CreateIndex(DbTable& table, Utf8CP indexName, bool isUnique, 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
+//--------------------------------------------------------------------------------------
+BentleyStatus DbSchema::LoadIndexes() const
+    {
+    if (m_indexesLoaded)
+        return SUCCESS;
+
+    m_indexesLoaded = true;
+    m_indexes.clear();
+    m_usedIndexNames.clear();
+
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT I.Id, T.Name, I.Name, I.IsUnique, I.AddNotNullWhereExp, I.IsAutoGenerated, I.ClassId, I.AppliesToSubclassesIfPartial FROM " EC_INDEX_TableName " I INNER JOIN ec_Table T ON T.Id = I.TableId");
+    if (stmt == nullptr)
+        return ERROR;
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        DbIndexId id = stmt->GetValueId<DbIndexId>(0);
+        Utf8CP tableName = stmt->GetValueText(1);
+        Utf8CP name = stmt->GetValueText(2);
+        bool isUnique = stmt->GetValueInt(3) == 1;
+        bool addNotNullWhereExp = stmt->GetValueInt(4) == 1;
+        bool isAutoGenerated = stmt->GetValueInt(5) == 1;
+        ECClassId classId = !stmt->IsColumnNull(6) ? stmt->GetValueId<ECClassId>(6) : ECClassId();
+        bool appliesToSubclassesIfPartial = stmt->GetValueInt(7) == 1;
+
+        DbTable* table = FindTableP(tableName);
+        if (table == nullptr)
+            {
+            BeAssert(false && "Failed to find table");
+            return ERROR;
+            }
+
+        CachedStatementPtr indexColStmt = m_ecdb.GetCachedStatement("SELECT C.Name FROM " EC_INDEXCOLUMN_TableName " I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
+        if (indexColStmt == nullptr)
+            return ERROR;
+
+        indexColStmt->BindId(1, id);
+        std::vector<DbColumn const*> columns;
+        while (indexColStmt->Step() == BE_SQLITE_ROW)
+            {
+            Utf8CP columnName = indexColStmt->GetValueText(0);
+            DbColumn const* col = table->FindColumn(columnName);
+            if (col == nullptr)
+                return ERROR;
+
+            columns.push_back(col);
+            }
+
+        if (nullptr ==  const_cast<DbSchema*>(this)->CreateIndex(id, *table, name, isUnique, columns, addNotNullWhereExp, isAutoGenerated, classId, appliesToSubclassesIfPartial))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+std::vector<std::unique_ptr<DbIndex>> const& DbSchema::GetIndexes() const
+    {
+    if (!m_indexesLoaded && LoadIndexes() == ERROR) 
+        { 
+        BeAssert(false); 
+        }  
+    
+    return m_indexes;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 DbIndex* DbSchema::CreateIndex(DbIndexId id, DbTable& table, Utf8CP indexName, bool isUnique, std::vector<DbColumn const*> const& columns, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId classId, bool applyToSubclassesIfPartial)
     {
     BeAssert(!columns.empty());
+    if (!m_indexesLoaded && LoadIndexes() == ERROR)
+        return nullptr;
 
     auto it = m_usedIndexNames.find(indexName);
     if (it != m_usedIndexNames.end())
@@ -432,19 +551,609 @@ DbIndex* DbSchema::CreateIndex(DbIndexId id, DbTable& table, Utf8CP indexName, b
     return indexP;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::SaveOrUpdateTables() const
+    {
+    //Following return the list of table and there id from db
+    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap = GetPersistedTableMap();
+    for (DbTable const* table : GetCachedTables())
+        {
+        // This would be null in case a table is not loaded yet and if its not loaded then we do not need to update it
+        if (table != nullptr)
+            {
+            auto itor = persistedTableMap.find(table->GetName());
+            if (itor == persistedTableMap.end())
+                {
+                if (InsertTable(*table) != SUCCESS)
+                    return ERROR;
+                }
+            else
+                {
+                if (UpdateTable(*table) != SUCCESS)
+                    return ERROR;
+                }
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+std::map<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetPersistedTableMap() const
+    {
+    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return persistedTableMap;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        persistedTableMap[stmt->GetValueText(0)] = stmt->GetValueId<DbTableId>(1);
+        }
+
+    return persistedTableMap;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+std::map<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetExistingTableMap() const
+    {
+    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(SqlPrintfString("SELECT Name, Id FROM ec_Table WHERE Type = %d", Enum::ToInt(DbTable::Type::Existing)).GetUtf8CP());
+    
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return persistedTableMap;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        persistedTableMap[stmt->GetValueText(0)] = stmt->GetValueId<DbTableId>(1);
+        }
+
+    return persistedTableMap;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchema::GetPersistedColumnMap(DbTableId tableId) const
+    {
+    std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Column WHERE TableId = ?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return persistedColumnMap;
+        }
+
+    stmt->BindId(1, tableId);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        persistedColumnMap[stmt->GetValueText(0)] = stmt->GetValueId<DbColumnId>(1);
+        }
+
+    return persistedColumnMap;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+void DbSchema::SyncTableCache() const
+    {
+    if (m_syncTableCacheNames)
+        return;
+
+    for (auto const& tableKey : GetPersistedTableMap())
+        {
+        if (m_tableMapByName.find(tableKey.first) == m_tableMapByName.end())
+            {
+            m_tableMapByName.insert(std::make_pair(tableKey.first, std::unique_ptr<DbTable>()));
+            m_tableMapById.insert(std::make_pair(tableKey.second, tableKey.first));
+            }
+        }
+
+    m_syncTableCacheNames = true;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
 void DbSchema::Reset()
     {
-    m_tables.clear(); 
     m_nullTable = nullptr;
+    m_tableMapByName.clear();
+    m_tableMapById.clear();
+    m_indexesLoaded = false;
     m_indexes.clear();
     m_usedIndexNames.clear();
-    m_dbMappings.Reset(); 
-    m_loadState = LoadState::NotLoaded;
+    m_syncTableCacheNames = false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+std::vector<DbTable const*> DbSchema::GetCachedTables() const
+    {
+    std::vector<DbTable const*> cachedTables;
+    for (auto const& tableKey : m_tableMapByName)
+        if (tableKey.second != nullptr)
+            {
+            if (tableKey.second->GetType() == DbTable::Type::Joined)
+                cachedTables.push_back(tableKey.second.get());
+            else
+                cachedTables.insert(cachedTables.begin(), tableKey.second.get());
+            }
+    return cachedTables;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::InsertTable(DbTable const& table) const
+    {
+    if (!table.IsNullTable() && !table.IsValid())
+        {
+        BeAssert(false && "Table to insert is not valid");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Table(Id, Name, Type, IsVirtual, PrimaryTableId) VALUES (?, ?, ?, ?, ?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, table.GetId());
+    stmt->BindText(2, table.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(3, Enum::ToInt(table.GetType()));
+    stmt->BindInt(4, table.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    if (auto primaryTable = table.GetParentOfJoinedTable())
+        stmt->BindId(5, primaryTable->GetId());
+    else
+        stmt->BindNull(5);
+
+    DbResult stat = stmt->Step();
+    if (stat != BE_SQLITE_DONE)
+        return ERROR;
+
+    bmap<DbColumn const*, int> primaryKeys;
+    int i = 0;
+    if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
+        {
+        for (DbColumn const* pkCol : pkConstraint->GetColumns())
+            {
+            primaryKeys[pkCol] = i++;
+            }
+        }
+
+    int columnOrdinal = 0;
+    for (DbColumn const* column : table.GetColumns())
+        {
+        auto it = primaryKeys.find(column);
+        const int primaryKeyOrdinal = it == primaryKeys.end() ? -1 : it->second;
+        if (InsertColumn(*column, columnOrdinal, primaryKeyOrdinal) == ERROR)
+            return ERROR;
+
+        columnOrdinal++;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
+    {
+    if (!table.IsNullTable() && !table.IsValid())
+        {
+        BeAssert(false && "Table to insert is not valid");
+        return ERROR;
+        }
+
+    std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap = GetPersistedColumnMap(table.GetId());
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Table SET Name =?, Type =?, IsVirtual=?, PrimaryTableId=? WHERE Id = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(5, table.GetId());
+    stmt->BindText(1, table.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(2, Enum::ToInt(table.GetType()));
+    stmt->BindInt(3, table.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    if (auto primaryTable = table.GetParentOfJoinedTable())
+        stmt->BindId(4, primaryTable->GetId());
+    else
+        stmt->BindNull(4);
+
+    DbResult stat = stmt->Step();
+    if (stat != BE_SQLITE_DONE)
+        return ERROR;
+
+    bmap<DbColumn const*, int> primaryKeys;
+    int i = 0;
+    if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
+        {
+        for (DbColumn const* pkCol : pkConstraint->GetColumns())
+            {
+            primaryKeys[pkCol] = i++;
+            }
+        }
+
+    int columnOrdinal = 0;
+    for (DbColumn const* column : table.GetColumns())
+        {
+        auto it = primaryKeys.find(column);
+        const int primaryKeyOrdinal = it == primaryKeys.end() ? -1 : it->second;
+        auto itor = persistedColumnMap.find(column->GetName());
+        if (itor == persistedColumnMap.end())
+            {
+            if (InsertColumn(*column, columnOrdinal, primaryKeyOrdinal) == ERROR)
+                return ERROR;
+            }
+        else
+            {
+            if (UpdateColumn(*column, columnOrdinal, primaryKeyOrdinal) == ERROR)
+                return ERROR;
+
+            }
+        columnOrdinal++;
+        }
+
+    return SUCCESS;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  08/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::CreateOrUpdateIndexes() const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Index");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    if (stmt->Step() != BE_SQLITE_DONE)
+        return ERROR;
+
+    stmt = nullptr;
+
+    bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
+    for (std::unique_ptr<DbIndex> const& indexPtr : GetIndexes())
+        {
+        DbIndex& index = *indexPtr;
+        if (index.GetColumns().empty())
+            {
+            BeAssert(false && "Index definition is not valid");
+            return ERROR;
+            }
+
+        //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
+        Utf8String dropIndexSql;
+        dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
+        m_ecdb.TryExecuteSql(dropIndexSql.c_str());
+
+        //indexes on virtual tables are ignored
+        if (index.GetTable().GetPersistenceType() == PersistenceType::Persisted)
+            {
+            Utf8String ddl, comparableIndexDef;
+            if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
+                return ERROR;
+
+            auto it = comparableIndexDefs.find(comparableIndexDef);
+            if (it != comparableIndexDefs.end())
+                {
+                Utf8CP errorMessage = "Index '%s'%s on table '%s' has the same definition as the already existing index '%s'%s. ECDb does not create this index.";
+
+                Utf8String provenanceStr;
+                if (index.HasClassId())
+                    {
+                    ECClassCP provenanceClass = m_ecdb.Schemas().GetECClass(index.GetClassId());
+                    if (provenanceClass == nullptr)
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+                    provenanceStr.Sprintf(" [Created for ECClass %s]", provenanceClass->GetFullName());
+                    }
+
+                DbIndex const* existingIndex = it->second;
+                Utf8String existingIndexProvenanceStr;
+                if (existingIndex->HasClassId())
+                    {
+                    ECClassCP provenanceClass = m_ecdb.Schemas().GetECClass(existingIndex->GetClassId());
+                    if (provenanceClass == nullptr)
+                        {
+                        BeAssert(false);
+                        return ERROR;
+                        }
+                    existingIndexProvenanceStr.Sprintf(" [Created for ECClass %s]", provenanceClass->GetFullName());
+                    }
+
+                if (!index.IsAutoGenerated())
+                    m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, errorMessage,
+                                                                    index.GetName().c_str(), provenanceStr.c_str(), index.GetTable().GetName().c_str(),
+                                                                    existingIndex->GetName().c_str(), existingIndexProvenanceStr.c_str());
+                else
+                    {
+                    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+                        LOG.debugv(errorMessage,
+                                    index.GetName().c_str(), provenanceStr.c_str(), index.GetTable().GetName().c_str(),
+                                    existingIndex->GetName().c_str(), existingIndexProvenanceStr.c_str());
+                    }
+
+                continue;
+                }
+
+            comparableIndexDefs[comparableIndexDef] = &index;
+
+            if (BE_SQLITE_OK != m_ecdb.ExecuteSql(ddl.c_str()))
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                                                                m_ecdb.GetLastError().c_str());
+                BeAssert(false && "Failed to create index");
+                return ERROR;
+                }
+            }
+
+        //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
+        //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
+        if (SUCCESS != InsertIndex(index))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::UpdateColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Column SET Name =?, Type =?, IsVirtual=?, Ordinal=?, NotNullConstraint=?, UniqueConstraint=?, CheckConstraint=?, DefaultConstraint=?, CollationConstraint=?, OrdinalInPrimaryKey=?, ColumnKind=? WHERE Id = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(12, column.GetId());
+    stmt->BindText(1, column.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(2, Enum::ToInt(column.GetType()));
+    stmt->BindInt(3, column.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    stmt->BindInt64(4, columnOrdinal);
+    stmt->BindInt(5, column.GetConstraints().HasNotNullConstraint() ? 1 : 0);
+    stmt->BindInt(6, column.GetConstraints().HasUniqueConstraint() ? 1 : 0);
+
+    if (!column.GetConstraints().GetCheckConstraint().empty())
+        stmt->BindText(7, column.GetConstraints().GetCheckConstraint().c_str(), Statement::MakeCopy::No);
+
+    if (!column.GetConstraints().GetDefaultValueConstraint().empty())
+        stmt->BindText(8, column.GetConstraints().GetDefaultValueConstraint().c_str(), Statement::MakeCopy::No);
+
+    stmt->BindInt(9, Enum::ToInt(column.GetConstraints().GetCollation()));
+    if (primaryKeyOrdinal > -1)
+        stmt->BindInt(10, primaryKeyOrdinal);
+
+    stmt->BindInt(11, Enum::ToInt(column.GetKind()));
+
+    return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, column.GetId());
+    stmt->BindId(2, column.GetTable().GetId());
+    stmt->BindText(3, column.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(4, Enum::ToInt(column.GetType()));
+    stmt->BindInt(5, column.GetPersistenceType() == PersistenceType::Virtual ? 1 : 0);
+    stmt->BindInt64(6, columnOrdinal);
+    stmt->BindInt(7, column.GetConstraints().HasNotNullConstraint() ? 1 : 0);
+    stmt->BindInt(8, column.GetConstraints().HasUniqueConstraint() ? 1 : 0);
+
+    if (!column.GetConstraints().GetCheckConstraint().empty())
+        stmt->BindText(9, column.GetConstraints().GetCheckConstraint().c_str(), Statement::MakeCopy::No);
+
+    if (!column.GetConstraints().GetDefaultValueConstraint().empty())
+        stmt->BindText(10, column.GetConstraints().GetDefaultValueConstraint().c_str(), Statement::MakeCopy::No);
+
+    stmt->BindInt(11, Enum::ToInt(column.GetConstraints().GetCollation()));
+    if (primaryKeyOrdinal > -1)
+        stmt->BindInt(12, primaryKeyOrdinal);
+
+    stmt->BindInt(13, Enum::ToInt(column.GetKind()));
+
+    return stmt->Step() == BE_SQLITE_DONE ? SUCCESS : ERROR;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::InsertIndex(DbIndex const& index) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO " EC_INDEX_TableName "(Id,TableId,Name,IsUnique,AddNotNullWhereExp,IsAutoGenerated,ClassId,AppliesToSubclassesIfPartial) VALUES(?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindId(1, index.GetId());
+    stmt->BindId(2, index.GetTable().GetId());
+    stmt->BindText(3, index.GetName().c_str(), Statement::MakeCopy::No);
+    stmt->BindInt(4, index.GetIsUnique() ? 1 : 0);
+    stmt->BindInt(5, index.IsAddColumnsAreNotNullWhereExp() ? 1 : 0);
+
+    stmt->BindInt(6, index.IsAutoGenerated() ? 1 : 0);
+    if (index.HasClassId())
+        stmt->BindId(7, index.GetClassId());
+
+    stmt->BindInt(8, index.AppliesToSubclassesIfPartial() ? 1 : 0);
+
+    DbResult stat = stmt->Step();
+    if (stat != BE_SQLITE_DONE)
+        {
+        LOG.errorv("Failed to insert index metadata into " EC_INDEX_TableName " for index %s (Id: %s): %s",
+                   index.GetName().c_str(), index.GetId().ToString().c_str(), m_ecdb.GetLastError().c_str());
+        return ERROR;
+        }
+
+    CachedStatementPtr indexColStmt = m_ecdb.GetCachedStatement("INSERT INTO " EC_INDEXCOLUMN_TableName "(IndexId,ColumnId,Ordinal) VALUES(?,?,?)");
+    if (indexColStmt == nullptr)
+        return ERROR;
+
+    int i = 0;
+    for (DbColumn const* col : index.GetColumns())
+        {
+        indexColStmt->BindId(1, index.GetId());
+        indexColStmt->BindId(2, col->GetId());
+        indexColStmt->BindInt(3, i);
+
+        stat = indexColStmt->Step();
+        if (stat != BE_SQLITE_DONE)
+            {
+            LOG.errorv("Failed to insert index column metadata into " EC_INDEXCOLUMN_TableName " for index %s (Id: %s) and column %s (Id: %s): %s",
+                       index.GetName().c_str(), index.GetId().ToString().c_str(), col->GetName().c_str(), col->GetId().ToString().c_str(), m_ecdb.GetLastError().c_str());
+            return ERROR;
+            }
+
+        indexColStmt->Reset();
+        indexColStmt->ClearBindings();
+        i++;
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::LoadColumns(DbTable& table) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, ColumnKind FROM ec_Column WHERE TableId = ? ORDER BY Ordinal");
+    if (stmt == nullptr)
+        return ERROR;
+
+    DbResult stat = stmt->BindId(1, table.GetId());
+    if (stat != BE_SQLITE_OK)
+        return ERROR;
+
+    const int notNullColIx = 4;
+    const int uniqueColIx = 5;
+    const int checkColIx = 6;
+    const int defaultValueColIx = 7;
+    const int collationColIx = 8;
+    const int pkOrdinalColIx = 9;
+    const int kindColIx = 10;
+
+    std::vector<DbColumn*> pkColumns;
+    std::vector<size_t> pkOrdinals;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        DbColumnId id = stmt->GetValueId<DbColumnId>(0);
+        Utf8CP name = stmt->GetValueText(1);
+        const DbColumn::Type type = Enum::FromInt<DbColumn::Type>(stmt->GetValueInt(2));
+        const PersistenceType persistenceType = IsTrue(stmt->GetValueInt(3)) ? PersistenceType::Virtual : PersistenceType::Persisted;
+
+        const bool hasNotNullConstraint = IsTrue(stmt->GetValueInt(notNullColIx));
+        const bool hasUniqueConstraint = IsTrue(stmt->GetValueInt(uniqueColIx));
+        Utf8CP constraintCheck = !stmt->IsColumnNull(checkColIx) ? stmt->GetValueText(checkColIx) : nullptr;
+        Utf8CP constraintDefault = !stmt->IsColumnNull(defaultValueColIx) ? stmt->GetValueText(defaultValueColIx) : nullptr;
+        const DbColumn::Constraints::Collation collationConstraint = Enum::FromInt<DbColumn::Constraints::Collation>(stmt->GetValueInt(collationColIx));
+
+        int primaryKeyOrdinal = stmt->IsColumnNull(pkOrdinalColIx) ? -1 : stmt->GetValueInt(pkOrdinalColIx);
+        const DbColumn::Kind columnKind = Enum::FromInt<DbColumn::Kind>(stmt->GetValueInt(kindColIx));
+
+        DbColumn* column = table.CreateColumn(id, name, type, columnKind, persistenceType);
+        if (column == nullptr)
+            {
+            BeAssert(false);
+            return SUCCESS;
+            }
+
+        if (hasNotNullConstraint)
+            column->GetConstraintsR().SetNotNullConstraint();
+
+        if (hasUniqueConstraint)
+            column->GetConstraintsR().SetUniqueConstraint();
+
+        column->GetConstraintsR().SetCollation(collationConstraint);
+
+        if (!Utf8String::IsNullOrEmpty(constraintCheck))
+            column->GetConstraintsR().SetCheckConstraint(constraintCheck);
+
+        if (!Utf8String::IsNullOrEmpty(constraintDefault))
+            column->GetConstraintsR().SetDefaultValueExpression(constraintDefault);
+
+        if (primaryKeyOrdinal >= 0)
+            {
+            pkColumns.push_back(column);
+            pkOrdinals.push_back((size_t) primaryKeyOrdinal);
+            }
+        }
+
+    if (!pkColumns.empty())
+        {
+        if (SUCCESS != table.CreatePrimaryKeyConstraint(pkColumns, &pkOrdinals))
+            return SUCCESS;
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
+    {
+    tableP = nullptr;
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT A.Id, A.Type, A.IsVirtual, B.Name BaseTableName FROM ec_Table A LEFT JOIN ec_Table B ON A.PrimaryTableId = B.Id WHERE A.Name = ?");
+    if (stmt == nullptr)
+        return ERROR;
+
+    stmt->BindText(1, name.c_str(), Statement::MakeCopy::No);
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return ERROR;
+
+    DbTableId id = stmt->GetValueId<DbTableId>(0);
+    DbTable::Type tableType = Enum::FromInt<DbTable::Type>(stmt->GetValueInt(1));
+    PersistenceType persistenceType = stmt->GetValueInt(2) == 1 ? PersistenceType::Virtual : PersistenceType::Persisted;
+    Utf8CP primaryTableName = stmt->GetValueText(3);
+
+    DbTable const* primaryTable = nullptr;
+    if (!Utf8String::IsNullOrEmpty(primaryTableName))
+        {
+        primaryTable = FindTable(primaryTableName);
+        BeAssert(primaryTable != nullptr && "Failed to find primary table");
+        BeAssert(DbTable::Type::Joined == tableType && "Expecting JoinedTable");
+        }
+
+    DbTable* table = const_cast<DbSchema*>(this)->CreateTable(id, name.c_str(), tableType, persistenceType, primaryTable);
+    if (table == nullptr)
+        {
+        BeAssert(false && "Failed to create table definition");
+        return ERROR;
+        }
+
+    const bool canEdit = table->GetEditHandle().CanEdit();
+    if (!canEdit)
+        table->GetEditHandleR().BeginEdit();
+
+    table->SetId(id);
+    if (LoadColumns(*table) != SUCCESS)
+        return ERROR;
+
+    if (!canEdit)
+        table->GetEditHandleR().EndEdit();
+
+    tableP = table;
+    return SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -1398,257 +2107,5 @@ bool ForeignKeyDbConstraint::Equals(ForeignKeyDbConstraint const& rhs) const
 
     return true;
     }
-
-//****************************************************************************************
-//DbMappings
-//****************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping::Path const* DbMappings::FindPropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const
-    {
-    auto it = m_propertyPathsByRootPropertyId.find(rootPropertyId);
-    if (it == m_propertyPathsByRootPropertyId.end())
-        return nullptr;
-
-    auto it2 = it->second.find(accessString);
-    if (it2 == it->second.end())
-        return nullptr;
-
-    return it2->second;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping::Path const* DbMappings::FindPropertyPath(PropertyPathId propertyPathId) const
-    {
-    auto itor = m_propertyPaths.find(propertyPathId);
-    if (itor == m_propertyPaths.end())
-        return nullptr;
-
-    return itor->second.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-ClassDbMapping const* DbMappings::FindClassMapping(ClassMapId id) const
-    {
-    auto itor = m_classMappings.find(id);
-    if (itor == m_classMappings.end())
-        return nullptr;
-
-    return itor->second.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-std::vector<ClassDbMapping const*> const* DbMappings::FindClassMappings(ECN::ECClassId id) const
-    {
-    auto itor = m_classMappingsByClassId.find(id);
-    if (itor != m_classMappingsByClassId.end())
-        return &itor->second;
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping::Path* DbMappings::AddPropertyPath(PropertyPathId id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString)
-    {
-    if (FindPropertyPath(rootPropertyId, accessString) != nullptr)
-        {
-        BeAssert(false && "PropertyPath already exist");
-        return nullptr;
-        }
-
-
-    if (m_propertyPaths.find(id) != m_propertyPaths.end())
-        {
-        BeAssert(false && "PropertyPath with same id already exists");
-        return nullptr;
-        }
-
-    std::unique_ptr<PropertyDbMapping::Path> pp(new PropertyDbMapping::Path(id, rootPropertyId, accessString));
-    PropertyDbMapping::Path* ppP = pp.get();
-
-    m_propertyPathsByRootPropertyId[pp->GetRootPropertyId()][pp->GetAccessString().c_str()] = ppP;
-    m_propertyPaths[id] = std::move(pp);
-    return ppP;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping::Path* DbMappings::CreatePropertyPath(ECN::ECPropertyId rootPropertyId, Utf8CP accessString)
-    {
-    BeBriefcaseBasedId id;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetPropertyPathIdSequence().GetNextValue(id))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return AddPropertyPath(PropertyPathId(id.GetValue()), rootPropertyId, accessString);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-ClassDbMapping* DbMappings::AddClassMapping(ClassMapId id, ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
-    {
-    if (m_classMappings.find(id) != m_classMappings.end())
-        {
-        BeAssert(false && "ClassDbMapping with same id already exists");
-        return nullptr;
-        }
-
-    std::unique_ptr<ClassDbMapping> cm(new ClassDbMapping(*this, id, classId, mapStrategy, baseClassMapId));
-    ClassDbMapping* cmP = cm.get();
-
-    std::vector<ClassDbMapping const*>& vect = m_classMappingsByClassId[classId];
-    if (!cm->GetBaseClassMappingId().IsValid())
-        vect.insert(vect.begin(), cmP);
-    else
-        vect.push_back(cmP);
-
-    m_classMappings[id] = std::move(cm);
-    return cmP;
-
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-ClassDbMapping* DbMappings::CreateClassMapping(ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
-    {
-    BeAssert(!baseClassMapId.IsValid()|| FindClassMapping(baseClassMapId) != nullptr);
-
-    BeBriefcaseBasedId id;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetClassMapIdSequence().GetNextValue(id))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return AddClassMapping(ClassMapId(id.GetValue()), classId, mapStrategy, baseClassMapId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-void DbMappings::Reset()
-    {
-    m_propertyPaths.clear();
-    m_propertyPathsByRootPropertyId.clear();
-    m_classMappings.clear();
-    m_classMappingsByClassId.clear();
-    }
-
-
-//****************************************************************************************
-//ClassMapping
-//****************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-void ClassDbMapping::GetPropertyMappings(std::vector<PropertyDbMapping const*>& propertyMaps, bool includeBaseProperties) const
-    {
-    if (includeBaseProperties && m_baseClassMappingId.IsValid())
-        {
-        ClassDbMapping const* baseClassMapping = m_dbMappings.FindClassMapping(m_baseClassMappingId);
-        BeAssert(baseClassMapping != nullptr);
-        baseClassMapping->GetPropertyMappings(propertyMaps, includeBaseProperties);
-        }
-
-    propertyMaps.erase(
-        std::remove_if(
-            propertyMaps.begin(),
-            propertyMaps.end(), [] (PropertyDbMapping const* minfo)
-        {
-        const DbColumn::Kind kind = minfo->ExpectingSingleColumn()->GetKind();
-        return kind != DbColumn::Kind::DataColumn && kind != DbColumn::Kind::SharedDataColumn;
-        }),
-        propertyMaps.end());
-
-    for (std::unique_ptr<PropertyDbMapping> const& localPropertyMap : m_localPropertyMaps)
-        propertyMaps.push_back(localPropertyMap.get());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(ECN::ECPropertyId rootPropertyId, Utf8CP accessString) const
-    {
-    std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, true);
-    for (PropertyDbMapping const* pm : propMappings)
-        {
-        if (pm->GetPropertyPath().GetRootPropertyId() == rootPropertyId && pm->GetPropertyPath().GetAccessString() == accessString)
-            return pm;
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping const* ClassDbMapping::FindPropertyMapping(Utf8CP accessString) const
-    {
-    std::vector<PropertyDbMapping const*> propMappings;
-    GetPropertyMappings(propMappings, true);
-
-    for (PropertyDbMapping const* pm : propMappings)
-        {
-        if (pm->GetPropertyPath().GetAccessString() == accessString)
-            return pm;
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping* ClassDbMapping::CreatePropertyMapping(PropertyDbMapping::Path const& propertyPath)
-    {
-    std::unique_ptr<PropertyDbMapping> pm(new PropertyDbMapping(*this, propertyPath));
-    PropertyDbMapping* pmP = pm.get();
-    m_localPropertyMaps.push_back(std::move(pm));
-    return pmP;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-PropertyDbMapping* ClassDbMapping::CreatePropertyMapping(ECN::ECPropertyId rootPropertyId, Utf8CP accessString, std::vector<DbColumn const*> const& columns)
-    {
-    PropertyDbMapping::Path const* propertyPath = m_dbMappings.FindPropertyPath(rootPropertyId, accessString);
-    if (propertyPath == nullptr)
-        propertyPath = m_dbMappings.CreatePropertyPath(rootPropertyId, accessString);
-
-    PropertyDbMapping* prop = CreatePropertyMapping(*propertyPath);
-    BeAssert(prop != nullptr);
-    for (DbColumn const* column : columns)
-        prop->GetColumnsR().push_back(const_cast<DbColumn*>(column));
-
-    return prop;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        01/2015
-//---------------------------------------------------------------------------------------
-ClassDbMapping const* ClassDbMapping::GetBaseClassMapping() const
-    {
-    if (!m_baseClassMappingId.IsValid())
-        return nullptr;
-
-    return m_dbMappings.FindClassMapping(m_baseClassMappingId);
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

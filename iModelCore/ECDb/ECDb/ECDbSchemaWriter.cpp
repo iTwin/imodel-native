@@ -2208,18 +2208,24 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
 DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
+    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_cache_ClassHierarchy");
     if (r != BE_SQLITE_OK)
         return r;
 
-    r = ecdb.ExecuteSql("WITH RECURSIVE "
-                        "BaseClassList(ClassId, BaseClassId) AS "
-                        "(SELECT Id, Id FROM ec_Class"
-                        " UNION"
-                        " SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
-                        " INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
-                        " ORDER BY 2)"
-                        " INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
+    r = ecdb.ExecuteSql(
+        "WITH RECURSIVE "
+        "  BaseClassList(ClassId, BaseClassId, Level, Ordinal) AS "
+        "  ( "
+        "  SELECT Id, Id, 1, 0 FROM ec_Class "
+        "  UNION "
+        "  SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1, COALESCE(NULLIF(BC.Ordinal, 0), DCL.Ordinal) "
+        "     FROM BaseClassList DCL "
+        "          INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
+        "  ) "
+        "INSERT INTO ec_cache_ClassHierarchy "
+        "SELECT DISTINCT NULL Id, ClassId, BaseClassId "
+        "   FROM BaseClassList"
+        "       ORDER BY Ordinal DESC, Level DESC;");
 
     if (r != BE_SQLITE_OK)
         return r;
