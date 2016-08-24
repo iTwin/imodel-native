@@ -551,7 +551,6 @@ public:
     BentleyStatus SynchronizeExistingTables();
     void SyncTableCache() const;
     ECDbCR GetECDb() const { return m_ecdb; }
-    bool RequireReset() const { return m_tableMapByName.empty(); }
     void Reset();
 
     //!Update existing table in db so any new columns added would be save to disk.

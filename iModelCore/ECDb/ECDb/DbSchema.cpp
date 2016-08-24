@@ -190,6 +190,7 @@ DbTable* DbSchema::CreateTable(DbTableId tableId, Utf8CP name, DbTable::Type tab
 
     DbTable* tableP = table.get();
     m_tableMapByName[tableP->GetName()] = std::move(table);
+    m_tableMapById[tableId] = tableP->GetName();
     return tableP;
     }
 
