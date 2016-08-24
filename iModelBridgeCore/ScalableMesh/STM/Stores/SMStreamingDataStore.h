@@ -304,7 +304,7 @@ struct Texture : public bvector<uint8_t>
             dataSource->close();
             //dataSourceAccount->destroyDataSource(dataSource);
 
-            if (blockSize > 0)
+            if (readSize > 0)
                 {
                 m_Width = reinterpret_cast<int&>(dest.get()[0]);
                 m_Height = reinterpret_cast<int&>(dest.get()[sizeof(int)]);
@@ -312,7 +312,7 @@ struct Texture : public bvector<uint8_t>
                 m_Format = reinterpret_cast<int&>(dest.get()[3 * sizeof(int)]);
 
                 auto textureSize = (uint32_t)(m_Width*m_Height*m_NbChannels);
-                uint32_t compressedSize = (uint32_t)blockSize - sizeof(4 * sizeof(int));
+                uint32_t compressedSize = (uint32_t)readSize - sizeof(4 * sizeof(int));
 
                 DecompressTexture(&(dest.get())[0] + 4 * sizeof(int), compressedSize, textureSize);
                 }

@@ -129,7 +129,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             {
             wchar_t buffer[10000];
 
-            swprintf(buffer, L"%sMasterHeaderWith%sGroups.bin", m_dataSourceAccount->getPrefixPath().c_str(), (m_use_virtual_grouping ? L"Virtual" : L""));
+            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", (m_use_virtual_grouping ? L"Virtual" : L""));
 
             DataSourceURL    dataSourceURL(buffer);
                                 
@@ -765,6 +765,10 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromBinary(
             header->m_apNeighborNodeID[neighborPosInd].push_back(neighborId != ISMStore::GetNullNodeID() ? HPMBlockID(neighborId) : ISMStore::GetNullNodeID());
             }
         }
+    if (dataIndex == maxCountData)
+        {
+        return;
+        }
     uint64_t nbDataSizes;
     memcpy(&nbDataSizes, headerData + dataIndex, sizeof(nbDataSizes));
     dataIndex += sizeof(nbDataSizes);
@@ -1186,13 +1190,13 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
 
 //                dataSourceAccount->destroyDataSource(dataSource);
 
-                if (dataSize > 0)
+                if (readSize > 0)
                 {
                     m_pIsLoaded = true;
 
                     uint32_t uncompressedSize = *reinterpret_cast<uint32_t *>(dest.get());
                     //std::wcout << "node id:" << m_pID << "  source: " << m_pDataSource << "  size(bytes) : " << dataSize << std::endl;
-                    uint32_t sizeData = (uint32_t)dataSize - sizeof(uint32_t);
+                    uint32_t sizeData = (uint32_t)readSize - sizeof(uint32_t);
                     DecompressPoints(dest.get() + sizeof(uint32_t), sizeData, uncompressedSize);
                 }
             }
