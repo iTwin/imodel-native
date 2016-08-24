@@ -469,7 +469,7 @@ public:
 //=======================================================================================
 struct IPublishModelTiles
 {
-    virtual TileGenerator::Status _PublishModelTiles (TileGenerator::ITileCollector& collector) = 0;
+    virtual TileGenerator::Status _PublishModelTiles (TileGenerator::ITileCollector& collector, TransformCR transformToTile) = 0;
 
 };  // IPublishModelMeshTiles
 
