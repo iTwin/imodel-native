@@ -82,7 +82,7 @@ HSTATUS HRFxChEditorRGBA::ReadBlock(uint64_t pi_PosBlockX,
         pBuffAlpha  = &(pBuffRed[BufferPixelLength*bytesPerPixel*3]);
         if ((Status = RASTER_FILE->m_AlphaFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffAlpha)) != H_SUCCESS)
             return H_NOT_FOUND;
-    }
+        }
 
     //:> Read each channel
     if ((Status = RASTER_FILE->m_RedFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffRed)) != H_SUCCESS ||
@@ -190,7 +190,7 @@ HSTATUS HRFxChEditorRGBA::ReadBlock(uint64_t pi_PosBlockX,
  */
     HRFxChEditorPanchromatic::HRFxChEditorPanchromatic(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                            uint32_t              pi_Page,
-                           uint16_t       pi_Resolution,
+                           uint16_t       		 pi_Resolution,
                            HFCAccessMode         pi_AccessMode)
     : HRFResolutionEditor(pi_rpRasterFile,
                           pi_Page,

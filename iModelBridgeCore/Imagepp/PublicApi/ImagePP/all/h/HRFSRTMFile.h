@@ -33,16 +33,16 @@ class HRFSRTMFile : public HRFRasterFile
     public:
 
         //Possible file sizes for SRTM files
-        static const uint32_t HRFSRTMFile::SRTM1_SIZE;
-        static const uint32_t HRFSRTMFile::SRTM3_SIZE;
-        static const uint32_t HRFSRTMFile::SRTM1_LINEWIDTH;
-        static const uint32_t HRFSRTMFile::SRTM3_LINEWIDTH;
-        static const uint32_t HRFSRTMFile::SRTM1_LINEBYTES;
-        static const uint32_t HRFSRTMFile::SRTM3_LINEBYTES;
-        static const int16_t  HRFSRTMFile::SRTM_NODATAVALUE;
-        static const double   HRFSRTMFile::EARTH_RADIUS;
-        static const double   HRFSRTMFile::SRTM1_RES;
-        static const double   HRFSRTMFile::SRTM3_RES;
+        static const uint32_t SRTM1_SIZE;
+        static const uint32_t SRTM3_SIZE;
+        static const uint32_t SRTM1_LINEWIDTH;
+        static const uint32_t SRTM3_LINEWIDTH;
+        static const uint32_t SRTM1_LINEBYTES;
+        static const uint32_t SRTM3_LINEBYTES;
+        static const int16_t  SRTM_NODATAVALUE;
+        static const double   EARTH_RADIUS;
+        static const double   SRTM1_RES;
+        static const double   SRTM3_RES;
 
         // Class ID for this class.
         HDECLARE_CLASS_ID(HRFFileId_SRTM, HRFRasterFile)
