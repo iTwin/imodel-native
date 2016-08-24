@@ -28,15 +28,22 @@ struct ScalableMeshDraping : IDTMDraping
         size_t m_levelForDrapeLinear;
 
         bvector<IScalableMeshNodePtr> m_nodeSelection;
-
+#ifdef VANCOUVER_API
+        DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
+#else
         DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
+#endif
 
         size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
 
         void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params);
 
     protected:
+#ifdef VANCOUVER_API
+        virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point) override;
+#else
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
+#endif
 
         virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
         //virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
@@ -52,7 +59,7 @@ struct ScalableMeshDraping : IDTMDraping
         void SetTransform(TransformR transform)
             {
             m_transform = transform;
-            m_UorsToStorage = m_transform.ValidatedInverse();
+            m_UorsToStorage.InverseOf(m_transform);
             }
 
         void SetAnalysisType(DTMAnalysisType type)
@@ -148,5 +155,6 @@ struct MeshTraversalQueue
             bool CollectAlongDirection(MeshTraversalStep& start, NodeCallback c);
 
     };
+
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

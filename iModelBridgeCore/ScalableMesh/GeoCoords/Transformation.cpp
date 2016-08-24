@@ -10,10 +10,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/GeoCoords/Transformation.h>
 #include <ScalableMesh/Foundations/Exception.h>
-
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include "TransformationUtils.h"
 #include "TransformationInternal.h"
 #include "TransfoModelMixinBase.h"
@@ -46,7 +46,7 @@ const TransfoModel& TransfoModel::GetIdentity ()
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel TransfoModel::CreateFrom  (const TransfoMatrix&    m,
-                                        Status&                 status)
+                                        SMStatus&                 status)
     {
     // TDORAY: Solve the problem by creating matrix properties analyzer that
     // returns a bitfield specifying all these.
@@ -97,7 +97,7 @@ TransfoModel TransfoModel::CreateFrom  (const TransfoMatrix&    m,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel TransfoModel::CreateFrom (const TransfoMatrix& transfoMatrix)
     {
-    Status status;
+    SMStatus status;
     const TransfoModel resulting(CreateFrom(transfoMatrix, status));
 
     if (S_SUCCESS != status)
@@ -179,7 +179,7 @@ TransfoModel TransfoModel::CreateScalingTranslatingFrom    (double xScale, doubl
 TransfoModel TransfoModel::CreateAffineFrom (const TransfoMatrix& affineMatrix)
     {
     // TDORAY: Make debug validation that ensure matrix is an affine
-    Status status;
+    SMStatus status;
     return CreateFrom(affineMatrix, status);
     }
 
@@ -284,7 +284,7 @@ bool TransfoModel::IsEquivalent (const TransfoModel& rhs) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel::Status TransfoModel::Transform   (const DPoint3d& sourcePt,
+SMStatus TransfoModel::Transform(const DPoint3d& sourcePt,
                                                 DPoint3d&       targetPt) const
     {
     return m_implP->_Transform(sourcePt, targetPt);
@@ -294,7 +294,7 @@ TransfoModel::Status TransfoModel::Transform   (const DPoint3d& sourcePt,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel::Status TransfoModel::Transform   (const DPoint3d* sourcePtP,
+SMStatus TransfoModel::Transform(const DPoint3d* sourcePtP,
                                                 size_t          sourcePtQty,
                                                 DPoint3d*       targetPtP) const
     {
@@ -305,9 +305,9 @@ TransfoModel::Status TransfoModel::Transform   (const DPoint3d* sourcePtP,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel::Status TransfoModel::Append (const TransfoModel& rhs)
+SMStatus TransfoModel::Append(const TransfoModel& rhs)
     {
-    Status status;
+    SMStatus status;
     TransfoModel result(Combine(*this, rhs, status));
 
     if (S_SUCCESS != status)
@@ -321,9 +321,9 @@ TransfoModel::Status TransfoModel::Append (const TransfoModel& rhs)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel::Status TransfoModel::Inverse ()
+SMStatus TransfoModel::Inverse()
     {
-    Status status;
+    SMStatus status;
     TransfoModel result(InverseOf(*this, status));
 
     if (S_SUCCESS != status)
@@ -349,10 +349,10 @@ void swap  (TransfoModel& lhs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel InverseOf (const TransfoModel& transform)
     {
-    TransfoModel::Status status;
+    SMStatus status;
     TransfoModel resulting(InverseOf(transform, status));
 
-    if (TransfoModel::S_SUCCESS != status)
+    if (SMStatus::S_SUCCESS != status)
         throw CustomException(L"Inverse of specified transform does not exist");
 
     return resulting;
@@ -363,16 +363,16 @@ TransfoModel InverseOf (const TransfoModel& transform)
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel InverseOf (const TransfoModel&     transform,
-                        TransfoModel::Status&   status)
+                        SMStatus&   status)
     {
     std::auto_ptr<TransfoModelBase> baseP(Handler::CreateInverse(transform));
     if (0 == baseP.get())
         {
-        status = TransfoModel::S_ERROR;
+        status = SMStatus::S_ERROR;
         return TransfoModel::GetIdentity();
         }
 
-    status = TransfoModel::S_SUCCESS;
+    status = SMStatus::S_SUCCESS;
     return Handler::CreateFrom(baseP.release());
     }
 
@@ -383,10 +383,10 @@ TransfoModel InverseOf (const TransfoModel&     transform,
 TransfoModel Combine   (const TransfoModel& lhs,
                         const TransfoModel& rhs)
     {
-    TransfoModel::Status status;
+    SMStatus status;
     TransfoModel result(Combine(lhs, rhs, status));
 
-    if (TransfoModel::S_SUCCESS != status)
+    if (SMStatus::S_SUCCESS != status)
         throw CustomException(L"Error combining transfo models!"); 
     return result;
     }
@@ -397,12 +397,12 @@ TransfoModel Combine   (const TransfoModel& lhs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransfoModel Combine   (const TransfoModel&     lhs,
                         const TransfoModel&     rhs,
-                        TransfoModel::Status&   status)
+                        SMStatus&   status)
     {
     if (Handler::IsConvertibleToMatrix(lhs) && Handler::IsConvertibleToMatrix(rhs))
         return TransfoModel::CreateFrom(Handler::ConvertToMatrix(rhs)*Handler::ConvertToMatrix(lhs), status);
 
-    status = TransfoModel::S_SUCCESS;
+    status = SMStatus::S_SUCCESS;
 
     if (Handler::OfType<TransfoModelIdentity>(lhs))
         return rhs;
@@ -434,7 +434,7 @@ TransfoMatrix& TransfoMatrix::operator*= (const TransfoMatrix& rhs)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransfoMatrix::Status TransfoMatrix::Inverse ()
+SMStatus TransfoMatrix::Inverse()
     {
     Transform transform(ToTransform3d(*this));
     if (!transform.InverseOf(transform))
@@ -499,10 +499,10 @@ GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix)
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix,
-                                        TransfoMatrix::Status&  status)
+                                        SMStatus&  status)
     {
     Transform transform(ToTransform3d(matrix));
-    transform.InverseOf(transform) ? TransfoMatrix::S_SUCCESS : TransfoMatrix::S_ERROR;
+    transform.InverseOf(transform) ? SMStatus::S_SUCCESS : SMStatus::S_ERROR;
 
     return FromTransform3d(transform);
     }

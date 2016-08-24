@@ -22,7 +22,16 @@
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
 #include "IDTMFeatureArray.h"
 
+#ifdef VANCOUVER_API
+typedef IDTMFile::FeatureHeader headerType;
+#else
+#include "Stores/SMStoreUtils.h"
+typedef ISMStore::FeatureHeader headerType;
+#endif
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -165,7 +174,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
     virtual void                            _Write                     () override
         {
-        m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+        m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
         
         for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End() ; myFeature++)
@@ -216,7 +225,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
          for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
@@ -317,7 +326,7 @@ class GenericLinearStorageEditor : public Import::BackInserter
 
      virtual void                            _Write() override
          {
-         m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+         m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
          m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
 
          for (ArrayType::const_iterator myFeature = m_Features.Begin(); myFeature != m_Features.End(); myFeature++)
@@ -575,7 +584,7 @@ class ClipShapeLinearFeatureStorageEditor : public Import::BackInserter
   
     HFCPtr<HVEShape> CreateClipShape()
         {
-        m_Features.EditHeaders().Wrap(m_headerPacket.Get(), m_headerPacket.GetSize());
+        m_Features.EditHeaders().Wrap((const headerType *)m_headerPacket.Get(), m_headerPacket.GetSize());
         m_Features.EditPoints().Wrap(m_pointPacket.Get(), m_pointPacket.GetSize());
      
         const HFCPtr<HGF2DCoordSys> coordSysP = m_resultingClipShapePtr->GetCoordSys();

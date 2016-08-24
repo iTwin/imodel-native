@@ -14,6 +14,7 @@
 #include "ImagePPHeaders.h" 
 extern bool   GET_HIGHEST_RES;
 
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 /*------------------------------------------------------------------+
 | Include of the current class header                               |
 +------------------------------------------------------------------*/
@@ -230,9 +231,9 @@ const BaseGCSCPtr& IScalableMesh::GetBaseGCS() const
 
 StatusInt IScalableMesh::SetBaseGCS(const BaseGCSCPtr& baseGCSPtr)
     {
-    GCSFactory::Status createStatus = GCSFactory::S_SUCCESS;
+    SMStatus createStatus = SMStatus::S_SUCCESS;
     GCS gcs(GetGCSFactory().Create(baseGCSPtr, createStatus));
-    if (GCSFactory::S_SUCCESS != createStatus)
+    if (SMStatus::S_SUCCESS != createStatus)
         return BSIERROR;
 
     return _SetGCS(gcs);
@@ -556,10 +557,10 @@ bool ScalableMeshBase::LoadGCSFrom()
 
     assert(result);
 
-    GCSFactory::Status gcsCreateStatus;
+    SMStatus gcsCreateStatus;
     GCS gcs(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsCreateStatus));
 
-    if (GCSFactory::S_SUCCESS != gcsCreateStatus)
+    if (SMStatus::S_SUCCESS != gcsCreateStatus)
         return false;
 
     using std::swap;
@@ -837,9 +838,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         return BSIERROR; // Error loading layer gcs
                         }
 
-                                        
+                        
+#ifndef VANCOUVER_API                                       
                     dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceAccount(), AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
-
+#else
+                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
+#endif
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
                                                       10000,
@@ -852,8 +856,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     }
                 else
-                    {                                                                                                                       
+                    {
+#ifndef VANCOUVER_API                       
                     dataStore = new SMSQLiteStore<Extent3dType>(m_smSQLitePtr);
+#else
+                    dataStore = SMSQLiteStore<Extent3dType>::Create(m_smSQLitePtr);
+#endif
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
@@ -869,9 +877,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
             if (isSingleFile && m_scmIndexPtr->IsTerrain())
                 {
-                BeFileName projectFilesPath(m_baseExtraFilesPath);
+
+                BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+
                 bool result = dataStore->SetProjectFilesPath(projectFilesPath);
                 assert(result == true);
+
                                                                  
                 ClipRegistry* registry = new ClipRegistry(dataStore);
                 m_scmIndexPtr->SetClipRegistry(registry);
@@ -992,55 +1003,7 @@ DRange3d ScalableMesh<POINT>::ComputeTotalExtentFor   (const MeshIndexType*   po
 
     return totalExtent;
     }
-#if 0
-/*----------------------------------------------------------------------------+
-|ScalableMesh::CreatePointIndexFilter
-+----------------------------------------------------------------------------*/
-template <class POINT> ISMPointIndexFilter<POINT, Extent3dType>* ScalableMesh<POINT>::CreatePointIndexFilter(ISMStore::UniformFeatureDir* pointDirPtr) const
-    {
-    HPRECONDITION(pointDirPtr != 0);
 
-    const ISMStore::FilteringDir* filteringDir = pointDirPtr->GetFilteringDir();
-    ISMStore::SpatialIndexDir* indexDirP = pointDirPtr->GetSpatialIndexDir();
-
-    if (0 == filteringDir || 0 == indexDirP)
-        return 0;
-
-    BTreeIndexHandler::Ptr indexHandler = BTreeIndexHandler::CreateFrom(indexDirP);
-
-    if (0 == indexHandler)
-        return 0;
- 
-
-    ISMPointIndexFilter<POINT, Extent3dType>* pFilter = 0;                            
-    ISMStore::FilterType filteringType = filteringDir->GetType();
-
-    if (indexHandler->IsProgressive())
-        {
-        switch (filteringType)
-            {
-            case ISMStore::FILTER_TYPE_DUMB :
-                pFilter = new ScalableMeshQuadTreeBCLIBProgressiveFilter1<POINT, Extent3dType>();                           
-                break;            
-            default : 
-                assert(0);
-            }               
-        }
-    else
-        {
-        switch (filteringType)
-            {
-            case FILTER_TYPE_DUMB :
-                pFilter = new ScalableMeshQuadTreeBCLIBFilter1<POINT, Extent3dType>();                           
-                break;                        
-            default : 
-                assert(0);
-            }               
-        }        
-
-    return pFilter;
-    }
-#endif
 
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ComputeTileBoundaryDuringQuery
@@ -1119,40 +1082,6 @@ template <class POINT> void ScalableMesh<POINT>::CreateSpatialIndexFromExtents(l
         }
     }
 
-/*----------------------------------------------------------------------------+
-|ScalableMesh::AddBreaklineSet
-+----------------------------------------------------------------------------*/
-#if 0
-template <class POINT> void ScalableMesh<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLinearFeature> >& breaklineList, 
-                                                          BC_DTM_OBJ*                         po_pBcDtmObj)
-    {   
-    int status;
-
-    if (breaklineList.size() > 0)
-        {        
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIter    = breaklineList.begin();
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIterEnd = breaklineList.end();
-
-        uint32_t TileNumber = 0;
-
-        while (BreaklineIter != BreaklineIterEnd) 
-            {
-            DPoint3d*     linePts = new DPoint3d[(*BreaklineIter)->GetSize()];        
-
-            for (size_t indexPoints = 0 ; indexPoints < (*BreaklineIter)->GetSize(); indexPoints++)
-                {
-                linePts[indexPoints].x = (*BreaklineIter)->GetPoint(indexPoints).GetX();
-                linePts[indexPoints].y = (*BreaklineIter)->GetPoint(indexPoints).GetY();
-                linePts[indexPoints].z = (*BreaklineIter)->GetPoint(indexPoints).GetZ();
-                }
-
-            status = bcdtmObject_storeDtmFeatureInDtmObject(po_pBcDtmObj, (DTMFeatureType)(*BreaklineIter)->GetFeatureType() /*DTMFeatureType::Breakline*/, TileNumber, 1, &po_pBcDtmObj->nullFeatureId, linePts, (uint32_t)(*BreaklineIter)->GetSize());
-            BreaklineIter++;
-            TileNumber++;
-            }         
-        }
-    }
-#endif
 /*-------------------Methods inherited from IDTM-----------------------------*/
 
 
@@ -1195,7 +1124,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     bvector<IScalableMeshNodePtr> returnedNodes;
     params->SetLevel(m_scMesh->GetTerrainDepth());
 
+#ifndef VANCOUVER_API
     Transform uorsToStorage = m_transformToUors.ValidatedInverse();
+#else
+    Transform uorsToStorage;
+    uorsToStorage.InverseOf(m_transformToUors);
+#endif
     bvector<DPoint3d> transPts(numPoints);
     memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
     uorsToStorage.Multiply(&transPts[0], numPoints);
@@ -1209,7 +1143,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         double flatAreaTile = 0;
         double slopeAreaTile = 0;
         BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+        if (dtmP != nullptr) 
+#ifdef VANCOUVER_API
+            dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, &transPts[0], numPoints);
+#else
+            dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1227,7 +1166,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     bvector<IScalableMeshNodePtr> returnedNodes;
     params->SetLevel(m_scMesh->GetTerrainDepth());
 
+#ifndef VANCOUVER_API
     Transform uorsToStorage = m_transformToUors.ValidatedInverse();
+#else
+    Transform uorsToStorage;
+    uorsToStorage.InverseOf(m_transformToUors);
+#endif
     bvector<DPoint3d> transPts(numPoints);
     memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
     uorsToStorage.Multiply(&transPts[0], numPoints);
@@ -1271,7 +1215,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     {
                     if (dtmP != nullptr)
                         {
+#ifdef VANCOUVER_API
+                        if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+#else
                         if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+#endif
                             {
                             flatAreaTile += flat;
                             slopeAreaTile += slope;
@@ -1280,7 +1228,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     }
             }
         else
-          if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile,  0, 0);
+#ifdef VANCOUVER_API
+          if (dtmP != nullptr) dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile,  0, 0);
+#else
+            if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0, 0);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1336,7 +1288,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                             {
                             if (dtmP != nullptr)
                                 {
+                                #ifdef VANCOUVER_API
+                                if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+                                #else
                                 if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+                                #endif
                                     {
                                     retval = DTM_SUCCESS;
                                     flatAreaTile += flat;
@@ -1347,7 +1303,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     
                     }
                 else
+                #ifdef VANCOUVER_API
+                if (dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #else
                 if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #endif
                 
                 flatAreaFull += flatAreaTile;
                 slopeAreaFull += slopeAreaTile;
@@ -1388,15 +1348,15 @@ DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP)
             }
         }
     if (returnedNodes.size() == 0) return DTM_ERROR;
-    bvector<bool> clips;
+
     IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-    auto meshPtr = returnedNodes.front()->GetMesh(flags, clips);
+    auto meshPtr = returnedNodes.front()->GetMesh(flags);
     ScalableMeshMesh* meshP = dynamic_cast<ScalableMeshMesh*>(meshPtr.get());
     //add all triangles from returned nodes to DTM
     for (auto nodeIter = returnedNodes.begin() + 1; nodeIter != returnedNodes.end(); ++nodeIter)
         {
         if ((*nodeIter)->GetPointCount() <= 4) continue;
-        auto currentMeshPtr = (*nodeIter)->GetMesh(flags, clips);
+        auto currentMeshPtr = (*nodeIter)->GetMesh(flags);
         if (!currentMeshPtr.IsValid()) continue;
         bvector<int32_t> indices(currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCount());
         memcpy(&indices[0], currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCP(), indices.size()*sizeof(int32_t));
@@ -1537,10 +1497,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
     DRange3d rangeCurrent = DRange3d::From(current);
     for (auto& node : returnedNodes)
         {
-        bvector<bool> clips;
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(true);
-        auto meshP = node->GetMesh(flags, clips);
+        auto meshP = node->GetMesh(flags);
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
@@ -1650,6 +1609,8 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
             return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmIndexPtr);
         case MESH_QUERY_PLANE_INTERSECT:
             return new ScalableMeshNodePlaneQuery<POINT>(&*m_scmIndexPtr);
+        case MESH_QUERY_CONTEXT:
+            return new ScalableMeshContextMeshQuery<POINT>(&*m_scmIndexPtr);
         default:
             return new ScalableMeshViewDependentMeshQuery<POINT>(&*m_scmIndexPtr);
         }
@@ -1747,7 +1708,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
 
     //HCPWKT wkt;
 
-    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
+    SMStatus wktCreateStatus = SMStatus::S_SUCCESS;
     //wkt = HCPWKT(savedGCS.GetWKT(wktCreateStatus).GetCStr());
 
     WString extendedWktStr(savedGCS.GetWKT(wktCreateStatus).GetCStr());
@@ -1760,7 +1721,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_SetGCS(const GCS& newGCS)
         //wkt = HCPWKT(extendedWktStr.c_str());
     }
 
-    if (GCS::S_SUCCESS != wktCreateStatus)
+    if (SMStatus::S_SUCCESS != wktCreateStatus)
         return BSIERROR;
 
     // This is called even if there are no GCS provided... In such case the WKT AString
@@ -1983,9 +1944,19 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
     {
     auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
-    if (m_scmIndexPtr == nullptr) return new ScalableMeshNode<POINT>(ptr);
+    if (m_scmIndexPtr == nullptr) 
+ #ifndef VANCOUVER_API
+        return new ScalableMeshNode<POINT>(ptr);
+#else
+return  ScalableMeshNode<POINT>::CreateItem(ptr);
+#endif
     auto nodeP = m_scmIndexPtr->GetRootNode();
+ #ifndef VANCOUVER_API
     return new ScalableMeshNode<POINT>(nodeP);
+#else
+return  ScalableMeshNode<POINT>::CreateItem(nodeP);
+#endif
+
     }
 
 

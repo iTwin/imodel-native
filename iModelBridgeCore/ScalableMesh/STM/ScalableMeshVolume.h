@@ -44,7 +44,11 @@ struct ScalableMeshVolume : IDTMVolume
         void SetTransform(TransformR transform)
             {
             m_transform = transform;
-            m_UorsToStorage = m_transform.ValidatedInverse();
+#ifndef VANCOUVER_API
+             m_UorsToStorage = m_transform.ValidatedInverse();
+#else
+            m_UorsToStorage.InverseOf(m_transform);
+#endif
             }
         //double ComputeVolumeCutAndFillForTile(PolyfaceHeaderPtr terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
     };

@@ -179,6 +179,7 @@ bool                                GCSConfig::IsExistingPreservedIfLocalCS() co
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentConfig::Impl : public RefCountedBase//ShareableObjectTypeTrait<Impl>::type
     {
+    friend struct ContentConfig;
     GCSConfig m_gcsConfig;
     TypeConfig m_typeConfig;
     ScalableMeshConfig m_scalableMeshConfig;

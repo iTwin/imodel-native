@@ -474,7 +474,7 @@ void LayerCfgVisitor::_Visit (const GCSExtendedConfig& config)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Status ContentDescriptor::Configure (const ContentConfig&    config,
+SMStatus ContentDescriptor::Configure(const ContentConfig&    config,
                                                         Log&                    log)
     {
     return Configure(config, ContentConfigPolicy(), log);
@@ -485,7 +485,7 @@ ContentDescriptor::Status ContentDescriptor::Configure (const ContentConfig&    
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::Status ContentDescriptor::Configure (const ContentConfig&            config,
+SMStatus ContentDescriptor::Configure(const ContentConfig&            config,
                                                         const ContentConfigPolicy&   policy,
                                                         Log&                            log)
     {

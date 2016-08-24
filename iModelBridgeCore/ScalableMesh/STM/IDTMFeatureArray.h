@@ -11,7 +11,7 @@
 
 
 #pragma once
-
+#ifndef VANCOUVER_API
 #include "HPUCompositeArray.h"
 #include "Stores/SMStoreUtils.h"
 //#include "IDTMFileDirectories/FeatureHeaderTypes.h"
@@ -325,7 +325,7 @@ inline void                                 swap                               (
 
 
 #include "IDTMFeatureArray.hpp"
-
+#endif
 // TDORAY: Dirty Microsoft fix/hack for their bad use of swap in std algorithms. In VC2010 the problem is fixed so remove.
 //#include "IDTMFileDirectories/PointTypes.h"
 //#include "IDTMFileDirectories/FeatureHeaderTypes.h"

@@ -140,15 +140,15 @@ struct SourcesImporter::Impl
         }
 
 
-    Status                          Import                             ();
+    SMStatus                          Import();
 
-    Status                          ImportSDKSources                    ();
+    SMStatus                          ImportSDKSources();
 
     void                            ImportFromSDK                       (Utf8CP inputFileName);
 
     void                            ParseFeatureOrPointBuffer           (unsigned char* buffer, size_t bufferSize);
 
-    Status                          ImportSource                       (SourceItem&                       sourceItem,
+    SMStatus                          ImportSource(SourceItem&                       sourceItem,
                                                                         SourcesImporter&                        attachmentsImporter);
 
     void                            AddAttachments                     (const Source&                           source,
@@ -228,7 +228,7 @@ bool SourcesImporter::IsEmpty () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourcesImporter::Status SourcesImporter::Import () const
+SMStatus SourcesImporter::Import() const
     {
     return m_implP->Import();
     }
@@ -324,6 +324,7 @@ void SourcesImporter::Impl::ParseFeatureOrPointBuffer(unsigned char* buffer, siz
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
     {
+#ifndef VANCOUVER_API
     STARTUPINFOA info = { sizeof(info) };
 
     BeFileName sdkExePath(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -394,16 +395,17 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
             }
 
         delete[] buffer;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Elenie.Godzaridis   05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
+SMStatus SourcesImporter::Impl::ImportSDKSources()
     {
     if (m_sdkSources.empty()) return S_SUCCESS;
-
+#ifndef VANCOUVER_API
     BeFileName tempDir(T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
     BeFileName tempSourcesToImportFile = tempDir;
     tempSourcesToImportFile.AppendUtf8("tempTerrainSourceImport.xml");
@@ -429,7 +431,7 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
             }
         if (sourceIt->m_importConfig->HasDefaultTargetGCS())
             {
-            GCS::Status wktCreateStatus;
+            SMStatus wktCreateStatus;
             WString extendedWktStr(sourceIt->m_importConfig->GetDefaultTargetGCS().GetWKT(wktCreateStatus).GetCStr());
             auto bGCS = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS();
             ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&extendedWktStr, extendedWktStr);
@@ -514,7 +516,9 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
     fclose(pOutputFileStream);
 
     ImportFromSDK(tempSourcesToImportFile.GetNameUtf8().c_str());
-
+#else
+assert(!"Not available on this platform");
+#endif
     return S_SUCCESS;
     }
 
@@ -522,13 +526,13 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSDKSources()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourcesImporter::Status SourcesImporter::Impl::Import ()
+SMStatus SourcesImporter::Impl::Import()
     {
     SourcesImporter attachmentsImporter(m_sinkSourceRef, m_sinkPtr);
 
     for (SourceList::iterator sourceIt = m_sources.begin(), sourcesEnd = m_sources.end(); sourceIt != sourcesEnd; ++sourceIt)
         {
-        SourcesImporter::Status status = ImportSource(*sourceIt, attachmentsImporter);
+        SMStatus status = ImportSource(*sourceIt, attachmentsImporter);
         if (S_SUCCESS != status)
             return S_ERROR;
         }
@@ -537,7 +541,7 @@ SourcesImporter::Status SourcesImporter::Impl::Import ()
     if (attachmentsImporter.IsEmpty())
         return S_SUCCESS;
 
-    Status attachmentImportStatus = attachmentsImporter.Import();
+    SMStatus attachmentImportStatus = attachmentsImporter.Import();
     if (S_SUCCESS != attachmentImportStatus)
         return S_ERROR;
 
@@ -548,7 +552,7 @@ SourcesImporter::Status SourcesImporter::Impl::Import ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourcesImporter::Status SourcesImporter::Impl::ImportSource   (SourceItem&    sourceItem,
+SMStatus SourcesImporter::Impl::ImportSource(SourceItem&    sourceItem,
                                                                SourcesImporter&     attachmentsImporter)
     {
     static const SourceFactory SOURCE_FACTORY(GetSourceFactory());
@@ -571,12 +575,12 @@ SourcesImporter::Status SourcesImporter::Impl::ImportSource   (SourceItem&    so
     if (0 == importerPtr.get())
         return S_ERROR;
 
-    const Importer::Status importStatus = importerPtr->Import(sourceItem.m_importSequence, 
+    const SMStatus importStatus = importerPtr->Import(sourceItem.m_importSequence,
                                                               *sourceItem.m_importConfig);
 
     sourceItem.m_sourceImportConf = sourcePtr->GetSourceImportConfig();
 
-    if (importStatus != Importer::S_SUCCESS)
+    if (importStatus != SMStatus::S_SUCCESS)
         return S_ERROR;
 
 

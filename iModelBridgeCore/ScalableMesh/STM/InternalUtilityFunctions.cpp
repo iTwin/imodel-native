@@ -244,93 +244,7 @@ StatusInt FillBBoxFromIppExtent(DPoint3d    boxPoints[],
 
     return SUCCESS;
     }
-#if 0
-int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTMLinearFeature>>& cutLinearList, HFCPtr<HVE2DPolygonOfSegments> queryPolyLine)
-    {   
-    int status = SUCCESS;
 
-    if (linearList.size() > 0)
-        {        
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIter    = linearList.begin();
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIterEnd = linearList.end();
-
-        while (linearIter != linearIterEnd) 
-            {                               
-            HGF3DPoint firstPt = (*linearIter)->GetPoint(0);
-            HGF3DPoint secondPt;
-            bool       addAllPts = false;
-            unsigned __int64 lastIndexPtAdd = UINT64_MAX;
-
-            HFCPtr<HVEDTMLinearFeature> cutFeatureP = new HVEDTMLinearFeature((*linearIter)->GetFeatureType(), 0);
-            ISMStore::FeatureType type = (*linearIter)->GetFeatureType();
-            
-            switch (type)
-                {
-                case DTMFeatureType::Void:
-                case DTMFeatureType::BreakVoid:
-                case DTMFeatureType::DrapeVoid:
-                case DTMFeatureType::Hole:
-                case DTMFeatureType::Island:
-                case DTMFeatureType::Hull:
-                case DTMFeatureType::DrapeHull:
-                case DTMFeatureType::Polygon:
-                case DTMFeatureType::Region:                
-                    addAllPts = true;
-                    break;
-                default :
-                    addAllPts = false;
-                    break;
-                }
-
-            //TR 353473 - Once in the queryPolyline don't cut any segment even if there are outside to ensure 
-            //            that there is no connecting segment inserted between two segments that are not continuous 
-            //            that is overlapping the query polyline.
-            bool canSkipLine = true;
-
-            for (size_t indexPoints = 1 ; indexPoints < (*linearIter)->GetSize(); indexPoints++)
-                {                
-                secondPt = (*linearIter)->GetPoint(indexPoints);
-
-                HVE2DSegment line(HGF2DLocation(firstPt.GetX(), firstPt.GetY(), queryPolyLine->GetCoordSys()), HGF2DLocation(secondPt.GetX(), secondPt.GetY(), queryPolyLine->GetCoordSys()));
-
-                HGF2DLocationCollection CrossPoints;
-
-                // If the segment is not NULL and if the segment intersects the query polyline or if the segment is inside the query polyline, add the extremity points               
-                if (!line.IsNull() && 
-                    (queryPolyLine->Intersect(line, &CrossPoints) > 0 || queryPolyLine->IsPointIn(HGF2DLocation(firstPt.GetX(), firstPt.GetY(), queryPolyLine->GetCoordSys())) || (canSkipLine == false)))
-                    {
-                    if (addAllPts)
-                        {
-                        for (size_t indexPoints2 = 0 ; indexPoints2 < (*linearIter)->GetSize(); indexPoints2++)
-                            {  
-                            cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints2));
-                            }
-                        break;
-                        }
-
-                    if (lastIndexPtAdd != (indexPoints-1))
-                        {  
-                        cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints-1));   
-                        }      
-
-                    cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints));   
-                    lastIndexPtAdd = indexPoints;
-                    canSkipLine = false;
-                    }
-
-                firstPt = secondPt;
-                }
-
-            if (cutFeatureP->GetSize() > 0)
-                cutLinearList.push_back(cutFeatureP);
-
-            linearIter++;
-            }           
-        }
-
-    return status;
-    }
-#endif
 
 
 
@@ -943,21 +857,27 @@ StatusInt GetGeoMathematicalDomain(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseG
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt GetMathematicalDomain(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& GCSPtr, GeoDomainShape& shape)
     {
-    //if(HRFGeoCoordinateProvider::GetServices() == NULL)
-    //    return ERROR;
+#ifdef VANCOUVER_API
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
+#endif
 
     StatusInt status = SUCCESS;
 
     GeoDomainShape geoPoints;
     
     status = GetGeoMathematicalDomain(GCSPtr, geoPoints);
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-   //RasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-   // IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(GCSPtr.get());
+#ifdef VANCOUVER_API
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(GCSPtr.get());
 
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pSource);
+#else
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
     HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pLL84, *GCSPtr);
+#endif
 
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys();
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, pSourceCS);
@@ -1031,8 +951,10 @@ StatusInt ReprojectRangeDomainLimited(DRange3d& reprojectedRange,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS,
                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS)
     {
-   // if(HRFGeoCoordinateProvider::GetServices() == NULL)
-   //     return ERROR;
+#ifdef VANCOUVER_API
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
+#endif
 
     // In order to compute the range in given geographic coordinate system, we only have the content extent
     // of the index. Hopefully, eventually, we will have the properly computed hull.
@@ -1042,15 +964,20 @@ StatusInt ReprojectRangeDomainLimited(DRange3d& reprojectedRange,
     HFCPtr<HVE2DShape> resultDomainShape = GetGCSDomainsIntersection(sourceGCS, targetGCS, latLongCoordinateSystem);
 
     // We now create Image++ compatible Geographic Coordinate System objects ...
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-    //IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-   // IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCS.get());
-   // IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCS.get());
+#ifdef VANCOUVER_API
+    IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCS.get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCS.get());
     
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
+    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*pSource, *pLL84);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pSource);
+#else
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
     HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*sourceGCS, *pLL84);
     HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCS, *sourceGCS);
+#endif
 
     // We create two dummies coordinate systems linked using this geographic transformation
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys(*pSourceToLL84, latLongCoordinateSystem);
@@ -1104,8 +1031,10 @@ StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates:
                                          DRange3d                             additionalSourceExtent,
                                          HFCPtr<HVE2DShape>                   queryShape)
     { 
-    //if(HRFGeoCoordinateProvider::GetServices() == NULL)
-    //    return ERROR;
+#ifdef VANCOUVER_API
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
+#endif
 
     // Here we have the viewbox expressed in the cartesian target GCS yet this viewbox may exceed the
     // Target GCS mathematical domain. It is also likely that it will exceeed in addition the source GCS
@@ -1136,13 +1065,18 @@ StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates:
     HFCPtr<HVE2DShape> resultDomainShape = GetGCSDomainsIntersection(sourceGCSPtr, targetGCSPtr, latLongCoordinateSystem);
 
     // We create a LL84 baseGCS in which are effectively expressed the geo domain
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-    //IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-    //IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
-    //IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
+#ifdef VANCOUVER_API
+    IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
 
     //Now we limit this domain to the query extent which is given in source coordinates
+    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*pSource, *pLL84);
+#else
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
     HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*sourceGCSPtr, *pLL84);
+#endif
+
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys(*pSourceToLL84, latLongCoordinateSystem);
 
     // Intersect with additional extent if one is defined
@@ -1169,7 +1103,11 @@ StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates:
         return ERROR;
         }
     // We now convert this geographic lat/long domain into the target GCS coordinates
+#ifdef VANCOUVER_API
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pLL84);
+#else
     HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCSPtr, *pLL84);
+#endif
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, latLongCoordinateSystem);
     HFCPtr<HVE2DShape> cartesianDomain = static_cast<HVE2DShape*>(limitedDomainShape->AllocateCopyInCoordSys (pTargetCS));
 
@@ -1259,8 +1197,10 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordi
                                       size_t  pi_SourcePtQty)
             
     {
-   // if(HRFGeoCoordinateProvider::GetServices() == NULL)
-   //     return NULL;
+#ifdef VANCOUVER_API
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return NULL;
+#endif
 
     // Something went wrong ... we need to limit the source shape to the domains
     // Create the three coordinate systems required for transformation
@@ -1272,18 +1212,25 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordi
         return NULL;
 
     // We create a LL84 baseGCS in which are effectively expressed the geo domain
-    //IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
-    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
-   // IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
-   // IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
+#ifdef VANCOUVER_API
+    IRasterBaseGcsPtr pLL84 = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromKeyName(L"LL84");
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(sourceGCSPtr.get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(targetGCSPtr.get());
 
     //Now we limit this domain to the query extent which is given in source coordinates
+    HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*pSource, *pLL84);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget, *pLL84);
+#else
+    BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr pLL84 = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
     HFCPtr<HCPGCoordModel> pSourceToLL84 = new HCPGCoordModel(*sourceGCSPtr, *pLL84);
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCSPtr, *pLL84);
+#endif
+
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys(*pSourceToLL84, latLongCoordinateSystem);
 
 
     // We now convert this geographic lat/long domain into the target GCS coordinates
-    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*targetGCSPtr, *pLL84);
+
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, latLongCoordinateSystem);
 
     HFCPtr<HVE2DShape> pShapeToReproject = CreateShapeFromPoints(pi_pSourcePt, pi_SourcePtQty, pTargetCS);

@@ -1703,3 +1703,108 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersect
     else return false; //don't do subnodes, this is not the right extent
     return true;
     }
+
+struct AppendClippedToMesh : public PolyfaceQuery::IClipToPlaneSetOutput
+    {
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* m_targetMesh;
+    ClipVectorCP m_clipVec;
+
+    virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override;
+    virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override;
+
+    AppendClippedToMesh(BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh, ClipVectorCP clip) : m_targetMesh(mesh), m_clipVec(clip) {};
+    };
+
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<POINT,EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
+                                                                                                          HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
+                                                                                                          size_t                                   numSubNodes,
+                                                                                                          BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh*               mesh)
+
+    {
+    bool result = true;
+
+
+    if (node->IsEmpty() || node->m_nodeHeader.m_level > 3)
+        {
+        return false;
+        }
+
+
+    assert(m_viewClipVector != 0);
+
+    //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
+    double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
+    double tolerance = maxDimension / cos(PI / 4);
+
+    DPoint3d center;
+
+    center.Init(ExtentOp<EXTENT>::GetXMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()) / 2,
+                ExtentOp<EXTENT>::GetYMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetHeight(node->GetContentExtent()) / 2,
+                ExtentOp<EXTENT>::GetZMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetThickness(node->GetContentExtent()) / 2);
+    if (node->m_nodeHeader.m_level == 3 || node->m_nodeHeader.m_IsLeaf)
+        {
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(node);
+
+        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+        vector<DPoint3d> dataPoints(pointsPtr->size());
+
+        PtToPtConverter converter;
+
+        for (size_t pointInd = 0; pointInd < pointsPtr->size(); pointInd++)
+            {
+            dataPoints[pointInd] = converter.operator()(pointsPtr->operator[](pointInd));
+            }
+
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(meshNode->GetPtsIndicePtr());
+
+        if (m_viewClipVector->PointInside(center, tolerance))
+            {
+            AppendClippedToMesh meshOutput(mesh, m_viewClipVector.get());
+            auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(dynamic_cast<SMMeshIndexNode<POINT, EXTENT>*>(node.GetPtr())));
+            IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+            new ScalableMeshNode<POINT>(nodePtr)
+#else
+            ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+            );
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+
+            if (meshP.get() != nullptr)
+                m_viewClipVector->ClipPolyface(*(meshP->GetPolyfaceQuery()), meshOutput, false);
+
+            }
+        else
+            {
+            bvector<int> indices(node->m_nodeHeader.m_nbFaceIndexes);
+            if (!indices.empty())
+                {
+                memcpy(indices.data(), &(*ptIndices)[0], indices.size()*sizeof(int));
+                for (auto& i : indices) i += (int)mesh->GetNbPoints();
+                mesh->AppendMesh(pointsPtr->size(), &dataPoints[0], node->m_nodeHeader.m_nbFaceIndexes, indices.data(), 0, 0, 0, 0, 0, 0);
+                }
+            }
+        }
+    return result;
+    }
+
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
+                                                                                                          HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
+                                                                                                          size_t                                   numSubNodes,
+                                                                                                          vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes)
+    {
+    bool result = false;
+
+    return result;
+    }
+
+template<class POINT, class EXTENT> bool ScalableMeshQuadTreeContextMeshQuery<POINT,EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT >> node,
+                                                                                                          HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
+                                                                                                          size_t                                  numSubNodes,
+                                                                                                          ProducedNodeContainer<POINT, EXTENT>&   foundNodes)
+    {
+    bool result = false;
+
+    return result;
+    }

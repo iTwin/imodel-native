@@ -10,6 +10,10 @@
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
 # PreCompiledHeader.mki uses CCompPDBName
+appName     = ScalableMesh
+DLM_NAME    = $(appName)
+LIB_NAME    = $(appName)
+CCompPDBName = $(appName)
 
 #This is because GMP and MPFR don't use vendor prefixes in the CGAL files
 dirToSearch=$(OutputRootDir)BuildContexts/CGAL/VendorAPI/GMP

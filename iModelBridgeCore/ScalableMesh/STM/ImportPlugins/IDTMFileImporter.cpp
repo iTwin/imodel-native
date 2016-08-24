@@ -25,11 +25,12 @@
 #include <ScalableMesh/Plugin/IScalableMeshCivilDTMSource.h>
 #include <ScalableMesh/Plugin/IScalableMeshSTMSource.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
+#include "..\Stores\SMStoreUtils.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace ISMStore;
+using namespace IDTMFile;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -271,10 +272,10 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
 
                 assert(result);    
 
-                GCSFactory::Status gcsCreateStatus = GCSFactory::S_SUCCESS;
+                SMStatus gcsCreateStatus = SMStatus::S_SUCCESS;
                 gcs = GetGCSFactory().Create(wktStr.c_str(), baseGcsWktFlavor, gcsCreateStatus);
 
-                success &= (GCSFactory::S_SUCCESS == gcsCreateStatus);
+                success &= (SMStatus::S_SUCCESS == gcsCreateStatus);
                 }
 
             // TDORAY: Fetch units
@@ -289,7 +290,7 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
             ScalableMeshData data = ScalableMeshData::GetNull();
             data.AddExtent(layerRange);
 
-            contentDesc.Add(LayerDescriptor(L"",
+            contentDesc.Add(ILayerDescriptor::CreateLayerDescriptor(L"",
                             dataTypes,
                             gcs, 
                             &layerRange,

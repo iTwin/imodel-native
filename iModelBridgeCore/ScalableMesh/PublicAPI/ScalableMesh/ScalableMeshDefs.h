@@ -83,6 +83,7 @@ enum MeshQueryType
     MESH_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
     MESH_QUERY_VIEW_DEPENDENT,
     MESH_QUERY_PLANE_INTERSECT,
+    MESH_QUERY_CONTEXT,
     MESH_QUERY_QTY
     };
 
@@ -129,6 +130,17 @@ enum DTMStatus
     DTMSTATUS_ERROR,
     DTMSTATUS_UNSUPPORTED_VERSION,
     DTMSTATUS_QTY                
+    };
+
+enum SMStatus
+    {
+    S_SUCCESS = 0,
+    S_ERROR,
+    S_ERROR_COULD_NOT_OPEN,
+    S_ERROR_NOT_SUPPORTED,
+    S_ERROR_NOT_FOUND,
+    S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
+    S_QTY,
     };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100

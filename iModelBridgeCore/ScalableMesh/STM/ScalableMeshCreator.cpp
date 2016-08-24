@@ -67,7 +67,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "Stores\SMStreamingDataStore.h"
 #include <ImagePP\all\h\HIMMosaic.h>
+#ifndef VANCOUVER_API
 #include <DgnPlatform\DesktopTools\ConfigurationManager.h>
+#else
+#include <DgnPlatform\Tools\ConfigurationManager.h>
+#endif
 
 
 #define SCALABLE_MESH_TIMINGS
@@ -196,14 +200,7 @@ IScalableMeshCreator::IScalableMeshCreator (Impl* implP)
 IScalableMeshCreator::~IScalableMeshCreator ()
     {
     }
-#if 0
-bool IScalableMeshCreator::AreAllSourcesReachable () const
-    {
-    // Reachable only if all sources are reachable
-    return m_implP->m_sources.End() == std::find_if(m_implP->m_sources.Begin(), m_implP->m_sources.End(), not1(mem_fun_ref(&IDTMSource::IsReachable)));
-    }
 
-#endif
 
 StatusInt IScalableMeshCreator::Create (bool isSingleFile)
     {
@@ -285,36 +282,7 @@ Time IScalableMeshCreator::GetLastSyncTime () const
     return m_implP->m_lastSyncTime;
     }
 
-#if 0
-Time IScalableMeshCreator::GetLastModified() const
-    {
-    return m_implP->m_lastSourcesModificationTime;
-    }
 
-Time IScalableMeshCreator::GetLastModifiedCheckTime () const
-    {
-    return m_implP->m_lastSourcesModificationCheckTime;
-    }
-
-
-
-StatusInt IScalableMeshCreator::UpdateLastModified()
-    {
-    return m_implP->UpdateLastModified();
-    }
-
-void IScalableMeshCreator::SetSourcesDirty ()
-    {
-    // Make sure that sources are not seen as up to date anymore
-    m_implP->m_sourcesDirty = true;
-    m_implP->m_lastSourcesModificationTime = Time::CreateActual();
-    }
-
-bool IScalableMeshCreator::HasDirtySources () const
-    {
-    return m_implP->m_sourcesDirty;
-    }
-#endif
 StatusInt IScalableMeshCreator::SaveToFile()
     {
     return m_implP->SaveToFile();
@@ -348,24 +316,7 @@ StatusInt IScalableMeshCreator::SetGCS(const GeoCoords::GCS& gcs)
 
     return 0;
     }
-#if 0
-const IDTMSourceCollection& IScalableMeshCreator::GetSources () const
-    {
-    return m_implP->m_sources;
-    }
 
-IDTMSourceCollection& IScalableMeshCreator::EditSources ()
-    {
-    return m_implP->m_sources;
-    }
-#endif
-#if 0
-IScalableMeshNodePtr IScalableMeshCreator::AddChildNode (const IScalableMeshNodePtr& parentNode, 
-                                                         StatusInt&                  status)
-    {
-    return m_implP->AddChildNode (parentNode, status);
-    }
-#endif
 /*----------------------------------------------------------------------------+
 |ScalableMeshCreator class
 +----------------------------------------------------------------------------*/
@@ -714,9 +665,9 @@ StatusInt IScalableMeshCreator::Impl::LoadGCS()
 
     assert(result);
 
-    GCSFactory::Status gcsFromWKTStatus = GCSFactory::S_SUCCESS;
+    SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
     GCS fileGCS(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsFromWKTStatus));
-    if (GCSFactory::S_SUCCESS != gcsFromWKTStatus)
+    if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
         return BSIERROR;
 
     assert(!m_gcsDirty);
@@ -746,9 +697,9 @@ int IScalableMeshCreator::Impl::SaveGCS()
         return BSIERROR;
     }
 
-    GCS::Status wktCreateStatus = GCS::S_SUCCESS;
+    SMStatus wktCreateStatus = SMStatus::S_SUCCESS;
     const WKT wkt(newSourceGCS.GetWKT(wktCreateStatus));
-    if (GCS::S_SUCCESS != wktCreateStatus)
+    if (SMStatus::S_SUCCESS != wktCreateStatus)
         return BSIERROR;
 
     WString extendedWktStr(wkt.GetCStr());

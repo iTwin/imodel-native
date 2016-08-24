@@ -3956,7 +3956,13 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<POINT>>
         bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(pointDataStore, &m_nodeHeader, SMStoreDataType::Points);
         assert(result == true);        
 
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, pointDataStore, SMStoreDataType::Points, (uint64_t)m_SMIndex));
+        RefCountedPtr<SMStoredMemoryPoolVectorItem<POINT>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+        new SMStoredMemoryPoolVectorItem<POINT>(GetBlockID().m_integerID, pointDataStore, SMStoreDataType::Points, (uint64_t)m_SMIndex)
+#else
+        SMStoredMemoryPoolVectorItem<POINT>::CreateItem(GetBlockID().m_integerID, pointDataStore, SMStoreDataType::Points, (uint64_t)m_SMIndex)
+#endif
+        );
         SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
         m_pointsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
         assert(m_pointsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
@@ -6083,198 +6089,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryV
     return digDown;
     }
 
-//NEEDS_WORK_SM : Not used - remove
-template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryNodesAround (ISMPointIndexQuery<POINT, EXTENT>* queryObject, size_t maxLevelDistance, size_t maxNeighborDistance, DisplayMovementType displayMovementType, bmap<__int64, __int64>& searchedNodes, ProducedNodeContainer<POINT, EXTENT>& previewNodes, ProducedNodeContainer<POINT, EXTENT>& foundNodes, ProducedNodeContainer<POINT, EXTENT>& nodesToSearch, IStopQuery* stopQueryP, IDisplayCacheNodeManager* displayCacheNodeManagerP)
-    {   
-    HINVARIANTS;
-#if 0
-    if (maxLevelDistance == 0)
-        {
-        HFCPtr<SMPointIndexNode<POINT, EXTENT>> node(this);
-
-        nodesToSearch.AddNode(node);
-
-        //if (displayMovementType == DisplayMovementType::ZOOM_OUT)
-        return false;                  
-        }
-    
-    bool digDown = true;
-
-    if (!IsLoaded())
-        {
-        Load();
-        }
-
-
-    ProducedNodeContainer<POINT, EXTENT> nodesZoomOut;
-         
-    if (displayMovementType == DisplayMovementType::UNKNOWN)
-        {        
-        ProducedNodeContainer<POINT, EXTENT> foundNodesLocally;
-                
-        digDown = queryObject->Query (this, pSubNodes, 1, nodesZoomOut);
-
-        if (digDown)
-            {      
-            nextDisplayMovementType = DisplayMovementType::ZOOM_IN;
-            }
-        else
-            {
-            assert(nodesZoomOut.GetNode().size() == 1);
-            nextDisplayMovementType = DisplayMovementType::ZOOM_OUT;
-            
-            /*
-            if (GetParentNodePtr() != 0 && searchedNodes.find(GetParentNodePtr()->GetBlockID().m_integerID) == searchedNodes.end())
-                {
-                searchedNodes.insert(bpair<__int64, __int64>GetParentNodePtr()->GetBlockID().m_integerID, GetParentNodePtr()->GetBlockID().m_integerID());
-
-                bool digDown = GetParentNodePtr()->QueryNodesAround (queryObject, maxLevelDistance - 1, maxNeighborDistance, nextDisplayMovementType, searchedNodes, previewNodes, foundNodesLocally, nodesToSearch, stopQueryP, displayCacheNodeManagerP))                               
-
-                if (digDown == true)
-                    {
-                    assert(nodes.GetNodes().size() == 1);
-                    assert(foundNodesLocally.GetNodes().size() == 0);
-                                
-                    foundNodes.AddNode(nodes.GetNodes()[0]);
-                
-                    return false;
-                    }
-                }            
-            }
-            */
-            }
-        }
-    
-    if (displayMovementType == DisplayMovementType::ZOOM_OUT)    
-        {       
-        if (nodesZoomOut.GetNode().size() == 0)
-            {
-            digDown = queryObject->Query (this, pSubNodes, 1, nodesZoomOut);
-            }
-        else
-            {
-            digDown = false;
-            }
-
-        if (digDown == true)
-            {
-            return digDown;
-            }
-        else
-            {
-            if (GetParentNodePtr() == 0)
-                {
-                foundNodes.AddNode(nodesZoomOut.GetNodes()[0]);
-                return false;
-                }
-            
-            if (searchedNodes.find(GetParentNodePtr()->GetBlockID().m_integerID) == searchedNodes.end())
-                {
-                searchedNodes.insert(bpair<__int64, __int64>GetParentNodePtr()->GetBlockID().m_integerID, GetParentNodePtr()->GetBlockID().m_integerID());
-
-                ProducedNodeContainer<POINT, EXTENT> foundNodesLocally;
-
-                bool digDown = GetParentNodePtr()->QueryNodesAround (queryObject, maxLevelDistance - 1, maxNeighborDistance, nextDisplayMovementType, searchedNodes, previewNodes, foundNodesLocally, nodesToSearch, stopQueryP, displayCacheNodeManagerP))                
-
-                if (digDown == true)
-                    {
-                    assert(nodesZoomOut.GetNodes().size() == 1);
-                    assert(foundNodesLocally.GetNodes().size() == 0);
-                                
-                    foundNodes.AddNode(nodesZoomOut.GetNodes()[0]);                                    
-                    }
-                else
-                    {
-                    if (foundNodesLocally.GetNodes().size() > 0)
-                        {
-                        assert(foundNodesLocally.GetNodes().size() == 1);
-                        foundNodes.AddNode(foundNodesLocally.GetNodes()[0]);
-                        }                    
-                    }
-
-                return false;
-                }
-            }        
-        }
-
-
-     if (displayMovementType == DisplayMovementType::ZOOM_IN)    
-        {          
-        if (!m_nodeHeader.m_IsLeaf)
-            {
-            if (m_pSubNodeNoSplit != NULL)
-                {
-                HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
-                pSubNodes[0] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit);
-                digDown = queryObject->Query (this, pSubNodes, 1, foundNodes);
-                                    
-                if (digDown)
-                    {    
-                    static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->QueryNodesAround (queryObject, maxLevelDistance - 1, maxNeighborDistance, displayMovementType, searchedNodes, previewNodes, foundNodes, nodesToSearch, stopQueryP, displayCacheNodeManagerP);
-                    }                                        
-                }
-            else
-                {
-                vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> subNodes(GetNumberOfSubNodesOnSplit());
-                for (size_t indexNodes = 0 ; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
-                    subNodes[indexNodes] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_apSubNodes[indexNodes]);
-
-                digDown = queryObject->Query(this, &subNodes[0], GetNumberOfSubNodesOnSplit(), foundNodes);
-
-                if (digDown)
-                    {
-                    /*
-                    vector<size_t> queryNodeOrder;
-                
-                    queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                    */
-                                                
-                    for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                        {                                      
-                        static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->QueryNodesAround (queryObject, maxLevelDistance - 1, maxNeighborDistance, displayMovementType, searchedNodes, previewNodes, foundNodes, nodesToSearch, stopQueryP, displayCacheNodeManagerP);                                                    
-                        }                                
-
-                        /*
-                        }
-                    else
-                        {
-                        HFCPtr<SMPointIndexNode<POINT, EXTENT>> node(this);
-
-                        overviewNodes.AddNode(node);
-
-                        vector<size_t> queryNodeOrder;
-                
-                        queryObject->GetQueryNodeOrder(queryNodeOrder, this, &subNodes[0], GetNumberOfSubNodesOnSplit());
-                                                
-                        for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
-                            {                                      
-                            HFCPtr<SMPointIndexNode<POINT, EXTENT>> node(m_apSubNodes[queryNodeOrder[indexNodes]]);
-
-                            nodesToSearch.AddNode(node);                            
-                            }                                                    
-                        }
-                        */
-                    }
-                }
-            }
-        else        
-            {
-            HFCPtr<SMPointIndexNode<POINT, EXTENT> > pSubNodes[1];
-            queryObject->Query (this, pSubNodes, 0, foundNodes);
-            }
-
-        HINVARIANTS;
-
-        return digDown;
-        }
-
-#endif
-
-     return false;
-
-    }
-
-
 template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, vector<QueriedNode>& meshNodes)
     {
     static bool s_delayLoadNode = false;
@@ -7749,8 +7563,13 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
         }
 
     this->SaveMasterHeaderToCloud(dataSourceAccount);
-
-    ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pCompress));                    
+    ISMDataStoreTypePtr<Extent3dType> dataStore(
+ #ifndef VANCOUVER_API
+    new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pCompress)
+   #else
+   SMStreamingStore<Extent3dType>::Create(dataSourceAccount, pi_pOutputDirPath, pi_pCompress)
+   #endif
+    );                    
 
     this->GetRootNode()->SavePointsToCloud(dataStore);
 
@@ -7868,7 +7687,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
     {    
 
     m_pRootNode->PropagateDataDownImmediately (true);
-#ifndef WIP_MESH_IMPORT    
+//#ifndef WIP_MESH_IMPORT    
     //size_t depth = m_pRootNode->GetDepth();    
 
     //NEEDS_WORK_SM - Not good when removing points, probably only good when adding points. 
@@ -7896,7 +7715,7 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::BalanceDow
         }
 
     assert(m_pRootNode->GetSplitDepth() == m_pRootNode->GetDepth());    
-#endif
+//#endif
     //assert(depth == m_pRootNode->GetDepth());
     }
 

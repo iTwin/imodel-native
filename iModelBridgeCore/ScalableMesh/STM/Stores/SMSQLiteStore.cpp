@@ -27,12 +27,12 @@ SMSQLiteClipDefinitionExtOps::~SMSQLiteClipDefinitionExtOps()
 
 void SMSQLiteClipDefinitionExtOps::GetMetadata(uint64_t id, double& importance, int& nDimensions)
     {
-    m_smSQLiteFile->SetClipPolygonMetadata(id, importance, nDimensions);
+    m_smSQLiteFile->GetClipPolygonMetadata(id, importance, nDimensions);
     }
 
 void SMSQLiteClipDefinitionExtOps::SetMetadata(uint64_t id, double importance, int nDimensions)
     {
-    m_smSQLiteFile->GetClipPolygonMetadata(id, importance, nDimensions);
+    m_smSQLiteFile->SetClipPolygonMetadata(id, importance, nDimensions);
     }
 
 void SMSQLiteClipDefinitionExtOps::GetAllIDs(bvector<uint64_t>& allIds)

@@ -2,7 +2,8 @@
 
 #include <ScalableTerrainModel\IMrDTMSources.h>
 
-#include <windows.h>
+
+#include <windows.h>   
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 namespace ScalableMeshSDKexe
@@ -238,6 +239,45 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                 */
             }       
 
+        //NEEDS_WORK_SM
+        WString classesToImportAttr;
+
+        status = pTestChildNode->GetAttributeStringValue(classesToImportAttr, "classesToImport");
+
+        if (status == BEXML_Success)
+            {           
+            bvector<uint32_t> classesToImport;
+
+            size_t startInd = 0;
+            size_t endInd = 0;
+
+            for (; endInd < classesToImportAttr.size(); endInd++)
+                {
+                if ((classesToImportAttr.c_str()[endInd] == ',') && (startInd < endInd - 1))
+                    {                    
+                    WString classIdStr(classesToImportAttr.substr(startInd, endInd - startInd - 1));
+                    int classId = _wtoi(classIdStr.c_str());                                        
+                    classesToImport.push_back(classId);
+                    startInd = endInd + 1;
+                    }
+                }
+
+            if (startInd < endInd)
+                {
+                WString classIdStr(classesToImportAttr.substr(startInd, endInd - startInd));
+                int classId = _wtoi(classIdStr.c_str());
+                classesToImport.push_back(classId);
+                }
+
+            if (classesToImport.size() > 0)
+                {
+                SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+                ScalableMeshData data = sourceImportConfig.GetReplacementSMData();            
+                data.SetClassificationToImport(classesToImport);
+                sourceImportConfig.SetReplacementSMData(data);
+                }
+            }
+
         return true;
         }
   
@@ -268,12 +308,22 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                         printf("Unsupporter/unknown data type");
                         }
             }
-        }
-    
-    bool ParseSourceSubNodes(BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
+        }            
+
+    bool ParseSourceSubNodes(BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourceCollection& sourceCollection,    
+                             bvector<DPoint3d>&                           importClipShape,                                                          
+                             DRange3d&                                    importRange, 
+                             BeXmlNodeP                                   pTestNode)
         {
         bool isSuccess = true;
 
+        importRange.low.x = -numeric_limits<double>::max();
+        importRange.high.x = numeric_limits<double>::max();
+        importRange.low.y = -numeric_limits<double>::max();
+        importRange.high.y = numeric_limits<double>::max();
+        importRange.low.z = -numeric_limits<double>::max();
+        importRange.high.z = numeric_limits<double>::max();
+        
         BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
         while ((0 != pTestChildNode) && (isSuccess == true))
@@ -341,7 +391,54 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                     }
                 }
             else
-                {
+            if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "clipshape"))
+                {      
+                WString clipShapeStr;
+                BeXmlStatus status = pTestChildNode->GetContent(clipShapeStr);
+                assert(status == BEXML_Success);
+                
+                size_t startInd = 0;
+                size_t endInd = 0;                
+                //DPoint3d pt; 
+                bvector<double> clipShape2d;                
+                DPoint3d pt; 
+                pt.z = 0;
+                bool isX = true;
+
+                for (; endInd < clipShapeStr.size(); endInd++)
+                    {
+                    if (((clipShapeStr.c_str()[endInd] == L',') || (clipShapeStr.c_str()[endInd] == L';')) && (startInd < endInd - 1))
+                        {                    
+                        WString coordStr(clipShapeStr.substr(startInd, endInd - startInd - 1));
+                        if (isX)
+                            {
+                            assert((clipShapeStr.c_str()[endInd] == L','));
+                            pt.x = _wtof(coordStr.c_str());                                        
+                            isX = false;
+                            }
+                        else
+                            {
+                            assert((clipShapeStr.c_str()[endInd] == L';'));
+                            pt.y = _wtof(coordStr.c_str());                                        
+                            isX = true;
+                            importClipShape.push_back(pt);
+                            }
+                        
+                        startInd = endInd + 1;
+                        }
+                    }
+
+                if (startInd < endInd)
+                    {
+                    assert(isX == false);
+                    WString coordStr(clipShapeStr.substr(startInd, endInd - startInd));
+                    pt.y = _wtof(coordStr.c_str());
+                    importClipShape.push_back(pt);
+                    }
+
+                importClipShape.push_back(importClipShape[0]);
+                                                                                                                          
+                importRange = DRange3d::From(&importClipShape[0], (int)importClipShape.size());                
                 }
 
             pTestChildNode = pTestChildNode->GetNextSibling();

@@ -30,17 +30,21 @@
 #include <ImagePP/all/h/HGF2DProjective.h>
 #include <ImagePP/all/h/HPMPool.h>
 #include <Imagepp/all/h/HCPGCoordModel.h>
-//#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
-//#include <ImagePP/all/h/ISMStore.h>
-//#include <ImagePP/all/h/IDTMFeatureArray.h>
-//#include <ImagePP/all/h/HPUArray.h>
+
+#ifdef VANCOUVER_API
+#include <Imagepp/all/h/interface/IRasterGeoCoordinateServices.h>
+#include <ImagePP/all/h/IDTMFile.h>
+#include <ImagePP/all/h/IDTMFeatureArray.h>
+#include <ImagePP/all/h/HPUArray.h>
+#endif
 
 #include <ImagePP\all\h\HFCURLFile.h>
 #include <ImagePP\all\h\HRFRasterFileFactory.h>
 #include <ImagePP\all\h\HVEClipShape.h>
 #include <ImagePP\all\h\HUTDEMRasterXYZPointsExtractor.h>
 
-//#include <RasterCore\DgnRaster.h>
-//#include <RasterCore\RasterDEMFilters.h>
-//#include <RasterCore\msrastercore.h>
-
+#ifdef VANCOUVER_API
+#include <RasterCore\DgnRaster.h>
+#include <RasterCore\RasterDEMFilters.h>
+#include <RasterCore\msrastercore.h>
+#endif

@@ -4,13 +4,13 @@
 #include "SMPointIndex.h"
 #include "Edits/DifferenceSet.h"
 //#include "Edits/ClipUtilities.h"
-#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
+
 #include "Threading/ScalableMeshScheduler.h"
 #include "Edits\ClipRegistry.h"
 #include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-
+#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <TerrainModel/Core/DTMIterators.h>
@@ -246,16 +246,28 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         if (!SMMemoryPool::GetInstance()->GetItem<BcDTMPtr>(poolMemItemPtr, m_dtmPoolItemId, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex))
             {
-            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex));
+            RefCountedPtr<SMMemoryPoolGenericBlobItem<BcDTMPtr>> storedMemoryPoolItem(
+#ifndef VANCOUVER_API   
+                new SMMemoryPoolGenericBlobItem<BcDTMPtr>(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
+#else
+            SMMemoryPoolGenericBlobItem<BcDTMPtr>::CreateItem(nullptr, 0, GetBlockID().m_integerID, SMStoreDataType::BcDTM, (uint64_t)m_SMIndex)
+#endif
+);
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
             m_dtmPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_dtmPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
             poolMemItemPtr = storedMemoryPoolItem.get();
-            bvector<bool> clips;
+
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
-            IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
-            auto meshP = nodeP->GetMesh(flags, clips);
+            IScalableMeshNodePtr nodeP(
+#ifndef VANCOUVER_API
+                new ScalableMeshNode<POINT>(nodePtr)
+#else
+                ScalableMeshNode<POINT>::CreateItem(nodePtr)
+#endif
+                );
+            auto meshP = nodeP->GetMesh(flags);
             if (meshP != nullptr)
                 {
                 auto ptrP = storedMemoryPoolItem->EditData();
@@ -461,7 +473,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {                        
         assert(smCachedDisplayData != 0);        
 
-        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex));
+        RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> customGenericBlobItemPtr(
+#ifndef VANCOUVER_API            
+            new SMMemoryPoolGenericBlobItem<SmCachedDisplayData>(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex)
+#else
+        SMMemoryPoolGenericBlobItem<SmCachedDisplayData>::CreateItem(smCachedDisplayData, smCachedDisplayData->GetMemorySize(), GetBlockID().m_integerID, SMStoreDataType::Display, (uint64_t)m_SMIndex)
+#endif
+            );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
         m_displayDataPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
         assert(m_displayDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);                                            
@@ -497,6 +515,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                                          bool pi_OnlyLoadedNode) const override;
 #endif       
    
+
+
+
     // The byte array starts with three integers specifying the width/heigth in pixels, and the number of channels
     void PushTexture(const Byte* texture, size_t size);              
 
@@ -517,7 +538,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
             bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
             assert(result == true);        
 
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex));
+            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+                new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
+#else
+            SMStoredMemoryPoolVectorItem<DPoint2d>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
+#endif
+                );
             SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
             m_uvCoordsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
             assert(m_uvCoordsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);

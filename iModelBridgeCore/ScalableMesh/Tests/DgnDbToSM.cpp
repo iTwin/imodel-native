@@ -465,8 +465,10 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
         else processedElems.insert(val["elementId"].asInt64());
        auto elementCP = model->FindElementById(DgnElementId((uint64_t)(val["elementId"].asInt64())));
         if (elementCP == nullptr) continue;
+        dgndbMutex.lock();
         if (RoadSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()))
             {
+            dgndbMutex.unlock();
             if (wasProcessed) continue;
             bvector<PolyfaceHeaderPtr> subMeshPoly;
             bvector<ImageBufferPtr> textures;
@@ -500,20 +502,21 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             }
         else if (Furniture::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0) 
             {
-
+            dgndbMutex.unlock();
             }
         else if (Marking::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)
             {
-
+            dgndbMutex.unlock();
             }
 
         else if (Waterway::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)
             {
-
+            dgndbMutex.unlock();
             }
 
         else if (BridgeSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)
             {
+            dgndbMutex.unlock();
             if (wasProcessed) continue;
             bvector<PolyfaceHeaderPtr> subMeshPoly;
             bvector<ImageBufferPtr> textures;
@@ -548,6 +551,7 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
 
         else if (BridgePier::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)
             {
+            dgndbMutex.unlock();
             if (wasProcessed) continue;
             bvector<PolyfaceHeaderPtr> subMeshPoly;
             bvector<ImageBufferPtr> textures;
@@ -581,7 +585,7 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             }
         else /*if (IntersectionSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()) && submeshes[i].IsValid() && submeshes[i]->GetNbFaces() > 0)*/
             {
-
+            dgndbMutex.unlock();
             DRange3d elemRange = DRange3d::From(submeshes[i]->GetPolyfaceQuery()->GetPointCP(), (int)submeshes[i]->GetNbPoints());
             double fraction = std::min(elemRange.XLength() / nodeExt.XLength(), elemRange.YLength() / nodeExt.YLength());
             if ((int)submeshes[i]->GetNbPoints() > 300 && fraction < 0.05) continue;

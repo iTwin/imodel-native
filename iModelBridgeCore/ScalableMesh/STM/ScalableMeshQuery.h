@@ -137,115 +137,7 @@ struct ScalableMeshFullResolutionQueryParams :  public virtual ScalableMeshQuery
         virtual ~ScalableMeshFullResolutionQueryParams() {}
     };
 
-struct ScalableMeshFullResolutionLinearQueryParams : public virtual IScalableMeshFullResolutionLinearQueryParams,
-                                              public virtual ScalableMeshFullResolutionQueryParams
-    {    
-    private : 
 
-        size_t           m_maximumNumberOfPointsForLinear;
-        bool             m_useDecimation;
-        bool             m_cutLinears;          
-        bool             m_addLinears;
-        std::vector<int> m_filteringFeatureTypes;
-        bool             m_doIncludeFilteringFeatureTypes;        
-                 
-    protected :        
-
-        virtual size_t _GetMaximumNumberOfPointsForLinear() override
-            {
-            return m_maximumNumberOfPointsForLinear;
-            }
-
-        virtual int _SetMaximumNumberOfPointsForLinear(size_t maximumNumberOfPointsForLinear) override
-            {
-            int status;
-
-            if (maximumNumberOfPointsForLinear > 10)
-                {
-                m_maximumNumberOfPointsForLinear = maximumNumberOfPointsForLinear;
-
-                status = SUCCESS;
-                }
-            else
-                {
-                status = ERROR;
-                }
-
-            return status;
-            }
-                
-        virtual void _SetUseDecimation(bool useDecimation) override
-            {
-            m_useDecimation = useDecimation;
-            }
-               
-        virtual bool _GetUseDecimation() override
-            {
-            return m_useDecimation;
-            }
-        
-        virtual void _SetCutLinears(bool cutLinears) override
-            {
-            m_cutLinears = cutLinears;
-            }
-
-        virtual bool _GetCutLinears() override
-            {
-            return m_cutLinears;
-            }
-
-        virtual void _SetAddLinears(const bool addLinears) override
-            {
-            m_addLinears = addLinears;
-            }
-
-        virtual bool _GetAddLinears() override
-            {
-            return m_addLinears;
-            }
-
-        virtual const std::vector<int>& _GetFilteringFeatureTypes(bool& doIncludeFilteringFeatureTypes) override
-            {
-            doIncludeFilteringFeatureTypes = m_doIncludeFilteringFeatureTypes;
-
-            return m_filteringFeatureTypes;
-            }
-          
-        //When no feature type is specified all feature types are returned.
-        virtual int _SetFilteringFeatureTypes(const std::vector<int>& filteringFeatureTypes, bool doIncludeFilteringFeatures) override
-            {
-            m_filteringFeatureTypes.clear();
-
-            if (filteringFeatureTypes.size() > 0)
-                {
-                m_filteringFeatureTypes.insert(m_filteringFeatureTypes.end(), filteringFeatureTypes.begin(), filteringFeatureTypes.end());
-                }    
-
-            m_doIncludeFilteringFeatureTypes = doIncludeFilteringFeatures;
-            return SUCCESS;
-            }
-
-        virtual void _SetIncludeFilteringFeatureTypes(const bool& doIncludeFilteringFeatures) override
-            {
-            m_doIncludeFilteringFeatureTypes = doIncludeFilteringFeatures;
-            }           
-       
-    public : 
-
-        ScalableMeshFullResolutionLinearQueryParams()
-            {
-            m_maximumNumberOfPointsForLinear = UINT64_MAX;
-            m_useDecimation = true;
-            m_cutLinears = false;
-            m_addLinears = true;
-            m_doIncludeFilteringFeatureTypes = false;
-            }
-
-        virtual ~ScalableMeshFullResolutionLinearQueryParams()
-            {
-            }
-    };
-                                                  
 struct SrDTMViewDependentQueryParams : public virtual ISrDTMViewDependentQueryParams, 
                                        public virtual ScalableMeshQueryParameters
     {                
@@ -689,6 +581,9 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const override;
+
+        virtual void _WriteToFile(WString& filePath) override;
 
         ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
 
@@ -996,11 +891,11 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
         void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
         void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
 
-    private:
+
+    protected:
 
         HFCPtr<SMPointIndex<POINT, Extent3dType>> m_scmIndexPtr;
 
-    protected:
 
         // Inherited from IScalableMeshMeshQuery
         virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
@@ -1019,6 +914,37 @@ template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalab
 
         virtual ~ScalableMeshViewDependentMeshQuery();
     };
+
+template <class POINT> class ScalableMeshContextMeshQuery : public ScalableMeshViewDependentMeshQuery<POINT>
+    {
+    public:
+        void*   operator new(size_t size){ return bentleyAllocator_allocateRefCounted(size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted(rawMemory, size); }
+        void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
+
+    
+
+    protected:
+
+        // Inherited from IScalableMeshMeshQuery
+        virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+    public:
+
+        ScalableMeshContextMeshQuery(const HFCPtr<SMPointIndex<POINT, Extent3dType>>& pointIndexPtr);
+
+        virtual ~ScalableMeshContextMeshQuery();
+    };
+
 
 template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalableMeshMeshQuery
     {
@@ -1281,8 +1207,6 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
     protected:
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> m_node;        
 
-        void ComputeDiffSet(DifferenceSet& diffs, const bvector<bool>& clipsToShow, bool applyAllClips = false) const;
-
         void ComputeDiffSet(DifferenceSet& diffs, const bset<uint64_t>& clipsToShow) const;
 
         virtual BcDTMPtr   _GetBcDTM() const override;
@@ -1291,11 +1215,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool    _ArePointsFullResolution() const override;
 
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
-
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
@@ -1304,8 +1226,6 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual void   _RefreshMergedClip() const override;
 
         virtual bool   _AddClip(uint64_t id, bool isVisible) const override;
-
-        virtual bool   _AddClipAsync(uint64_t id, bool isVisible) const override;
 
         virtual bool   _ModifyClip(uint64_t id,  bool isVisible) const override;
 
@@ -1345,8 +1265,18 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const override;
 
+#ifdef WIP_MESH_IMPORT
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
+#endif
+
         
-    public:         
+    public:   
+#ifdef VANCOUVER_API
+        static ScalableMeshNode<POINT>* CreateItem(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
+            {
+            return new ScalableMeshNode<POINT>(nodePtr);
+            }
+#endif
         ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
         ScalableMeshNode() {};
 
@@ -1369,9 +1299,7 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
     protected: 
 
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
-
-            virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
             virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
@@ -1447,6 +1375,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
+
                 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {
@@ -1469,7 +1398,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
 
-        // The binary buffer for the texture starts with three int numbers representing texture width, texture height and number of color channels
+        // The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
         virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling = false) override;
 
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;
@@ -1504,9 +1433,7 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
     private:
         GeoCoords::Reprojection  m_reprojectFunction;
     protected:
-        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags, bvector<bool>& clipsToShow) const override;
-
-        virtual IScalableMeshMeshPtr _GetMeshByParts(const bvector<bool>& clipsToShow) const override;
+        virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
     public:

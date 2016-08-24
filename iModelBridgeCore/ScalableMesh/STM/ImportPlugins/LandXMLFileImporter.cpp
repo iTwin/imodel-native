@@ -22,7 +22,7 @@
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 
 #include <TerrainModel/Formats/LandXMLImporter.h>
-
+#include "..\Stores\SMStoreUtils.h"
 #include <STMInternal/Foundations/PrivateStringTools.h>
 
 #include "CivilDTMHelpers.h"

@@ -1177,8 +1177,14 @@ template<class POINT, class EXTENT> size_t ScalableMesh2DDelaunayMesher<POINT, E
         }
 #endif
     
-    ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
-    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex));
+ISMMTGGraphDataStorePtr graphStore(node->GetGraphStore());
+    RefCountedPtr<SMStoredMemoryPoolGenericBlobItem<MTGGraph>> storedMemoryPoolItem(
+#ifndef VANCOUVER_API
+        new SMStoredMemoryPoolGenericBlobItem<MTGGraph>(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex)
+#else
+ SMStoredMemoryPoolGenericBlobItem<MTGGraph>::CreateItem(node->GetBlockID().m_integerID, graphStore, SMStoreDataType::Graph, (uint64_t)node->m_SMIndex)
+#endif
+        );
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolItem.get());
     MTGGraph * tempGraph = new MTGGraph();
     bvector<int> componentPointsId;
@@ -1364,7 +1370,7 @@ for (size_t i = 0; i < pointsPtr->size(); i++)
         }
 #endif
 bvector<bvector<DPoint3d>> boundary;
-EXTENT ext = node->GetContentExtent();
+//EXTENT ext = node->GetContentExtent();
 bvector<bvector<DPoint3d>> stitchedNeighborsBoundary;
 std::vector<EXTENT> stitchedNeighborsExtents;
 

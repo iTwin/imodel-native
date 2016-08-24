@@ -104,7 +104,7 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
 
     bool deleted;
 
-    Manager<DataSource>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted](typename Manager<DataSource>::Iterator it) -> bool
+    Manager<DataSource>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted]( Manager<DataSource>::Iterator it) -> bool
     {
         if (it->second)
         {

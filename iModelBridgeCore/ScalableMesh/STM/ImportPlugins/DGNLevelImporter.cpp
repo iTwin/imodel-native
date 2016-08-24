@@ -24,16 +24,14 @@
 #include <ScalableMesh\Type\IScalableMeshLinear.h>
 #include <ScalableMesh\Type\IScalableMeshPoint.h>
 #include <ScalableMesh\Type\IScalableMeshMesh.h>
-
+#include "..\Stores\SMStoreUtils.h"
 
 
 
 #include "DGNModelUtilities.h"      
 #include "PluginUtils.h"
 #include "ElemSourceRef.h"
-
-#include " ..\..\ScalableMeshDgn\DgnInterface.h"
-//#include "ElementType.h"
+#include "ElementType.h"
 
 
 #define PointCloudMinorId_Handler 1
@@ -61,7 +59,17 @@ struct DTMFeaturesStruct
     {}
 };
 
-#if 0
+struct ElementStats
+    {
+    ElementPointStats   m_point;
+    ElementLinearStats  m_linear;
+    ElementMeshStats    m_mesh;
+
+    explicit            ElementStats           ()
+        {
+        }
+    };
+
 struct RefHolder
     {
     DGNModelRefHolder   m_modelRef;
@@ -126,7 +134,7 @@ int ComputeCountsCallback(ElementRefP elmRef, void* userArgP, ScanCriteria* scan
 
     return SUCCESS;
     }
-#endif
+ 
 /*---------------------------------------------------------------------------------**//**
 * @description
 * NTERAY: This whole method should be redesigned in order to implement a kind of
@@ -262,7 +270,7 @@ public:
         {
         return m_levelID;
         }
-#if 0
+
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                Jean-Francois.Cote   11/2012
@@ -299,7 +307,7 @@ public:
         elementIt.AddSingleElementTypeTest(EXTENDED_ELM);
         elementIt.Scan(CreateSourceRefListCallback, userArgP);
         }
-#endif
+
 private:
     friend class            DGNLevelSourceCreator;
 
@@ -351,7 +359,7 @@ private:
             dataTypes.push_back(MeshTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator().Create());
         ScalableMeshData data = ScalableMeshData::GetNull();
 
-        LayerDescriptor layerDesc(L"",
+        auto layerDesc = ILayerDescriptor::CreateLayerDescriptor(L"",
                                   dataTypes,
                                   GetBSIElementGCSFromRootPerspective(m_refHolder.m_modelRef.GetP()),
                                   0,
@@ -360,7 +368,9 @@ private:
         list<SourceRef>::const_iterator srcRefIter = m_srcRefList.begin();
         for(; srcRefIter != m_srcRefList.end(); srcRefIter++)
             {
-            layerDesc.EditAttachmentRecord().push_back(AttachmentEntry(*srcRefIter));
+            auto record = layerDesc->GetAttachmentRecord();
+            record.push_back(AttachmentEntry(*srcRefIter));
+            layerDesc->SetAttachmentRecord(record);
             }
         contentDesc.Add(layerDesc);
 
@@ -382,7 +392,7 @@ private:
 * @description
 * @bsiclass                                                  Raymond.Gauthier   01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGNSourceRefVisitor : SourceRefVisitor
+struct DGNSourceRefVisitor// : SourceRefVisitor
     {
     DGNModelRefHolder                   m_modelRef;
     LevelId                             m_levelID;
@@ -395,33 +405,30 @@ struct DGNSourceRefVisitor : SourceRefVisitor
 
     static bool                         IsActiveDgnFile        (const WChar*                          dgnFilePath)
         {
-       /* DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
+        DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
                             
-        return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());*/
-        return false; //they can't be the active model, because we only support dgnv8 and this is running from dgndb.
+        return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());
         }
 
     static bool                         IsActiveModel          (uint32_t                                  modelID)
         {              
-       /* if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
+        if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
             return false;
         assert(0 == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetParentModelRefP()); // Active model should also be a root model
 
         const ModelId activeModelID = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelId(); 
 
-        return activeModelID == modelID;*/
-        return false;
+        return activeModelID == modelID;
         }
 
 
     static bool                         IsActiveModel          (const WChar*                          modelName)
         {               
-        /*if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
+        if (INVALID_MODELREF == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef())
             return false;
         assert(0 == ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetParentModelRefP()); // Active model should also be a root model
      
-        return 0 == wcscmp(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelNameCP(), modelName);*/
-        return false;
+        return 0 == wcscmp(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetModelNameCP(), modelName);
         }
 
     // TDORAY: Add dgn model source ref?
@@ -437,7 +444,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         return dgnFile;
         }
 
-    /*static DGNFileHolder                GetActiveDgnFile       ()
+    static DGNFileHolder                GetActiveDgnFile       ()
         {               
         return DGNFileHolder::CreateFromActive(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
         }
@@ -445,18 +452,18 @@ struct DGNSourceRefVisitor : SourceRefVisitor
     static DGNModelRefHolder            GetActiveModel         ()
         {       
         return DGNModelRefHolder::CreateFromActive(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef());
-        }*/
+        }
 
 
     static DGNModelRefHolder            OpenRootModel          (const WChar*                          filePath,
                                                                 uint32_t                                  modelID)
         {
-       /* const bool isActiveDgnFile = IsActiveDgnFile(filePath);
+        const bool isActiveDgnFile = IsActiveDgnFile(filePath);
 
         if (isActiveDgnFile && IsActiveModel(modelID))
-            return GetActiveModel();*/
+            return GetActiveModel();
 
-        DGNFileHolder dgnFile(/*isActiveDgnFile ? GetActiveDgnFile() : */OpenFile(filePath));
+        DGNFileHolder dgnFile(isActiveDgnFile ? GetActiveDgnFile() : OpenFile(filePath));
 
         StatusInt modelOpenStatus = BSISUCCESS;
         DGNModelRefHolder modelRef = FindDGNModel(dgnFile, modelID, modelOpenStatus);
@@ -470,12 +477,12 @@ struct DGNSourceRefVisitor : SourceRefVisitor
     static DGNModelRefHolder            OpenRootModel          (const WChar*                          filePath,
                                                                 const WChar*                          modelName)
         {
-        /*const bool isActiveDgnFile = IsActiveDgnFile(filePath);
+        const bool isActiveDgnFile = IsActiveDgnFile(filePath);
 
         if (isActiveDgnFile && IsActiveModel(modelName))
-            return GetActiveModel();*/
+            return GetActiveModel();
 
-        DGNFileHolder dgnFile(/*isActiveDgnFile ? GetActiveDgnFile() : */OpenFile(filePath));
+        DGNFileHolder dgnFile(isActiveDgnFile ? GetActiveDgnFile() : OpenFile(filePath));
 
         StatusInt modelOpenStatus = BSISUCCESS;
         DGNModelRefHolder modelRef = FindDGNModel(dgnFile, modelName, modelOpenStatus);
@@ -519,7 +526,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         }
 
 
-    virtual void                        _Visit                 (const DGNLevelByIDSourceRef&            sourceRef) override
+     void                        Visit                 (const DGNLevelByIDSourceRef&            sourceRef) 
         {
         const DGNModelRefHolder modelRef(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetModelID()));
         LevelId levelID = FindLevel(modelRef, sourceRef.GetLevelID());
@@ -528,7 +535,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         m_levelID = levelID;
         }
 
-    virtual void                        _Visit                 (const DGNReferenceLevelByIDSourceRef&   sourceRef) override
+     void                        Visit                 (const DGNReferenceLevelByIDSourceRef&   sourceRef) 
         {
         const DGNModelRefHolder rootModel(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetRootModelID()));
         const DGNModelRefHolder referenceModel(OpenReferenceFromRoot(rootModel, sourceRef.GetRootToRefPersistentPathCStr()));
@@ -539,7 +546,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         }
 
 
-    virtual void                        _Visit                 (const DGNLevelByNameSourceRef&          sourceRef) override
+     void                        Visit                 (const DGNLevelByNameSourceRef&          sourceRef) 
         {
         const DGNModelRefHolder modelRef(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetModelNameCStr()));
         LevelId levelID = FindLevel(modelRef, sourceRef.GetLevelNameCStr());
@@ -548,7 +555,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         m_levelID = levelID;
         }
 
-    virtual void                        _Visit                 (const DGNReferenceLevelByNameSourceRef& sourceRef) override
+     void                        Visit                 (const DGNReferenceLevelByNameSourceRef& sourceRef) 
         {
         const DGNModelRefHolder rootModel(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetRootModelNameCStr()));
         const DGNModelRefHolder referenceModel(OpenReferenceFromRoot(rootModel, sourceRef.GetRootToRefPersistentPathCStr()));
@@ -556,6 +563,18 @@ struct DGNSourceRefVisitor : SourceRefVisitor
 
         m_modelRef = referenceModel;
         m_levelID = levelID;
+        }
+        
+        void Visit(const SourceRefBase& sourceRef)
+        {
+        if(dynamic_cast<const DGNReferenceLevelByNameSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNReferenceLevelByNameSourceRef*>(&sourceRef));
+        else if(dynamic_cast<const DGNLevelByNameSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNLevelByNameSourceRef*>(&sourceRef));
+        else if(dynamic_cast<const DGNReferenceLevelByIDSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNReferenceLevelByIDSourceRef*>(&sourceRef));
+        else if(dynamic_cast<const DGNLevelByIDSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNLevelByIDSourceRef*>(&sourceRef));
         }
 
     };
@@ -588,7 +607,8 @@ class DGNLevelSourceCreator : public SourceCreatorBase
                                                                             Log&                            log) const override
         {
         DGNSourceRefVisitor visitor;
-        sourceRef.Accept(visitor);
+        visitor.Visit(*sourceRef.m_basePtr);
+        //sourceRef.Accept(visitor);
 
         assert(0 != visitor.m_modelRef.GetP()); // Should already have thrown on errors
 
@@ -763,7 +783,7 @@ private:
         {
         m_headerPacket.AssignTo(rawEntities[DG_Header]);
         m_pointPacket.AssignTo(rawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader*)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
@@ -886,7 +906,7 @@ private:
         {
         m_headerPacket.AssignTo(rawEntities[DG_Header]);
         m_pointPacket.AssignTo(rawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader*)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 

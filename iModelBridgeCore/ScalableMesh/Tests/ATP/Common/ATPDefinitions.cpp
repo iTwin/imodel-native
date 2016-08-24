@@ -151,12 +151,11 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 WString materialName = number;
                 WString binFileName = folderName + materialName + L".bin";
                 
-                //Get mesh
-                bvector<bool> clips;
+                //Get mesh                
                 IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
                 if (currentNode->IsTextured())
                     flags->SetLoadTexture(true);
-                IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags, clips);
+                IScalableMeshMeshPtr mesh = currentNode->GetMesh(flags);
                 
                 //Bin file
                 FILE* outBin;
@@ -268,7 +267,7 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                     flags = IScalableMeshMeshFlags::Create();
                     if (child->IsTextured())
                         flags->SetLoadTexture(true);
-                    mesh = child->GetMesh(flags, clips);
+                    mesh = child->GetMesh(flags);
 
                     if (mesh != NULL && child->GetLevel() <= maxLevel)
                         {
@@ -355,7 +354,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             isSingleFile = true;
 
         ScalableMeshMesherType mesherType = SCM_MESHER_2D_DELAUNAY;
-        ScalableMeshFilterType filterType = SCM_FILTER_CGAL_SIMPLIFIER;//SCM_FILTER_DUMB_MESH;
+        ScalableMeshFilterType filterType = SCM_FILTER_DUMB_MESH;
         ScalableMeshSaveType saveType = SCM_SAVE_STMFILE;
         int trimmingMethod = 5;
 
@@ -2422,7 +2421,7 @@ void PerformVolumeTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             bvector<bool> clips;
             IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
             flags->SetLoadGraph(false);
-            IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags, clips);
+            IScalableMeshMeshPtr scalableMesh = node->GetMesh(flags);
             const PolyfaceQuery* polyface = scalableMesh->GetPolyfaceQuery();
             builder->AddPolyface(*polyface);
             allPts.insert(allPts.end(), polyface->GetPointCP(), polyface->GetPointCP() + polyface->GetPointCount());
@@ -4205,11 +4204,10 @@ bool ValidateFeatureDefinition(size_t& nErrors, IScalableMesh* scMeshP, DTMFeatu
     meshQueryInterface->Query(returnedNodes, box, 4, params);
 
     for (auto& node : returnedNodes)
-        {
-        bvector<bool> clips;
+        {        
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(false);
-        auto mesh = node->GetMesh(flags, clips);
+        auto mesh = node->GetMesh(flags);
         auto polyfaceP = mesh->GetPolyfaceQuery();
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyfaceP, true);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
@@ -4469,15 +4467,14 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     assert(returnedNodes.size() == returnedNodesStreaming.size());
     int j = 0;
     for (auto& node : returnedNodes)
-        {
-        bvector<bool> clips;
+        {        
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
         flags->SetLoadGraph(false);
-        IScalableMeshMeshPtr mesh = node->GetMesh(flags, clips);
+        IScalableMeshMeshPtr mesh = node->GetMesh(flags);
         const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyface = mesh->GetPolyfaceQuery();
 
         bvector<bool> clipsStreaming;
-        IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(flags, clips);
+        IScalableMeshMeshPtr meshStreaming = returnedNodesStreaming[j]->GetMesh(flags);
         const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* polyfaceStreaming = meshStreaming->GetPolyfaceQuery();
 
         DPoint3d point;

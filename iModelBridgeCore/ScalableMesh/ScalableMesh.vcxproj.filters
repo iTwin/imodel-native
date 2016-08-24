@@ -738,12 +738,6 @@
     <ClInclude Include="STM\Edits\DifferenceSet.h">
       <Filter>Includes\Core\Edits</Filter>
     </ClInclude>
-    <ClInclude Include="STM\Edits\DiffSetTileStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="STM\DTMGraphTileStore.h">
-      <Filter>Includes\Core</Filter>
-    </ClInclude>
     <ClInclude Include="STM\Edits\ClipUtilities.h">
       <Filter>Includes\Core\Edits</Filter>
     </ClInclude>

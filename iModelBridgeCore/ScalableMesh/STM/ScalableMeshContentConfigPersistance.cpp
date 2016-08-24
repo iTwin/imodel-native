@@ -114,9 +114,9 @@ bool ContentConfigSerializer::Serialize(const ContentConfig&    config,
     if (config.GetGCSConfig().IsSet())
         {
         const GCS& gcs = config.GetGCSConfig().GetGCS();
-        GCS::Status status = GCS::S_SUCCESS;
+        SMStatus status = SMStatus::S_SUCCESS;
         WKT gcsWKT(gcs.GetWKT(status));
-        if (GCS::S_SUCCESS != status)
+        if (SMStatus::S_SUCCESS != status)
             return false;
 
         WString extendedWktStr(gcsWKT.GetCStr());
@@ -165,10 +165,10 @@ bool ContentConfigSerializer::Deserialize(SourceDataSQLite&      sourceData,
     assert(result == true);
 
     GCS gcs(GCS::GetNull());
-    GCSFactory::Status gcsFromWKTStatus = GCSFactory::S_SUCCESS;
+    SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
     gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
 
-    if (GCSFactory::S_SUCCESS != gcsFromWKTStatus)
+    if (SMStatus::S_SUCCESS != gcsFromWKTStatus)
         return false;
     config.SetGCSConfig(GCSConfig(gcs, sourceData.GetFlags()));
 

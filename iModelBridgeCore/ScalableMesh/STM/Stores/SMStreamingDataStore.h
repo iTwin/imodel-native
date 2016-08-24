@@ -12,7 +12,7 @@
 #include "ISMDataStore.h"
 #include "..\SMNodeGroup.h"
 #include "SMStoreUtils.h"
-
+#include <json/json.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
 extern bool s_stream_from_disk;
@@ -102,6 +102,10 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+        {
+        return new SMStreamingStore(dataSourceAccount, path, compress,areNodeHeadersGrouped, headers_path);
+        }
         //Inherited from ISMDataStore - End
                              
     };

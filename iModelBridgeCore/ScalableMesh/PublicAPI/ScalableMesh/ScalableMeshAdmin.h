@@ -25,16 +25,17 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         {
         return false;
         }
-
-    /*virtual DgnModelRefP _GetActiveModelRef() const
+#ifdef VANCOUVER_API
+    virtual DgnModelRefP _GetActiveModelRef() const
         {
         return 0;
-        }*/
+        }
 
-   /* virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
+    virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
         {
         return ERROR;
-        }    */      
+        }       
+#endif
 };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

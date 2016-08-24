@@ -120,7 +120,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
     };
 
 
-void InitializeProgressiveQueries();
+void BENTLEY_SM_EXPORT InitializeProgressiveQueries();
 void BENTLEY_SM_EXPORT ClearProgressiveQueriesInfo();
 
 void TerminateProgressiveQueries();

@@ -4,16 +4,19 @@
 #include "Initialize.h"
 
 using namespace std;
+#include <Bentley\BeFileListIterator.h>
 #include <DgnPlatform\IAuxCoordSys.h>
 #include <DgnPlatform/DelegatedElementECEnabler.h>
 #include <DgnPlatform\ITransactionHandler.h>
 #include <DgnPlatform\IPointCloud.h>
 #include <DgnPlatform\PointCloudHandler.h>
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#include <GeoCoord\GCSLibrary.h>
 #include <PointCloud\PointCloud.h>
 #include <PointCloud\PointCloudDisplayHandler.h>
 #include <RasterCore\RasterCoreLib.h>
 #include <RmgrTools\Tools\RscFileManager.h>
+#undef LAT
 #include <TerrainModel\TerrainModel.h>
 #include <ScalableMesh\ScalableMeshDefs.h>
 #include <ScalableMesh\IScalableMeshMoniker.h>
@@ -59,7 +62,9 @@ namespace ScalableMeshSDKexe
         //=======================================================================================
         class AppHost : public BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnViewLib::Host
         {
-            AppViewManager   m_viewManager;
+            AppViewManager m_viewManager;
+            BeFileName     m_systemDtyPath;
+            BeFileName     m_customDtyPath;
 
         protected:
 
@@ -72,7 +77,7 @@ namespace ScalableMeshSDKexe
             virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
 
         public:
-            void Startup ();
+            void Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath);
         
             void Terminate ();
         };
@@ -115,8 +120,11 @@ struct AppRasterCoreLibHost : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::Raste
 virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
 }; // RasterCoreLib::Host
 
-void AppHost::Startup ()
-    {
+void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
+    {           
+    m_systemDtyPath = systemDtyPath;
+    m_customDtyPath = customDtyPath;
+
     //Init GDAL path.    
     WString gdalDataPath(L".\\Gdal_Data\\");        
     ConfigurationManager::DefineVariable (L"_USTN_RASTERGDALDATA", gdalDataPath.c_str());
@@ -124,14 +132,25 @@ void AppHost::Startup ()
     RscFileManager::StaticInitialize(L"en");
         
     DgnViewLib::Initialize (*this, true);
-
-    //Application needs to initialize PdfLibInitializer dll if it wants support for PDF raster attachment.
-
+    
     BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
     BeAssert (BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
 
     //Ensure basegeocoord is initialized.
     _SupplyGeoCoordinationAdmin()._GetServices();
+
+    if (BeFileName::DoesPathExist(m_customDtyPath.c_str()))
+        {
+        BeFileName customDtySearchPath(m_customDtyPath);
+        customDtySearchPath.AppendToPath(L"*.dty");
+
+        BeFileListIterator iterDir(customDtySearchPath, false);
+        BeFileName currentFile;
+        while (BSISUCCESS == iterDir.GetNextFileName(currentFile))
+            {
+            GeoCoordinates::LibraryManager::Instance()->AddUserLibrary(currentFile.GetName(), nullptr);
+            }        
+        }   
     }
 
 void AppHost::Terminate ()
@@ -147,10 +166,18 @@ BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                              
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new BENTLEY_NAMESPACE_NAME::DgnPlatform::PointCloudDisplayAdmin();}
 BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()
-    {        
-    
-    WString geocoordinateDataPath(L".\\GeoCoordinateData\\");    
+    {            
+    WString geocoordinateDataPath;
 
+    if (BeFileName::DoesPathExist(m_systemDtyPath.c_str()))
+        {
+        geocoordinateDataPath = WString(m_systemDtyPath.c_str());
+        }
+    else
+        {
+        geocoordinateDataPath = WString(L".\\GeoCoordinateData\\");
+        }
+       
     return *DgnGeoCoordinationAdmin::Create (geocoordinateDataPath.c_str(), IACSManager::GetManager()); 
     }
 
@@ -256,15 +283,15 @@ private:
         return BSISUCCESS == status;
         }
 
-    virtual StatusInt                   _Serialize                     (BENTLEY_NAMESPACE_NAME::ScalableMesh::BinaryOStream&                      stream,
+    virtual StatusInt                   _Serialize                     (BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::SourceDataSQLite&                      sourceData,
                                                                         const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env) const override
         {
         // TDORAY: Recreate the moniker using new env prior to serializing it in order so
         // that relative path is correct on s_dgnFile moves...
 
-        const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
-            return BSIERROR;
+        //const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
+        //if (!WriteStringW(stream, monikerString.c_str()))
+        //    return BSIERROR;
 
         return BSISUCCESS;
         }
@@ -329,7 +356,38 @@ private :
         }
 
 
-    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerPtr                 _Create                        (BENTLEY_NAMESPACE_NAME::ScalableMesh::BinaryIStream&                      stream,
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerPtr                 _Create                        (BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::SourceDataSQLite&                      sourceData,
+                                                                                               const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env,
+                                                                                               StatusInt&                          status) const override
+        {
+        WString monikerString = sourceData.GetMonikerString();
+        /*if (!ReadStringW(stream, monikerString))
+            {
+            status = BSIERROR;
+            return 0;
+            }*/
+
+        const WChar* basePath = env.GetCurrentDirCStr();
+
+        BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocumentMoniker> documentMonikerPtr
+            (            
+            DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
+                                       basePath,                                                                  
+                                       false)
+            );
+
+        if (documentMonikerPtr == 0)
+            {
+            status = BSIERROR;
+            return 0;
+            }
+
+        status = BSISUCCESS;
+        
+        return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
+        }
+        
+    /*        virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
                                                                                                const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env,
                                                                                                StatusInt&                          status) const override
         {
@@ -358,7 +416,7 @@ private :
         status = BSISUCCESS;
         
         return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
-        }
+        }*/
     };
 
 
@@ -414,14 +472,27 @@ private:
         return BSISUCCESS == status;
         }
 
-    virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
+  /*  virtual StatusInt                   _Serialize                     (ScalableMesh::Import::SourceDataSQLite&                      sourceData,//BinaryOStream&                      stream,
+                                                                        const DocumentEnv&                  env) const override
+        {
+        // TDORAY: Recreate the moniker using new env prior to serializing it in order so
+        // that relative path is correct on file moves...
+
+       // const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
+       // if (!WriteStringW(stream, monikerString.c_str()))
+       //     return BSIERROR;
+
+        return BSISUCCESS;
+        }*/
+        
+            virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
                                                                         const DocumentEnv&                  env) const override
         {
         // TDORAY: Recreate the moniker using new env prior to serializing it in order so
         // that relative path is correct on file moves...
 
         const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
+       if (!WriteStringW(stream, monikerString.c_str()))
             return BSIERROR;
 
         return BSISUCCESS;
@@ -487,12 +558,39 @@ private :
         }
 
 
-    virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
+  /*  virtual IMonikerPtr                 _Create                        (ScalableMesh::Import::SourceDataSQLite&                      sourceData,
                                                                         const DocumentEnv&                  env,
                                                                         StatusInt&                          status) const override
         {
-        WString monikerString;
-        if (!ReadStringW(stream, monikerString))
+       WString monikerString = sourceData.GetMonikerString();
+
+        const WChar* basePath = env.GetCurrentDirCStr();
+
+        DgnDocumentMonikerPtr documentMonikerPtr
+            (            
+            DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
+                                       basePath,                                                                  
+                                       false)
+            );
+
+        if (documentMonikerPtr == 0)
+            {
+            status = BSIERROR;
+            return 0;
+            }
+
+        status = BSISUCCESS;
+        
+        return GeoDtmMSDocumentMoniker::Create(documentMonikerPtr.get());
+        }*/
+        
+        
+   virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
+                                                                        const DocumentEnv&                  env,
+                                                                        StatusInt&                          status) const override
+        {
+       WString monikerString;
+       if (!ReadStringW(stream, monikerString))
             {
             status = BSIERROR;
             return 0;
@@ -536,10 +634,10 @@ void InitMonikerFactories()
 BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocument> docPtr = nullptr;
 BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnFile> file = nullptr;
 
-void InitializeSDK(DgnPlatformLib::Host& host)
+void InitializeSDK(BeFileName& systemDtyPath, BeFileName& customDtyPath)
         {
         static AppHost appHost;
-        appHost.Startup ();
+        appHost.Startup (systemDtyPath, customDtyPath);
 
         DependencyManager::SetTrackingDisabled(true);
         DependencyManager::SetProcessingDisabled(true);

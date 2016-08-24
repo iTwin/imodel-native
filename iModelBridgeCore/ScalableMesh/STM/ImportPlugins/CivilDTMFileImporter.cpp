@@ -27,7 +27,7 @@
 
 
 #include "CivilDTMHelpers.h"
-
+#include "..\Stores\SMStoreUtils.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -259,7 +259,7 @@ class CivilDTMFileCreator : public LocalFileSourceCreatorBase
         {
         BcDTMPtr pDTM = CreateDTMFromFilePath(pi_rSourceRef);
         if (pDTM.IsNull())
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
 
         //CivilDTMSource will take ownership of pDTM
         return new CivilDTMSource(*pDTM, GCS::GetNull());
@@ -428,7 +428,11 @@ private:
         {
         m_headerPacket.AssignTo(pi_rRawEntities[DG_Header]);
         m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#ifdef VANCOUVER_API
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader *)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#else
+       m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+#endif
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 

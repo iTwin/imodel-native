@@ -22,6 +22,7 @@
 
 using namespace std;
 
+USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
 
@@ -339,7 +340,12 @@ template <typename DataType> class SMMemoryPoolGenericBlobItem : public SMMemory
     protected :         
 
     public : 
-        
+#ifdef VANCOUVER_API
+        static SMMemoryPoolGenericBlobItem<DataType>* CreateItem(DataType* data, size_t size, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
+            {
+            return new SMMemoryPoolGenericBlobItem<DataType>(data, size, nodeId, dataType, smId);
+            }
+#endif        
         SMMemoryPoolGenericBlobItem(DataType* data, size_t size, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
             {               
             m_size = size;
@@ -394,6 +400,13 @@ template <typename DataType> class SMStoredMemoryPoolGenericBlobItem : public SM
 
     public:
         
+#ifdef VANCOUVER_API
+        static SMStoredMemoryPoolGenericBlobItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
+            {
+            return new SMStoredMemoryPoolGenericBlobItem<DataType>(nodeId, store, dataType, smId);
+            }
+#endif
+
         SMStoredMemoryPoolGenericBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolGenericBlobItem(nullptr,dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {
@@ -453,7 +466,17 @@ template <typename DataType> class SMStoredMemoryPoolBlobItem : public SMMemoryP
         ISMNodeDataStoreTypePtr<DataType> m_dataStore;
 
     public : 
-                        
+#ifdef VANCOUVER_API
+        static SMStoredMemoryPoolBlobItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
+            {
+            return new SMStoredMemoryPoolBlobItem<DataType>(nodeId, store, dataType, smId);
+            }
+        static SMStoredMemoryPoolBlobItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, const DataType* data, uint64_t dataSize, SMStoreDataType dataType, uint64_t smId)
+            {
+            return new SMStoredMemoryPoolBlobItem<DataType>(nodeId, store, data, dataSize, dataType, smId);
+            }
+#endif
+        
         SMStoredMemoryPoolBlobItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolBlobItem(store->GetBlockDataCount(HPMBlockID(nodeId)) * sizeof(DataType), nodeId, dataType, smId)
             {                                    
@@ -503,7 +526,7 @@ protected:
 
 public:
     
-    template <class T> class iteratorBase : public RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ReverseConstTrait<T>::type >, T>
+    template <class T> class iteratorBase : public RandomAccessIteratorWithAutoReverseConst<iteratorBase<T>, iteratorBase<typename ImagePP::ReverseConstTrait<T>::type >, T>
         {
     public:
         static const size_t npos = -1;
@@ -1015,7 +1038,13 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
         ISMNodeDataStoreTypePtr<DataType> m_dataStore;
         
     public:        
-                              
+#ifdef VANCOUVER_API
+        static SMStoredMemoryPoolGenericVectorItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
+            {
+            return new SMStoredMemoryPoolGenericVectorItem<DataType>(nodeId, store, dataType, smId);
+            }
+#endif
+                        
         SMStoredMemoryPoolGenericVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
             : SMMemoryPoolGenericVectorItem(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
             {                                    
@@ -1046,7 +1075,12 @@ template <typename DataType> class SMStoredMemoryPoolGenericVectorItem : public 
             ISMNodeDataStoreTypePtr<DataType> m_dataStore;
 
         public:
-            
+#ifdef VANCOUVER_API
+            static SMStoredMemoryPoolVectorItem<DataType>* CreateItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& store, SMStoreDataType dataType, uint64_t smId)
+                {
+                return new SMStoredMemoryPoolVectorItem<DataType>(nodeId, store, dataType, smId);
+                }
+#endif
             SMStoredMemoryPoolVectorItem(uint64_t nodeId, ISMNodeDataStoreTypePtr<DataType>& dataStore, SMStoreDataType dataType, uint64_t smId)
                 : SMMemoryPoolVectorItem(dataStore->GetBlockDataCount(HPMBlockID(nodeId)), nodeId, dataType, smId)
                 {                

@@ -111,8 +111,8 @@ public:
                                  (&SMNodeDistributor::consume), this, function);
         }
 
-    SMNodeDistributor(SMNodeDistributor &&) = default;
-    SMNodeDistributor &operator=(SMNodeDistributor &&) = delete;
+//    SMNodeDistributor(SMNodeDistributor &&) = default;
+//    SMNodeDistributor &operator=(SMNodeDistributor &&) = delete;
 
     ~SMNodeDistributor()
         {

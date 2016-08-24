@@ -12,7 +12,7 @@
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
 #include "CivilDTMHelpers.h"
-
+#include "..\Stores\SMStoreUtils.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
