@@ -12,7 +12,6 @@ SrcDir              = $(_MakeFilePath)
 LibDir              = $(SrcDir)../lib/
 SubpartLibs         = $(BuildContext)SubParts/Libs/
 o                   = $(OutputRootDir)Build/TilePublisher/
-ContextDeliveryDir  = $(BuildContext)Delivery/
 appName             = TilePublisher
 
 always:
