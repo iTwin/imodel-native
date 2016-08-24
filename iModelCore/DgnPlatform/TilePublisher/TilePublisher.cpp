@@ -1068,8 +1068,7 @@ TilesetPublisher::Status TilesetPublisher::Publish()
         WString         tileSetName;
         DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
 
-        if (viewedModel.IsValid() &&
-            TilesetPublisher::Status::Success == (status = ConvertStatus (PublishViewedModel (tileSetName, *viewedModel))))
+        if (viewedModel.IsValid() && TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel))
             viewedTileSetNames.push_back (tileSetName);
         }
 
