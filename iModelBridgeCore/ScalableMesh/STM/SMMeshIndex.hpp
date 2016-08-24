@@ -4122,12 +4122,13 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
     if (m_indexHeader.m_terrainDepth == (size_t)-1)
         {
         m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
-        m_indexHeader.m_depth = (size_t)-1;
         }
     if (sourceRasterP == nullptr || sourceRasterP->GetEffectiveShape() == nullptr || sourceRasterP->GetEffectiveShape()->IsEmpty()) return;
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
    // WaitForThreadStop();
     for (auto& task : m_textureWorkerTasks) task.get();
+    m_indexHeader.m_depth = (size_t)-1;
+    m_indexHeader.m_depth = GetDepth();
     }
 
 template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn)
