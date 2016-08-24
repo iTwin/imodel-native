@@ -56,7 +56,7 @@ protected:
     GraphicPtr m_graphic;
 
 public:
-    Geometry();
+     Geometry() { }
     THREEMX_EXPORT Geometry(IGraphicBuilder::TriMeshArgs const&, SceneR);
     PolyfaceHeaderPtr GetPolyface() const;
     void Draw(TileTree::DrawArgsR);

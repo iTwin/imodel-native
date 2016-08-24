@@ -380,9 +380,9 @@ struct Publish3mxGeometry : Geometry
 //=======================================================================================
 struct Publish3mxTexture : Render::Texture
 {
-    ImageSource m_source;
-    Image::Format m_format;
-    Image::BottomUp m_bottomUp;
+    ImageSource         m_source;
+    Image::Format       m_format;
+    Image::BottomUp     m_bottomUp;
     Publish3mxTexture(ImageSourceCR source, Image::Format format, Image::BottomUp bottomUp) : m_source(std::move(source)), m_format(format), m_bottomUp(bottomUp) {}
 };
 
@@ -404,7 +404,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
     {
     TileDisplayParams       tileDisplayParams;
     double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (node.GetMaximumSize() / (2.0 * node.GetRadius()));
-    PublishTileNode tileNode(node, scene.GetLocation(), tileDisplayParams, node.GetRange(), depth, siblingIndex, tolerance, parent);
+    PublishTileNode         tileNode(node, scene.GetLocation(), tileDisplayParams, node.GetRange(), depth, siblingIndex, tolerance, parent);
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
