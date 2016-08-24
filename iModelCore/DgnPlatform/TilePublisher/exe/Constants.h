@@ -95,9 +95,15 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
         "endTransform": tf
     });
 
+   var elementIdCheckbox = document.getElementById('elementIdCheckbox');
+   var pickingEnabled = elementIdCheckbox.checked;
+   elementIdCheckbox.onchange = function() {
+       pickingEnabled = elementIdCheckbox.checked;
+   };
+
    var handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
    handler.setInputAction(function(movement) {
-       var pickedObjects = viewer.scene.pick(movement.endPosition);
+       var pickedObjects = pickingEnabled ? viewer.scene.pick(movement.endPosition) : null;
        if (pickedObjects !== curPickedObjects) {
            var elemId = null;
            curPickedObjects = pickedObjects;
@@ -126,7 +132,8 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
 
 </script>
 <div style="z-index:10000; position:absolute;top:0;left:0;background-color:whitesmoke;opacity:0.5;padding:5px; margin:5px">
-    <div>ElementId: <b id="field_elementId">None</b></div>
+    <input type="checkbox" checked="true" id="elementIdCheckbox" />
+    <span>ElementId: <b id="field_elementId">None</b></span>
 </div>
 </body>
 </html>)HTML";
