@@ -1076,13 +1076,13 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
     {
-    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts);
+    return _AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, true);
     }
 
 //-------------------------------------------------------------------------------------
 //* @bsimethod                                              
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
+ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
     if (&(baseClass.GetSchema()) != &(this->GetSchema()))
         {
@@ -1653,7 +1653,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         }
 
     ECObjectsStatus stat;
-    if (ECObjectsStatus::Success != (stat = AddBaseClass(*baseClass, false, resolveConflicts)))
+    if (ECObjectsStatus::Success != (stat = _AddBaseClass(*baseClass, false, resolveConflicts, false)))
         {
         if (stat == ECObjectsStatus::BaseClassUnacceptable)
             {
@@ -2195,6 +2195,9 @@ uint32_t upperLimit
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
+* If lhs is equal to rhs,     return 0
+* If lhs is greater than rhs, return -1
+* If lhs is less than rhs,    return 1
 +---------------+---------------+---------------+---------------+---------------+------*/
 int RelationshipMultiplicity::Compare
 (
@@ -2206,7 +2209,7 @@ RelationshipMultiplicity const& rhs
         lhs.GetUpperLimit() == rhs.GetUpperLimit())
         return 0;
 
-    return (rhs.GetLowerLimit() > lhs.GetLowerLimit() || rhs.GetUpperLimit() > lhs.GetUpperLimit()) ? 1 : -1;
+    return (lhs.GetLowerLimit() > rhs.GetLowerLimit() || rhs.GetUpperLimit() > lhs.GetUpperLimit()) ? 1 : -1;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2340,14 +2343,28 @@ ECSchemaCP ECRelationshipConstraint::_GetContainerSchema() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint() const
+    {
+    for (const auto &constraint : m_constraintClasses)
+        {
+        ECObjectsStatus status = _ValidateClassConstraint(constraint->GetClass());
+        if (ECObjectsStatus::Success != status)
+            return status;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint
+ECObjectsStatus ECRelationshipConstraint::_ValidateClassConstraint
 (
 ECEntityClassCR constraintClass
 ) const
     {
-#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
@@ -2364,7 +2381,7 @@ ECEntityClassCR constraintClass
                                                                               : &relationshipBaseClass->GetTarget();
 
         // Validate against the base class again...
-        ECObjectsStatus validationStatus = baseClassConstraint->ValidateClassConstraint(constraintClass);
+        ECObjectsStatus validationStatus = baseClassConstraint->_ValidateClassConstraint(constraintClass);
         if (validationStatus != ECObjectsStatus::Success)
             {
             return validationStatus;
@@ -2373,22 +2390,34 @@ ECEntityClassCR constraintClass
         // Iterate over the constraint classes and check if they meet the scopeing requirements.
         for (auto ecClassIterator : baseClassConstraint->GetConstraintClasses())
             {
-            if (!constraintClass.Is(&ecClassIterator->GetClass()))
+            auto baseConstraintClass = &ecClassIterator->GetClass();
+            if (!constraintClass.Is(baseConstraintClass))
                 {
+                LOG.errorv("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not nor derived from Class '%s' as speficied in Class '%s'",
+                            constraintClass.GetName(), (isSourceConstraint) ? "Source" : "Target", m_relClass->GetName(), baseConstraintClass->GetName(), relationshipBaseClass->GetName());
                 return ECObjectsStatus::RelationshipConstraintsNotCompatible;
                 }
             }
         }
-#endif
+
     return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const
+ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint() const
     {
-#ifdef THIS_BREAKS_264_TESTS
+    uint32_t lowerLimit = GetMultiplicity().GetLowerLimit();
+    uint32_t upperLimit = GetMultiplicity().GetUpperLimit();
+    return _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const
+    {
     ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
@@ -2398,22 +2427,28 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_
         {
         // Get the relationship base class
         ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
-        ECRelationshipConstraintCP baseClassConstraint = (isSourceConstraint) ? &relationshipBaseClass->GetSource()
+        ECRelationshipConstraintP baseClassConstraint = (isSourceConstraint) ? &relationshipBaseClass->GetSource()
                                                                               : &relationshipBaseClass->GetTarget();
 
-        // Validate against the base class again...
-        ECObjectsStatus validationStatus = baseClassConstraint->ValidateMultiplicityConstraint(lowerLimit, upperLimit);
-        if (validationStatus != ECObjectsStatus::Success)
+        // Checks the multiplicity: 0 = equal multiplicity, -1 = leftside is bigger, 1 = rightside is bigger
+        // since the left side is the current multiplicity and the right side the base class, it is expected the baseclass is bigger.
+        if (RelationshipMultiplicity::Compare(RelationshipMultiplicity(lowerLimit, upperLimit), baseClassConstraint->GetMultiplicity()) == -1)
             {
-            return validationStatus;
-            }
+            LOG.errorv("Multiplicity Violation: The Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
+                        lowerLimit, upperLimit, relationshipClass->GetName(),
+                        relationshipBaseClass->GetName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
-        if (RelationshipCardinality::Compare(RelationshipCardinality(lowerLimit, upperLimit), baseClassConstraint->GetCardinality()) == 1)
-            {
-            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() != 2)
+                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+
+            // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
+            LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%u..%u) to (%u..%u) to conform to new relationship constraint rules.",
+                        relationshipClass->GetName(), relationshipBaseClass->GetName(), 
+                        baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
+            baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
             }
         }
-#endif
+
     return ECObjectsStatus::Success;
     }
 
@@ -2431,7 +2466,9 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
 
     if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() >= 1)
         {
-        READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, MULTIPLICITY_ATTRIBUTE, this, Multiplicity);
+        Utf8String multiplicity;
+        if (BEXML_Success == constraintNode.GetAttributeStringValue(multiplicity, MULTIPLICITY_ATTRIBUTE))
+            _SetMultiplicity(multiplicity.c_str());
         }
     else
         {
@@ -2488,12 +2525,6 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             {
             LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
                          CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-
-        // Validate the constraint class if it meets the constraints requirements (including base class requirements).
-        if (ECObjectsStatus::Success != ValidateClassConstraint(*constraintAsEntity))
-            {
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
@@ -2576,7 +2607,7 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           ECRelationshipConstraint::AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass)
     {
-    ECObjectsStatus validationStatus = ValidateClassConstraint(ecClass);
+    ECObjectsStatus validationStatus = _ValidateClassConstraint(ecClass);
     if (validationStatus != ECObjectsStatus::Success)
         {
         return validationStatus;
@@ -2683,10 +2714,6 @@ RelationshipMultiplicityCR ECRelationshipConstraint::GetMultiplicity () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (uint32_t& lowerLimit, uint32_t& upperLimit)
     {
-    ECObjectsStatus validationStatus = ValidateMultiplicityConstraint(lowerLimit, upperLimit);
-    if (validationStatus != ECObjectsStatus::Success)
-        return validationStatus;
-
     if (lowerLimit == 0 && upperLimit == 1)
         m_multiplicity = &s_zeroOneMultiplicity;
     else if (lowerLimit == 0 && upperLimit == UINT_MAX)
@@ -2709,13 +2736,17 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (RelationshipMultiplic
     uint32_t lowerLimit = multiplicity.GetLowerLimit();
     uint32_t upperLimit = multiplicity.GetUpperLimit();
 
+    ECObjectsStatus validationStatus = _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
+    if (validationStatus != ECObjectsStatus::Success)
+        return validationStatus;
+
     return SetMultiplicity(lowerLimit, upperLimit);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Caleb.Shafer                    08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (Utf8CP multiplicity)
+ECObjectsStatus ECRelationshipConstraint::_SetMultiplicity(Utf8CP multiplicity, bool validate)
     {
     PRECONDITION (NULL != multiplicity, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
@@ -2726,10 +2757,20 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (Utf8CP multiplicity)
         LOG.errorv ("Failed to parse the RelationshipMultiplicity string '%s'.", multiplicity);
         return ECObjectsStatus::ParseError;
         }
-    else
-        m_multiplicity = new RelationshipMultiplicity(lowerLimit, upperLimit);
-        
-    return ECObjectsStatus::Success;
+
+    ECObjectsStatus validationStatus = _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
+    if (validationStatus != ECObjectsStatus::Success)
+        return validationStatus;
+
+    return SetMultiplicity(lowerLimit, upperLimit);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                    08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (Utf8CP multiplicity)
+    {   
+    return _SetMultiplicity(multiplicity, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2746,10 +2787,8 @@ ECObjectsStatus ECRelationshipConstraint::SetCardinality (Utf8CP cardinality)
         LOG.errorv ("Failed to parse the RelationshipCardinality string '%s'.", cardinality);
         return ECObjectsStatus::ParseError;
         }
-    else
-        m_multiplicity = new RelationshipMultiplicity(lowerLimit, upperLimit);
         
-    return ECObjectsStatus::Success;
+    return SetMultiplicity(lowerLimit, upperLimit);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -3092,15 +3131,14 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
     if (status != SchemaReadStatus::Success)
         return status;
         
-    return SchemaReadStatus::Success;
+    return status;
     }
 
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts)
+ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     if (baseClass.IsRelationshipClass())
         {
         // Get the relationship base class and compare it's strength and direction
@@ -3111,16 +3149,25 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
             }
 
-        // Compare Multiplicity. In general, the multiplicity of the derived class must be more restrictive 
-        // than the bounds defined in the base class multiplicity. 
-        if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == 1 ||
-            RelationshipMultiplicity::Compare(GetTarget().GetMultiplicity(), relationshipBaseClass->GetTarget().GetMultiplicity()) == 1)
+        if (validate)
             {
-            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            if (RelationshipMultiplicity::Compare(GetSource().GetMultiplicity(), relationshipBaseClass->GetSource().GetMultiplicity()) == -1)
+                {
+			    LOG.errorv("Multiplicity Violation: The Source Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
+				    GetSource().GetMultiplicity().GetLowerLimit(), GetSource().GetMultiplicity().GetUpperLimit(), GetName(), relationshipBaseClass->GetName(), relationshipBaseClass->GetSource().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetSource().GetMultiplicity().GetUpperLimit());
+			    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+                }
+
+            if (RelationshipMultiplicity::Compare(GetTarget().GetMultiplicity(), relationshipBaseClass->GetTarget().GetMultiplicity()) == -1)
+                {
+			    LOG.errorv("Multiplicity Violation: The Target Multiplicity (%u..%u) of %s is larger than the Multiplicity of it's base class %s (%u..%u)",
+				    GetTarget().GetMultiplicity().GetLowerLimit(), GetTarget().GetMultiplicity().GetUpperLimit(), GetName(), relationshipBaseClass->GetName(), relationshipBaseClass->GetTarget().GetMultiplicity().GetLowerLimit(), relationshipBaseClass->GetTarget().GetMultiplicity().GetUpperLimit());
+			    return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+                }
             }
         }
-#endif
-    return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts);
+
+    return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3128,20 +3175,21 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool compareValue) const
     {
-#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     if (HasBaseClasses())
         {
         for (auto baseClass : GetBaseClasses())
             {
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
+                {
+                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than it's baseclass '%s' (%d).",
+                            GetName(), value, relationshipBaseClass->GetName(), relationshipBaseClass->GetStrength());
                 return false;
+                }
             }
         }
 
     return (!compareValue || GetStrength() == value);
-#endif
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3149,19 +3197,44 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue) const
     {
-#ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     if (HasBaseClasses())
         {
         for (auto baseClass : GetBaseClasses())
             {
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
+                {
+                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different StrengthDirection (%d) than it's baseclass '%s' (%d).",
+                            GetName(), value, relationshipBaseClass->GetName(), relationshipBaseClass->GetStrengthDirection());
                 return false;
+                }
             }
         }
 
     return (!compareValue || GetStrengthDirection() == value);
-#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                    08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipClass::ValidateMultiplicityConstraint() const
+    {
+    if (ECObjectsStatus::Success != GetSource().ValidateMultiplicityConstraint() || 
+        ECObjectsStatus::Success != GetTarget().ValidateMultiplicityConstraint())
+        return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Caleb.Shafer                    08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECRelationshipClass::ValidateClassConstraint() const
+    {
+    if (ECObjectsStatus::Success != GetSource().ValidateClassConstraint() || 
+        ECObjectsStatus::Success != GetTarget().ValidateClassConstraint())
+        return false;
+
     return true;
     }
    

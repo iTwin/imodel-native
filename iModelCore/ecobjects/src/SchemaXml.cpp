@@ -328,6 +328,17 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
+    for (classesStart = classes.begin(), classesEnd = classes.end(), classesIterator = classesStart; classesIterator != classesEnd; classesIterator++)
+        {
+        ecClass = classesIterator->first;
+        if (ecClass->IsRelationshipClass())
+            {
+            ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+            if (!relClass->ValidateMultiplicityConstraint() || !relClass->ValidateClassConstraint())
+                return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
     return status;
     }
 

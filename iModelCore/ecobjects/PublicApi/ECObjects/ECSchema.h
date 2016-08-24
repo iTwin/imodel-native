@@ -1309,7 +1309,7 @@ protected:
     virtual ~ECClass();
 
     ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
-    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false);
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -2134,6 +2134,7 @@ private:
     bool                        m_isSource;
 
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
+    ECObjectsStatus             _SetMultiplicity(Utf8CP multiplicity, bool validate = false);
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
@@ -2141,8 +2142,10 @@ private:
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, int ecXmlVersionMajor, int ecXmlVersionMinor) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
-    ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
+    ECObjectsStatus             ValidateClassConstraint() const;
+    ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
+    ECObjectsStatus             ValidateMultiplicityConstraint() const;
+    ECObjectsStatus             _ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit) const;
 
 protected:
     virtual ECSchemaCP          _GetContainerSchema() const override;
@@ -2259,6 +2262,8 @@ private:
 
     bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
+    bool                                ValidateMultiplicityConstraint() const;
+    bool                                ValidateClassConstraint() const;
 
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, int ecXmlVersionMajor, int ecXmlVersionMinor) const override;
@@ -2268,7 +2273,7 @@ protected:
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
-    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false) override;
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
 
 //__PUBLISH_SECTION_START__
