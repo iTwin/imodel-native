@@ -23,7 +23,6 @@ enum class ParamId
     View,
     Output,
     Name,
-    Compress,
     Invalid
 };
 
@@ -48,7 +47,6 @@ static CommandParam s_paramTable[] =
         { L"v", L"view", L"Name of the view to publish. If omitted, the default view is used", false },
         { L"o", L"output", L"Directory in which to place the output .html file. If omitted, the output is placed in the .bim file's directory", false },
         { L"n", L"name", L"Name of the .html file and root name of the tileset .json and .b3dm files. If omitted, uses the name of the .bim file", false },
-        { L"c", L"compress", L"If specified, .b3dm files will be compressed using gzip.", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -113,7 +111,6 @@ private:
     Utf8String      m_viewName;         //!< Name of the view definition from which to publish
     BeFileName      m_outputDir;        //!< Directory in which to place the output
     WString         m_tilesetName;      //!< Root name of the output tileset files
-    bool            m_compress=false;   //!< If true, compress .b3dm files
 
     DgnViewId GetViewId(DgnDbR db) const;
 public:
@@ -121,7 +118,6 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetTilesetName() const { return m_tilesetName; }
     Utf8StringCR GetViewName() const { return m_viewName; }
-    bool WantCompressed() const { return m_compress; }
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
@@ -219,9 +215,6 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                 break;
             case ParamId::Name:
                 m_tilesetName = arg.m_value.c_str();
-                break;
-            case ParamId::Compress:
-                m_compress = true;
                 break;
             default:
                 printf("Unrecognized command option %ls\n", av[i]);
@@ -333,9 +326,8 @@ int wmain(int ac, wchar_t const** av)
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"
            "\tOutput: %ls%ls.html\n"
-           "\tData: %ls\n"
-           "\tCompressed: %s\n",
-            createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str(), createParams.WantCompressed() ? "true" : "false");
+           "\tData: %ls\n",
+            createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
             
     auto status = publisher.Publish();
 
