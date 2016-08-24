@@ -97,15 +97,13 @@ void HttpRequestHeaders::SetIfModifiedSince(DateTimeCR dateTime) {SetIfModifiedS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-#define RANGE_HEADER_FORMAT "bytes=%llu-%llu"
-
 BentleyStatus RangeHeaderValue::Parse(Utf8CP stringValue, RangeHeaderValue& valueOut)
     {
     if (nullptr == stringValue)
         {
         return ERROR;
         }
-    if (2 != sscanf(stringValue, RANGE_HEADER_FORMAT, &valueOut.m_from, &valueOut.m_to))
+    if (2 != sscanf(stringValue, "bytes=%" SCNu64 "-%" SCNu64, &valueOut.m_from, &valueOut.m_to))
         {
         return ERROR;
         }
@@ -117,13 +115,8 @@ BentleyStatus RangeHeaderValue::Parse(Utf8CP stringValue, RangeHeaderValue& valu
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String RangeHeaderValue::ToString() const
     {
-    return Utf8PrintfString(RANGE_HEADER_FORMAT, m_from, m_to);
+    return Utf8PrintfString("bytes=%" PRIu64 "-%" PRIu64, m_from, m_to);
     }
-
-#define CONTENT_RANGE_HEADER_FORMAT_FULL    "bytes %llu-%llu/%llu"
-#define CONTENT_RANGE_HEADER_FORMAT_RANGE   "bytes %llu-%llu/*"
-#define CONTENT_RANGE_HEADER_FORMAT_LENGTH  "bytes */%llu"
-#define CONTENT_RANGE_HEADER_FORMAT_NONE    "bytes */*"
 
 BentleyStatus ContentRangeHeaderValue::Parse(Utf8CP stringValue, ContentRangeHeaderValue& valueOut)
     {
@@ -131,25 +124,25 @@ BentleyStatus ContentRangeHeaderValue::Parse(Utf8CP stringValue, ContentRangeHea
         {
         return ERROR;
         }
-    if (3 == sscanf(stringValue, CONTENT_RANGE_HEADER_FORMAT_FULL, &valueOut.m_from, &valueOut.m_to, &valueOut.m_length))
+    if (3 == sscanf(stringValue, "bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64, &valueOut.m_from, &valueOut.m_to, &valueOut.m_length))
         {
         valueOut.m_hasRange = true;
         valueOut.m_hasLength = true;
         return SUCCESS;
         }
-    if (2 == sscanf(stringValue, CONTENT_RANGE_HEADER_FORMAT_RANGE, &valueOut.m_from, &valueOut.m_to))
+    if (2 == sscanf(stringValue, "bytes %" PRIu64 "-%" PRIu64 "/*", &valueOut.m_from, &valueOut.m_to))
         {
         valueOut.m_hasRange = true;
         valueOut.m_hasLength = false;
         return SUCCESS;
         }
-    if (1 == sscanf(stringValue, CONTENT_RANGE_HEADER_FORMAT_LENGTH, &valueOut.m_length))
+    if (1 == sscanf(stringValue, "bytes */%" PRIu64, &valueOut.m_length))
         {
         valueOut.m_hasRange = false;
         valueOut.m_hasLength = true;
         return SUCCESS;
         }
-    if (0 == strcmp(CONTENT_RANGE_HEADER_FORMAT_NONE, stringValue))
+    if (0 == strcmp("bytes */*", stringValue))
         {
         valueOut.m_hasRange = false;
         valueOut.m_hasLength = false;
@@ -166,19 +159,19 @@ Utf8String ContentRangeHeaderValue::ToString() const
     Utf8String stringValue;
     if (HasLength() && HasRange())
         {
-        stringValue.Sprintf(CONTENT_RANGE_HEADER_FORMAT_FULL, m_from, m_to, m_length);
+        stringValue.Sprintf("bytes %" SCNu64 "-%" SCNu64 "/%" SCNu64, m_from, m_to, m_length);
         }
     else if (HasRange())
         {
-        stringValue.Sprintf(CONTENT_RANGE_HEADER_FORMAT_RANGE, m_from, m_to);
+        stringValue.Sprintf("bytes %" SCNu64 "-%" SCNu64 "/*", m_from, m_to);
         }
     else if (HasLength())
         {
-        stringValue.Sprintf(CONTENT_RANGE_HEADER_FORMAT_LENGTH, m_length);
+        stringValue.Sprintf("bytes */%" SCNu64, m_length);
         }
     else
         {
-        stringValue.Sprintf(CONTENT_RANGE_HEADER_FORMAT_NONE);
+        stringValue.Sprintf("bytes */*");
         }
     return stringValue;
     }

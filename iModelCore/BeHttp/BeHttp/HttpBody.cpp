@@ -7,7 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpBody.h>
 
+#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
 #pragma mark - HttpBody
+#endif
 
 USING_NAMESPACE_BENTLEY_HTTP
 
@@ -157,7 +159,9 @@ Utf8String HttpFileBody::AsString() const
     return stringContents;
     }
 
+#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
 #pragma mark - HttpStringBody
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
@@ -225,7 +229,9 @@ size_t HttpStringBody::Read(char* bufferOut, size_t bufferSize)
     return static_cast<size_t>(bytesCopied);
     }
 
+#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
 #pragma mark - HttpByteStreamBody
+#endif
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
@@ -253,8 +259,9 @@ size_t HttpByteStreamBody::Read(char* bufferOut, size_t bufferSize)
     return copyBytesCount;
     }
 
-
+#ifndef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
 #pragma mark - HttpMultipartBody
+#endif
 
 Utf8String HttpMultipartBody::DefaultBoundary() {return "----------------c74c9f339ca44dd48ee4b45a9dedd811";}
 
