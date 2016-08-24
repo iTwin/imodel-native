@@ -136,7 +136,7 @@ HSTATUS HRFSRTMImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
         return Status;
         }
 
-    uint64_t ImageLen = m_pRasterFile->m_pSRTMFile->GetSize();
+    size_t ImageLen = m_pRasterFile->m_pSRTMFile->GetSize();
 
     // Read the compressed image in memory
     m_pRasterFile->m_pSRTMFile->SeekToPos(0);
