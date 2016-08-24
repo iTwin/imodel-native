@@ -103,6 +103,8 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
            curPickedObjects = pickedObjects;
            if (Cesium.defined(curPickedObjects)) {
                elemId = pickedObjects.getProperty("element");
+               if (0 == elemId)
+                   elemId = null;
            }
 
            // Update field displaying ID of moused-over element
