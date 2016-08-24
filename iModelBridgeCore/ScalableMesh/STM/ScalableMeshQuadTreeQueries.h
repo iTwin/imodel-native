@@ -249,16 +249,28 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
     private:
         
         DPoint3d   m_viewBox[8];         
-   
+        ClipVectorCP m_extent3d;
+        bool m_useAllRes;
+
     public:
 
                             ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent, 
                                                               size_t         level,                                                     
                                                               const DPoint3d viewBox[]) 
-                            : HGFLevelPointIndexQuery(extent, level)                              
+                                                              : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr)
                                 {                                                             
                                 memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);                                
-                                }                            
+                                }    
+
+                            ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
+                                                                    size_t         level,
+                                                                    ClipVectorCP extent3d,
+                                                                    bool useAllResolutions)
+                                                                    :HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d)
+                                {
+
+                                }
+
 
                             virtual ~ScalableMeshQuadTreeLevelMeshIndexQuery() {}
 
