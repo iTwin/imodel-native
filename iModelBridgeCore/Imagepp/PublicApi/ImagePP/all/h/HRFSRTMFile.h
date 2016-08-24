@@ -1,13 +1,13 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PublicApi/ImagePP/all/h/HRFHgtFile.h $
+//:>     $Source: PublicApi/ImagePP/all/h/HRFSRTMFile.h $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class : HRFHgtFile
+// Class : HRFSRTMFile
 //-----------------------------------------------------------------------------
-// This class describes an HGT File Raster image.
+// This class describes an SRTM File Raster image.
 //-----------------------------------------------------------------------------
 #pragma once
 
@@ -22,39 +22,39 @@
 
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRFHgtCapabilities : public HRFRasterFileCapabilities
+class HRFSRTMCapabilities : public HRFRasterFileCapabilities
     {
     public:
-        HRFHgtCapabilities();
+        HRFSRTMCapabilities();
     };
 
-class HRFHgtFile : public HRFRasterFile
+class HRFSRTMFile : public HRFRasterFile
     {
     public:
 
-        //Possible file sizes for HGT files
-        static const uint32_t HRFHgtFile::SRTM1_SIZE;
-        static const uint32_t HRFHgtFile::SRTM3_SIZE;
-        static const uint32_t HRFHgtFile::SRTM1_LINEWIDTH;
-        static const uint32_t HRFHgtFile::SRTM3_LINEWIDTH;
-        static const uint32_t HRFHgtFile::SRTM1_LINEBYTES;
-        static const uint32_t HRFHgtFile::SRTM3_LINEBYTES;
-        static const int16_t  HRFHgtFile::HGT_NODATAVALUE;
-        static const double   HRFHgtFile::EARTH_RADIUS;
-        static const double   HRFHgtFile::SRTM1_RES;
-        static const double   HRFHgtFile::SRTM3_RES;
+        //Possible file sizes for SRTM files
+        static const uint32_t HRFSRTMFile::SRTM1_SIZE;
+        static const uint32_t HRFSRTMFile::SRTM3_SIZE;
+        static const uint32_t HRFSRTMFile::SRTM1_LINEWIDTH;
+        static const uint32_t HRFSRTMFile::SRTM3_LINEWIDTH;
+        static const uint32_t HRFSRTMFile::SRTM1_LINEBYTES;
+        static const uint32_t HRFSRTMFile::SRTM3_LINEBYTES;
+        static const int16_t  HRFSRTMFile::SRTM_NODATAVALUE;
+        static const double   HRFSRTMFile::EARTH_RADIUS;
+        static const double   HRFSRTMFile::SRTM1_RES;
+        static const double   HRFSRTMFile::SRTM3_RES;
 
         // Class ID for this class.
-        HDECLARE_CLASS_ID(HRFFileId_Hgt, HRFRasterFile)
+        HDECLARE_CLASS_ID(HRFFileId_SRTM, HRFRasterFile)
 
-            friend class HRFHgtLineEditor;
-        friend class HRFHgtImageEditor;
+            friend class HRFSRTMLineEditor;
+        friend class HRFSRTMImageEditor;
 
-        HRFHgtFile(const HFCPtr<HFCURL>&          pi_rpURL,
+        HRFSRTMFile(const HFCPtr<HFCURL>&          pi_rpURL,
                    HFCAccessMode                  pi_AccessMode = HFC_READ_ONLY,
                    uint64_t                       pi_Offset = 0);
 
-        virtual                                    ~HRFHgtFile();
+        virtual                                    ~HRFSRTMFile();
 
         // File capabilities
         virtual const HFCPtr<HRFRasterFileCapabilities>& GetCapabilities() const;
@@ -74,7 +74,7 @@ class HRFHgtFile : public HRFRasterFile
         virtual void                        CreateDescriptors();
 
     private:
-        HAutoPtr<HFCBinStream>  m_pHgtFile;
+        HAutoPtr<HFCBinStream>  m_pSRTMFile;
         uint32_t   m_Width;        // width and height of image in pixels
 
         //Disabled
@@ -83,7 +83,7 @@ class HRFHgtFile : public HRFRasterFile
         bool                          IsSRTM1() const;
     };
 
-struct HRFHgtCreator : public HRFRasterFileCreator
+struct HRFSRTMCreator : public HRFRasterFileCreator
     {
     // Opens the file and verifies if it is the right type
     virtual bool                     IsKindOfFile(const HFCPtr<HFCURL>&    pi_rpURL,
@@ -103,9 +103,9 @@ struct HRFHgtCreator : public HRFRasterFileCreator
                                              uint64_t              pi_Offset = 0) const;
 
     private:
-        HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFHgtCreator)
+        HFC_DECLARE_SINGLETON_DLL(IMAGEPP_EXPORT, HRFSRTMCreator)
 
             // Disabled methodes
-            HRFHgtCreator();
+            HRFSRTMCreator();
     };
 END_IMAGEPP_NAMESPACE

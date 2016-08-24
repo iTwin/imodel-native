@@ -1,19 +1,19 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hrf/src/HRFHgtFile.cpp $
+//:>     $Source: all/gra/hrf/src/HRFSRTMFile.cpp $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class HRFHgtFile
+// Class HRFSRTMFile
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
 
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <Imagepp/all/h/HGF2DStretch.h>
-#include <Imagepp/all/h/HRFHgtFile.h>
-#include <Imagepp/all/h/HRFHgtEditor.h>
+#include <Imagepp/all/h/HRFSRTMFile.h>
+#include <Imagepp/all/h/HRFSRTMEditor.h>
 #include <Imagepp/all/h/HRPPixelTypeV16Int16.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 
@@ -23,68 +23,68 @@
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 
 // Constant initialization
-const uint32_t HRFHgtFile::SRTM1_SIZE = 25934402;
-const uint32_t HRFHgtFile::SRTM3_SIZE = 2884802;
-const uint32_t HRFHgtFile::SRTM1_LINEWIDTH = 3601;
-const uint32_t HRFHgtFile::SRTM3_LINEWIDTH = 1201;
-const uint32_t HRFHgtFile::SRTM1_LINEBYTES = 7202;
-const uint32_t HRFHgtFile::SRTM3_LINEBYTES = 2402;
-const int16_t  HRFHgtFile::HGT_NODATAVALUE = -32768;
-const double   HRFHgtFile::EARTH_RADIUS = 6378137;
-const double   HRFHgtFile::SRTM1_RES = PI * HRFHgtFile::EARTH_RADIUS / (HRFHgtFile::SRTM1_LINEWIDTH * 180);
-const double   HRFHgtFile::SRTM3_RES = PI * HRFHgtFile::EARTH_RADIUS / (HRFHgtFile::SRTM3_LINEWIDTH * 180);
+const uint32_t HRFSRTMFile::SRTM1_SIZE = 25934402;
+const uint32_t HRFSRTMFile::SRTM3_SIZE = 2884802;
+const uint32_t HRFSRTMFile::SRTM1_LINEWIDTH = 3601;
+const uint32_t HRFSRTMFile::SRTM3_LINEWIDTH = 1201;
+const uint32_t HRFSRTMFile::SRTM1_LINEBYTES = 7202;
+const uint32_t HRFSRTMFile::SRTM3_LINEBYTES = 2402;
+const int16_t  HRFSRTMFile::SRTM_NODATAVALUE = -32768;
+const double   HRFSRTMFile::EARTH_RADIUS = 6378137;
+const double   HRFSRTMFile::SRTM1_RES = PI * HRFSRTMFile::EARTH_RADIUS / (HRFSRTMFile::SRTM1_LINEWIDTH * 180);
+const double   HRFSRTMFile::SRTM3_RES = PI * HRFSRTMFile::EARTH_RADIUS / (HRFSRTMFile::SRTM3_LINEWIDTH * 180);
 
 //-----------------------------------------------------------------------------
-// HRFHgtBlockCapabilities
+// HRFSRTMBlockCapabilities
 //-----------------------------------------------------------------------------
-class HRFHgtBlockCapabilities : public HRFRasterFileCapabilities
+class HRFSRTMBlockCapabilities : public HRFRasterFileCapabilities
     {
     public:
         // Constructor
-        HRFHgtBlockCapabilities()
+        HRFSRTMBlockCapabilities()
             : HRFRasterFileCapabilities()
             {
             //// Block Capability
             Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,
-                HRFHgtFile::SRTM1_LINEBYTES,
+                HRFSRTMFile::SRTM1_LINEBYTES,
                 HRFBlockAccess::RANDOM));
 
             Add(new HRFImageCapability(HFC_READ_WRITE,     // AccessMode
                 INT32_MAX,                                 // MaxSizeInBytes
-                HRFHgtFile::SRTM3_LINEWIDTH,               // MinWidth
-                HRFHgtFile::SRTM1_LINEWIDTH,               // MaxWidth
-                HRFHgtFile::SRTM3_LINEWIDTH,               // MinHeight
-                HRFHgtFile::SRTM1_LINEWIDTH));             // MaxHeight
+                HRFSRTMFile::SRTM3_LINEWIDTH,               // MinWidth
+                HRFSRTMFile::SRTM1_LINEWIDTH,               // MaxWidth
+                HRFSRTMFile::SRTM3_LINEWIDTH,               // MinHeight
+                HRFSRTMFile::SRTM1_LINEWIDTH));             // MaxHeight
             }
     };
 
 //-----------------------------------------------------------------------------
-// HRFHgtCodecIdentityCapabilities
+// HRFSRTMCodecIdentityCapabilities
 //-----------------------------------------------------------------------------
-class HRFHgtCodecIdentityCapabilities : public  HRFRasterFileCapabilities
+class HRFSRTMCodecIdentityCapabilities : public  HRFRasterFileCapabilities
     {
     public:
         // Constructor
-        HRFHgtCodecIdentityCapabilities()
+        HRFSRTMCodecIdentityCapabilities()
             : HRFRasterFileCapabilities()
             {
             // Codec
             Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
                 HCDCodecIdentity::CLASS_ID,
-                new HRFHgtBlockCapabilities()));
+                new HRFSRTMBlockCapabilities()));
             }
     };
 
 //-----------------------------------------------------------------------------
-// HRFHgtCapabilities
+// HRFSRTMCapabilities
 //-----------------------------------------------------------------------------
-HRFHgtCapabilities::HRFHgtCapabilities()
+HRFSRTMCapabilities::HRFSRTMCapabilities()
     : HRFRasterFileCapabilities()
     {
     // Read/Write/Create capabilities
     Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
         HRPPixelTypeV16Int16::CLASS_ID,
-        new HRFHgtCodecIdentityCapabilities()));
+        new HRFSRTMCodecIdentityCapabilities()));
 
     // Scanline orientation capability
     Add(new HRFScanlineOrientationCapability(HFC_READ_ONLY, HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL));
@@ -156,63 +156,63 @@ HRFHgtCapabilities::HRFHgtCapabilities()
 
     }
 
-HFC_IMPLEMENT_SINGLETON(HRFHgtCreator)
+HFC_IMPLEMENT_SINGLETON(HRFSRTMCreator)
 
 //-----------------------------------------------------------------------------
 // Constructor
-// Public (HRFHgtCreator)
-// This is the creator to instantiate Hgt format
+// Public (HRFSRTMCreator)
+// This is the creator to instantiate SRTM format
 //-----------------------------------------------------------------------------
-HRFHgtCreator::HRFHgtCreator()
-: HRFRasterFileCreator(HRFHgtFile::CLASS_ID)
+HRFSRTMCreator::HRFSRTMCreator()
+: HRFRasterFileCreator(HRFSRTMFile::CLASS_ID)
     {
-    // Hgt capabilities instance member initialization
+    // SRTM capabilities instance member initialization
     m_pCapabilities = 0;
     }
 
 //-----------------------------------------------------------------------------
 // GetLabel
-// Public (HRFHgtCreator)
+// Public (HRFSRTMCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFHgtCreator::GetLabel() const
+WString HRFSRTMCreator::GetLabel() const
     {
-    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_Hgt()); // Hgt File Format
+    return ImagePPMessages::GetStringW(ImagePPMessages::FILEFORMAT_SRTM()); // SRTM File Format
     }
 
 //-----------------------------------------------------------------------------
 // GetSchemes
-// Public (HRFHgtCreator)
+// Public (HRFSRTMCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFHgtCreator::GetSchemes() const
+WString HRFSRTMCreator::GetSchemes() const
     {
     return WString(HFCURLFile::s_SchemeName());
     }
 
 //-----------------------------------------------------------------------------
 // GetExtensions
-// Public (HRFHgtCreator)
+// Public (HRFSRTMCreator)
 // Identification information
 //-----------------------------------------------------------------------------
-WString HRFHgtCreator::GetExtensions() const
+WString HRFSRTMCreator::GetExtensions() const
     {
     return WString(L"*.hgt");
     }
 
 //-----------------------------------------------------------------------------
 // Create
-// Public (HRFHgtCreator)
+// Public (HRFSRTMCreator)
 // allow to Open an image file
 //-----------------------------------------------------------------------------
-HFCPtr<HRFRasterFile> HRFHgtCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
+HFCPtr<HRFRasterFile> HRFSRTMCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
                                             HFCAccessMode   pi_AccessMode,
                                             uint64_t       pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
 
     // Open the new file with the given options
-    HFCPtr<HRFRasterFile> pFile = new HRFHgtFile(pi_rpURL, pi_AccessMode, pi_Offset);
+    HFCPtr<HRFRasterFile> pFile = new HRFSRTMFile(pi_rpURL, pi_AccessMode, pi_Offset);
     HASSERT(pFile != 0);
 
     return (pFile);
@@ -221,10 +221,10 @@ HFCPtr<HRFRasterFile> HRFHgtCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
 
 //-----------------------------------------------------------------------------
 // IsKindOfFile
-// Public (HRFHgtCreator)
+// Public (HRFSRTMCreator)
 // Opens the file and verifies if it is the right type
 //-----------------------------------------------------------------------------
-bool HRFHgtCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
+bool HRFSRTMCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
                                  uint64_t             pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
@@ -232,14 +232,14 @@ bool HRFHgtCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
     bool                   bResult = false;
     HAutoPtr<HFCBinStream>  pFile;
 
-    // Open the Hgt File & place file pointer at the start of the file
+    // Open the SRTM File & place file pointer at the start of the file
     pFile = HFCBinStream::Instanciate(pi_rpURL, pi_Offset, HFC_READ_ONLY | HFC_SHARE_READ_WRITE);
 
     if (pFile == 0 || pFile->GetLastException() != 0)
         goto WRAPUP;
 
-    //An HGT file will always have one of two specific sizes
-    if ((pFile->GetSize() != HRFHgtFile::SRTM1_SIZE) && (pFile->GetSize() != HRFHgtFile::SRTM3_SIZE))
+    //An SRTM file will always have one of two specific sizes
+    if ((pFile->GetSize() != HRFSRTMFile::SRTM1_SIZE) && (pFile->GetSize() != HRFSRTMFile::SRTM3_SIZE))
         goto WRAPUP;
 
     //Since the only criteria we have is the filesize, we check the file extension to eliminate the possibility of error.
@@ -254,13 +254,13 @@ WRAPUP:
 
 //-----------------------------------------------------------------------------
 // GetCapabilities
-// Public (HRFHgtCreator)
-// Create or get the singleton capabilities of Hgt file.
+// Public (HRFSRTMCreator)
+// Create or get the singleton capabilities of SRTM file.
 //-----------------------------------------------------------------------------
-const HFCPtr<HRFRasterFileCapabilities>& HRFHgtCreator::GetCapabilities()
+const HFCPtr<HRFRasterFileCapabilities>& HRFSRTMCreator::GetCapabilities()
     {
     if (m_pCapabilities == 0)
-        m_pCapabilities = new HRFHgtCapabilities();
+        m_pCapabilities = new HRFSRTMCapabilities();
 
     return m_pCapabilities;
     }
@@ -271,7 +271,7 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFHgtCreator::GetCapabilities()
 // allow to Open an image file
 //-----------------------------------------------------------------------------
 
-HRFHgtFile::HRFHgtFile(const HFCPtr<HFCURL>& pi_rURL,
+HRFSRTMFile::HRFSRTMFile(const HFCPtr<HFCURL>& pi_rURL,
                        HFCAccessMode         pi_AccessMode,
                        uint64_t             pi_Offset)
                        : HRFRasterFile(pi_rURL, pi_AccessMode, pi_Offset)
@@ -295,9 +295,9 @@ HRFHgtFile::HRFHgtFile(const HFCPtr<HFCURL>& pi_rURL,
 //-----------------------------------------------------------------------------
 // Destructor
 // Public
-// Destroy Hgt file object
+// Destroy SRTM file object
 //-----------------------------------------------------------------------------
-HRFHgtFile::~HRFHgtFile()
+HRFSRTMFile::~HRFSRTMFile()
     {}
 
 //-----------------------------------------------------------------------------
@@ -305,12 +305,12 @@ HRFHgtFile::~HRFHgtFile()
 // Protected
 // This method open the file.
 //-----------------------------------------------------------------------------
-bool HRFHgtFile::Open()
+bool HRFSRTMFile::Open()
     {
     // Open the file
     if (!m_IsOpen)
         {
-        m_pHgtFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
+        m_pSRTMFile = HFCBinStream::Instanciate(GetURL(), m_Offset, GetAccessMode(), 0, true);
 
         if (IsSRTM1())
             {
@@ -332,7 +332,7 @@ bool HRFHgtFile::Open()
 // Public
 // File manipulation
 //-----------------------------------------------------------------------------
-bool HRFHgtFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
+bool HRFSRTMFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     {
     // Validation if it's possible to add a page
     HPRECONDITION(CountPages() == 0);
@@ -355,23 +355,23 @@ bool HRFHgtFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
 // Public
 // Returnt the capabilities of the file.
 //-----------------------------------------------------------------------------
-const HFCPtr<HRFRasterFileCapabilities>& HRFHgtFile::GetCapabilities() const
+const HFCPtr<HRFRasterFileCapabilities>& HRFSRTMFile::GetCapabilities() const
     {
-    return (HRFHgtCreator::GetInstance()->GetCapabilities());
+    return (HRFSRTMCreator::GetInstance()->GetCapabilities());
     }
 
 //-----------------------------------------------------------------------------
 // CreateDescriptors
 // Protected
-// Create Hgt File Descriptors
+// Create SRTM File Descriptors
 //-----------------------------------------------------------------------------
-void HRFHgtFile::CreateDescriptors()
+void HRFSRTMFile::CreateDescriptors()
     {
     // Create Page and Resolution Description/Capabilities for this file.
     HFCPtr<HRFResolutionDescriptor>     pResolution;
     HFCPtr<HRFPageDescriptor>           pPage;
 
-    HFCPtr<HRPPixelType>  pPixelType = new HRPPixelTypeV16Int16(HRPChannelType::USER, &HRFHgtFile::HGT_NODATAVALUE);;
+    HFCPtr<HRPPixelType>  pPixelType = new HRPPixelTypeV16Int16(HRPChannelType::USER, &HRFSRTMFile::SRTM_NODATAVALUE);;
 
     double scale;
     double offsetLatitude;
@@ -379,11 +379,11 @@ void HRFHgtFile::CreateDescriptors()
 
     if (IsSRTM1())
         {
-        scale = HRFHgtFile::SRTM1_RES;
+        scale = HRFSRTMFile::SRTM1_RES;
         }
     else
         {
-        scale = HRFHgtFile::SRTM3_RES;
+        scale = HRFSRTMFile::SRTM3_RES;
         }
 
     ExtractLatLong(&offsetLatitude, &offsetLongitude);
@@ -482,7 +482,7 @@ void HRFHgtFile::CreateDescriptors()
 // GetWorldIdentificator
 // File information
 //-----------------------------------------------------------------------------
-const HGF2DWorldIdentificator HRFHgtFile::GetWorldIdentificator() const
+const HGF2DWorldIdentificator HRFSRTMFile::GetWorldIdentificator() const
     {
     //return HGF2DWorld_GEOTIFFUNKNOWN;
 	return HGF2DWorld_HMRWORLD;
@@ -493,7 +493,7 @@ const HGF2DWorldIdentificator HRFHgtFile::GetWorldIdentificator() const
 // Public
 // File manipulation
 //-----------------------------------------------------------------------------
-HRFResolutionEditor* HRFHgtFile::CreateResolutionEditor(uint32_t       pi_Page,
+HRFResolutionEditor* HRFSRTMFile::CreateResolutionEditor(uint32_t       pi_Page,
                                                         uint16_t pi_Resolution,
                                                         HFCAccessMode  pi_AccessMode)
     {
@@ -503,8 +503,8 @@ HRFResolutionEditor* HRFHgtFile::CreateResolutionEditor(uint32_t       pi_Page,
 
     HRFResolutionEditor* pEditor = 0;
 
-    pEditor = new HRFHgtImageEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
-    //pEditor = new HRFHgtLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    pEditor = new HRFSRTMImageEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    //pEditor = new HRFSRTMLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
 
     return pEditor;
     }
@@ -513,17 +513,17 @@ HRFResolutionEditor* HRFHgtFile::CreateResolutionEditor(uint32_t       pi_Page,
 // Save
 // Disabled
 //-----------------------------------------------------------------------------
-void HRFHgtFile::Save()
+void HRFSRTMFile::Save()
     {}
 
 //-----------------------------------------------------------------------------
 // Private
 // ExtractLatLong
-// Outputs the latitude and longitude of the bottom-left corner of the hgt file
+// Outputs the latitude and longitude of the bottom-left corner of the SRTM file
 //-----------------------------------------------------------------------------
-void HRFHgtFile::ExtractLatLong(double* latitude, double* longitude) const
+void HRFSRTMFile::ExtractLatLong(double* latitude, double* longitude) const
     {
-    const HFCPtr<HFCURL>& urlFile = m_pHgtFile->GetURL();
+    const HFCPtr<HFCURL>& urlFile = m_pSRTMFile->GetURL();
     WString fileName = ((HFCPtr<HFCURLFile>&) urlFile)->GetFilename();
     wchar_t latHemi = fileName[0];
     wchar_t lonHemi = fileName[3];
@@ -552,7 +552,7 @@ void HRFHgtFile::ExtractLatLong(double* latitude, double* longitude) const
 // Outputs true if the file is SRTM1, false otherwise (should be SRTM3)
 //-----------------------------------------------------------------------------
 
-bool HRFHgtFile::IsSRTM1() const
+bool HRFSRTMFile::IsSRTM1() const
     {
-    return (m_pHgtFile->GetSize() == HRFHgtFile::SRTM1_SIZE);
+    return (m_pSRTMFile->GetSize() == HRFSRTMFile::SRTM1_SIZE);
     }

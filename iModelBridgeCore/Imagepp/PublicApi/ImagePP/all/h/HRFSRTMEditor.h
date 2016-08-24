@@ -1,12 +1,12 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: PublicApi/ImagePP/all/h/HRFHgtEditor.h $
+//:>     $Source: PublicApi/ImagePP/all/h/HRFSRTMEditor.h $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-// Class : HRFHgtEditor
+// Class : HRFSRTMEditor
 //-----------------------------------------------------------------------------
 // This class describes the resolution editor interface
 //-----------------------------------------------------------------------------
@@ -16,16 +16,16 @@
 #include "HRFResolutionEditor.h"
 
 BEGIN_IMAGEPP_NAMESPACE
-class HRFHgtFile;
+class HRFSRTMFile;
 
-class HRFHgtLineEditor : public HRFResolutionEditor
+class HRFSRTMLineEditor : public HRFResolutionEditor
     {
     public:
         DEFINE_T_SUPER(HRFResolutionEditor)
 
-            friend class HRFHgtFile;
+            friend class HRFSRTMFile;
 
-        virtual ~HRFHgtLineEditor();
+        virtual ~HRFSRTMLineEditor();
 
         // Edition by block
         virtual HSTATUS ReadBlock(uint64_t    pi_PosBlockX,
@@ -45,13 +45,13 @@ class HRFHgtLineEditor : public HRFResolutionEditor
         // and to the capabilities
 
         // Constructor
-        HRFHgtLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
+        HRFSRTMLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                          uint32_t              pi_Page,
                          uint16_t       pi_Resolution,
                          HFCAccessMode         pi_AccessMode);
     private:
 
-        HFCPtr<HRFHgtFile>    m_pRasterFile;
+        HFCPtr<HRFSRTMFile>    m_pRasterFile;
 
         uint32_t                    m_DataOffset;
 
@@ -59,18 +59,18 @@ class HRFHgtLineEditor : public HRFResolutionEditor
         uint32_t                    m_ExactBytesPerRow;
 
         // Methods Disabled
-        HRFHgtLineEditor(const HRFHgtLineEditor& pi_rObj);
-        HRFHgtLineEditor& operator=(const HRFHgtLineEditor& pi_rObj);
+        HRFSRTMLineEditor(const HRFSRTMLineEditor& pi_rObj);
+        HRFSRTMLineEditor& operator=(const HRFSRTMLineEditor& pi_rObj);
     };
 
-class HRFHgtImageEditor : public HRFResolutionEditor
+class HRFSRTMImageEditor : public HRFResolutionEditor
     {
     public:
         DEFINE_T_SUPER(HRFResolutionEditor)
 
-            friend class HRFHgtFile;
+            friend class HRFSRTMFile;
 
-        virtual ~HRFHgtImageEditor();
+        virtual ~HRFSRTMImageEditor();
 
         // Edition by block
         virtual HSTATUS ReadBlock(uint64_t    pi_PosBlockX,
@@ -89,18 +89,18 @@ class HRFHgtImageEditor : public HRFResolutionEditor
         // and to the capabilities
 
         // Constructor
-        HRFHgtImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
+        HRFSRTMImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                           uint32_t              pi_Page,
                           uint16_t       pi_Resolution,
                           HFCAccessMode         pi_AccessMode);
     private:
 
-        HFCPtr<HRFHgtFile>    m_pRasterFile;
+        HFCPtr<HRFSRTMFile>    m_pRasterFile;
 
 
         // Methods Disabled
-        HRFHgtImageEditor(const HRFHgtImageEditor& pi_rObj);
-        HRFHgtImageEditor& operator=(const HRFHgtImageEditor& pi_rObj);
+        HRFSRTMImageEditor(const HRFSRTMImageEditor& pi_rObj);
+        HRFSRTMImageEditor& operator=(const HRFSRTMImageEditor& pi_rObj);
     };
 END_IMAGEPP_NAMESPACE
 

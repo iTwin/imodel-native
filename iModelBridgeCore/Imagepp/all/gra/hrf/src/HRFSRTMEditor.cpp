@@ -1,25 +1,25 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: all/gra/hrf/src/HRFHgtEditor.cpp $
+//:>     $Source: all/gra/hrf/src/HRFSRTMEditor.cpp $
 //:>
 //:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class HRFHgtLineEditor
+// Class HRFSRTMLineEditor
 //-----------------------------------------------------------------------------
 
 #include <ImageppInternal.h>
 
-#include <Imagepp/all/h/HRFHgtFile.h>
-#include <Imagepp/all/h/HRFHgtEditor.h>
+#include <Imagepp/all/h/HRFSRTMFile.h>
+#include <Imagepp/all/h/HRFSRTMEditor.h>
 
-//---------------------------------------------- HRFHgtLineEditor
+//---------------------------------------------- HRFSRTMLineEditor
 
 //-----------------------------------------------------------------------------
 // public
 // Construction
 //-----------------------------------------------------------------------------
-HRFHgtLineEditor::HRFHgtLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
+HRFSRTMLineEditor::HRFSRTMLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    uint32_t              pi_Page,
                                    uint16_t       pi_Resolution,
                                    HFCAccessMode         pi_AccessMode)
@@ -28,7 +28,7 @@ HRFHgtLineEditor::HRFHgtLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                    pi_Resolution,
                                    pi_AccessMode)
     {
-    m_pRasterFile = static_cast<HRFHgtFile*>(GetRasterFile().GetPtr());
+    m_pRasterFile = static_cast<HRFSRTMFile*>(GetRasterFile().GetPtr());
 
     m_ExactBytesPerRow = m_pRasterFile->m_Width * 2;
 
@@ -40,7 +40,7 @@ HRFHgtLineEditor::HRFHgtLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
 // public
 // Destruction
 //-----------------------------------------------------------------------------
-HRFHgtLineEditor::~HRFHgtLineEditor()
+HRFSRTMLineEditor::~HRFSRTMLineEditor()
     {}
 
 //-----------------------------------------------------------------------------
@@ -48,7 +48,7 @@ HRFHgtLineEditor::~HRFHgtLineEditor()
 // ReadBlock
 // Edition by Block
 //-----------------------------------------------------------------------------
-HSTATUS HRFHgtLineEditor::ReadBlock(uint64_t pi_PosBlockX,
+HSTATUS HRFSRTMLineEditor::ReadBlock(uint64_t pi_PosBlockX,
                                     uint64_t pi_PosBlockY,
                                     Byte*  po_pData)
     {
@@ -66,10 +66,10 @@ HSTATUS HRFHgtLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     uint64_t offsetToLine;
     offsetToLine = pi_PosBlockY * m_ExactBytesPerRow;
 
-    m_pRasterFile->m_pHgtFile->SeekToPos(offsetToLine);
+    m_pRasterFile->m_pSRTMFile->SeekToPos(offsetToLine);
 
     uint32_t DataSize = GetResolutionDescriptor()->GetBytesPerBlockWidth();
-    if (m_pRasterFile->m_pHgtFile->Read(po_pData, DataSize) != DataSize)
+    if (m_pRasterFile->m_pSRTMFile->Read(po_pData, DataSize) != DataSize)
         return Status;    // H_ERROR
 
     //I'll keep it as a reference for big endian, little endian switch that may be necessary. To remove once done.
@@ -89,14 +89,14 @@ HSTATUS HRFHgtLineEditor::ReadBlock(uint64_t pi_PosBlockX,
     return Status;
     }
 
-//---------------------------------------------- HRFHgtImageEditor
+//---------------------------------------------- HRFSRTMImageEditor
 
 
 //-----------------------------------------------------------------------------
 // public
 // Construction
 //-----------------------------------------------------------------------------
-HRFHgtImageEditor::HRFHgtImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
+HRFSRTMImageEditor::HRFSRTMImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      uint32_t              pi_Page,
                                      uint16_t       pi_Resolution,
                                      HFCAccessMode         pi_AccessMode)
@@ -105,14 +105,14 @@ HRFHgtImageEditor::HRFHgtImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      pi_Resolution,
                                      pi_AccessMode)
     {
-    m_pRasterFile = static_cast<HRFHgtFile*>(GetRasterFile().GetPtr());
+    m_pRasterFile = static_cast<HRFSRTMFile*>(GetRasterFile().GetPtr());
     }
 
 //-----------------------------------------------------------------------------
 // public
 // Destruction
 //-----------------------------------------------------------------------------
-HRFHgtImageEditor::~HRFHgtImageEditor()
+HRFSRTMImageEditor::~HRFSRTMImageEditor()
     {}
 
 //-----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ HRFHgtImageEditor::~HRFHgtImageEditor()
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFHgtImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
+HSTATUS HRFSRTMImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
                                      uint64_t       pi_PosBlockY,
                                      Byte*          po_pData)
     {
@@ -136,11 +136,11 @@ HSTATUS HRFHgtImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
         return Status;
         }
 
-    uint64_t ImageLen = m_pRasterFile->m_pHgtFile->GetSize();
+    uint64_t ImageLen = m_pRasterFile->m_pSRTMFile->GetSize();
 
     // Read the compressed image in memory
-    m_pRasterFile->m_pHgtFile->SeekToPos(0);
-    if (m_pRasterFile->m_pHgtFile->Read(po_pData, ImageLen) != ImageLen)
+    m_pRasterFile->m_pSRTMFile->SeekToPos(0);
+    if (m_pRasterFile->m_pSRTMFile->Read(po_pData, ImageLen) != ImageLen)
         return Status;    // H_ERROR
 
     //The data is in big-endian order. If the system is not, we swap the bytes.
