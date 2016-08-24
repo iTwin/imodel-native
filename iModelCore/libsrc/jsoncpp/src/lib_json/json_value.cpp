@@ -369,7 +369,11 @@ Value::Value( double value )
 #endif
 {
    // Bentley change: NaN handling
+#ifdef BENTLEY_TOOL_CONTEXT_IsLinuxGcc
    if (std::isnan( value ))
+#else
+   if (isnan( value ))
+#endif
    {
       // the problem is with the caller so assert in debug builds, but convert value to null in optimized builds to prevent downstream issues
       BeAssert (false);
