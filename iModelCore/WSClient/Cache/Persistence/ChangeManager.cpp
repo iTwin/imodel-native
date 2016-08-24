@@ -120,12 +120,11 @@ ECRelationshipClassCP ChangeManager::GetLegacyParentRelationshipClass(ECClassId 
         }
 
     ECSchemaPtr ecSchema;
-    ECSchema::CreateSchema(ecSchema, schemaName, 1, 0);
+    ECSchema::CreateSchema(ecSchema, schemaName, schemaName, 1, 0, 0);
     if (ecSchema.IsNull())
         return nullptr;
 
-    if (ECObjectsStatus::Success != ecSchema->SetAlias(schemaName) ||
-        ECObjectsStatus::Success != ecSchema->AddReferencedSchema((ECSchemaR) parentClass->GetSchema()))
+    if (ECObjectsStatus::Success != ecSchema->AddReferencedSchema((ECSchemaR) parentClass->GetSchema()))
         return nullptr;
 
     auto status = ecSchema->AddReferencedSchema((ECSchemaR) childClass->GetSchema());
