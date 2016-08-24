@@ -13,6 +13,12 @@
 #include <iostream>
 #include <fstream>
 
+#if defined(__TILEPUBLISHER_LIB_BUILD__)
+    #define TILEPUBLISHER_EXPORT EXPORT_ATTRIBUTE
+#else
+    #define TILEPUBLISHER_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 USING_NAMESPACE_BENTLEY
 
 #define BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Tile3d {
@@ -86,10 +92,10 @@ private:
         explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
+    TILEPUBLISHER_EXPORT TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
-    Status Publish();
-    TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model);
+    TILEPUBLISHER_EXPORT Status Publish();
+    TILEPUBLISHER_EXPORT TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
@@ -99,8 +105,8 @@ public:
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
 
-    static Status ConvertStatus(TileGenerator::Status input);
-    static TileGenerator::Status ConvertStatus(Status input);
+    TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
+    TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 };
 
 //=======================================================================================
@@ -144,9 +150,9 @@ private:
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 public:
-    TilePublisher(TileNodeCR tile, TilesetPublisher& context);
+    TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, TilesetPublisher& context);
 
-    TilesetPublisher::Status Publish();
+    TILEPUBLISHER_EXPORT TilesetPublisher::Status Publish();
 
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }

@@ -689,12 +689,20 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/TilePublisherLib.mke">
         <SubPart PartName="DgnPlatformLib" />
-        <SubPart PartName="DgnPlatformSqlang" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
-		<SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="TilePublisherLib" />
+        <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>
