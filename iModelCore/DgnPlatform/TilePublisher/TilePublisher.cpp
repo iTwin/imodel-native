@@ -949,8 +949,9 @@ TilesetPublisher::Status TilesetPublisher::ConvertStatus(TileGenerator::Status i
     {
     switch (input)
         {
-        case TileGenerator::Status::Success:    return Status::Success;
-        case TileGenerator::Status::NoGeometry: return Status::NoGeometry;
+        case TileGenerator::Status::Success:        return Status::Success;
+        case TileGenerator::Status::NoGeometry:     return Status::NoGeometry;
+        case TileGenerator::Status::NotImplemented: return Status::NoGeometry;  // "NotImplemented" means "the viewed model is not an IPublishModelTiles therefore no tiles to publish"...not an error.
         default: BeAssert(TileGenerator::Status::Aborted == input); return Status::Aborted;
         }
     }
@@ -967,8 +968,6 @@ TileGenerator::Status TilesetPublisher::ConvertStatus(Status input)
         default:                    return TileGenerator::Status::Aborted;
         }
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16

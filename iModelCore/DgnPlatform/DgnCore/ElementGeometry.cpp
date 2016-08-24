@@ -555,7 +555,7 @@ bool GeometricPrimitive::IsSolid() const
             return GetAsPolyfaceHeader()->IsClosedByEdgePairing();
 
         case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType_Solid == GetAsISolidKernelEntity()->GetEntityType();
+            return ISolidKernelEntity::EntityType::Solid == GetAsISolidKernelEntity()->GetEntityType();
 
         default:
             return false;
@@ -582,7 +582,7 @@ bool GeometricPrimitive::IsSheet() const
             return !GetAsPolyfaceHeader()->IsClosedByEdgePairing();
 
         case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType_Sheet == GetAsISolidKernelEntity()->GetEntityType();
+            return ISolidKernelEntity::EntityType::Sheet == GetAsISolidKernelEntity()->GetEntityType();
 
         default:
             return false;
@@ -603,7 +603,7 @@ bool GeometricPrimitive::IsWire() const
             return GetAsCurveVector()->IsOpenPath();
 
         case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType_Wire == GetAsISolidKernelEntity()->GetEntityType();
+            return ISolidKernelEntity::EntityType::Wire == GetAsISolidKernelEntity()->GetEntityType();
 
         default:
             return false;
@@ -613,30 +613,30 @@ bool GeometricPrimitive::IsWire() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntity::KernelEntityType GeometricPrimitive::GetKernelEntityType() const
+ISolidKernelEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
     {
     switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
-            return ISolidKernelEntity::EntityType_Wire;
+            return ISolidKernelEntity::EntityType::Wire;
 
         case GeometryType::CurveVector:
-            return (GetAsCurveVector()->IsAnyRegionType() ? ISolidKernelEntity::EntityType_Sheet : (GetAsCurveVector()->IsOpenPath() ? ISolidKernelEntity::EntityType_Wire : ISolidKernelEntity::EntityType_Minimal));
+            return (GetAsCurveVector()->IsAnyRegionType() ? ISolidKernelEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? ISolidKernelEntity::EntityType::Wire : ISolidKernelEntity::EntityType::Minimal));
 
         case GeometryType::BsplineSurface:
-            return ISolidKernelEntity::EntityType_Sheet;
+            return ISolidKernelEntity::EntityType::Sheet;
 
         case GeometryType::SolidPrimitive:
-            return GetAsISolidPrimitive()->GetCapped() ? ISolidKernelEntity::EntityType_Solid : ISolidKernelEntity::EntityType_Sheet;
+            return GetAsISolidPrimitive()->GetCapped() ? ISolidKernelEntity::EntityType::Solid : ISolidKernelEntity::EntityType::Sheet;
 
         case GeometryType::Polyface:
-            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? ISolidKernelEntity::EntityType_Solid : ISolidKernelEntity::EntityType_Sheet;
+            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? ISolidKernelEntity::EntityType::Solid : ISolidKernelEntity::EntityType::Sheet;
 
         case GeometryType::SolidKernelEntity:
             return GetAsISolidKernelEntity()->GetEntityType();
 
         default:
-            return ISolidKernelEntity::EntityType_Minimal;
+            return ISolidKernelEntity::EntityType::Minimal;
         }
     }
 
@@ -3496,7 +3496,7 @@ bool GeometryCollection::Iterator::IsSurface() const
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
 #endif
 
@@ -3531,7 +3531,7 @@ bool GeometryCollection::Iterator::IsSolid() const
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
 #endif
 
