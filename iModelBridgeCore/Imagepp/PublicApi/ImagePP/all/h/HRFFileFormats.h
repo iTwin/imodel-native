@@ -67,6 +67,7 @@
 #include "HRFErdasImgFile.h"
 #include "HRFNitfFile.h"
 #include "HRFDtedFile.h"
+#include "HRFHgtFile.h"
 
 #include "HRFErMapperSupportedFile.h"
 #include "HRFMrSIDFile.h"
@@ -260,6 +261,7 @@
     HOST_REGISTER_FILEFORMAT(HRFIntergraphCRLCreator)   \
     HOST_REGISTER_FILEFORMAT(HRFTiffIntgrCreator)       \
     HOST_REGISTER_FILEFORMAT(HRFWbmpCreator)            \
+    HOST_REGISTER_FILEFORMAT(HRFHgtCreator)             \
     HOST_REGISTER_GDAL_FILEFORMAT                       \
     HOST_REGISTER_Irasb_FILEFORMAT                      \
     HOST_REGISTER_Raw_FILEFORMAT                        \
