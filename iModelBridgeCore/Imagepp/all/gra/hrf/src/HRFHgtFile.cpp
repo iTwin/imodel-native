@@ -420,15 +420,15 @@ void HRFHgtFile::CreateDescriptors()
     pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
     if (SUCCESS == pBaseGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
         {
-        GeoPoint geoPoint = {offsetLongitude, offsetLatitude, 0.0};
+        GeoPoint geoPoint = {offsetLongitude, offsetLatitude + 1, 0.0};
         DPoint3d cartesianPoint;
         pBaseGCS->CartesianFromLatLong(cartesianPoint, geoPoint);
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), scale, scale);
+        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), scale, scale / cos((offsetLatitude + 0.5)* PI / 180));
         }
 
 
     if (pTransfoModel == nullptr)
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), scale, scale);
+        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), scale, scale / cos((offsetLatitude + 0.5)* PI / 180));
 
     // Flip the Y Axe because the origin of ModelSpace is lower-left
     HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
@@ -471,6 +471,9 @@ void HRFHgtFile::CreateDescriptors()
                                   0,                   // Filters
                                   0);                  // Defined Tag
 
+	if (!pBaseGCS.IsNull() && pBaseGCS->IsValid())
+        pPage->SetGeocoding(pBaseGCS.get());
+								  
     m_ListOfPageDescriptor.push_back(pPage);
     }
 
@@ -481,7 +484,8 @@ void HRFHgtFile::CreateDescriptors()
 //-----------------------------------------------------------------------------
 const HGF2DWorldIdentificator HRFHgtFile::GetWorldIdentificator() const
     {
-    return HGF2DWorld_GEOTIFFUNKNOWN;
+    //return HGF2DWorld_GEOTIFFUNKNOWN;
+	return HGF2DWorld_HMRWORLD;
     }
 
 //-----------------------------------------------------------------------------
