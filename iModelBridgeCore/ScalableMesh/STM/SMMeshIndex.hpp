@@ -456,8 +456,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
             }
         // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)
         ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());
-#endif
         node->SavePointDataToCloud(pDataStore);
+#endif
 
         SetThreadAvailableAsync(threadId);
         }, this, std::placeholders::_1));

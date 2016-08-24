@@ -102,9 +102,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
         {
-        return new SMStreamingStore(dataSourceAccount, path, compress,areNodeHeadersGrouped, headers_path);
+        return new SMStreamingStore(dataSourceAccount, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
         }
         //Inherited from ISMDataStore - End
                              
