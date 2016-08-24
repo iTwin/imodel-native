@@ -373,13 +373,11 @@ MultiCompileDepends=$(_MakeFileSpec)
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
-%if defined (BENTLEY_TOOL_CONTEXT_NAME)
-%if $(BENTLEY_TOOL_CONTEXT_NAME) == "LinuxGcc"
+%if "LINUX_GCC" == $(BUILD_TOOLSET)
     OldLinuxGccCommonOptions =% $(LinuxGccCommonOptions)
     LinuxGccCommonOptions + -Wno-unknown-pragmas
     LinuxGccCommonOptions + -Wno-unused-function
     LinuxGccCommonOptions + -Wno-address
-%endif
 %endif
 
 # Prefer to disable warnings in third-party code vs. editing it.
@@ -401,10 +399,8 @@ $(o)SqlBison$(oext): $(baseDir)ECSql/Parser/SqlBison.cpp $(ECDbAllHeaders) ${Mul
 %include MultiCppCompileGo.mki
 nonportObjs=%$(MultiCompileObjectList)
 
-%if defined (BENTLEY_TOOL_CONTEXT_NAME)
-%if $(BENTLEY_TOOL_CONTEXT_NAME) == "LinuxGcc"
+%if "LINUX_GCC" == $(BUILD_TOOLSET)
     LinuxGccCommonOptions = $(OldLinuxGccCommonOptions)
-%endif
 %endif
 
 %if $(BUILD_TOOLSET) == "ANDROID_CLANG"
