@@ -309,10 +309,23 @@ SpatialModelPtr DgnDbTestUtils::InsertSpatialModel(DgnDbR db, DgnCode modelCode)
     DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
     SpatialModelPtr catalogModel = new SpatialModel(SpatialModel::CreateParams(db, mclassId, modelCode));
     DgnDbStatus status = catalogModel->Insert();
-    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
+    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%s - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
     return catalogModel;
     }
 
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                           Umar.Hayat             08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+SheetModelPtr DgnDbTestUtils::InsertSheetModel(DgnDbR db, DgnCode modelCode)
+    {
+    MUST_HAVE_HOST(nullptr);
+
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
+    SheetModelPtr catalogModel = new SheetModel(SheetModel::CreateParams(db, mclassId, modelCode, DPoint2d::From(2.0, 2.0)));
+    DgnDbStatus status = catalogModel->Insert();
+    EXPECT_EQ(DgnDbStatus::Success, status) << WPrintfString(L"%ls - insert into %ls failed with %x", modelCode.GetValue().c_str(), db.GetFileName().c_str(), (int)status).c_str();
+    return catalogModel;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------

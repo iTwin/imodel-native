@@ -76,11 +76,8 @@ struct ComponentModelBasicTest : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr ComponentModelBasicTest::initDb(WCharCP fileName, Db::OpenMode mode)
     {
-    //** Force to copy the file in Sub-Directory of TestCase
-    BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
-    testFileName.AppendToPath(fileName);
-
-    BeFileName dbName = DgnDbTestFixture::CopyDb(L"DgnDb/3dMetricGeneral.ibim", testFileName.c_str());
+    BeFileName dbName;
+    EXPECT_TRUE(DgnDbStatus::Success == DgnDbTestFixture::GetSeedDbCopy(dbName, fileName));
     DgnDbPtr db;
     DgnDbTestFixture::OpenDb(db, dbName, Db::OpenMode::ReadWrite);
     return db;
@@ -413,7 +410,7 @@ TEST_F(ComponentModelBasicTest, ComponentDef_Export)
     // Export redundantly 
     status = cdef->Export(context);
     ASSERT_TRUE(DgnDbStatus::Success == status);
-
+    clientDb->SaveChanges();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat                      01/16

@@ -35,6 +35,7 @@ struct CommandParam
     WCharCP     m_verbose;
     WCharCP     m_descr;
     bool        m_required;
+    bool        m_boolean;  // True => arg is true if param specified. False => expect 'arg=value'.
 };
 
 //=======================================================================================
@@ -69,12 +70,10 @@ struct CommandArg
             ++raw;
 
         WCharCP equalPos = wcschr(raw, '=');
-        if (nullptr == equalPos)
-            return;
+        bool haveArgValue = nullptr != equalPos;
+        WCharCP argValue = haveArgValue ? equalPos+1 : nullptr;
+        auto paramNameLen = haveArgValue ? equalPos - raw : wcslen(raw);
 
-        WCharCP argValue = equalPos+1;
-
-        auto paramNameLen = equalPos - raw;
         if (0 == paramNameLen || (!verboseParamName && 1 != paramNameLen))
             return;
 
@@ -85,10 +84,18 @@ struct CommandArg
             if (0 != wcsncmp(raw, paramName, paramNameLen) || paramNameLen != wcslen(paramName))
                 continue;
 
+            if ((nullptr == equalPos) != (param.m_boolean))
+                return;
+
             m_paramId = static_cast<ParamId>(i);
-            m_value = argValue;
-            m_value.Trim(L"\"");
-            m_value.Trim();
+
+            if (!param.m_boolean)
+                {
+                m_value = argValue;
+                m_value.Trim(L"\"");
+                m_value.Trim();
+                }
+
             break;
             }
         }

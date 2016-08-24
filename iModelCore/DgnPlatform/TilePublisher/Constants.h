@@ -21,6 +21,7 @@ USING_NAMESPACE_BENTLEY
 #define GLTF_UINT32 5125
 #define GLTF_FLOAT 5126
 #define GLTF_RGB 6407
+#define GLTF_RGBA 6408
 #define GLTF_LINEAR 9729
 #define GLTF_LINEAR_MIPMAP_LINEAR 9987
 #define GLTF_CLAMP_TO_EDGE 33071
@@ -47,7 +48,7 @@ USING_NAMESPACE_BENTLEY
 
 
 //Shaders for display of mesh data
-static std::string s_textureShaderCommon = 
+static std::string s_litTextureCommon = 
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_n;\n"
 "attribute float a_batchId;\n"
@@ -66,14 +67,26 @@ static std::string s_texturedVertexShader =
 "precision highp float;\n" 
 "attribute vec2 a_texc;\n"
 "varying vec2 v_texc;\n"
-+ s_textureShaderCommon +
++ s_litTextureCommon +
 "v_texc = a_texc;\n"
 "}\n";
 
 static std::string s_untexturedVertexShader =
 "precision highp float;\n" 
-+ s_textureShaderCommon +
++ s_litTextureCommon +
 "}\n";
+
+static std::string s_unlitTextureVertexShader =     // Used for reality meshes.
+"precision highp float;\n" 
+"attribute vec3 a_pos;\n"
+"attribute float a_batchId;\n"
+"attribute vec2 a_texc;\n"
+"varying vec2 v_texc;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"void main(void) {\n"
+"gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
+
 
 static std::string s_fragShaderCommon = 
 "varying vec3 v_n;\n"
@@ -108,7 +121,14 @@ static std::string s_texturedFragShader =
 "gl_FragColor = vec4(color.rgb * diffuseIntensity, textureColor.a);\n"
 "}\n";
 
-// Polyline shaders....
+static std::string s_unlitTextureFragmentShader =
+"precision highp float;\n"
+"varying vec2 v_texc;\n"  
+"uniform sampler2D u_tex;\n" 
+"void main(void) {gl_FragColor = texture2D(u_tex, v_texc);}\n";
+
+
+// Polyline shaders.... (no lighting).
 static std::string s_polylineVertexShader =
 "precision highp float;\n" 
 "attribute vec3 a_pos;\n"
@@ -192,9 +212,7 @@ maximumNumberOfLoadedTiles: 1000,
 debugShowBoundingVolume:false
 }));
 
-var highlightColor = new Cesium.Color(0.5, 0.5, 0.5, 1);
 var curPickedObjects = null;
-var curPickedColor = null;
 
 Cesium.when(tileset.readyPromise).then(function(tileset) {       
    %s
@@ -211,22 +229,25 @@ Cesium.when(tileset.readyPromise).then(function(tileset) {
    handler.setInputAction(function(movement) {
        var pickedObjects = viewer.scene.pick(movement.endPosition);
        if (pickedObjects !== curPickedObjects) {
-           if (Cesium.defined(curPickedObjects)) {
-               curPickedObjects.color = curPickedColor;
-           }
-
-           var elemId = "None";
+           var elemId = null;
            curPickedObjects = pickedObjects;
            if (Cesium.defined(curPickedObjects)) {
-               curPickedColor = curPickedObjects.color;
-               curPickedObjects.color = highlightColor;
                elemId = pickedObjects.getProperty("element");
-           } else {
-               curPickedColor = null;
            }
 
+           // Update field displaying ID of moused-over element
            var field = document.getElementById("field_elementId");
-           field.firstChild.nodeValue = elemId;
+           field.firstChild.nodeValue = null != elemId ? elemId : "None";
+
+           // Update tileset style to hilite moused-over element
+           var style = undefined;
+           if (null !== elemId) {
+           style = new Cesium.Cesium3DTileStyle({
+               "color": "(${element} === '" + elemId + "') ? color('#808080') : color('#ffffff')"
+               });
+           }
+
+           tileset.style = style;
        }
    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 });

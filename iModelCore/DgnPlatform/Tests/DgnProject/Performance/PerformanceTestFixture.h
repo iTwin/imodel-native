@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Performance/PerformanceTestFixture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,10 +27,10 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                                 Krischan.Eberle      09/2012
 //=======================================================================================    
-struct PerformanceTestFixture : public testing::Test
+struct PerformanceTestFixture : public DgnDbTestFixture
     {
 private:
-    static void ImportSchema(ECN::ECSchemaReadContextR schemaContext, ECN::ECSchemaR testSchema, DgnDbTestDgnManager tdm);
+    static void ImportSchema(ECN::ECSchemaReadContextR schemaContext, ECN::ECSchemaR testSchema, DgnDbR project);
 
 protected:
     static Utf8CP const TEST_CLASS_NAME;
@@ -44,8 +44,8 @@ protected:
     PerformanceTestFixture() {};
     virtual ~PerformanceTestFixture () {};
 
-    static void ImportTestSchema(ECN::ECSchemaPtr& schema, DgnDbTestDgnManager tdm, int numIntProperties, int numStringProperties);
-    static void ImportComplexTestSchema (ECN::ECSchemaPtr& schema, DgnDbTestDgnManager tdm);
+    static void ImportTestSchema(ECN::ECSchemaPtr& schema, DgnDbR project, int numIntProperties, int numStringProperties);
+    static void ImportComplexTestSchema(ECN::ECSchemaPtr& schema, DgnDbR project);
     static void AssignRandomECValue (ECN::ECValue& ecValue, ECN::ECPropertyCR ecProp);
     static void LogResultsToFile(bmap<Utf8String, double> results);
     };

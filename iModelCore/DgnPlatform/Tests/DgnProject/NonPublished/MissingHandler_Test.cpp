@@ -114,7 +114,10 @@ DOMAIN_DEFINE_MEMBERS(MissingHandlerDomain);
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct MissingHandlerTest : public ::testing::Test
 {
+public: 
+    static void SetUpTestCase();
     typedef PhysicalElement::RestrictedAction Restriction;
+    static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
     struct ElemInfo
     {
@@ -137,6 +140,17 @@ struct MissingHandlerTest : public ::testing::Test
     void TestDelete(DgnElementId elemId, DgnDbR db, bool allowed);
 };
 
+DgnDbTestUtils::SeedDbInfo MissingHandlerTest::s_seedFileInfo;
+//---------------------------------------------------------------------------------------
+// Do one-time setup for all tests in this group
+// In this case, I just request the (root) seed file that my tests will use and make a note of it.
+// @bsimethod                                           Sam.Wilson             01/2016
+//---------------------------------------------------------------------------------------
+void MissingHandlerTest::SetUpTestCase()
+    {
+    ScopedDgnHost tempHost;
+    MissingHandlerTest::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -316,15 +330,14 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(MissingHandlerTest, HandlerRestrictions)
     {
-    static const WCharCP s_dbName = L"HandlerRestrictions.ibim";
     BeFileName fullDgnDbFileName;
-    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(fullDgnDbFileName, L"3dMetricGeneral.ibim", s_dbName, __FILE__));
 
     // Create a new dgndb, with our domain + handlers loaded
         {
         ScopedDgnHost host;
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, fullDgnDbFileName, DgnDb::OpenParams(BeSQLite::Db::OpenMode::ReadWrite));
+        DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(MissingHandlerTest::s_seedFileInfo.fileName, L"HandlerRestrictions");
         ASSERT_TRUE(db.IsValid());
+        fullDgnDbFileName = db->GetFileName();
 
         // register domain and handlers
         MissingHandlerDomain domain;
@@ -340,6 +353,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
         TestRestrictions(m_elem1Info, *db, 0);
         TestRestrictions(m_elem2Info, *db, 0);
 
+        db->SaveChanges();
         // Host terminated; DgnDb closed; domain and handlers no longer registered
         }
 
@@ -358,6 +372,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
         // Confirm deletion restriction (NOTE: will result in our Elem2 element being deleted
         TestDelete(m_elem1Info.m_elemId, *db, false);
         TestDelete(m_elem2Info.m_elemId, *db, true);
+        db->SaveChanges();
         }
 
     // Reopen the dgndb once more, with handlers loaded again
@@ -374,6 +389,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
         // Confirm operations are all supported again now that handler is available
         TestRestrictions(m_elem1Info, *db, 0);
         TestDelete(m_elem1Info.m_elemId, *db, true);
+        db->SaveChanges();
         }
     }
 

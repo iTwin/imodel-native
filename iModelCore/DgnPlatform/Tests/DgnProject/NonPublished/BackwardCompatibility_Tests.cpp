@@ -173,6 +173,10 @@ TEST_F(BackwardsCompatibilityTests, OpenDgndbInCurrent)
 
     BeFileName outputRoot;
     BeTest::GetHost().GetOutputRoot(outputRoot);
+    WString testCaseName(TEST_FIXTURE_NAME, true);
+    outputRoot.AppendToPath(testCaseName.c_str());
+    if (!outputRoot.DoesPathExist())
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::CreateNewDirectory(outputRoot.c_str()));
 
     BeFileName resultsFilePath = outputRoot;
     resultsFilePath.AppendToPath(L"CompatibilityResults_DgnDb0601.csv");

@@ -67,9 +67,8 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                 07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName)
+void PerformanceDgnECTests::RunInsertTests(ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName)
     {
-    DgnDbR project = *tdm.GetDgnProjectP ();
     DgnModels& modelTable = project.Models ();
     DgnModelId id = modelTable.QueryModelId (DgnModel::CreateModelCode ("Default"));
     DgnModelPtr model = modelTable.GetModel (id);
@@ -107,7 +106,7 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
 
     StopWatch insertingTimer (inserting.c_str (), false);
     StopWatch attachingTimer (attaching.c_str (), false);
-    ECInstanceInserter inserter (*tdm.GetDgnProjectP (), *testClass);
+    ECInstanceInserter inserter (project, *testClass);
     ASSERT_TRUE (inserter.IsValid ());
 
     totalInsertingStopwatch.Start ();
@@ -163,20 +162,20 @@ void PerformanceDgnECTests::RunInsertTests (ECSchemaR schema, DgnDbTestDgnManage
     results[attaching] = attachingTimer.GetElapsedSeconds ();
 
     LogResultsToFile (results);
-    tdm.GetDgnProjectP ()->SaveChanges ();
+    project.SaveChanges ();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Carole.MacDonald                 07/13
+* @bsimethod                                  Carole.MacDonald                 07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager tdm, Utf8String testcaseName, Utf8String testName)
+void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbR project, Utf8String testcaseName, Utf8String testName)
     {
     ECClassP testClass = schema.GetClassP (TEST_CLASS_NAME);
 
     ECSqlStatement statement;
     Utf8String query;
     query.Sprintf ("SELECT * FROM %s.%s", schema.GetNamespacePrefix ().c_str (), TEST_CLASS_NAME);
-    statement.Prepare (*tdm.GetDgnProjectP (), query.c_str ());
+    statement.Prepare (project, query.c_str ());
 
     int count = 0;
 
@@ -248,7 +247,7 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager
     statement.Finalize ();
 
     query.Sprintf ("SELECT Count(*) FROM %s.%s", schema.GetName ().c_str (), TEST_CLASS_NAME);
-    statement.Prepare (*tdm.GetDgnProjectP (), query.c_str ());
+    statement.Prepare (project, query.c_str ());
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, statement.Step ());
     ASSERT_EQ (count, statement.GetValueInt (0));
 
@@ -259,22 +258,22 @@ void PerformanceDgnECTests::RunQueryTests (ECSchemaR schema, DgnDbTestDgnManager
 
 TEST_F (PerformanceDgnECTests, InsertingAndQueryingInstances)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
+    SetupSeedProject();
 
     ECSchemaPtr schema;
-    PerformanceTestFixture::ImportTestSchema (schema, tdm, 25, 25);
-    RunInsertTests (*schema, tdm, TEST_DETAILS);
-    RunQueryTests (*schema, tdm, TEST_DETAILS);
+    PerformanceTestFixture::ImportTestSchema(schema, *m_db, 25, 25);
+    RunInsertTests(*schema, *m_db, TEST_DETAILS);
+    RunQueryTests(*schema, *m_db, TEST_DETAILS);
     }
 
 TEST_F (PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
     {
-    DgnDbTestDgnManager tdm (L"3dMetricGeneral.ibim", __FILE__, Db::OpenMode::ReadWrite, false);
+    SetupSeedProject();
 
     ECSchemaPtr schema;
-    PerformanceTestFixture::ImportComplexTestSchema (schema, tdm);
-    RunInsertTests (*schema, tdm, TEST_DETAILS);
-    //RunQueryTests(*schema, tdm, TEST_DETAILS);
+    PerformanceTestFixture::ImportComplexTestSchema(schema, *m_db);
+    RunInsertTests(*schema, *m_db, TEST_DETAILS);
+    //RunQueryTests(*schema, *m_db, TEST_DETAILS);
     }
 
 END_DGNDB_UNIT_TESTS_NAMESPACE
