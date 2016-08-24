@@ -1032,7 +1032,7 @@ TileGenerator::Status   TilesetPublisher::PublishViewedModel (WStringCR tileSetN
     if (NULL == (publishTiles = dynamic_cast <IPublishModelTiles*> (&model)))
         return TileGenerator::Status::NotImplemented;
 
-    return publishTiles->_PublishModelTiles (*this);
+    return publishTiles->_PublishModelTiles (*this, m_dbToTile);
     }
 
 /*---------------------------------------------------------------------------------**//**
