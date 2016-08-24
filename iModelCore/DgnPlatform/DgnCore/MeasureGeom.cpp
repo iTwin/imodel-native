@@ -819,11 +819,11 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
         {
         case AccumulateLengths:
             {
-            if (ISolidKernelEntity::EntityType_Solid == entity.GetEntityType ())
+            if (ISolidKernelEntity::EntityType::Solid == entity.GetEntityType ())
                 {
                 return true; // Not valid type for operation...
                 }
-            else if (ISolidKernelEntity::EntityType_Sheet == entity.GetEntityType ())
+            else if (ISolidKernelEntity::EntityType::Sheet == entity.GetEntityType ())
                 {
                 TopoDS_Shape const* shape = SolidKernelUtil::GetShape(entity);
 
@@ -836,7 +836,7 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
 
         case AccumulateVolumes:
             {
-            if (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ())
+            if (ISolidKernelEntity::EntityType::Solid != entity.GetEntityType ())
                 return true; // Not valid type for operation...
 
             return DoAccumulateVolumes (entity, graphic);
@@ -844,7 +844,7 @@ bool MeasureGeomCollector::_ProcessBody (ISolidKernelEntityCR entity, SimplifyGr
 
         default:
             {
-            if (ISolidKernelEntity::EntityType_Wire == entity.GetEntityType ())
+            if (ISolidKernelEntity::EntityType::Wire == entity.GetEntityType ())
                 return true; // Not valid type for operation...
 
             return DoAccumulateAreas (entity, graphic);

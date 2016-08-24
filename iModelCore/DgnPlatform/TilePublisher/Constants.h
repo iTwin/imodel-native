@@ -85,6 +85,7 @@ static std::string s_unlitTextureVertexShader =     // Used for reality meshes.
 "uniform mat4 u_mv;\n"
 "uniform mat4 u_proj;\n"
 "void main(void) {\n"
+"v_texc = a_texc;\n"
 "gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
 
 
@@ -153,7 +154,17 @@ Utf8CP s_3dOnlyViewingFrameJs =
 // For geolocated models, don't set the camera's viewing transform explicitly
 Utf8CP s_geoLocatedViewingFrameJs = "var tf = undefined;";
 
-// printf(s_viewerHtml, dataDirectoryName, tilesetName,
+
+// printf (s_tilesetHtml, dataDirectory, rootName)
+Utf8CP s_tilesetHtml =
+"viewer.scene.primitives.add(new Cesium.Cesium3DTileset({\n"
+"url: '%ls/%ls.json',\n"
+"maximumScreenSpaceError: 2,\n"
+"maximumNumberOfLoadedTiles: 1000,\n"
+"debugShowBoundingVolume:false\n"
+"}));\n";
+
+// printf(s_viewerHtml, tilesetHtml,
 //        viewCenterX, viewCenterY, viewCenterZ,
 //        zVecX, zVecY, zVecZ,
 //        yVecZ, yVecY, yVecZ)
@@ -205,12 +216,7 @@ viewer.extend(Cesium.viewerCesiumInspectorMixin);
 var iframe = document.getElementsByClassName('cesium-infoBox-iframe')[0];
 iframe.removeAttribute('sandbox');
 
-var tileset = viewer.scene.primitives.add(new Cesium.Cesium3DTileset({
-url: '%ls/%ls.json',
-maximumScreenSpaceError: 2,
-maximumNumberOfLoadedTiles: 1000,
-debugShowBoundingVolume:false
-}));
+var tileset=%s
 
 var curPickedObjects = null;
 

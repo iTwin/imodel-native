@@ -9,6 +9,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/AutoRestore.h>
 #include <iostream>
 #include <fstream>
 
@@ -88,7 +89,7 @@ public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
     Status Publish();
-    TileGenerator::Status PublishViewedModel (WStringR tileSetName, DgnModelR model);
+    TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
     TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
