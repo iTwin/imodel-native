@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: TilePublisher/TilePublisher.h $
+|     $Source: TilePublisher/lib/TilePublisher.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,6 +12,12 @@
 #include <DgnPlatform/AutoRestore.h>
 #include <iostream>
 #include <fstream>
+
+#if defined(__TILEPUBLISHER_LIB_BUILD__)
+    #define TILEPUBLISHER_EXPORT EXPORT_ATTRIBUTE
+#else
+    #define TILEPUBLISHER_EXPORT IMPORT_ATTRIBUTE
+#endif
 
 USING_NAMESPACE_BENTLEY
 
@@ -38,10 +44,10 @@ public:
 };
 
 //=======================================================================================
-//! Publishes the contents of a DgnDb view as a Cesium tileset.
+//! Context in which tile publishing occurs.
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
-struct TilesetPublisher : TileGenerator::ITileCollector
+struct PublisherContext
 {
     enum class Status
     {
@@ -53,54 +59,32 @@ struct TilesetPublisher : TileGenerator::ITileCollector
         ErrorWritingScene,
         ErrorWritingNode,
     };
-private:
+protected:
     ViewControllerR     m_viewController;
     BeFileName          m_outputDir;
     BeFileName          m_dataDir;
     WString             m_rootName;
-    TileGeneratorP      m_generator = nullptr;
-    Status              m_acceptTileStatus = Status::Success;
     Transform           m_dbToTile;
     Transform           m_tileToEcef;
 
-    virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
 
-    Status Setup();
-    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
-    void OutputStatistics(TileGenerator::Statistics const& stats) const;
+    virtual TileGeometryCacheP _GetGeometryCache() = 0;
 
-    //=======================================================================================
-    // @bsistruct                                                   Paul.Connelly   08/16
-    //=======================================================================================
-    struct ProgressMeter : TileGenerator::IProgressMeter
-    {
-    private:
-        Utf8String          m_taskName;
-        TilesetPublisher&   m_publisher;
-        uint32_t            m_lastNumCompleted = 0xffffffff;
-        
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
-        virtual void _SetTaskName(TileGenerator::TaskName task) override;
-        virtual bool _WasAborted() override { return TilesetPublisher::Status::Success != m_publisher.GetTileStatus(); }
-    public:
-        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
-    };
+    TILEPUBLISHER_EXPORT Status Setup();
+
+    TILEPUBLISHER_EXPORT TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGenerator::ITileCollector& collector);
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
-
-    Status Publish();
-    TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model);
-
-    Status GetTileStatus() const { return m_acceptTileStatus; }
-    TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
 
-    static Status ConvertStatus(TileGenerator::Status input);
-    static TileGenerator::Status ConvertStatus(Status input);
+    TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
+    TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
+
+    TileGeometryCacheP GetGeometryCache() { return _GetGeometryCache(); }
 };
 
 //=======================================================================================
@@ -117,8 +101,7 @@ private:
     TileMeshList            m_meshes;
     TileNodeCR              m_tile;
     ByteStream              m_binaryData;
-    TilesetPublisher&       m_context;
-
+    PublisherContext&       m_context;
 
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
@@ -144,13 +127,13 @@ private:
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 public:
-    TilePublisher(TileNodeCR tile, TilesetPublisher& context);
+    TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
 
-    TilesetPublisher::Status Publish();
+    TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
 
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
-    TileGeometryCacheR GetGeometryCache() { return *m_context.GetGeometryCache(); }
+    TileGeometryCacheR GetGeometryCache() { BeAssert(nullptr != m_context.GetGeometryCache()); return *m_context.GetGeometryCache(); }
 };
 
 
