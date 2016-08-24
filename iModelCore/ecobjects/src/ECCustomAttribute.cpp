@@ -615,7 +615,7 @@ ECClassCR classDefinition
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema, int ecXmlVersionMajor)
+CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR schemaContext, ECSchemaCR fallBackSchema)
     {
     CustomAttributeReadStatus status = CustomAttributeReadStatus::Success;
 
@@ -641,7 +641,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
             if (InstanceReadStatus::Success != thisStatus && InstanceReadStatus::CommentOnly != thisStatus)
                 {
                 // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
-                if (ecXmlVersionMajor >= 3)
+                if (fallBackSchema.GetOriginalECXmlVersionMajor() >= 3)
                     status = CustomAttributeReadStatus::InvalidCustomAttributes;
                 else if (CustomAttributeReadStatus::Success == status) 
                     status = CustomAttributeReadStatus::SkippedCustomAttributes;
@@ -656,7 +656,7 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeX
                 if (ECObjectsStatus::Success != caSetStatus)
                     {
                     // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
-                    if (ecXmlVersionMajor >= 3)
+                    if (fallBackSchema.GetOriginalECXmlVersionMajor() >= 3)
                         status = CustomAttributeReadStatus::InvalidCustomAttributes;
                     else if (CustomAttributeReadStatus::Success == status)
                         status = CustomAttributeReadStatus::SkippedCustomAttributes;

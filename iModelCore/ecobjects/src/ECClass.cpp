@@ -1453,7 +1453,7 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties)
     {
     bvector<Utf8String> comments;
 
@@ -1478,7 +1478,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         if (0 == strcmp (childNodeName, EC_PROPERTY_ELEMENT))
             {
             PrimitiveECPropertyP ecProperty = new PrimitiveECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1505,7 +1505,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp (childNodeName, EC_ARRAYPROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty;
-            if (2 == ecXmlVersionMajor)
+            if (2 == m_schema.GetOriginalECXmlVersionMajor())
                 {
                 Utf8String boolStr;
                 bool isStruct = false;
@@ -1524,9 +1524,9 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 else
                     ecProperty = new ArrayECProperty(*this);
                 }
-                else 
-                    ecProperty = new ArrayECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
+            else 
+                ecProperty = new ArrayECProperty(*this);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1541,7 +1541,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp(childNodeName, EC_STRUCTARRAYPROPERTY_ELEMENT)) // technically, this only happens in EC3.0 and higher, but no harm in checking 2.0 schemas
             {
             ECPropertyP ecProperty = new StructArrayECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1556,7 +1556,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp (childNodeName, EC_STRUCTPROPERTY_ELEMENT))
             {
             ECPropertyP ecProperty = new StructECProperty (*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass (ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             if (context.GetPreserveXmlComments())
@@ -1570,7 +1570,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
             NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName, ecXmlVersionMajor);
+            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
             if (SchemaReadStatus::Success != status)
                 return status;
             navigationProperties.push_back(ecProperty);
@@ -1596,7 +1596,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
         }
     
     // Add Custom Attributes
-    if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(classNode, context, GetSchema(), ecXmlVersionMajor))
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(classNode, context, GetSchema()))
         {
         LOG.errorv("Failed to read class %s because one or more invalid custom attributes were applied to it.", this->GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -1673,10 +1673,10 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr            09/2012
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName, int ecXmlVersionMajor)
+SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName)
     {
     // read the property data.
-    SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context, ecXmlVersionMajor);
+    SchemaReadStatus status = ecProperty->_ReadXml (*childNode, context);
     if (status != SchemaReadStatus::Success)
         {
         LOG.errorv ("Invalid ECSchemaXML: Failed to read properties of ECClass '%s:%s'", this->GetSchema().GetName().c_str(), this->GetName().c_str());
@@ -2420,7 +2420,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(uint32_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext, int ecXmlVersionMajor, int ecXmlVersionMinor)
+SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     
@@ -2429,7 +2429,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
 
-    if (ecXmlVersionMajor >= 3 && ecXmlVersionMinor >= 1)
+    if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() >= 1)
         {
         READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, MULTIPLICITY_ATTRIBUTE, this, Multiplicity);
         }
@@ -2439,7 +2439,7 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         }
     
     // Add Custom Attributes
-    if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema(), ecXmlVersionMajor))
+    if (CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes(constraintNode, schemaContext, m_relClass->GetSchema()))
         {
         LOG.error("Failed to read relationship constraint because one or more invalid custom attributes were applied to it.");
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -3074,21 +3074,21 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor, int ecXmlVersionMinor, bvector<NavigationECPropertyP>& navigationProperties)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties)
     {
-    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, ecXmlVersionMajor, ecXmlVersionMinor, navigationProperties);
+    SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, navigationProperties);
     if (status != SchemaReadStatus::Success)
         return status;
 
     BeXmlNodeP sourceNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_SOURCECONSTRAINT_ELEMENT);
     if (NULL != sourceNode)
-        status = m_source->ReadXml (*sourceNode, context, ecXmlVersionMajor, ecXmlVersionMinor);
+        status = m_source->ReadXml (*sourceNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
     
     BeXmlNodeP  targetNode = classNode.SelectSingleNode (EC_NAMESPACE_PREFIX ":" EC_TARGETCONSTRAINT_ELEMENT);
     if (NULL != targetNode)
-        status = m_target->ReadXml (*targetNode, context, ecXmlVersionMajor, ecXmlVersionMinor);
+        status = m_target->ReadXml (*targetNode, context);
     if (status != SchemaReadStatus::Success)
         return status;
         

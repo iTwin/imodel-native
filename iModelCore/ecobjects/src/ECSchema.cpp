@@ -656,6 +656,26 @@ ECObjectsStatus ECSchema::SetVersionMinor (const uint32_t versionMinor)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::GetOriginalECXmlVersionMajor
+(
+) const
+    {
+    return m_originalECXmlVersionMajor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t ECSchema::GetOriginalECXmlVersionMinor
+(
+) const
+    {
+    return m_originalECXmlVersionMinor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECSchema::GetClassCP (Utf8CP name) const
     {
     return const_cast<ECSchemaP> (this)->GetClassP(name);
