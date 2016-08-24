@@ -381,6 +381,8 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
         if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
             polyface->BuildPerFaceNormals();
 
+        polyface->Transform (m_transform);
+
         Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
         Publish3mxTexture*      publishTexture;
         TileTextureImagePtr     tileTexture;
@@ -421,10 +423,14 @@ struct Publish3mxScene : Scene
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent) 
+TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent, TransformCR transformDbToTile) 
     {
-    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (node.GetMaximumSize() / (2.0 * node.GetRadius()));
-    PublishTileNode         tileNode(node, scene.GetLocation(), node.GetRange(), depth, siblingIndex, tolerance, parent);
+    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node.GetMaximumSize());
+    DRange3d                range;
+    Transform               toTile = Transform::FromProduct (transformDbToTile, scene.GetLocation());
+    
+    toTile.Multiply (range, node.GetRange());
+    PublishTileNode         tileNode(node, toTile, range, depth, siblingIndex, tolerance, parent);
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
@@ -434,12 +440,15 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
         size_t childIndex = 0;
 
         for (auto& child : *node._GetChildren())
-            tileNode.GetChildren().push_back(TileNode(child->GetRange(), depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
+            {
+            toTile.Multiply (range, child->GetRange());
+            tileNode.GetChildren().push_back(TileNode(range, depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
+            }
         }
 
     TileGenerator::Status status = collector._AcceptTile(tileNode);
 
-    static size_t s_depthLimit = 4;
+    static size_t s_depthLimit = 0xffff;
 
     if (TileGenerator::Status::Success != status || !node._HasChildren() || depth > s_depthLimit)
         return status;
@@ -452,7 +461,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
     node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
 
     for (auto& child : children)
-        if (TileGenerator::Status::Success != (status = publishModelTiles(collector, scene, (NodeR) *child, depth, childIndex++, &tileNode)))
+        if (TileGenerator::Status::Success != (status = publishModelTiles(collector, scene, (NodeR) *child, depth, childIndex++, &tileNode, transformDbToTile)))
             return status;
 
     return TileGenerator::Status::Success;
@@ -461,7 +470,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileCollector& collector) 
+TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileCollector& collector, TransformCR transformToTile) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
     
@@ -470,7 +479,7 @@ TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileColle
 
     TileTree::TilePtr     publishNode = scene->GetRoot()->_GetChildren()->front();
 
-    return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr);
+    return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr, transformToTile);
     }
 
 
