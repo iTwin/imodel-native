@@ -69,7 +69,7 @@ TEST_F(SchemaTest, ExpectReadOnly)
     ECCustomAttributeClassP customAttributeClass;
     ECEnumerationP enumeration;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
     //Create Domain Class
@@ -113,7 +113,7 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
     ECEnumerationP enumeration;
     ECEnumerationP enumeration2;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
     //Create Enumeration
@@ -163,7 +163,7 @@ TEST_F(SchemaTest, TestPrimitiveEnumerationProperty)
     ECEntityClassP domainClass;
     ECEnumerationP enumeration;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
     //Create Enumeration
@@ -199,7 +199,7 @@ TEST_F(SchemaTest, CheckEnumerationBasicProperties)
     ECSchemaPtr schema;
     ECEnumerationP enumeration;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
 
     //Create Enumeration
@@ -391,13 +391,9 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
 
-    ECSchema::CreateSchema(schema, "Widget", 5, 5);
-    ECSchema::CreateSchema(schema2, "BaseSchema", 5, 5);
-    ECSchema::CreateSchema(schema3, "BaseSchema2", 5, 5);
-
-    schema->SetAlias("ecw");
-    schema2->SetAlias("base");
-    schema3->SetAlias("base");
+    ECSchema::CreateSchema(schema, "Widget", "ecw", 5, 5, 5);
+    ECSchema::CreateSchema(schema2, "BaseSchema", "base", 5, 5, 5);
+    ECSchema::CreateSchema(schema3, "BaseSchema2", "base", 5, 5, 5);
 
     ECEntityClassP class1;
     ECEntityClassP baseClass;
@@ -449,10 +445,10 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
 TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
 
     ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 5, 5);
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
     EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
@@ -671,10 +667,10 @@ TEST_F(SchemaReferenceTest, InvalidReference)
 TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
     ECEntityClassP class1;
@@ -754,8 +750,8 @@ TEST_F(SchemaReferenceTest, ExpectSuccessWithSpecialCaseOpenPlantSchema)
 TEST_F(SchemaReferenceTest, FindClassInReferenceList)
     {
     ECSchemaPtr schema, refSchema;
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
 
     ECRelationshipClassP relClass;
     ECEntityClassP targetClass, sourceClass;
@@ -813,7 +809,7 @@ TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
 TEST_F(SchemaLocateTest, ExpectFailureWithNonStandardSchema)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "TestSchema", 1, 2);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
     EXPECT_FALSE(testSchema->IsStandardSchema());
     }
 
@@ -830,7 +826,7 @@ TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
     EXPECT_TRUE(schema.IsValid());
     EXPECT_FALSE(schema->ShouldNotBeStored());
 
-    ECSchema::CreateSchema(schema, "Units_Schema", 1, 4);
+    ECSchema::CreateSchema(schema, "Units_Schema", "ts", 1, 0, 4);
     EXPECT_TRUE(schema->ShouldNotBeStored());
     }
 
@@ -840,8 +836,7 @@ TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
 TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "TestSchema", 1, 2);
-    testSchema->SetAlias("ts");
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
     testSchema->SetDescription("Schema for testing programmatic construction");
     testSchema->SetDisplayLabel("Test Schema");
 
@@ -854,7 +849,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_EQ(0, strcmp(testSchema->GetDisplayLabel().c_str(), "Test Schema"));
 
     ECSchemaPtr schema2;
-    ECSchema::CreateSchema(schema2, "BaseSchema", 5, 5);
+    ECSchema::CreateSchema(schema2, "BaseSchema", "ts", 5, 0, 5);
 
     testSchema->AddReferencedSchema(*schema2);
 
@@ -1058,7 +1053,7 @@ TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
     {
     ECSchemaPtr schema;
     ECEnumerationP enumeration;
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     //Create Enumeration
     auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
@@ -1087,7 +1082,7 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
     ECEntityClassP baseClass1;
     ECEntityClassP baseClass2;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema->CreateEntityClass(baseClass1, "BaseClass1");
     schema->CreateEntityClass(baseClass2, "BaseClass2");
@@ -1103,7 +1098,7 @@ TEST_F(ClassTest, ExpectErrorWithCircularBaseClasses)
 TEST_F(ClassTest, GetPropertyCount)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
     ECEntityClassP baseClass1, baseClass2, derivedClass;
     ECStructClassP structClass;
@@ -1166,7 +1161,7 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     ECEntityClassP class1;
     ECEntityClassP baseClass1;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema->CreateEntityClass(baseClass1, "BaseClass");
 
@@ -1193,7 +1188,7 @@ TEST_F(ClassTest, AddBaseClassWithProperties)
     ECEntityClassP baseClass1;
     ECEntityClassP baseClass2;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema->CreateEntityClass(baseClass1, "BaseClass");
     schema->CreateEntityClass(baseClass2, "BaseClass2");
@@ -1223,7 +1218,7 @@ TEST_F(ClassTest, BaseClassOrder)
     ECEntityClassP baseClass2 = nullptr;
     ECEntityClassP baseClass3 = nullptr;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema->CreateEntityClass(baseClass1, "BaseClass");
     schema->CreateEntityClass(baseClass2, "BaseClass2");
@@ -1259,7 +1254,7 @@ TEST_F(ClassTest, IsTests)
     ECEntityClassP baseClass1;
     ECEntityClassP baseClass2;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema->CreateEntityClass(baseClass1, "BaseClass1");
     schema->CreateEntityClass(baseClass2, "BaseClass2");
@@ -1280,7 +1275,7 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     ECStructClassP structClass;
     ECStructClassP structClass2;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema->CreateEntityClass(baseClass1, "BaseClass1");
     schema->CreateStructClass(structClass, "ClassForStructs");
@@ -1373,7 +1368,7 @@ TEST_F(ClassTest, CanOverrideBasePropertiesInDerivedClass)
     ECEntityClassP derived;
     ECEntityClassP base;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
     schema->CreateEntityClass(base, "BaseClass");
     schema->CreateEntityClass(parent, "Parent");
     schema->CreateEntityClass(derived, "Derived");
@@ -1406,8 +1401,8 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     ECStructClassP structClass;
     ECStructClassP structClass2;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    ECSchema::CreateSchema(schema2, "TestSchema2", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(schema2, "TestSchema2", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     schema2->CreateStructClass(structClass, "ClassForStructs");
     schema->CreateStructClass(structClass2, "ClassForStructs2");
@@ -1444,7 +1439,7 @@ TEST_F(ClassTest, ExpectPropertiesInOrder)
     PrimitiveECPropertyP property3;
     PrimitiveECPropertyP property4;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(class1, "TestClass");
     class1->CreatePrimitiveProperty(property1, "beta");
     class1->CreatePrimitiveProperty(property2, "gamma");
@@ -1477,7 +1472,7 @@ TEST_F(ClassTest, ExpectProperties)
     PrimitiveECPropertyP e;
     PrimitiveECPropertyP f;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(ab, "ab");
     schema->CreateEntityClass(cd, "cd");
     schema->CreateEntityClass(ef, "ef");
@@ -1528,7 +1523,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     PrimitiveECPropertyP m;
     PrimitiveECPropertyP n;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(ab, "ab");
     schema->CreateEntityClass(cd, "cd");
     schema->CreateEntityClass(ef, "ef");
@@ -1651,8 +1646,8 @@ TEST_F(ClassTest, AddAndRemoveConstraintClasses)
     ECSchemaPtr schema;
     ECSchemaPtr refSchema;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
 
     ECRelationshipClassP relClass;
     ECEntityClassP targetClass;
@@ -1683,7 +1678,7 @@ TEST_F(ClassTest, ExpectReadOnlyFromBaseClass)
 
     PrimitiveECPropertyP readOnlyProp;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(base, "BaseClass");
     schema->CreateEntityClass(child, "ChildClass");
 
@@ -1702,7 +1697,7 @@ void TestOverriding(Utf8CP schemaName, int majorVersion, bool allowOverriding)
     ECEntityClassP base;
     ECEntityClassP child;
 
-    ECSchema::CreateSchema(schema, schemaName, majorVersion, 5);
+    ECSchema::CreateSchema(schema, schemaName, "ts", majorVersion, 0, 5);
     schema->CreateEntityClass(base, "base");
     schema->CreateEntityClass(child, "child");
 
@@ -1790,7 +1785,7 @@ struct ECNameValidationTest : ECTestFixture
     void Roundtrip(ITester const& tester)
         {
         ECSchemaPtr schema;
-        ECSchema::CreateSchema(schema, "MySchema", 1, 1);
+        ECSchema::CreateSchema(schema, "MySchema", "ts", 1, 0, 1);
         tester.Preprocess(*schema);
 
         Utf8String schemaXml;
@@ -2010,9 +2005,9 @@ TEST_F(SchemaCacheTest, LoadAndGetSchema)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
 
-    ECSchema::CreateSchema(schema1, "Widget", 5, 1);
-    ECSchema::CreateSchema(schema2, "BaseSchema1", 2, 0);
-    ECSchema::CreateSchema(schema3, "BaseSchema2", 5, 5);
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BaseSchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema2", "ts", 5, 0, 5);
 
     EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
     EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
@@ -2037,9 +2032,9 @@ TEST_F(SchemaCacheTest, FilterSchema)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
 
-    ECSchema::CreateSchema(schema1, "Widget", 5, 1);
-    ECSchema::CreateSchema(schema2, "BaseSchema1", 2, 0);
-    ECSchema::CreateSchema(schema3, "BaseSchema2", 5, 5);
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BaseSchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema2", "ts", 5, 0, 5);
 
     EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
     EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
@@ -2076,9 +2071,9 @@ TEST_F(SchemaCacheTest, DropSchema)
     ECSchemaPtr schema2;
     ECSchemaPtr schema3;
 
-    ECSchema::CreateSchema(schema1, "Widget", 5, 1);
-    ECSchema::CreateSchema(schema2, "BaseSchema1", 2, 0);
-    ECSchema::CreateSchema(schema3, "BaseSchema2", 5, 5);
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BaseSchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema2", "ts", 5, 0, 5);
 
     EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
     EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
@@ -2230,7 +2225,7 @@ TEST_F(SchemaTest, TryRenameECClass)
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     ECSchemaPtr schema;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     ECEntityClassP entityClass1;
     ECEntityClassP entityClass2;
@@ -2268,8 +2263,8 @@ TEST_F(SchemaTest, RemoveReferenceSchema)
     ECSchemaPtr schema;
     ECSchemaPtr refSchema;
 
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
-    ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
 
     ECRelationshipClassP relClass;
     ECEntityClassP targetClass;

@@ -852,8 +852,24 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionWrite, versionMinor).c_str());
 
-    //Using the old overload of CreateSchema as we don't have the alias at this point.
-    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, versionMajor, versionMinor);
+    Utf8String alias; 
+    // Alias is a required attribute for EC3.1. If it is missing from <=EC3.0 schemas it is set to the schemaName
+    if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 1)
+        {
+        if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE))
+            {
+            BeAssert(s_noAssert);
+            LOG.errorv("Invalid ECSchemaXML: %s element must contain an alias attribute", EC_SCHEMA_ELEMENT);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    else
+        {
+        if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE))
+            alias = schemaName;
+        }
+
+    ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaName, alias, versionMajor, versionWrite, versionMinor);
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
@@ -872,15 +888,6 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // OPTIONAL attributes - If these attributes exist they MUST be valid
     Utf8String value;  // used by macro.
-    if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 1)
-        {
-        READ_REQUIRED_XML_ATTRIBUTE((*schemaNode), ALIAS_ATTRIBUTE, schemaOut, Alias, EC_SCHEMA_ELEMENT)
-        }
-    else
-        {
-        READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, schemaOut, Alias)
-        }
-
     READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DESCRIPTION_ATTRIBUTE, schemaOut, Description)
     READ_OPTIONAL_XML_ATTRIBUTE((*schemaNode), DISPLAY_LABEL_ATTRIBUTE, schemaOut, DisplayLabel)
 

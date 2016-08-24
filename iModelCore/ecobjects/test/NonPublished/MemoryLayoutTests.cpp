@@ -1122,7 +1122,7 @@ TEST_F(ECDBufferTests, IsEmpty)
 TEST_F(ECDBufferTests, ClearArray)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "ArrayTest", 1, 0);
+    ECSchema::CreateSchema(schema, "ArrayTest", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
     schema->CreateEntityClass(ecClass, "TestClass");
     PrimitiveECPropertyP primProp;
@@ -1163,7 +1163,7 @@ TEST_F(ECDBufferTests, ClearArray)
 TEST_F(ECDBufferTests, MoreClearArrayTests)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "Test", 1, 0);
+    ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
     schema->CreateEntityClass(ecClass, "Test");
     ArrayECPropertyP arrayProp;
@@ -1185,7 +1185,7 @@ TEST_F(ECDBufferTests, MoreClearArrayTests)
 TEST_F(ECDBufferTests, PointersIntoInstanceMemory)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "InstancePointers", 1, 0);
+    ECSchema::CreateSchema(schema, "InstancePointers", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
     schema->CreateEntityClass(ecClass, "InstancePointers");
     PrimitiveECPropertyP ecprop;
@@ -1229,7 +1229,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer)
     {
     // Create initial version of class
     ECSchemaPtr schemaA;
-    ECSchema::CreateSchema(schemaA, "SchemaA", 1, 0);
+    ECSchema::CreateSchema(schemaA, "SchemaA", "ts", 1, 0, 0);
     ECEntityClassP classA;
     schemaA->CreateEntityClass(classA, "ClassA");
 
@@ -1257,7 +1257,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer)
 
     // Create a new version of the class with different layout
     ECSchemaPtr schemaA2;
-    ECSchema::CreateSchema(schemaA2, "SchemaA", 2, 0);
+    ECSchema::CreateSchema(schemaA2, "SchemaA", "ts", 2, 0 ,0);
     ECEntityClassP classA2;
     schemaA2->CreateEntityClass(classA2, "ClassA");
 
@@ -1283,7 +1283,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer)
 TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
     {
     ECSchemaPtr schemaA;
-    ECSchema::CreateSchema(schemaA, "SchemaA", 1, 0);
+    ECSchema::CreateSchema(schemaA, "SchemaA", "ts", 1, 0, 0);
     ECEntityClassP classA;
     schemaA->CreateEntityClass(classA, "ClassA");
 
@@ -1310,7 +1310,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
     instanceA->SetValue("Removed", ECValue("stuff"), 0);
 
     ECSchemaPtr schemaA2;
-    ECSchema::CreateSchema(schemaA2, "SchemaA", 2, 0);
+    ECSchema::CreateSchema(schemaA2, "SchemaA", "ts", 2, 0, 0);
     ECEntityClassP classA2;
     schemaA2->CreateEntityClass(classA2, "ClassA");
     classA2->CreateArrayProperty(prop, "IntArray", PRIMITIVETYPE_String);
@@ -1347,7 +1347,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_Arrays)
 TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
     {
     ECSchemaPtr schema1;
-    ECSchema::CreateSchema(schema1, "Schema", 1, 0);
+    ECSchema::CreateSchema(schema1, "Schema", "ts", 1, 0, 0);
     ECStructClassP struct1;
     schema1->CreateStructClass(struct1, "Struct");
     PrimitiveECPropertyP primProp;
@@ -1369,7 +1369,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
     instance1->SetValue("StructArray", structVal, 1);
 
     ECSchemaPtr schema2;
-    ECSchema::CreateSchema(schema2, "Schema", 2, 0);
+    ECSchema::CreateSchema(schema2, "Schema", "ts", 2, 0, 0);
     ECStructClassP struct2;
     schema2->CreateStructClass(struct2, "Struct");
     struct2->CreatePrimitiveProperty(primProp, "String", PRIMITIVETYPE_Integer);
@@ -1400,7 +1400,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
 TEST_F(ECDBufferTests, ArraysAreNotNull)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "Test", 1, 0);
+    ECSchema::CreateSchema(schema, "Test", "ts", 1, 0, 0);
     ECEntityClassP ecClass;
     schema->CreateEntityClass(ecClass, "Test");
     ArrayECPropertyP arrayProp;
@@ -1527,7 +1527,7 @@ TEST_F(PropertyIndexTests, FlatteningIterator)
         //      8
         //  9
         ECSchemaPtr schema;
-        ECSchema::CreateSchema(schema, "Schema", 1, 0);
+        ECSchema::CreateSchema(schema, "Schema", "ts", 1, 0, 0);
         PrimitiveECPropertyP primProp;
         StructECPropertyP structProp;
 

@@ -91,8 +91,8 @@ ECSchemaPtr PropertyOverrideTests::SetUpBaseSchema()
     {
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
-    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
-    testSchema->SetAlias ("ts");
+    Utf8String alias = "ts";
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, alias, 1, 0, 0));
 
     ECEntityClassP root = NULL;
     EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(root, "Root"));
@@ -128,8 +128,8 @@ TEST_F(PropertyOverrideTests, PropertyOverrideInMultiInheritance)
     //create Schema
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
-    testSchema->SetAlias("ts");
+    Utf8String alias = "ts";
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, alias, 1, 0, 0));
 
     ECEntityClassP ab = NULL;
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ab, "ab"));
@@ -312,8 +312,8 @@ TEST_F(PropertyOverrideTests, AddingBasePropertyOverrideChangesPropertyInDerived
     {
     ECSchemaPtr testSchema;
     Utf8String schemaName = "testSchema";
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, 1, 0));
-    testSchema->SetAlias("ts");
+    Utf8String alias = "ts";
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, schemaName, alias, 1, 0, 0));
     ECEntityClassP baseClass = NULL;
     ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(baseClass, "BaseClass"));
     PrimitiveECPropertyP primitiveProperty;

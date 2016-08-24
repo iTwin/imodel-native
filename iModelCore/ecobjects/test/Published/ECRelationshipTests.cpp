@@ -484,7 +484,7 @@ TEST_F (ECRelationshipTests, TestsRelationshipStrengthAndDirectionConstraints)
     {
 #ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
     ECSchemaP ecSchema = schemaPtr.get();
 
@@ -527,7 +527,7 @@ TEST_F (ECRelationshipTests, TestsRelationshipConstraints)
     {
 #ifdef ECRELATIONSHIP_CONSTRAINT_VALIDATION
     ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
     ECSchemaP ecSchema = schemaPtr.get();
 

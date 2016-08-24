@@ -11,6 +11,7 @@ using namespace std;
 #define ID_DISPLAY_LABEL "DisplayLabel"
 #define ID_DESCRIPTION "Description"
 #define ID_VERSION_MAJOR "VersionMajor"
+#define ID_VERSION_WRITE "VersionWrite"
 #define ID_VERSION_MINOR "VersionMinor"
 #define ID_CLASSES "Classes"
 #define ID_REFERENCES "References"
@@ -788,6 +789,7 @@ Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
         case DiffNodeId::DisplayLabel: return ID_DISPLAY_LABEL;
         case DiffNodeId::Description: return ID_DESCRIPTION;
         case DiffNodeId::VersionMajor: return ID_VERSION_MAJOR;
+        case DiffNodeId::VersionWrite: return ID_VERSION_WRITE;
         case DiffNodeId::VersionMinor:return ID_VERSION_MINOR;
         case DiffNodeId::ConstraintClasses: 
         case DiffNodeId::Classes: 
@@ -1827,7 +1829,9 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
         BuildClassMap (GetLeft());
         }
     Utf8String schemaName;
+    Utf8String alias;
     uint32_t versionMajor;
+    uint32_t versionWrite;
     uint32_t versionMinor;
 
     ECDiffValueP v;
@@ -1837,17 +1841,28 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
     else
         schemaName = GetDefault().GetName();
 
+    if ((v = GetMergeValue(r, DiffNodeId::Alias)) != NULL)
+        alias = v->GetValueString();
+    else
+        alias = GetDefault().GetAlias();
+
     if ((v = GetMergeValue (r, DiffNodeId::VersionMajor)) != NULL)
         versionMajor = (uint32_t)v->GetValueInt32();
     else
-        versionMajor = GetDefault().GetVersionMajor();;
+        versionMajor = GetDefault().GetVersionMajor();
+
+    if ((v = GetMergeValue(r, DiffNodeId::VersionWrite)) != NULL)
+        versionWrite = (uint32_t)v->GetValueInt32();
+    else
+        versionWrite = GetDefault().GetVersionWrite();
 
     if ((v = GetMergeValue (r, DiffNodeId::VersionMinor)) != NULL)
         versionMinor = (uint32_t)v->GetValueInt32();
     else
         versionMinor = GetDefault().GetVersionMinor();
+
     //Create Merge schema 
-    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, versionMajor, versionMinor) != ECObjectsStatus::Success)
+    if (ECSchema::CreateSchema (m_mergeSchema, schemaName, alias, versionMajor, versionWrite, versionMinor) != ECObjectsStatus::Success)
         return MergeStatus::ErrorCreatingMergeSchema;
 
     if ((v = GetMergeValue (r, DiffNodeId::DisplayLabel)) == NULL)
@@ -1860,11 +1875,6 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
 
     if ((v = GetMergeValue (r, DiffNodeId::Description)) == NULL)
         GetMerged().SetDescription(GetDefault().GetDescription());
-    else
-        GetMerged().SetDescription (v->GetValueString());
-
-    if ((v = GetMergeValue (r, DiffNodeId::Alias)) == NULL)
-        GetMerged().SetAlias (GetDefault().GetAlias());
     else
         GetMerged().SetDescription (v->GetValueString());
 

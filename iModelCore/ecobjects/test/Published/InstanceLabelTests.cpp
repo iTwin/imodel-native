@@ -28,7 +28,7 @@ struct InstanceLabelTest      : ECTestFixture
         
         m_customAttributeEnabler = customAttributesSchema->GetClassP ("InstanceLabelSpecification")->GetDefaultStandaloneEnabler();
 
-        ECSchema::CreateSchema (m_schema, "TestSchema", 1, 0);
+        ECSchema::CreateSchema (m_schema, "TestSchema", "ts", 1, 0, 0);
         m_schema->AddReferencedSchema (*customAttributesSchema);
         }
 

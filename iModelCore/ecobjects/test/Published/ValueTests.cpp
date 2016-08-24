@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ValueTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -80,7 +80,7 @@ TEST_F(ValueTests, ValueReadOnly)
     ECSchemaPtr schema;
     ECEntityClassP base;
     
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     schema->CreateEntityClass(base, "BaseClass");
 
     PrimitiveECPropertyP readOnlyProp;

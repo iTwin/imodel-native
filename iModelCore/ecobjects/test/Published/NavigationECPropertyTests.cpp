@@ -70,7 +70,7 @@ TEST_F(NavigationECPropertyTests, CreateAndRoundTripNavigationProperty)
     ECRelationshipClassP relClass;
     ECRelationshipClassP relClass2;
 
-    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->SetAlias("navt");
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(relClass2, "RelClass2");
@@ -115,7 +115,7 @@ TEST_F(NavigationECPropertyTests, NavPropUsingRelationshipWithMultipleConstraint
     ECEntityClassP target2Class;
     ECRelationshipClassP relClass;
 
-    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->SetAlias("navt");
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateEntityClass(sourceClass, "Source");
@@ -148,7 +148,7 @@ TEST_F(NavigationECPropertyTests, InvalidNavigationProperties)
     ECEntityClassP targetClass;
     ECRelationshipClassP relClass;
 
-    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateEntityClass(sourceClass, "Source");
     schema->CreateEntityClass(targetClass, "Target");
@@ -173,7 +173,7 @@ TEST_F(NavigationECPropertyTests, InvalidXml)
     ECRelationshipClassP relClass;
     ECRelationshipClassP otherRelClass;
 
-    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(otherRelClass, "OtherRelClass");
     schema->CreateEntityClass(sourceClass, "Source");
@@ -222,7 +222,7 @@ TEST_F(NavigationECPropertyTests, RoundtripToEC2Xml)
     ECEntityClassP targetClass;
     ECRelationshipClassP relClass;
 
-    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateEntityClass(sourceClass, "Source");
     schema->CreateEntityClass(targetClass, "Target");
@@ -364,7 +364,7 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     ECRelationshipClassP relClass;
     ECRelationshipClassP relClass2;
 
-    ECSchema::CreateSchema(schema, "NavTest", 4, 2);
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     schema->CreateRelationshipClass(relClass, "RelClass");
     schema->CreateRelationshipClass(relClass2, "RelClass2");
     schema->CreateEntityClass(sourceClass, "Source");

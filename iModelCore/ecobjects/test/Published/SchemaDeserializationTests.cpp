@@ -648,7 +648,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenECSchemaContainsOnlyRequiredA
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_STREQ("OnlyRequiredECSchemaAttributes", schema->GetName().c_str());
-    EXPECT_STREQ("", schema->GetAlias().c_str());
+    EXPECT_STREQ("OnlyRequiredECSchemaAttributes", schema->GetAlias().c_str());
     EXPECT_STREQ("OnlyRequiredECSchemaAttributes", schema->GetDisplayLabel().c_str());
     EXPECT_FALSE(schema->GetIsDisplayLabelDefined());
     EXPECT_STREQ("", schema->GetDescription().c_str());

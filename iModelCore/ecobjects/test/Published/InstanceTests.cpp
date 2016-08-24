@@ -41,9 +41,9 @@ struct InstanceTests : ECTestFixture
     IECInstancePtr       m_instance;
     uint32_t             propIndex;
 
-    void CreateSchema (Utf8String schemaName = "TestSchema", Utf8String className = "TestClass")
+    void CreateSchema (Utf8String schemaName = "TestSchema", Utf8String className = "TestClass", Utf8String alias = "TestAlias")
         {
-        ECSchema::CreateSchema (m_schema, schemaName, 1, 0);
+        ECSchema::CreateSchema (m_schema, schemaName, alias, 1, 0, 0);
         m_schema->CreateEntityClass (m_ecClass, className);
         }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/PropertiesTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -49,7 +49,7 @@ struct PerformancePropertiesTest   : PerformanceTestFixture
 TEST_F(PerformancePropertiesTest, AddArrayElements)
     {
     ECSchemaPtr schemaA;
-    ECSchema::CreateSchema (schemaA, "SchemaA", 1, 0);
+    ECSchema::CreateSchema (schemaA, "SchemaA", "ts", 1, 0, 0);
     ECEntityClassP classA;
     schemaA->CreateEntityClass (classA, "ClassA");
 

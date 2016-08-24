@@ -170,7 +170,7 @@ TEST_F(ExtendedTypeTests, ReadSchemaWithExtendedTypes)
 TEST_F(ExtendedTypeTests, WriteSchemaWithExtendedTypes)
     {
     ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
     // Writing
     ECEntityClassP classPtr;
@@ -220,7 +220,7 @@ TEST_F(ExtendedTypeTests, GetKnownExtendedType)
 TEST_F(ExtendedTypeTests, SetExtendedTypeToNull)
     {
     ECSchemaPtr schemaPtr;
-    ECSchema::CreateSchema(schemaPtr, "TestSchema", 1, 0);
+    ECSchema::CreateSchema(schemaPtr, "TestSchema", "ts", 1, 0, 0);
 
     ECEntityClassP classPtr;
     schemaPtr.get()->CreateEntityClass(classPtr, "ClassA");

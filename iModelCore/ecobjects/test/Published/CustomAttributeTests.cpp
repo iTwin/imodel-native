@@ -33,7 +33,7 @@ ECSchemaPtr   CreateCustomAttributeTestSchema()
     ECEntityClassP baseClass;
     ECEntityClassP classWithProperties;
     
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "test", 5, 0, 5);
     schema->CreateCustomAttributeClass(customAttributeClass, "CustomAttribClass");
     schema->CreateCustomAttributeClass(customAttributeClass2, "CustomAttribClass2");
     schema->CreateCustomAttributeClass(customAttributeClass3, "CustomAttribClass3");
@@ -421,7 +421,7 @@ TEST_F(CustomAttributeTest, ExpectFailureWithUnreferencedCustomAttribute)
     ECSchemaPtr         schema = CreateCustomAttributeTestSchema();
 
     ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", 5, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 5, 5);
 
     ECCustomAttributeClassP refClass;
     refSchema->CreateCustomAttributeClass(refClass, "RefClass");
@@ -506,7 +506,7 @@ TEST_F (CustomAttributeTest, PresentationMetadataHelper)
     ArrayECPropertyP        arrayProp;
     PrimitiveECPropertyP    pointProp;
 
-    ECSchema::CreateSchema (schema, "TestSchema", 1, 2);
+    ECSchema::CreateSchema (schema, "TestSchema", "ts", 1, 0, 2);
     schema->CreateEntityClass (ecclass, "TestClass");
     ecclass->CreatePrimitiveProperty (primProp, "PrimitiveProperty", PRIMITIVETYPE_String);
     ecclass->CreateArrayProperty (arrayProp, "ArrayProperty", PRIMITIVETYPE_String);
@@ -780,16 +780,16 @@ TEST_F(CustomAttributeTest, TestCustomAttributesWithSameNameInDifferentSchemas)
     ECCustomAttributeClassP customAttributeClass1;
     ECCustomAttributeClassP customAttributeClass2;
 
-    ECSchema::CreateSchema(schema1, "CASchema1", 5, 5);
+    ECSchema::CreateSchema(schema1, "CASchema1", "ts", 5, 5, 5);
     schema1->CreateCustomAttributeClass(customAttributeClass1, "CustomAttribClass");
 
-    ECSchema::CreateSchema(schema2, "CASchema2", 5, 5);
+    ECSchema::CreateSchema(schema2, "CASchema2", "ts", 5, 5, 5);
     schema2->CreateCustomAttributeClass(customAttributeClass2, "CustomAttribClass");
     
     IECInstancePtr caInstance1 = GetInstanceForClass("CustomAttribClass", *schema1);
     IECInstancePtr caInstance2 = GetInstanceForClass("CustomAttribClass", *schema2);
         
-    ECSchema::CreateSchema(testSchema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 5, 5, 5);
     testSchema->AddReferencedSchema(*schema1);
     testSchema->AddReferencedSchema(*schema2);
     IECCustomAttributeContainer& schemaCustomAttributeContainer = testSchema->GetCustomAttributeContainer();

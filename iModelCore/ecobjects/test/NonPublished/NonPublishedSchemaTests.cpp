@@ -25,7 +25,7 @@ TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ECEntityClassP foo;
     ECEntityClassP bar;
     
-    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema(schema, "TestSchema", "testAlias", 5, 5, 5);
     schema->CreateEntityClass(foo, "foo");
     schema->CreateEntityClass(bar, "bar");
 

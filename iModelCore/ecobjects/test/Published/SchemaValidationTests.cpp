@@ -64,7 +64,7 @@ struct SchemaValidationTests : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------//
 TEST_F(SchemaValidationTests, TestNamesMayNotDifferByCase)
     {
-    ECSchema::CreateSchema(m_schema, "MySchema", 1, 0);
+    ECSchema::CreateSchema(m_schema, "MySchema", "ts", 1, 0, 0);
 
     ECEntityClassP ecClass;
     m_schema->CreateEntityClass(ecClass, "MyClass");
@@ -89,8 +89,8 @@ TEST_F(SchemaValidationTests, TestValidSchemaNames)
     ECSchemaPtr schemaA;
     ECSchemaPtr schemaB;
 
-    ECObjectsStatus statusA = ECSchema::CreateSchema(schemaA, "somethingsomethingdarkside", 2, 3);
-    ECObjectsStatus statusB = ECSchema::CreateSchema(schemaB, "MySchema5&!(/$§!$", 2, 3);
+    ECObjectsStatus statusA = ECSchema::CreateSchema(schemaA, "somethingsomethingdarkside", "ts", 2, 0, 3);
+    ECObjectsStatus statusB = ECSchema::CreateSchema(schemaB, "MySchema5&!(/$§!$", "ts", 2, 0, 3);
 
     EXPECT_TRUE(statusA == ECObjectsStatus::Success) << "Expected to return success when a valid schema name is given";
     EXPECT_TRUE(statusB == ECObjectsStatus::InvalidName) << "Expected InvalidName because the schema name contains invalid characters";
@@ -111,8 +111,7 @@ TEST_F(SchemaValidationTests, TestAliases)
     {
     ECSchemaPtr schemaA;
 
-    ECObjectsStatus status = ECSchema::CreateSchema(schemaA, "somethingsomethingdarkside", 3, 1);
-    status = schemaA->SetAlias("testalias");
+    ECObjectsStatus status = ECSchema::CreateSchema(schemaA, "somethingsomethingdarkside", "testalias", 3, 0, 1);
     EXPECT_TRUE(status == ECObjectsStatus::Success) << "Expected success because a valid alias was given";
 
     status = schemaA->SetAlias("invalid&/(!$&(/§!$");

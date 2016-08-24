@@ -44,7 +44,7 @@ TEST_F (SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ECEntityClassP foo;
     ECEntityClassP bar;
 
-    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema (schema, "TestSchema", "test", 5, 5, 5);
     schema->CreateEntityClass (foo, "foo");
     schema->CreateEntityClass (bar, "bar");
 
@@ -79,7 +79,7 @@ TEST_F (SchemaTest, TestGetClassCount)
     ECEntityClassP foo;
     ECEntityClassP bar;
 
-    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema (schema, "TestSchema", "test", 5, 5, 5);
     schema->CreateEntityClass (foo, "foo");
     schema->CreateEntityClass (bar, "bar");
 

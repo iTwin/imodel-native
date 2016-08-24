@@ -19,11 +19,12 @@ struct SchemaHolderTestFixture : ECTestFixture
     protected:
         ECSchemaPtr m_bscaSchema;
 
-        void CreateSupplementalSchema(ECSchemaPtr& supplementalSchema, Utf8String primarySchemaName, Utf8String purpose, uint32_t precedence, uint32_t primaryMajorVersion, uint32_t primaryMinorVersion, uint32_t supplementalMajorVersion, uint32_t supplementalMinorVersion)
+        void CreateSupplementalSchema(ECSchemaPtr& supplementalSchema, Utf8String primarySchemaName, Utf8String alias, Utf8String purpose, uint32_t precedence, uint32_t primaryMajorVersion, uint32_t primaryMinorVersion, uint32_t supplementalMajorVersion, uint32_t supplementalMinorVersion)
             {
             Utf8String supplementalName = primarySchemaName + "_Supplemental_" + purpose;
 
-            ECSchema::CreateSchema(supplementalSchema, supplementalName, supplementalMajorVersion, supplementalMinorVersion);
+            // TODO: Hardcode Write version until it is fully supported by supplemental schemas.
+            ECSchema::CreateSchema(supplementalSchema, supplementalName, alias, supplementalMajorVersion, 0, supplementalMinorVersion);
             SupplementalSchemaMetaData metaData(primarySchemaName, primaryMajorVersion, primaryMinorVersion, precedence, purpose, false);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
             supplementalSchema->GetCustomAttributeContainer().SetCustomAttribute(*(metaData.CreateCustomAttribute()));
@@ -76,7 +77,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateCustomAttributeSchema()
             {
-            ECSchema::CreateSchema(m_customAttributeSchema, "Test_Custom_Attributes", 1, 0);
+            ECSchema::CreateSchema(m_customAttributeSchema, "Test_Custom_Attributes", "ts", 1, 0, 0);
             ECCustomAttributeClassP customAttributeClass;
             ECCustomAttributeClassP customAttributeClass2;
             ECCustomAttributeClassP customAttributeClass3;
@@ -118,7 +119,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             PrimitiveECPropertyP fileSizeProperty;
             PrimitiveECPropertyP creationDateProperty;
             PrimitiveECPropertyP hiddenProperty;
-            ECSchema::CreateSchema(primarySchema, "TestSchema", 1, 0);
+            ECSchema::CreateSchema(primarySchema, "TestSchema", "ts", 1, 0, 0);
             primarySchema->CreateEntityClass(fileClass, "File");
             primarySchema->AddReferencedSchema(*m_customAttributeSchema);
             primarySchema->AddReferencedSchema(*m_bscaSchema);
@@ -158,7 +159,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema1(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_OverrideFiles", 1, 0);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_OverrideFiles", "ts", 1, 0, 0);
             SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 200, "OverrideFiles", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -175,7 +176,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema2(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_UnderrideFiles_ExtraText", 1, 0);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_UnderrideFiles_ExtraText", "ts", 1, 0, 0);
             SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 199, "UnderrideFiles", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -192,7 +193,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema3(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_FileAndImageInfo", 3, 33);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_FileAndImageInfo", "ts", 3, 0, 33);
             SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 200, "FileAndImageInfo", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -228,7 +229,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema4(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_Conflict", 6, 66);
+            ECSchema::CreateSchema(supplementalSchema, "TestSchema_Supplemental_Conflict", "ts", 6, 0, 66);
             SupplementalSchemaMetaData metaData("TestSchema", 1, 0, 199, "Conflict", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -246,7 +247,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
         void BuildSupplementedSchemaForCustomAttributeTests(ECClassP& classA, ECClassP& classB, ECSchemaPtr& schema)
             {
             ECSchemaPtr customAttributeSchema;
-            ECSchema::CreateSchema(customAttributeSchema, "CustomAttributes", (uint32_t) 1, (uint32_t) 0);
+            ECSchema::CreateSchema(customAttributeSchema, "CustomAttributes", "ts", (uint32_t) 1, (uint32_t) 0, (uint32_t) 0);
             ECCustomAttributeClassP customAttributeA = NULL;
             customAttributeSchema->CreateCustomAttributeClass(customAttributeA, "CustomAttributeA");
             ECCustomAttributeClassP customAttributeB = NULL;
@@ -256,7 +257,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             ECCustomAttributeClassP customAttributeD = NULL;
             customAttributeSchema->CreateCustomAttributeClass(customAttributeD, "CustomAttributeD");
 
-            ECSchema::CreateSchema(schema, "testPrimary", (uint32_t) 1, (uint32_t) 0);
+            ECSchema::CreateSchema(schema, "testPrimary", "ts", (uint32_t) 1, (uint32_t) 0, (uint32_t) 0);
             schema->AddReferencedSchema(*customAttributeSchema, "cas");
 
             StandaloneECEnablerPtr customAttributeEnablerA = customAttributeA->GetDefaultStandaloneEnabler();
@@ -273,7 +274,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
             primaryClassB->AddBaseClass(*primaryClassA);
 
             ECSchemaPtr supplementalSchema;
-            ECSchema::CreateSchema(supplementalSchema, "testSupplemental", (uint32_t) 1, (uint32_t) 0);
+            ECSchema::CreateSchema(supplementalSchema, "testSupplemental", "ts", (uint32_t) 1, (uint32_t) 0, (uint32_t) 0);
             SupplementalSchemaMetaData metaData("testPrimary", 1, 0, 354, "None", false);
             supplementalSchema->AddReferencedSchema(*customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -295,7 +296,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreatePrimarySchemaForRelationshipTests(ECSchemaPtr& schema)
             {
-            ECSchema::CreateSchema(schema, "RelationshipTestSchema", (uint32_t) 1, (uint32_t) 2);
+            ECSchema::CreateSchema(schema, "RelationshipTestSchema", "ts", (uint32_t) 1, (uint32_t) 0, (uint32_t) 2);
             ECEntityClassP targetClass = NULL;
             schema->CreateEntityClass(targetClass, "TargetClass");
             ECEntityClassP sourceClass = NULL;
@@ -314,7 +315,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema0ForRelationshipTests(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "RTS_Supplemental", (uint32_t) 3, (uint32_t) 4);
+            ECSchema::CreateSchema(supplementalSchema, "RTS_Supplemental", "ts", (uint32_t) 3, (uint32_t)0, (uint32_t) 4);
             SupplementalSchemaMetaData metaData("RelationshipTestSchema", 1, 2, 200, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -336,7 +337,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateSupplementalSchema1ForRelationshipTests(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "RTS_Supplemental2", (uint32_t) 5, (uint32_t) 6);
+            ECSchema::CreateSchema(supplementalSchema, "RTS_Supplemental2", "ts", (uint32_t) 5, (uint32_t)0, (uint32_t) 6);
             SupplementalSchemaMetaData metaData("RelationshipTestSchema", 1, 2, 200, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -366,7 +367,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreatePrimarySchemaForInheritTests(ECSchemaPtr& primarySchema)
             {
-            ECSchema::CreateSchema(primarySchema, "InheritTestSchema", 2, 34);
+            ECSchema::CreateSchema(primarySchema, "InheritTestSchema", "ts", 2, 0, 34);
             primarySchema->AddReferencedSchema(*m_customAttributeSchema);
             // BaseClass1
                 // BC1Prop1
@@ -431,7 +432,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateLowPrioritySchema1(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "LowPrioritySchema1", 4, 3);
+            ECSchema::CreateSchema(supplementalSchema, "LowPrioritySchema1", "ts", 4, 0, 3);
             SupplementalSchemaMetaData metaData("InheritTest", 2, 34, 1, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -467,7 +468,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateLowPrioritySchema199(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "LowPrioritySchema199", 4, 3);
+            ECSchema::CreateSchema(supplementalSchema, "LowPrioritySchema199", "ts", 4, 0, 3);
             SupplementalSchemaMetaData metaData("InheritTest", 2, 34, 199, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -503,7 +504,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 
         void CreateHighPrioritySchema200(ECSchemaPtr& supplementalSchema)
             {
-            ECSchema::CreateSchema(supplementalSchema, "HighPrioritySchema200", 4, 3);
+            ECSchema::CreateSchema(supplementalSchema, "HighPrioritySchema200", "ts", 4, 0, 3);
             SupplementalSchemaMetaData metaData("InheritTest", 2, 34, 200, "Test", false);
             supplementalSchema->AddReferencedSchema(*m_customAttributeSchema);
             supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -830,7 +831,7 @@ struct SupplementedSchemaBuilderTests : SchemaHolderTestFixture
 TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
     {
     ECSchemaPtr supplemental;
-    CreateSupplementalSchema(supplemental, "TestSchema", "OverrideWidgets", (uint32_t) 200, (uint32_t) 1, (uint32_t) 0, 4, 2);
+    CreateSupplementalSchema(supplemental, "TestSchema", "ts", "OverrideWidgets", (uint32_t) 200, (uint32_t) 1, (uint32_t) 0, 4, 2);
 
     EXPECT_TRUE(supplemental.IsValid());
     ECSchemaP tempSchema = supplemental.get();
@@ -854,7 +855,7 @@ TEST_F(SupplementalSchemaMetaDataTests, CanRetrieveFromSchema)
 TEST_F(SupplementalSchemaMetaDataTests, SetMetaDataUsingIndividualMethods)
     {
     ECSchemaPtr supplementalSchema;
-    ECSchema::CreateSchema(supplementalSchema, "SupplementalSchema", 1, 1);
+    ECSchema::CreateSchema(supplementalSchema, "SupplementalSchema", "ts", 1, 0, 1);
     ASSERT_TRUE(nullptr != supplementalSchema.get());
     ASSERT_TRUE(supplementalSchema.IsValid());
     supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -891,7 +892,7 @@ TEST_F(SupplementalSchemaMetaDataTests, SetMetaDataUsingIndividualMethods)
 TEST_F(SupplementalSchemaMetaDataTests, CreateMetaData)
     {
     ECSchemaPtr supplementalSchema;
-    ECSchema::CreateSchema(supplementalSchema, "SupplementalSchema", 1, 1);
+    ECSchema::CreateSchema(supplementalSchema, "SupplementalSchema", "ts", 1, 0, 1);
     ASSERT_TRUE(nullptr != supplementalSchema.get());
     ASSERT_TRUE(supplementalSchema.IsValid());
     supplementalSchema->AddReferencedSchema(*m_bscaSchema);
@@ -925,16 +926,16 @@ TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
     Utf8String primarySchemaFullName("PrimarySchema.08.02");
 
     ECSchemaPtr primarySchema;
-    ECSchema::CreateSchema(primarySchema, "PrimarySchema", 8, 2);
+    ECSchema::CreateSchema(primarySchema, "PrimarySchema", "ts", 8, 0, 2);
 
     ECSchemaPtr supplementalSchema1;
     ECSchemaPtr supplementalSchema2;
     ECSchemaPtr supplementalSchema3;
     ECSchemaPtr supplementalSchema4;
-    CreateSupplementalSchema(supplementalSchema1, "PrimarySchema", "Units", 200, 8, 2, 1, 0);
-    CreateSupplementalSchema(supplementalSchema2, "PrimarySchema", "Units", 201, 8, 2, 2, 0);
-    CreateSupplementalSchema(supplementalSchema3, "PrimarySchema", "Alpha", 202, 8, 2, 1, 1);
-    CreateSupplementalSchema(supplementalSchema4, "PrimarySchema", "Beta", 203, 8, 2, 1, 0);
+    CreateSupplementalSchema(supplementalSchema1, "PrimarySchema", "ts", "Units", 200, 8, 2, 1, 0);
+    CreateSupplementalSchema(supplementalSchema2, "PrimarySchema", "ts", "Units", 201, 8, 2, 2, 0);
+    CreateSupplementalSchema(supplementalSchema3, "PrimarySchema", "ts", "Alpha", 202, 8, 2, 1, 1);
+    CreateSupplementalSchema(supplementalSchema4, "PrimarySchema", "ts", "Beta", 203, 8, 2, 1, 0);
 
     bvector<ECSchemaP> supplementalSchemas;
     supplementalSchemas.push_back(supplementalSchema1.get());
@@ -945,7 +946,7 @@ TEST_F(SupplementalSchemaInfoTests, CanSetAndRetrieveInfo)
     ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*primarySchema, supplementalSchemas));
 
     ECSchemaPtr schema2;
-    ECSchema::CreateSchema(schema2, "PrimarySchema", 8, 2);
+    ECSchema::CreateSchema(schema2, "PrimarySchema", "ts", 8, 0, 2);
     SupplementedSchemaBuilder builder2;
     ASSERT_EQ(SupplementedSchemaStatus::Success, builder2.UpdateSchema(*schema2, supplementalSchemas));
 

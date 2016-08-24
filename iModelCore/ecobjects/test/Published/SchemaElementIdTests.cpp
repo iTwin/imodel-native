@@ -34,7 +34,7 @@ TEST_F (SchemaElementIdTests, IdsAreNotSetAutomatically)
     KindOfQuantityP koq;
     uint64_t id(42);
 
-    ECSchema::CreateSchema (schema, "TestSchema", 5, 5);
+    ECSchema::CreateSchema (schema, "TestSchema", "ts", 5, 5, 5);
     ASSERT_TRUE (schema.IsValid ());
     EXPECT_FALSE(schema->HasId()) << "Expected ECSchemaId to be unset when created via ECSchema::CreateSchema";
     schema->SetId(ECSchemaId(id));

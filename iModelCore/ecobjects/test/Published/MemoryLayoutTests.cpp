@@ -1564,7 +1564,7 @@ TEST_F(MemoryLayoutTests, RecursiveECValueEnumeration_EmptyInstance)
 TEST_F(MemoryLayoutTests, MergeArrayPropertyWithSmallerArray)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "TestSchema", 1, 2);
+    ECSchema::CreateSchema(testSchema, "TestSchema", "ts", 1, 0, 2);
     ECEntityClassP class1;
     testSchema->CreateEntityClass(class1, "TestClass");
     ArrayECPropertyP primitiveArrayProp;
@@ -2968,7 +2968,7 @@ TEST_F(MemoryLayoutTests, ProfileSettingValues)
 TEST_F(MemoryLayoutTests, GeometrySetGet)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "GeometrySchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "GeometrySchema", "ts", 1, 0, 0);
     ECEntityClassP geomClass;
     testSchema->CreateEntityClass(geomClass, "GeometryStore");
 
@@ -3007,7 +3007,7 @@ struct DefaultStandaloneEnablerTests : ECTestFixture
 
     DefaultStandaloneEnablerTests() : m_class(nullptr)
         {
-        ECSchema::CreateSchema(m_schema, "TestSchema", 1, 0);
+        ECSchema::CreateSchema(m_schema, "TestSchema", "ts", 1, 0, 0);
         m_schema->CreateEntityClass(m_class, "TestClass");
         }
 

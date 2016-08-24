@@ -959,7 +959,7 @@ public:
 ECSchemaPtr ExpressionRemappingTest::CreateSchema (bool rename)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema (schema, GetName ("schema", rename), 1, 0);
+    ECSchema::CreateSchema (schema, GetName ("schema", rename), "testAlias", 1, 0, 0);
 
     ECStructClassP structClass;
     schema->CreateStructClass (structClass, GetName ("struct", rename));

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/InstanceXMLTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -808,7 +808,7 @@ TEST_F (InstanceSerializationTest, EmptyPropertyTags)
 TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, "GeometrySchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "GeometrySchema", "ts", 1, 0, 0);
     ECEntityClassP geomClass;
     testSchema->CreateEntityClass(geomClass, "GeometryStore");
 
