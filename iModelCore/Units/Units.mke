@@ -28,7 +28,7 @@ CompileOptionsMki   = $(baseDir)mki/UnitsCompileOpts.mki
 #  $(UsePrecompiledHeaderOptions) will contain the /Yu and /Fp options that we
 #  need to consume the .pch.
 #----------------------------------------------------------------------
-PchCompiland        = $(unitsSrc)src\UnitsPch.cpp
+PchCompiland        = $(unitsSrc)src\UnitsPCH.cpp
 PchOutputDir        = $(o)
 %if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Compiling using gch causes internal compiler error in GCC using windows ndk toolchain
@@ -80,7 +80,7 @@ DLM_NAME                    = $(appName)
 DLM_DEST                    = $(o)
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_FILES            = $(cppObjects)
-DLM_OBJECT_PCH              = $(o)UnitsPch$(oext)
+DLM_OBJECT_PCH              = $(o)UnitsPCH$(oext)
 DLM_EXPORT_OBJS             = $(cppObjects)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOINITFUNC              = 1

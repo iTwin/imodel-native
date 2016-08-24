@@ -30,7 +30,7 @@ always:
 #-----------------------------------------------------------------------
 #       Source directories
 #-----------------------------------------------------------------------
-unitsPublicAPISrc       = $(SrcRoot)Units/PublicApi/Units/
+unitsPublicAPISrc       = $(SrcRoot)Units/PublicAPI/Units/
 unitsSrc                = $(SrcRoot)Units/
 
 #-----------------------------------------------------------------------

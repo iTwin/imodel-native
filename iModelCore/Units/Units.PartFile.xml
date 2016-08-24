@@ -28,7 +28,7 @@
   </Part>
 
   <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
-    <Part Name="PublicAPI" BentleyBuildMakeFile="units.prewire.mke">
+    <Part Name="PublicAPI" BentleyBuildMakeFile="Units.Prewire.mke">
         <Bindings>
             <PublicAPI Domain="Units" />
         </Bindings>
