@@ -426,14 +426,19 @@ struct Publish3mxScene : Scene
 TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent, TransformCR transformDbToTile) 
     {
     double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node.GetMaximumSize());
-    DRange3d                range;
+    DRange3d                range = node.GetRange();;
     Transform               toTile = Transform::FromProduct (transformDbToTile, scene.GetLocation());
-    
-    toTile.Multiply (range, node.GetRange());
-    PublishTileNode         tileNode(node, toTile, range, depth, siblingIndex, tolerance, parent);
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
+
+    if (range.IsNull() && nullptr != node._GetChildren())     // No range set on root node...
+        for (auto& child : *node._GetChildren())
+            range.Extend (child->GetRange());
+
+    toTile.Multiply (range, range);
+    PublishTileNode         tileNode(node, toTile, range, depth, siblingIndex, tolerance, parent);
+
 
     if (nullptr != node._GetChildren())
         {
@@ -448,7 +453,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 
     TileGenerator::Status status = collector._AcceptTile(tileNode);
 
-    static size_t s_depthLimit = 0xffff;
+    static size_t s_depthLimit = 3;
 
     if (TileGenerator::Status::Success != status || !node._HasChildren() || depth > s_depthLimit)
         return status;
@@ -477,9 +482,7 @@ TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileColle
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    TileTree::TilePtr     publishNode = scene->GetRoot()->_GetChildren()->front();
-
-    return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr, transformToTile);
+    return publishModelTiles(collector, *scene, (NodeR) *scene->GetRoot(), 0, 0, nullptr, transformToTile);
     }
 
 
