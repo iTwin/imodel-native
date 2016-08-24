@@ -16,22 +16,20 @@ USING_NAMESPACE_BENTLEY_SQLITE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnAuthoritiesTest : public DgnDbTestFixture
     {
-    DgnDbR GetDb() { return *m_db; }
-
     void Compare(DgnAuthorityId id, Utf8CP name)
         {
-        DgnAuthorityCPtr auth = GetDb().Authorities().GetAuthority(id);
+        DgnAuthorityCPtr auth = GetDgnDb().Authorities().GetAuthority(id);
         ASSERT_TRUE(auth.IsValid());
         EXPECT_EQ(auth->GetName(), name);
 
-        DgnAuthorityId authId = GetDb().Authorities().QueryAuthorityId(name);
+        DgnAuthorityId authId = GetDgnDb().Authorities().QueryAuthorityId(name);
         EXPECT_TRUE(authId.IsValid());
         EXPECT_EQ(authId, id);
         }
 
     RefCountedPtr<NamespaceAuthority> Create(Utf8CP name, bool insert = true)
         {
-        auto auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDb());
+        auto auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDgnDb());
         if (insert)
             {
             EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
@@ -46,7 +44,7 @@ struct DgnAuthoritiesTest : public DgnDbTestFixture
 
     bool CodeExists(DgnCodeCR toFind, IteratorOptions options=IteratorOptions())
         {
-        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDb(), options);
+        DgnCode::Iterator iter = DgnCode::MakeIterator(GetDgnDb(), options);
         for (auto const& entry : iter)
             {
             DgnCode code = entry.GetCode();
@@ -86,16 +84,16 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
     {
     SetupSeedProject();
 
-    EXPECT_TRUE(CodeExists(GetDb().GetDictionaryModel().GetCode()));
+    EXPECT_TRUE(CodeExists(GetDgnDb().GetDictionaryModel().GetCode()));
 
-    AnnotationTextStyle style(GetDb());
+    AnnotationTextStyle style(GetDgnDb());
     style.SetName("MyStyle");
     DgnCode originalStyleCode = style.GetCode();
     EXPECT_TRUE(style.Insert().IsValid());
 
     EXPECT_TRUE(CodeExists(originalStyleCode));
 
-    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(GetDb(), "MyStyle")->CreateCopy();
+    AnnotationTextStylePtr pStyle = AnnotationTextStyle::Get(GetDgnDb(), "MyStyle")->CreateCopy();
     pStyle->SetName("RenamedStyle");
     EXPECT_TRUE(pStyle->Update().IsValid());
 
@@ -107,7 +105,7 @@ TEST_F(DgnAuthoritiesTest, IterateCodes)
 
     // Test with various options
     DgnCode emptyCode = DgnCode::CreateEmpty();
-    DgnCode modelCode = GetDb().GetDictionaryModel().GetCode();
+    DgnCode modelCode = GetDgnDb().GetDictionaryModel().GetCode();
     DgnCode elementCode = pStyle->GetCode();
 
     typedef DgnCode::Iterator::Include Include;

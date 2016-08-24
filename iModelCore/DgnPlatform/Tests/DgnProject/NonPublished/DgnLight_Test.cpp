@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnLightsTest : public GenericDgnModelTestFixture
+struct DgnLightsTest : public DgnDbTestFixture
 {
     Utf8String MakeLightValue(Utf8CP dummyJsonValue)
         {
@@ -26,7 +26,7 @@ struct DgnLightsTest : public GenericDgnModelTestFixture
 
     LightDefinition::CreateParams MakeParams(Utf8CP name, Utf8CP dummyJsonValue, Utf8CP descr=nullptr)
         {
-            return LightDefinition::CreateParams(*m_dgnDb, name, MakeLightValue(dummyJsonValue).c_str(), descr);
+            return LightDefinition::CreateParams(*m_db, name, MakeLightValue(dummyJsonValue).c_str(), descr);
         }
 
     template<typename T, typename U> void Compare(T const& lhs, U const& rhs)
@@ -43,7 +43,9 @@ struct DgnLightsTest : public GenericDgnModelTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLightsTest, CRUD)
     {
-    DgnDbPtr db = GetDgnDb(L"CRUD.bim");
+    SetupSeedProject();
+    DgnDbR db = GetDgnDb();
+
     auto params = MakeParams("Light1", "one");
     LightDefinition lt(params);
     LightDefinitionCPtr persistent = lt.Insert();
@@ -62,13 +64,13 @@ TEST_F(DgnLightsTest, CRUD)
     Compare(lt, *updatedLt);
 
     // Query 
-    LightDefinitionCPtr toFind = LightDefinition::QueryLightDefinition(lightId, *db);
+    LightDefinitionCPtr toFind = LightDefinition::QueryLightDefinition(lightId, db);
     Compare(*updatedLt, *toFind);
 
-    DgnLightId idToFind = LightDefinition::QueryLightId("Light1", *db);
+    DgnLightId idToFind = LightDefinition::QueryLightId("Light1", db);
     EXPECT_TRUE(lightId == idToFind);
 
-    idToFind = LightDefinition::QueryLightId(lightCode, *db);
+    idToFind = LightDefinition::QueryLightId(lightCode, db);
     EXPECT_TRUE(lightId == idToFind);
 
     }

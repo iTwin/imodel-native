@@ -22,48 +22,47 @@
 #include <Geom/GeoPoint.h>
 #include <valarray>
 #include <math.h>
-#include <DgnPlatform/VecMath.h>
-#include <DgnPlatform/ECUtils.h>
-#include <DgnPlatform/DgnCoreAPI.h>
-#include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
-#include <DgnPlatform/NullContext.h>
-#include <DgnPlatform/SimplifyGraphic.h>
-#include <DgnPlatform/ClipPrimitive.h>
-#include <DgnPlatform/ClipVector.h>
-#include <DgnPlatform/SectionClip.h>
-#include <DgnPlatform/DgnCoreEvent.h>
-#include <DgnPlatform/GPArray.h>
-#include <DgnPlatform/DgnRangeTree.h>
-#include <DgnPlatform/MeasureGeom.h>
-#include <DgnPlatform/DgnDbTables.h>
-#include <DgnPlatform/DgnIModel.h>
-#include <DgnPlatform/RealityDataCache.h>
-#include <DgnPlatform/WebMercator.h>
-#include <DgnPlatform/ElementGeometry.h>
-#include <DgnPlatform/ElementGraphics.h>
-#include <DgnPlatform/AutoRestore.h>
-#include <Logging/bentleylogging.h>
+#include "DgnCore/DgnCoreLog.h"
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeThreadLocalStorage.h>
-#include <DgnPlatform/DgnProgressMeter.h>
-#include <ECObjects/ECSchema.h>
-#include <DgnPlatform/JsonUtils.h>
-#include <DgnPlatform/DgnHandlersAPI.h>
-#include <DgnPlatform/RegionUtil.h>
-#include <Logging/bentleylogging.h>
-#include <DgnPlatform/IGeoCoordServices.h>
-#include <DgnPlatform/DgnMaterial.h>
-#include <DgnPlatform/RenderMaterial.h>
-#include <DgnPlatform/DgnLight.h>
-#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/AutoRestore.h>
+#include <DgnPlatform/ClipPrimitive.h>
+#include <DgnPlatform/ClipVector.h>
 #include <DgnPlatform/DgnCategory.h>
+#include <DgnPlatform/DgnCoreAPI.h>
+#include <DgnPlatform/DgnCoreEvent.h>
+#include <DgnPlatform/DgnDbTables.h>
+#include <DgnPlatform/DgnHandlersAPI.h>
+#include <DgnPlatform/DgnIModel.h>
+#include <DgnPlatform/DgnLight.h>
+#include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/DgnProgressMeter.h>
+#include <DgnPlatform/DgnRangeTree.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnTrueColor.h>
+#include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/ECUtils.h>
+#include <DgnPlatform/ElementGeometry.h>
+#include <DgnPlatform/ElementGraphics.h>
+#include <DgnPlatform/GPArray.h>
 #include <DgnPlatform/GenericDomain.h>
+#include <DgnPlatform/IGeoCoordServices.h>
+#include <DgnPlatform/JsonUtils.h>
+#include <DgnPlatform/MeasureGeom.h>
+#include <DgnPlatform/NullContext.h>
 #include <DgnPlatform/QueryView.h>
-#include <DgnPlatform/TileSet.h>
-#include "DgnCore/DgnCoreLog.h"
+#include <DgnPlatform/RealityDataCache.h>
+#include <DgnPlatform/RegionUtil.h>
+#include <DgnPlatform/RenderMaterial.h>
+#include <DgnPlatform/SectionClip.h>
+#include <DgnPlatform/SimplifyGraphic.h>
+#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/VecMath.h>
+#include <DgnPlatform/WebMercator.h>
+#include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
+#include <ECObjects/ECSchema.h>
+#include <Logging/bentleylogging.h>
 
 #define ___DGNPLATFORM_SERIALIZED___ BeSystemMutexHolder ___holdBeSystemMutexInScope___
 
@@ -88,7 +87,7 @@ ILogger& LOGGER ## _getLogger()\
     #define DGNPLATFORM_TRACE(msg) BeDebugLog(msg)
 #else
     // don't show trace messages for any build
-    #define DGNPLATFORM_TRACE(msg) 
+    #define DGNPLATFORM_TRACE(msg)
 #endif
 
 USING_NAMESPACE_BENTLEY
@@ -122,7 +121,7 @@ extern double const fc_hugeVal;
 #   define WARN_PRINTF THREADLOG.warningv
 #   define ERROR_PRINTF THREADLOG.errorv
 #else
-#   define DEBUG_PRINTF(...) 
+#   define DEBUG_PRINTF(...)
 #   define WARN_PRINTF(...)
 #   define ERROR_PRINTF(...)
 #endif

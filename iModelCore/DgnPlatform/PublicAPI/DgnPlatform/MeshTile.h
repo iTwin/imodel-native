@@ -25,10 +25,12 @@ BENTLEY_RENDER_TYPEDEFS(TileNode);
 BENTLEY_RENDER_TYPEDEFS(TileGenerator);
 BENTLEY_RENDER_TYPEDEFS(TileGeometry);
 BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
+BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -38,14 +40,39 @@ typedef bvector<TileNodeP> TileNodePList;
 typedef bvector<TileGeometryPtr> TileGeometryList;
 
 //=======================================================================================
+// ! Holds a texture image.
+// @bsistruct                                                   Paul.Connelly   07/16
+//=======================================================================================
+struct TileTextureImage : RefCountedBase
+    {
+    private:
+        Image       m_image;
+        bool        m_hasAlpha;
+
+        TileTextureImage(Image&& image, bool hasAlpha = false) : m_image(std::move(image)), m_hasAlpha (hasAlpha) { BeAssert(m_image.IsValid()); }
+        static Image Load(TileDisplayParamsCR params, DgnDbR db);
+    public:
+        ImageCR GetImage() const { return m_image; }
+        uint32_t GetWidth() const { return GetImage().GetWidth(); }
+        uint32_t GetHeight() const { return GetImage().GetHeight(); }
+        bool GetHasAlpha() const { return m_hasAlpha; }
+
+        static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
+
+    };
+
+
+
+//=======================================================================================
 //! Display params associated with TileGeometry. Based on GraphicParams and GeometryParams.
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
 struct TileDisplayParams
 {
 private:
-    uint32_t        m_fillColor;
-    DgnMaterialId   m_materialId;
+    uint32_t                m_fillColor;
+    DgnMaterialId           m_materialId;
+    TileTextureImagePtr     m_textureImage;
 public:
     TileDisplayParams() : TileDisplayParams(nullptr, nullptr) { }
     TileDisplayParams(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) : TileDisplayParams(&graphicParams, &geometryParams) { }
@@ -63,6 +90,8 @@ public:
     DgnMaterialId GetMaterialId() const { return m_materialId; }
     uint32_t GetFillColor() const { return m_fillColor; }
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
+    TileTextureImagePtr& TextureImage() { return m_textureImage; }
+    TileTextureImageCP GetTextureImage() const { return m_textureImage.get(); }
 };
 
 //=======================================================================================
@@ -73,31 +102,11 @@ public:
 //=======================================================================================
 struct TileGeometryCache
 {
-    struct TextureImage : RefCountedBase
-    {
-    friend struct TileGeometryCache;
-    private:
-        Image       m_image;
-        size_t      m_id;
-
-        static Image Load(TileDisplayParamsCR params, DgnDbR db);
-
-        TextureImage(Image&& image, size_t id) : m_image(std::move(image)), m_id(id) { BeAssert(m_image.IsValid()); }
-    public:
-        size_t GetId() const { return m_id; }
-        ImageCR GetImage() const { return m_image; }
-        uint32_t GetWidth() const { return GetImage().GetWidth(); }
-        uint32_t GetHeight() const { return GetImage().GetHeight(); }
-    };
 private:
-    typedef RefCountedPtr<TextureImage> TextureImagePtr;
-    typedef bmap<TileDisplayParams, TextureImagePtr> TextureImageMap;
 
     XYZRangeTreeRoot*       m_tree;
-    TextureImageMap         m_textures;
     Transform               m_transformToDgn;
     Transform               m_transformFromDgn;
-    size_t                  m_nextTextureId;
 public:
     DGNPLATFORM_EXPORT TileGeometryCache(TransformCR transformFromDgn);
     DGNPLATFORM_EXPORT ~TileGeometryCache();
@@ -106,9 +115,6 @@ public:
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
     TransformCR GetTransformToDgn() const { return m_transformToDgn; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
-
-    void ResolveTexture(TileDisplayParamsCR params, DgnDbR db);
-    DGNPLATFORM_EXPORT TextureImage const* GetTextureImage(TileDisplayParamsCR params) const;
 };
 
 //=======================================================================================

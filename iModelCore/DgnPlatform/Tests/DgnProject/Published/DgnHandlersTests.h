@@ -12,6 +12,7 @@
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
 #include "../TestFixture/GenericDgnModelTestFixture.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 
 #define LOCALIZED_STR(str) str

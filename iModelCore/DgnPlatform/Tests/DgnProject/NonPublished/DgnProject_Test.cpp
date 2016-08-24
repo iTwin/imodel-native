@@ -44,21 +44,6 @@ struct DgnDbTest : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void openProject(DgnDbPtr& project, BeFileName const& projectFileName, Db::OpenMode mode = Db::OpenMode::Readonly)
-    {
-    DbResult result;
-    project = DgnDb::OpenDgnDb(&result, projectFileName, DgnDb::OpenParams(mode));
-
-    ASSERT_TRUE( project != NULL);
-    ASSERT_TRUE( result == BE_SQLITE_OK );
-
-    Utf8String projectFileNameUtf8(projectFileName.GetName());
-    ASSERT_TRUE( projectFileNameUtf8 == Utf8String(project->GetDbFileName()));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/11
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnDbTest, Settings)
     {
     Utf8CP val1 = "value 1";
@@ -100,7 +85,7 @@ TEST_F (DgnDbTest, Settings)
 
     // reopen the project
     DgnDbPtr sameProjectPtr;
-    openProject(sameProjectPtr, projectName, BeSQLite::Db::OpenMode::ReadWrite);
+    DgnDbTestFixture::OpenDb(sameProjectPtr, projectName, BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_TRUE( sameProjectPtr.IsValid());
 
     Utf8String val;
@@ -118,12 +103,11 @@ TEST_F (DgnDbTest, Settings)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnDbTest, CheckStandardProperties)
     {
-    //DbResult rc;
-    Utf8String val;
-
     SetupSeedProject();
+
     DgnDbP project = m_db.get();
     ASSERT_TRUE( project != NULL );
+    Utf8String val;
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("DbGuid",            "be_Db"         )) );
@@ -454,7 +438,9 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     getPropertiesInTable(m_db, propertiesInTable);
     m_db->CloseDb();
     //Create package and open it for verification
-    BeFileName packageFile = DgnDbTestDgnManager::GetOutputFilePath(L"package.db");
+    BeFileName packageFile(testFile.GetDirectoryName());
+    packageFile.AppendToPath(L"package.db");
+
     CreateIModelParams createParams;
     createParams.SetOverwriteExisting(true);
     status =  DgnIModel::Create(packageFile, testFile, createParams);
@@ -513,7 +499,7 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     DgnDbPtr dgnProjV;
     BeFileName extractedFile(extractedFileDir.GetNameUtf8());
     extractedFile.AppendToPath(BeFileName::GetFileNameAndExtension(testFile.GetName()).c_str());
-    openProject(dgnProjV, extractedFile, BeSQLite::Db::OpenMode::ReadWrite);
+    DgnDbTestFixture::OpenDb(dgnProjV, extractedFile, BeSQLite::Db::OpenMode::ReadWrite);
     //Verify that properties did not change
     ProjectProperties projectPropV;
     getProjectProperties(dgnProjV, projectPropV);
@@ -556,7 +542,7 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
    
     //Open file for verification
     DgnDbPtr dgnProjV;
-    openProject(dgnProjV, extractedFile, BeSQLite::Db::OpenMode::ReadWrite);
+    DgnDbTestFixture::OpenDb(dgnProjV, extractedFile, BeSQLite::Db::OpenMode::ReadWrite);
    //Verify that properties did not change
     ProjectProperties projectPropV;
     getProjectProperties(dgnProjV, projectPropV);
@@ -581,8 +567,7 @@ BentleyStatus ImportSchema(ECSchemaR ecSchema, DgnDbR project)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     {
-    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"EnforceLinkTableFor11Relationship.ibim");
-
+    SetupSeedProject();
 
     BeFileName ecSchemaPath;
     BeTest::GetHost().GetDocumentsRoot(ecSchemaPath);
@@ -827,7 +812,7 @@ TEST_F(ImportTests, simpleSchemaImport)
         "  </ECClass>"
         "</ECSchema>";
 
-    SetupWithPrePublishedFile(L"3dMetricGeneral.ibim", L"New3dMetricGeneralDb.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
     ECN::ECSchemaReadContextPtr schemaContext = ECN::ECSchemaReadContext::CreateContext();
     m_db->SaveChanges();
 

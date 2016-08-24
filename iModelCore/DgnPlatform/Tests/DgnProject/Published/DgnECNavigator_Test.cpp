@@ -150,7 +150,7 @@ protected:
         DbResult openStatus;
         m_testDb = DgnDb::OpenDgnDb(&openStatus, testPathname, openParams);
         ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
-
+        
         BentleyStatus status = m_syncInfoUtility.Initialize(*m_testDb);
         ASSERT_EQ(SUCCESS, status);
         }
