@@ -310,47 +310,6 @@ void ThreeMxModel::_ReadJsonProperties(JsonValueCR val)
     }
 
 //=======================================================================================
-// @bsiclass                                                    Ray.Bentley     08/2016
-//=======================================================================================
-struct  PublishTileNode : TileNode
-{
-    NodePtr              m_node;
-    Transform            m_transform;
-    TileDisplayParamsR   m_tileDisplayParams;
-
-    PublishTileNode(NodeR node, TransformCR transform, TileDisplayParamsR tileDisplayParams, DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
-                     m_node(&node), m_transform(transform), m_tileDisplayParams(tileDisplayParams), TileNode(range, depth, siblingIndex, tolerance, parent) { }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
-    {
-    TileMeshList        tileMeshes;
-
-    for (auto& geometry : m_node->GetGeometry())
-        {
-        if (!geometry->GetPolyface().IsValid())
-            continue;
-
-        PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
-
-        if (0 == polyface->GetNormalCount())
-            polyface->BuildPerFaceNormals();
-
-        TileMeshBuilderPtr  builder = TileMeshBuilder::Create(&m_tileDisplayParams, NULL, 0.0);
-
-        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
-            builder->AddTriangle(*visitor,DgnElementId(), false, twoSidedTriangles);
-
-        tileMeshes.push_back(builder->GetMesh());
-        }
-    return tileMeshes;
-    }
-
-};  //  PublishTileNode
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct Publish3mxGeometry : Geometry
@@ -380,11 +339,64 @@ struct Publish3mxGeometry : Geometry
 //=======================================================================================
 struct Publish3mxTexture : Render::Texture
 {
-    ImageSource m_source;
-    Image::Format m_format;
-    Image::BottomUp m_bottomUp;
+    ImageSource         m_source;
+    Image::Format       m_format;
+    Image::BottomUp     m_bottomUp;
     Publish3mxTexture(ImageSourceCR source, Image::Format format, Image::BottomUp bottomUp) : m_source(std::move(source)), m_format(format), m_bottomUp(bottomUp) {}
 };
+
+//=======================================================================================
+// @bsiclass                                                    Ray.Bentley     08/2016
+//=======================================================================================
+struct  PublishTileNode : TileNode
+{
+    NodePtr              m_node;
+    Transform            m_transform;
+
+    PublishTileNode(NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
+                     m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles=false) const override
+    {
+    TileMeshList        tileMeshes;
+
+    for (auto& geometry : m_node->GetGeometry())
+        {
+        if (!geometry->GetPolyface().IsValid())
+            continue;
+
+        PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
+
+        if (0 == polyface->GetNormalCount())
+            polyface->BuildPerFaceNormals();
+
+        Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
+        Publish3mxTexture*      publishTexture;
+        TileTextureImagePtr     tileTexture;
+
+        if (nullptr != publishGeometry &&
+            nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
+            {
+            Image   image (publishTexture->m_source, publishTexture->m_format, publishTexture->m_bottomUp);
+            tileTexture = new TileTextureImage (std::move(image), false);
+            }
+
+        TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture);
+        TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
+
+        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
+            builder->AddTriangle(*visitor,DgnElementId(), false, twoSidedTriangles);
+
+        tileMeshes.push_back(builder->GetMesh());
+        }
+    return tileMeshes;
+    }
+
+};  //  PublishTileNode
+
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
@@ -402,9 +414,8 @@ struct Publish3mxScene : Scene
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent) 
     {
-    TileDisplayParams       tileDisplayParams;
     double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (node.GetMaximumSize() / (2.0 * node.GetRadius()));
-    PublishTileNode tileNode(node, scene.GetLocation(), tileDisplayParams, node.GetRange(), depth, siblingIndex, tolerance, parent);
+    PublishTileNode         tileNode(node, scene.GetLocation(), node.GetRange(), depth, siblingIndex, tolerance, parent);
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
@@ -423,16 +434,15 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
         return status;
 
     depth++;
-    Tile::ChildTiles children = *node._GetChildren();
-    size_t  childIndex = 0;
+
+    Tile::ChildTiles    children = *node._GetChildren();
+    size_t              childIndex = 0;
 
     node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
 
     for (auto& child : children)
-        {
         if (TileGenerator::Status::Success != (status = publishModelTiles(collector, scene, (NodeR) *child, depth, childIndex++, &tileNode)))
             return status;
-        }
 
     return TileGenerator::Status::Success;
     }
@@ -447,5 +457,7 @@ TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileColle
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    return publishModelTiles(collector, *scene, (NodeR) *scene->GetRoot(), 0, 0, nullptr);
+    TileTree::TilePtr     publishNode = scene->GetRoot()->_GetChildren()->front();
+
+    return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr);
     }
