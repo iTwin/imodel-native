@@ -132,7 +132,7 @@ private:
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
-    Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent);
+    Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);

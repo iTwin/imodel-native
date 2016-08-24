@@ -220,14 +220,10 @@ TilesetPublisher::Status TilePublisher::Publish()
     ProcessMeshes(sceneJson);
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
-#if USE_BATCH_TABLE
     Json::Value batchTableJson(Json::objectValue);
     m_batchIds.ToJson(batchTableJson);
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-#else
-    uint32_t batchTableStrLen = 0;
-#endif
 
     m_outputFile.open(Utf8String(b3dmPath.c_str()).c_str(), std::ios_base::trunc | std::ios_base::binary);
 
@@ -252,10 +248,7 @@ TilesetPublisher::Status TilePublisher::Publish()
     AppendUInt32(b3dmLength);
     AppendUInt32(b3dmNumBatches);
     AppendUInt32(batchTableStrLen);
-
-#if USE_BATCH_TABLE
     m_outputFile.write(batchTableStr.data(), batchTableStrLen);
-#endif
 
     m_outputFile.write(s_gltfMagic, 4);
     AppendUInt32(s_gltfVersion);
@@ -427,12 +420,15 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent)
+Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting)
     {
     Utf8String  prefix = textured ? "textured" : "untextured";
 
     if (transparent)
         prefix = prefix + "Transparent";
+
+    if (ignoreLighting)
+        prefix = prefix + "Unlit";
 
     Utf8String  techniqueName = prefix + "Technique";
     
@@ -445,12 +441,12 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
     AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
     AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-    AddTechniqueParameter(technique, "n", GLTF_FLOAT_VEC3, "NORMAL");
-    AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
+    if (!ignoreLighting)
+        {
+        AddTechniqueParameter(technique, "n", GLTF_FLOAT_VEC3, "NORMAL");
+        AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
+        }
     AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
-
-    if (transparent)
-        prefix = prefix + "Transparent";
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
@@ -467,19 +463,22 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
-    techniqueAttributes["a_n"] = "n";
     techniqueAttributes["a_batchId"] = "batch";
+    if(!ignoreLighting)
+        techniqueAttributes["a_n"] = "n";
 
     auto& techniqueUniforms = technique["uniforms"];
     techniqueUniforms["u_mv"] = "mv";
     techniqueUniforms["u_proj"] = "proj";
-    techniqueUniforms["u_nmx"] = "nmx";
+    if (!ignoreLighting)
+        techniqueUniforms["u_nmx"] = "nmx";
 
     auto& rootProgramNode = (rootNode["programs"][programName.c_str()] = Json::objectValue);
     rootProgramNode["attributes"] = Json::arrayValue;
     AppendProgramAttribute(rootProgramNode, "a_pos");
-    AppendProgramAttribute(rootProgramNode, "a_n");
     AppendProgramAttribute(rootProgramNode, "a_batchId");
+    if (!ignoreLighting)
+        AppendProgramAttribute(rootProgramNode, "a_n");
 
     rootProgramNode["vertexShader"]   = vertexShader.c_str();
     rootProgramNode["fragmentShader"] = fragmentShader.c_str();
@@ -491,8 +490,8 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
     auto& bufferViews = rootNode["bufferViews"];
 
 
-    AddBufferView(bufferViews, vertexShaderBufferView.c_str(), textured ? s_texturedVertexShader : s_untexturedVertexShader);
-    AddBufferView(bufferViews, fragmentShaderBufferView.c_str(), textured ? s_texturedFragShader   : s_untexturedFragShader); 
+    AddBufferView(bufferViews, vertexShaderBufferView.c_str(),   ignoreLighting ? s_unlitTextureVertexShader  : (textured ? s_texturedVertexShader : s_untexturedVertexShader));
+    AddBufferView(bufferViews, fragmentShaderBufferView.c_str(), ignoreLighting ? s_unlitTextureFragmentShader: (textured ? s_texturedFragShader    : s_untexturedFragShader)); 
 
     // Diffuse...
     if (textured)
@@ -512,12 +511,15 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
         AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
         techniqueUniforms["u_color"] = "color";
         }
-    // Specular...
-    AddTechniqueParameter(technique, "specularColor", GLTF_FLOAT_VEC3, nullptr);
-    techniqueUniforms["u_specularColor"] = "specularColor";
+    if (!ignoreLighting)
+       {
+        // Specular...
+        AddTechniqueParameter(technique, "specularColor", GLTF_FLOAT_VEC3, nullptr);
+        techniqueUniforms["u_specularColor"] = "specularColor";
 
-    AddTechniqueParameter(technique, "specularExponent", GLTF_FLOAT, nullptr);
-    techniqueUniforms["u_specularExponent"] = "specularExponent";
+        AddTechniqueParameter(technique, "specularExponent", GLTF_FLOAT, nullptr);
+        techniqueUniforms["u_specularExponent"] = "specularExponent";
+        }
 
     // Transparency requires blending extensions...
     if (transparent)
@@ -545,6 +547,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 
     return techniqueName;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -589,7 +592,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
 
         if (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))
             {
-            materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0).c_str();
+            materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
             materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, suffix);
             }
         else
@@ -603,7 +606,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
             materialColor.append(rgb.blue);
             materialColor.append(alpha);
 
-            materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0).c_str();
+            materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
             }
 
         if (!isPolyline)
@@ -630,18 +633,12 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
                bv_ind_id    = Concat("bv_ind_", idStr),
                bv_uv_id     = Concat("bv_uv_", idStr),
                bv_n_id      = Concat("bv_n_", idStr),
-#if USE_BATCH_TABLE
                bv_bat_id    = Concat("bv_bat_", idStr),
-#endif
                acc_pos_id   = Concat("acc_pos_", idStr),
                acc_ind_id   = Concat("acc_ind_", idStr),
                acc_uv_id    = Concat("acc_uv_", idStr),
                acc_n_id     = Concat("acc_n_", idStr)
-#if USE_BATCH_TABLE
                ,acc_bat_id  = Concat("acc_bat_", idStr);
-#else
-               ;
-#endif
 
     bvector<float> ptsVal;
     ptsVal.reserve(mesh.Points().size() * 3);
@@ -697,12 +694,10 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         normals.push_back((float)norm.z);
         }
 
-#if USE_BATCH_TABLE
     bvector<uint16_t> batchIds;
     batchIds.reserve(mesh.ElementIds().size());
     for (auto const& elemId : mesh.ElementIds())
         batchIds.push_back(m_batchIds.GetBatchId(elemId));
-#endif
 
     Json::Value attr = Json::objectValue;
 
@@ -714,9 +709,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     if (!normals.empty())
         attr["attributes"]["NORMAL"] = acc_n_id;
 
-#if USE_BATCH_TABLE
     attr["attributes"]["BATCHID"] = acc_bat_id;
-#endif
     attr["indices"] = acc_ind_id;
 
     attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh.Triangles().empty(), idStr.c_str());
@@ -751,7 +744,6 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][acc_pos_id]["count"] = ptsVal.size();
     rootNode["accessors"][acc_pos_id]["type"] = "VEC3";
 
-#if USE_BATCH_TABLE
     auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
     rootNode["bufferViews"][bv_bat_id] = Json::objectValue;
     rootNode["bufferViews"][bv_bat_id]["buffer"] = "binary_glTF";
@@ -762,7 +754,6 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     current_buffer_size = m_binaryData.size();
     m_binaryData.resize(m_binaryData.size() + nBatchIdBytes);
     memcpy(m_binaryData.data() + current_buffer_size, batchIds.data(), nBatchIdBytes);
-#endif
 
     DRange3d range = DRange3d::From(mesh.Points().data(), (int)mesh.Points().size());
 
@@ -782,14 +773,12 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][acc_ind_id]["count"] = indices.size();
     rootNode["accessors"][acc_ind_id]["type"] = "SCALAR";
 
-#if USE_BATCH_TABLE
     rootNode["accessors"][acc_bat_id] = Json::objectValue;
     rootNode["accessors"][acc_bat_id]["bufferView"] = bv_bat_id;
     rootNode["accessors"][acc_bat_id]["byteOffset"] = 0;
     rootNode["accessors"][acc_bat_id]["componentType"] = GLTF_UNSIGNED_SHORT;
     rootNode["accessors"][acc_bat_id]["count"] = batchIds.size();
     rootNode["accessors"][acc_bat_id]["type"] = "SCALAR";
-#endif
 
     if (!uvs.empty())
         {
