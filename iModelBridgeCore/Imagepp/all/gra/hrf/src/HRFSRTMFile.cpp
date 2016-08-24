@@ -49,7 +49,7 @@ class HRFSRTMBlockCapabilities : public HRFRasterFileCapabilities
                 HRFSRTMFile::SRTM1_LINEBYTES,
                 HRFBlockAccess::RANDOM));
 
-            Add(new HRFImageCapability(HFC_READ_WRITE,     // AccessMode
+            Add(new HRFImageCapability(HFC_READ_ONLY,     // AccessMode
                 INT32_MAX,                                 // MaxSizeInBytes
                 HRFSRTMFile::SRTM3_LINEWIDTH,               // MinWidth
                 HRFSRTMFile::SRTM1_LINEWIDTH,               // MaxWidth
@@ -69,7 +69,7 @@ class HRFSRTMCodecIdentityCapabilities : public  HRFRasterFileCapabilities
             : HRFRasterFileCapabilities()
             {
             // Codec
-            Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
+            Add(new HRFCodecCapability(HFC_READ_ONLY,
                 HCDCodecIdentity::CLASS_ID,
                 new HRFSRTMBlockCapabilities()));
             }
@@ -435,10 +435,6 @@ void HRFSRTMFile::CreateDescriptors()
     pFlipModel->SetYScaling(-1.0);
     pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
 
-    //TODO : Set NoDataValue? The line below doesn't work, due to const...We eould have to const cast, not sure if this is appropriate...
-    //pPixelType->GetChannelOrg().GetChannelPtr(0)->SetNoDataValue(-32768);
-
-    //TODO : See if block type, block access, width and height can be different.
     // Create Resolution Descriptor
     pResolution = new HRFResolutionDescriptor(
         GetAccessMode(),               // AccessMode,
