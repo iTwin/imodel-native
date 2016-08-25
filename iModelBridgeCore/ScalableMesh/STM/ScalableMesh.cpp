@@ -48,6 +48,7 @@ extern bool   GET_HIGHEST_RES;
 #include "vuPolygonClassifier.h"
 #include <ImagePP\all\h\HIMMosaic.h>
 #include "LogUtils.h"
+#include "ScalableMeshEdit.h"
 //#include "CGALEdgeCollapse.h"
 
 DataSourceManager ScalableMeshBase::s_dataSourceManager;
@@ -212,6 +213,11 @@ IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType que
 IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     {
     return _GetNodeQueryInterface();
+    }
+
+IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
+    {
+    return _GetMeshEditInterface();
     }
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DTMAnalysisType type)
@@ -1601,14 +1607,22 @@ template <class POINT> IScalableMeshMeshQueryPtr ScalableMesh<POINT>::_GetMeshQu
     return meshQueryPtr;
     }
 
+
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_GetNodeQueryInterface
+|ScalableMesh::_GetMeshEditInterface
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshNodeRayQueryPtr ScalableMesh<POINT>::_GetNodeQueryInterface() const
     {
     return new ScalableMeshNodeRayQuery<POINT>(&*m_scmIndexPtr);
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_GetMeshEditInterface
++----------------------------------------------------------------------------*/
+template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInterface() const
+    {
+    return ScalableMeshEdit::Create(&*m_scmIndexPtr);
+    }
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
 +----------------------------------------------------------------------------*/

@@ -52,4 +52,7 @@ int IScalableMeshEdit::RemoveWithin(ClipVectorCP clipPlaneSet, const bvector<ISc
     return _RemoveWithin(clipPlaneSet, priorityNodes);
     }
 
+ScalableMeshEdit* ScalableMeshEdit::Create(SMMeshIndex<DPoint3d, DRange3d>* smIndex)
+     { return new ScalableMeshEdit(smIndex); }
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

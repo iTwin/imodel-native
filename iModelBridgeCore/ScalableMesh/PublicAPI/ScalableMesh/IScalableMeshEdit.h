@@ -23,7 +23,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
 
-class IScalableMeshEdit abstract : RefCountedBase
+class IScalableMeshEdit abstract : public RefCountedBase
     {
     protected:
         virtual int _RemoveWithin(ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes) = 0;

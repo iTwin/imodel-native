@@ -29,6 +29,8 @@ class ScalableMeshEdit : public IScalableMeshEdit
     public:
         ScalableMeshEdit(SMMeshIndex<DPoint3d, DRange3d>* smIndex);
         ~ScalableMeshEdit();
+
+        static ScalableMeshEdit* Create(SMMeshIndex<DPoint3d, DRange3d>* smIndex);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

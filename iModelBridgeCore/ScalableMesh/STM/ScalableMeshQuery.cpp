@@ -2329,6 +2329,16 @@ bool IScalableMeshNode::ArePointsFullResolution() const
     return _ArePointsFullResolution();
     }
 
+bool IScalableMeshNode::IsDataUpToDate() const
+    {
+    return _IsDataUpToDate();
+    }
+
+void IScalableMeshNode::UpdateData() 
+    {
+    return _UpdateData();
+    }
+
 IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags) const
     {
     return _GetMesh(flags);

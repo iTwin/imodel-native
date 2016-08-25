@@ -472,6 +472,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _IsClippingUpToDate() const = 0;
 
+        virtual bool _IsDataUpToDate() const = 0;
+
+        virtual void _UpdateData() = 0;
+
         virtual void _GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const = 0;
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const = 0;
@@ -534,6 +538,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
 
         BENTLEY_SM_EXPORT bool IsClippingUpToDate() const;
+
+        BENTLEY_SM_EXPORT bool IsDataUpToDate() const;
+
+        BENTLEY_SM_EXPORT void UpdateData();
 
         BENTLEY_SM_EXPORT void GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const;
 

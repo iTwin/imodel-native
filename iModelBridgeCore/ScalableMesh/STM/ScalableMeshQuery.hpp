@@ -2274,6 +2274,22 @@ template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip() const
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ComputeMergedClips();
     }
 
+
+template <class POINT> bool ScalableMeshNode<POINT>::_IsDataUpToDate() const
+    {
+    LOAD_NODE
+
+        return m_node->IsDirty();
+    }
+
+template <class POINT> void ScalableMeshNode<POINT>::_UpdateData() 
+    {
+    LOAD_NODE
+
+        dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->UpdateData();
+    _RefreshMergedClip(); //must recompute clip after data was updated
+    }
+
 template <class POINT> bool ScalableMeshNode<POINT>::_AddClip(uint64_t id, bool isVisible) const
     {
     return dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->AddClip(id, isVisible);
