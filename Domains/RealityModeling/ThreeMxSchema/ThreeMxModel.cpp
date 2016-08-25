@@ -420,60 +420,6 @@ struct Publish3mxScene : Scene
     GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) override {return new Publish3mxGeometry(args, *this);}
 };
 
-#ifdef NOTNOW
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent, TransformCR transformDbToTile) 
-    {
-    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node.GetMaximumSize());
-    DRange3d                range = node.GetRange();;
-    Transform               toTile = Transform::FromProduct (transformDbToTile, scene.GetLocation());
-
-    if (node._HasChildren() && node.IsNotLoaded())
-        scene.LoadNodeSynchronous(node);
-
-    if (range.IsNull() && nullptr != node._GetChildren())     // No range set on root node...
-        for (auto& child : *node._GetChildren())
-            range.Extend (child->GetRange());
-
-    toTile.Multiply (range, range);
-    PublishTileNode         tileNode(node, toTile, range, depth, siblingIndex, tolerance, parent);
-
-
-    if (nullptr != node._GetChildren())
-        {
-        size_t childIndex = 0;
-
-        for (auto& child : *node._GetChildren())
-            {
-            toTile.Multiply (range, child->GetRange());
-            tileNode.GetChildren().push_back(TileNode(range, depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
-            }
-        }
-
-    TileGenerator::Status status = collector._AcceptTile(tileNode);
-
-    static size_t s_depthLimit = 0xffff;
-
-    if (TileGenerator::Status::Success != status || !node._HasChildren() || depth > s_depthLimit)
-        return status;
-
-    depth++;
-
-    Tile::ChildTiles    children = *node._GetChildren();
-    size_t              childIndex = 0;
-
-    node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
-
-    for (auto& child : children)
-        if (TileGenerator::Status::Success != (status = publishModelTiles(collector, scene, (NodeR) *child, depth, childIndex++, &tileNode, transformDbToTile)))
-            return status;
-
-    return TileGenerator::Status::Success;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
