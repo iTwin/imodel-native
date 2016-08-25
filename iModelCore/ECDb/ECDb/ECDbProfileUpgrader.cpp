@@ -18,7 +18,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 DbResult ECDbProfileUpgrader_3731::_Upgrade(ECDbCR ecdb) const
     {
     //Get ECSchemaId of MetaSchema
-    DbResult stat = ecdb.ExecuteSql("DROP TABLE ec_ClassHierarchy");
+    //From Q4 files
+    DbResult stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_ClassHierarchy");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //From Q2 files
+    stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_cache_ClassHasTables");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //From Q2 files
+    stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_cache_ClassHierarchy");
     if (BE_SQLITE_OK != stat)
         return stat;
 
