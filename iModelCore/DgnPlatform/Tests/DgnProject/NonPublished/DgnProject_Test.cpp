@@ -773,40 +773,58 @@ TEST_F (DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct QueryElementIdGraphiteURI : ::testing::Test
+struct ElementUriTests : ::testing::Test
 {
     BETEST_DECLARE_TC_SETUP
     BETEST_DECLARE_TC_TEARDOWN
 
     ScopedDgnHost m_host;
+    RefCountedPtr<Dgn::NamespaceAuthority> m_codeAuthority;
 
     static DgnDbTestUtils::SeedDbInfo s_seedFileInfo;
 
-    QueryElementIdGraphiteURI()
+    ElementUriTests()
         {
         // Must register my domain whenever I initialize a host
         DgnPlatformTestDomain::Register();
         }
+
+    NamespaceAuthority& GetTestCodeAuthority(DgnDbR db)
+        {
+        if (!m_codeAuthority.IsValid())
+            {
+            m_codeAuthority = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority", db);
+            DgnDbStatus status = m_codeAuthority->Insert();
+            BeAssert(status == DgnDbStatus::Success);
+            }
+        return *m_codeAuthority;
+        }
+
+    DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)
+        {
+        return GetTestCodeAuthority(db).CreateCode(elementCode, ns);
+        }
+
 };
 
-DgnDbTestUtils::SeedDbInfo QueryElementIdGraphiteURI::s_seedFileInfo;
+DgnDbTestUtils::SeedDbInfo ElementUriTests::s_seedFileInfo;
 
 //---------------------------------------------------------------------------------------
 // Do one-time setup for all tests in this group
 // In this case, I just request the (root) seed file that my tests will use and make a note of it.
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(QueryElementIdGraphiteURI) 
+BETEST_TC_SETUP(ElementUriTests) 
     {
     ScopedDgnHost tempHost;
-    QueryElementIdGraphiteURI::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
+    ElementUriTests::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
     }
 
 //---------------------------------------------------------------------------------------
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(QueryElementIdGraphiteURI)
+BETEST_TC_TEARDOWN(ElementUriTests)
     {
     // Note: leave your subdirectory in place. Don't remove it. That allows the 
     // base class to detect and throw an error if two groups try to use a directory of the same name.
@@ -815,7 +833,10 @@ BETEST_TC_TEARDOWN(QueryElementIdGraphiteURI)
     //DgnDbTestUtils::EmptySubDirectory(GROUP_SUBDIR);
     }
 
-TEST_F(QueryElementIdGraphiteURI, Test1)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             08/2016
+//---------------------------------------------------------------------------------------
+TEST_F(ElementUriTests, Test1)
     {
     // Note: We know that our group's TC_SETUP function has already created the group seed file. We can just ask for it.
     DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(s_seedFileInfo.fileName, L"Test1");
@@ -827,7 +848,7 @@ TEST_F(QueryElementIdGraphiteURI, Test1)
     DgnElementCPtr el;
     if (true)
         {
-        TestElementPtr testel = TestElement::Create(*db, mid, catId, "E1");
+        TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "TestNS", "E1"));
         testel->SetTestElementProperty("foo");
         el = testel->Insert();
         ASSERT_TRUE(el.IsValid());
@@ -835,14 +856,80 @@ TEST_F(QueryElementIdGraphiteURI, Test1)
         db->SaveChanges();
         }
 
-    Utf8CP uri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=foo";
-    auto eid = db->Elements().QueryElementIdGraphiteURI(uri);
-    ASSERT_TRUE(eid == el->GetElementId());
+    if (true)
+        {
+        // Graphite format - ECCass=
+        Utf8CP uri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=foo";
+        auto eid = db->Elements().QueryElementIdByURI(uri);
+        ASSERT_TRUE(eid == el->GetElementId());
 
-    Utf8CP baduri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=bar";
-    auto badeid = db->Elements().QueryElementIdGraphiteURI(baduri);
-    ASSERT_TRUE(!badeid.IsValid());
+        Utf8CP baduri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=bar";
+        auto badeid = db->Elements().QueryElementIdByURI(baduri);
+        ASSERT_TRUE(!badeid.IsValid());
+        }
+
+    if (true)
+        {
+        // Graphite format - Source=
+        // *** TBD
+        }
+
+    if (true)
+        {
+        // DgnDb format - ECCass=
+        Utf8CP uri = "/DgnDb?ECClass=DgnPlatformTest:TestElement&TestElementProperty=foo";
+        auto eid = db->Elements().QueryElementIdByURI(uri);
+        ASSERT_TRUE(eid == el->GetElementId());
+
+        Utf8CP baduri = "/DgnDb?ECClass=DgnPlatformTest:TestElement&TestElementProperty=bar";
+        auto badeid = db->Elements().QueryElementIdByURI(baduri);
+        ASSERT_TRUE(!badeid.IsValid());
+        }
+
+    if (true)
+        {
+        // DgnDb format - Code
+
+        Utf8String dbUri;
+        ASSERT_EQ(BSISUCCESS, db->Elements().CreateElementUri(dbUri, *el, true, true));
+        ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI(dbUri.c_str()));
+
+        ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI("/DgnDb?Code=E1&A=TestAuthority&N=TestNS"));
+
+        BeTest::SetFailOnAssert(false);
+        ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestAuthority&N=TestNS").IsValid());
+        BeTest::SetFailOnAssert(true);
+        }
+
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             08/2016
+//---------------------------------------------------------------------------------------
+#ifdef WIP_HAVE_LEGACY_FILES
+TEST_F(ElementUriTests, TestLegacyUris)
+    {
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
+    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Hydrotreater Expansion.i.idgndb"), openParams);
+    ASSERT_TRUE(db.IsValid());
+
+    auto eid1 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=OpenPlant%5F3D%3ASHELL%5FAND%5FTUBE%5FHEAT%5FEXCHANGER%5FPAR&GUID=A1AC9BB1%2D9AAF%2D4A9D%2D96B6%2DD5C242358405");
+    ASSERT_TRUE(eid1.IsValid());
+
+    auto eid2 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=OpenPlant%5F3D%3ASTORAGE%5FTANK%5FPAR&GUID=D3F923AD%2D5694%2D4300%2DBE23%2D1953D6D0D02B");
+    ASSERT_TRUE(eid2.IsValid());
+
+    db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Office Building.i.idgndb"), openParams);
+    ASSERT_TRUE(db.IsValid());
+
+    auto eid3 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=Bentley%5FRevit%5FSchema%3APlanting&RevitConnectorID=513243");
+    ASSERT_TRUE(eid3.IsValid());
+
+    auto eid4 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=Bentley%5FRevit%5FSchema%3ARoofs&RevitConnectorID=343500");
+    ASSERT_TRUE(eid4.IsValid());
+    }
+#endif
 
 struct ImportTests : DgnDbTestFixture
     {};
