@@ -13,7 +13,7 @@
 
 #include <Imagepp/all/h/HRFMapBoxFile.h>
 #include <Imagepp/all/h/HRFMapBoxTileEditor.h>
-#include <ImagePP\all\h\HRFPngFile.h>
+#include <ImagePP/all/h/HRFPngFile.h>
 #include <ImagePPInternal/HttpConnection.h>
 #include <BeJpeg/BeJpeg.h>
 
