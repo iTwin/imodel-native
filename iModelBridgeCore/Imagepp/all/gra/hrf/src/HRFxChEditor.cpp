@@ -238,7 +238,10 @@ HSTATUS HRFxChEditorPanchromatic::ReadBlock(uint64_t pi_PosBlockX,
     if (GetRasterFile()->GetAccessMode().m_HasCreateAccess)
         return H_NOT_FOUND;
 
-    uint32_t BufferPixelLength = GetResolutionDescriptor()->GetBlockWidth() * GetResolutionDescriptor()->GetBlockHeight();
+    uint32_t blockW = GetResolutionDescriptor()->GetBlockWidth();
+    uint32_t blockH = GetResolutionDescriptor()->GetBlockHeight();
+
+    uint32_t BufferPixelLength = blockW * blockH;
 
     HArrayAutoPtr<Byte> pBuffRed(new Byte[BufferPixelLength* bytesPerPixel * (RASTER_FILE->m_ChannelCount)]);
     Byte* pBuffGreen = &(pBuffRed[BufferPixelLength*bytesPerPixel]);
@@ -248,13 +251,10 @@ HSTATUS HRFxChEditorPanchromatic::ReadBlock(uint64_t pi_PosBlockX,
     if ((Status = RASTER_FILE->m_PanchromaticFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffChrom)) != H_SUCCESS)
         return H_NOT_FOUND;
 
-    // Panchromatic has a 2X better resolution.
-    pi_PosBlockX = pi_PosBlockX / 2;
-    pi_PosBlockY = pi_PosBlockY / 2;
-    //:> Read each channel
-    if ((Status = RASTER_FILE->m_RedFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffRed)) != H_SUCCESS ||
-        (Status = RASTER_FILE->m_GreenFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffGreen)) != H_SUCCESS ||
-        (Status = RASTER_FILE->m_BlueFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX, pi_PosBlockY, pBuffBlue)) != H_SUCCESS)
+    //:> Read each channel                                          Panchromatic has a 2X better resolution.
+    if ((Status = RASTER_FILE->m_RedFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX / 2, pi_PosBlockY / 2, pBuffRed)) != H_SUCCESS ||
+        (Status = RASTER_FILE->m_GreenFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX /2 , pi_PosBlockY / 2, pBuffGreen)) != H_SUCCESS ||
+        (Status = RASTER_FILE->m_BlueFileResolutionEditor[m_Resolution]->ReadBlock(pi_PosBlockX / 2, pi_PosBlockY / 2, pBuffBlue)) != H_SUCCESS)
         return H_NOT_FOUND;
 
     //:> Fill client buffer ...
@@ -262,82 +262,99 @@ HSTATUS HRFxChEditorPanchromatic::ReadBlock(uint64_t pi_PosBlockX,
     uint16_t* pBuffRed16 = (uint16_t *)pBuffRed.get();
     uint16_t* pBuffGreen16 = (uint16_t *)pBuffGreen;
     uint16_t* pBuffBlue16 = (uint16_t *)pBuffBlue;
-    uint16_t* pBuffCh416 = (uint16_t *)pBuffChrom;
+    uint16_t* pBuffChrom16 = (uint16_t *)pBuffChrom;
 
-#if (1)
-    for (uint32_t pos = 0, bufPos = 0; pos < BufferPixelLength; pos++, bufPos += 3)
+    // Need to compute position in the buffer RGB, if tile
+    uint64_t OffX = (pi_PosBlockX / 2) % blockW;
+    uint64_t OffY = (pi_PosBlockY / 2) % blockH;
+
+#if (1)   // Simple mean
+    for (uint32_t y= 0, bufPos = 0, chromPos=0; y < blockH; ++y)
         {
-        // Convert RGB to IHS
-        double red = pBuffRed16[pos >> 1] / 65535.0;
-        double green = pBuffGreen16[pos >> 1] / 65535.0;
-        double blue = pBuffBlue16[pos >> 1] / 65535.0;
+            uint64_t Offset = ((((y>>1) + OffY) * blockW)) + OffX;
 
-        double Intensity(red+green+blue);
-        HASSERT(Intensity >= 0.0 && Intensity <= 3.0);
-
-        double Hue(0.0);
-        double minval = min(red,min(green,blue));
-        if (blue == minval)
+        for (uint32_t x = 0;  x < blockW; ++x, bufPos += 3, ++chromPos)
             {
-            if (!HDOUBLE_EQUAL_EPSILON(Intensity - (3*blue), 0.0))
-                Hue = (green - blue) / (Intensity - (3*blue));
-            }
-        else if (red == minval)
-            Hue = ((blue - red) / (Intensity - (3*red))) + 1;
-        else //(green == minval)
-            Hue = ((red - green) / (Intensity - (3*green))) + 2;
-        HASSERT(Hue >= 0.0 && Hue <= 3.0);
-
-        double Saturation;
-        if (HDOUBLE_EQUAL_EPSILON(Intensity,0.0))
-            Saturation = 0.0;
-        else
-            {
-            if (Hue <= 1.0)
-                Saturation = (Intensity - (3 * blue)) / Intensity;
-            else if (Hue <= 2.0)
-                Saturation = (Intensity - (3 * red)) / Intensity;
-            else // (Hue <= 3.0)
-                Saturation = (Intensity - (3 * green)) / Intensity;
-            }
-        HASSERT(Saturation >= 0.0 && Saturation <= 1.0);
-
-        // Update intensity channel by the panchromatic value
-        Intensity = pBuffCh416[pos] / 65535.0;
-
-        // Convert IHS to RGB
-        if (pBuffRed16[pos >> 1] == 0 && pBuffGreen16[pos >> 1] == 0 && pBuffBlue16[pos >> 1] == 0)
-            {   // Keep the true black - transparency
-            pData[bufPos]     = 0;
-            pData[bufPos + 1] = 0;
-            pData[bufPos + 2] = 0;
-            }
-        else if (Hue <= 1.0)
-            {
-            pData[bufPos]     = (uint16_t)(Intensity * (1 + (2*Saturation) - (3*Saturation*Hue)) / 3.0 * 65535);
-            pData[bufPos + 1] = (uint16_t)(Intensity * (1 - Saturation     + (3 * Saturation*Hue)) / 3.0 * 65535);
-            pData[bufPos + 2] = (uint16_t)(Intensity * (1 - Saturation) / 3.0 * 65535);
-            }
-        else if (Hue <= 2.0)
-            {
-            pData[bufPos]     = (uint16_t)(Intensity * (1 - Saturation) / 3.0 * 65535);
-            pData[bufPos + 1] = (uint16_t)(Intensity * (1 + (2 * Saturation) - (3 * Saturation*(Hue-1.0))) / 3.0 * 65535);
-            pData[bufPos + 2] = (uint16_t)(Intensity * (1 - Saturation       + (3 * Saturation*(Hue - 1.0))) / 3.0 * 65535);
-            }
-        else // (Hue <= 3.0)
-            {
-            pData[bufPos]     = (uint16_t)(Intensity * (1 - Saturation + (3 * Saturation*(Hue - 2.0))) / 3.0 * 65535);
-            pData[bufPos + 1] = (uint16_t)(Intensity * (1 - Saturation) / 3.0 * 65535);
-            pData[bufPos + 2] = (uint16_t)(Intensity * (1 + (2 * Saturation) - (3 * Saturation*(Hue - 2.0))) / 3.0 * 65535);
+            pData[bufPos] = (pBuffRed16[Offset + (x >> 1)] + pBuffChrom16[chromPos]) >> 1;
+            pData[bufPos + 1] = (pBuffGreen16[Offset + (x >> 1)] + pBuffChrom16[chromPos]) >> 1;
+            pData[bufPos + 2] = (pBuffBlue16[Offset + (x >> 1)] + pBuffChrom16[chromPos]) >> 1;
             }
         }
 #endif
-#if (0)   // Simple mean
-    for (uint32_t pos = 0, bufPos = 0; pos < BufferPixelLength; pos++, bufPos += 3)
+
+#if (0) // PanSharpening - Need to optimize if using. 
+    for (uint32_t y = 0, bufPos = 0, chromPos = 0; y < blockH; ++y)
         {
-        pData[bufPos]     = (pBuffRed16[pos>>1] + pBuffCh416[pos]) >> 1;
-        pData[bufPos + 1] = (pBuffGreen16[pos >> 1] + pBuffCh416[pos]) >> 1;
-        pData[bufPos + 2] = (pBuffBlue16[pos >> 1] + pBuffCh416[pos]) >> 1;
+        uint64_t Offset = ((((y >> 1) + OffY) * blockW)) + OffX;
+
+        for (uint32_t x = 0; x < blockW; ++x, bufPos += 3, ++chromPos)
+            {
+            uint64_t index = Offset + (x >> 1);
+
+            // Convert RGB to IHS
+            double red = pBuffRed16[index] / 65535.0;
+            double green = pBuffGreen16[index] / 65535.0;
+            double blue = pBuffBlue16[index] / 65535.0;
+
+            double Intensity(red+green+blue);
+            HASSERT(Intensity >= 0.0 && Intensity <= 3.0);
+
+            double Hue(0.0);
+            double minval = min(red,min(green,blue));
+            if (blue == minval)
+                {
+                if (!HDOUBLE_EQUAL_EPSILON(Intensity - (3*blue), 0.0))
+                    Hue = (green - blue) / (Intensity - (3*blue));
+                }
+            else if (red == minval)
+                Hue = ((blue - red) / (Intensity - (3*red))) + 1;
+            else //(green == minval)
+                Hue = ((red - green) / (Intensity - (3*green))) + 2;
+            HASSERT(Hue >= 0.0 && Hue <= 3.0);
+
+            double Saturation;
+            if (HDOUBLE_EQUAL_EPSILON(Intensity,0.0))
+                Saturation = 0.0;
+            else
+                {
+                if (Hue <= 1.0)
+                    Saturation = (Intensity - (3 * blue)) / Intensity;
+                else if (Hue <= 2.0)
+                    Saturation = (Intensity - (3 * red)) / Intensity;
+                else // (Hue <= 3.0)
+                    Saturation = (Intensity - (3 * green)) / Intensity;
+                }
+            HASSERT(Saturation >= 0.0 && Saturation <= 1.0);
+
+            // Update intensity channel by the panchromatic value
+            Intensity = pBuffChrom16[chromPos] / 65535.0;
+
+            // Convert IHS to RGB
+            if (pBuffRed16[index] == 0 && pBuffGreen16[index] == 0 && pBuffBlue16[index] == 0)
+                {   // Keep the true black - transparency
+                pData[bufPos]     = 0;
+                pData[bufPos + 1] = 0;
+                pData[bufPos + 2] = 0;
+                }
+            else if (Hue <= 1.0)
+                {
+                pData[bufPos]     = (uint16_t)(Intensity * (1 + (2*Saturation) - (3*Saturation*Hue)) / 3.0 * 65535);
+                pData[bufPos + 1] = (uint16_t)(Intensity * (1 - Saturation     + (3 * Saturation*Hue)) / 3.0 * 65535);
+                pData[bufPos + 2] = (uint16_t)(Intensity * (1 - Saturation) / 3.0 * 65535);
+                }
+            else if (Hue <= 2.0)
+                {
+                pData[bufPos]     = (uint16_t)(Intensity * (1 - Saturation) / 3.0 * 65535);
+                pData[bufPos + 1] = (uint16_t)(Intensity * (1 + (2 * Saturation) - (3 * Saturation*(Hue-1.0))) / 3.0 * 65535);
+                pData[bufPos + 2] = (uint16_t)(Intensity * (1 - Saturation       + (3 * Saturation*(Hue - 1.0))) / 3.0 * 65535);
+                }
+            else // (Hue <= 3.0)
+                {
+                pData[bufPos]     = (uint16_t)(Intensity * (1 - Saturation + (3 * Saturation*(Hue - 2.0))) / 3.0 * 65535);
+                pData[bufPos + 1] = (uint16_t)(Intensity * (1 - Saturation) / 3.0 * 65535);
+                pData[bufPos + 2] = (uint16_t)(Intensity * (1 + (2 * Saturation) - (3 * Saturation*(Hue - 2.0))) / 3.0 * 65535);
+                }
+            }
         }
 #endif
 

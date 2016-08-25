@@ -1055,9 +1055,8 @@ void HRFxChFile::ValidateChannelFilesPanchromatic(const HFCPtr<HRFRasterFile>& p
         //        == pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockHeight())))
         //    throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
         
-        // Only strip input file supported for the moment.
-        if (pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::STRIP ||
-            pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() !=
+        // Same block type
+        if (pi_rpPanchromaticFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() !=
             pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType())
             throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
     }
