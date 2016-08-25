@@ -18,7 +18,7 @@
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <!-- Also re-deliver some ECSchemas -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
