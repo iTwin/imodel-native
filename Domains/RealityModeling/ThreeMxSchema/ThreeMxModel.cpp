@@ -447,7 +447,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
         for (auto& child : *node._GetChildren())
             {
             toTile.Multiply (range, child->GetRange());
-            tileNode.GetChildren().push_back(TileNode(range, depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
+            tileNode.GetChildren().push_back(new TileNode(range, depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
             }
         }
 
@@ -475,7 +475,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileCollector& collector, TransformCR transformToTile) 
+TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator& generator, TileGenerator::ITileCollector& collector, TransformCR transformToTile) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
     
