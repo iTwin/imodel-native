@@ -71,7 +71,6 @@ namespace ServerSchema
         static Utf8CP MasterFileId = "MasterFileId";
         static Utf8CP MergedRevisionId = "MergedRevisionId";
         static Utf8CP PushDate = "PushDate";
-        static Utf8CP Published = "Published";
         static Utf8CP ObjectId = "ObjectId";
         static Utf8CP ObjectIds = "ObjectIds";
         static Utf8CP QueryOnly = "QueryOnly";
