@@ -420,6 +420,7 @@ struct Publish3mxScene : Scene
     GeometryPtr _CreateGeometry(IGraphicBuilder::TriMeshArgs const& args) override {return new Publish3mxGeometry(args, *this);}
 };
 
+#ifdef NOTNOW
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -471,18 +472,59 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 
     return TileGenerator::Status::Success;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileCollector& collector, TransformCR transformToTile) 
+RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, TransformCR toTile, size_t depth, size_t siblingIndex, TileNodeP parent)
+    { 
+    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node.GetMaximumSize());
+    DRange3d                range = node.GetRange();;
+
+    if (node._HasChildren() && node.IsNotLoaded())
+        scene.LoadNodeSynchronous(node);
+
+    if (range.IsNull() && nullptr != node._GetChildren())     // No range set on root node...
+        for (auto& child : *node._GetChildren())
+            range.Extend (child->GetRange());
+
+    toTile.Multiply (range, range);
+    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (node, toTile, range, depth, siblingIndex, tolerance, parent);
+
+    static size_t s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+
+    if (node._HasChildren() && depth < s_depthLimit)
+        {
+        depth++;
+
+        Tile::ChildTiles    children = *node._GetChildren();
+        size_t              childIndex = 0;
+
+        // node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
+
+        for (auto& child : children)
+            tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
+        }
+
+    return tileNode;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator& generator, TileGenerator::ITileCollector& collector, TransformCR transformDbToTile) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
     
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    return publishModelTiles(collector, *scene, (NodeR) *scene->GetRoot(), 0, 0, nullptr, transformToTile);
+    Transform               modelToTile = Transform::FromProduct (transformDbToTile, scene->GetLocation());
+    
+    RefCountedPtr<PublishTileNode>  rootTile = tileFromNode ((NodeR) *scene->GetRoot(), *scene, modelToTile, 0, 0, nullptr);
+    
+    return generator.CollectTiles (*rootTile, collector);
     }
 
 

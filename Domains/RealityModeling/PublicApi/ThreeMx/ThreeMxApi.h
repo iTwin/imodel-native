@@ -189,7 +189,7 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(FitContextR) override;
-    THREEMX_EXPORT TileGenerator::Status _PublishModelTiles(TileGenerator::ITileCollector& collector, TransformCR transformToTile) override;
+    THREEMX_EXPORT TileGenerator::Status _PublishModelTiles(TileGeneratorR generator, TileGenerator::ITileCollector& collector, TransformCR transformToTile) override;
 
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
