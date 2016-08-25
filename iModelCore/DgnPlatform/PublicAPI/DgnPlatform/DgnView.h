@@ -399,7 +399,7 @@ public:
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition)); }
 
     DGNPLATFORM_EXPORT DPoint3d GetOrigin() const {return GetPropertyValueDPoint3d("Origin");} //!< Get the origin of the viewed volume on the lower, back, rear
-    DGNPLATFORM_EXPORT DVec3d GetExtents() const {return (DVec3d const&)GetPropertyValueDPoint3d("Extents");} //!< Get the size of the view diagonal
+    DGNPLATFORM_EXPORT DVec3d GetExtents() const {DPoint3d pt = GetPropertyValueDPoint3d("Extents"); return *(DVec3d*)(&pt);} //!< Get the size of the view diagonal
     DGNPLATFORM_EXPORT YawPitchRollAngles GetViewDirection() const {return GetPropertyValueYpr("DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Get the view direction
 
     DGNPLATFORM_EXPORT DgnDbStatus SetOrigin(DPoint3dCR pt) {return SetPropertyValue("Origin", pt);} //!< Set the origin of the viewed volume on the lower, back, rear
