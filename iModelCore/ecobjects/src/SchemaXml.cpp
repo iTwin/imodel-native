@@ -655,6 +655,22 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            11/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes)
+    {
+    return _ReadClassContentsFromXml(schemaOut, classes);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReader3::ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    return _ReadSchemaReferencesFromXml(schemaOut, schemaNode);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   
 //---------------+---------------+---------------+---------------+---------------+-------
  void SchemaXmlReaderImpl::PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode)
@@ -768,22 +784,6 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadKindOfQuantitiesFromXml(ECSchemaPtr& s
             }
         }
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader3::ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector& classes)
-    {
-    return _ReadClassContentsFromXml(schemaOut, classes);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                08/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader3::ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
-    {
-    return _ReadSchemaReferencesFromXml(schemaOut, schemaNode);
     }
 
 //---------------------------------------------------------------------------------------
