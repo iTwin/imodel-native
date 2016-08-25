@@ -1587,10 +1587,8 @@ ECN::ECSchemaPtr ComponentDefCreator::GenerateSchema(DgnDbR db, Utf8StringCR sch
 
     // Ask componentDb to generate a schema
     ECN::ECSchemaPtr schema;
-    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(schema, schemaName, 0, 0))
+    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(schema, schemaName, schemaName, 0, 0, 0))
         return nullptr;
-
-    schema->SetAlias(schemaName);
     
     return schema;
     }

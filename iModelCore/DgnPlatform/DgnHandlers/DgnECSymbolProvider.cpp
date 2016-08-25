@@ -242,7 +242,7 @@ ECSchemaR DgnECSymbolProvider::GetSchema()
     {
     if (m_schema.IsNull())
         {
-        ECSchema::CreateSchema (m_schema, "PseudoSchema", 1, 0);
+        ECSchema::CreateSchema (m_schema, "PseudoSchema", "PseudoSchema", 1, 0, 0);
         ECEntityClassP ecClass;
         m_schema->CreateEntityClass (ecClass, "ECClass");
         PrimitiveECPropertyP ecProp;
