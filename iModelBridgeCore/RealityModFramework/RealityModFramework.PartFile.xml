@@ -235,6 +235,11 @@
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
         <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="RealityAssemblies"/>
         <ProductDirectory Name="RealityDbECPluginNuGetPackages" Path="Install" />
+		
+		<ProductDirectory Name="Assemblies"                     Path=""/>
+		<ProductDirectory Name="Assets"                         Path=""/>
+		<ProductDirectory Name="Assets"                         LibType="static" Path="" />
+		
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework">
