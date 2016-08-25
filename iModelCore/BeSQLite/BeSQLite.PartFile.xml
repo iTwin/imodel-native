@@ -38,7 +38,7 @@
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="BeSQLite"/>
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="BeSQLite" SubPartDirectory="UnitTests/BeSQLite">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-BeSQLiteTestData" SourceName="Delivery/UnitTests/BeSQLiteTestData" />
