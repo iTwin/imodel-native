@@ -28,6 +28,7 @@ BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
 BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
@@ -36,8 +37,8 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 typedef bvector<TileMeshPtr> TileMeshList;
-typedef bvector<TileNode> TileNodeList;
-typedef bvector<TileNodeP> TileNodePList;
+typedef bvector<TileNodePtr> TileNodeList;
+typedef bvector<TileNodeP>   TileNodePList;
 typedef bvector<TileGeometryPtr> TileGeometryList;
 
 //=======================================================================================
@@ -319,7 +320,7 @@ public:
 //! child tiles within the same range.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileNode
+struct TileNode : RefCountedBase
 {
 private:
     DRange3d            m_range;
@@ -469,7 +470,7 @@ public:
 //=======================================================================================
 struct IPublishModelTiles
 {
-    virtual TileGenerator::Status _PublishModelTiles (TileGenerator::ITileCollector& collector, TransformCR transformToTile) = 0;
+    virtual TileGenerator::Status _PublishModelTiles (TileGenerator& generator, TileGenerator::ITileCollector& collector, TransformCR transformToTile) = 0;
 
 };  // IPublishModelMeshTiles
 

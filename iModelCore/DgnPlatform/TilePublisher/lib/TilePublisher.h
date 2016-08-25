@@ -73,7 +73,7 @@ protected:
 
     TILEPUBLISHER_EXPORT Status Setup();
 
-    TILEPUBLISHER_EXPORT TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGenerator::ITileCollector& collector);
+    TILEPUBLISHER_EXPORT TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }

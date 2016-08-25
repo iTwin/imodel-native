@@ -422,12 +422,12 @@ PublisherContext::Status TilesetPublisher::Publish()
     if (Status::Success == status)
         {
         static const size_t     s_maxPointsPerTile = 20000;
-        TileNode                rootNode;
+        TileNodePtr             rootNode = new TileNode();
 
-        status = ConvertStatus(generator.GenerateTiles (rootNode, s_toleranceInMeters, s_maxPointsPerTile));
+        status = ConvertStatus(generator.GenerateTiles (*rootNode, s_toleranceInMeters, s_maxPointsPerTile));
         if (Status::Success == status)
             {
-            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(rootNode, *this))))
+            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(*rootNode, *this))))
                 viewedTileSetNames.push_back (m_rootName);
             }
         }
@@ -448,7 +448,7 @@ PublisherContext::Status TilesetPublisher::Publish()
             
             tileSetName.AssignA (viewedModel->GetName().c_str());
 
-            if (TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel, *this))
+            if (TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
                 {
                 viewedTileSetNames.push_back (tileSetName);
                 status = Status::Success;       // Override NoGeometry (empty model with reality attachment).

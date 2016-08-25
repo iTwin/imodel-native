@@ -141,11 +141,11 @@ void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tole
     for (auto& childTile : tile.GetChildren())
         {
         Json::Value         child;
-        WString             path = GetTileMetadataName(childTile);
+        WString             path = GetTileMetadataName(*childTile);
 
         child[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(path.c_str()).c_str()).c_str();
-        child[JSON_GeometricError] = childTile.GetTolerance();
-        WriteBoundingVolume(child, childTile);
+        child[JSON_GeometricError] = childTile->GetTolerance();
+        WriteBoundingVolume(child, *childTile);
 
         root[JSON_Children].append(child);
         }
@@ -949,7 +949,7 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status   PublisherContext::PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGenerator::ITileCollector& collector)
+TileGenerator::Status   PublisherContext::PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
     {
     IPublishModelTiles*         publishTiles;
     AutoRestore <WString>       saveRootName (&m_rootName, tileSetName);
@@ -957,6 +957,6 @@ TileGenerator::Status   PublisherContext::PublishViewedModel (WStringCR tileSetN
     if (NULL == (publishTiles = dynamic_cast <IPublishModelTiles*> (&model)))
         return TileGenerator::Status::NotImplemented;
 
-    return publishTiles->_PublishModelTiles (collector, m_dbToTile);
+    return publishTiles->_PublishModelTiles (generator, collector, m_dbToTile);
     }
 

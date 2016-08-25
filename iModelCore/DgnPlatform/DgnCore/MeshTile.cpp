@@ -515,11 +515,11 @@ void TileNode::ComputeTiles(TileGeometryCacheR geometryCache, double chordTolera
         for (auto& subRange : subRanges)
             {
             double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
-            m_children.push_back(TileNode(subRange, m_depth+1, siblingIndex++, childTolerance, this));
+            m_children.push_back(new TileNode(subRange, m_depth+1, siblingIndex++, childTolerance, this));
             }
 
         for (auto& child : m_children)
-            child.ComputeTiles(geometryCache, chordTolerance, maxPointsPerTile);
+            child->ComputeTiles(geometryCache, chordTolerance, maxPointsPerTile);
         }
     }
 
@@ -746,7 +746,7 @@ size_t TileNode::GetNodeCount() const
     {
     size_t count = 1;
     for (auto const& child : m_children)
-        count += child.GetNodeCount();
+        count += child->GetNodeCount();
 
     return count;
     }
@@ -759,7 +759,7 @@ size_t TileNode::GetMaxDepth() const
     size_t maxChildDepth = 0;
     for (auto const& child : m_children)
         {
-        size_t childDepth = child.GetMaxDepth();
+        size_t childDepth = child->GetMaxDepth();
         maxChildDepth = std::max(maxChildDepth, childDepth);
         }
 
@@ -773,7 +773,7 @@ void TileNode::GetTiles(TileNodePList& tiles)
     {
     tiles.push_back(this);
     for (auto& child : m_children)
-        child.GetTiles(tiles);
+        child->GetTiles(tiles);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1243,7 +1243,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     m_progressMeter._SetTaskName(TaskName::CreatingTiles);
 
     // Enqueue all tiles for processing on the IO thread pool...
-    bvector<TileNode*> tiles = root.GetTiles();
+    bvector<TileNodeP> tiles = root.GetTiles();
     m_statistics.m_tileCount = tiles.size();
     m_statistics.m_tileDepth = root.GetMaxDepth();
 
