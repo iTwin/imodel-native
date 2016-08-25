@@ -49,7 +49,7 @@ public:
         {                
         // Tile Capability
         Add(new HRFTileCapability(HFC_READ_ONLY, // AccessMode
-                                  LONG_MAX,             // MaxSizeInBytes
+                                  INT32_MAX,            // MaxSizeInBytes
                                   256,                  // MinWidth
                                   256,                  // MaxWidth
                                   0,                    // WidthIncrement
