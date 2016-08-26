@@ -10,7 +10,7 @@
 #include <ECObjects/ECObjects.h>
 #include <string>
 
-static Utf8CP      ECXML_URI                           = "http://www.bentley.com/schemas/Bentley.ECXML";
+#define     ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
 #define     EC_NAMESPACE_PREFIX                 "ec"
 #define     EC_NAMESPACE_PREFIX3                "ec3"
 
@@ -119,9 +119,9 @@ static Utf8CP      ECXML_URI                           = "http://www.bentley.com
 #define ECXML_DIRECTION_FORWARD           "forward"
 #define ECXML_DIRECTION_BACKWARD          "backward"
 
-static Utf8CP ECXML_MODIFIER_NONE =       "None";
-static Utf8CP ECXML_MODIFIER_ABSTRACT =   "Abstract";
-static Utf8CP ECXML_MODIFIER_SEALED =     "Sealed";
+#define ECXML_MODIFIER_NONE                 "None"
+#define ECXML_MODIFIER_ABSTRACT             "Abstract"
+#define ECXML_MODIFIER_SEALED               "Sealed"
 
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
