@@ -995,21 +995,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     //NEEDS_WORK_MST : Root node could be loaded at load time instead. 
     if (parentNodePtr == nullptr)
         {        
-        assert(!"Should not occurs");
-        
-        /*
-        ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));    
-            
-        //if (meshNode->IsLoaded() == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))                    
-            {
-                meshNode->ApplyAllExistingClips();
-                meshNode->RemoveDisplayDataFromCache();                    
-                meshNode->LoadMesh(false, clipVisibilities, s_displayCacheManagerPtr, loadTexture);                               
-                assert(meshNode->HasCorrectClipping(clipVisibilities));                 
-                lowerResOverviewNodes.push_back(meshNode);
-            }
-            */
-
+        assert(!"Should not occurs");               
         return;
         }
          
@@ -1031,7 +1017,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             nodeIter++;
             }
 
-        if (true || nodeIter == lowerResOverviewNodes.end())
+        if (nodeIter == lowerResOverviewNodes.end())
             {
             lowerResOverviewNodes.push_back(meshNodePtr);
             }        
@@ -1039,19 +1025,6 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     }
 
 static bool s_sortOverviewBySize = true; 
-
-#ifndef NDEBUG 
-
-void ValidateOverviewExtent(const DRange3d& nodeExtent, 
-                            const DRange3d& nodeExtentOver, 
-                            const DRange3d& contentExtent, 
-                            const DRange3d& contentExtentOver)
-    {
-    //assert(contentExtent.IntersectsWith(contentExtentOver));
-    assert(nodeExtent.IsContained(nodeExtentOver));    
-    }
-
-#endif
 
 class NewQueryStartingNodeProcessor
     {
@@ -1076,8 +1049,7 @@ class NewQueryStartingNodeProcessor
 
         NewQueryStartingNodeProcessor()
             {
-            //m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
-            m_numWorkingThreads = 1;
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;            
 
             m_lowerResOverviewNodes.resize(m_numWorkingThreads);
             m_requiredMeshNodes.resize(m_numWorkingThreads);        
@@ -1115,13 +1087,6 @@ class NewQueryStartingNodeProcessor
                 if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
-
-#ifndef NDEBUG
-                    ValidateOverviewExtent(meshNodePtr->GetNodeExtent(), 
-                                           m_lowerResOverviewNodes[threadId].back()->GetNodeExtent(), 
-                                           meshNodePtr->GetContentExtent(), 
-                                           m_lowerResOverviewNodes[threadId].back()->GetContentExtent());                                           
-#endif
                     }
                 else
                     {
@@ -1138,13 +1103,6 @@ class NewQueryStartingNodeProcessor
                 if (!meshNodePtr->IsLoaded() || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
                     FindOverview(m_lowerResOverviewNodes[threadId], m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips/*, scalableMeshPtr*/);
-
-#ifndef NDEBUG
-                    ValidateOverviewExtent(meshNodePtr->GetNodeExtent(), 
-                                           m_lowerResOverviewNodes[threadId].back()->GetNodeExtent(), 
-                                           meshNodePtr->GetContentExtent(), 
-                                           m_lowerResOverviewNodes[threadId].back()->GetContentExtent());                                           
-#endif
                                         
                     m_toLoadNodes[threadId].push_back(m_foundNodes->GetNodes()[nodeInd]);
                     }
