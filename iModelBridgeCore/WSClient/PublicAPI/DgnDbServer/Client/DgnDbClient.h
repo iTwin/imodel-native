@@ -79,7 +79,7 @@ private:
     DgnDbServerStatusTaskPtr DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                                ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description, bool published,
+    DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
                                                       ICancellationTokenPtr cancellationToken) const;
 
 //__PUBLISH_SECTION_START__
@@ -116,30 +116,28 @@ public:
     //! Get list of available repostiories for this client.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has a collection of repository information as the result. See RepositoryInfo.
-    //! @note Does not return unpublished, uninitialized repositories or repositories that the user does not have authorization to access.
+    //! @note Does not return uninitialized repositories or repositories that the user does not have authorization to access.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoriesTaskPtr GetRepositories(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
-    //! @param[in] publish Sets the respository as published (unpublished repositories cannot be accessed).
     //! @param[in] callback Progress callback for the file upload.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has created repository information as the result. See RepositoryInfo.
     //! @note This method uses name and description properties from dgn_Proj namespace as repository name and description. If name property is not set, it will use the filename instead.
     //! @note Returned repository Id might be different from the user supplied repository name.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, bool publish = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Create a new repository on the server.
     //! @param[in] db A DgnDb file to upload as a master file for the repository.
     //! @param[in] repositoryName Explicit repository name.
     //! @param[in] description Explicit description of the repository.
-    //! @param[in] publish Sets the respository as published (unpublished repositories cannot be accessed).
     //! @param[in] callback Progress callback for the file upload.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has created repository information as the result. See RepositoryInfo.
     //! @note CreateNewRepository without repositoryName and descriptons arguments should be used instead, to resolve name and description from the dgndb file.
     //! @note Returned repository Id might be different from the user supplied repository name.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description, bool publish = true,
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRepositoryTaskPtr CreateNewRepository(DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description,
                                                                                      Http::Request::ProgressCallbackCR  callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a briefcase of a repository from the server.

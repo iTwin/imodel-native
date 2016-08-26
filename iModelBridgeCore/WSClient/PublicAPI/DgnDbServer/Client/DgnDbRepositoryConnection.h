@@ -296,6 +296,11 @@ public:
     //! @note Part of master file replacement. See LockRepository.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Deletes the last file if its upload has failed and unlocks the repository.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that is successful if file has been deleted.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr DeleteLastMasterFile(ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Returns all revisions available in the server.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of revision information as the result.
@@ -373,7 +378,7 @@ public:
     //! @param[in] startIndex
     //! @param[in] incrementBy
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex, int incrementBy, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex=0, int incrementBy=1, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Update the Event Subscription
     //! @param[in] eventTypes
