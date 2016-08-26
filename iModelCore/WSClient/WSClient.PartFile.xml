@@ -63,6 +63,7 @@
     </Part>
 
     <Part Name="WebServicesCache-PublicAPI" BentleyBuildMakeFile="CachePrewire.mke">
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
             <PublicAPI Domain="WebServices" />
         </Bindings>
