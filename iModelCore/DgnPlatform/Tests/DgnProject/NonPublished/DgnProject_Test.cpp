@@ -916,31 +916,47 @@ TEST_F(ElementUriTests, Test1)
 
     }
 
+#ifdef WIP_HAVE_LEGACY_FILES
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             08/2016
 //---------------------------------------------------------------------------------------
-#ifdef WIP_HAVE_LEGACY_FILES
+static void testLegacyUri(DgnDbR db, Utf8CP uriQuery)
+    {
+    // Make sure we can resolve a legacy Graphite URI ...
+    Utf8String graphiteUri("/DgnElements?");
+    graphiteUri.append(uriQuery);
+    auto eid1 = db.Elements().QueryElementIdByURI(graphiteUri.c_str());
+    ASSERT_TRUE(eid1.IsValid());
+
+    auto el = db.Elements().GetElement(eid1);;
+    ASSERT_TRUE(el.IsValid());
+
+    // ... and that we can create a similar URI to the same element in the new version
+    Utf8String uri1;
+    ASSERT_EQ(BSISUCCESS, db.Elements().CreateElementUri(uri1, *el, false, false));
+    ASSERT_TRUE(uri1.substr(0,7) == "/DgnDb?");
+    // Compare the query part (leaving out the path /DgnDb? and /DgnElements?)
+    ASSERT_TRUE(uri1.substr(7) == uriQuery);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Sam.Wilson             08/2016
+//---------------------------------------------------------------------------------------
 TEST_F(ElementUriTests, TestLegacyUris)
     {
     DbResult openStatus;
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
-    DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Hydrotreater Expansion.i.idgndb"), openParams);
-    ASSERT_TRUE(db.IsValid());
-
-    auto eid1 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=OpenPlant%5F3D%3ASHELL%5FAND%5FTUBE%5FHEAT%5FEXCHANGER%5FPAR&GUID=A1AC9BB1%2D9AAF%2D4A9D%2D96B6%2DD5C242358405");
-    ASSERT_TRUE(eid1.IsValid());
-
-    auto eid2 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=OpenPlant%5F3D%3ASTORAGE%5FTANK%5FPAR&GUID=D3F923AD%2D5694%2D4300%2DBE23%2D1953D6D0D02B");
-    ASSERT_TRUE(eid2.IsValid());
-
+    DgnDbPtr db;
+    
     db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Office Building.i.idgndb"), openParams);
     ASSERT_TRUE(db.IsValid());
+    testLegacyUri(*db, "ECClass=Bentley%5FRevit%5FSchema%3APlanting&RevitConnectorID=513243");
+    testLegacyUri(*db, "ECClass=Bentley%5FRevit%5FSchema%3ARoofs&RevitConnectorID=343500");
 
-    auto eid3 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=Bentley%5FRevit%5FSchema%3APlanting&RevitConnectorID=513243");
-    ASSERT_TRUE(eid3.IsValid());
-
-    auto eid4 = db->Elements().QueryElementIdByURI("/DgnElements?ECClass=Bentley%5FRevit%5FSchema%3ARoofs&RevitConnectorID=343500");
-    ASSERT_TRUE(eid4.IsValid());
+    db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Hydrotreater Expansion.i.idgndb"), openParams);
+    ASSERT_TRUE(db.IsValid());
+    testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASHELL%5FAND%5FTUBE%5FHEAT%5FEXCHANGER%5FPAR&GUID=A1AC9BB1%2D9AAF%2D4A9D%2D96B6%2DD5C242358405");
+    testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASTORAGE%5FTANK%5FPAR&GUID=D3F923AD%2D5694%2D4300%2DBE23%2D1953D6D0D02B");
     }
 #endif
 
