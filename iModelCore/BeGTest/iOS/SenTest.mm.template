@@ -22,7 +22,7 @@ TEARDOWN_METHOD
 #undef  BE_TEST_SETUP
 #define BE_TEST_SETUP(TC)       + (void)setUp { [__FIXTURE__ begtest_initialize]; BeTest::SetUpTestCase(#TC); }   
 #undef  BE_TEST_TEARDOWN
-#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { BeTest::TearDownTestCase(#TC); [__FIXTURE__ begtest_uninitialize]}
+#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { BeTest::TearDownTestCase(#TC); [__FIXTURE__ begtest_uninitialize];}
 
 // XCTest callback that runs an individual test
 #undef  BE_TEST_RUNNER
