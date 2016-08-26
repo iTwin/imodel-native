@@ -476,10 +476,12 @@ void CategorySelector::GetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCate
     for (Json::ArrayIndex i = 0; i<arr.size(); ++i)
         {
         JsonValueCR val = arr[i];
-        DgnSubCategoryId subCategoryId(val["SubCategoryOverrides"].asUInt64());
+        DgnSubCategoryId subCategoryId(val["SubCategoryId"].asUInt64());
         if (!subCategoryId.IsValid())
+            {
+            BeDataAssert(false && "SubCategoryOverride refers to missing SubCategory");
             continue;
-
+            }
         overrides[subCategoryId] = DgnSubCategory::Override(val);
         }
     }
