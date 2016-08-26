@@ -158,7 +158,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR description, bool published)
+Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR description)
     {
     Json::Value repositoryCreation(Json::objectValue);
     JsonValueR instance = repositoryCreation[ServerSchema::Instance] = Json::objectValue;
@@ -167,7 +167,6 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR des
     JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
     properties[ServerSchema::Property::RepositoryName] = repositoryName;
     properties[ServerSchema::Property::RepositoryDescription] = description;
-    properties[ServerSchema::Property::Published] = published;
     return repositoryCreation;
     }
 
@@ -175,13 +174,13 @@ Json::Value RepositoryCreationJson(Utf8StringCR repositoryName, Utf8StringCR des
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
-                                                               bool published, ICancellationTokenPtr cancellationToken) const
+                                                               ICancellationTokenPtr cancellationToken) const
     {
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
     Utf8String project;
     project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
-    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description, published);
+    Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description);
     client->SetCredentials(m_credentials);
     return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
@@ -267,7 +266,7 @@ DgnDbPtr CleanDb(DgnDbCR db)
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, Utf8StringCR repositoryName, Utf8StringCR description,
-    bool published, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.GetFileName().DoesPathExist())
@@ -299,7 +298,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     tempdb->CloseDb();
 
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
-    return CreateRepositoryInstance(repositoryName, description, published, cancellationToken)
+    return CreateRepositoryInstance(repositoryName, description, cancellationToken)
         ->Then([=] (DgnDbServerRepositoryResultCR createRepositoryResult)
         {
         if (!createRepositoryResult.IsSuccess())
@@ -335,7 +334,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             11/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, bool published, Http::Request::ProgressCallbackCR callback,
+DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, Http::Request::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
     BeAssert(DgnDbServerHost::IsInitialized());
@@ -349,7 +348,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, b
         BeStringUtilities::WCharToUtf8(name, db.GetFileName().GetFileNameWithoutExtension().c_str());
     Utf8String description;
     db.QueryProperty(description, BeSQLite::PropertySpec(Db::Properties::Description, Db::Properties::ProjectNamespace));
-    return CreateNewRepository(db, name, description, published, callback, cancellationToken);
+    return CreateNewRepository(db, name, description, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
