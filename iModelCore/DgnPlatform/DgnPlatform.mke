@@ -364,8 +364,8 @@ $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomai
 $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
-#$(CoreObjs)TileSet$(oext) :                         $(DgnCoreDir)TileSet.cpp $(DgnPlatformAPISrc)TileSet.h ${MultiCompileDepends}
 
+$(CoreObjs)TileTree$(oext) :                        $(DgnCoreDir)TileTree.cpp $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 

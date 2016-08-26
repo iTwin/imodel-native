@@ -62,7 +62,7 @@ public:
     DGNPLATFORM_EXPORT bool IsWire() const;
 
     // Return the type of solid kernel entity that would be used to represent this geometry.
-    DGNPLATFORM_EXPORT ISolidKernelEntity::KernelEntityType GetKernelEntityType() const;
+    DGNPLATFORM_EXPORT ISolidKernelEntity::EntityType GetBRepEntityType() const;
 
     DGNPLATFORM_EXPORT ICurvePrimitivePtr GetAsICurvePrimitive() const;
     DGNPLATFORM_EXPORT CurveVectorPtr GetAsCurveVector() const;

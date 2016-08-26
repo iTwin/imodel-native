@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: TilePublisher/TilePublisherExe.mke $
+#  $Source: TilePublisher/lib/TilePublisherLib.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -11,26 +11,21 @@
 SrcDir              = $(_MakeFilePath)
 SubpartLibs         = $(BuildContext)SubParts/Libs/
 o                   = $(OutputRootDir)Build/TilePublisher/
-ContextDeliveryDir  = $(BuildContext)Delivery/
 appName             = TilePublisher
 
 always:
     ~mkdir $(o)
 
+nameToDefine = __TILEPUBLISHER_LIB_BUILD__
+%include cdefapnd.mki
+
 MultiCompileDepends = $(_MakeFileSpec)
+
 %include MultiCppCompileRule.mki
 
 $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
 
-$(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)TilePublisher.h ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
-
-EXE_NO_SIGN         = 1
-EXE_DEST            = $(o)
-EXE_NAME            = $(appName)
-EXE_OBJS            = $(MultiCompileObjectList)
-EXE_LOPT1           = -entry:wmainCRTStartup
 
 LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)BeSQLite.lib          \
@@ -42,9 +37,16 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)Units.lib             \
                       $(SubpartLibs)BeJsonCpp.lib         \
                       $(SubpartLibs)BaseGeoCoord.lib      \
-                      $(SubpartLIbs)ThreeMx.lib           \
-                      gdi32.lib                           \
-                      user32.lib                          \
+                      $(SubpartLibs)ThreeMx.lib           \
+                      $(SubpartLibs)BeFolly.lib           \
 
-%include $(SharedMki)linktool.mki
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+
+%include $(sharedMki)LinkLibrary.mki
 

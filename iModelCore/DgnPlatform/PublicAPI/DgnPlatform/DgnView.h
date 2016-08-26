@@ -198,12 +198,13 @@ public:
     //! Specifies whether or not models associated with a ViewDefinition should be filled when loading a ViewController
     enum class FillModels
     {
-    No=0, //!< Don't fill models
-    Yes=1 //!< Fill models
+        No=0, //!< Don't fill models
+        Yes=1 //!< Fill models
     };
 
     //! Instantiate a ViewController for this ViewDefinition in order to render the view
     DGNPLATFORM_EXPORT ViewControllerPtr LoadViewController(FillModels fillModels=FillModels::No) const;
+
     //! Instantiate a ViewController for the ViewDefinition with the specified ID in order to render the view
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fillModels=FillModels::No);
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/TileSet.h $
+|     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,11 +12,13 @@
 #include <DgnPlatform/RealityDataCache.h>
 #include <folly/futures/Future.h>
 
-#define BEGIN_TILESET_NAMESPACE     BEGIN_BENTLEY_DGN_NAMESPACE namespace TileSet {
-#define END_TILESET_NAMESPACE       } END_BENTLEY_DGN_NAMESPACE
-#define USING_NAMESPACE_TILESET     using namespace BentleyApi::Dgn::TileSet;
+#define BEGIN_TILETREE_NAMESPACE     BEGIN_BENTLEY_DGN_NAMESPACE namespace TileTree {
+#define END_TILETREE_NAMESPACE       } END_BENTLEY_DGN_NAMESPACE
+#define USING_NAMESPACE_TILETREE     using namespace BentleyApi::Dgn::TileTree;
 
-BEGIN_TILESET_NAMESPACE
+BEGIN_TILETREE_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_DGN
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
@@ -34,8 +36,8 @@ typedef std::chrono::steady_clock::time_point TimePoint;
 struct StreamBuffer : ByteStream
     {
     uint32_t m_currPos = 0;
-    Dgn::ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
-    Dgn::ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
+    ByteCP GetCurrent() const {return (m_currPos > GetSize()) ? nullptr : GetData() + m_currPos;}
+    ByteCP Advance(uint32_t size) {m_currPos += size; return GetCurrent();} // returns nullptr if advanced past end.
     void SetPos(uint32_t pos) {m_currPos=pos;}
     StreamBuffer() {}
     StreamBuffer(ByteStream const& other) : ByteStream(other) {}
@@ -46,40 +48,51 @@ struct StreamBuffer : ByteStream
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct Tile : RefCountedBase, NonCopyableClass
 {
+    friend struct Root;
+    enum class VisitComplete {Yes=1, No=0,};
     enum LoadState {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
     typedef bvector<TilePtr> ChildTiles;
 
-private:
-    Dgn::ElementAlignedBox3d m_range;
+protected:
+    mutable ElementAlignedBox3d m_range;
     DPoint3d m_center;
     double m_radius = 0.0;
-    double m_maxScreenSpaceError = 0.0;
+    double m_maxSize = 0.0;
     TileP m_parent;
-    BeAtomic<int> m_loadState;
+    mutable BeAtomic<int> m_loadState;
     mutable ChildTiles m_children;
     mutable TimePoint m_childrenLastUsed;
 
+    void SetAbandoned() const;
+
 public:
     Tile(TileP parent) : m_parent(parent), m_loadState(LoadState::NotLoaded) {m_center.Zero();}
-    double GetMaximumScreenSpaceError() const {return m_maxScreenSpaceError;}
+    double GetMaximumSize() const {return m_maxSize;}
     double GetRadius() const {return m_radius;}
     DPoint3dCR GetCenter() const {return m_center;}
-    Dgn::ElementAlignedBox3d GetRange() const {return m_range;}
-    enum class VisitCompleted {Yes=1, No=0,};
-    VisitCompleted Visit(DrawArgsR, int depth) const;
+    ElementAlignedBox3d GetRange() const {return m_range;}
+    DGNPLATFORM_EXPORT VisitComplete Visit(DrawArgsR, int depth) const;
     LoadState GetLoadState() const {return (LoadState) m_loadState.load();}
     void SetIsReady() {return m_loadState.store(LoadState::Ready);}
-    void SetNotFound() {BeAssert(false); return m_loadState.store(LoadState::NotFound);}
+    void SetIsQueued() const {return m_loadState.store(LoadState::Queued);}
+    void SetNotFound() {return m_loadState.store(LoadState::NotFound);}
     bool IsQueued() const {return m_loadState.load() == LoadState::Queued;}
     bool IsAbandoned() const {return m_loadState.load() == LoadState::Abandoned;}
     bool IsReady() const {return m_loadState.load() == LoadState::Ready;}
     bool IsNotLoaded() const {return m_loadState.load() == LoadState::NotLoaded;}
-    bool IsDisplayable() const {return GetMaximumScreenSpaceError() > 0.0;}
+    bool IsNotFound() const {return m_loadState.load() == LoadState::NotFound;}
+    bool IsDisplayable() const {return m_maxSize > 0.0;}
     TileCP GetParent() const {return m_parent;}
+    DGNPLATFORM_EXPORT int CountTiles() const;
+    DGNPLATFORM_EXPORT ElementAlignedBox3d ComputeRange() const;
 
+    DGNPLATFORM_EXPORT virtual void _UnloadChildren(TimePoint olderThan) const;
+
+    virtual BentleyStatus _Read(StreamBuffer&, RootR) = 0;
     virtual bool _HasChildren() const = 0;
-    virtual void _UnloadChildren(TimePoint olderThan) const = 0;
     virtual ChildTiles const* _GetChildren() const = 0;
+    virtual VisitComplete _Draw(DrawArgsR, int depth) const = 0;
+    virtual Utf8String _GetTileName() const = 0;
 };
 
 /*=================================================================================**//**
@@ -87,20 +100,17 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct Root : RefCountedBase, NonCopyableClass
 {
-    friend struct Node;
-
-private:
+protected:
     bool m_isHttp = false;
     bool m_locatable = false;
-    Dgn::DgnDbR m_db;
+    DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;
-    double m_scale = 1.0;
     TilePtr m_rootTile;
+    Utf8String m_rootUrl;
+    Utf8String m_rootDir;
     std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused tiles for 20 seconds
-    Dgn::RealityData::CachePtr m_cache;
-
-    void CreateCache();
+    RealityData::CachePtr m_cache;
 
 public:
     bool IsHttp() const {return m_isHttp;}
@@ -108,14 +118,18 @@ public:
     void SetExpirationTime(std::chrono::seconds val) {m_expirationTime = val;} //! set expiration time for unused nodes
     std::chrono::seconds GetExpirationTime() const {return m_expirationTime;} //! get expiration time for unused nodes
     bool IsLocatable() const {return m_locatable;}
+    void SetLocatable(bool locatable) {m_locatable = locatable;}
     TransformCR GetLocation() const {return m_location;}
-    double GetScale() const {return m_scale;}
-    Dgn::RealityData::CachePtr GetCache() const {return m_cache;}
+    RealityData::CachePtr GetCache() const {return m_cache;}
+    TilePtr GetRoot() {return m_rootTile;}
+    ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
+    DGNPLATFORM_EXPORT void CreateCache();
     DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
-    DGNPLATFORM_EXPORT Root(Dgn::DgnDbR, TransformCR location, Utf8CP realityCacheName);
+    DGNPLATFORM_EXPORT Root(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl);
 
-    DGNPLATFORM_EXPORT folly::Future<BentleyStatus> RequestRoot(StreamBuffer&);
-    DGNPLATFORM_EXPORT folly::Future<BentleyStatus> RequestTile(Tile& node);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestFile(Utf8StringCR, StreamBuffer&);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileCR);
+    virtual Utf8String _ConstructTileName(TileCR tile) {return m_rootDir + tile._GetTileName();}
 };
 
 //=======================================================================================
@@ -131,20 +145,21 @@ public:
 //=======================================================================================
 struct DrawArgs
 {
-    typedef bmultimap<int, TilePtr> MissingNodes;
-    Dgn::RenderContextR m_context;
+    typedef bmultimap<int, TileCPtr> MissingNodes;
+    RenderContextR m_context;
     Transform m_location;
     double m_scale;
-    Dgn::Render::GraphicBranch m_graphics;
+    Render::GraphicBranch m_graphics;
     MissingNodes m_missing;
     TimePoint m_now;
     TimePoint m_purgeOlderThan;
 
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(m_location, tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {return m_scale * tile.GetRadius();}
-    DrawArgs(Dgn::RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan) {m_scale = location.ColumnXMagnitude();}
-    void DrawGraphics(Dgn::ViewContextR); // place all entries into a GraphicBranch and send it to the RenderContext.
+    DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan) {m_scale = location.ColumnXMagnitude();}
+    DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
+    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
 };
 
-END_TILESET_NAMESPACE
+END_TILETREE_NAMESPACE
 

@@ -1,14 +1,14 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: TilePublisher/main.cpp $
+|     $Source: TilePublisher/exe/main.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "TilePublisher.h"
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
-
+#include "../lib/TilePublisher.h"   // ###TODO: API dir...
+#include "Constants.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
@@ -35,6 +35,7 @@ struct CommandParam
     WCharCP     m_verbose;
     WCharCP     m_descr;
     bool        m_required;
+    bool        m_boolean;  // True => arg is true if param specified. False => expect 'arg=value'.
 };
 
 //=======================================================================================
@@ -69,12 +70,10 @@ struct CommandArg
             ++raw;
 
         WCharCP equalPos = wcschr(raw, '=');
-        if (nullptr == equalPos)
-            return;
+        bool haveArgValue = nullptr != equalPos;
+        WCharCP argValue = haveArgValue ? equalPos+1 : nullptr;
+        auto paramNameLen = haveArgValue ? equalPos - raw : wcslen(raw);
 
-        WCharCP argValue = equalPos+1;
-
-        auto paramNameLen = equalPos - raw;
         if (0 == paramNameLen || (!verboseParamName && 1 != paramNameLen))
             return;
 
@@ -85,10 +84,18 @@ struct CommandArg
             if (0 != wcsncmp(raw, paramName, paramNameLen) || paramNameLen != wcslen(paramName))
                 continue;
 
+            if ((nullptr == equalPos) != (param.m_boolean))
+                return;
+
             m_paramId = static_cast<ParamId>(i);
-            m_value = argValue;
-            m_value.Trim(L"\"");
-            m_value.Trim();
+
+            if (!param.m_boolean)
+                {
+                m_value = argValue;
+                m_value.Trim(L"\"");
+                m_value.Trim();
+                }
+
             break;
             }
         }
@@ -230,6 +237,236 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
     return true;
     }
 
+//=======================================================================================
+//! Publishes the contents of a DgnDb view as a Cesium tileset.
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct TilesetPublisher : PublisherContext, TileGenerator::ITileCollector
+{
+private:
+    TileGeneratorP      m_generator = nullptr;
+    Status              m_acceptTileStatus = Status::Success;
+
+    virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
+    virtual TileGeometryCacheP _GetGeometryCache() override { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
+
+    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
+    void OutputStatistics(TileGenerator::Statistics const& stats) const;
+
+    //=======================================================================================
+    // @bsistruct                                                   Paul.Connelly   08/16
+    //=======================================================================================
+    struct ProgressMeter : TileGenerator::IProgressMeter
+    {
+    private:
+        Utf8String          m_taskName;
+        TilesetPublisher&   m_publisher;
+        uint32_t            m_lastNumCompleted = 0xffffffff;
+        
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
+        virtual void _SetTaskName(TileGenerator::TaskName task) override;
+        virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
+    public:
+        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
+    };
+public:
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName)
+        : PublisherContext(viewController, outputDir, tilesetName) { }
+
+    Status Publish();
+
+    Status GetTileStatus() const { return m_acceptTileStatus; }
+    TileGeometryCacheP GetGeometryCache() { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
+    {
+    if (Status::Success != m_acceptTileStatus)
+        return TileGenerator::Status::Aborted;
+
+    TilePublisher publisher(tile, *this);
+    auto publisherStatus = publisher.Publish();
+    switch (publisherStatus)
+        {
+        case Status::Success:
+        case Status::NoGeometry:    // ok for tile to have no geometry
+            break;
+        default:
+            m_acceptTileStatus = publisherStatus;
+            break;
+        }
+
+    return ConvertStatus(publisherStatus);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& tileSetNames)
+    {
+    // Set up initial view based on view controller settings
+    DVec3d xVec, yVec, zVec;
+    m_viewController.GetRotation().GetRows(xVec, yVec, zVec);
+
+    auto cameraView = m_viewController._ToCameraView();
+    bool useCamera = nullptr != cameraView && cameraView->IsCameraOn();
+    DPoint3d viewDest = useCamera ? cameraView->GetControllerCamera().GetEyePoint() : m_viewController.GetCenter();
+    if (!useCamera)
+        {
+        static const double s_zRatio = 1.5;
+        DVec3d viewDelta = m_viewController.GetDelta();
+        viewDest = DPoint3d::FromSumOf(viewDest, zVec, std::max(viewDelta.x, viewDelta.y) * s_zRatio);
+        }
+
+    transform.Multiply(viewDest);
+    transform.MultiplyMatrixOnly(yVec);
+    transform.MultiplyMatrixOnly(zVec);
+
+    yVec.Normalize();
+    zVec.Normalize();
+    zVec.Negate();      // Towards target.
+
+    bool geoLocated = !m_tileToEcef.IsIdentity();
+    Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
+    Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
+
+    Utf8String       tileSetHtml;
+
+    for (auto& tileSetName : tileSetNames)
+        tileSetHtml = tileSetHtml + Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), tileSetName.c_str());
+
+    // Produce the html file contents
+    Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
+
+    BeFileName htmlFileName = m_outputDir;
+    htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
+
+    std::ofstream htmlFile;
+    htmlFile.open(Utf8String(htmlFileName.c_str()).c_str(), std::ios_base::trunc);
+    htmlFile.write(html.data(), html.size());
+    htmlFile.close();
+
+    // ###TODO: Symlink Cesium scripts, if not present
+
+    return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::OutputStatistics(TileGenerator::Statistics const& stats) const
+    {
+    printf("Statistics:\n"
+           "Tile count: %u\n"
+           "Tile depth: %u\n"
+           "Geometry collection time: %.4f seconds\n"
+           "Tile creation: %.4f seconds Average per-tile: %.4f seconds\n",
+           static_cast<uint32_t>(stats.m_tileCount),
+           static_cast<uint32_t>(stats.m_tileDepth),
+           stats.m_collectionTime,
+           stats.m_tileCreationTime,
+           0 != stats.m_tileCount ? stats.m_tileCreationTime / stats.m_tileCount : 0.0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint32_t total)
+    {
+    if (m_lastNumCompleted == completed)
+        {
+        printf("...");
+        }
+    else
+        {
+        m_lastNumCompleted = completed;
+        uint32_t pctComplete = static_cast<double>(completed)/total * 100;
+        printf("\n%s: %u%% (%u/%u)%s", m_taskName.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::ProgressMeter::_SetTaskName(TileGenerator::TaskName task)
+    {
+    Utf8String newTaskName = (TileGenerator::TaskName::CreatingTiles == task) ? "Creating Tiles" : "Collecting Geometry";
+    if (!m_taskName.Equals(newTaskName))
+        {
+        m_lastNumCompleted = 0xffffffff;
+        m_taskName = newTaskName;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status TilesetPublisher::Publish()
+    {
+    auto status = Setup();
+    if (Status::Success != status)
+        return status;
+
+    ProgressMeter progressMeter(*this);
+    TileGenerator generator (m_dbToTile, &progressMeter);
+
+    static double       s_toleranceInMeters = 0.01;
+    bvector<WString>    viewedTileSetNames;
+
+    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
+
+    m_generator = &generator;
+    if (Status::Success == status)
+        {
+        static const size_t     s_maxPointsPerTile = 20000;
+        TileNodePtr             rootNode = new TileNode();
+
+        status = ConvertStatus(generator.GenerateTiles (*rootNode, s_toleranceInMeters, s_maxPointsPerTile));
+        if (Status::Success == status)
+            {
+            rootNode->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(*rootNode, *this))))
+                viewedTileSetNames.push_back (m_rootName);
+            }
+        }
+    if (status != Status::Success &&
+        status != Status::NoGeometry)      // If no root geometry there still may be viewed models.
+        return status;
+
+    for (auto& modelId : m_viewController.GetViewedModels())
+        {
+        if (modelId == m_viewController.GetBaseModelId())
+            continue;
+
+        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
+
+        if (viewedModel.IsValid())
+            {
+            WString tileSetName;
+            
+            tileSetName.AssignA (viewedModel->GetName().c_str());
+
+            if (Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
+                {
+                viewedTileSetNames.push_back (tileSetName);
+                status = Status::Success;       // Override NoGeometry (empty model with reality attachment).
+                }
+            }
+        }
+
+    m_generator = nullptr;
+
+    if (Status::Success != status)
+        return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
+
+    OutputStatistics(generator.GetStatistics());
+
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -247,7 +484,7 @@ static void printUsage(WCharCP exePath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void printStatus(TilesetPublisher::Status status)
+static void printStatus(PublisherContext::Status status)
     {
     static const Utf8CP s_msg[] =
         {
