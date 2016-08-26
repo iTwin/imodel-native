@@ -35,10 +35,15 @@
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
+    <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->
+    <Part Name="BeCurlShim" ExcludePlatforms="WinRT*">
+        <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>
+    </Part>
+
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="G06">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeCurlShim"/>
         <SubPart PartName="ECDb"                PartFile="ECDb"         Repository="ECDb" />
         <SubPart PartName="GeomDlls"            PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
