@@ -130,6 +130,8 @@ public:
             Utf8CP m_utf8cp;
             bool m_bool;
             };
+        ArgValueUnion(ArgValueUnion const& rhs) {memcpy(this, (void*)&rhs, sizeof(*this)); }
+        ArgValueUnion& operator=(ArgValueUnion const& rhs) {if (this != &rhs) memcpy(this, (void*)&rhs, sizeof(*this)); return *this;}
         ArgValueUnion(std::nullptr_t ) : m_type(Type::Pointer), m_ptr(nullptr) { ; }
         ArgValueUnion(void const*p) : m_type(Type::Pointer), m_ptr((void*)p) { ; }
         ArgValueUnion(int32_t i) : m_type(Type::Int32), m_int32(i) { ; }
