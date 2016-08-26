@@ -27,6 +27,13 @@ public:
 
     WmsMap const& GetMapInfo() {return m_mapInfo;}
 
+    virtual TransformCR _PhysicalToSource() const override
+        {
+        BeAssert(!"todo"); //&&MM
+        static Transform m_trans;
+        return m_trans;
+        }
+
 protected:
     virtual Render::Image _QueryTile(TileId const& id, bool& alphaBlend) override;
     RealityData::Cache& GetRealityDataCache() const;

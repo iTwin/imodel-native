@@ -36,6 +36,25 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
     Point2d sizePixels;
     m_rasterFilePtr->GetSize(&sizePixels);
 
+    // Compute transformation to a LOWER_LEFT_HORIZONTAL origin 
+    switch (m_rasterFilePtr->GetHRFRasterFile().GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().m_ScanlineOrientation)
+        {
+        case HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL: // SLO 6
+            m_physicalToSource.InitIdentity();
+            break;
+
+        case HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL: // SLO 4
+            m_physicalToSource = Transform::FromScaleFactors(1, -1, 1);
+            m_physicalToSource.SetTranslation(DPoint2d::From(0, sizePixels.y));
+            break;
+
+            // Adapt everything else like a SLO4? binaries have their SLO transform to SLO 4(and/or SLO 6?) added to the page transfo model.
+        default:
+            m_physicalToSource = Transform::FromScaleFactors(1, -1, 1);
+            m_physicalToSource.SetTranslation(DPoint2d::From(0, sizePixels.y));
+            break;
+        }
+
     // Raster width and height come from the raster file.
     // And resolution definition should come from the raster resolution descriptor.
     bvector<Resolution> resolution;
@@ -122,3 +141,5 @@ Render::Image RasterFileSource::_QueryTile(TileId const& id, bool& alphaBlend)
     alphaBlend = (Render::Image::Format::Rgba == imageFormat);
     return Render::Image(effectiveTileSizeX, effectiveTileSizeY, std::move(dataStream), imageFormat);
     }
+
+      

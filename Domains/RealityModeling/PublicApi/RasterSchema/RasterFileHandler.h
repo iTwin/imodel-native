@@ -80,7 +80,7 @@ protected:
     virtual BentleyStatus   _LoadQuadTree() const override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
-    virtual DMatrix4dCR  _GetPixelToWorld() const override { return m_fileProperties.m_transform;}
+    virtual DMatrix4dCR  _GetSourceToWorld() const override { return m_fileProperties.m_transform;}
 
 public:
 

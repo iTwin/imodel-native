@@ -276,9 +276,9 @@ AxisAlignedBox3d WmsModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  8/2016
 //----------------------------------------------------------------------------------------
-DMatrix4dCR WmsModel::_GetPixelToWorld() const
+DMatrix4dCR WmsModel::_GetSourceToWorld() const
     {
     //&&MM TODO
-    return RasterModel::_GetPixelToWorld();
+    return RasterModel::_GetSourceToWorld();
     }
 

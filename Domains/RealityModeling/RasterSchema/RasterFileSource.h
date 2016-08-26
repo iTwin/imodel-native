@@ -20,6 +20,7 @@ struct RasterFileSource : public RasterSource
 private:
     RasterFileProperties    m_properties;
     RasterFilePtr           m_rasterFilePtr;
+    Transform               m_physicalToSource;  // Transformation from raster file true origin to a lower-left origin. In pixel unit.
 
 private:
             RasterFileSource(Utf8StringCR resolvedName);
@@ -30,6 +31,8 @@ protected:
 
 public:
     static  RasterSourcePtr Create(Utf8StringCR resolvedName);
+
+    virtual TransformCR _PhysicalToSource() const override { return m_physicalToSource; }
     
 };
 
