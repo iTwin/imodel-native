@@ -221,14 +221,15 @@ struct SmCachedGraphics : TransientCachedGraphics
 static bool s_waitCheckStop = false;
 static Byte s_transparency = 100;
 
-void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
+
+void ProgressiveDrawMeshNode(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
                               bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
                               ViewContextR                                context, 
                               const DMatrix4d&                            storageToUors)
     {    
 
 #ifdef PRINT_SMDISPLAY_MSG
-    PRINT_MSG("ProgressiveDrawMeshNode2 meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
+    PRINT_MSG("ProgressiveDrawMeshNode meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
 #endif
 
     static size_t s_callCount = 0;
@@ -268,7 +269,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {                          
+            {     
             if (context.CheckStop())
                 break;                           
             
@@ -490,7 +491,9 @@ protected:
         
     IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-    const DMatrix4d&                        m_storageToUorsTransfo;        
+    const DMatrix4d&                        m_storageToUorsTransfo;
+    bool                                    m_hasFetchedFinalNode;
+
 
     ScalableMeshProgressiveDisplay (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
                                     ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
@@ -501,6 +504,7 @@ protected:
 
         m_progressiveQueryEngine = progressiveQueryEngine;
         m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
+        m_hasFetchedFinalNode = false;
         }
 
 public:
@@ -514,18 +518,23 @@ virtual Completion _Process(ViewContextR viewContext) override
     {
     Completion completionStatus = Completion::Aborted; 
 
-    if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
+    if (!m_hasFetchedFinalNode)
         {                    
         int queryId = m_currentDrawingInfoPtr->m_currentQuery;
 
         if (m_progressiveQueryEngine->IsQueryComplete(queryId))
             {
             m_currentDrawingInfoPtr->m_meshNodes.clear();
+
             StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+
+            assert(status == SUCCESS);
 
             assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
 
-            m_currentDrawingInfoPtr->m_overviewNodes.clear();
+            m_currentDrawingInfoPtr->m_overviewNodes.clear();                
+                            
+            status = m_progressiveQueryEngine->StopQuery(queryId);
 
             assert(status == SUCCESS);
 
@@ -534,13 +543,15 @@ virtual Completion _Process(ViewContextR viewContext) override
 #ifdef PRINT_SMDISPLAY_MSG        
             PRINT_MSG("Heal required  meshNode : %I64u overviewMeshNode : %I64u \n", m_currentDrawingInfoPtr->m_meshNodes.size(), m_currentDrawingInfoPtr->m_overviewNodes.size());       
 #endif
+
+            m_hasFetchedFinalNode = true;
             }
         else
-            {                                       
+            {                                            
             m_currentDrawingInfoPtr->m_meshNodes.clear();
             StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
             assert(status == SUCCESS);                                  
-
+            
             m_currentDrawingInfoPtr->m_overviewNodes.clear();
             status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
             assert(status == SUCCESS);                                  
@@ -548,7 +559,7 @@ virtual Completion _Process(ViewContextR viewContext) override
             completionStatus = Completion::Aborted;
 
             if (s_drawInProcess)
-                ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                                                      
+                ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, viewContext, m_storageToUorsTransfo);                                                      
             }
         }
     else
@@ -634,7 +645,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
+            ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
             return;                        
             }   
         }        
@@ -717,7 +728,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     status = m_progressiveQueryEngine->StartQuery(queryId, 
                                                   viewDependentQueryParams, 
                                                   m_currentDrawingInfoPtr->m_meshNodes, 
-                                                  !IsWireframeRendering(context) && s_loadTexture, 
+                                                  true, //No wireframe mode, so always load the texture.
                                                   clips,
                                                   &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
                                                   &nextDrawingInfoPtr->GetLocalToViewTransform()); 
@@ -735,17 +746,16 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     bool needProgressive;
     
     if (m_progressiveQueryEngine->IsQueryComplete(queryId))
-        {
+        {        
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
         assert(status == SUCCESS);
-
+        m_currentDrawingInfoPtr->m_overviewNodes.clear();
+       
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
-        
-        m_currentDrawingInfoPtr->m_overviewNodes.clear();
-        
+                        
         needProgressive = false;
         m_forceRedraw = false;
         }
@@ -755,9 +765,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
         status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
-        m_currentDrawingInfoPtr->m_overviewNodes.insert(m_currentDrawingInfoPtr->m_overviewNodes.end(), m_currentDrawingInfoPtr->m_meshNodes.begin(), m_currentDrawingInfoPtr->m_meshNodes.end());
+
         m_currentDrawingInfoPtr->m_meshNodes.clear();
 
+        status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        assert(status == SUCCESS);
+        
         //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
         //assert(m_currentDrawingInfoPtr->m_overviewNodes.size() > 0);
         assert(status == SUCCESS);
@@ -765,7 +778,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         needProgressive = true;
         }                         
 
-    ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
+    ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
 
     if (needProgressive)
         {
@@ -959,6 +972,17 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         clipsToShow.insert(elem);
     SetActiveClipSets(clipsToShow, clipsShown);
     //m_properties.m_fileId = smFilename.GetNameUtf8();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Elenie.Godzaridis     2/2016
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::CloseFile()
+    {
+    m_smPtr = nullptr;
+    m_displayNodesCache = nullptr;
+    m_progressiveQueryEngine = nullptr;
+    m_tryOpen = false;
     }
 
 //----------------------------------------------------------------------------------------
