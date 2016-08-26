@@ -2252,7 +2252,7 @@ CategorySelectorR ViewController::GetCategorySelector() const
             catSel = existingCatSel->MakeCopy<CategorySelector>();
         else
             {
-            catSel = new CategorySelector(GetDgnDb(), GetViewDefinition().GetName().c_str()); // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+            catSel = new CategorySelector(GetDgnDb(),""); // *** WIP_VIEW_DEFINITION - Is it right to auto-create an unnamed definition?
             DGNCORELOG->errorv("Missing CategorySelector for view %s - generating one", GetViewDefinition().GetName().c_str());
             }
         m_definitionElements.AddElement(*catSel);
@@ -2275,7 +2275,7 @@ DisplayStyleR ViewController::GetDisplayStyle() const
             dstyle = existingDstyle->MakeCopy<DisplayStyle>();
         else
             {
-            dstyle = new DisplayStyle(GetDgnDb(), GetViewDefinition().GetName().c_str());     // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+            dstyle = new DisplayStyle(GetDgnDb(), "");     // *** WIP_VIEW_DEFINITION - Is it right to auto-create an unnamed definition?
             DGNCORELOG->errorv("Missing DisplayStyle for view %s - generating one", GetViewDefinition().GetName().c_str());
             }
 
@@ -2299,7 +2299,7 @@ ModelSelectorR SpatialViewController::GetModelSelector() const
             modSel = existingModSel->MakeCopy<ModelSelector>();
         else
             {
-            modSel = new ModelSelector(GetDgnDb(), GetViewDefinition().GetName().c_str());    // *** WIP_VIEW_DEFINITION - auto-creation of definitions??
+            modSel = new ModelSelector(GetDgnDb(), "");    // *** WIP_VIEW_DEFINITION - Is it right to auto-create an unnamed definition?
             DGNCORELOG->errorv("Missing ModelSelector for view %s - generating one", GetViewDefinition().GetName().c_str());
             }
 

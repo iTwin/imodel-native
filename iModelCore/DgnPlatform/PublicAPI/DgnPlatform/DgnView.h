@@ -69,7 +69,7 @@ public:
     Utf8String GetEnvironment() const { return GetPropertyValueString("Environment"); } //!< Get Environment
     DgnDbStatus SetEnvironment(Utf8StringCR value) { return SetPropertyValue("Environment", value.c_str()); } //!< Set Environment
 
-    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle); }
+    static DgnCode CreateCode(Utf8StringCR name) { return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_DisplayStyle); }
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle)); }
 };
 
@@ -101,7 +101,7 @@ public:
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId);
 
-    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector); }
+    static DgnCode CreateCode(Utf8StringCR name) { return (0==name.size())? DgnCode(): ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ModelSelector); }
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector)); }
     };
 
@@ -134,7 +134,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetSubCategoryOverrides(bmap<DgnSubCategoryId, DgnSubCategory::Override> const& overrides);
     
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector)); }
-    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector); }
+    static DgnCode CreateCode(Utf8StringCR name) { return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_CategorySelector); }
     };
 
 //=======================================================================================
@@ -208,7 +208,7 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db, FillModels fillModels=FillModels::No);
 
     //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition); }
+    static DgnCode CreateCode(Utf8StringCR name) { return (0 == name.size()) ? DgnCode() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition); }
 
     //! Look up the ID of the view with the specified DgnCode
     DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
