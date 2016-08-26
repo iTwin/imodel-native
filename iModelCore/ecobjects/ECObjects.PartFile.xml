@@ -19,7 +19,7 @@
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="BeXmlDll"        PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <SubPart PartName="StandardSchemasV3" PartFile="ECStandards" Repository="ECStandards" />
         <SubPart PartName="V3ConversionSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
