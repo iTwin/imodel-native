@@ -556,8 +556,8 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
     RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
     double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
     uint32_t        rgbInt  = 0xffffff;
-    RgbFactor       rgb;
-    double          alpha = 1.0;
+    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
+    double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
     Utf8String      materialName = Utf8String ("Material_") + suffix;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
 
@@ -596,8 +596,6 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
             }
         else
             {
-            RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
-            double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
             auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
             materialColor.append(rgb.red);
