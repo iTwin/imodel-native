@@ -427,6 +427,7 @@ PublisherContext::Status TilesetPublisher::Publish()
         status = ConvertStatus(generator.GenerateTiles (*rootNode, s_toleranceInMeters, s_maxPointsPerTile));
         if (Status::Success == status)
             {
+            rootNode->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
             if (Status::Success == (status = ConvertStatus (generator.CollectTiles(*rootNode, *this))))
                 viewedTileSetNames.push_back (m_rootName);
             }
@@ -448,7 +449,7 @@ PublisherContext::Status TilesetPublisher::Publish()
             
             tileSetName.AssignA (viewedModel->GetName().c_str());
 
-            if (TileGenerator::Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
+            if (Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
                 {
                 viewedTileSetNames.push_back (tileSetName);
                 status = Status::Success;       // Override NoGeometry (empty model with reality attachment).

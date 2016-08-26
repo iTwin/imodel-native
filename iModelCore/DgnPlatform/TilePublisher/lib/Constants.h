@@ -150,4 +150,7 @@ static double const s_qvExponentMultiplier  = 48.0,
                     s_qvDiffuse             = 0.6;
 
 
+static const WCharCP s_metadataExtension    = L"json";
+static const WCharCP s_binaryDataExtension  = L"b3dm";
+
 

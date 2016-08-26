@@ -58,6 +58,7 @@ struct PublisherContext
         CantCreateSubDirectory,
         ErrorWritingScene,
         ErrorWritingNode,
+        NotImplemented,
     };
 protected:
     ViewControllerR     m_viewController;
@@ -66,20 +67,22 @@ protected:
     WString             m_rootName;
     Transform           m_dbToTile;
     Transform           m_tileToEcef;
+    size_t              m_maxTilesPerDirectory;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory = 500);
 
     virtual TileGeometryCacheP _GetGeometryCache() = 0;
 
     TILEPUBLISHER_EXPORT Status Setup();
 
-    TILEPUBLISHER_EXPORT TileGenerator::Status PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
+    TILEPUBLISHER_EXPORT Status PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
+    size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
@@ -112,7 +115,6 @@ private:
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
-    WString GetTileMetadataName(TileNodeCR tile) const;
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
@@ -121,7 +123,7 @@ private:
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
     void AppendUInt32(uint32_t value);
-    void WriteMetadata(Json::Value&, TileNodeCR, double tolerance, WStringCR b3dmPath);
+    void WriteMetadata(Json::Value&, TileNodeCR, double tolerance);
     Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP suffix);
 

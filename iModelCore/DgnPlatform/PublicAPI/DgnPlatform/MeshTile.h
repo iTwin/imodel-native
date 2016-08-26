@@ -329,6 +329,7 @@ private:
     size_t              m_siblingIndex;
     double              m_tolerance;
     TileNodeP           m_parent;
+    WString             m_subdirectory;
 
     static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, TileGeometryCacheR geometryCache, DRange3dCR range, size_t maxFacetsPerSubTile);
 
@@ -347,6 +348,8 @@ public:
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
     TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
+    WStringCR GetSubdirectory() const { return m_subdirectory; }
+    void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
 
     DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
@@ -359,6 +362,10 @@ public:
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
     DGNPLATFORM_EXPORT void GetTiles(TileNodePList& tiles);
     DGNPLATFORM_EXPORT TileNodePList GetTiles();
+    DGNPLATFORM_EXPORT WString GetNameSuffix() const;
+    DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
+    DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
+
 };
 
 //=======================================================================================
@@ -468,9 +475,9 @@ public:
 // Interface for models to generate HLOD tree of TileNodes 
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================
-struct IPublishModelTiles
+struct IGenerateMeshTiles
 {
-    virtual TileGenerator::Status _PublishModelTiles (TileGenerator& generator, TileGenerator::ITileCollector& collector, TransformCR transformToTile) = 0;
+    virtual TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) = 0;
 
 };  // IPublishModelMeshTiles
 

@@ -110,9 +110,9 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                               Elenie.Godzaridis     07/2016
+* @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tolerance, WStringCR b3dmPath)
+void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tolerance)
     {
     val["asset"]["version"] = "0.0";
     val[JSON_GeometricError] = tile.GetTolerance();
@@ -134,16 +134,15 @@ void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tole
                 transformValue.append (matrix.coff[j][i]);
         }
 
-    root[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(b3dmPath.c_str()).c_str()).c_str();
+    root[JSON_Content]["url"] = Utf8String (tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str()).c_str();
     if (!tile.GetChildren().empty())
         root[JSON_Children] = Json::arrayValue;
 
     for (auto& childTile : tile.GetChildren())
         {
         Json::Value         child;
-        WString             path = GetTileMetadataName(*childTile);
 
-        child[JSON_Content]["url"] = Utf8String(BeFileName::GetFileNameAndExtension(path.c_str()).c_str()).c_str();
+        child[JSON_Content]["url"] = Utf8String (childTile->GetRelativePath (m_context.GetRootName().c_str(), s_metadataExtension).c_str()).c_str();
         child[JSON_GeometricError] = childTile->GetTolerance();
         WriteBoundingVolume(child, *childTile);
 
@@ -203,15 +202,15 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
-    BeFileName  b3dmPath(nullptr, GetDataDirectory().c_str(), (GetPrefix() + GetNodeNameSuffix(m_tile)).c_str(), L"b3dm");
+    BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
+    BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_metadataExtension).c_str(), nullptr);
     Json::Value val;
 
-    WriteMetadata(val, m_tile, m_tile.GetTolerance(), b3dmPath);
+    WriteMetadata(val, m_tile, m_tile.GetTolerance());
 
     Utf8String metadataStr = Json::FastWriter().write(val);
 
-    WString metadataPath = GetTileMetadataName(m_tile);
-    m_outputFile.open(Utf8String(metadataPath.c_str()).c_str(), std::ios_base::trunc);
+    m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
     m_outputFile.write(metadataStr.data(), metadataStr.size());
     m_outputFile.close();
 
@@ -225,7 +224,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
-    m_outputFile.open(Utf8String(b3dmPath.c_str()).c_str(), std::ios_base::trunc | std::ios_base::binary);
+    m_outputFile.open(Utf8String(binaryDataFileName.c_str()).c_str(), std::ios_base::trunc | std::ios_base::binary);
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
@@ -826,34 +825,10 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString TilePublisher::GetNodeNameSuffix(TileNodeCR node)
-    {
-    WString suffix;
-    if (nullptr != node.GetParent())
-        {
-        suffix = WPrintfString(L"%02d", static_cast<int>(node.GetSiblingIndex()));
-        for (auto parent = node.GetParent(); nullptr != parent->GetParent(); parent = parent->GetParent())
-            suffix = WPrintfString(L"%02d", static_cast<int>(parent->GetSiblingIndex())) + suffix;
-        }
-
-    return suffix;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString TilePublisher::GetTileMetadataName(TileNodeCR node) const
-    {
-    return BeFileName(nullptr, GetDataDirectory().c_str(), (GetPrefix() + GetNodeNameSuffix(node)).c_str(), L"json");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_dataDir(m_outputDir)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory)
+    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_dataDir(m_outputDir), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
     // m_outputDir holds the .html file + shared scripts
     // m_dataDir = m_outputDir/m_rootName/ - holds the json + b3dm files
@@ -949,14 +924,22 @@ TileGenerator::Status PublisherContext::ConvertStatus(Status input)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status   PublisherContext::PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
+PublisherContext::Status   PublisherContext::PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector)
     {
-    IPublishModelTiles*         publishTiles;
+    IGenerateMeshTiles*         generateMeshTiles;
     AutoRestore <WString>       saveRootName (&m_rootName, tileSetName);
 
-    if (NULL == (publishTiles = dynamic_cast <IPublishModelTiles*> (&model)))
-        return TileGenerator::Status::NotImplemented;
+    if (NULL == (generateMeshTiles = dynamic_cast <IGenerateMeshTiles*> (&model)))
+        return Status::NotImplemented;
 
-    return publishTiles->_PublishModelTiles (generator, collector, m_dbToTile);
+    TileNodePtr     rootTile;
+    auto            status = generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile);
+
+    if (TileGenerator::Status::Success == status)
+        {
+        rootTile->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+        status = generator.CollectTiles (*rootTile, collector);
+        }
+
+    return ConvertStatus (status);
     }
-
