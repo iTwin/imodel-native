@@ -1065,7 +1065,7 @@ TEST_F(ChangeSummaryTestFixture, ValidateTableMap)
     ASSERT_TRUE(tableMap->GetECClassIdColumn().GetIndex() >= 0);
     ASSERT_TRUE(tableMap->GetECInstanceIdColumn().GetIndex() >= 0);
 
-    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementsHaveLinks);
+    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementHasLinks);
     ASSERT_TRUE(ecRelClass != nullptr);
 
     ChangeSummary::TableMapPtr relTableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecRelClass);

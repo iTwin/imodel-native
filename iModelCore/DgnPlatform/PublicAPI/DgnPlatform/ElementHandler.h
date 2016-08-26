@@ -129,10 +129,10 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DrawingGraphic, Dgn::DrawingGraphic, DrawingGraphic, Geometric2d, DGNPLATFORM_EXPORT)
     };
 
-    //! The ElementHandler for InformationElement
-    struct EXPORT_VTABLE_ATTRIBUTE Information : Element
+    //! The ElementHandler for InformationContentElement
+    struct EXPORT_VTABLE_ATTRIBUTE InformationContent : Element
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationElement, InformationElement, Information, Element, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationContentElement, InformationContentElement, InformationContent, Element, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for InformationCarrierElement
@@ -142,9 +142,9 @@ namespace dgn_ElementHandler
     };
 
     //! The ElementHandler for DefinitionElement
-    struct EXPORT_VTABLE_ATTRIBUTE Definition : Information
+    struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, Information, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, InformationContent, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for Subject

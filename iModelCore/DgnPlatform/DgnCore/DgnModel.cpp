@@ -436,7 +436,7 @@ GroupInformationModelPtr GroupInformationModel::Create(DgnDbR db, DgnCode const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RepositoryModel::_OnInsertElement(DgnElementR element)
     {
-    return element.IsInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1686,7 +1686,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     BIS_TABLE(BIS_REL_ModelSelectorsReferToModels)
 #endif
 
-    // *** WIP_IMPORT *** ElementsHaveLinks -- should we deep-copy links?
+    // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
 
     return DgnDbStatus::Success;
     }

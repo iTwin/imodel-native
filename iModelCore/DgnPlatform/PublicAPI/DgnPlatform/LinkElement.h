@@ -20,7 +20,7 @@
 #define BIS_CLASS_UrlLink               "UrlLink"
 #define BIS_CLASS_EmbeddedFileLink      "EmbeddedFileLink"
 #define BIS_CLASS_RepositoryLink        "RepositoryLink"
-#define BIS_REL_ElementsHaveLinks       "ElementsHaveLinks"
+#define BIS_REL_ElementHasLinks         "ElementHasLinks"
 
 #define LINK_ECSQL_PREFIX "link"
 #define SOURCE_ECSQL_PREFIX "source"
@@ -82,9 +82,9 @@ public:
 //=======================================================================================
 //! LinkElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationElement
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationContentElement
 {
-    DEFINE_T_SUPER(InformationElement)
+    DEFINE_T_SUPER(InformationContentElement)
 
 protected:
     //! Constructor
@@ -144,7 +144,7 @@ private:
         BeAssert(sourceElementId.IsValid());
 
         Utf8CP ecSqlFmt = "SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX " " \
-            "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " " SOURCE_ECSQL_PREFIX " USING " BIS_SCHEMA(BIS_REL_ElementsHaveLinks) " " \
+            "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " " SOURCE_ECSQL_PREFIX " USING " BIS_SCHEMA(BIS_REL_ElementHasLinks) " " \
             "WHERE " SOURCE_ECSQL_PREFIX ".ECInstanceId=?";
 
         Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
@@ -235,7 +235,7 @@ public:
 
         DgnElementIdSet removeLinkIds = QueryBySource(dgndb, sourceElementId);
 
-        Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementsHaveLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
+        Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
         Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
@@ -256,7 +256,7 @@ public:
     //! Finds all links that do not have a source specified
     static DgnElementIdSet FindOrphaned(DgnDbCR dgndb)
         {
-        Utf8CP ecSqlFmt = "SELECT link.ECInstanceId FROM ONLY %s.%s link WHERE link.ECInstanceId NOT IN (SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementsHaveLinks) ")";
+        Utf8CP ecSqlFmt = "SELECT link.ECInstanceId FROM ONLY %s.%s link WHERE link.ECInstanceId NOT IN (SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementHasLinks) ")";
         Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
@@ -492,15 +492,15 @@ namespace dgn_ModelHandler
 namespace dgn_ElementHandler
 {
     //! The handler for UrlLink elements
-    struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Information
+    struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : InformationContent
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, Information, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
     };
 
     //! The handler for EmbeddedFileLink elements
-    struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Information
+    struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : InformationContent
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Information, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
     };
 
     //! The handler for RepositoryLink elements
