@@ -353,6 +353,44 @@ DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileName
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DeleteLastMasterFile(ICancellationTokenPtr cancellationToken) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::File);
+    Utf8String filter;
+    filter.Sprintf("%s+eq+false", ServerSchema::Property::Initialized);
+    query.SetFilter(filter);
+    std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then([=] (WSObjectsResult const& result)
+        {
+        if (!result.IsSuccess())
+            {
+            finalResult->SetError(result.GetError());
+            return;
+            }
+        
+        auto instances = result.GetValue().GetJsonValue()[ServerSchema::Instances];
+        if (!instances.isArray())
+            {
+            finalResult->SetError(DgnDbServerError::Id::FileDoesNotExist);
+            return;
+            }
+        auto fileInfo = FileInfo::FromJson(instances[0], FileInfo());
+        m_wsRepositoryClient->SendDeleteObjectRequest(fileInfo->GetObjectId(), cancellationToken)->Then([=] (WSVoidResult const& deleteResult)
+            {
+            if (!deleteResult.IsSuccess())
+                finalResult->SetError(deleteResult.GetError());
+            else
+                finalResult->SetSuccess();
+            });
+        })->Then<DgnDbServerStatusResult>([=] ()
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2015
+//---------------------------------------------------------------------------------------
 DgnDbServerStatusResult DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile
 (
 BeFileName                     filePath,
