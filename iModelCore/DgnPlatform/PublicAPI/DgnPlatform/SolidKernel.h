@@ -80,13 +80,13 @@ struct ISolidKernelEntity : BentleyApi::IRefCounted
 {
 public:
 
-enum KernelEntityType
+enum class EntityType
     {
-    EntityType_Solid    = 0, //!< Body consisting of at least one solid region.
-    EntityType_Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
-    EntityType_Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
-    EntityType_Minimal  = 3, //!< Body consisting of a single vertex.
-    EntityType_Compound = 4, //!< Body consisting of a non-homogeneous group of solids, sheets, and wires.
+    Solid    = 0, //!< Body consisting of at least one solid region.
+    Sheet    = 1, //!< Body consisting of connected sets of faces having edges that are shared by a maximum of two faces. 
+    Wire     = 2, //!< Body consisting of connected sets of edges having vertices that are shared by a maximum of two edges.
+    Minimal  = 3, //!< Body consisting of a single vertex.
+    Compound = 4, //!< Body consisting of a non-homogeneous group of solids, sheets, and wires.
     };
 
 protected:
@@ -94,7 +94,7 @@ protected:
 //! @private
 virtual bool _IsEqual(ISolidKernelEntityCR) const = 0;
 //! @private
-virtual KernelEntityType _GetEntityType() const = 0;
+virtual EntityType _GetEntityType() const = 0;
 //! @private
 virtual DRange3d _GetEntityRange() const = 0;
 //! @private
@@ -116,7 +116,7 @@ bool IsEqual (ISolidKernelEntityCR entity) const {return _IsEqual(entity);}
 
 //! Get the body type for this entity.
 //! @return The solid kernel entity type.
-KernelEntityType GetEntityType() const {return _GetEntityType();}
+EntityType GetEntityType() const {return _GetEntityType();}
 
 //! Get the axis aligned bounding box for this entity.
 //! @return The axis aligned bounding box for the entity.
@@ -170,11 +170,11 @@ struct ISubEntity : BentleyApi::IRefCounted
 {
 public:
 
-enum SubEntityType
+enum class SubEntityType
     {
-    SubEntityType_Face    = (1 << 0), //!< A single bounded part of a surface.
-    SubEntityType_Edge    = (1 << 1), //!< A single bounded part of a curve.
-    SubEntityType_Vertex  = (1 << 2), //!< A single point.
+    Face    = 0, //!< A single bounded part of a surface.
+    Edge    = 1, //!< A single bounded part of a curve.
+    Vertex  = 2, //!< A single point.
     };
 
 protected:
