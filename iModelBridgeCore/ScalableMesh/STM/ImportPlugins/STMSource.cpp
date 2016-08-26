@@ -14,7 +14,6 @@
 #include <ScalableMesh\GeoCoords\Reprojection.h>
 #include <ScalableMesh\Import\ContentConfig.h>
 #include <ScalableMesh\Import\Config\Content\GCS.h>
-#include <ScalableMesh\Import\Config\Content\Layer.h>
 #include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
 #include <ScalableMesh\Import\Plugin\SourceV0.h>
 #include <ScalableMesh\Plugin\IScalableMeshSTMSource.h>
@@ -69,8 +68,10 @@ class STMElementSourceDecorator : public SourceBase
              layerIt != layersEnd;
              ++layerIt)
             {
-            LayerConfig layerConfig(DecorateLayer(descriptor.GetLayerIDFor(layerIt), *layerIt, m_elHandle));
-            contentConfig.push_back(layerConfig);
+            //LayerConfig layerConfig(DecorateLayer(descriptor.GetLayerIDFor(layerIt), *layerIt, m_elHandle));
+            //contentConfig.push_back(layerConfig);
+             GCSConfig gcsConfig(AdaptGCS((*layerIt)->GetGCS(), m_elHandle));
+             contentConfig.SetGCSConfig(gcsConfig);
             }
 
         if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
@@ -87,8 +88,8 @@ class STMElementSourceDecorator : public SourceBase
 
 
 
-    static LayerConfig              DecorateLayer                          (uint32_t                        layerID,
-                                                                            const LayerDescriptor&      descriptor,
+/*    static LayerConfig              DecorateLayer                          (uint32_t                        layerID,
+                                                                            const ILayerDescriptor&      descriptor,
                                                                             const ElementHandle&           elHandle)
         {
         GCSConfig gcsConfig(AdaptGCS(descriptor.GetGCS(), elHandle));
@@ -98,7 +99,7 @@ class STMElementSourceDecorator : public SourceBase
 
 
         return layerConfig;
-        }
+        }*/
 
     static GCSConfig                AdaptGCS                               (const GCS&                  storageGCS,
                                                                             const ElementHandle&           elHandle)

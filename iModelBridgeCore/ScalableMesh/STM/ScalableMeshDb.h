@@ -10,8 +10,11 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 class ScalableMeshDb : public BeSQLite::Db
     {
+
     static const SchemaVersion CURRENT_VERSION;
+#ifndef VANCOUVER_API
     virtual DbResult _VerifySchemaVersion(OpenParams const& params) override;
+#endif
     virtual DbResult _OnDbCreated(CreateParams const& params) override;
     };
 

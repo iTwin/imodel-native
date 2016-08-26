@@ -3,12 +3,20 @@
 
 #ifdef VANCOUVER_API
 #define WSTRING_FROM_CSTR(cstr) WString(cstr)
+#define MAKE_COPY_NO Statement::MAKE_COPY_No
+#define MAKE_COPY_YES Statement::MAKE_COPY_Yes
+#define GET_VALUE_STR(stmt, id) stmt->GetValueUtf8(id)
+#define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindUtf8String(id, utf8str, copyval)
+#define READONLY Db::OpenMode::OPEN_Readonly
+#define READWRITE Db::OpenMode::OPEN_ReadWrite
 #else
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
 #define MAKE_COPY_YES Statement::MakeCopy::Yes
 #define GET_VALUE_STR(stmt, id) stmt->GetValueText(id)
 #define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindText(id, utf8str, copyval)
+#define READONLY Db::OpenMode::Readonly
+#define READWRITE Db::OpenMode::ReadWrite
 #endif
 
 
@@ -45,15 +53,15 @@ bool SMSQLiteFile::UpdateDatabase()
     m_database->GetCachedStatement(stmtTest, "SELECT Version FROM SMFileMetadata");
     assert(stmtTest != nullptr);
     stmtTest->Step();
-
-    SchemaVersion databaseSchema(stmtTest->GetValueText(0));    
+#ifndef VANCOUVER_API
+    SchemaVersion databaseSchema(GET_VALUE_STR(stmtTest,0));    
     SchemaVersion databaseSchemaV1(1, 0, 0, 0);
 
     if (databaseSchema.CompareTo(databaseSchemaV1) == 0)
         {
         //ALTER TABLE SMNodeHeader ADD  CHAR(25) DEFAULT '10' NOT NULL
         }
-    
+    #endif
     assert(!"ERROR - Unknown database schema version");
     return false;
     }
@@ -67,13 +75,15 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
     if (m_database->IsDbOpen())
         m_database->CloseDb();
 
-    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+    result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
     if (result == BE_SQLITE_SCHEMA)
         {
-        Db::OpenParams openParamUpdate(Db::OpenMode::ReadWrite);
+        Db::OpenParams openParamUpdate(READWRITE);
 
+        #ifndef VANCOUVER_API
         openParamUpdate.m_skipSchemaCheck = true;
+        #endif
 
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
@@ -83,7 +93,7 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
         m_database->CloseDb();
 
-        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+        result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
     
     return result == BE_SQLITE_OK;
@@ -1651,7 +1661,11 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
             stmt->BindInt(6, pos);
             stmt->Step();
             }
+#ifdef VANCOUVER_API
+        s.Save();
+#else
         s.Save("newSource");
+#endif
    }
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");

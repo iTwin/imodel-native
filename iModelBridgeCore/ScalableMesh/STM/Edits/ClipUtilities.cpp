@@ -593,7 +593,11 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     if (dtmCreateStatus == 0)
         {
         BcDTMPtr bcDtmObjPtr;
+#ifdef VANCOUVER_API
+        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
+#else
         bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif
         dtmPtr = bcDtmObjPtr.get();
         }
     else return;
@@ -870,7 +874,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     int stat = DTM_SUCCESS;
     for (auto& poly : polygons)
         {
-        bool applyClipPoly = metadata[&poly - &polygons[0]].second == 0;
+        bool applyClipPoly = true;//metadata[&poly - &polygons[0]].second == 0;
         if (!applyClipPoly)
             {
             if (metadata[&poly - &polygons[0]].second == 1)

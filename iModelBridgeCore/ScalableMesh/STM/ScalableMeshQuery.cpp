@@ -478,8 +478,10 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
                          int   numberOfPoints,
                          bool  isClipMask)
     {
-   // if(HRFGeoCoordinateProvider::GetServices() == NULL)
-   //     return ERROR;
+#ifdef VANCOUVER_API
+    if(HRFGeoCoordinateProvider::GetServices() == NULL)
+        return ERROR;
+#endif
 
     // We first validate the clip shape being provided
     HFCPtr<HGF2DCoordSys>   coordSysPtr(new HGF2DCoordSys());       HArrayAutoPtr<double> tempBuffer(new double[numberOfPoints * 2]);
@@ -521,13 +523,16 @@ int ScalableMeshReprojectionQuery::_AddClip(DPoint3d* clipPointsP,
     assert(m_sourceGCS.HasGeoRef());
     assert(m_targetGCS.HasGeoRef());
 
-    //IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_sourceGCS.GetGeoRef().GetBasePtr().get());
-    //IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_targetGCS.GetGeoRef().GetBasePtr().get());
+#ifdef VANCOUVER_API
+    IRasterBaseGcsPtr pSource = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_sourceGCS.GetGeoRef().GetBasePtr().get());
+    IRasterBaseGcsPtr pTarget = HRFGeoCoordinateProvider::GetServices()->_CreateRasterBaseGcsFromBaseGcs(m_targetGCS.GetGeoRef().GetBasePtr().get());
 
     // We then create the Image++ compatible geographic transformation between these
     // Geographic coordinate systems...
+    HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*pTarget,*pSource);
+#else
     HFCPtr<HCPGCoordModel> pTransfo = new HCPGCoordModel(*m_targetGCS.GetGeoRef().GetBasePtr(), *m_sourceGCS.GetGeoRef().GetBasePtr());
-
+#endif
     // We create two dummies coordinate systems linked using this geographic transformation
     HFCPtr<HGF2DCoordSys> pSourceCS = new HGF2DCoordSys();
     HFCPtr<HGF2DCoordSys> pTargetCS = new HGF2DCoordSys(*pTransfo, pSourceCS);
@@ -732,6 +737,11 @@ int IScalableMeshMesh::ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DP
 bool IScalableMeshMesh::FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d) const
     {
     return _FindTriangleForProjectedPoint(outTriangle, point,use2d);
+    }
+
+bool IScalableMeshMesh::IntersectRay(DPoint3d& pt, const DRay3d& ray) const
+    {
+    return _IntersectRay(pt,ray);
     }
 
 bool IScalableMeshMesh::FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d) const
@@ -1479,7 +1489,11 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
     if (dtmCreateStatus == 0)
         {
+#ifdef VANCOUVER_API
+        bcdtm = BcDTM::CreateFromDtmHandle(*bcDtmP);
+#else
         bcdtm = BcDTM::CreateFromDtmHandle(bcDtmP);
+#endif
         }
     else return DTM_ERROR;
 
@@ -1559,6 +1573,35 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
     assert(status == SUCCESS);
 
     return status == SUCCESS? DTM_SUCCESS : DTM_ERROR;
+    }
+
+bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
+    {
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+    double minParam = DBL_MAX;
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+        DPoint3d projectedPt;
+        DPoint3d bary;
+        double param;
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
+            {
+            if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            }
+
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
+            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0 && param < minParam;
+        if (intersectTri)
+            {
+            pt = projectedPt;
+            minParam = param;
+            }
+        }
+    return minParam < DBL_MAX;
     }
 
 bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const
@@ -2399,6 +2442,13 @@ void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
     {
     return _GetSkirtMeshes(meshes);
     }
+
+#ifdef WIP_MESH_IMPORT
+bool IScalableMeshNode::IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata)
+    {
+    return _IntersectRay(pt, ray, retrievedMetadata);
+    }
+#endif
 
 bool IScalableMeshNode::RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const
     {

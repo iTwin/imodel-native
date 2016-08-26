@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>   
 #include "../STM/ImagePPHeaders.h"
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>
@@ -23,6 +24,9 @@
 #include "WktUtils.h"
 #include "GCSWktParsing.h"
 
+#ifndef VANCOUVER_API
+#define GetWellKnownText(a,b) GetWellKnownText(a,b,false)
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
@@ -504,7 +508,7 @@ inline SMStatus GCS::Impl::GetNullCSWKT(WString& wkt) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus GCS::Impl::GetBaseCSWKT(WString& wkt) const
     {            
-    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk, false))
+    if (BSISUCCESS != m_geoRef.GetBase().GetWellKnownText(wkt, BaseGCS::wktFlavorAutodesk))
         return S_ERROR;  
      
     return S_SUCCESS;
@@ -911,8 +915,14 @@ GCS GCSFactory::Impl::CreateFromBaseCS (const WChar*             wkt,
     {
     BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr gcsPtr(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS());
     WString w_wkt(wkt);
+    WString wktWithoutFlavor;
     StatusInt initWarningCode = BSISUCCESS;
-    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, w_wkt.GetWCharCP());
+
+    ISMStore::WktFlavor wktFlavorInternal = GetWKTFlavor(&wktWithoutFlavor, w_wkt);
+    bool result = MapWktFlavorEnum(wktFlavor, wktFlavorInternal);
+    assert(result == true);
+    
+    const StatusInt initStatus = gcsPtr->InitFromWellKnownText(&initWarningCode, 0, wktFlavor, wktWithoutFlavor.GetWCharCP());
     
     if (BSISUCCESS != initStatus)
         {

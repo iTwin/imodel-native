@@ -46,8 +46,6 @@ protected:
     void                                setCurrentSegmentIndex              (SegmentIndex index);
     SegmentIndex                        getCurrentSegmentIndex              (void);
 
-    BufferData                        * getSegment                          (SegmentIndex index);
-
     void                                setExternalBuffer                   (BufferData *extBuffer);
 
     void                                setExternalBufferSize               (BufferSize size);
@@ -70,17 +68,19 @@ public:
     void                                setLocator                          (const DataSourceLocator &newLocator);
     DataSourceLocator                &  getLocator                          (void);
 
-    BufferSize                          getSize                             (void);
+    CLOUD_EXPORT BufferSize             getSize                             (void);
     SegmentIndex                        getNumSegments                      (void);
 
     DataSourceStatus                    clear                               (void);
-    DataSourceStatus                    append                              (BufferData *source, BufferSize size);
+    DataSourceStatus                    append                              (const BufferData *source, BufferSize size);
     DataSourceStatus                    expand                              (BufferSize size);
+
+    BufferData                        * getSegment(SegmentIndex index);
 
     SegmentIndex                        getAndAdvanceCurrentSegment         (BufferData ** dest, BufferSize * size);
     bool                                signalSegmentProcessed              (void);
     void                                signalCancelled                     (void);
-    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds);
+    DataSourceStatus                    waitForSegments                     (Timeout timeoutMilliseconds, int numRetries = 1);
 
     BufferData                        * getExternalBuffer                   (void);
     BufferSize                          getExternalBufferSize               (void);

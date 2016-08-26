@@ -20,7 +20,7 @@
 #include <map>
 
 
-#include <Bentley/Bentley.h>
+
 #include <Bentley\BeStringUtilities.h>
 #include <DgnPlatform\DgnPlatform.h>
 #include <Geom/GeomApi.h>
@@ -87,5 +87,13 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #define END_UNNAMED_NAMESPACE }
 #endif //!BEGIN_UNNAMED_NAMESPACE
 
+//TM API changes
+#ifdef VANCOUVER_API
+#define GET_POINT_AT_INDEX(drapedLineP, pt, dist, code, sample)\
+                    drapedLineP->GetPointByIndex(pt, dist, code, sample)
+#else
+#define GET_POINT_AT_INDEX(drapedLineP, pt, dist, code, sample)\
+                        drapedLineP->GetPointByIndex(&pt, dist, code, sample)
+#endif
 
 #define scmInterface struct __declspec(novtable)

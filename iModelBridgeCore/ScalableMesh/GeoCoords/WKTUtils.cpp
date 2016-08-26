@@ -11,6 +11,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <STMInternal/Foundations/PrivateStringTools.h>
 #include "WktUtils.h"
 

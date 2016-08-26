@@ -5,6 +5,8 @@ using namespace std;
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <TerrainModel/TerrainModel.h>
+
+
 #include <ScalableMesh\ScalableMeshDefs.h>
 //#include <ScalableMesh\IScalableMeshMoniker.h>
 #include <ScalableMesh\IScalableMeshStream.h>
@@ -15,6 +17,7 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshSourceCollection.h>
 
 #include <ScalableTerrainModel\IMrDTMSourceCollection.h>
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -36,7 +39,13 @@ namespace ScalableMeshSDKexe
                                                  WString&                pio_FirstPath) const;
         };
     
-    bool ParseSourceSubNodes(BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode);
+    
     BENTLEY_NAMESPACE_NAME::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
-                                                  BENTLEY_NAMESPACE_NAME::MrDTM::DTMSourceDataType importedType);        
+                                                  BENTLEY_NAMESPACE_NAME::MrDTM::DTMSourceDataType importedType);   
+                                                       
+    bool ParseSourceSubNodes(BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourceCollection& sourceCollection,                              
+                             bvector<DPoint3d>&                           importClipShape,                             
+                             DRange3d&                                    importRange, 
+                             BeXmlNodeP                                   pTestNode);
+    
     };

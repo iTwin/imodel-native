@@ -67,7 +67,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "Stores\SMStreamingDataStore.h"
 #include <ImagePP\all\h\HIMMosaic.h>
+#ifndef VANCOUVER_API
 #include <DgnPlatform\DesktopTools\ConfigurationManager.h>
+#else
+#include <DgnPlatform\Tools\ConfigurationManager.h>
+#endif
 
 
 #define SCALABLE_MESH_TIMINGS
@@ -546,9 +550,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             }
 
         // Pip ToDo: Create account?
-        DataSourceAccount *account = nullptr;                                    
+            DataSourceAccount *account = nullptr;                                    
         
-        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         

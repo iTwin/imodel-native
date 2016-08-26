@@ -30,8 +30,11 @@ namespace GeoCoordinates {
 class BaseGCS;
 
 typedef RefCountedPtr<BaseGCS>          BaseGCSPtr;
+#ifndef VANCOUVER_API
 typedef BENTLEY_NAMESPACE_NAME::RefCountedCPtr<BaseGCS> BaseGCSCPtr; 
-
+#else
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<BaseGCS> BaseGCSCPtr; 
+#endif
 } // namespace GeoCoordinates
 END_BENTLEY_NAMESPACE
 

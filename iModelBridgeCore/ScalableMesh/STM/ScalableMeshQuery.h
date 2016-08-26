@@ -581,6 +581,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
 
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const override;
+
         virtual void _WriteToFile(WString& filePath) override;
 
         ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex);
@@ -1263,8 +1265,18 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const override;
 
+#ifdef WIP_MESH_IMPORT
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
+#endif
+
         
-    public:         
+    public:   
+#ifdef VANCOUVER_API
+        static ScalableMeshNode<POINT>* CreateItem(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
+            {
+            return new ScalableMeshNode<POINT>(nodePtr);
+            }
+#endif
         ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
         ScalableMeshNode() {};
 
@@ -1363,6 +1375,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
+
                 
             static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
                 {
@@ -1385,7 +1398,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
 
-        // The binary buffer for the texture starts with three int numbers representing texture width, texture height and number of color channels
+        // The binary buffer for each texture starts with three int numbers representing texture width, texture height and number of color channels
         virtual StatusInt _AddTextures(bvector<Byte>& data, bool sibling = false) override;
 
         virtual StatusInt _AddTexturedMesh(bvector<DPoint3d>& vertices, bvector<bvector<int32_t>>& ptsIndices, bvector<DPoint2d>& uv, bvector<bvector<int32_t>>& uvIndices, size_t nTexture) override;

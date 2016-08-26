@@ -7,6 +7,7 @@
 
 DataSourceServiceAzure::DataSourceServiceAzure(DataSourceManager &manager, const DataSourceService::ServiceName & service) : DataSourceService(manager, service)
 {
+    setDefaultTimeout(DataSource::Timeout (DATA_SOURCE_SERVICE_AZURE_DEFAULT_TIMEOUT));
     setDefaultSegmentSize(DATA_SOURCE_SERVICE_AZURE_DEFAULT_SEGMENT_SIZE);
 }
 
@@ -16,6 +17,8 @@ DataSourceAccount * DataSourceServiceAzure::createAccount(const DataSourceAccoun
                                                             // Create an Azure account with credentials
     if ((accountAzure = new DataSourceAccountAzure(account, identifier, key)) == nullptr)
         return accountAzure;
+                                                            // Set up account's default timeout for this type of service
+    accountAzure->setDefaultTimeout(getDefaultTimeout());
                                                             // Set up account's default segment size for this type of service
     accountAzure->setDefaultSegmentSize(getDefaultSegmentSize());
                                                             // Inform Service base classes
@@ -39,4 +42,13 @@ DataSourceBuffer::BufferSize DataSourceServiceAzure::getDefaultSegmentSize(void)
     return defaultSegmentSize;
 }
 
+void DataSourceServiceAzure::setDefaultTimeout(DataSourceBuffer::Timeout time)
+    {
+    defaultTimeout = time;
+    }
+
+DataSourceBuffer::Timeout DataSourceServiceAzure::getDefaultTimeout(void)
+    {
+    return defaultTimeout;
+    }
 

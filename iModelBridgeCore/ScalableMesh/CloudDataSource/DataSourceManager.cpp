@@ -7,6 +7,7 @@
 #include "DataSourceServiceFile.h"
 #include "DataSourceServiceAzure.h"
 #include "include\DataSourceManager.h"
+#include <assert.h>
 
 
 
@@ -62,6 +63,7 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
         if (created)
             *created = false;
                                                             // Return the found DataSource
+        assert(!dataSource->isValid() || dataSource->isEmpty());
         return dataSource;
     }
                                                             // If requested, flag that the DataSource was created
@@ -102,7 +104,7 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
 
     bool deleted;
 
-    Manager<DataSource>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted](typename Manager<DataSource>::Iterator it) -> bool
+    Manager<DataSource>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted]( Manager<DataSource>::Iterator it) -> bool
     {
         if (it->second)
         {

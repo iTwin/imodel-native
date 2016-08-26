@@ -6,6 +6,7 @@
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 
 %include  mdl.mki
 %include $(baseDir)CloudDataSource/CloudDataSourcePolicy.mki

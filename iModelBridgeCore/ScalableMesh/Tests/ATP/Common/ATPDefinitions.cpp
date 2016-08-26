@@ -8,6 +8,7 @@
 #include <wtypes.h>
 #include <random>
 #include <queue>
+#include <thread>
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #undef static_assert
@@ -61,6 +62,9 @@ using namespace std;
 
 #include <GeoCoord/BaseGeoCoord.h>
 
+#include <CloudDataSource/DataSourceManager.h>
+#include <CloudDataSource/DataSourceAccount.h>
+#include <CloudDataSource/DataSourceBuffered.h>
 
 //#define ABORT(ERROR + 1)
 
@@ -1525,7 +1529,7 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, outputDir, result;
+    WString scmFileName, outputDir, mode(L"normal"), result;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
         {
@@ -1537,8 +1541,27 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : outputDir attribute not found\r\n");
         return;
         }
+    if (pTestNode->GetAttributeStringValue(mode, "mode") != BEXML_Success)
+        {
+        printf("mode attribute not found : default \"normal\" mode will be used\r\n");
+        }
 
     double t = clock();
+
+    short groupMode = -1;
+    if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
+        {
+        groupMode = 0;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
+        {
+        groupMode = 1;
+        }
+    else
+        {
+        printf("ERROR : unknown group mode (should be normal or virtual)");
+        return;
+        }
 
     // Check existence of scm file
     StatusInt status;
@@ -1546,7 +1569,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
 
     if (scmFile != 0 && status == SUCCESS)
         {
-        status = scmFile->SaveGroupedNodeHeaders(outputDir);
+        status = scmFile->SaveGroupedNodeHeaders(outputDir, groupMode);
         if (SUCCESS != status) result = L"FAILURE -> could not group node headers";
         }
     else
@@ -4489,34 +4512,58 @@ void PerformStreaming(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
-void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
+void PerformSMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, cloudOutDirPath, result;
+    WString smFileName, cloudContainer, cloudName, result;
+    bool uploadToAzure = false;
     // Parses the test(s) definition:
-    if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
         {
-        printf("ERROR : scmFileName attribute not found\r\n");
+        printf("ERROR : smFileName attribute not found\r\n");
         return;
         }
 
-    if (pTestNode->GetAttributeStringValue(cloudOutDirPath, "cloudOutDirPath") != BEXML_Success || cloudOutDirPath.compare(L"") == 0 || cloudOutDirPath.compare(L"default") == 0)
+    if (pTestNode->GetAttributeBooleanValue(uploadToAzure, "azure") != BEXML_Success)
+        {
+        printf("Saving cloud format to local directory ");
+        }
+    if (uploadToAzure)
+        {
+        if (pTestNode->GetAttributeStringValue(cloudContainer, "container") != BEXML_Success)
+            {
+            printf("ERROR : container attribute not found\r\n");
+            return;
+            }
+        if (pTestNode->GetAttributeStringValue(cloudName, "name") != BEXML_Success)
+            {
+            printf("ERROR : name attribute not found\r\n");
+            return;
+            }
+        printf("Saving to Azure... container: %ls  name: %ls\n", cloudContainer.c_str(), cloudName.c_str());
+        }
+    else if (pTestNode->GetAttributeStringValue(cloudContainer, "localDirectory") != BEXML_Success || cloudContainer.compare(L"") == 0 || cloudContainer.compare(L"default") == 0)
         {
         // Use default path to output files
-        auto position = scmFileName.find_last_of(L".stm");
-        cloudOutDirPath = scmFileName.substr(0, position - 3) + L"_stream\\";
+        auto position = smFileName.find_last_of(L".stm");
+        cloudContainer = smFileName.substr(0, position - 3) + L"_stream\\";
+        printf("%ls\n", cloudContainer.c_str());
         }
+    // remove trailing slashes if any
+    size_t position;
+    if ((position = cloudContainer.find_last_of(L"\\")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
+    if ((position = cloudContainer.find_last_of(L"/")) == cloudContainer.size()-1) cloudContainer = cloudContainer.substr(0, position);
 
     bool allTestPass = true;
     double t = 0;
 
     // Check existence of scm file
     StatusInt status;
-    IScalableMeshPtr scmFile = IScalableMesh::GetFor(scmFileName.c_str(), true, true, status);
+    IScalableMeshPtr smFile = IScalableMesh::GetFor(smFileName.c_str(), true, true, status);
 
-    if (scmFile != 0 && status == SUCCESS)
+    if (smFile != 0 && status == SUCCESS)
         {
         t = clock();
-        status = scmFile->ConvertToCloud(cloudOutDirPath);
+        status = smFile->ConvertToCloud(cloudContainer, cloudName, uploadToAzure);
         t = clock() - t;
         result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> could not convert scm file";
         }
@@ -4527,10 +4574,231 @@ void PerformSCMToCloud(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
 
     fwprintf(pResultFile, L"%s,%s,%s,%0.5f\n",
-             scmFileName.c_str(),
-             cloudOutDirPath.c_str(),
+             smFileName.c_str(),
+             cloudContainer.c_str(),
              allTestPass ? L"true" : L"false",
              (double)t / CLOCKS_PER_SEC
+             );
+
+    fflush(pResultFile);
+    }
+
+void PerformCloudTests(BeXmlNodeP pTestNode, FILE* pResultFile)
+    {
+    WString azureId, azureKey, azureContainer, directory, result;
+
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(azureId, "id") != BEXML_Success)
+        {
+        printf("ERROR : id attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(azureKey, "key") != BEXML_Success)
+        {
+        printf("ERROR : key attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(azureContainer, "container") != BEXML_Success)
+        {
+        printf("ERROR : container attribute not found\r\n");
+        return;
+        }
+    if (pTestNode->GetAttributeStringValue(directory, "directory") != BEXML_Success)
+        {
+        printf("ERROR : directory attribute not found\r\n");
+        return;
+        }
+    printf("Saving to Azure... container: %ls  directory: %ls", azureContainer.c_str(), directory.c_str());
+
+    StatusInt status = SUCCESS;
+    bool allTestPass = true;
+    double t = 0, t_up = 0, t_down = 0;
+
+    // remove trailing slashes if any
+    size_t position;
+    if ((position = azureContainer.find_last_of(L"\\")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
+    if ((position = azureContainer.find_last_of(L"/")) == azureContainer.size() - 1) azureContainer = azureContainer.substr(0, position);
+
+    DataSourceManager dataSourceManager;
+
+    DataSourceAccount::AccountIdentifier        accountIdentifier(azureId.c_str());
+    DataSourceAccount::AccountKey               accountKey(azureKey.c_str());
+    DataSourceService                       *   serviceAzure = nullptr;
+    DataSourceAccount                       *   accountAzure = nullptr;
+
+    // Get the Azure service
+    if (status == SUCCESS)
+        {
+        serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        if (serviceAzure == nullptr)
+            status = ERROR;
+        }
+
+    // Create an account on Azure
+    if (status == SUCCESS)
+        {
+        accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+        if (accountAzure == nullptr)
+            status = ERROR;
+        }
+
+    // Set up default container
+    if (status == SUCCESS)
+        {
+        accountAzure->setPrefixPath(DataSourceURL((azureContainer + L"/" + directory).c_str()));
+        }
+
+    const size_t buffer_size = 152 * 1024;
+
+    // create buffer of data to upload
+    DataSource::Buffer* buffer = nullptr;
+
+    if (status == SUCCESS)
+        {
+        buffer = new DataSource::Buffer[buffer_size]; // should be split into 4 segments of 32 KB + 1 segment of 24 KB
+
+                                                      // fill buffer with data
+        int32_t counter = 0;
+        for (size_t offset = 0; offset < buffer_size; offset += sizeof(counter), counter++)
+            {
+            memcpy(buffer + offset, &counter, sizeof(counter));
+            }
+        }
+
+    auto uploadToAzureTask = [&](size_t threadId, bool segmented)
+        {
+        // upload data to azure
+
+        if (status == SUCCESS)
+            {
+            t = clock();
+
+            DataSource *dataSource = accountAzure->getOrCreateThreadDataSource();
+            if (dataSource == nullptr)
+                {
+                status = ERROR;
+                }
+
+            DataSourceMode writeMode = segmented ? DataSourceMode_Write_Segmented : DataSourceMode_Write;
+            wchar_t name_buffer[10000];
+            swprintf(name_buffer, L"data_%llu.bin", threadId);
+            
+            DataSourceURL    dataSourceURL(name_buffer);
+
+            if (status == SUCCESS && dataSource->open(dataSourceURL, writeMode).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->write(buffer, buffer_size).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->close().isFailed())
+                {
+                status = ERROR;
+                }
+            t_up = clock() - t;
+            }
+        };
+    const int numThreads = 1;
+    thread* threads = new thread[numThreads];
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(uploadToAzureTask, i, true));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(uploadToAzureTask, i, false));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    auto downloadFromAzureTask = [&](size_t threadId, bool segmented)
+        {
+        // download data from azure
+        std::unique_ptr<DataSource::Buffer[]>   dest = nullptr;
+        DataSource::DataSize                    readSize = 0;
+        if (status == SUCCESS)
+            {
+            DataSourceBuffer::BufferSize        destSize = 20 * 1024 * 1024;
+
+            t = clock();
+
+            DataSource* dataSource = accountAzure->getOrCreateThreadDataSource();
+            if (dataSource == nullptr)
+                {
+                status = ERROR;
+                }
+
+            wchar_t name_buffer[10000];
+
+            swprintf(name_buffer, L"data_%llu.bin", threadId);
+            DataSourceURL    dataSourceURL(name_buffer);
+            if (status == SUCCESS && dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                status = ERROR;
+                }
+
+            // reserve enough space to receive data
+            dest.reset(new unsigned char[destSize]);
+
+            // Use segmented download (provide exact buffer size)
+            if (status == SUCCESS && dataSource->read(dest.get(), destSize, readSize, segmented ? buffer_size : 0).isFailed())
+                {
+                status = ERROR;
+                }
+
+            if (status == SUCCESS && dataSource->close().isFailed())
+                {
+                status = ERROR;
+                }
+            t_down = clock() - t;
+
+            // compare result
+            if (status == SUCCESS)
+                {
+                status = (dest != nullptr && buffer_size == readSize && 0 == memcmp(buffer, dest.get(), readSize)) ? SUCCESS : ERROR;
+                }
+            }
+        };
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(downloadFromAzureTask, i, true));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    for (int i = 0; i < numThreads; i++)
+        {
+        threads[i] = thread(bind(downloadFromAzureTask, i, false));
+        }
+    for (int i = 0; i < numThreads; i++)
+        {
+        if (threads[i].joinable()) threads[i].join();
+        }
+
+    delete[] threads;
+    result = SUCCESS == status ? L"SUCCESS" : L"FAILURE -> Azure tests not completed";
+
+    fwprintf(pResultFile, L"%s,%s,%s,%0.5f,%0.5f\n",
+             azureContainer.c_str(),
+             directory.c_str(),
+             allTestPass ? L"true" : L"false",
+             (double)t_up / CLOCKS_PER_SEC,
+             (double)t_down / CLOCKS_PER_SEC
              );
 
     fflush(pResultFile);

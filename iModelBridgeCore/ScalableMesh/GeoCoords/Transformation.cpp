@@ -10,10 +10,10 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/GeoCoords/Transformation.h>
 #include <ScalableMesh/Foundations/Exception.h>
-
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include "TransformationUtils.h"
 #include "TransformationInternal.h"
 #include "TransfoModelMixinBase.h"

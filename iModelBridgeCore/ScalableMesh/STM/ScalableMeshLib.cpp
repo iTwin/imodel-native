@@ -42,6 +42,8 @@ void ScalableMeshLib::Host::Initialize()
     m_scalableTerrainModelAdmin = &_SupplyScalableMeshAdmin();  
     InitializeProgressiveQueries();
     RegisterPODImportPlugin();
+        BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
+        GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
     }
     
@@ -120,14 +122,18 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     
     // Register Moniker
 
-    //InitScalableMeshMonikerFactories();
+    
 
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     BeFileName tempDir;
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
+#ifdef VANCOUVER_API
+    BeSQLiteLib::Initialize(tempDir.GetNameUtf8().c_str());
+#else
     BeSQLiteLib::Initialize(tempDir);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

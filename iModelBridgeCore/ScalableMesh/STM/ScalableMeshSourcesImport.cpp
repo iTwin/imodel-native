@@ -324,6 +324,7 @@ void SourcesImporter::Impl::ParseFeatureOrPointBuffer(unsigned char* buffer, siz
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
     {
+#ifndef VANCOUVER_API
     STARTUPINFOA info = { sizeof(info) };
 
     BeFileName sdkExePath(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -394,6 +395,7 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
             }
 
         delete[] buffer;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -403,7 +405,7 @@ void SourcesImporter::Impl::ImportFromSDK(Utf8CP inputFileName)
 SMStatus SourcesImporter::Impl::ImportSDKSources()
     {
     if (m_sdkSources.empty()) return S_SUCCESS;
-
+#ifndef VANCOUVER_API
     BeFileName tempDir(T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName());
     BeFileName tempSourcesToImportFile = tempDir;
     tempSourcesToImportFile.AppendUtf8("tempTerrainSourceImport.xml");
@@ -514,7 +516,9 @@ SMStatus SourcesImporter::Impl::ImportSDKSources()
     fclose(pOutputFileStream);
 
     ImportFromSDK(tempSourcesToImportFile.GetNameUtf8().c_str());
-
+#else
+assert(!"Not available on this platform");
+#endif
     return S_SUCCESS;
     }
 

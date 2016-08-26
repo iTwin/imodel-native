@@ -14,6 +14,7 @@
 #include "ImagePPHeaders.h" 
 extern bool   GET_HIGHEST_RES;
 
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 /*------------------------------------------------------------------+
 | Include of the current class header                               |
 +------------------------------------------------------------------*/
@@ -362,9 +363,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::ConvertToCloud(const WString& pi_pOutputDirPath) const
+int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, bool uploadToAzure) const
     {
-    return _ConvertToCloud(pi_pOutputDirPath);
+    return _ConvertToCloud(outContainerName, outDatasetName, uploadToAzure);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -378,9 +379,9 @@ int IScalableMesh::LoadAllNodeData(size_t& nbLoadedNodes, int level) const
     return _LoadAllNodeData(nbLoadedNodes, level);
 }
 
-int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
+int IScalableMesh::SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
-    return _SaveGroupedNodeHeaders(pi_pOutputDirPath);
+    return _SaveGroupedNodeHeaders(pi_pOutputDirPath, pi_pGroupMode);
     }
 #endif
 
@@ -572,7 +573,7 @@ bool ScalableMeshBase::LoadGCSFrom()
 /*----------------------------------------------------------------------------+
 |ScalableMesh::ScalableMesh
 +----------------------------------------------------------------------------*/
-DataSourceStatus ScalableMeshBase::InitializeAzureTest(void)
+DataSourceStatus ScalableMeshBase::InitializeAzureTest(const WString& directory)
 {
     DataSourceStatus                            status;
     if (s_stream_from_disk)
@@ -586,6 +587,8 @@ DataSourceStatus ScalableMeshBase::InitializeAzureTest(void)
         // Create an account on the file service streaming
         if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+
+        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
 
         this->SetDataSourceAccount(accountLocalFile);
     }
@@ -637,7 +640,7 @@ DataSourceStatus ScalableMeshBase::InitializeAzureTest(void)
                                                             // Set up local file based caching
     accountAzure->setCaching(*accountCaching, DataSourceURL());
                                                             // Set up default container
-    accountAzure->setPrefixPath(DataSourceURL(L"scalablemeshtest"));
+    accountAzure->setPrefixPath(DataSourceURL((WString(L"scalablemeshtest/") + directory).c_str()));
     }
 
     return status;
@@ -817,22 +820,30 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                 if (!isSingleFile)
                     {
+                    bool isVirtualGroups = false; // Streaming without node grouping by default
+                    isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
+
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
                     auto position = m_path.find_last_of(L".stm");
-                    auto filenameWithoutExtension = m_path.substr(0, position - 3);
+                    //auto filenameWithoutExtension = m_path.substr(0, position - 3);
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
                     WString azureDatasetName(L"marseille\\");
-                    //WString azureDatasetName(L"quebeccityvg\\");
+                    //WString azureDatasetName(L"quebeccity2\\");
+                    //WString azureDatasetName(L"quebectest2/");
                     // NEEDS_WORK_SM - Check existence of the following directories
                     WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
 
-                    if (this->InitializeAzureTest().isFailed())
+                    if (this->InitializeAzureTest(streamingSourcePath).isFailed())
                         {
                         return BSIERROR; // Error loading layer gcs
                         }
-                                        
-                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
 
+                        
+#ifndef VANCOUVER_API                                       
+                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceAccount(), AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
+#else
+                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceAccount(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);                    
+#endif
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
                                                       10000,
@@ -845,8 +856,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     }
                 else
-                    {                                                                                                                       
+                    {
+#ifndef VANCOUVER_API                       
                     dataStore = new SMSQLiteStore<Extent3dType>(m_smSQLitePtr);
+#else
+                    dataStore = SMSQLiteStore<Extent3dType>::Create(m_smSQLitePtr);
+#endif
 
                     m_scmIndexPtr = new MeshIndexType(dataStore, 
                                                       ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
@@ -862,9 +877,12 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
             if (isSingleFile && m_scmIndexPtr->IsTerrain())
                 {
-                BeFileName projectFilesPath(m_baseExtraFilesPath);
+
+                BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
+
                 bool result = dataStore->SetProjectFilesPath(projectFilesPath);
                 assert(result == true);
+
                                                                  
                 ClipRegistry* registry = new ClipRegistry(dataStore);
                 m_scmIndexPtr->SetClipRegistry(registry);
@@ -1106,7 +1124,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     bvector<IScalableMeshNodePtr> returnedNodes;
     params->SetLevel(m_scMesh->GetTerrainDepth());
 
+#ifndef VANCOUVER_API
     Transform uorsToStorage = m_transformToUors.ValidatedInverse();
+#else
+    Transform uorsToStorage;
+    uorsToStorage.InverseOf(m_transformToUors);
+#endif
     bvector<DPoint3d> transPts(numPoints);
     memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
     uorsToStorage.Multiply(&transPts[0], numPoints);
@@ -1120,7 +1143,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
         double flatAreaTile = 0;
         double slopeAreaTile = 0;
         BcDTMPtr dtmP = node->GetBcDTM();
-        if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+        if (dtmP != nullptr) 
+#ifdef VANCOUVER_API
+            dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, &transPts[0], numPoints);
+#else
+            dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, &transPts[0], numPoints);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1138,7 +1166,12 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     bvector<IScalableMeshNodePtr> returnedNodes;
     params->SetLevel(m_scMesh->GetTerrainDepth());
 
+#ifndef VANCOUVER_API
     Transform uorsToStorage = m_transformToUors.ValidatedInverse();
+#else
+    Transform uorsToStorage;
+    uorsToStorage.InverseOf(m_transformToUors);
+#endif
     bvector<DPoint3d> transPts(numPoints);
     memcpy(&transPts[0], pts, numPoints*sizeof(DPoint3d));
     uorsToStorage.Multiply(&transPts[0], numPoints);
@@ -1182,7 +1215,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     {
                     if (dtmP != nullptr)
                         {
+#ifdef VANCOUVER_API
+                        if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+#else
                         if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+#endif
                             {
                             flatAreaTile += flat;
                             slopeAreaTile += slope;
@@ -1191,7 +1228,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     }
             }
         else
-          if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile,  0, 0);
+#ifdef VANCOUVER_API
+          if (dtmP != nullptr) dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile,  0, 0);
+#else
+            if (dtmP != nullptr) dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0, 0);
+#endif
         flatArea += flatAreaTile;
         slopeArea += slopeAreaTile;
         }
@@ -1247,7 +1288,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                             {
                             if (dtmP != nullptr)
                                 {
+                                #ifdef VANCOUVER_API
+                                if (DTM_SUCCESS == dtmP->CalculateSlopeArea(flat, slope, &lineString[0], (int)lineString.size()))
+                                #else
                                 if (DTM_SUCCESS == dtmP->CalculateSlopeArea(&flat, &slope, &lineString[0], (int)lineString.size()))
+                                #endif
                                     {
                                     retval = DTM_SUCCESS;
                                     flatAreaTile += flat;
@@ -1258,7 +1303,11 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
                     
                     }
                 else
+                #ifdef VANCOUVER_API
+                if (dtmP->CalculateSlopeArea(flatAreaTile, slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #else
                 if (dtmP->CalculateSlopeArea(&flatAreaTile, &slopeAreaTile, 0,0) == DTM_SUCCESS) retval = DTM_SUCCESS;
+                #endif
                 
                 flatAreaFull += flatAreaTile;
                 slopeAreaFull += slopeAreaTile;
@@ -1895,9 +1944,19 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
     {
     auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
-    if (m_scmIndexPtr == nullptr) return new ScalableMeshNode<POINT>(ptr);
+    if (m_scmIndexPtr == nullptr) 
+ #ifndef VANCOUVER_API
+        return new ScalableMeshNode<POINT>(ptr);
+#else
+return  ScalableMeshNode<POINT>::CreateItem(ptr);
+#endif
     auto nodeP = m_scmIndexPtr->GetRootNode();
+ #ifndef VANCOUVER_API
     return new ScalableMeshNode<POINT>(nodeP);
+#else
+return  ScalableMeshNode<POINT>::CreateItem(nodeP);
+#endif
+
     }
 
 
@@ -2012,14 +2071,48 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_ConvertToCloud
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& pi_pOutputDirPath) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, bool uploadToAzure) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
 
-    return m_scmIndexPtr->SaveMeshToCloud(this->GetDataSourceAccount(), pi_pOutputDirPath, false);
+    DataSourceAccount *   account;
+    if (uploadToAzure)
+        {
+        // create an Azure account to upload this mesh to
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
+        DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+        DataSourceService                       *   serviceAzure;
+
+        // Get the Azure service
+        serviceAzure = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
+        if (serviceAzure == nullptr)
+            return ERROR_SERVICE_DOES_NOT_EXIST;
+        // Create an account on Azure
+        account = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
+        if (account == nullptr)
+            return ERROR_ACCOUNT_DISABLED;
+        }
+    else
+        {
+        DataSourceService  *   serviceLocalFile;
+
+        if ((serviceLocalFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+            return ERROR_SERVICE_DOES_NOT_EXIST;
+
+        // Create an account on the file service streaming
+        if ((account = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+            return ERROR_ACCOUNT_DISABLED;
+        }
+
+    assert(account != nullptr);
+
+    // Set up default container
+    account->setPrefixPath(DataSourceURL((outContainerName + L"/" + outDatasetName).c_str()));
+
+    return m_scmIndexPtr->SaveMeshToCloud(account, false);
     }
 
 #ifdef SCALABLE_MESH_ATP
@@ -2044,15 +2137,18 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeData(size_t& nbLoade
 /*----------------------------------------------------------------------------+
 |MrDTM::_GroupNodeHeaders
 +----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const
+template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
     if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
     s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
+    s_is_virtual_grouping = pi_pGroupMode == SMNodeGroup::VIRTUAL;
 
-    m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, true);
+    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMNodeGroup::VIRTUAL);
+
+    m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
     return SUCCESS;
     }
 #endif

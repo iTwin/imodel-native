@@ -14,6 +14,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 //#include <GeoCoord/BaseGeoCoord.h>
+#include <ScalableMesh/GeoCoords/GCS.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <TerrainModel/Core/bcDTMClass.h>
@@ -325,6 +326,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const = 0;
 
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray) const = 0;
+
         virtual void _WriteToFile(WString& filePath) = 0;
 
     public: 
@@ -354,6 +357,8 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
+
+        BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT void WriteToFile(WString& filePath);
 
@@ -473,6 +478,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual bool _RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const = 0;
 
+#ifdef WIP_MESH_IMPORT
+        virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) = 0;
+#endif
+
                 
     public:
         static const BENTLEY_SM_EXPORT ScalableMeshTextureID UNTEXTURED_PART = 0;
@@ -535,6 +544,10 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query, bvector<IScalableMeshNodePtr>& nodes) const;
 
         BENTLEY_SM_EXPORT bool RunQuery(ISMPointIndexQuery<DPoint3d, DRange3d>& query) const;
+
+#ifdef WIP_MESH_IMPORT
+        BENTLEY_SM_EXPORT bool IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata);
+#endif
     };
 
 struct SmCachedDisplayMesh;

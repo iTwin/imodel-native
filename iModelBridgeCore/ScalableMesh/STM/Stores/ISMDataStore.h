@@ -18,6 +18,10 @@ need be.
 
 
 ////MST_TS
+#ifdef VANCOUVER_API
+#include "..\ImagePPHeaders.h"
+#endif
+
 #include <ImagePP\all\h\HFCPtr.h>
 #include <ImagePP\all\h\HPMDataStore.h>
 

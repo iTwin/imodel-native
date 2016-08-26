@@ -6,7 +6,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 const SchemaVersion ScalableMeshDb::CURRENT_VERSION = SchemaVersion(1, 1, 0, 0);
 static bool s_checkShemaVersion = false;
 
-
+#ifndef VANCOUVER_API
 DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     {
     /*
@@ -26,6 +26,7 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
         */
     return BE_SQLITE_OK;
     }
+#endif
 
 DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     {        
@@ -36,8 +37,11 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     CachedStatementPtr stmt;
     GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version) VALUES(?)");
     Utf8String versonJson(ScalableMeshDb::CURRENT_VERSION.ToJson());
-
-    stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
+#ifndef VANCOUVER_API
+       stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
+#else
+        stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
+#endif
     DbResult status = stmt->Step();
     status = status;
         

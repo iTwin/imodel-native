@@ -14,7 +14,7 @@
 #ifndef INCLUDED_FROM_TRANSFORMATION_CPP 
     #error "See note" 
 #endif
-
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 // NOTE: This header is expected to be included only inside specific compilation units and 
 // so has access to all this compilation unit included headers (as long as they are included
 // prior to inclusion of this one.

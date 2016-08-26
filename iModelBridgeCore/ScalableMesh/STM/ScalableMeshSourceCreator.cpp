@@ -459,12 +459,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
-
+        
+#ifndef VANCOUVER_API
+//apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
     if (!PolygonOps::IsConvex(m_filterPolygon))
         {
             pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
         }
-
+#endif
 
 #ifdef SCALABLE_MESH_ATP
     s_getImportPointsDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;

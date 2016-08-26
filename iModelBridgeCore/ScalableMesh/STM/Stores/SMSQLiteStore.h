@@ -59,7 +59,10 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
         
-
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create (SMSQLiteFilePtr database)
+        {
+        return new SMSQLiteStore(database);
+        }
         
     };
 
@@ -71,7 +74,9 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
         SMIndexNodeHeader<EXTENT>* m_nodeHeader;
         SMStoreDataType            m_dataType;
 
-        size_t LoadTextureBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID);
+        void   GetCompressedBlock(bvector<uint8_t>& nodeData, size_t& uncompressedSize, HPMBlockID blockID);
+
+        size_t DecompressTextureData(bvector<uint8_t>& ptData, DATATYPE* DataTypeArray, size_t uncompressedSize);
 
         HPMBlockID StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID);
 
@@ -88,6 +93,8 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
         virtual size_t GetBlockDataCount(HPMBlockID blockID, SMStoreDataType dataType) const override;
             
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+
+        virtual size_t LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 

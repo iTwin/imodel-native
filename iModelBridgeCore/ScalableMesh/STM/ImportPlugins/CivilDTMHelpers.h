@@ -11,8 +11,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+#ifndef VANCOUVER_API
 #include "..\IDTMFeatureArray.h"
 #include "..\HPUArray.h"
+#else
+#include <ImagePP/all/h/IDTMFeatureArray.h>
+#include <ImagePP/all/h/HPUArray.h>
+#endif
 
 #include <TerrainModel/Core/bcDTMClass.h>
 

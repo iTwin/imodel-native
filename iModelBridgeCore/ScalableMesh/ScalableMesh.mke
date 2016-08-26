@@ -8,6 +8,8 @@
      
 baseDir         = $(_MakeFilePath)
 
+
+
 %include  mdl.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
 %include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
@@ -30,7 +32,6 @@ dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
 always:
     !~@mkdir $(o)
 
-%message $(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)ScalableMesh
 #----------------------------------------------------------------------
 #   Symlink APIs
 #----------------------------------------------------------------------
@@ -337,7 +338,7 @@ $(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDep
 
 
 #   Importer from DcStmCore
-$(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)DGNLevelImporter$(oext) : $(importerPluginsDir)DGNLevelImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -349,7 +350,7 @@ $(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHH
 
 #$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter$(oext) : $(importerPluginsDir)PODImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -405,29 +406,13 @@ $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaun
 
 cppObjects =% $(MultiCompileObjectList)
 
-#FileTypeControl =
-#CCPchOpts =
-#CPchOpts =
-#PublicApiIncludes =
-#cIncs = -I$(BuildContext)PublicAPI/DgnV8Api/
-
-
-#%include MultiCppCompileRule.mki
-
-#$(o)DgnInterface$(oext) : $(baseDir)ScalableMeshDgn\DgnInterface.cpp $(baseDir)ScalableMeshDgn\DgnInterface.h ${MultiCompileDepends}
-
-#$(o)ElementType$(oext) : $(baseDir)ScalableMeshDgn\ElementType.cpp $(baseDir)ScalableMeshDgn\ElementType.h ${MultiCompileDepends}
-
-#%include MultiCppCompileGo.mki
-
-#nonPortableObjects =% $(MultiCompileObjectList)
-#cppObjects = $(nonPortableObjects)
-
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(cppObjects)
+
+#SCALABLE_MESH_DGN=1
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \

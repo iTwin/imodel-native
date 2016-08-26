@@ -75,9 +75,10 @@ public:
     virtual            DataSourceStatus             close               (void) = 0;
 
     virtual            DataSourceStatus             read                (Buffer *dest,   DataSize destSize, DataSize &readSize, DataSize size = 0) = 0;
-    virtual            DataSourceStatus             write               (Buffer *source, DataSize size) = 0;
+    virtual            DataSourceStatus             write               (const Buffer *source, DataSize size) = 0;
 
     virtual            bool                         isValid             (void);
+    virtual            bool                         isEmpty             (void);
 
     virtual            void                         setTimeout          (Timeout timeMilliseconds);
     virtual            Timeout                      getTimeout          (void);

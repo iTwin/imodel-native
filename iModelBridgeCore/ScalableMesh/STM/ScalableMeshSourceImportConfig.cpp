@@ -40,6 +40,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SourceImportConfig::Impl
     {
+    friend class Internal::Config;
     EditListener*                   m_editListenerP;
     ImportSequence                  m_sequence;
     RefCountedPtr<ImportConfig>                    m_config;

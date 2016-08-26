@@ -60,7 +60,7 @@ class CivilElementSourceDecorator : public SourceBase
     {
     friend class                    CivilElementSourceCreator;
 
-    auto_ptr<SourceBase>            m_decoratedP;
+    std::auto_ptr<SourceBase>            m_decoratedP;
     ElementHandle                      m_elHandle;
 
     explicit                        CivilElementSourceDecorator            (SourceBase*                 decoratedP,
@@ -87,7 +87,7 @@ class CivilElementSourceDecorator : public SourceBase
 
 
         ContentConfig contentConfig;
-        contentConfig.push_back(storageGCSConfig);
+        contentConfig.SetGCSConfig(storageGCSConfig);
 
         if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
             throw CustomError(L"Error configuring descriptor!");

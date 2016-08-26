@@ -8,19 +8,29 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
+#include <ScalableMesh/ScalableMeshDefs.h>
 #include <Bentley\Bentley.h>
 #include <GeoCoord/BaseGeoCoord.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
-#include <ScalableMesh/ScalableMeshDefs.h>
+
 #include <Bentley/RefCounted.h>
+#undef static_assert
+
+#ifndef VANCOUVER_API // HIMMosaic apparently moved into the imagepp namespace in dgndb
 namespace BENTLEY_NAMESPACE_NAME
     {
     namespace ImagePP
         {
+#endif
         class HIMMosaic;
+
+#ifndef VANCOUVER_API
         }
     }
-
+#define MOSAIC_TYPE BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic
+#else 
+#define MOSAIC_TYPE HIMMosaic
+#endif
 //ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume)
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -119,12 +129,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _ConvertToCloud(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, bool uploadToAzure) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
-        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
 #endif
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
@@ -151,7 +161,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
-        virtual void                               _TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP, Transform unitTransform=Transform::FromIdentity()) = 0;
+        virtual void                               _TextureFromRaster(MOSAIC_TYPE* mosaicP, Transform unitTransform=Transform::FromIdentity()) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
@@ -164,7 +174,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(BENTLEY_NAMESPACE_NAME::ImagePP::HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
+        void TextureFromRaster(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
@@ -259,7 +269,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& outContainerName, WString outDatasetName = L"", bool uploadToAzure = false) const;
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
@@ -283,7 +293,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
-        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
 
     };
 
