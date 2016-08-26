@@ -846,12 +846,16 @@ TEST_F(ElementUriTests, Test1)
     DgnCategoryId catId = DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *db);
 
     DgnElementCPtr el;
+    DgnElementCPtr elNoProps;
     if (true)
         {
         TestElementPtr testel = TestElement::Create(*db, mid, catId, CreateCode(*db, "TestNS", "E1"));
         testel->SetTestElementProperty("foo");
         el = testel->Insert();
         ASSERT_TRUE(el.IsValid());
+
+        elNoProps = TestElement::Create(*db, mid, catId)->Insert();;
+        ASSERT_TRUE(elNoProps.IsValid());
 
         db->SaveChanges();
         }
@@ -899,6 +903,15 @@ TEST_F(ElementUriTests, Test1)
         BeTest::SetFailOnAssert(false);
         ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestAuthority&N=TestNS").IsValid());
         BeTest::SetFailOnAssert(true);
+        }
+
+    if (true)
+        {
+        // fallBackOnDgnDbId
+        Utf8String dbUri;
+        ASSERT_EQ(BSISUCCESS, db->Elements().CreateElementUri(dbUri, *elNoProps, true, true));
+        ASSERT_TRUE(Utf8String::npos == dbUri.find('?')) << " This URI should not contain a query (just an ID)";
+        ASSERT_TRUE(elNoProps->GetElementId() == db->Elements().QueryElementIdByURI(dbUri.c_str()));
         }
 
     }

@@ -695,6 +695,23 @@ static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnElementId queryElementIdFromDgnDbURI(DgnDbR db, DgnResourceURI& uri, DgnResourceURI::PathParser& pathParser)
     {
+    switch (pathParser.ParseNextToken().GetType())
+        {
+        default: //  Unsupported path 
+            {
+            BeAssert(false && "bad DgnDb URI - unrecognized resource type");
+            return DgnElementId();
+            }
+
+        case DgnResourceURI::UriToken::TYPE_UInt64: //  /DgnElements/elementid
+            {
+            return DgnElementId(pathParser.GetCurToken().GetUInt64());
+            }
+
+        case DgnResourceURI::UriToken::TYPE_EOS:
+            break;  // It's a query. Handled below.
+        }
+
     DgnResourceURI::QueryParser queryParser(uri.GetQuery());
     DgnResourceURI::UriToken key, value;
     char logical;
