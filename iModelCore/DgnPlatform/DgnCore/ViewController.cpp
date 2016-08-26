@@ -2341,6 +2341,7 @@ DgnDbStatus ViewController::SaveDefinition()
     if (anyInserts)
         {
         _FixUpDefinitionRelationships();
+        _StoreToDefinition();  
         GetDefinitionR().Write();
         }
     return status;

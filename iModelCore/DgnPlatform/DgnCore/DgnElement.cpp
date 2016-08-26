@@ -2405,9 +2405,9 @@ DgnDbStatus DgnElement::SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP 
     DgnDbStatus status;
     if (DgnDbStatus::Success != (status = SetPropertyValue(yawName, angles.GetYaw().Degrees())))
         return status;
-    if (DgnDbStatus::Success != (status = SetPropertyValue(pitchName, angles.GetYaw().Degrees())))
+    if (DgnDbStatus::Success != (status = SetPropertyValue(pitchName, angles.GetPitch().Degrees())))
         return status;
-    if (DgnDbStatus::Success != (status = SetPropertyValue(rollName, angles.GetYaw().Degrees())))
+    if (DgnDbStatus::Success != (status = SetPropertyValue(rollName, angles.GetRoll().Degrees())))
         return status;
     return DgnDbStatus::Success;
     }
