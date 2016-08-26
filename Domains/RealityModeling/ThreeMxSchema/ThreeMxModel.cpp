@@ -459,7 +459,7 @@ RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, Transform
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator& generator, TileGenerator::ITileCollector& collector, TransformCR transformDbToTile) 
+TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
     
@@ -468,9 +468,10 @@ TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator& generator,
 
     Transform               modelToTile = Transform::FromProduct (transformDbToTile, scene->GetLocation());
     
-    RefCountedPtr<PublishTileNode>  rootTile = tileFromNode ((NodeR) *scene->GetRoot(), *scene, modelToTile, 0, 0, nullptr);
+    RefCountedPtr<PublishTileNode>  rootPublishTile = tileFromNode ((NodeR) *scene->GetRoot(), *scene, modelToTile, 0, 0, nullptr);
     
-    return generator.CollectTiles (*rootTile, collector);
+    rootTile = rootPublishTile;
+    return TileGenerator::Status::Success;
     }
 
 

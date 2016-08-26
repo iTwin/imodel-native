@@ -167,7 +167,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : DgnDomain
 // and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : SpatialModel, IPublishModelTiles
+struct ThreeMxModel : SpatialModel, IGenerateMeshTiles
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -189,8 +189,7 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(FitContextR) override;
-    THREEMX_EXPORT TileGenerator::Status _PublishModelTiles(TileGeneratorR generator, TileGenerator::ITileCollector& collector, TransformCR transformToTile) override;
-
+    THREEMX_EXPORT TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) override;
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
 
