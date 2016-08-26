@@ -7,7 +7,8 @@ DECLARATION_END
 #define IMPLEMENTATION_BEGIN @implementation __FIXTURE__
 IMPLEMENTATION_BEGIN
 
-#define SETUP_METHOD    - (void)setUp { [super setUp]; [__FIXTURE__ begtest_initialize]; }
+// XCTest callbacks that are invoked before/after each test (i.e., these are the test fixture "instance methods")
+#define SETUP_METHOD    - (void)setUp { [super setUp]; }
 SETUP_METHOD
 
 #define TEARDOWN_METHOD - (void)tearDown { [super tearDown];  }
@@ -17,13 +18,13 @@ TEARDOWN_METHOD
 #define BE_TEST_SETUP_JNI_WRAPPER(JTC)
 #define BE_TEST_TEARDOWN_JNI_WRAPPER(JTC)
 
-// Define Objective-C setup and teardown functions that are detected by the UnitTest framework 
+// XCTest callbacks that are invoked before/after each group of tests (i.e., these are the test fixture "class methods")
 #undef  BE_TEST_SETUP
-#define BE_TEST_SETUP(TC)       + (void)setUp { BeTest::SetUpTestCase(#TC); }   
+#define BE_TEST_SETUP(TC)       + (void)setUp { [__FIXTURE__ begtest_initialize]; BeTest::SetUpTestCase(#TC); }   
 #undef  BE_TEST_TEARDOWN
-#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { BeTest::TearDownTestCase(#TC); }
+#define BE_TEST_TEARDOWN(TC)    + (void)tearDown { BeTest::TearDownTestCase(#TC); [__FIXTURE__ begtest_uninitialize]}
 
-// Define Objective-C functions that are detected by the UnitTest framework and that call the test runner functions
+// XCTest callback that runs an individual test
 #undef  BE_TEST_RUNNER
 #define BE_TEST_RUNNER(TC,TN)   extern "C" int BETEST_TEST_RUNNER_FUNC(TC,TN) (); \
                                 - (void) test##TN { \
