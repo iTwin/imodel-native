@@ -367,8 +367,6 @@ $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(Vi
 
 $(CoreObjs)TileTree$(oext) :                        $(DgnCoreDir)TileTree.cpp $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 
-$(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
-
 $(CoreObjs)LinkElement$(oext) :                     $(DgnCoreDir)LinkElement.cpp $(DgnPlatformAPISrc)LinkElement.h ${MultiCompileDepends}
 
 $(CoreObjs)VolumeElement$(oext) :                   $(DgnCoreDir)VolumeElement.cpp $(DgnPlatformAPISrc)VolumeElement.h ${MultiCompileDepends}
