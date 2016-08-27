@@ -79,6 +79,8 @@ static Logger logger;
 
 #endif
 
+//#define DEACTIVATE_THREADING
+
 /*==================================================================*/
 /*                   IScalableMeshProgressiveQueryEngine            */
 /*==================================================================*/
@@ -604,7 +606,11 @@ public:
 
     QueryProcessor()
         {        
+#ifndef DEACTIVATE_THREADING
         m_numWorkingThreads = std::thread::hardware_concurrency() - 2;        
+#else
+        m_numWorkingThreads = 1;        
+#endif
         m_workingThreads = new std::thread[m_numWorkingThreads];
         m_areWorkingThreadRunning = new std::atomic<bool>[m_numWorkingThreads];
 
@@ -873,8 +879,9 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     {    
     for (auto& node : m_overviewNodes)
         {
-        assert(node->IsLoaded() == true);
-
+        //Empty node are never loaded
+        if (node->IsLoaded() == false) continue;
+        
         if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips))
             {
             node->ApplyAllExistingClips();
@@ -886,13 +893,13 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
     }
 
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
-    {            
+    {                
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
     assert(meshNode->IsLoaded() == false);
     meshNode->ApplyAllExistingClips();
     meshNode->RemoveDisplayDataFromCache();                    
     meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);                               
-    assert(meshNode->HasCorrectClipping(m_activeClips));  
+    assert(meshNode->IsLoaded() == false || meshNode->HasCorrectClipping(m_activeClips));  
 
     m_overviewNodes.push_back(meshNode);
         
@@ -1052,8 +1059,11 @@ class NewQueryStartingNodeProcessor
 
         NewQueryStartingNodeProcessor()
             {
+#ifndef DEACTIVATE_THREADING
             m_numWorkingThreads = std::thread::hardware_concurrency() - 2;            
-
+#else
+            m_numWorkingThreads = 1;            
+#endif
             m_lowerResOverviewNodes.resize(m_numWorkingThreads);
             m_requiredMeshNodes.resize(m_numWorkingThreads);        
             m_toLoadNodes.resize(m_numWorkingThreads);
