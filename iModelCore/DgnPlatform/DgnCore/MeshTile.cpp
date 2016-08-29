@@ -1189,7 +1189,6 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGraphic& gf) 
     {
-#define MESHTILE_FACET_BODIES
 #if !defined(MESHTILE_FACET_BODIES)
     ISolidKernelEntityPtr clone = const_cast<ISolidKernelEntityP>(&solid);
     DRange3d range = clone->GetEntityRange();
@@ -1200,15 +1199,14 @@ bool TileGeometryProcessor::_ProcessBody(ISolidKernelEntityCR solid, SimplifyGra
     solidTo3mx.Multiply(range, range);
     m_range.Extend(range);
 
-    TileDisplayParams displayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
-    m_geometryCache.ResolveTexture(displayParams, m_view.GetDgnDb());
+    TileDisplayParamsPtr displayParams = new TileDisplayParams(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileTextureImage::ResolveTexture(*displayParams, m_view.GetDgnDb());
+
     auto rangeTreeNode = new RangeTreeNode(*clone, localTo3mx, range, m_curElemId, displayParams, *m_targetFacetOptions, m_view.GetDgnDb());
     m_rangeTree->Add(rangeTreeNode, range);
 
     return true;
 #else
-    // ###TODO: There's a threading issue in OpenCascade - TileGeometry::GetPolyface() is going to produce access violations in EnsureNormalConsistency() when called from another thread.
-    // If we call it here on the main thread when creating the range tree, no such problems.
     return false;
 #endif
     }

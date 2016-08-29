@@ -10,6 +10,10 @@
 #include "../lib/TilePublisher.h"   // ###TODO: API dir...
 #include "Constants.h"
 
+#if defined(TILE_PUBLISHER_PROFILE)
+#include <conio.h>
+#endif
+
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
@@ -542,6 +546,11 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain(int ac, wchar_t const** av)
     {
+#if defined(TILE_PUBLISHER_PROFILE)
+    printf("Press a key to start...\n");
+    _getch();
+#endif
+
     PublisherParams createParams;
     if (!createParams.ParseArgs(ac, av))
         {

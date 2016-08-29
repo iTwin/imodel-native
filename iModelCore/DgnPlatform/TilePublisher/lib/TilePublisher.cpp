@@ -743,7 +743,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accPositionId]["bufferView"] = bvPositionId;
     rootNode["accessors"][accPositionId]["byteOffset"] = 0;
     rootNode["accessors"][accPositionId]["componentType"] = GLTF_FLOAT;
-    rootNode["accessors"][accPositionId]["count"] = ptsVal.size();
+    BeAssert(0 == ptsVal.size() % 3);
+    rootNode["accessors"][accPositionId]["count"] = ptsVal.size() / 3;
     rootNode["accessors"][accPositionId]["type"] = "VEC3";
 
     auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
@@ -798,7 +799,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         rootNode["accessors"][accParamId]["bufferView"] = bvParamId;
         rootNode["accessors"][accParamId]["byteOffset"] = 0;
         rootNode["accessors"][accParamId]["componentType"] = GLTF_FLOAT;
-        rootNode["accessors"][accParamId]["count"] = uvs.size();
+        BeAssert(0 == uvs.size() % 2);
+        rootNode["accessors"][accParamId]["count"] = uvs.size() / 2;
         rootNode["accessors"][accParamId]["type"] = "VEC2";
         }
 
@@ -818,7 +820,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
         rootNode["accessors"][accNormalId]["bufferView"] = bvNormalId;
         rootNode["accessors"][accNormalId]["byteOffset"] = 0;
         rootNode["accessors"][accNormalId]["componentType"] = GLTF_FLOAT;
-        rootNode["accessors"][accNormalId]["count"] = normals.size();
+        BeAssert(0 == normals.size() % 3);
+        rootNode["accessors"][accNormalId]["count"] = normals.size() / 3;
         rootNode["accessors"][accNormalId]["type"] = "VEC3";
         }
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
