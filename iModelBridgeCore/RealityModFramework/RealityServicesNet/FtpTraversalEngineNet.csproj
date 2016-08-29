@@ -128,23 +128,26 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeCurl\BeCurlG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeIcu4c\BeIcu4cG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeLibxml2\BeLibxml2G06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\CrawlerLib\CrawlerLib.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeOpenSSL\BeOpenSSLG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BaseGeoCoord\BaseGeoCoordG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\Bentley\BentleyG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeSQLite\BeSQLiteG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\BeXml\BeXml_dll\BeXmlG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\ImagePP\ImagePP\ImagePPG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\Product\RealityModFramework\NCSEcw.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.pdb $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\BuildContexts\geomlibs\Delivery\BentleyGeomG06.dll $(TargetDir)
-copy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\build\Pointools\PointoolsVortexAPI\PointoolsVortexAPIG06.dll $(TargetDir)
-mkdir $(TargetDir)GeoCoordinateData
-xcopy D:\BSI\DgnDb0601Dev_RMF\out\Winx64\Product\RealityModFramework\GeoCoordinateData $(TargetDir)\GeoCoordinateData /Y /S /E</PostBuildEvent>
+    <PostBuildEvent>copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BeCurl\BeCurlG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BeIcu4c\BeIcu4cG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BeLibxml2\BeLibxml2G06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BeOpenSSL\BeOpenSSLG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BaseGeoCoord\BaseGeoCoordG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\Bentley\BentleyG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BeSQLite\BeSQLiteG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\BeXml\BeXml_dll\BeXmlG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\ImagePP\ImagePP\ImagePPG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\src\bin\ErdasEcwJpeg2000\V5_2_1\Winx64\VC120\bin\NCSEcw.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\RealityModFramework\RealityPlatform\RealityPlatform.pdb $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\Geom\delivery\basegeom\bin\BentleyGeomG06.dll $(TargetDir)
+copy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\build\Pointools\PointoolsVortexAPI\PointoolsVortexAPIG06.dll $(TargetDir)
+mkdir $(TargetDir)DgnGeoCoord
+xcopy D:\BSI\DgnDb0601Dev_RMF_3\out\Winx64\Product\RealityModFramework\DgnGeoCoord $(TargetDir)\DgnGeoCoord /Y /S /E</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
