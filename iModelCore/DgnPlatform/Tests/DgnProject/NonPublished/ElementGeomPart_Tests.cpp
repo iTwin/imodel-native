@@ -149,7 +149,7 @@ TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, ElementsUseGeometryParts)
+TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     {
     SetupSeedProject();
 
@@ -169,11 +169,11 @@ TEST_F(ElementGeomPartTests, ElementsUseGeometryParts)
     DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementsUseGeometryParts(*m_db, elementId, existingPartId) );
+    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT SourceECInstanceId,TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts)));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT SourceECInstanceId,TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(elementId.GetValue(), statement.GetValueInt64(0));
     ASSERT_EQ(existingPartId.GetValue(), statement.GetValueInt64(1));
@@ -182,7 +182,7 @@ TEST_F(ElementGeomPartTests, ElementsUseGeometryParts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, ElementsUseGeometryParts_DeleteGeomPart)
+TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteGeomPart)
     {
     SetupSeedProject();
 
@@ -202,20 +202,20 @@ TEST_F(ElementGeomPartTests, ElementsUseGeometryParts_DeleteGeomPart)
     DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementsUseGeometryParts(*m_db, elementId, existingPartId));
+    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId));
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
 
     // Delete Geom Part
     EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(existingPartId));
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts)));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeomPartTests, ElementsUseGeometryParts_DeleteElement)
+TEST_F(ElementGeomPartTests, ElementUsesGeometryParts_DeleteElement)
     {
     SetupSeedProject();
 
@@ -235,13 +235,13 @@ TEST_F(ElementGeomPartTests, ElementsUseGeometryParts_DeleteElement)
     DgnElementId elementId = InsertElement()->GetElementId();
     EXPECT_TRUE(elementId.IsValid());
 
-    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementsUseGeometryParts(*m_db, elementId, existingPartId) );
+    EXPECT_EQ(SUCCESS, DgnGeometryPart::InsertElementUsesGeometryParts(*m_db, elementId, existingPartId) );
     DgnElementCPtr elem = m_db->Elements().GetElement(elementId);
     m_db->SaveChanges ();
     // Delete Element
     ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*m_db->Elements().GetElement(elementId)));
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts)));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
 
     EXPECT_TRUE(DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db).IsValid());

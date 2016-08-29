@@ -26,7 +26,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementsHaveLinks:0:LinkElement</RelationshipPath>
+                    <RelationshipPath>ElementHasLinks:0:LinkElement</RelationshipPath>
                     <DerivedClasses>
                         <string>UrlLink</string>
                         <string>EmbeddedFileLink</string>
@@ -34,7 +34,7 @@
                 </RelatedItemsDisplaySpecification>
                 <RelatedItemsDisplaySpecification>
                     <ParentClass>Element</ParentClass>
-                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementsHaveLinks:0:LinkElement</RelationshipPath>
+                    <RelationshipPath>ElementGroupsMembers:1:Element.ElementHasLinks:0:LinkElement</RelationshipPath>
                     <DerivedClasses>
                         <string>UrlLink</string>
                         <string>EmbeddedFileLink</string>
@@ -550,7 +550,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECEntityClass typeName="InformationElement" modifier="Abstract">
+    <ECEntityClass typeName="InformationContentElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -568,7 +568,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
-        <BaseClass>InformationElement</BaseClass>
+        <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
             <ShareColumns xmlns="ECDbMap.02.00">
@@ -599,7 +599,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="LinkElement" modifier="Abstract">
-        <BaseClass>InformationElement</BaseClass>
+        <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>8</SharedColumnCount>
@@ -677,7 +677,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="GroupInformationElement" modifier="Abstract">
-        <BaseClass>InformationElement</BaseClass>
+        <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>8</SharedColumnCount>
@@ -693,7 +693,7 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract">
         <!-- Base class for elements with 3d geometry -->
-	    <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
+        <!-- GeometricElement3d elements are not inherently spatially located, but can be spatially located. -->
         <BaseClass>GeometricElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
@@ -1342,7 +1342,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementsReferToElements" strength="referencing" modifier="Abstract">
+    <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1726,8 +1726,8 @@
             <Class class="DisplayStyle"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CategorySelectorsReferToCategories" strength="referencing">
-        <BaseClass>ElementsReferToElements</BaseClass>
+    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing">
+        <BaseClass>ElementRefersToElements</BaseClass>
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="CategorySelector"/>
         </Source>
@@ -1735,7 +1735,7 @@
             <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ModelSelectorsReferToModels" strength="referencing">
+    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>
@@ -1748,14 +1748,14 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <!-- Note: The Models in the selector are actually captured by the 1:N ModelSelectorsReferToModels ECRelationship -->
+        <!-- Note: The Models in the selector are actually captured by the 1:N ModelSelectorRefersToModels ECRelationship -->
     </ECEntityClass>
     <ECEntityClass typeName="CategorySelector">
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorsReferToCategories -->
+        <!-- Note: The Categories in the selector are actually captured by the 1:N ECRelationship CategorySelectorRefersToCategories -->
         <ECProperty propertyName="SubCategoryOverrides" typeName="string" displayLabel="JSON string consisting of array of SubCategoryOverrides"/>
     </ECEntityClass>
     <ECEntityClass typeName="DisplayStyle">
@@ -1842,9 +1842,8 @@
         </ECCustomAttributes>
     </ECEntityClass>
   
-    <ECRelationshipClass typeName="ElementsHaveLinks" description="Associates links to an element." strength="referencing">
-        <!-- WIP: Rename to ElementsHaveLinks? -->
-        <BaseClass>ElementsReferToElements</BaseClass>
+    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing">
+        <BaseClass>ElementRefersToElements</BaseClass>
         <Source cardinality="(1,N)" polymorphic="true">
             <!-- WIP: (0,N)? -->
             <Class class="Element"/>
@@ -1907,8 +1906,8 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementsUseGeometryParts" strength="referencing">
-        <BaseClass>ElementsReferToElements</BaseClass>
+    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
+        <BaseClass>ElementRefersToElements</BaseClass>
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
         <Source cardinality="(0,N)" polymorphic="true">
             <Class class="Element"/>

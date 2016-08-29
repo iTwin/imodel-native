@@ -5,7 +5,7 @@
     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Document">
-        <BaseClass>bis:InformationElement</BaseClass>
+        <BaseClass>bis:InformationContentElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
                 <SharedColumnCount>16</SharedColumnCount>
@@ -14,7 +14,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="DocumentCopy" modifier="Abstract">
+    <ECEntityClass typeName="DocumentCarrier" modifier="Abstract">
         <BaseClass>bis:InformationCarrierElement</BaseClass>
         <ECCustomAttributes>
             <ShareColumns xmlns="ECDbMap.02.00">
@@ -24,10 +24,10 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="PrintedDocumentCopy">
-        <BaseClass>DocumentCopy</BaseClass>
+        <BaseClass>DocumentCarrier</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="ElectronicDocumentCopy">
-        <BaseClass>DocumentCopy</BaseClass>
+        <BaseClass>DocumentCarrier</BaseClass>
     </ECEntityClass>
 
 </ECSchema>

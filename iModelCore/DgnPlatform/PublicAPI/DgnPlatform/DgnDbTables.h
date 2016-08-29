@@ -48,7 +48,7 @@
 #define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
 #define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
 #define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
-#define BIS_CLASS_InformationElement        "InformationElement"
+#define BIS_CLASS_InformationContentElement "InformationContentElement"
 #define BIS_CLASS_LineStyle                 "LineStyle"
 #define BIS_CLASS_LocalAuthority            "LocalAuthority"
 #define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
@@ -76,18 +76,18 @@
 // ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define BIS_REL_ElementDrivesElement        "ElementDrivesElement"
-#define BIS_REL_ElementsUseGeometryParts    "ElementsUseGeometryParts"
+#define BIS_REL_ElementUsesGeometryParts    "ElementUsesGeometryParts"
 #define BIS_REL_ElementGroupsMembers        "ElementGroupsMembers"
 #define BIS_REL_ElementOwnsChildElements    "ElementOwnsChildElements"
 #define BIS_REL_ElementOwnsUniqueAspect     "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementOwnsMultiAspects     "ElementOwnsMultiAspects"
-#define BIS_REL_ElementsReferToElements     "ElementsReferToElements"
+#define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
 #define BIS_REL_SolutionOfComponent         "SolutionOfComponent"
 #define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define BIS_REL_ModelDrivesModel            "ModelDrivesModel"
-#define BIS_REL_CategorySelectorsReferToCategories "CategorySelectorsReferToCategories"
-#define BIS_REL_ModelSelectorsReferToModels "ModelSelectorsReferToModels"
+#define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
+#define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names

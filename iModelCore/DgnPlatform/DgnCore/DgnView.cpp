@@ -393,9 +393,9 @@ DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
     if (!GetElementId().IsValid())
         return DgnDbStatus::MissingId;
 
-    // *** WIP_VIEW_DEFINITION: Delete all existing CategorySelectorsReferToCategories instances with Source = this
+    // *** WIP_VIEW_DEFINITION: Delete all existing CategorySelectorRefersToCategories instances with Source = this
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -421,7 +421,7 @@ DgnCategoryIdSet CategorySelector::GetCategoryIds() const
 
     DgnCategoryIdSet categories;
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);
@@ -445,7 +445,7 @@ DgnCategoryIdSet CategorySelector::GetCategoryIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::ContainsCategoryId(DgnCategoryId cid) const
     {
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorsReferToCategories) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);
@@ -517,7 +517,7 @@ DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
 DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
     {
     // Detect all ModelSelectors that include this model
-    auto statement = db.GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE TargetECInstanceId=?");
+    auto statement = db.GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);
@@ -565,9 +565,9 @@ DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
     if (!GetElementId().IsValid())
         return DgnDbStatus::MissingId;
 
-    // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorsReferToModels instances with Source = this
+    // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorRefersToModels instances with Source = this
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -595,7 +595,7 @@ DgnModelIdSet ModelSelector::GetModelIds() const
         return DgnModelIdSet();
         }
 
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE SourceECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);
@@ -619,7 +619,7 @@ DgnModelIdSet ModelSelector::GetModelIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ModelSelector::ContainsModelId(DgnModelId mid) const
     {
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorsReferToModels) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     if (!statement.IsValid())
         {
         BeAssert(false);

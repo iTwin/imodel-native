@@ -2384,7 +2384,11 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(id.GetValueUnchecked()));
+    ECValue value(id.GetValueUnchecked());
+    if (!id.IsValid())
+        value.SetToNull();
+
+    DgnDbStatus status = SetPropertyValue(propertyName, value);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
@@ -3506,13 +3510,13 @@ DgnDbStatus GeometricElement::InsertGeomStream() const
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Insert ElementsUseGeometryParts relationships for any GeometryPartIds in the GeomStream
+    // Insert ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     IdSet<DgnGeometryPartId> parts;
     GeometryStreamIO::Collection(m_geom.GetData(), m_geom.GetSize()).GetGeometryPartIds(parts, db);
     for (DgnGeometryPartId const& partId : parts)
         {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementsUseGeometryParts(db, GetElementId(), partId))
+        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, GetElementId(), partId))
             status = DgnDbStatus::WriteError;
         }
 
@@ -3528,10 +3532,10 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
     if (DgnDbStatus::Success != status)
         return status;
 
-    // Update ElementsUseGeometryParts relationships for any GeometryPartIds in the GeomStream
+    // Update ElementUsesGeometryParts relationships for any GeometryPartIds in the GeomStream
     DgnDbR db = GetDgnDb();
     DgnElementId elementId = GetElementId();
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts) " WHERE SourceECInstanceId=?");
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
@@ -3552,7 +3556,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     if (!partsToRemove.empty())
         {
-        CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementsUseGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
+        CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
         if (!statement.IsValid())
             return DgnDbStatus::BadRequest;
 
@@ -3571,7 +3575,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     for (DgnGeometryPartId const& partId : partsToAdd)
         {
-        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementsUseGeometryParts(db, elementId, partId))
+        if (BentleyStatus::SUCCESS != DgnGeometryPart::InsertElementUsesGeometryParts(db, elementId, partId))
             status = DgnDbStatus::WriteError;
         }
 

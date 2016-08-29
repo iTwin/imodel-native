@@ -42,16 +42,16 @@ public:
 };
 
 //=======================================================================================
-//! A Document is an InformationElement that identifies the content of a document.
+//! A Document is an InformationContentElement that identifies the content of a document.
 //! The realized form of a document is called a DocumentCopy (different class than Document). 
 //! For example, a will is a legal document.  The will published into a PDF file is an ElectronicDocumentCopy.
 //! The will printed onto paper is a PrintedDocumentCopy.
 //! In this example, the Document only identifies, names, and tracks the content of the will.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Document : InformationElement
+struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DOC_CLASSNAME_Document, InformationElement)
+    DGNELEMENT_DECLARE_MEMBERS(DOC_CLASSNAME_Document, InformationContentElement)
     friend struct doc_ElementHandler::Document;
 
 protected:
@@ -66,9 +66,9 @@ namespace doc_ElementHandler
 {
     //! The ElementHandler for Document
     //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE Document : dgn_ElementHandler::Information
+    struct EXPORT_VTABLE_ATTRIBUTE Document : dgn_ElementHandler::InformationContent
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DOC_CLASSNAME_Document, Dgn::Document, Document, dgn_ElementHandler::Information, DGNPLATFORM_EXPORT)
+        ELEMENTHANDLER_DECLARE_MEMBERS(DOC_CLASSNAME_Document, Dgn::Document, Document, dgn_ElementHandler::InformationContent, DGNPLATFORM_EXPORT)
     };
 }
 

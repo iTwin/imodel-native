@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct Information; struct InformationCarrier; struct Definition; struct Subject;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Definition; struct Subject;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -859,6 +859,7 @@ protected:
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value);
     //! Set an ECNavigationProperty by name
+    //! @note Passing an invalid ID will cause a null value to be set.
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value);
     //! Set a string ECProperty by name
@@ -1114,7 +1115,7 @@ protected:
     virtual GeometrySourceCP _ToGeometrySource() const {return nullptr;}
     virtual AnnotationElement2dCP _ToAnnotationElement2d() const {return nullptr;}
     virtual DrawingGraphicCP _ToDrawingGraphic() const {return nullptr;}
-    virtual InformationElementCP _ToInformationElement() const {return nullptr;}
+    virtual InformationContentElementCP _ToInformationContentElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual GroupInformationElementCP _ToGroupInformationElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
@@ -1154,7 +1155,7 @@ public:
     DGNPLATFORM_EXPORT GeometrySource3dCP ToGeometrySource3d() const;
 
     DgnGeometryPartCP ToGeometryPart() const {return _ToGeometryPart();}                //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
-    InformationElementCP ToInformationElement() const {return _ToInformationElement();} //!< more efficient substitute for dynamic_cast<InformationElementCP>(el)
+    InformationContentElementCP ToInformationContentElement() const {return _ToInformationContentElement();} //!< more efficient substitute for dynamic_cast<InformationContentElementCP>(el)
     DefinitionElementCP ToDefinitionElement() const {return _ToDefinitionElement();}    //!< more efficient substitute for dynamic_cast<DefinitionElementCP>(el)
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
@@ -1166,7 +1167,7 @@ public:
     GeometrySource3dP ToGeometrySource3dP() {return const_cast<GeometrySource3dP>(ToGeometrySource3d());} //!< more efficient substitute for dynamic_cast<GeometrySource3dP>(el)
 
     DgnGeometryPartP ToGeometryPartP() {return const_cast<DgnGeometryPartP>(_ToGeometryPart());} //!< more efficient substitute for dynamic_cast<DgnGeometryPartCP>(el)
-    InformationElementP ToInformationElementP() {return const_cast<InformationElementP>(_ToInformationElement());} //!< more efficient substitute for dynamic_cast<InformationElementP>(el)
+    InformationContentElementP ToInformationContentElementP() {return const_cast<InformationContentElementP>(_ToInformationContentElement());} //!< more efficient substitute for dynamic_cast<InformationContentElementP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     GroupInformationElementP ToGroupInformationElementP() {return const_cast<GroupInformationElementP>(_ToGroupInformationElement());} //!< more efficient substitute for dynamic_cast<GroupInformationElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
@@ -1176,7 +1177,7 @@ public:
     bool Is3d() const {return nullptr != ToGeometrySource3d();}                     //!< Determine whether this element is 3d or not
     bool Is2d() const {return nullptr != ToGeometrySource2d();}                     //!< Determine whether this element is 2d or not
     bool IsGeometricElement() const {return nullptr != ToGeometrySource();}         //!< Determine whether this element is a GeometricElement or not
-    bool IsInformationElement() const {return nullptr != ToInformationElement();}   //!< Determine whether this element is an InformationElement or not
+    bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a DefinitionElement or not
     bool IsGroupInformationElement() const {return nullptr != ToGroupInformationElement();} //!< Determine whether this element is a GroupInformationElement or not
     bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
@@ -2012,25 +2013,25 @@ public:
 };
 
 //=======================================================================================
-//! An InformationElement identifies and names information content.
+//! An InformationContentElement identifies and names information content.
 //! @see InformationCarrierElement
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE InformationElement : DgnElement
+struct EXPORT_VTABLE_ATTRIBUTE InformationContentElement : DgnElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationElement, DgnElement);
-    friend struct dgn_ElementHandler::Information;
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_InformationContentElement, DgnElement);
+    friend struct dgn_ElementHandler::InformationContent;
 
 protected:
-    virtual InformationElementCP _ToInformationElement() const override final {return this;}
-    explicit InformationElement(CreateParams const& params) : T_Super(params) {}
+    virtual InformationContentElementCP _ToInformationContentElement() const override final {return this;}
+    explicit InformationContentElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
 //! For example, a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
-//! @see InformationElement
+//! @see InformationContentElement
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE InformationCarrierElement : DgnElement
@@ -2046,9 +2047,9 @@ protected:
 //! A DefinitionElement resides in (and only in) a DefinitionModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationElement
+struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, InformationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, InformationContentElement);
     friend struct dgn_ElementHandler::Definition;
 
 protected:
@@ -2085,9 +2086,9 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    04/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationElement
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationContentElement
 {
-    DEFINE_T_SUPER(InformationElement);
+    DEFINE_T_SUPER(InformationContentElement);
 protected:
     virtual GroupInformationElementCP _ToGroupInformationElement() const override final {return this;}
     explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
