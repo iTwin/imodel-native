@@ -566,7 +566,14 @@ DgnDbStatus DgnElement::_InsertInDb()
         }
 
     if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
-        UpdateAutoHandledProperties();
+        {
+        status = UpdateAutoHandledProperties();
+        if (DgnDbStatus::Success != status)
+            {
+            BeAssert(false && "Auto-handled properties update failed - see log for sql constraint errors, etc.");
+            return status;
+            }
+        }
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -607,7 +614,14 @@ DgnDbStatus DgnElement::_UpdateInDb()
         }
 
     if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
-        UpdateAutoHandledProperties();
+        {
+        status = UpdateAutoHandledProperties();
+        if (DgnDbStatus::Success != status)
+            {
+            BeAssert(false && "Auto-handled properties update failed - see log for sql constraint errors, etc.");
+            return status;
+            }
+        }
 
     if (m_userProperties)
         status = SaveUserProperties();
