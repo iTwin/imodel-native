@@ -435,7 +435,7 @@ private:
 
     explicit RelatedItemsDisplaySpecificationsCache(ECDbCR ecDb) : Db::AppData(), m_ecDb(ecDb) {}
 
-    BentleyStatus Initialize();
+    void Initialize();
 public:
     ~RelatedItemsDisplaySpecificationsCache() {}
 
