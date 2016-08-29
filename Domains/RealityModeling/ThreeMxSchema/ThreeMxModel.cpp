@@ -370,6 +370,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
     {
     TileMeshList        tileMeshes;
 
+
     for (auto& geometry : m_node->GetGeometry())
         {
         if (!geometry->GetPolyface().IsValid())
@@ -390,10 +391,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
 
         if (nullptr != publishGeometry &&
             nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
-            {
-            Image   image (publishTexture->m_source, publishTexture->m_format, publishTexture->m_bottomUp);
-            tileTexture = new TileTextureImage (std::move(image), false);
-            }
+            tileTexture = new TileTextureImage (publishTexture->m_source, false);
 
         TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
         TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
@@ -438,18 +436,15 @@ RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, Transform
     toTile.Multiply (range, range);
     RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (node, toTile, range, depth, siblingIndex, tolerance, parent);
 
-    static size_t s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+    static size_t               s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+    Tile::ChildTiles const*     children = node._GetChildren();
 
-    if (node._HasChildren() && depth < s_depthLimit)
+    if (nullptr != children && depth < s_depthLimit)
         {
+        size_t                   childIndex = 0;
+
         depth++;
-
-        Tile::ChildTiles    children = *node._GetChildren();
-        size_t              childIndex = 0;
-
-        // node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
-
-        for (auto& child : children)
+        for (auto& child : *children)
             tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
         }
 
