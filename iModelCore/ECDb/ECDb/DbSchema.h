@@ -489,14 +489,16 @@ public:
 
     typedef std::unordered_map<Utf8String, std::unique_ptr<DbTable>, Utf8StringHash, Utf8StringEqual> TableMap;
 #else
-    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMap;
-
+    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMapByName;
 #endif
+    typedef std::map<DbTableId, Utf8String> TableMapById;
     private:
 
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
-    mutable TableMap m_tables;
+    mutable TableMapByName m_tableMapByName;
+    mutable TableMapById m_tableMapById;
+
     mutable DbTable* m_nullTable;
     mutable std::vector<std::unique_ptr<DbIndex>> m_indexes;
     mutable bset<Utf8CP, CompareIUtf8Ascii> m_usedIndexNames;
@@ -524,6 +526,7 @@ public:
     DbTable* CreateTable(DbTableId, Utf8CP name, DbTable::Type, PersistenceType type, DbTable const* primaryTable);
     std::vector<DbTable const*> GetCachedTables() const;
     DbTable const* FindTable(Utf8CP name) const;
+    DbTable const* FindTable(DbTableId id) const;
     DbTable* FindTableP(Utf8CP name) const;
     DbSchemaNameGenerator& GetNameGenerator() { return m_nameGenerator; }
     bool IsTableNameInUse(Utf8CP tableName) const;
@@ -535,7 +538,6 @@ public:
 
     void SyncTableCache() const;
     ECDbCR GetECDb() const { return m_ecdb; }
-    bool RequireReset() const { return m_tables.empty(); }
     void Reset();
 
     //!Update existing table in db so any new columns added would be save to disk.

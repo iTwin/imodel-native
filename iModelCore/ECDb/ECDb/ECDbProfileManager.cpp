@@ -99,16 +99,6 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
-    //Statement stmt;
-    //stmt.Prepare(ecdb, "SELECT NULL FROM sqlite_master WHERE Name = 'ix_ec_ClassMap_ClassId' AND type = 'index'");
-    //if (stmt->Step() == BE_SQLITE_DONE)
-    //    {
-    //    if (ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId)") != BE_SQLITE_OK)
-    //        {
-
-    //        }
-    //    }
-
     const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
     stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
@@ -124,18 +114,12 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
 
     BeAssert(!ecdb.IsReadonly());
 
-    //Call upgrader sequence and let upgraders incrementally upgrade the profile
+    //let upgraders incrementally upgrade the profile
     //to the latest state
-    std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
-    GetUpgraderSequence(upgraders, actualProfileVersion);
-    for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
+    if (BE_SQLITE_OK != RunUpgraders(ecdb, actualProfileVersion))
         {
-        stat = upgrader->Upgrade(ecdb);
-        if (BE_SQLITE_OK != stat)
-            {
-            ecdb.AbandonChanges();
-            return stat;
-            }
+        ecdb.AbandonChanges();
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
     if (BE_SQLITE_OK != ECDbProfileECSchemaUpgrader::ImportProfileSchemas(ecdb))
@@ -161,6 +145,28 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
         LOG.infov("Upgraded " PROFILENAME " profile from version %s to version %s (in %.4lf seconds) in file '%s'.",
                   actualProfileVersion.ToString().c_str(), expectedVersion.ToString().c_str(),
                   timer.GetElapsedSeconds(), ecdb.GetDbFileName());
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle  06/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& currentProfileVersion)
+    {
+    //IMPORTANT: order from low to high version
+    //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
+    std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
+    if (currentProfileVersion < SchemaVersion(3, 7, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3701()));
+
+    for (std::unique_ptr<ECDbProfileUpgrader> const& upgrader : upgraders)
+        {
+        DbResult stat = upgrader->Upgrade(ecdb);
+        if (BE_SQLITE_OK != stat)
+            return stat;
         }
 
     return BE_SQLITE_OK;
@@ -216,16 +222,6 @@ DbResult ECDbProfileManager::ReadProfileVersion(SchemaVersion& profileVersion, E
         defaultTransaction.Commit(nullptr);
 
     return stat;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    07/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-//static
-void ECDbProfileManager::GetUpgraderSequence(std::vector<std::unique_ptr<ECDbProfileUpgrader>>& upgraders, SchemaVersion const& currentProfileVersion)
-    {
-    // Upgradibility not needed for 0601.
-    upgraders.clear();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -501,9 +497,36 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON ec_IndexColumn(IndexId,ColumnId,Ordinal);"
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON ec_IndexColumn(IndexId,ColumnId,Ordinal);"
                            "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON ec_IndexColumn(IndexId,Ordinal);"
                            "CREATE INDEX ix_ec_IndexColumn_ColumnId ON ec_IndexColumn(ColumnId)");
+
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //ec_cache_ClassHasTables
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHasTables("
+                           "Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId_TableId ON ec_cache_ClassHasTables(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON ec_cache_ClassHasTables(TableId);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //ec_cache_ClassHierarchy
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHierarchy("
+                           "Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    return ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId);");
     }
 
 

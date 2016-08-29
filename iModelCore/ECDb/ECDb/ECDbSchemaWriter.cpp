@@ -1657,4 +1657,32 @@ void SqlUpdater::Where(Utf8CP column, int64_t value)
     {
     m_whereMap[column] = ECN::ECValue(value);
     }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+//static
+DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
+    {
+    StopWatch timer(true);
+    DbResult stat = ecdb.ExecuteSql("DELETE FROM ec_cache_ClassHierarchy");
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    stat = ecdb.ExecuteSql("WITH RECURSIVE "
+                           "BaseClassList(ClassId, BaseClassId) AS "
+                           "("
+                           "   SELECT Id, Id FROM ec_Class"
+                           "   UNION"
+                           "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
+                           "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
+                           ")"
+                           "INSERT INTO ec_cache_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    timer.Stop();
+    LOG.debugv("Re-populated ec_cache_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
+    return BE_SQLITE_OK;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

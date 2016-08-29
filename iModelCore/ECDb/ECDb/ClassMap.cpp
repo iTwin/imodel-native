@@ -642,7 +642,6 @@ BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo)
     {
-
     std::set<DbTable*> tables;
     std::set<DbTable*> joinedTables;
 
