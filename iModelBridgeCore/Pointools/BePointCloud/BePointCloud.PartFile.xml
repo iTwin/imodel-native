@@ -8,7 +8,7 @@
         <SubPart PartName="VortexLibs" PartFile="PointoolsVortexAPI" Repository="PointoolsVortexAPI" />
         <Bindings>
           <PublicAPI Domain="BePointCloud" />
-          <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/$(shlibprefix)BePointCloud$(ApiNumber)$(shlibext)</Assemblies>
+          <Assemblies>Delivery/$(shlibprefix)BePointCloud$(ApiNumber)$(shlibext)</Assemblies>
           <Libs>Delivery/$(shlibprefix)BePointCloud$(libext)</Libs>
         </Bindings>
     </Part>
