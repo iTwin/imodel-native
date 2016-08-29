@@ -435,6 +435,10 @@ void HRFSRTMFile::CreateDescriptors()
     pFlipModel->SetYScaling(-1.0);
     pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
 
+    //TODO : Set NoDataValue? The line below doesn't work, due to const...We eould have to const cast, not sure if this is appropriate...
+    //pPixelType->GetChannelOrg().GetChannelPtr(0)->SetNoDataValue(-32768);
+
+    //TODO : See if block type, block access, width and height can be different.
     // Create Resolution Descriptor
     pResolution = new HRFResolutionDescriptor(
         GetAccessMode(),               // AccessMode,
@@ -523,6 +527,12 @@ void HRFSRTMFile::ExtractLatLong(double* latitude, double* longitude) const
     Utf8String fileName = ((HFCPtr<HFCURLFile>&) urlFile)->GetFilename();
     char latHemi = fileName[0];
     char lonHemi = fileName[3];
+
+    HASSERT(fileName[1] >= '0' && (fileName[1] <= '9'));
+    HASSERT(fileName[2] >= '0' && (fileName[2] <= '9'));
+    HASSERT(fileName[4] >= '0' && (fileName[4] <= '9'));
+    HASSERT(fileName[5] >= '0' && (fileName[5] <= '9'));
+    HASSERT(fileName[6] >= '0' && (fileName[6] <= '9'));
 
     *latitude = (double) atof(fileName.substr(1, 2).c_str());
     *longitude = (double) atof(fileName.substr(4, 3).c_str());

@@ -3002,15 +3002,16 @@ ImagePPStatus HRATiledRaster::_BuildCopyToContext(ImageTransformNodeR parentNode
 
         pEffPhyCS = new HGF2DCoordSys(*pPhysicalToLogical, pEffLogCS);
         }
-
+    
+#ifndef NDEBUG    
     // Validate that we intersect with copyRegion.
-    HDEBUGCODE
-        (
-        HVEShape myPhysicalExtent(GetPhysicalExtent());
-        myPhysicalExtent.SetCoordSys(pEffPhyCS);
 
-        BeAssert(options.GetShape()->HasIntersect(myPhysicalExtent));
-        );
+    //Use GetShape instead of GetPhysicalExtent since GetPhysicalExtent doesn't work with reprojected huge raster like BingMap 
+    HVEShape myPhysicalExtent(GetShape());
+    myPhysicalExtent.ChangeCoordSys(pEffPhyCS);    
+
+    BeAssert(options.GetShape()->HasIntersect(myPhysicalExtent));    
+#endif
 
     ImagePPStatus status = IMAGEPP_STATUS_Success;
 

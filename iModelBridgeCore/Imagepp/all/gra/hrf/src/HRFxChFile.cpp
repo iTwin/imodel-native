@@ -187,6 +187,11 @@ HRFxChCapabilities::HRFxChCapabilities()
                                    HRPPixelTypeV48R16G16B16::CLASS_ID,
                                    new HRFxChCodecCapabilities()));
 
+    // PixelTypeV48R16G16B16
+    Add(new HRFPixelTypeCapability(HFC_READ_ONLY,
+                                   HRPPixelTypeV48R16G16B16::CLASS_ID,
+                                   new HRFxChCodecCapabilities()));
+
     // Scanline orientation capability
     Add(new HRFScanlineOrientationCapability(HFC_READ_ONLY, HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL));
     Add(new HRFScanlineOrientationCapability(HFC_READ_ONLY, HRFScanlineOrientation::UPPER_LEFT_VERTICAL));
@@ -1060,6 +1065,7 @@ void HRFxChFile::ValidateChannelFilesPanchromatic(const HFCPtr<HRFRasterFile>& p
             pi_rpRedFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType())
             throw HRFXCHChannelsBlockDimensionsDifferException(GetURL()->GetURL());
     }
+
 
 
 

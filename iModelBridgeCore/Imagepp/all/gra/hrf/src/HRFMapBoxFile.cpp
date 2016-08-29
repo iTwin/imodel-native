@@ -32,8 +32,7 @@
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 #include <Imagepp/all/h/HFCURLHTTP.h>
 
-#define VE_MAP_RESOLUTION       18
-//#define VE_MAP_RESOLUTION       13
+#define VE_MAP_RESOLUTION       19
 #define VE_MAP_WIDTH            (256 * (1 << VE_MAP_RESOLUTION))
 #define VE_MAP_HEIGHT           (256 * (1 << VE_MAP_RESOLUTION))
 
