@@ -121,10 +121,10 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Image TileTextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
+ImageSource TileTextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
     {
     DgnTextureCPtr tex = params.QueryTexture(db);
-    return tex.IsValid() ? Image(tex->GetImageSource()) : Image();
+    return tex.IsValid() ? tex->GetImageSource() : ImageSource();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,7 +135,7 @@ void TileTextureImage::ResolveTexture(TileDisplayParamsR params, DgnDbR db)
     if (params.TextureImage().IsValid())
         return;
 
-    Image               renderImage  = TileTextureImage::Load(params, db);
+    ImageSource renderImage  = TileTextureImage::Load(params, db);
 
     if (renderImage.IsValid())
         params.TextureImage() = new TileTextureImage(std::move(renderImage));
@@ -495,7 +495,7 @@ void TileNode::ComputeSubTiles(bvector<DRange3d>& subTileRanges, TileGeometryCac
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileNode::ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile)
     {
-    static const size_t s_depthLimit = 0xffff;
+    static const size_t s_depthLimit = 0xffff;          // Useful for debugging....
     static const double s_targetChildCount = 5.0;
 
     ComputeFacetCountTreeHandler handler(m_range);
@@ -515,13 +515,91 @@ void TileNode::ComputeTiles(TileGeometryCacheR geometryCache, double chordTolera
         for (auto& subRange : subRanges)
             {
             double childTolerance = pow(subRange.Volume() / maxPointsPerTile, 1.0 / 3.0);
-            m_children.push_back(TileNode(subRange, m_depth+1, siblingIndex++, childTolerance, this));
+            m_children.push_back(new TileNode(subRange, m_depth+1, siblingIndex++, childTolerance, this));
             }
 
         for (auto& child : m_children)
-            child.ComputeTiles(geometryCache, chordTolerance, maxPointsPerTile);
+            child->ComputeTiles(geometryCache, chordTolerance, maxPointsPerTile);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WString TileNode::GetNameSuffix() const
+    {
+    WString suffix;
+
+    if (nullptr != m_parent)
+        {
+        suffix = WPrintfString(L"%02d", static_cast<int>(m_siblingIndex));
+        for (auto parent = m_parent; nullptr != parent->GetParent(); parent = parent->GetParent())
+            suffix = WPrintfString(L"%02d", static_cast<int>(parent->GetSiblingIndex())) + suffix;
+        }
+
+    return suffix;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void setSubDirectoryRecursive (TileNodeR tile, WStringCR subdirectory)
+    {
+    tile.SetSubdirectory (subdirectory);
+    for (auto& child : tile.GetChildren())
+        setSubDirectoryRecursive(*child, subdirectory);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileNameStatus TileNode::GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory)
+    {
+    if (GetNodeCount () < maxTilesPerDirectory)
+        return BeFileNameStatus::Success;
+        
+    for (auto& child : m_children)
+        {
+        if (child->GetNodeCount() < maxTilesPerDirectory)
+            {
+            BeFileName  childDataDirectory = dataDirectory;
+            WString     subdirectoryName = L"Tile"  + child->GetNameSuffix();
+
+            childDataDirectory.AppendToPath (subdirectoryName.c_str());
+            BeFileNameStatus  status;
+            if (BeFileNameStatus::Success != (status = BeFileName::CreateNewDirectory (childDataDirectory)))
+                return status;
+
+            setSubDirectoryRecursive (*child, subdirectoryName);
+            }
+        else
+            {
+            child->GenerateSubdirectories (maxTilesPerDirectory, dataDirectory);
+            }
+        }
+    return BeFileNameStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WString TileNode::GetRelativePath (WCharCP rootName, WCharCP extension) const
+    {
+    WString     relativePath;
+    if (0 == m_depth)
+        {
+        // Acute3d convenstion -- root tile gets root name.
+        BeFileName::BuildName (relativePath, nullptr, nullptr, rootName, extension);
+        }
+    else
+        {
+        WString     fileName = L"Tile" + GetNameSuffix();
+        BeFileName::BuildName (relativePath, nullptr, m_subdirectory.empty() ? nullptr : m_subdirectory.c_str(), fileName.c_str(), extension);
+        }
+
+    return relativePath;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -746,7 +824,7 @@ size_t TileNode::GetNodeCount() const
     {
     size_t count = 1;
     for (auto const& child : m_children)
-        count += child.GetNodeCount();
+        count += child->GetNodeCount();
 
     return count;
     }
@@ -759,7 +837,7 @@ size_t TileNode::GetMaxDepth() const
     size_t maxChildDepth = 0;
     for (auto const& child : m_children)
         {
-        size_t childDepth = child.GetMaxDepth();
+        size_t childDepth = child->GetMaxDepth();
         maxChildDepth = std::max(maxChildDepth, childDepth);
         }
 
@@ -773,7 +851,7 @@ void TileNode::GetTiles(TileNodePList& tiles)
     {
     tiles.push_back(this);
     for (auto& child : m_children)
-        child.GetTiles(tiles);
+        child->GetTiles(tiles);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1243,7 +1321,7 @@ TileGenerator::Status TileGenerator::CollectTiles(TileNodeR root, ITileCollector
     m_progressMeter._SetTaskName(TaskName::CreatingTiles);
 
     // Enqueue all tiles for processing on the IO thread pool...
-    bvector<TileNode*> tiles = root.GetTiles();
+    bvector<TileNodeP> tiles = root.GetTiles();
     m_statistics.m_tileCount = tiles.size();
     m_statistics.m_tileDepth = root.GetMaxDepth();
 

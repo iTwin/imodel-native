@@ -28,6 +28,7 @@ BENTLEY_RENDER_TYPEDEFS(TileDisplayParams);
 BENTLEY_RENDER_TYPEDEFS(TileTextureImage);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshBuilder);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGeometry);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
@@ -36,8 +37,8 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
 typedef bvector<TileMeshPtr> TileMeshList;
-typedef bvector<TileNode> TileNodeList;
-typedef bvector<TileNodeP> TileNodePList;
+typedef bvector<TileNodePtr> TileNodeList;
+typedef bvector<TileNodeP>   TileNodePList;
 typedef bvector<TileGeometryPtr> TileGeometryList;
 
 //=======================================================================================
@@ -47,17 +48,14 @@ typedef bvector<TileGeometryPtr> TileGeometryList;
 struct TileTextureImage : RefCountedBase
     {
     private:
-        Image       m_image;
-        bool        m_hasAlpha;
+        ImageSource       m_imageSource;
+        bool              m_hasAlpha;
 
-        static Image Load(TileDisplayParamsCR params, DgnDbR db);
+        static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
     public:
-        TileTextureImage(Image&& image, bool hasAlpha = false) : m_image(std::move(image)), m_hasAlpha (hasAlpha) { BeAssert(m_image.IsValid()); }
-        ImageCR GetImage() const { return m_image; }
-        uint32_t GetWidth() const { return GetImage().GetWidth(); }
-        uint32_t GetHeight() const { return GetImage().GetHeight(); }
-        bool GetHasAlpha() const { return m_hasAlpha; }
-
+        TileTextureImage(ImageSource&& imageSource, bool hasAlpha = false) : m_imageSource(std::move(imageSource)), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource& imageSource, bool hasAlpha = false) : m_imageSource (imageSource), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
+        ImageSourceCR GetImageSource() const { return m_imageSource; }
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
     };
 
@@ -319,7 +317,7 @@ public:
 //! child tiles within the same range.
 // @bsistruct                                                   Paul.Connelly   07/16
 //=======================================================================================
-struct TileNode
+struct TileNode : RefCountedBase
 {
 private:
     DRange3d            m_range;
@@ -328,6 +326,7 @@ private:
     size_t              m_siblingIndex;
     double              m_tolerance;
     TileNodeP           m_parent;
+    WString             m_subdirectory;
 
     static void ComputeSubTiles(bvector<DRange3d>& subTileRanges, TileGeometryCacheR geometryCache, DRange3dCR range, size_t maxFacetsPerSubTile);
 
@@ -346,6 +345,8 @@ public:
     TileNodeP GetParent() { return m_parent; } //!< The direct parent of this node
     TileNodeList const& GetChildren() const { return m_children; } //!< The direct children of this node
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
+    WStringCR GetSubdirectory() const { return m_subdirectory; }
+    void SetSubdirectory (WStringCR subdirectory) { m_subdirectory = subdirectory; }
 
     DGNPLATFORM_EXPORT void ComputeTiles(TileGeometryCacheR geometryCache, double chordTolerance, size_t maxPointsPerTile);
     DGNPLATFORM_EXPORT double GetMaxDiameter(double tolerance) const;
@@ -358,6 +359,10 @@ public:
     DGNPLATFORM_EXPORT size_t GetMaxDepth() const;
     DGNPLATFORM_EXPORT void GetTiles(TileNodePList& tiles);
     DGNPLATFORM_EXPORT TileNodePList GetTiles();
+    DGNPLATFORM_EXPORT WString GetNameSuffix() const;
+    DGNPLATFORM_EXPORT BeFileNameStatus GenerateSubdirectories (size_t maxTilesPerDirectory, BeFileNameCR dataDirectory);
+    DGNPLATFORM_EXPORT WString GetRelativePath (WCharCP rootName, WCharCP extension) const;
+
 };
 
 //=======================================================================================
@@ -393,6 +398,7 @@ struct TileGenerator
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
         virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
         virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
+        virtual void _SetModel (DgnModelCP dgnModel) { }
     };
 
     //! Accumulates statistics during tile generation
@@ -467,9 +473,9 @@ public:
 // Interface for models to generate HLOD tree of TileNodes 
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================
-struct IPublishModelTiles
+struct IGenerateMeshTiles
 {
-    virtual TileGenerator::Status _PublishModelTiles (TileGenerator::ITileCollector& collector) = 0;
+    virtual TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) = 0;
 
 };  // IPublishModelMeshTiles
 
