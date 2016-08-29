@@ -36,8 +36,6 @@ extern std::mutex s_consoleMutex;
 #include <Bentley\BeConsole.h>
 #endif
 
-extern bool s_is_virtual_grouping;
-extern bool s_stream_from_disk;
 extern bool s_stream_enable_caching;
 
 extern uint32_t s_max_number_nodes_in_group;
