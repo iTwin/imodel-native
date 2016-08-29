@@ -40,7 +40,6 @@ class HRFSRTMFile : public HRFRasterFile
         static const uint32_t SRTM1_LINEBYTES;
         static const uint32_t SRTM3_LINEBYTES;
         static const int16_t  SRTM_NODATAVALUE;
-        static const double   EARTH_RADIUS;
         static const double   SRTM1_RES;
         static const double   SRTM3_RES;
 

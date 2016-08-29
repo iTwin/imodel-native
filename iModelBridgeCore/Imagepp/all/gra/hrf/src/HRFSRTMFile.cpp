@@ -30,9 +30,8 @@ const uint32_t HRFSRTMFile::SRTM3_LINEWIDTH = 1201;
 const uint32_t HRFSRTMFile::SRTM1_LINEBYTES = 7202;
 const uint32_t HRFSRTMFile::SRTM3_LINEBYTES = 2402;
 const int16_t  HRFSRTMFile::SRTM_NODATAVALUE = -32768;
-const double   HRFSRTMFile::EARTH_RADIUS = 6378137;
-const double   HRFSRTMFile::SRTM1_RES = PI * HRFSRTMFile::EARTH_RADIUS / (HRFSRTMFile::SRTM1_LINEWIDTH * 180);
-const double   HRFSRTMFile::SRTM3_RES = PI * HRFSRTMFile::EARTH_RADIUS / (HRFSRTMFile::SRTM3_LINEWIDTH * 180);
+const double   HRFSRTMFile::SRTM1_RES = 1 / 3600.0; // 1 arcsecond 
+const double   HRFSRTMFile::SRTM3_RES = 3 / 3600.0; // 3 arcseconds
 
 //-----------------------------------------------------------------------------
 // HRFSRTMBlockCapabilities
@@ -44,8 +43,7 @@ class HRFSRTMBlockCapabilities : public HRFRasterFileCapabilities
         HRFSRTMBlockCapabilities()
             : HRFRasterFileCapabilities()
             {
-            //// Block Capability
-            Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,
+            Add(new HRFLineCapability(HFC_READ_ONLY,
                 HRFSRTMFile::SRTM1_LINEBYTES,
                 HRFBlockAccess::RANDOM));
 
@@ -398,37 +396,9 @@ void HRFSRTMFile::CreateDescriptors()
 
     GeoCoordinates::BaseGCSPtr pBaseGCS;
 
-
-    WString WKTString = L"PROJCS[\"EPSG:900913\", \
-                          GEOGCS[\"GCS_Sphere_WGS84\", \
-                          DATUM[\"SphereWGS84\", \
-                          SPHEROID[\"SphereWGS84\",6378137.0,0.0], \
-                          TOWGS84[0, 0, 0, 0, 0, 0, 0] \
-                          ], \
-                          PRIMEM[\"Greenwich\",0.0], \
-                          UNIT[\"Degree\",0.0174532925199433 ], \
-                          ], \
-                          PROJECTION[\"Mercator\"], \
-                          PARAMETER[\"False_Easting\",0.0], \
-                          PARAMETER[\"False_Northing\",0.0], \
-                          PARAMETER[\"Central_Meridian\",0.0], \
-                          PARAMETER[\"Standard_Parallel_1\",0.0], \
-                          UNIT[\"Meter\", 1.0] \
-                          ]";
-
     // Obtain the GCS
-    pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
-    if (SUCCESS == pBaseGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
-        {
-        GeoPoint geoPoint = {offsetLongitude, offsetLatitude + 1, 0.0};
-        DPoint3d cartesianPoint;
-        pBaseGCS->CartesianFromLatLong(cartesianPoint, geoPoint);
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), scale, scale / cos((offsetLatitude + 0.5)* PI / 180));
-        }
-
-
-    if (pTransfoModel == nullptr)
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), scale, scale / cos((offsetLatitude + 0.5)* PI / 180));
+    pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    pTransfoModel = new HGF2DStretch(HGF2DDisplacement(offsetLongitude, offsetLatitude + 1.0), scale, scale);
 
     // Flip the Y Axe because the origin of ModelSpace is lower-left
     HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
@@ -453,7 +423,7 @@ void HRFSRTMFile::CreateDescriptors()
         m_Width,                       // BlockWidth,
         m_Width,                       // BlockHeight,
         0,                             // BlocksDataFlag
-        HRFBlockType::IMAGE);          // BlockType
+        HRFBlockType::LINE);          // BlockType
 
 
     pPage = new HRFPageDescriptor(GetAccessMode(),
@@ -499,8 +469,8 @@ HRFResolutionEditor* HRFSRTMFile::CreateResolutionEditor(uint32_t       pi_Page,
 
     HRFResolutionEditor* pEditor = 0;
 
-    pEditor = new HRFSRTMImageEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
-    //pEditor = new HRFSRTMLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    //pEditor = new HRFSRTMImageEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    pEditor = new HRFSRTMLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
 
     return pEditor;
     }
