@@ -39,7 +39,7 @@ if __name__ == '__main__':
             print "and re-run the following tests:"
             print failedTests
         else:
-            print "See XCTest.log for details"
+            print "See " + sys.argv[1] + " for details"
     else:
         print "All tests passed."
 
