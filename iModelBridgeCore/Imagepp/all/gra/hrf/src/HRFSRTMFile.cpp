@@ -30,9 +30,8 @@ const uint32_t HRFSRTMFile::SRTM3_LINEWIDTH = 1201;
 const uint32_t HRFSRTMFile::SRTM1_LINEBYTES = 7202;
 const uint32_t HRFSRTMFile::SRTM3_LINEBYTES = 2402;
 const int16_t  HRFSRTMFile::SRTM_NODATAVALUE = -32768;
-const double   HRFSRTMFile::EARTH_RADIUS = 6378137;
-const double   HRFSRTMFile::SRTM1_RES = PI * HRFSRTMFile::EARTH_RADIUS / (HRFSRTMFile::SRTM1_LINEWIDTH * 180);
-const double   HRFSRTMFile::SRTM3_RES = PI * HRFSRTMFile::EARTH_RADIUS / (HRFSRTMFile::SRTM3_LINEWIDTH * 180);
+const double   HRFSRTMFile::SRTM1_RES = 1 / 3600.0; // 1 arcsecond 
+const double   HRFSRTMFile::SRTM3_RES = 3 / 3600.0; // 3 arcseconds
 
 //-----------------------------------------------------------------------------
 // HRFSRTMBlockCapabilities
@@ -44,12 +43,11 @@ class HRFSRTMBlockCapabilities : public HRFRasterFileCapabilities
         HRFSRTMBlockCapabilities()
             : HRFRasterFileCapabilities()
             {
-            //// Block Capability
-            Add(new HRFLineCapability(HFC_READ_WRITE_CREATE,
+            Add(new HRFLineCapability(HFC_READ_ONLY,
                 HRFSRTMFile::SRTM1_LINEBYTES,
                 HRFBlockAccess::RANDOM));
 
-            Add(new HRFImageCapability(HFC_READ_WRITE,     // AccessMode
+            Add(new HRFImageCapability(HFC_READ_ONLY,     // AccessMode
                 INT32_MAX,                                 // MaxSizeInBytes
                 HRFSRTMFile::SRTM3_LINEWIDTH,               // MinWidth
                 HRFSRTMFile::SRTM1_LINEWIDTH,               // MaxWidth
@@ -69,7 +67,7 @@ class HRFSRTMCodecIdentityCapabilities : public  HRFRasterFileCapabilities
             : HRFRasterFileCapabilities()
             {
             // Codec
-            Add(new HRFCodecCapability(HFC_READ_WRITE_CREATE,
+            Add(new HRFCodecCapability(HFC_READ_ONLY,
                 HCDCodecIdentity::CLASS_ID,
                 new HRFSRTMBlockCapabilities()));
             }
@@ -398,47 +396,15 @@ void HRFSRTMFile::CreateDescriptors()
 
     GeoCoordinates::BaseGCSPtr pBaseGCS;
 
-
-    WString WKTString = L"PROJCS[\"EPSG:900913\", \
-                          GEOGCS[\"GCS_Sphere_WGS84\", \
-                          DATUM[\"SphereWGS84\", \
-                          SPHEROID[\"SphereWGS84\",6378137.0,0.0], \
-                          TOWGS84[0, 0, 0, 0, 0, 0, 0] \
-                          ], \
-                          PRIMEM[\"Greenwich\",0.0], \
-                          UNIT[\"Degree\",0.0174532925199433 ], \
-                          ], \
-                          PROJECTION[\"Mercator\"], \
-                          PARAMETER[\"False_Easting\",0.0], \
-                          PARAMETER[\"False_Northing\",0.0], \
-                          PARAMETER[\"Central_Meridian\",0.0], \
-                          PARAMETER[\"Standard_Parallel_1\",0.0], \
-                          UNIT[\"Meter\", 1.0] \
-                          ]";
-
     // Obtain the GCS
-    pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
-    if (SUCCESS == pBaseGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
-        {
-        GeoPoint geoPoint = {offsetLongitude, offsetLatitude + 1, 0.0};
-        DPoint3d cartesianPoint;
-        pBaseGCS->CartesianFromLatLong(cartesianPoint, geoPoint);
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), scale, scale / cos((offsetLatitude + 0.5)* PI / 180));
-        }
-
-
-    if (pTransfoModel == nullptr)
-        pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), scale, scale / cos((offsetLatitude + 0.5)* PI / 180));
+    pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+    pTransfoModel = new HGF2DStretch(HGF2DDisplacement(offsetLongitude, offsetLatitude + 1.0), scale, scale);
 
     // Flip the Y Axe because the origin of ModelSpace is lower-left
     HFCPtr<HGF2DStretch> pFlipModel = new HGF2DStretch();
     pFlipModel->SetYScaling(-1.0);
     pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
 
-    //TODO : Set NoDataValue? The line below doesn't work, due to const...We eould have to const cast, not sure if this is appropriate...
-    //pPixelType->GetChannelOrg().GetChannelPtr(0)->SetNoDataValue(-32768);
-
-    //TODO : See if block type, block access, width and height can be different.
     // Create Resolution Descriptor
     pResolution = new HRFResolutionDescriptor(
         GetAccessMode(),               // AccessMode,
@@ -457,7 +423,7 @@ void HRFSRTMFile::CreateDescriptors()
         m_Width,                       // BlockWidth,
         m_Width,                       // BlockHeight,
         0,                             // BlocksDataFlag
-        HRFBlockType::IMAGE);          // BlockType
+        HRFBlockType::LINE);          // BlockType
 
 
     pPage = new HRFPageDescriptor(GetAccessMode(),
@@ -503,8 +469,8 @@ HRFResolutionEditor* HRFSRTMFile::CreateResolutionEditor(uint32_t       pi_Page,
 
     HRFResolutionEditor* pEditor = 0;
 
-    pEditor = new HRFSRTMImageEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
-    //pEditor = new HRFSRTMLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    //pEditor = new HRFSRTMImageEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
+    pEditor = new HRFSRTMLineEditor(this, pi_Page, pi_Resolution, pi_AccessMode);
 
     return pEditor;
     }
@@ -528,14 +494,8 @@ void HRFSRTMFile::ExtractLatLong(double* latitude, double* longitude) const
     wchar_t latHemi = fileName[0];
     wchar_t lonHemi = fileName[3];
 
-	HASSERT(fileName[1] >= L'0' && (fileName[1] <= L'9'));
-	HASSERT(fileName[2] >= L'0' && (fileName[2] <= L'9'));
-	HASSERT(fileName[4] >= L'0' && (fileName[4] <= L'9'));
-	HASSERT(fileName[5] >= L'0' && (fileName[5] <= L'9'));
-	HASSERT(fileName[6] >= L'0' && (fileName[6] <= L'9'));
-	
-    *latitude = (double) ((fileName[1] - L'0') * 10 + fileName[2] - L'0');
-    *longitude = (double) ((fileName[4] - L'0') * 100 + ((fileName[5] - L'0') * 10) + fileName[6] - L'0');
+    *latitude = (double) _wtof(fileName.substr(1, 2).c_str());
+    *longitude = (double) _wtof(fileName.substr(4, 3).c_str());
     if (latHemi == L'S')
         {
         *latitude *= -1;
