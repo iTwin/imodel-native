@@ -381,38 +381,36 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
         {
             SQLBindCol(hStmt, 1, SQL_INTEGER, &serverId, 2, &len);
-            TryODBC(hStmt, SQL_HANDLE_STMT, retCode = SQLFetch(hStmt));
-            ReleaseStmt();
+            retCode = SQLFetch(hStmt);
+        }
+    ReleaseStmt();
 
-        if (retCode != SQL_SUCCESS)
-            {
-            CHAR serverQuery[1024];
-            sprintf(serverQuery, "INSERT INTO [FTPIndex].[dbo].[Servers] ([CommunicationProtocol], [Name], [URL], [ServerContactInformation], [Legal], [Online], [LastCheck], [LastTimeOnLine], [Latency], [State], [Type], [MeanReachabilityStats]) VALUES ('%s', '%s', '%s', '%s', '%s', %d, ?, ?, %f, '%s', '%s', 0)",
-                server.GetProtocol().c_str(),
-                server.GetName().c_str(),
-                url.c_str(),
-                server.GetContactInfo().c_str(),
-                server.GetLegal().c_str(),
-                server.IsOnline(),
-                server.GetLatency(),
-                server.GetState().c_str(),
-                server.GetType().c_str());
+    if (retCode != SQL_SUCCESS)
+        {
+        CHAR serverQuery[1024];
+        sprintf(serverQuery, "INSERT INTO [FTPIndex].[dbo].[Servers] ([CommunicationProtocol], [Name], [URL], [ServerContactInformation], [Legal], [Online], [LastCheck], [LastTimeOnLine], [Latency], [State], [Type], [MeanReachabilityStats]) VALUES ('%s', '%s', '%s', '%s', '%s', %d, ?, ?, %f, '%s', '%s', 0)",
+            server.GetProtocol().c_str(),
+            server.GetName().c_str(),
+            url.c_str(),
+            server.GetContactInfo().c_str(),
+            server.GetLegal().c_str(),
+            server.IsOnline(),
+            server.GetLatency(),
+            server.GetState().c_str(),
+            server.GetType().c_str());
 
-            SQLPrepare(hStmt, (SQLCHAR*)serverQuery, SQL_NTS);
+        SQLPrepare(hStmt, (SQLCHAR*)serverQuery, SQL_NTS);
 
-            SQL_TIMESTAMP_STRUCT checkTime = PackageDateTime(server.GetLastCheck());
-            SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &checkTime, dateTimeSize, 0);
-            SQL_TIMESTAMP_STRUCT onlineTime = PackageDateTime(server.GetLastTimeOnline());
-            SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &onlineTime, dateTimeSize, 0);
+        SQL_TIMESTAMP_STRUCT checkTime = PackageDateTime(server.GetLastCheck());
+        SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &checkTime, dateTimeSize, 0);
+        SQL_TIMESTAMP_STRUCT onlineTime = PackageDateTime(server.GetLastTimeOnline());
+        SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &onlineTime, dateTimeSize, 0);
 
-            retCode = ExecuteSQL(hStmt);
-            ReleaseStmt();
+        retCode = ExecuteSQL(hStmt);
+        ReleaseStmt();
 
-            if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
-                FetchScopeIdentity(serverId, len);
-
-            ReleaseStmt();
-            }
+        if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
+            FetchScopeIdentity(serverId, len);
         }
     
     CHAR existingEntityBaseQuery[512];
