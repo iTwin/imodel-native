@@ -16,7 +16,7 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-typedef RefCountedPtr<GeometricPrimitive> GeometricPrimitivePtr;
+//typedef RefCountedPtr<GeometricPrimitive> GeometricPrimitivePtr;
 
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
