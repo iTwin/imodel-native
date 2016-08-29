@@ -18,6 +18,7 @@
 
 #include <ImagePP\all\h\HCDCodecZlib.h>
 #include <ImagePP\all\h\HFCAccessMode.h>
+#include "ScalableMesh/ScalableMeshLib.h"
 
 USING_NAMESPACE_IMAGEPP
 
@@ -28,7 +29,12 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceAcc
      m_use_node_header_grouping(areNodeHeadersGrouped),
      m_use_virtual_grouping(isVirtualGrouping)
     {
-    SetDataSourceAccount(dataSourceAccount);            
+    Utf8String token1 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
+    assert(!token1.empty());
+    Utf8String token2 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
+    assert(!token2.empty());
+
+    SetDataSourceAccount(dataSourceAccount);
        
     if (m_pathToHeaders.empty())
         {

@@ -28,9 +28,12 @@ public:
         protected:
 
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
+            WsgTokenAdmin*                m_wsgTokenAdmin;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
+
+            BENTLEY_SM_EXPORT virtual WsgTokenAdmin& _SupplyWsgTokenAdmin();
 
         public:
             Host()
@@ -39,12 +42,12 @@ public:
                 }
 
             ScalableMeshAdmin&  GetScalableMeshAdmin()             { return *m_scalableTerrainModelAdmin; }
-         
+            WsgTokenAdmin&      GetWsgTokenAdmin()                 { return *m_wsgTokenAdmin; }
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized () {return 0 != m_scalableTerrainModelAdmin;}
 
-        void Initialize ();        
-
+        void Initialize ();
+        
         //! Terminate this Host. After this method is called, no further ScalableTerrainModel methods can ever be called on this thread again (including Initialize).
         //! This method should be called on thread termination.
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.

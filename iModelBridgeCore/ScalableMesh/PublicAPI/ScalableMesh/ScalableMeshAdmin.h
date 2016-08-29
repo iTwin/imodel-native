@@ -38,5 +38,25 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
 #endif
 };
 
+struct WsgTokenAdmin
+    {
+    private:
+        std::function<Utf8String(void)> m_getToken;
+
+    public:
+    WsgTokenAdmin()
+        {
+        }
+    WsgTokenAdmin(std::function<Utf8String(void)> tokenGetter)
+        : m_getToken(tokenGetter)
+        {
+        }
+    Utf8String GetToken()
+        {
+        return m_getToken();
+        }
+    };
+
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 
