@@ -48,17 +48,14 @@ typedef bvector<TileGeometryPtr> TileGeometryList;
 struct TileTextureImage : RefCountedBase
     {
     private:
-        Image       m_image;
-        bool        m_hasAlpha;
+        ImageSource       m_imageSource;
+        bool              m_hasAlpha;
 
-        static Image Load(TileDisplayParamsCR params, DgnDbR db);
+        static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
     public:
-        TileTextureImage(Image&& image, bool hasAlpha = false) : m_image(std::move(image)), m_hasAlpha (hasAlpha) { BeAssert(m_image.IsValid()); }
-        ImageCR GetImage() const { return m_image; }
-        uint32_t GetWidth() const { return GetImage().GetWidth(); }
-        uint32_t GetHeight() const { return GetImage().GetHeight(); }
-        bool GetHasAlpha() const { return m_hasAlpha; }
-
+        TileTextureImage(ImageSource&& imageSource, bool hasAlpha = false) : m_imageSource(std::move(imageSource)), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource& imageSource, bool hasAlpha = false) : m_imageSource (imageSource), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
+        ImageSourceCR GetImageSource() const { return m_imageSource; }
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
     };
 
@@ -401,6 +398,7 @@ struct TileGenerator
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) { } //!< Invoked to announce the current ratio completed
         virtual bool _WasAborted() { return false; } //!< Return true to abort tile generation
         virtual void _SetTaskName(TaskName taskName) { } //!< Invoked to announce the current task
+        virtual void _SetModel (DgnModelCP dgnModel) { }
     };
 
     //! Accumulates statistics during tile generation
