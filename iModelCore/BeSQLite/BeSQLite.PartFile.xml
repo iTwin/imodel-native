@@ -136,6 +136,9 @@
 
     <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=BeSQLite-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="BeSQLite-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/BeSQLite-iOSXCTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- *********************************************************** -->
