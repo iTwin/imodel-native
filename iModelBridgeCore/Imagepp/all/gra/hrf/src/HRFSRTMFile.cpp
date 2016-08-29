@@ -397,7 +397,7 @@ void HRFSRTMFile::CreateDescriptors()
     GeoCoordinates::BaseGCSPtr pBaseGCS;
 
     // Obtain the GCS
-    pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS("LL84");
+    pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
     pTransfoModel = new HGF2DStretch(HGF2DDisplacement(offsetLongitude, offsetLatitude + 1.0), scale, scale);
 
     // Flip the Y Axe because the origin of ModelSpace is lower-left
