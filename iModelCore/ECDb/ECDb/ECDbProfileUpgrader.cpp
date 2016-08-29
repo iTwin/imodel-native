@@ -376,8 +376,8 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadSchemaFromDisk(ECSchemaReadContex
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='3.0.2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
-        "    <ECSchemaReference name='ECDbMap' version='02.00.00' prefix='ecdbmap' /> "
+        "<ECSchema schemaName='ECDb_System' alias='ecdbsys' version='3.0.2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' /> "
         "    <ECEntityClass typeName='PrimitiveArray' modifier='Abstract'> "
         "        <ECCustomAttributes> "
         "            <ClassMap xmlns='ECDbMap.02.00.00'> "

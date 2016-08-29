@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECDb_FileInfo" nameSpacePrefix="ecdbf" version="02.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="ECDbMap" version="02.00.00" prefix="ecdbmap"/>
-    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" prefix="CoreCA"/>
+<ECSchema schemaName="ECDb_FileInfo" alias="ecdbf" version="02.00" description="ECDb FileInfo" displayLabel="ECDb FileInfo" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
 
     <ECEntityClass typeName="FileInfo" description="Abstract base class for holding attributes of a file" modifier="Abstract">
         <ECProperty propertyName="Name" typeName="string" description="File name"/>

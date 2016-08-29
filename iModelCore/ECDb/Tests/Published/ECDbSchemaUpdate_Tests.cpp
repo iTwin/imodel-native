@@ -245,7 +245,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECSchemaAttributes)
 
     //Verify attributes via ECSql using MataSchema
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
     ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -293,7 +293,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECClassAttributes)
 
     //Verify attributes via ECSql using MataSchema
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
     ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -361,7 +361,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECPropertyAttributes)
 
     //Verify attributes via ECSql using MataSchema
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
     ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -1256,7 +1256,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -1572,7 +1572,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -1726,7 +1726,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -1987,7 +1987,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
@@ -2095,7 +2095,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, NameSpacePrefix FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT DisplayLabel, Description, Alias FROM ec.ECSchemaDef WHERE Name='TestSchema'"));
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
