@@ -286,6 +286,7 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
     {
     public:
    
+        HPMBlockID          m_id;
         HPMBlockID          m_parentNodeID; //Required when loading 
         vector<HPMBlockID>  m_apSubNodeID;
         HPMBlockID          m_SubNodeNoSplitID;
@@ -311,6 +312,14 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
 
         std::vector<HPMBlockID> m_clipSetsID;
 
+        // Store compressed sizes for optimal streaming performances (persisted only for streaming)
+        struct BlockSize
+            {
+            uint64_t m_size;
+            short    m_type; // 0 = POINTS, 1 = INDICES, 2 = UVS, 3 = UVINDICES, 4 = TEXTURES
+            };
+        std::vector<BlockSize>   m_blockSizes;
+
         SMIndexNodeHeader();
 
         virtual ~SMIndexNodeHeader();
@@ -318,6 +327,8 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         SMIndexNodeHeader<EXTENT>& operator=(const SQLiteNodeHeader& nodeHeader);
             
         operator SQLiteNodeHeader();
+
+        uint64_t GetBlockSize(const short& type);
            
         };
     

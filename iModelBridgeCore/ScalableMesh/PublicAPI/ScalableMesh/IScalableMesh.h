@@ -131,12 +131,12 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
-        virtual int                                 _ConvertToCloud(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, bool uploadToAzure) const = 0;
 
 #ifdef SCALABLE_MESH_ATP
         virtual int                                 _LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
-        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
+        virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const = 0;
 #endif
 
         virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) = 0;
@@ -275,7 +275,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                    ConvertToCloud(const WString& outContainerName, WString outDatasetName = L"", bool uploadToAzure = false) const;
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
@@ -299,7 +299,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
-        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
+        BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath, const short& pi_pGroupMode) const;
 
         BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
         BENTLEY_SM_EXPORT void ReFilter();

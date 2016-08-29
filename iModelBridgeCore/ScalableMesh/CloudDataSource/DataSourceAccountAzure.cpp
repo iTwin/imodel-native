@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <assert.h>
 #include "DataSourceAccountAzure.h"
 #include "DataSourceAzure.h"
 #include <cpprest/rawptrstream.h>
@@ -77,6 +78,8 @@ DataSource * DataSourceAccountAzure::createDataSource(void)
     dataSourceAzure = new DataSourceAzure(this);
     if (dataSourceAzure == nullptr)
         return nullptr;
+                                                            // Set the timeout from the account's default (which comes from the Service's default)
+    dataSourceAzure->setTimeout(this->getDefaultTimeout());
                                                             // Set the segment size from the account's default (which comes from the Service's default)
     dataSourceAzure->setSegmentSize(this->getDefaultSegmentSize());
 
@@ -106,6 +109,16 @@ DataSourceBuffer::BufferSize DataSourceAccountAzure::getDefaultSegmentSize(void)
 {
     return defaultSegmentSize;
 }
+
+void DataSourceAccountAzure::setDefaultTimeout(DataSourceBuffer::Timeout time)
+    {
+    defaultTimeout = time;
+    }
+
+DataSourceBuffer::Timeout DataSourceAccountAzure::getDefaultTimeout(void)
+    {
+    return defaultTimeout;
+    }
 
 DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
@@ -182,8 +195,15 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(const DataSourceURL &u
         readSize = p;
 
         stream.close().wait();
-
-        pcb.getn(dest, size).wait();
+		
+        pcb.getn(dest, size)
+            .then([&readSize,size](size_t nBytes) -> pplx::task<void>
+            {
+            assert(nBytes == readSize || nBytes == size);
+            if (nBytes != size) readSize = nBytes;
+            return pplx::task_from_result();
+            })
+            .wait();
     }
     catch (...)
     {

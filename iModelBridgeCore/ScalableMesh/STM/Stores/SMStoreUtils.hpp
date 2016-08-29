@@ -141,6 +141,14 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::operator SQLiteNodeHeader()
     return header;
     }
 
+template <class EXTENT> uint64_t SMIndexNodeHeader<EXTENT>::GetBlockSize(const short& type)
+    {
+    for (auto block : this->m_blockSizes)
+        {
+        if (block.m_type == type) return block.m_size;
+        }
+    return uint64_t(-1);
+    }
 
 
 

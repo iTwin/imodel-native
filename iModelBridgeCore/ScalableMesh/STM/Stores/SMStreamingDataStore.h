@@ -15,6 +15,19 @@
 #include <json/json.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
 
+extern bool s_stream_from_disk;
+extern bool s_stream_from_file_server;
+extern bool s_stream_from_grouped_store;
+extern bool s_stream_enable_caching;
+extern bool s_is_virtual_grouping;
+
+//extern std::mutex fileMutex;
+
+#ifndef NDEBUG
+#define DEBUG_STREAMING_DATA_STORE
+extern std::mutex s_consoleMutex;
+#endif
+
 class DataSourceAccount; 
 
 template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>
@@ -25,6 +38,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         WString m_rootDirectory;        
         WString m_pathToHeaders;
         bool m_use_node_header_grouping;
+        bool m_use_virtual_grouping;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
         bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
 
@@ -41,7 +55,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         
     public : 
     
-        SMStreamingStore(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
 
@@ -88,9 +102,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, WString headers_path = L"")
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
         {
-        return new SMStreamingStore(dataSourceAccount, path, compress,areNodeHeadersGrouped, headers_path);
+        return new SMStreamingStore(dataSourceAccount, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
         }
         //Inherited from ISMDataStore - End
                              
@@ -110,7 +124,7 @@ public:
 
     DataSource *initializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize);
         
-    void Load(DataSourceAccount *dataSourceAccount);
+    void Load(DataSourceAccount *dataSourceAccount, uint64_t dataSize = uint64_t(-1));
         
     void UnLoad();
             
@@ -152,14 +166,16 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     private:
         
         SMIndexNodeHeader<EXTENT>*    m_nodeHeader;
+        HFCPtr<SMNodeGroup>           m_nodeGroup;
         DataSourceAccount*            m_dataSourceAccount;
         WString                       m_pathToNodeData;
         SMStoreDataType               m_dataType;
-        WString                       m_storage_connection_string;        
 
         // Use cache to avoid refetching data after a call to GetBlockDataCount(); cache is cleared when data has been received and returned by the store
         mutable std::map<ISMStore::NodeID, StreamingDataBlock    > m_pointCache;
         mutable std::mutex m_pointCacheLock;
+
+        uint64_t GetBlockSizeFromNodeHeader() const;
 
     protected: 
 
@@ -167,7 +183,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
        
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, const WString& path, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup = nullptr, bool compress = true);
             
         virtual ~SMStreamingNodeDataStore();                      
             
@@ -187,9 +203,6 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
     };
 
 
-// Helper texture data structure
-void OpenOrCreateBeFile(BeFile& file, const WString& path, HPMBlockID blockID);
-
 struct Texture : public bvector<uint8_t>
     {
     public:
@@ -198,8 +211,9 @@ struct Texture : public bvector<uint8_t>
         Texture(const int& width, const int& height, const int& numChannels)
             : m_Width{width}, m_Height{height}, m_NbChannels(numChannels)
             {}
-        void SetDataSource(const WString& pi_DataSource)
+        void SetDataSource(DataSourceAccount * dataSourceAccount, const WString& pi_DataSource)
             {
+            m_dataSourceAccount = dataSourceAccount;
             m_DataSource = pi_DataSource;
             }
         void SavePixelDataToDisk(uint8_t* DataTypeArray, size_t countData, const HPMBlockID& blockID)
@@ -211,7 +225,7 @@ struct Texture : public bvector<uint8_t>
 
             CompressTexture(pi_uncompressedPacket, pi_compressedPacket);
 
-            // Second, save to disk
+            // Second, save to DataSource
             int format = 0; // Keep an int to define the format and possible other options
 
             bvector<uint8_t> texData(4 * sizeof(int) + pi_compressedPacket.GetDataSize());
@@ -222,10 +236,32 @@ struct Texture : public bvector<uint8_t>
             pHeader[3] = format;
             memcpy(texData.data() + 4 * sizeof(int), pi_compressedPacket.GetBufferAddress(), pi_compressedPacket.GetDataSize());
 
-            BeFile file;
-            OpenOrCreateBeFile(file, m_DataSource, blockID);
-            file.Write(NULL, texData.data(), (uint32_t)(texData.size()));
-            file.Close();
+            DataSourceStatus writeStatus;
+            wchar_t buffer[10000];
+            swprintf(buffer, L"%st_%llu.bin", m_DataSource.c_str(), blockID.m_integerID);
+            DataSourceURL    dataSourceURL(buffer);
+
+            bool created = false;
+            DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource(&created);
+            assert(dataSource != nullptr);
+            //{
+            //std::lock_guard<mutex> clk(s_consoleMutex);
+            //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
+            //else std::cout << "[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
+            //}
+
+            writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
+            assert(writeStatus.isOK()); // problem opening a DataSource
+
+            writeStatus = dataSource->write(texData.data(), (uint32_t)(texData.size()));
+            assert(writeStatus.isOK()); // problem writing a DataSource
+
+            writeStatus = dataSource->close();
+            assert(writeStatus.isOK()); // problem closing a DataSource
+            //{
+            //std::lock_guard<mutex> clk(s_consoleMutex);
+            //std::cout << "[" << std::this_thread::get_id() << "] Thread DataSource finished" << std::endl;
+            //}
             }
 
         DataSource *InitializeDataSource(DataSourceAccount *dataSourceAccount, std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const
@@ -244,7 +280,7 @@ struct Texture : public bvector<uint8_t>
             return dataSource;
             }
 
-        void Load(DataSourceAccount *dataSourceAccount)
+        void Load(uint64_t blockSize = uint64_t(-1))
             {
             std::unique_ptr<DataSource::Buffer[]>       dest;
             DataSource                              *   dataSource;
@@ -258,18 +294,19 @@ struct Texture : public bvector<uint8_t>
 
             DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
-            dataSource = this->InitializeDataSource(dataSourceAccount, dest, destSize);
+            dataSource = this->InitializeDataSource(m_dataSourceAccount, dest, destSize);
             if (dataSource == nullptr)
                 return;
 
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
                 return;
 
-            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+            if (blockSize == uint64_t(-1)) blockSize = 0;
+            if (dataSource->read(dest.get(), destSize, readSize, blockSize).isFailed())
                 return;
 
             dataSource->close();
-//          dataSourceAccount->destroyDataSource(dataSource);
+            //dataSourceAccount->destroyDataSource(dataSource);
 
             if (readSize > 0)
                 {
@@ -398,7 +435,7 @@ template <class DATATYPE, class EXTENT> class StreamingNodeTextureStore : public
 
         Texture& GetTexture(HPMBlockID blockID) const;
             
-        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, const WString& directory, SMIndexNodeHeader<EXTENT>* nodeHeader);
+        StreamingNodeTextureStore(DataSourceAccount *dataSourceAccount, SMIndexNodeHeader<EXTENT>* nodeHeader);
 
         virtual ~StreamingNodeTextureStore();
             

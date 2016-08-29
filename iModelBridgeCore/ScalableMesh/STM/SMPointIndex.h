@@ -27,7 +27,7 @@
 #include <ScalableMesh\IScalableMeshQuery.h>
 
 #include "Stores\SMSQLiteStore.h"
-#include "Stores\SMStreamingDataStore.h"
+#include "SMNodeGroup.h"
 
 class DataSourceAccount;
 
@@ -567,9 +567,9 @@ public:
     virtual void         AddOpenGroup(const size_t&, SMNodeGroup* pi_pNodeGroup) const;
 
     virtual void         SaveAllOpenGroups() const;
-    
-    void                 SavePointsToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
-    virtual void         SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, SMNodeGroup* pi_pNodes, SMNodeGroupMasterHeader* pi_pGroupsHeader);
+
+    void                 SavePointsToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore);
+    virtual void         SaveGroupedNodeHeaders(SMNodeGroup* pi_pGroup, SMNodeGroupMasterHeader* pi_pGroupsHeader);
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -1051,7 +1051,7 @@ protected:
      Saves node header and point data in files that can be used for streaming
      point data from a cloud server.
     -----------------------------------------------------------------------------*/
-    void SavePointDataToCloud(DataSourceAccount *dataSourceAccount, ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
+    void SavePointDataToCloud(ISMDataStoreTypePtr<EXTENT>& pi_pDataStreamingStore);
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;
 
@@ -1289,10 +1289,10 @@ public:
     bool                Clear(HFCPtr<HVEShape> pi_shapeToClear);    
     bool                RemovePoints(const EXTENT& pi_extentToClear);    
 
-    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true) const;
-    StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName) const;
-    
+    StatusInt           SaveGroupedNodeHeaders(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, const short& pi_pGroupMode, bool pi_pCompress = true);
+    StatusInt           SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirectoryName, bool pi_pCompress = true);
+    StatusInt           SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount);
+
 #ifdef INDEX_DUMPING_ACTIVATED    
     virtual void                DumpOctTree(char* pi_pOutputXMLFileName, bool pi_OnlyLoadedNode) const;
 #endif

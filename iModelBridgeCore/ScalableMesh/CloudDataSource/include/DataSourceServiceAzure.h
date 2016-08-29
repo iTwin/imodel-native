@@ -5,8 +5,8 @@
 #include "DataSourceBuffer.h"
 
 
-#define DATA_SOURCE_SERVICE_AZURE_DEFAULT_SEGMENT_SIZE  (64 * 1024)
-
+#define DATA_SOURCE_SERVICE_AZURE_DEFAULT_SEGMENT_SIZE  (32 * 1024)
+#define DATA_SOURCE_SERVICE_AZURE_DEFAULT_TIMEOUT       (60 * 1000)
 
 class DataSourceServiceAzure : public DataSourceService
 {
@@ -18,6 +18,7 @@ public:
 protected:
 
         DataSourceBuffer::BufferSize    defaultSegmentSize;
+        DataSourceBuffer::Timeout       defaultTimeout;
 
 public:
 
@@ -28,5 +29,8 @@ public:
 
         void                            setDefaultSegmentSize           (DataSourceBuffer::BufferSize size);
         DataSourceBuffer::BufferSize    getDefaultSegmentSize           (void);
+    
+        void                            setDefaultTimeout               (DataSourceBuffer::Timeout time);
+        DataSourceBuffer::Timeout       getDefaultTimeout               (void);
 };
 

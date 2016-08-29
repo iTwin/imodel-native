@@ -550,9 +550,9 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             }
 
         // Pip ToDo: Create account?
-        DataSourceAccount *account = nullptr;                                    
+            DataSourceAccount *account = nullptr;                                    
         
-        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(account, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         

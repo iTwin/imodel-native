@@ -392,33 +392,27 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount,
-                                                                                         ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore,
-                                                                                         ISMDataStoreTypePtr<EXTENT>&    pi_pStreamingDataStore)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore)
     {
-    assert(!"NEW_SSTORE_RB");
-#if 0 
-
-    assert(pi_pDataStore != nullptr && pi_pPointStore != nullptr && pi_pIndiceStore != nullptr);
-    assert(!m_nodeHeader.m_isTextured || (m_nodeHeader.m_isTextured && pi_pUVStore != nullptr && pi_pUVIndiceStore != nullptr && pi_pTextureStore != nullptr));
+    assert(pi_pDataStore != nullptr);
 
     if (!IsLoaded())
         Load();
-
-    RunOnNextAvailableThread(std::bind([dataSourceAccount, pi_pDataStore, pi_pPointStore, pi_pIndiceStore, pi_pUVStore, pi_pUVIndiceStore, pi_pTextureStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    //auto* node = this;
+    RunOnNextAvailableThread(std::bind([pi_pDataStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
         assert(false && "Make this compile on Vancouver!");
 #if 0
-        // Save header and points
-        ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());        
-
-        node->SavePointDataToCloud(dataSourceAccount, pDataStore, pi_pPointStore);
-
         // Save indices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
 
-        if (indicePtr->size() > 0)
-            pi_pIndiceStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
+        if (indicePtr.IsValid() && indicePtr->size() > 0)
+            {
+            ISMInt32DataStorePtr faceIndDataStore;
+            bool result = pi_pDataStore->GetNodeDataStore(faceIndDataStore, &node->m_nodeHeader, SMStoreDataType::TriPtIndices);
+            assert(result == true); // problem getting the indice data store for streaming
+            faceIndDataStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
+            }
 
         if (node->m_nodeHeader.m_isTextured)
             {
@@ -427,8 +421,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
             if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
                 {
-                //assert(uvCoordsPtr->size() > 0);
-                pi_pUVStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
+                ISMUVCoordsDataStorePtr uvCoordDataStore;
+                bool result = pi_pDataStore->GetNodeDataStore(uvCoordDataStore, &node->m_nodeHeader);
+                assert(result == true); // problem getting the uv data store for streaming
+                uvCoordDataStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
                 }
 
             // Save UVIndices
@@ -436,33 +432,39 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
 
             if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
                 {
-                //assert(uvIndicePtr->size() > 0);
-                pi_pUVIndiceStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
+                ISMInt32DataStorePtr uvIndiceDataStore;
+                bool result = pi_pDataStore->GetNodeDataStore(uvIndiceDataStore, &node->m_nodeHeader, SMStoreDataType::TriUvIndices);
+                assert(result == true); // problem getting the uvIndice data store for streaming
+                uvIndiceDataStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
                 }
 
             // Save texture
-            auto textureStore = static_cast<IScalableMeshDataStore<uint8_t, float, float>*>(node->GetTextureStore());
-            assert(textureStore != nullptr);
-            auto countTextureData = textureStore->GetBlockDataCount(node->GetBlockID());
+            ISMTextureDataStorePtr textureDataStore;
+            bool result = node->m_SMIndex->GetDataStore()->GetNodeDataStore(textureDataStore, &node->m_nodeHeader);
+            assert(result == true && textureDataStore.IsValid() && !textureDataStore.IsNull());
+            auto countTextureData = textureDataStore->GetBlockDataCount(node->GetBlockID());
             if (countTextureData > 0)
                 {
-                //uint8_t* textureData = new uint8_t[countTextureData];
                 bvector<uint8_t> textureData(countTextureData);
-                size_t newCount = textureStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
-                pi_pTextureStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
-                //delete[] textureData;
+                size_t newCount = textureDataStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
+                ISMTextureDataStorePtr cloudTextureDataStore;
+                bool result = pi_pDataStore->GetNodeDataStore(cloudTextureDataStore, &node->m_nodeHeader);
+                assert(result == true && cloudTextureDataStore.IsValid() && !cloudTextureDataStore.IsNull());
+                cloudTextureDataStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
+                node->m_nodeHeader.m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ newCount, 5 });
                 }
             }
+        // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)
+        ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());
+        node->SavePointDataToCloud(pDataStore);
 #endif
+
         SetThreadAvailableAsync(threadId);
         }, this, std::placeholders::_1));
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(dataSourceAccount,
-                                                                                             pi_pDataStore,
-                                                                                             pi_pStreamingDataStore);
+        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(pi_pDataStore);
         }
     else
         {
@@ -470,15 +472,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
             {
             if (m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveMeshToCloud(dataSourceAccount,
-                                                                                                           pi_pDataStore,
-                                                                                                           pi_pStreamingDataStore);
+                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveMeshToCloud(pi_pDataStore);
                 }
             }
         }
     if (m_nodeHeader.m_level == 0)
         WaitForThreadStop();
-#endif
     }
 
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
@@ -4262,39 +4261,17 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
 
     HINVARIANTS;
     }
-/**----------------------------------------------------------------------------
-Save cloud ready format
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::GetCloudFormatStore(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath,
-                                                                                          const bool& pi_pCompress,
-                                                                                          ISMDataStoreTypePtr<EXTENT>&     po_pDataStore) const
-    { 
-#ifndef VANCOUVER_API    
-    po_pDataStore = new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);   
-#else
-    po_pDataStore = SMStreamingStore<Extent3dType>::Create(dataSourceAccount, pi_pOutputDirPath, pi_pCompress);   
-#endif    
-    }
 
 /**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceAccount *dataSourceAccount, const bool& pi_pCompress)
     {
-    if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
-        {
-        if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
-        }
+    this->SaveMasterHeaderToCloud(dataSourceAccount);
 
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(dataSourceAccount, pi_pCompress);
 
-    ISMDataStoreTypePtr<EXTENT> pStreamingDataStore;
-    ISMDataStoreTypePtr<EXTENT> pLocalDataStore(GetDataStore());    
-    
-    this->GetCloudFormatStore(dataSourceAccount, pi_pOutputDirPath, pi_pCompress, pStreamingDataStore);
-
-    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(dataSourceAccount, pLocalDataStore, pStreamingDataStore);
-
-    this->SaveMasterHeaderToCloud(dataSourceAccount, pi_pOutputDirPath);
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pDataStore);
 
     return SUCCESS;
     }

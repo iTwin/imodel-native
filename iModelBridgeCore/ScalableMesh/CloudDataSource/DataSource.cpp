@@ -35,6 +35,11 @@ bool DataSource::isValid(void)
     return false;
 }
 
+bool DataSource::isEmpty(void)
+    {
+    return true;
+    }
+
 void DataSource::setTimeout(Timeout timeMilliseconds)
 {
     timeout = timeMilliseconds;

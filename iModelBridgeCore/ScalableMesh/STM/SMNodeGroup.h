@@ -133,9 +133,10 @@ public:
         while (Queue::size() == capacity)
             {
 #ifdef DEBUG_GROUPS
-            s_consoleMutex.lock();
-            std::cout << "[" << std::this_thread::get_id() << "] Queue is full, waiting for jobs to complete" << std::endl;
-            s_consoleMutex.unlock();
+                {
+                std::lock_guard<mutex> clk(s_consoleMutex);
+                std::cout << "[" << std::this_thread::get_id() << "] Queue is full, waiting for jobs to complete" << std::endl;
+                }
 #endif
             wait(lock, [this]
                 {
@@ -176,23 +177,26 @@ private:
                 }
             else if (m_done) {
 #ifdef DEBUG_GROUPS
-                s_consoleMutex.lock();
-                std::cout << "[" << std::this_thread::get_id() << "] Finished work" << std::endl;
-                s_consoleMutex.unlock();
+            {
+            std::lock_guard<mutex> clk(s_consoleMutex);
+            std::cout << "[" << std::this_thread::get_id() << "] Finished work" << std::endl;
+            }
 #endif
-                break;
+            break;
                 }
             else {
 #ifdef DEBUG_GROUPS
-                s_consoleMutex.lock();
-                std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
-                s_consoleMutex.unlock();
+            {
+            std::lock_guard<mutex> clk(s_consoleMutex);
+            std::cout << "[" << std::this_thread::get_id() << "] Waiting for work" << std::endl;
+            }
 #endif
-                wait(lock);
+            wait(lock);
 #ifdef DEBUG_GROUPS
-                s_consoleMutex.lock();
-                std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
-                s_consoleMutex.unlock();
+            {
+            std::lock_guard<mutex> clk(s_consoleMutex);
+            std::cout << "[" << std::this_thread::get_id() << "] Going to perform work" << std::endl;
+            }
 #endif
                 }
             }
@@ -209,102 +213,52 @@ private:
         }
     };
 
-class SMNodeGroupMasterHeader : public std::map<size_t, SMGroupNodeIds>, public HFCShareableObject<SMNodeGroupMasterHeader>
-    {
-    public:
-        SMNodeGroupMasterHeader() {}
-
-        void AddGroup(const size_t& pi_pGroupID, size_type pi_pCount = 10000)
-            {
-            auto& newGroup = this->operator[](pi_pGroupID);
-            newGroup.reserve(s_max_number_nodes_in_group);
-            }
-
-        void AddNodeToGroup(const size_t& pi_pGroupID, const uint64_t& pi_pNodeID, const uint64_t& pi_pNodeHeaderSize)
-            {
-            auto& group = this->operator[](pi_pGroupID);
-            group.push_back(pi_pNodeID);
-            group.m_sizeOfRawHeaders += pi_pNodeHeaderSize;
-            }
-
-        void SaveToFile(const WString pi_pOutputDirPath)
-            {
-            assert(!m_oldMasterHeader.empty()); // Old master header must be set!
-
-            // NEEDS_WORK_SM_STREAMING : use new CloudDataSource
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%s/MasterHeaderWithGroups.bin", pi_pOutputDirPath.c_str());
-            std::wstring group_header_filename(buffer);
-            BeFile file;
-            if (BeFileStatus::Success == OPEN_FILE(file, group_header_filename.c_str(), BeFileAccess::Write) ||
-                BeFileStatus::Success == file.Create(group_header_filename.c_str()))
-                {
-                uint32_t NbChars = 0;
-
-                // Save old Master Header part: size + data
-                const uint32_t sizeOldMasterHeaderFile = (uint32_t)m_oldMasterHeader.size();
-                file.Write(&NbChars, &sizeOldMasterHeaderFile, sizeof(sizeOldMasterHeaderFile));
-                assert(NbChars == sizeof(sizeOldMasterHeaderFile));
-
-                file.Write(&NbChars, m_oldMasterHeader.data(), sizeOldMasterHeaderFile);
-                assert(NbChars == (uint32_t)m_oldMasterHeader.size());
-
-                file.Write(&NbChars, &s_is_virtual_grouping, sizeof(s_is_virtual_grouping));
-
-                // Append group information
-                for (auto& group : *this)
-                    {
-                    // Group id
-                    auto const id = group.first;
-                    file.Write(&NbChars, &id, sizeof(id));
-                    assert(NbChars == sizeof(id));
-
-                    auto& groupInfo = group.second;
-
-                    // Group total size of headers
-                    if (s_is_virtual_grouping)
-                        {
-                        auto const total_size = groupInfo.m_sizeOfRawHeaders;
-                        file.Write(&NbChars, &total_size, sizeof(total_size));
-                        assert(NbChars == sizeof(total_size));
-                        }
-
-                    // Group number of nodes
-                    auto const numNodes = groupInfo.size();
-                    file.Write(&NbChars, &numNodes, sizeof(numNodes));
-                    assert(NbChars == sizeof(numNodes));
-
-                    // Group node ids
-                    file.Write(&NbChars, groupInfo.data(), (uint32_t)numNodes * sizeof(uint64_t));
-                    assert(NbChars == (uint32_t)numNodes * sizeof(uint64_t));
-                    }
-                }
-            file.Close();
-            }
-
-        void SetOldMasterHeaderData(SQLiteIndexHeader pi_pOldMasterHeader)
-            {
-            // Serialize master header
-            m_oldMasterHeader.resize(sizeof(pi_pOldMasterHeader));
-            memcpy(m_oldMasterHeader.data(), &pi_pOldMasterHeader, sizeof(pi_pOldMasterHeader));
-            }
-    private:
-        bvector<uint8_t> m_oldMasterHeader;
-    };
-
 class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
     {
+
     public:
+        enum Mode 
+            {
+            NORMAL,
+            VIRTUAL
+            };
         typedef std::pair<uint64_t, SMNodeGroup*> DistributeData;
 
-        SMNodeGroup(DataSourceAccount *dataSourceAccount, const size_t& pi_pID, const size_t& pi_pSize, const uint64_t& pi_pTotalSizeOfHeaders)
-            : m_dataSourceAccount(dataSourceAccount), m_groupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
-            m_rawHeaders(pi_pTotalSizeOfHeaders)
+    private:
+        bool   m_isLoaded = false;
+        bool   m_isLoading = false;
+        Mode   m_mode = NORMAL;
+        size_t m_level = 0;
+        size_t m_totalSize;
+        size_t m_nLevels = 0;
+        size_t m_depth = 0;
+        size_t m_ancestor = -1;
+        uint64_t m_currentPosition = 0;
+        uint64_t m_progress = 0;
+        bvector<uint8_t> m_rawHeaders;
+        WString m_outputDirPath;
+        WString m_dataSourceName;
+        HFCPtr<SMGroupHeader> m_groupHeader;
+        SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_nodeDistributorPtr;
+        condition_variable m_groupCV;
+        mutex m_groupMutex;
+        DataSourceAccount *m_dataSourceAccount;
+
+    public:
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, const size_t& pi_pID, const Mode& pi_pMode, const size_t& pi_pSize, const uint64_t& pi_pTotalSizeOfHeaders)
+            : m_mode(pi_pMode),
+              m_dataSourceAccount(dataSourceAccount), 
+              m_groupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
+              m_rawHeaders(pi_pTotalSizeOfHeaders)
             {
             };
 
-        SMNodeGroup(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirPath, const size_t& pi_pGroupLevel, const size_t& pi_pGroupID)
-            : m_dataSourceAccount(dataSourceAccount), m_outputDirPath(pi_pOutputDirPath), m_level(pi_pGroupLevel), m_groupHeader(new SMGroupHeader(pi_pGroupID))
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, const WString pi_pOutputDirPath, const size_t& pi_pGroupLevel, const size_t& pi_pGroupID, const Mode& pi_pMode)
+            : m_mode(pi_pMode),
+              m_dataSourceAccount(dataSourceAccount), 
+              m_outputDirPath(pi_pOutputDirPath), 
+              m_level(pi_pGroupLevel), 
+              m_groupHeader(new SMGroupHeader(pi_pGroupID))
             {
             // reserve space for total number of nodes for this group
             m_groupHeader->reserve(s_max_number_nodes_in_group);
@@ -322,12 +276,11 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         void SetID(const size_t& pi_NewID) { m_groupHeader->SetID(pi_NewID); }
 
+        Mode GetMode() { return m_mode; }
+
         void SetAncestor(const size_t& pi_pLevel) { m_ancestor = pi_pLevel; }
 
-        void SetDataSource(const WString& pi_pDataSourceName)
-            {
-            m_dataSourceName = pi_pDataSourceName;
-            }
+        void SetDataSource(const WString& pi_pDataSourceName) { m_dataSourceName = pi_pDataSourceName; }
 
         size_t GetNumberNodes() { return m_groupHeader->size(); }
 
@@ -378,10 +331,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             m_totalSize += pi_Size + sizeof(SMNodeHeader);
             }
 
-        bool IsEmpty()
-            {
-            return m_groupHeader->empty();
-            }
+        bool IsEmpty() { return m_groupHeader->empty(); }
 
         bool IsFull()
             {
@@ -401,7 +351,6 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         bool IsLoaded() { return m_isLoaded; }
 
-
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount)
             {
             m_dataSourceAccount = dataSourceAccount;
@@ -412,9 +361,10 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             return m_dataSourceAccount;
             }
 
-
         void Save()
             {
+            if (m_mode == VIRTUAL) return; // Don't need to save virtual groups, they will use normal headers to retrieve node header data
+
             WString path(m_outputDirPath + L"\\g_");
             wchar_t buffer[10000];
             swprintf(buffer, L"%s%llu.bin", path.c_str(), this->GetID());
@@ -428,13 +378,6 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 file.Write(&NbChars, &id, sizeof(id));
                 assert(NbChars == sizeof(id));
 
-                if (s_is_virtual_grouping)
-                    {
-                    auto sizeHeaders = GetSizeOfHeaders();
-                    file.Write(&NbChars, &sizeHeaders, sizeof(sizeHeaders));
-                    assert(NbChars == sizeof(sizeHeaders));
-                    }
-
                 const auto numNodes = m_groupHeader->size();
                 file.Write(&NbChars, &numNodes, sizeof(numNodes));
                 assert(NbChars == sizeof(numNodes));
@@ -442,12 +385,9 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 file.Write(&NbChars, m_groupHeader->data(), (uint32_t)numNodes * sizeof(SMNodeHeader));
                 assert(NbChars == numNodes * sizeof(SMNodeHeader));
 
-                if (!s_is_virtual_grouping)
-                    {
-                    auto sizeHeaders = (uint32_t)GetSizeOfHeaders();
-                    file.Write(&NbChars, GetRawHeaders(0), sizeHeaders * sizeof(uint8_t));
-                    assert(NbChars == sizeHeaders * sizeof(uint8_t));
-                    }
+                auto sizeHeaders = (uint32_t)GetSizeOfHeaders();
+                file.Write(&NbChars, GetRawHeaders(0), sizeHeaders * sizeof(uint8_t));
+                assert(NbChars == sizeHeaders * sizeof(uint8_t));
                 }
             else
                 {
@@ -456,7 +396,6 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
             file.Close();
             }
-
 
         DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize)
             {
@@ -474,7 +413,6 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 return dataSource;
             }
 
-
         StatusInt Load()
             {
             unique_lock<mutex> lk(m_groupMutex);
@@ -486,7 +424,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 {
                 m_isLoading = true;
 
-                if (s_is_virtual_grouping)
+                if (m_mode == VIRTUAL)
                     {
                     this->LoadGroupParallel();
                     }
@@ -545,7 +483,6 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             return SUCCESS;
             }
 
-
         StatusInt Load(const uint64_t& priorityNodeID);
 
         void LoadGroupParallel();
@@ -579,9 +516,10 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             pi_pNodeDistributor.InitCustomWork([](DistributeData data)
                 {
 #ifdef DEBUG_GROUPS
-                s_consoleMutex.lock();
+                {
+                std::lock_guard<mutex> clk(s_consoleMutex);
                 std::cout << "Processing... " << data.first << std::endl;
-                s_consoleMutex.unlock();
+                }
 #endif
                 uint64_t nodeID = data.first;
                 SMNodeGroup* group = data.second;
@@ -654,50 +592,88 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             return readSize;
             }
 
-
-
-        void WaitFor(SMNodeHeader& pi_pNode)
-            {
-#ifdef DEBUG_GROUPS
-            //s_consoleMutex.lock();
-            //std::cout << "[" << std::this_thread::get_id() <<"," << this->m_groupHeader->GetID() << "," << pi_pNode.blockid << "] waiting..." << std::endl;
-            //s_consoleMutex.unlock();
-#endif
-            unique_lock<mutex> lk(m_groupMutex);
-            if (!lk.owns_lock()) lk.lock();
-            m_groupCV.wait(lk, [this, &pi_pNode]
-                {
-                if (!m_isLoading && m_isLoaded)
-                    {
-                    assert(pi_pNode.size > 0);
-                    return true;
-                    }
-                return pi_pNode.size > 0;
-                });
-#ifdef DEBUG_GROUPS
-            if (lk.owns_lock()) lk.unlock();
-            s_consoleMutex.lock();
-            std::cout << "[" << std::this_thread::get_id() << "," << this->m_groupHeader->GetID() << "," << pi_pNode.blockid << "] ready!" << std::endl;
-            s_consoleMutex.unlock();
-#endif
-            }
-
-    private:
-        bool   m_isLoaded = false;
-        bool   m_isLoading = false;
-        size_t m_level = 0;
-        size_t m_totalSize;
-        size_t m_nLevels = 0;
-        size_t m_depth = 0;
-        size_t m_ancestor = -1;
-        uint64_t m_currentPosition = 0;
-        uint64_t m_progress = 0;
-        bvector<uint8_t> m_rawHeaders;
-        WString m_outputDirPath;
-        WString m_dataSourceName;
-        HFCPtr<SMGroupHeader> m_groupHeader;
-        SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_nodeDistributorPtr;
-        condition_variable m_groupCV;
-        mutex m_groupMutex;
-        DataSourceAccount *m_dataSourceAccount;
+        void WaitFor(SMNodeHeader& pi_pNode);
     };
+
+    class SMNodeGroupMasterHeader : public std::map<size_t, SMGroupNodeIds>, public HFCShareableObject<SMNodeGroupMasterHeader>
+        {
+        public:
+            SMNodeGroupMasterHeader() {}
+
+            void AddGroup(const size_t& pi_pGroupID, size_type pi_pCount = 10000)
+                {
+                auto& newGroup = this->operator[](pi_pGroupID);
+                newGroup.reserve(s_max_number_nodes_in_group);
+                }
+
+            void AddNodeToGroup(const size_t& pi_pGroupID, const uint64_t& pi_pNodeID, const uint64_t& pi_pNodeHeaderSize)
+                {
+                auto& group = this->operator[](pi_pGroupID);
+                group.push_back(pi_pNodeID);
+                group.m_sizeOfRawHeaders += pi_pNodeHeaderSize;
+                }
+
+            void SaveToFile(const WString pi_pOutputDirPath, const short& pi_pGroupMode)
+                {
+                assert(!m_oldMasterHeader.empty()); // Old master header must be set!
+
+                                                    // NEEDS_WORK_SM_STREAMING : use new CloudDataSource
+                wchar_t buffer[10000];
+                swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), (pi_pGroupMode == SMNodeGroup::VIRTUAL ? L"Virtual" : L""));
+                std::wstring group_header_filename(buffer);
+                BeFile file;
+                if (BeFileStatus::Success == OPEN_FILE(file, group_header_filename.c_str(), BeFileAccess::Write) ||
+                    BeFileStatus::Success == file.Create(group_header_filename.c_str()))
+                    {
+                    uint32_t NbChars = 0;
+
+                    // Save old Master Header part: size + data
+                    const uint32_t sizeOldMasterHeaderFile = (uint32_t)m_oldMasterHeader.size();
+                    file.Write(&NbChars, &sizeOldMasterHeaderFile, sizeof(sizeOldMasterHeaderFile));
+                    assert(NbChars == sizeof(sizeOldMasterHeaderFile));
+
+                    file.Write(&NbChars, m_oldMasterHeader.data(), sizeOldMasterHeaderFile);
+                    assert(NbChars == (uint32_t)m_oldMasterHeader.size());
+
+                    file.Write(&NbChars, &pi_pGroupMode, sizeof(pi_pGroupMode));
+
+                    // Append group information
+                    for (auto& group : *this)
+                        {
+                        // Group id
+                        auto const id = group.first;
+                        file.Write(&NbChars, &id, sizeof(id));
+                        assert(NbChars == sizeof(id));
+
+                        auto& groupInfo = group.second;
+
+                        // Group total size of headers
+                        if (pi_pGroupMode == SMNodeGroup::VIRTUAL)
+                            {
+                            auto const total_size = groupInfo.m_sizeOfRawHeaders;
+                            file.Write(&NbChars, &total_size, sizeof(total_size));
+                            assert(NbChars == sizeof(total_size));
+                            }
+
+                        // Group number of nodes
+                        auto const numNodes = groupInfo.size();
+                        file.Write(&NbChars, &numNodes, sizeof(numNodes));
+                        assert(NbChars == sizeof(numNodes));
+
+                        // Group node ids
+                        file.Write(&NbChars, groupInfo.data(), (uint32_t)numNodes * sizeof(uint64_t));
+                        assert(NbChars == (uint32_t)numNodes * sizeof(uint64_t));
+                        }
+                    }
+                file.Close();
+                }
+
+            void SetOldMasterHeaderData(SQLiteIndexHeader pi_pOldMasterHeader)
+                {
+                // Serialize master header
+                m_oldMasterHeader.resize(sizeof(pi_pOldMasterHeader));
+                memcpy(m_oldMasterHeader.data(), &pi_pOldMasterHeader, sizeof(pi_pOldMasterHeader));
+                }
+        private:
+            bvector<uint8_t> m_oldMasterHeader;
+        };
