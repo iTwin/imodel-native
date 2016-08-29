@@ -127,7 +127,7 @@ BentleyStatus ECJsonUtilities::PointCoordinateFromJson(double& coordinate, Json:
         return ERROR;
 
     Json::Value const& coordinateJson = json[coordinateKey];
-    if (coordinateJson.isNull() || !coordinateJson.isDouble())
+    if (coordinateJson.isNull() || !coordinateJson.isNumeric())
         return ERROR;
 
     coordinate = coordinateJson.asDouble();
