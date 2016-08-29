@@ -13,6 +13,7 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
+#include "Render.h"
 
 #define BIS_CLASS_ViewDefinition "ViewDefinition"
 #define BIS_CLASS_ViewDefinition3d "ViewDefinition3d"

@@ -901,12 +901,11 @@ protected:
     DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override final; // For QueryViews, don't allow override.
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
 public:
-    //! *** NEEDS WORK: merge into ViewDefinition3d or SpatialViewDefinition
-    DGNPLATFORM_EXPORT QueryViewController(CameraViewDefinition const& definition);
+    DGNPLATFORM_EXPORT QueryViewController(SpatialViewDefinition const&);
     DGNPLATFORM_EXPORT ~QueryViewController();
 
     //! Get the Level-of-Detail filtering size for scene creation for this QueryViewController. This is the size, in pixels, of one side of a square. 
@@ -1047,7 +1046,7 @@ This is what the parameters to the camera methods, and the values stored by Came
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : QueryViewController
 {
-    DEFINE_T_SUPER(SpatialViewController);
+    DEFINE_T_SUPER(QueryViewController);
 
 protected:
     DPoint3d m_origin;                 //!< Back origin

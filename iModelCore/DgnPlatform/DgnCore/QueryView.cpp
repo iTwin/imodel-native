@@ -49,7 +49,7 @@ Frustum::Frustum(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryViewController::QueryViewController(CameraViewDefinition const& def) : T_Super(def)
+QueryViewController::QueryViewController(SpatialViewDefinition const& def) : T_Super(def)
     {
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
