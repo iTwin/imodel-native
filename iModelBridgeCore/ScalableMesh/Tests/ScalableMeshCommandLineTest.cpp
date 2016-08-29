@@ -455,30 +455,49 @@ void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
 
 void RunDTMTriangulateTest()
     {
-    WString pathMeshes = L"E:\\output\\scmesh\\2016-04-13\\mesh_tile_2875_13_-183.424623_-50.422123";
-    WString path = pathMeshes + WString(L".pts");
-    FILE* mesh = _wfopen(path.c_str(), L"rb");
-    size_t nVerts = 0;
-    fread(&nVerts, sizeof(size_t), 1, mesh);
-    bvector<DPoint3d> allVerts(nVerts);
-    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
-    fclose(mesh);
-
-    for (auto&pt : allVerts) pt.z = 0;
-    TerrainModel::DTMPtr dtmPtr;
-    BC_DTM_OBJ* bcDtmP = 0;
-    int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
-    if (dtmCreateStatus == 0)
+    //while (true)
         {
-        TerrainModel::BcDTMPtr bcDtmObjPtr;
-        bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
-        dtmPtr = bcDtmObjPtr.get();
+        WString pathMeshes = L"E:\\makeTM\\submesh";
+        bvector<DPoint3d> allPts;
+        for (size_t i = 0; i < 4; ++i)
+            {
+            WString path = pathMeshes + WString(std::to_wstring(i).c_str()) + WString(L".pts");
+            FILE* mesh = _wfopen(path.c_str(), L"rb");
+            size_t nVerts = 0;
+            fread(&nVerts, sizeof(size_t), 1, mesh);
+            bvector<DPoint3d> allVerts(nVerts);
+            fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
+            fclose(mesh);
+            size_t offset = allPts.size();
+            allPts.resize(allPts.size() + nVerts);
+
+            for (auto&pt : allVerts) pt.z = 0;
+
+            std::random_shuffle(allVerts.begin(), allVerts.end());
+
+            size_t count = (allVerts.size() / 4) + 1;
+
+            memcpy(&allPts[offset], &allVerts[0], sizeof(DPoint3d)*std::min(count, allVerts.size()));
+            }
+        TerrainModel::DTMPtr dtmPtr;
+        BC_DTM_OBJ* bcDtmP = 0;
+        int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
+        if (dtmCreateStatus == 0)
+            {
+            TerrainModel::BcDTMPtr bcDtmObjPtr;
+            bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
+            dtmPtr = bcDtmObjPtr.get();
+            }
+        bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allPts[0], (long)allPts.size());
+        int status = bcdtmObject_triangulateDtmObject(bcDtmP);
+        if (status != SUCCESS)
+            {
+            std::cout << "ERROR!" << std::endl;
+            WString str(L"e:\\test");
+            str.append(L".dtm");
+            bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
+            }
         }
-    bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allVerts[0], (long)nVerts);
-    bcdtmObject_triangulateDtmObject(bcDtmP);
-    WString str(L"e:\\test");
-    str.append(L".dtm");
-    bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
     }
 
 void RunDTMSTMTriangulateTest()
@@ -972,13 +991,13 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
 
     //RunDTMClipTest();
-    //RunDTMTriangulateTest();
+    RunDTMTriangulateTest();
     //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();
-    WString stmFileName(argv[1]);
+    //WString stmFileName(argv[1]);
    // RunParseTree(stmFileName);
-    RunIntersectRayMetadata(stmFileName);
+   // RunIntersectRayMetadata(stmFileName);
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
     std::cout << "THE END" << std::endl;

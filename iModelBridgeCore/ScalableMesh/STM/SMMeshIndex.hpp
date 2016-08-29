@@ -2711,6 +2711,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Append
     {
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicesPtr(GetPtsIndicePtr());
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+    pointsPtr->clear();
+    indicesPtr->clear();
 
     if (pointsPtr->size() > 0) 
         std::cout << " TOO MANY POINTS BEFORE ADD :"<< pointsPtr->size()  << std::endl;

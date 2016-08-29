@@ -2081,6 +2081,8 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IntersectRay(DPoint3d& pt,
     ((SMMeshIndexNode<POINT,Extent3dType>*)m_node.GetPtr())->GetMeshParts(meshParts, metadata, tex);
     volatile bool dbg = false;
 
+    double minParam = DBL_MAX;
+
     for (auto& part : meshParts)
         {
         if (part.IsValid())
@@ -2092,17 +2094,22 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IntersectRay(DPoint3d& pt,
                 }
             if (part->IntersectRay(pt, ray))
                 {
-                size_t id = &part - &meshParts[0];
-                Json::Value val;
-                Json::Reader reader;
-                bool parsingSuccessful = reader.parse(metadata[id], val);
-                if (!parsingSuccessful) continue;
-                retrievedMetadata = val;
-                return true;
+                double param;
+                DPoint3d pPt;
+                if(ray.ProjectPointUnbounded(pPt, param, pt) && param < minParam)
+                    {
+                    minParam = param;
+                    size_t id = &part - &meshParts[0];
+                    Json::Value val;
+                    Json::Reader reader;
+                    bool parsingSuccessful = reader.parse(metadata[id], val);
+                    if (!parsingSuccessful) continue;
+                    retrievedMetadata = val;
+                    }
                 }
             }
         }
-    return false;
+    return minParam != DBL_MAX;
     }
 #endif
 

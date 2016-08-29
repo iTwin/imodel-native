@@ -508,7 +508,7 @@ template <class DATATYPE, class EXTENT> size_t SMSQLiteNodeDataStore<DATATYPE, E
             blockDataCount = m_nodeHeader->m_nodeCount;            
             break;
         case SMStoreDataType::TriPtIndices : 
-            blockDataCount = m_nodeHeader->m_nbFaceIndexes;            
+            blockDataCount = m_nodeHeader->m_nbFaceIndexes;
             break;                  
         case SMStoreDataType::TriUvIndices :             
             blockDataCount = m_smSQLiteFile->GetNumberOfUVIndices(blockID.m_integerID) / sizeof(DATATYPE);

@@ -122,10 +122,10 @@ private:
         };
 
 
-    bool IsMatchTex(int x, int y, Point2d dimensions, const uint8_t* texP, const uint8_t* pattern, int width, int height, int nChannels = 3)
+    bool IsMatchTex(int x, int y, Point2d dimensions, const uint8_t* texP, const uint8_t* pattern, int width, int height, int subWidth, int subHeight, int nChannels = 3)
         {
-        for (int i = 0; i < width; ++i)
-            for (int j = 0; j < height; ++j)
+        for (int i = 0; i < subWidth; ++i)
+            for (int j = 0; j < subHeight; ++j)
                 {
                 if ((y + j) >= dimensions.y || (x + i) >= dimensions.x) return false;
                 const uint8_t* origPixel = texP + (y+j)*dimensions.x * 3 + (x+i) * 3;
@@ -137,12 +137,12 @@ private:
         return true;
         }
 
-    bool FindMatching(int&x, int&y, int width, int height, Point2d dimensions, const uint8_t* texP, const uint8_t* pattern, int nChannels = 3)
+    bool FindMatching(int&x, int&y, int width, int height, Point2d dimensions, const uint8_t* texP, const uint8_t* pattern, int subWidth, int subHeight,int nChannels = 3)
         {
         for (int i = 0; i < dimensions.x; ++i)
             for (int j = 0; j < dimensions.y; ++j)
                 {
-                if (IsMatchTex(i, j, dimensions, texP, pattern, width, height, nChannels))
+                if (IsMatchTex(i, j, dimensions, texP, pattern, width, height,subWidth, subHeight, nChannels))
                     {
                     x = i;
                     y = j;
@@ -162,6 +162,11 @@ private:
             oldHeight = ((const uint32_t*)tex.data())[1];
             oldTex.insert(oldTex.end(), tex.begin(), tex.end());
             }
+        uint32_t endWidth = width;
+        uint32_t endHeight = height;
+        if (width == 512 && height == 512)
+            endWidth = endHeight = 128;
+
         int x, y;
         int nChannels;
         if (ImageBuffer::Format::Rgb == fmt)
@@ -171,7 +176,7 @@ private:
         int newWidth, newHeight;
         Point2d dim;
         dim.Init((int)oldWidth, (int)oldHeight);
-        if (oldWidth >= width && oldHeight >= height && FindMatching(x, y, width, height, dim, oldTex.data() + 3 * sizeof(uint32_t), data, nChannels))
+        if (oldWidth >= width && oldHeight >= height && FindMatching(x, y, width, height, dim, oldTex.data() + 3 * sizeof(uint32_t), data,endWidth, endHeight, nChannels))
             {
             newWidth = oldWidth;
             newHeight = oldHeight;
@@ -183,17 +188,17 @@ private:
             }
         else
             {
-            if (oldWidth+ width <= 65535)
+            if (oldWidth + endWidth <= 65535)
                 {
                 x = oldWidth;
                 y = 0;
-                newWidth = oldWidth + width;
-                newHeight = std::max(height, oldHeight);
+                newWidth = oldWidth + endWidth;
+                newHeight = std::max(endHeight, oldHeight);
                 }
             else
                 {
-                newWidth = std::max(width, oldWidth);
-                newHeight = oldHeight + height;
+                newWidth = std::max(endWidth, oldWidth);
+                newHeight = oldHeight + endHeight;
                 x = 0;
                 y = oldHeight;
                 }
@@ -216,9 +221,9 @@ private:
             }
 
         //copy new texture data in outTex starting at x, y
-        for (size_t i = 0; i < width; ++i)
+        for (size_t i = 0; i < endWidth; ++i)
             {
-            for (size_t j = 0; j < height; ++j)
+            for (size_t j = 0; j < endHeight; ++j)
                 {
                 const uint8_t* origPixel = data + j*width * nChannels + i * nChannels;
                 uint8_t* targetPixel = buffer + (y + j)*newWidth * 3 + (i + x) * 3;
@@ -228,8 +233,8 @@ private:
 
         //compute uvs
         uvMapBottomLeft.x = (double)x / newWidth;
-        uvMapBottomLeft.y = (double)(y + height) / newHeight;
-        uvMapTopRight.x = (double)(x + width) / newWidth;
+        uvMapBottomLeft.y = (double)(y + endHeight) / newHeight;
+        uvMapTopRight.x = (double)(x + endWidth) / newWidth;
         uvMapTopRight.y = (double)y / newHeight;
         }
 

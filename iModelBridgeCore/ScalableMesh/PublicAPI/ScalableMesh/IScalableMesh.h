@@ -35,6 +35,8 @@ namespace BENTLEY_NAMESPACE_NAME
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+typedef std::function<bool(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshPts, bvector<bvector<int32_t>>& newMeshIndexes, bvector<Utf8String>& newMeshMetadata, bvector<bvector<DPoint2d>>& newMeshUvs, bvector<bvector<uint8_t>>& newMeshTex, const bvector<IScalableMeshMeshPtr>& submeshes, const bvector<Utf8String>& meshMetadata, DRange3d nodeExt)> MeshUserFilterCallback;
+
 struct IScalableMesh;
 typedef RefCountedPtr<IScalableMesh> IScalableMeshPtr;
 
@@ -136,6 +138,10 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         virtual int                                 _LoadAllNodeData(size_t& nbLoadedNodes, int level) const = 0;
         virtual int                                 _SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const = 0;
 #endif
+
+        virtual void _SetUserFilterCallback(MeshUserFilterCallback callback) = 0;
+        virtual void _ReFilter() = 0;
+
         virtual uint64_t                           _AddClip(const DPoint3d* pts, size_t ptsSize) = 0;
 
         virtual bool                               _ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID) = 0;
@@ -294,6 +300,9 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
         BENTLEY_SM_EXPORT int                     LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     LoadAllNodeData(size_t& nbLoadedNodes, int level) const;
         BENTLEY_SM_EXPORT int                     SaveGroupedNodeHeaders(const WString& pi_pOutputDirPath) const;
+
+        BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
+        BENTLEY_SM_EXPORT void ReFilter();
 
     };
 

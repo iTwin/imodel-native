@@ -15,7 +15,7 @@
 #include "ScalableMesh\ScalableMeshGraph.h"
 #include "CGALEdgeCollapse.h"
 #include "ScalableMeshMesher.h"
-
+#include "LogUtils.h"
 
 //=====================================================================================================================
 //=====================================================================================================================
@@ -312,7 +312,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         // representativity is retained in this area.
         DRange3d extent = DRange3d::NullRange();
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
-
+        parentPointsPtr->clear();
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
             {
             extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
@@ -335,12 +335,13 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
         DRange3d extent = DRange3d::NullRange();
 
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
-
+        parentPointsPtr->clear();
         parentPointsPtr->reserve(parentPointsPtr->size() + (totalNumberOfPoints * 1 / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 20);
         for (size_t indexNodes = 0; indexNodes < numSubNodes ; indexNodes++)
         {
             if (subNodes[indexNodes] != NULL)
                 {            
+                if (!subNodes[indexNodes]->IsLoaded()) subNodes[indexNodes]->Load();
                 if (subNodes[indexNodes]->m_nodeHeader.m_contentExtentDefined) extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
                 // The value of 10 here is required. The alternative path use integer division (*3/4 +1) that will take all points anyway
                 // In reality starting at 9 not all points are used but let's gives us a little margin.
@@ -368,7 +369,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                     size_t count = (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
 
                     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
-                    parentPointsPtr->push_back(&points[0], count);
+                    parentPointsPtr->push_back(&points[0], std::min(count, points.size()));
 
                 }               
             }
@@ -388,6 +389,21 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
     if (pParentMeshNode->GetPointsPtr()->size() > 10 && pParentMeshNode->GetPtsIndicePtr()->size() == 0)
         {
         std::cout << "NODE " << pParentMeshNode->GetBlockID().m_integerID << " SHOULD HAVE FACES " << std::endl;
+        for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
+            {
+            if (subNodes[indexNodes] != NULL)
+                {
+                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+                Utf8String namePts = "e:\\output\\scmesh\\2016-08-24\\sub_mesh_tile_";
+                LOGSTRING_NODE_INFO(subNodes[indexNodes], namePts)
+                    namePts.append(".pts");
+                size_t _nVertices = subNodePointsPtr->size();
+                FILE* _meshFile = fopen(namePts.c_str(), "wb");
+                fwrite(&_nVertices, sizeof(size_t), 1, _meshFile);
+                fwrite(&((*subNodePointsPtr)[0]), sizeof(DPoint3d), _nVertices, _meshFile);
+                fclose(_meshFile);
+                }
+            }
         }
     return true;
     }
@@ -571,13 +587,16 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_UserMeshFilte
 
             if (numFaceIndexes > 0)
                 {
-                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);                
+                HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);          
+                if(!subMeshNode->IsLoaded())subMeshNode->Load();
                 bvector<IScalableMeshMeshPtr> meshParts;
                 bvector<Utf8String> meshMetadata;
                 bvector<bvector<uint8_t>> texData;
                 RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(subMeshNode->GetPointsPtr());
                 if (pointsPtr->size() > 65000)
                     std::cout << " TOO MANY POINTS BEFORE FILTER :" << pointsPtr->size() << std::endl;
+                subMeshNode->GetMetadata();
+                subMeshNode->GetMeshParts();
                 subMeshNode->GetMeshParts(meshParts, meshMetadata, texData);
                 if (meshParts.size() > 0)
                     {
