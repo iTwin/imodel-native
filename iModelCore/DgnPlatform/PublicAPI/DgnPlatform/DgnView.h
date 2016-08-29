@@ -247,7 +247,7 @@ public:
         DGNPLATFORM_EXPORT bool IsSheetView() const;
 
         template <typename VIEW_TYPE>
-        RefCountedCPtr<VIEW_TYPE> ViewDefinition::Entry::GetViewDefinition(bool (ViewDefinition::Entry::*TestFunc)() const, VIEW_TYPE const* (ViewDefinition::*ToFunc)() const) const
+        RefCountedCPtr<VIEW_TYPE> GetViewDefinition(bool (ViewDefinition::Entry::*TestFunc)() const, VIEW_TYPE const* (ViewDefinition::*ToFunc)() const) const
             {
             DgnDbP db = this->GetDgnDb();
             if (!(this->*TestFunc)() || (nullptr == db))
