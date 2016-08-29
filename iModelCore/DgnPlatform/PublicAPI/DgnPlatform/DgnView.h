@@ -264,11 +264,11 @@ public:
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Sam.Wilson                      08/16
         +---------------+---------------+---------------+---------------+---------------+------*/
-        DrawingViewDefinitionCPtr      ViewDefinition::Entry::GetDrawingViewDefinition()      const {return GetViewDefinition(&Entry::IsDrawingView, &ViewDefinition::ToDrawingView);}
-        SheetViewDefinitionCPtr        ViewDefinition::Entry::GetSheetViewDefinition()        const {return GetViewDefinition(&Entry::IsSheetView,   &ViewDefinition::ToSheetView);}
-        SpatialViewDefinitionCPtr      ViewDefinition::Entry::GetSpatialViewDefinition()      const {return GetViewDefinition(&Entry::IsSpatialView, &ViewDefinition::ToSpatialView);}
-        CameraViewDefinitionCPtr       ViewDefinition::Entry::GetCameraViewDefinition()       const {return GetViewDefinition(&Entry::IsCameraView,  &ViewDefinition::ToCameraView);}
-        OrthographicViewDefinitionCPtr ViewDefinition::Entry::GetOrthographicViewDefinition() const {return GetViewDefinition(&Entry::IsOrthographicView, &ViewDefinition::ToOrthographicView);}
+        DrawingViewDefinitionCPtr      GetDrawingViewDefinition()      const {return GetViewDefinition(&Entry::IsDrawingView, &ViewDefinition::ToDrawingView);}
+        SheetViewDefinitionCPtr        GetSheetViewDefinition()        const {return GetViewDefinition(&Entry::IsSheetView,   &ViewDefinition::ToSheetView);}
+        SpatialViewDefinitionCPtr      GetSpatialViewDefinition()      const {return GetViewDefinition(&Entry::IsSpatialView, &ViewDefinition::ToSpatialView);}
+        CameraViewDefinitionCPtr       GetCameraViewDefinition()       const {return GetViewDefinition(&Entry::IsCameraView,  &ViewDefinition::ToCameraView);}
+        OrthographicViewDefinitionCPtr GetOrthographicViewDefinition() const {return GetViewDefinition(&Entry::IsOrthographicView, &ViewDefinition::ToOrthographicView);}
     };
 
     //! An iterator over the view definitions stored in a DgnDb
