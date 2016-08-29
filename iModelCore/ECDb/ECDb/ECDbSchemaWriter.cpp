@@ -754,7 +754,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
 BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchema.GetId()))
@@ -2163,7 +2163,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("NamespacePrefix", schemaChange.GetAlias().GetNew().Value().c_str());
+        updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
         }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name

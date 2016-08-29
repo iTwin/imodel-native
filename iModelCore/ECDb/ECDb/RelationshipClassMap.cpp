@@ -1031,7 +1031,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(SchemaImportContext
     {
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&mapInfo) != nullptr);
     RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
-    const bool isUniqueIndex = relMapInfo.GetMultiplicity() == RelationshipMappingInfo::Multiplicity::OneToOne;
+    const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMappingInfo::Cardinality::OneToOne;
 
     if (!relMapInfo.CreateIndexOnForeignKey() ||
         (!isUniqueIndex && m_hasKeyPropertyFk))
@@ -1550,24 +1550,24 @@ void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& schemaImport
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&mapInfo) != nullptr);
     RelationshipMappingInfo const& relationshipClassMapInfo = static_cast<RelationshipMappingInfo const&> (mapInfo);
 
-    RelationshipMappingInfo::Multiplicity multiplicity = relationshipClassMapInfo.GetMultiplicity();
+    RelationshipMappingInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
     const bool enforceUniqueness = !relationshipClassMapInfo.AllowDuplicateRelationships();
 
     // Add indices on the source and target based on cardinality
     bool sourceIsUnique = enforceUniqueness;
     bool targetIsUnique = enforceUniqueness;
 
-    switch (multiplicity)
+    switch (cardinality)
         {
         //the many side can be unique, but the one side must never be unique
-            case RelationshipMappingInfo::Multiplicity::OneToMany:
+            case RelationshipMappingInfo::Cardinality::OneToMany:
                 sourceIsUnique = false;
                 break;
-            case RelationshipMappingInfo::Multiplicity::ManyToOne:
+            case RelationshipMappingInfo::Cardinality::ManyToOne:
                 targetIsUnique = false;
                 break;
 
-            case RelationshipMappingInfo::Multiplicity::ManyToMany:
+            case RelationshipMappingInfo::Cardinality::ManyToMany:
                 sourceIsUnique = false;
                 targetIsUnique = false;
                 break;

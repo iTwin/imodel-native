@@ -659,7 +659,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 //+---------------+---------------+---------------+---------------+---------------+------
 MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     {
-    DetermineMultiplicity();
+    DetermineCardinality();
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     std::vector<ECClass const*> sourceClasses = m_ecdbMap.GetFlattenListOfClassesFromRelationshipEnd(relClass->GetSource());
@@ -749,7 +749,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         return MappingStatus::Success;
         }
 
-    if (m_customMapType == CustomMapType::LinkTable || m_multiplicity == Multiplicity::ManyToMany || m_ecClass.GetPropertyCount() > 0)
+    if (m_customMapType == CustomMapType::LinkTable || m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0)
         return EvaluateLinkTableStrategy(*caCache, baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
 
     return EvaluateForeignKeyStrategy(*caCache, baseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
@@ -887,9 +887,9 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
     const ECRelatedInstanceDirection strengthDirection = relClass->GetStrengthDirection();
 
     MapStrategy resolvedStrategy = MapStrategy::NotMapped;
-    switch (m_multiplicity)
+    switch (m_cardinality)
         {
-            case Multiplicity::OneToOne:
+            case Cardinality::OneToOne:
             {
             if (m_customMapType == CustomMapType::ForeignKeyOnSource)
                 {
@@ -913,11 +913,11 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
             break;
             }
 
-            case Multiplicity::OneToMany:
+            case Cardinality::OneToMany:
             {
             if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
                 {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the multiplicity '%s:%s' requires the strength direction to be 'Forward'.",
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
                                 m_ecClass.GetFullName(), relClass->GetSource().GetMultiplicity().ToString().c_str(), relClass->GetTarget().GetMultiplicity().ToString().c_str());
                 return ERROR;
                 }
@@ -926,11 +926,11 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
             break;
             }
 
-            case Multiplicity::ManyToOne:
+            case Cardinality::ManyToOne:
             {
             if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
                 {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the multiplicity '%s:%s' requires the strength direction to be 'Backward'.",
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
                                 m_ecClass.GetFullName(), relClass->GetSource().GetMultiplicity().ToString().c_str(), relClass->GetTarget().GetMultiplicity().ToString().c_str());
                 return ERROR;
                 }
@@ -1015,19 +1015,19 @@ RelationshipEndColumns const& RelationshipMappingInfo::GetColumnsMapping(ECRelat
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void RelationshipMappingInfo::DetermineMultiplicity()
+void RelationshipMappingInfo::DetermineCardinality()
     {
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     const bool sourceIsM = relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1;
     const bool targetIsM = relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1;
     if (sourceIsM && targetIsM)
-        m_multiplicity = Multiplicity::ManyToMany;
+        m_cardinality = Cardinality::ManyToMany;
     else if (!sourceIsM && targetIsM)
-        m_multiplicity = Multiplicity::OneToMany;
+        m_cardinality = Cardinality::OneToMany;
     else if (sourceIsM && !targetIsM)
-        m_multiplicity = Multiplicity::ManyToOne;
+        m_cardinality = Cardinality::ManyToOne;
     else
-        m_multiplicity = Multiplicity::OneToOne;
+        m_cardinality = Cardinality::OneToOne;
     }
 
 //----------------------------------------------------------------------------------

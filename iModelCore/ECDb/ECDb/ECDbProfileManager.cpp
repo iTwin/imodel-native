@@ -244,7 +244,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                                     "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "DisplayLabel TEXT,"
                                     "Description TEXT,"
-                                    "NamespacePrefix TEXT UNIQUE NOT NULL COLLATE NOCASE,"
+                                    "Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "VersionDigit1 INTEGER NOT NULL,"
                                     "VersionDigit2 INTEGER NOT NULL,"
                                     "VersionDigit3 INTEGER NOT NULL)");
