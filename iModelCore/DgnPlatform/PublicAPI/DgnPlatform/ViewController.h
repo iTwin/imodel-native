@@ -12,25 +12,19 @@
 #include "IAuxCoordSys.h"
 #include "ViewContext.h"
 #include "SectionClip.h"
+#include "UpdatePlan.h"
+#include <Bentley/BeThread.h>
+#include <BeSQLite/RTreeMatch.h>
 
 DGNPLATFORM_TYPEDEFS(CameraInfo)
-DGNPLATFORM_TYPEDEFS(CameraViewController)
-DGNPLATFORM_TYPEDEFS(OrthographicViewController)
-DGNPLATFORM_TYPEDEFS(DrawingViewController)
 DGNPLATFORM_TYPEDEFS(FitViewParams)
 DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
 DGNPLATFORM_TYPEDEFS(SectionDrawingViewController)
 DGNPLATFORM_TYPEDEFS(SectioningViewController)
-DGNPLATFORM_TYPEDEFS(SheetViewController)
-DGNPLATFORM_TYPEDEFS(SpatialViewController)
 
-DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
-DGNPLATFORM_REF_COUNTED_PTR(DrawingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SectionDrawingViewController)
 DGNPLATFORM_REF_COUNTED_PTR(SectioningViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR(SpatialViewController)
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -416,10 +410,12 @@ public:
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
     SheetViewControllerP ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
-    //! perform the equivalent of a dynamic_cast to a DgnQueryView.
-    //! @return a valid DgnQueryViewCP, or nullptr if this is not a query view
-    virtual DgnQueryViewCP _ToQueryView() const {return nullptr;}
-    DgnQueryViewP ToQueryViewP() {return const_cast<DgnQueryViewP>(_ToQueryView());}
+    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
+    //! perform the equivalent of a dynamic_cast to a QueryViewController.
+    //! @return a valid QueryViewControllerCP, or nullptr if this is not a query view
+    virtual QueryViewControllerCP _ToQueryView() const {return nullptr;}
+    QueryViewControllerP ToQueryViewP() {return const_cast<QueryViewControllerP>(_ToQueryView());}
+*/
 
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
@@ -433,8 +429,10 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
+    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! determine whether this is a query view
     bool IsQueryView() const {return nullptr != _ToQueryView();}
+    */
 
     //! Get the ViewFlags.
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
@@ -598,8 +596,37 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController
     DEFINE_T_SUPER(ViewController);
 
     friend struct  SpatialRedlineViewController;
+public:
+    struct EnvironmentDisplay
+        {
+        struct GroundPlane
+            {
+            bool m_enabled = false;
+            double m_elevation;
+            ColorDef m_aboveColor;
+            ColorDef m_belowColor;
+            };
+        struct SkyBox
+            {
+            bool m_enabled = false;
+            Utf8String m_jpegFile;
+            ColorDef m_zenithColor;
+            ColorDef m_nadirColor;
+            ColorDef m_groundColor;
+            ColorDef m_skyColor;
+            double m_groundExponent;
+            double m_skyExponent;
+            };
+        bool m_enabled = false;
+        GroundPlane m_groundPlane;
+        SkyBox m_skybox;
+
+        };
 
 protected:
+    ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
+    Render::MaterialPtr m_skybox;
+    EnvironmentDisplay m_environment;
     IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
 
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
@@ -610,7 +637,13 @@ protected:
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override; // reads things like modelselector that is common to all 3d views
     DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _FixUpDefinitionRelationships() override;
+    void _CreateTerrain(TerrainContextR context) override { DrawSkyBox(context); }
     virtual void _OnTransform(TransformCR) = 0;
+    //! Determine whether the eyepoint is above or below an elevation (postion along world-z axis).
+    //! @param[in] elevation The elevation to test
+    //! @return true if the eyepoint is above the elevation. 
+    virtual bool _IsEyePointAbove(double elevation) const {return GetZVector().z > 0;}
+    DGNPLATFORM_EXPORT virtual DPoint3d _ComputeEyePoint(Frustum const&) const;
 
     DGNPLATFORM_EXPORT void AdjustAspectRatio(DPoint3dR origin, DVec3dR delta, RotMatrixR rot, double, bool expandView);
 
@@ -626,6 +659,15 @@ protected:
     //! Called prior to save to make sure that all definition elements are in m_definitionElements.
     void _CacheDefinition() override {T_Super::_CacheDefinition(); GetModelSelector(); }
 
+    void LoadEnvironment();
+    DGNPLATFORM_EXPORT void SaveEnvironment();
+    void LoadSkyBox(Render::SystemCR system);
+    Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
+    double GetGroundElevation() const;
+    AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
+    void DrawGroundPlane(DecorateContextR);
+    DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR);
+
 public:
     DGNPLATFORM_EXPORT bool ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui);
 
@@ -635,6 +677,9 @@ public:
 
     DGNPLATFORM_EXPORT static double CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec);
 
+    bool IsEyePointAbove(double elevation) const {return _IsEyePointAbove(elevation);}
+    DPoint3d ComputeEyePoint(Frustum const& f) const {return _ComputeEyePoint(f);}
+
     //! Gets the Auxiliary Coordinate System for this view.
     IAuxCoordSysP GetAuxCoordinateSystem() const {return m_auxCoordSys.get();}
 
@@ -643,7 +688,264 @@ public:
     void SetAuxCoordinateSystem(IAuxCoordSysP acs) {m_auxCoordSys = acs;}
 
     void AdjustAspectRatio(double windowAspect, bool expandView) {_AdjustAspectRatio(windowAspect, expandView);}
+
+    //! @name Active Volume
+    //! @{
+    DGNPLATFORM_EXPORT void AssignActiveVolume(ClipPrimitiveR volume);
+    DGNPLATFORM_EXPORT void ClearActiveVolume();
+    ClipPrimitivePtr GetActiveVolume() const { return m_activeVolume; }
+    //! @}
+
+
+    /** @name Environment Display*/
+    /** @{ */
+    //! Determine whether the Environment is displayed in this view. If false, neither Ground Plane nor SkyBox are displayed.
+    bool IsEnvironmentEnabled() const { return m_environment.m_enabled; }
+    //! Determine whether the SkyBox is displayed in this view.
+    bool IsSkyBoxEnabled() const { return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled; }
+    //! Determine whether the Ground Plane is displayed in this view.
+    bool IsGroundPlaneEnabled() const { return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled; }
+    //! Get the current values for the Environment Display for this view
+    EnvironmentDisplay GetEnvironmentDisplay() const { return m_environment; }
+    //! Change the current values for the Environment Display for this view
+    void SetEnvironmentDisplay(EnvironmentDisplay const& val) { m_environment = val; SaveEnvironment(); }
+    /** @} */
+};
+
+//=======================================================================================
+//! Displays %DgnElements from a SQL query. The query can combine
+//! spatial criteria with business and graphic criteria.
+//!
+//! @remarks QueryView is also used to produce graphics for picking and for purposes other than display.
+// @bsiclass                                                    Keith.Bentley   07/12
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE QueryViewController : SpatialViewController, BeSQLite::VirtualSet
+{
+    DEFINE_T_SUPER(SpatialViewController)
+
+    friend struct DgnQueryQueue::Task;
+
+    //=======================================================================================
+    // The Ids of elements that are somehow treated specially for a QueryViewController
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SpecialElements
+    {
+        DgnElementIdSet m_always;
+        DgnElementIdSet m_never;
+        bool IsEmpty() const {return m_always.empty() && m_never.empty();}
     };
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   05/16
+    //=======================================================================================
+    struct ElementsQuery
+    {
+        BeSQLite::CachedStatementPtr m_viewStmt;
+        SpecialElements const* m_special;
+        ClipPrimitiveCPtr m_activeVolume;
+        int m_idCol = 0;
+        DGNPLATFORM_EXPORT bool TestElement(DgnElementId);
+        bool IsNever(DgnElementId id) const {return m_special && m_special->m_never.Contains(id);}
+        bool IsAlways(DgnElementId id) const {return m_special && m_special->m_always.Contains(id);}
+        bool HasAlwaysList() const {return m_special && !m_special->m_always.empty();}
+        DGNPLATFORM_EXPORT void Start(QueryViewControllerCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the QueryViewController supplied.
+        ElementsQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) {m_special = (special && !special->IsEmpty()) ? special : nullptr; m_activeVolume=activeVolume;}
+    };
+
+    //=======================================================================================
+    // A query that uses both the BeSQLite spatial index and a DgnElementId-based filter for a QueryView.
+    // This object holds two statements - one for the spatial query and one that filters element, by id,
+    // on the "other" criteria for a QueryView.
+    // The Statements are retrieved from the statement cache and prepared/bound in the Start method.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SpatialQuery : ElementsQuery
+    {
+        bool m_doSkewTest = false;
+        BeSQLite::CachedStatementPtr m_rangeStmt;
+        BeSQLite::RTree3dVal m_boundingRange;    // only return entries whose range intersects this cube.
+        BeSQLite::RTree3dVal m_backFace;
+        Render::FrustumPlanes m_planes;
+        Frustum m_frustum;
+        DMatrix4d m_localToNpc;
+        DVec3d m_viewVec;  // vector from front face to back face, for SkewScan
+        DPoint3d m_cameraPosition;
+
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) = 0;
+        DgnElementId StepRtree();
+        bool SkewTest(BeSQLite::RTree3dValCP testRange);
+        BeSQLite::RTreeMatchFunction::Within TestVolume(FrustumCR box, BeSQLite::RTree3dValCP);
+        void Start(QueryViewControllerCR); //!< when this method is called the SQL string for the "ViewStmt" is obtained from the QueryViewController supplied.
+        void SetFrustum(FrustumCR);
+        SpatialQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) : ElementsQuery(special, activeVolume) {}
+    };
+
+    //! Holds the results of a query.
+    struct QueryResults : RefCounted<NonCopyableClass>
+    {
+        typedef bmultimap<double, DgnElementId> OcclusionScores;
+        bool m_incomplete = false;
+        OcclusionScores m_scores;
+        uint32_t GetCount() const {return (uint32_t) m_scores.size();}
+    };
+    typedef RefCountedPtr<QueryResults> QueryResultsPtr;
+
+    //=======================================================================================
+    // This object is created on the Client thread and queued to the Query thread. It populates its
+    // QueryResults with the set of n-best elements that satisfy both range and view criteria.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
+    {
+        DEFINE_T_SUPER(SpatialQuery)
+        bool m_depthFirst = false;
+        bool m_cameraOn = false;
+        bool m_testLOD = false;
+        uint32_t m_orthogonalProjectionIndex;
+        uint32_t m_count = 0;
+        uint32_t m_hitLimit = 0;     // find this many "best" elements sorted by occlusion score
+        uint64_t m_lastId = 0;
+        double m_lodFilterNPCArea = 0.0;
+        double m_minScore = 0.0;
+        double m_lastScore = 0.0;
+        QueryViewController::QueryResultsPtr m_results;
+
+        virtual void _Go() override;
+        virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
+        void AddAlwaysDrawn(QueryViewControllerCR);
+        void SetDepthFirst() {m_depthFirst=true;}
+        void SetTestLOD(bool onOff) {m_testLOD=onOff;}
+        void SetSizeFilter(DgnViewportCR, double size);
+        bool ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn);
+        bool ComputeOcclusionScore(double& score, FrustumCR);
+
+    public:
+        RangeQuery(QueryViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);
+        QueryViewController::QueryResultsPtr DoQuery();
+        QueryViewController::QueryResultsPtr GetResults() {return m_results;}
+    };
+
+    //=======================================================================================
+    // The set of DgnElements that are contained in a scene. This is used when performing a progressive
+    // update or heal of a view to determine which elements are already visible.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SceneMembers : RefCounted<DgnElementMap>, NonCopyableClass
+    {
+        bool m_complete = false;
+        uint32_t m_progressiveTotal = 0;
+    };
+    typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
+
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   03/16
+    //=======================================================================================
+    struct NonSceneQuery : RangeQuery
+    {
+    NonSceneQuery(QueryViewControllerCR, FrustumCR, DgnViewportCR);
+    };
+
+    //=======================================================================================
+    // A ProgressiveTask for a QueryViewController that draws all of the elements that satisfy the query and range
+    // criteria, but were too small to be in the scene.
+    // @bsiclass                                                    Keith.Bentley   04/14
+    //=======================================================================================
+    struct ProgressiveTask : Dgn::ProgressiveTask
+    {
+        enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
+        bool m_setTimeout = false;
+        uint32_t m_thisBatch = 0;
+        uint32_t m_batchSize = 0;
+        uint64_t m_nextShow  = 0;
+        NonSceneQuery m_rangeQuery;
+        QueryViewControllerR m_view;
+        explicit ProgressiveTask(QueryViewControllerR, DgnViewportCR);
+        virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+    };
+
+
+protected:
+    bool m_noQuery = false;
+    bool m_loading = false;
+    mutable bool m_abortQuery = false;
+    Utf8String m_viewSQL;
+    double m_sceneLODSize = 6.0; 
+    double m_nonSceneLODSize = 7.0; 
+    mutable double m_queryElementPerSecond = 10000;
+    SceneMembersPtr m_scene;
+    SpecialElements m_special;
+    bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
+    mutable QueryResultsPtr m_results;
+
+    void QueryModelExtents(FitContextR);
+    void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
+    void AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>&);
+    bool AbortRequested() const {return m_abortQuery;} //!< @private
+    void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
+
+    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
+    QueryViewControllerCP _ToQueryView() const override {return this;}
+*/
+    DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
+    DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
+    DGNPLATFORM_EXPORT void _InvalidateScene() override;
+    DGNPLATFORM_EXPORT bool _IsSceneReady() const override;
+    void _FillModels() override {} // query views do not load elements in advance
+    DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT void _OnAttachedToViewport(DgnViewportR) override;
+    DGNPLATFORM_EXPORT void _CreateScene(SceneContextR) override;
+    DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
+    DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
+    DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
+    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
+    DGNPLATFORM_EXPORT void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
+    DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override final; // For QueryViews, don't allow override.
+    DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
+
+public:
+    //! *** NEEDS WORK: merge into ViewDefinition3d or SpatialViewDefinition
+    DGNPLATFORM_EXPORT QueryViewController(CameraViewDefinition const& definition);
+    DGNPLATFORM_EXPORT ~QueryViewController();
+
+    //! Get the Level-of-Detail filtering size for scene creation for this QueryViewController. This is the size, in pixels, of one side of a square. 
+    //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
+    double GetSceneLODSize() const {return m_sceneLODSize;}
+    void SetSceneLODSize(double val) {m_sceneLODSize=val;} //!< see GetSceneLODSize
+
+    //! Get the Level-of-Detail filtering size for non-scene (background) elements this QueryViewController. This is the size, in pixels, of one side of a square. 
+    //! Elements whose aabb projects onto the view an area less than this box are skippped during background-element display.
+    double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
+    void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
+
+    // Get the set of special elements for this QueryViewController.
+    SpecialElements const& GetSpecialElements() const {return m_special;}
+
+    //! Get the list of elements that are always drawn
+    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
+
+    //! Establish a set of elements that are always drawn in the view.
+    //! @param[in] exclusive If true, only these elements are drawn
+    DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
+
+    //! Empty the set of elements that are always drawn
+    DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
+
+    //! Establish a set of elements that are never drawn in the view.
+    DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
+
+    //! Get the list of elements that are never drawn.
+    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
+    //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
+    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
+
+    //! Empty the set of elements that are never drawn
+    DGNPLATFORM_EXPORT void ClearNeverDrawn();
+
+    //! Requests that any active or pending queries for this view be canceled, optionally not returning until the request is satisfied
+    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
+};
 
 //=======================================================================================
 //! A OrthographicViewController controls orthogrphic projections of views of SpatialModels
@@ -747,39 +1049,11 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    struct EnvironmentDisplay
-    {
-        struct GroundPlane
-        {
-            bool m_enabled = false;
-            double m_elevation;
-            ColorDef m_aboveColor;
-            ColorDef m_belowColor;
-        };
-        struct SkyBox
-        {
-            bool m_enabled = false;
-            Utf8String m_jpegFile;
-            ColorDef m_zenithColor;
-            ColorDef m_nadirColor;
-            ColorDef m_groundColor;
-            ColorDef m_skyColor;
-            double m_groundExponent;
-            double m_skyExponent;
-        };
-        bool m_enabled = false;
-        GroundPlane m_groundPlane;
-        SkyBox m_skybox;
-
-    };
-
 protected:
     DPoint3d m_origin;                 //!< Back origin
     DVec3d m_delta;                    //!< X,Y extents of focus plane; Z=depth
     RotMatrix m_rotation;              //!< View direction
     CameraInfo m_camera;  //!< Information about the camera lens used for the view.
-    Render::MaterialPtr m_skybox;
-    EnvironmentDisplay m_environment;
 
     CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
@@ -789,7 +1063,6 @@ protected:
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
-    void _CreateTerrain(TerrainContextR context) override {DrawSkyBox(context);}
     DPoint3d _GetOrigin() const override { return m_origin; }
     DVec3d _GetDelta() const override { return m_delta; }
     RotMatrix _GetRotation() const override { return m_rotation; }
@@ -797,15 +1070,8 @@ protected:
     void _SetDelta(DVec3dCR delta) override { m_delta = delta; }
     void _SetRotation(RotMatrixCR rot) override { m_rotation = rot; }
     void _AdjustAspectRatio(double windowAspect, bool expandView) override { AdjustAspectRatio(m_origin, m_delta, m_rotation, windowAspect, expandView); }
-
-    void LoadEnvironment();
-    DGNPLATFORM_EXPORT void SaveEnvironment();
-    void LoadSkyBox(Render::SystemCR system);
-    Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
-    double GetGroundElevation() const;
-    AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
-    void DrawGroundPlane(DecorateContextR);
-    DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR); 
+    bool _IsEyePointAbove(double elevation) const override { return GetEyePoint().z > elevation; }
+    DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
 
 public:
     void VerifyFocusPlane();
@@ -906,11 +1172,6 @@ public:
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
 
-    //! Determine whether the camera is above or below an elevation (postion along world-z axis).
-    //! @param[in] elevation The elevation to test
-    //! @return true if the camera is above the elevation. 
-    bool IsCameraAbove(double elevation) const {return GetEyePoint().z > elevation;}
-
     //! Get the distance from the eyePoint to the front plane for this view.
     double GetFrontDistance() const {return GetBackDistance() - GetDelta().z;}
 
@@ -940,20 +1201,6 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
-/** @} */
-
-/** @name Environment Display*/
-/** @{ */
-    //! Determine whether the Environment is displayed in this view. If false, neither Ground Plane nor SkyBox are displayed.
-    bool IsEnvironmentEnabled() const {return m_environment.m_enabled;}
-    //! Determine whether the SkyBox is displayed in this view.
-    bool IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled;}
-    //! Determine whether the Ground Plane is displayed in this view.
-    bool IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled;}
-    //! Get the current values for the Environment Display for this view
-    EnvironmentDisplay GetEnvironmentDisplay() const {return m_environment;}
-    //! Change the current values for the Environment Display for this view
-    void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment=val; SaveEnvironment();}
 /** @} */
 
 };

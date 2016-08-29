@@ -109,13 +109,13 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
-struct FitQuery : DgnQueryView::SpatialQuery
+struct FitQuery : QueryViewController::SpatialQuery
     {
     FitContextR m_context;
     virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
 
 public:
-    FitQuery(DgnQueryView::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : DgnQueryView::SpatialQuery(special, volume), m_context(context)
+    FitQuery(QueryViewController::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : QueryViewController::SpatialQuery(special, volume), m_context(context)
         {
         if (context.m_params.m_limitByVolume)
             SetFrustum(context.GetFrustum());
@@ -170,7 +170,7 @@ ViewController::FitComplete ViewController::_ComputeFitRange(FitContextR context
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::FitComplete DgnQueryView::_ComputeFitRange(FitContextR context)
+ViewController::FitComplete QueryViewController::_ComputeFitRange(FitContextR context)
     {
     FitQuery filter(&m_special, context, m_activeVolume.get());
     filter.Start(*this);

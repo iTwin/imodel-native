@@ -348,7 +348,7 @@ public:
 struct RenderListContext : RenderContext
 {
     DEFINE_T_SUPER(RenderContext);
-    friend struct DgnQueryView;
+    friend struct QueryViewController;
 
 protected:
     bool m_wantStroke = true;
@@ -380,7 +380,7 @@ public:
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
-    friend struct DgnQueryView;
+    friend struct QueryViewController;
 
 private:
     bool _CheckStop() override;
