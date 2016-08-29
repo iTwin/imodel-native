@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/QueryView.h>
 
 #define PROPNAME_Descr "Descr"
 #define PROPNAME_Source "Source"

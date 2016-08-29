@@ -952,9 +952,9 @@ public:
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : SpatialViewController
+struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : QueryViewController
     {
-    DEFINE_T_SUPER(SpatialViewController);
+    DEFINE_T_SUPER(QueryViewController);
 
 protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
@@ -1045,7 +1045,7 @@ This is what the parameters to the camera methods, and the values stored by Came
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
+struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : QueryViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
