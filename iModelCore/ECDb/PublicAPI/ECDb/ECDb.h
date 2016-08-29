@@ -17,16 +17,6 @@ struct ECDbSchemaManager;
 struct ECSqlScalarFunction;
 
 //=======================================================================================
-//! OptimizationHint allow application to decide how it will interact with ECDb
-// @bsiclass                                                Krischan.Eberle      09/2015
-//+===============+===============+===============+===============+===============+======
-enum class ECSqlQueryOptimizationOption
-    {
-    Interactive,  //!Improver performance for applications that need quick response on first query. This is also the default mode.
-    Bulk, //! Improve performance for applications that need to access bulk of data. Downside is that the first query can take more time as ECDB caches needed data to run rest of query faster.
-    };
-
-//=======================================================================================
 //! Severity of an ECDb issue
 // @bsiclass                                                Krischan.Eberle      09/2015
 //+===============+===============+===============+===============+===============+======
@@ -133,13 +123,6 @@ public:
     //! into or retrieve @ref ECN::ECSchema "ECSchemas" or individual @ref ECN::ECClass "ECClasses" from the %ECDb file.
     //! @return Schema manager
     ECDB_EXPORT ECDbSchemaManager const& Schemas() const;
-
-    //! This should  be called before first ECSql executed. It set mode of access depending on type of application
-    ECDB_EXPORT void SetECSqlQueryOptimizationOption(ECSqlQueryOptimizationOption mode);
-
-    //! Gets optimization mode for ECSQl
-    //! @return Currently set optimization mode
-    ECDB_EXPORT ECSqlQueryOptimizationOption GetECSqlQueryOptimizationOption() const;
 
     //! Gets the schema locator for schemas stored in this ECDb file.
     //! @return This ECDb file's schema locater
