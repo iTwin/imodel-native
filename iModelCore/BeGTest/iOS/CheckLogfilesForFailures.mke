@@ -1,0 +1,22 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iOS/CheckLogfilesForFailures.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+baseDir             = $(_MakeFilePath)
+
+%if $(TARGET_PLATFORM)!="iOS"
+    %error This makefile should be used only when TARGET_PLATFORM is iOS
+%endif
+
+%ifndef LogFilesDir
+    %error Define LogFilesDir as the directory that contaings the logfiles to analyze
+%endif
+
+always:
+    python $(baseDIr)CheckLogFilesForFailures.py $(LogFilesDir) 1
+    

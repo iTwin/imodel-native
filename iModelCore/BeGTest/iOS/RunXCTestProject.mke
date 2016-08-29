@@ -22,6 +22,10 @@
 
 XCODEPROJ=$(OutputRootDir)Product/$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 
+%ifndef XCTEST_LOGFILE_NAME
+    XCTEST_LOGFILE_NAME=$(XCTEST_PRODUCT).log
+%endif
+
 %ifnofile $(XCODEPROJ)
     %error $(XCODEPROJ) not found.
 %endif
@@ -44,15 +48,22 @@ always:
 
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
-    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
+    echo $(XCODEPROJ)>$(logfile)
+    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &>> $(logfile)
     python $(baseDir)CheckForRetry.py $(logfile) > ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt
     %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
         |Retrying...
-        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &> $(logfile)
-    %endif
-    %if !defined (BEGTEST_IGNORE_FAILURES)
-        python $(baseDIr)CheckResultsForFailures.py $(logFile) $(XCODEPROJ)
+        echo $(XCODEPROJ)>$(logfile)
+        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &>> $(logfile)
     %endif
 
+BreakOnFailure = 0
+%if defined (BEGTEST_BREAK_ON_FAILURE)
+    BreakOnFailure = 1
+%endif
 
+always:
+    python $(baseDIr)CheckResultsForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
 
+always:
+    ~linkfile "$(BuildContext)Delivery/XCTest/Logs/$(XCTEST_LOGFILE_NAME)=$(logFile)"
