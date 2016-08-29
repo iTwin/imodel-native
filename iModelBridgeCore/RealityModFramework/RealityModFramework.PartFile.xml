@@ -20,6 +20,13 @@
             <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+    
+    <Part Name="FtpTraverser" BentleyBuildMakeFile="RealityPlatform\FtpTraverser\FtpTraverser.mke">
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/FtpTraverser.exe</Assemblies>
+        </Bindings>
+    </Part>
 
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="BentleyCrawlerLibNet"/>
@@ -91,6 +98,7 @@
         <SubPart PartName="RealityDbECPluginInstaller" />
         <SubPart PartName="DataHandlerTool" />
         <SubPart PartName="RealityServicesNet"/>
+        <SubPart PartName="FtpTraverser"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 
