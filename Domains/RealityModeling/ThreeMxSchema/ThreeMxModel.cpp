@@ -357,11 +357,12 @@ struct Publish3mxTexture : Render::Texture
 //=======================================================================================
 struct  PublishTileNode : TileNode
 {
-    NodePtr              m_node;
-    Transform            m_transform;
+    ScenePtr            m_scene;
+    NodePtr             m_node;
+    Transform           m_transform;
 
-    PublishTileNode(NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
-                     m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
+    PublishTileNode(SceneR scene, NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
+                    m_scene (&scene), m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -370,14 +371,13 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
     {
     TileMeshList        tileMeshes;
 
-
     for (auto& geometry : m_node->GetGeometry())
         {
         if (!geometry->GetPolyface().IsValid())
             continue;
 
         PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
-        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighing (it is baked into the capture).
+        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighting (it is baked into the capture).
 
         if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
             polyface->BuildPerFaceNormals();
@@ -434,17 +434,16 @@ RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, Transform
             range.Extend (child->GetRange());
 
     toTile.Multiply (range, range);
-    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (node, toTile, range, depth, siblingIndex, tolerance, parent);
 
-    static size_t               s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
-    Tile::ChildTiles const*     children = node._GetChildren();
+    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
+    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
 
-    if (nullptr != children && depth < s_depthLimit)
+    if (nullptr != node._GetChildren() && depth < s_depthLimit)
         {
-        size_t                   childIndex = 0;
+        size_t                  childIndex = 0;
 
         depth++;
-        for (auto& child : *children)
+        for (auto& child : *node._GetChildren())
             tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
         }
 
