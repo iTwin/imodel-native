@@ -558,7 +558,6 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
     RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
     double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
     uint32_t        rgbInt  = 0xffffff;
-    RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
     double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
     Utf8String      materialName = Utf8String ("Material_") + suffix;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
@@ -566,6 +565,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
     if (nullptr != displayParams)
         {
         rgbInt = displayParams->GetFillColor();
+        RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
 
         if (!isPolyline && displayParams->GetMaterialId().IsValid())
             {
