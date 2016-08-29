@@ -7,7 +7,7 @@
 <!-- / This section contains parts that make the ECF Runtime ///////////////////////////// -->
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="Logging" ExcludeLibType="Static" ExcludePlatforms="MacOS*"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
+    <Part Name="Logging" ExcludeLibType="Static" ExcludePlatforms="MacOS*,WinRT*"> <!-- Trim off dynamic-only parts here so we don't have to download the (non-existant) partfiles) -->
         <SubPart PartName="LoggingNative"   PartFile="LoggingSDK"                           Repository="loggingsdk" /> 
     </Part>
 
