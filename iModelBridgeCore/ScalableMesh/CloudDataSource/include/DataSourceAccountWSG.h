@@ -10,6 +10,23 @@
 
 unsigned int const DATA_SOURCE_SERVICE_WSG_DEFAULT_TRANSFER_TASKS = 16;
 
+namespace WSGServer
+    {
+    namespace Request
+        {
+        typedef   std::wstring     protocol;
+        typedef   std::wstring     server;
+        typedef   std::wstring     port;
+        }
+    typedef   std::wstring     token;
+    typedef   std::wstring     version;
+    typedef   std::wstring     apiID;
+    typedef   std::wstring     repository;
+    typedef   std::wstring     schema;
+    typedef   std::wstring     class_name;
+    typedef   std::wstring     instanceIDPrefix;
+    typedef   std::wstring     parameters;
+    }
 
 class DataSourceAccountWSG : public DataSourceAccountCached
 {
@@ -17,11 +34,14 @@ class DataSourceAccountWSG : public DataSourceAccountCached
 
 protected:
 
-    typedef std::wstring                                WSGToken;
+    WSGServer::Request::protocol            wsgProtocol   = L"https:";
+    WSGServer::Request::port                wsgPort       = L"443";
+    WSGServer::version                      wsgVersion    = L"v2.3";
+    WSGServer::apiID                        wsgAPIID      = L"Repositories";
+    WSGServer::repository                   wsgRepository = L"S3MXECPlugin--Server";
+    WSGServer::schema                       wsgSchema     = L"S3MX";
+    WSGServer::class_name                   wsgClassName  = L"Document";
 
-protected:
-
-    WSGToken                                tokenString;
     DataSourceBuffer::BufferSize            defaultSegmentSize;
     DataSourceBuffer::Timeout               defaultTimeout;
 
@@ -40,7 +60,9 @@ public:
         void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
         DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
 
-        DataSourceStatus                    setAccount                          (const AccountName &account);
+        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key);
+
+        virtual void                        setPrefixPath                       (const DataSourceURL &prefix) override;
 
         DataSource                   *      createDataSource                    (void);
         DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);

@@ -17,6 +17,7 @@
 
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
+extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;

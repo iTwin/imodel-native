@@ -7,8 +7,9 @@
 #include "include\DataSourceAccountWSG.h"
 
 
-DataSourceAccountWSG::DataSourceAccountWSG(const ServiceName & /*name*/, const AccountIdentifier & /*identifier*/, const AccountKey & /*key*/)
+DataSourceAccountWSG::DataSourceAccountWSG(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
+    setAccount(name, identifier, key);
                                                             // Default size is set by Service on creation
     setDefaultSegmentSize(0);
 
@@ -73,15 +74,34 @@ DataSourceBuffer::Timeout DataSourceAccountWSG::getDefaultTimeout(void)
     return defaultTimeout;
     }
 
-DataSourceStatus DataSourceAccountWSG::setAccount(const AccountName & account)
+DataSourceStatus DataSourceAccountWSG::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
     if (account.length() == 0 )
         return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
                                                             // Set details in base class
-    DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceWSG"), account, DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey());
+    DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceWSG"), account, identifier, key);
 
     return DataSourceStatus();
 }
+
+void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
+    {
+    DataSourceURL url(this->wsgProtocol + L"//");
+    url.append(this->getAccountIdentifier());
+    if (!this->wsgPort.empty())
+        {
+                                                            // using the += operator prevents appending an unwanted / separator
+        url += (L":" + this->wsgPort);
+        }
+    url.append(this->wsgVersion);
+    url.append(this->wsgAPIID);
+    url.append(this->wsgRepository);
+    url.append(this->wsgSchema);
+    url.append(this->wsgClassName);
+    url.append(prefix);
+
+    DataSourceAccount::setPrefixPath(url);
+    }
 
 
 DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)

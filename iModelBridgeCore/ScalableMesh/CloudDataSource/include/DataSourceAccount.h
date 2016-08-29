@@ -83,7 +83,7 @@ CLOUD_EXPORT    const AccountName &     getAccountName                  (void) c
     virtual void                        setCacheAccount                 (DataSourceAccount *account);
     virtual DataSourceAccount    *      getCacheAccount                 (void);
 
-    CLOUD_EXPORT         void           setPrefixPath                   (const DataSourceURL &url);
+    CLOUD_EXPORT virtual void           setPrefixPath                   (const DataSourceURL &url);
     CLOUD_EXPORT const   DataSourceURL  getPrefixPath                   (void) const;
 
     virtual DataSourceStatus            getFormattedCacheURL            (const DataSourceURL &sourceURL, DataSourceURL &fullCacheURL);
