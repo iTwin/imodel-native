@@ -267,7 +267,7 @@ BentleyStatus DbClassMapLoadContext::SetBaseClassMap(ClassMapCR classMap)
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ECDbCR ecdb, ECN::ECClassId classId)
     {
     loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT cm.Id, cm.ClassId, cm.MapStrategy, cm.UseSharedColumns, cm.SharedColumnCount, cm.ExcessColumnName, cm.JoinedTableInfo "
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT cm.Id, basecm.ClassId, cm.MapStrategy, cm.UseSharedColumns, cm.SharedColumnCount, cm.ExcessColumnName, cm.JoinedTableInfo "
                                                       "FROM ec_ClassMap cm LEFT JOIN ec_ClassMap basecm ON basecm.Id = cm.BaseId WHERE cm.ClassId=?");
     if (stmt == nullptr)
         {
@@ -284,7 +284,6 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, EC
     loadContext.m_baseClassId = stmt->IsColumnNull(1) ? ECN::ECClassId() : stmt->GetValueId<ECN::ECClassId>(1);
 
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(2));
-    MapStrategyExtendedInfo mapStrategyExtInfo;
     if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
         const bool useSharedColumns = stmt->IsColumnNull(3) ? false : DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(3));
@@ -302,13 +301,13 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, EC
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
 
+    stmt = nullptr; //to release the statement.
     if (DbClassMapLoadContext::ReadPropertyMaps(loadContext, ecdb) != SUCCESS)
         return ERROR;
 
     loadContext.m_isValid = true;
     return SUCCESS;
     }
-
 
 
 //---------------------------------------------------------------------------------------
