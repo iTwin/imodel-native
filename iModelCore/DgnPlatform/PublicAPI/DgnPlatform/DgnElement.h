@@ -859,6 +859,7 @@ protected:
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value);
     //! Set an ECNavigationProperty by name
+    //! @note Passing an invalid ID will cause a null value to be set.
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value);
     //! Set a string ECProperty by name

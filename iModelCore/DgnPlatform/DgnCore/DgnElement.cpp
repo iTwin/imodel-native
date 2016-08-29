@@ -2384,7 +2384,11 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id)
     {
-    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(id.GetValueUnchecked()));
+    ECValue value(id.GetValueUnchecked());
+    if (!id.IsValid())
+        value.SetToNull();
+
+    DgnDbStatus status = SetPropertyValue(propertyName, value);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }
