@@ -457,6 +457,9 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ExecuteSQL(hStmt);
     ReleaseStmt();
 
+    if(!hasExisting)
+        FetchScopeIdentity(entityId, len);
+
     SQLINTEGER dataSize = (int)data.GetSize();
     CHAR spatialDataSourceQuery[512];
     sprintf(spatialDataSourceQuery, "INSERT INTO [FTPIndex].[dbo].[SpatialDataSources] ([MainURL], [CompoundType], [FileSize], [DataSourceType], [LocationInCompound], [Server_Id]) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
