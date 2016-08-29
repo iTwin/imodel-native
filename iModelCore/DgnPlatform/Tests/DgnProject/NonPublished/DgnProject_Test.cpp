@@ -957,6 +957,18 @@ TEST_F(ElementUriTests, TestLegacyUris)
     ASSERT_TRUE(db.IsValid());
     testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASHELL%5FAND%5FTUBE%5FHEAT%5FEXCHANGER%5FPAR&GUID=A1AC9BB1%2D9AAF%2D4A9D%2D96B6%2DD5C242358405");
     testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASTORAGE%5FTANK%5FPAR&GUID=D3F923AD%2D5694%2D4300%2DBE23%2D1953D6D0D02B");
+
+    if (true)
+        {
+        db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\BGRSmall976.dgndb"), openParams);
+        ASSERT_TRUE(db.IsValid());
+
+        auto eid1 = db->Elements().QueryElementIdByURI("/DgnDb?Code=29V%252D9&A=ConstructionPlanning%255FPhysicalHierarchy&N=Equipment");
+        ASSERT_TRUE(eid1.IsValid());
+        
+        auto eid2 = db->Elements().QueryElementIdByURI("/DgnDb?Code=CB1002%252D0%252D6420&A=ConstructionPlanning%255FPhysicalHierarchy&N=Piping%252F03A%252D45405%252D01%252FSPOOL%252003A%252D45405%252D01%252D3");
+        ASSERT_TRUE(eid2.IsValid());
+        }
     }
 #endif
 

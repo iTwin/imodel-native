@@ -715,7 +715,7 @@ static DgnElementId queryElementIdFromDgnDbURI(DgnDbR db, DgnResourceURI& uri, D
     DgnResourceURI::QueryParser queryParser(uri.GetQuery());
     DgnResourceURI::UriToken key, value;
     char logical;
-    if (queryParser.ParseQueryParameter(key, value, logical) != SUCCESS)
+    if (queryParser.ParseQueryParameter(key, value, logical, true) != SUCCESS)
         {
         BeAssert(false && "invalid Db URI");
         return DgnElementId();
@@ -762,7 +762,7 @@ static DgnElementId queryElementIdFromGraphiteURI(DgnDbR db, DgnResourceURI& uri
     DgnResourceURI::QueryParser queryParser(uri.GetQuery());
     DgnResourceURI::UriToken key, value;
     char logical;
-    if (queryParser.ParseQueryParameter(key, value, logical) != SUCCESS)
+    if (queryParser.ParseQueryParameter(key, value, logical, true) != SUCCESS)
         {
         BeDataAssert(false && "invalid Graphite URI");
         return DgnElementId();
