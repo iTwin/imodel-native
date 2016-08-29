@@ -46,7 +46,8 @@
 //
 // XXX: Ideally we would instead determine if emutls is in use at runtime as it
 // is possible to configure glibc on Linux to use emutls regardless.
-#if !FOLLY_MOBILE && !defined(__APPLE__)
+// BENTLEY_CHANGE #if !FOLLY_MOBILE
+#if !FOLLY_MOBILE && !defined(__APPLE__) && !defined(BENTLEY_WINRT)
 #define FOLLY_TLD_USE_FOLLY_TLS 1
 #else
 #undef FOLLY_TLD_USE_FOLLY_TLS
