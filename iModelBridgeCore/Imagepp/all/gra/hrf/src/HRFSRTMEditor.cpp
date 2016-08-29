@@ -68,22 +68,14 @@ HSTATUS HRFSRTMLineEditor::ReadBlock(uint64_t pi_PosBlockX,
 
     m_pRasterFile->m_pSRTMFile->SeekToPos(offsetToLine);
 
-    uint32_t DataSize = GetResolutionDescriptor()->GetBytesPerBlockWidth();
-    if (m_pRasterFile->m_pSRTMFile->Read(po_pData, DataSize) != DataSize)
+    if (m_pRasterFile->m_pSRTMFile->Read(po_pData, m_ExactBytesPerRow) != m_ExactBytesPerRow)
         return Status;    // H_ERROR
-
-    //I'll keep it as a reference for big endian, little endian switch that may be necessary. To remove once done.
-    //// Switch reb end blue.
-    //if (m_pRasterFile->m_IsBGR)
-    //{
-    //    Byte temporaryValue;
-    //    for (uint32_t PixelIndex = 0; PixelIndex < GetResolutionDescriptor()->GetBytesPerBlockWidth(); PixelIndex += 3)
-    //    {
-    //        temporaryValue = po_pData[PixelIndex];
-    //        po_pData[PixelIndex] = po_pData[PixelIndex + 2];
-    //        po_pData[PixelIndex + 2] = temporaryValue;
-    //    }
-    //}
+	
+    //The data is in big-endian order. If the system is not, we swap the bytes.
+    if (!SystemIsBigEndian())
+        {
+        SwabArrayOfShort((uint16_t*) po_pData, m_ExactBytesPerRow / sizeof(uint16_t));
+        }
 
     Status = H_SUCCESS;
     return Status;
