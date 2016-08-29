@@ -110,7 +110,6 @@ struct ECDbMap :NonCopyableClass
         explicit ECDbMap(ECDbCR ecdb);
         ~ECDbMap() {}
 
-        static DbResult RepopulateClassHasTable(ECDbCR);
         ClassMap const* GetClassMap(ECN::ECClassCR) const;
         ClassMap const* GetClassMap(ECN::ECClassId) const;
 

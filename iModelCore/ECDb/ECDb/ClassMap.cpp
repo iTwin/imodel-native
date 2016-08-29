@@ -586,7 +586,6 @@ BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
     ClassMapId baseClassMapid;
     std::set<PropertyMapCP> baseProperties;
     ctx.BeginSaving(*this);
-    //auto baseClassMap = GetParentMapClassId () == 
     if (GetParentMapClassId().IsValid())
         {
         auto baseClass = ecdb.Schemas().GetECClass(GetParentMapClassId());
