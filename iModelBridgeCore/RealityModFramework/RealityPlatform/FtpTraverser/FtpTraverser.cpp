@@ -525,11 +525,13 @@ void ServerConnection::Update(FtpDataCR data)
         SQLBindCol(hStmt, 1, SQL_INTEGER, &sourceId, 2, &len);
         retCode = SQLFetch(hStmt);
 
-        if (retCode == SQL_SUCCESS)
+        if (retCode != SQL_SUCCESS)
             return;
         }
     else
         return;
+
+    ReleaseStmt();
 
     const char* url = data.GetUrl().c_str();
     CHAR sourceQuery[512];
@@ -549,6 +551,7 @@ void ServerConnection::Update(FtpDataCR data)
     SQLINTEGER serverId;
     SQLBindCol(hStmt, 1, SQL_INTEGER, &serverId, 2, &len);
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
+    ReleaseStmt();
 
     FtpServerCR server = data.GetServer();
 
@@ -567,8 +570,9 @@ void ServerConnection::Update(FtpDataCR data)
     SQLPrepare(hStmt, (SQLCHAR*)serverQuery, SQL_NTS);
     SQLLEN dateSize = sizeof(SQL_TIMESTAMP_STRUCT);
     SQL_TIMESTAMP_STRUCT checkTime = PackageDateTime(server.GetLastCheck());
-    SQLBindParameter(hStmt, 7, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &checkTime, 0, &dateSize);
+    SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &checkTime, dateSize, 0);
     SQL_TIMESTAMP_STRUCT onlineTime = PackageDateTime(server.GetLastTimeOnline());
+    SQLBindParameter(hStmt, 2, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &onlineTime, dateSize, 0);
     ExecuteSQL(hStmt);
     ReleaseStmt();
 
@@ -601,7 +605,7 @@ void ServerConnection::Update(FtpDataCR data)
     double yMax = std::max(Fpt.low.y, Fpt.high.y);
     char polygon[2000];
     sprintf(polygon, "POLYGON((%f %f, %f %f, %f %f, %f %f, %f %f))", xMax, yMax, xMax, yMin, xMin, yMin, xMin, yMax, xMax, yMax);
-    SQLBindParameter(hStmt, 5, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
+    SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(polygon), 0, (SQLPOINTER)polygon, strlen(polygon), NULL);
     
     ExecuteSQL(hStmt);
     ReleaseStmt();
@@ -628,12 +632,11 @@ void ServerConnection::Update(FtpDataCR data)
     ReleaseStmt();
 
     SQLINTEGER thumbnailId;
-    CHAR* thumbIdQuery = "SELECT [Thumbnail_Id] FROM [FTPIndex].[dbo].[SpatialEntityBases] WHERE [Id] = ?";
-    SQLPrepare(hStmt, (SQLCHAR*)thumbIdQuery, SQL_NTS);
-    SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_NUMERIC, SQL_INTEGER, 0, 0, &entityId, 0, NULL);
-    ExecuteSQL(hStmt);
+    CHAR thumbIdQuery[256];
+    sprintf(thumbIdQuery, "SELECT [Thumbnail_Id] FROM [FTPIndex].[dbo].[SpatialEntityBases] WHERE [Id] = %d", entityId);
+    ExecuteSQL(thumbIdQuery);
     SQLBindCol(hStmt, 1, SQL_INTEGER, &thumbnailId, 2, &len);
-    TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetchScroll(hStmt, SQL_FETCH_FIRST, 0));
+    TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
     ReleaseStmt();
 
     FtpThumbnailCR thumbnail = data.GetThumbnail();
@@ -648,7 +651,7 @@ void ServerConnection::Update(FtpDataCR data)
     SQLPrepare(hStmt, (SQLCHAR*)thumbQuery, SQL_NTS);
     
     SQL_TIMESTAMP_STRUCT stampTime = PackageDateTime(thumbnail.GetStamp());
-    SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &stampTime, 0, &dateSize);
+    SQLBindParameter(hStmt, 1, SQL_PARAM_INPUT, SQL_C_TIMESTAMP, SQL_TYPE_TIMESTAMP, 23, 3, &stampTime, dateSize, 0);
     
     const bvector<Byte>& thumbnailBytes = thumbnail.GetData();
     size_t size = thumbnailBytes.size();
