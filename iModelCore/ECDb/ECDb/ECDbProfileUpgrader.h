@@ -123,17 +123,6 @@ struct ECDbProfileUpgrader_3712 : ECDbProfileUpgrader
     };
 
 //=======================================================================================
-// @bsiclass                                                 Affan Khan      06/2016
-//+===============+===============+===============+===============+===============+======
-struct ECDbProfileUpgrader_3711 : ECDbProfileUpgrader
-    {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-    private:
-        virtual DbResult _Upgrade(ECDbCR) const override;
-    };
-
-
-//=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      05/2016
 //+===============+===============+===============+===============+===============+======
 struct ECDbProfileUpgrader_3710 : ECDbProfileUpgrader

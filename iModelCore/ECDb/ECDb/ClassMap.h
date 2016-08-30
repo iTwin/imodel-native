@@ -11,9 +11,15 @@
 #include "IssueReporter.h"
 #include <Bentley/NonCopyableClass.h>
 
-#include "DbSchemaPersistenceManager.h"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle      01/2016
+//+===============+===============+===============+===============+===============+======
+struct ClassMapId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ClassMapId, BeInt64Id)
+    };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
@@ -79,6 +85,10 @@ struct ECDbMap;
 struct ECSqlPrepareContext;
 struct ECInstanceIdPropertyMap;
 struct ECClassIdPropertyMap;
+
+struct DbClassMapLoadContext;
+struct DbMapSaveContext;
+
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======

@@ -42,11 +42,6 @@ struct DbConstraintId : BeInt64Id
     BEINT64_ID_DECLARE_MEMBERS(DbConstraintId, BeInt64Id)
     };
 
-struct ClassMapId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ClassMapId, BeInt64Id)
-    };
-
 struct PropertyPathId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(PropertyPathId, BeInt64Id)

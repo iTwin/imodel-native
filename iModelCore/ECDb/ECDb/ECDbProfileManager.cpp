@@ -165,8 +165,7 @@ DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& curr
     if (currentProfileVersion < SchemaVersion(3, 7, 1, 0))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3710()));
 
-    if (currentProfileVersion < SchemaVersion(3, 7, 1, 1))
-        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3711()));
+    //upgrader for 3.7.1.1 is obsolete. 3.7.0.1 has already handled it, or for newer files, 3.7.3.1 will handle it.
 
     if (currentProfileVersion < SchemaVersion(3, 7, 1, 2))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3712()));
