@@ -10,8 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/AutoRestore.h>
-#include <iostream>
-#include <fstream>
+#include <stdio.h>
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
     #define TILEPUBLISHER_EXPORT EXPORT_ATTRIBUTE
@@ -101,7 +100,7 @@ struct TilePublisher
     typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
 private:
     BatchIdMap              m_batchIds;
-    std::ofstream           m_outputFile;
+    std::FILE*              m_outputFile;
     DPoint3d                m_centroid;
     TileMeshList            m_meshes;
     TileNodeCR              m_tile;

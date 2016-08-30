@@ -57,7 +57,7 @@ void BatchIdMap::ToJson(Json::Value& value) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
-    : m_centroid(GetCentroid(tile)), m_tile(tile), m_context(context)
+    : m_centroid(GetCentroid(tile)), m_tile(tile), m_context(context), m_outputFile(NULL)
     {
 #define CESIUM_RTC_ZERO
 #ifdef CESIUM_RTC_ZERO
@@ -84,7 +84,7 @@ DPoint3d TilePublisher::GetCentroid(TileNodeCR tile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AppendUInt32(uint32_t value)
     {
-    m_outputFile.write(reinterpret_cast<const char*>(&value), sizeof(value));
+    std::fwrite(&value, 1, sizeof(value), m_outputFile);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -141,9 +141,10 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
 
                 BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), metadataRelativePath.c_str(), nullptr);
 
-                m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
-                m_outputFile.write(metadataStr.data(), metadataStr.size());
-                m_outputFile.close();
+                m_outputFile = std::fopen(Utf8String(metadataFileName.c_str()).c_str(), "w");
+                std::fwrite(metadataStr.data(), 1, metadataStr.size(), m_outputFile);
+                std::fclose(m_outputFile);
+                m_outputFile = NULL;
 
                 Json::Value         child;
 
@@ -242,9 +243,10 @@ void TilePublisher::WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth
 
     Utf8String metadataStr = Json::FastWriter().write(val);
 
-    m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
-    m_outputFile.write(metadataStr.data(), metadataStr.size());
-    m_outputFile.close();
+    m_outputFile = std::fopen(Utf8String(metadataFileName.c_str()).c_str(), "w");
+    std::fwrite(metadataStr.data(), 1, metadataStr.size(), m_outputFile);
+    std::fclose(m_outputFile);
+    m_outputFile = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -274,7 +276,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
-    m_outputFile.open(Utf8String(binaryDataFileName.c_str()).c_str(), std::ios_base::trunc | std::ios_base::binary);
+    m_outputFile = std::fopen(Utf8String(binaryDataFileName.c_str()).c_str(), "wb");
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
@@ -292,24 +294,25 @@ PublisherContext::Status TilePublisher::Publish()
     uint32_t b3dmNumBatches = m_batchIds.Count();
     uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
 
-    m_outputFile.write(s_b3dmMagic, 4);
+    std::fwrite(s_b3dmMagic, 1, 4, m_outputFile);
     AppendUInt32(s_b3dmVersion);
     AppendUInt32(b3dmLength);
     AppendUInt32(b3dmNumBatches);
     AppendUInt32(batchTableStrLen);
-    m_outputFile.write(batchTableStr.data(), batchTableStrLen);
+    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, m_outputFile);
 
-    m_outputFile.write(s_gltfMagic, 4);
+    std::fwrite(s_gltfMagic, 1, 4, m_outputFile);
     AppendUInt32(s_gltfVersion);
     AppendUInt32(gltfLength);
     AppendUInt32(sceneStrLength);
     AppendUInt32(s_gltfSceneFormat);
 
-    m_outputFile.write(sceneStr.data(), sceneStrLength);
+    std::fwrite(sceneStr.data(), 1, sceneStrLength, m_outputFile);
     if (!m_binaryData.empty())
-        m_outputFile.write(reinterpret_cast<const char*>(m_binaryData.data()), m_binaryData.size());
+        std::fwrite(m_binaryData.data(), 1, m_binaryData.size(), m_outputFile);
 
-    m_outputFile.close();
+    std::fclose(m_outputFile);
+    m_outputFile = NULL;
 
     return PublisherContext::Status::Success;
     }

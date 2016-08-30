@@ -355,10 +355,9 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString((m_rootName + suffix).c_str()).AppendExtension(L"html");
 
-    std::ofstream htmlFile;
-    htmlFile.open(Utf8String(htmlFileName.c_str()).c_str(), std::ios_base::trunc);
-    htmlFile.write(html.data(), html.size());
-    htmlFile.close();
+    std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
+    std::fwrite(html.data(), 1, html.size(), htmlFile);
+    std::fclose(htmlFile);
 
     // ###TODO: Symlink Cesium scripts, if not present
 
