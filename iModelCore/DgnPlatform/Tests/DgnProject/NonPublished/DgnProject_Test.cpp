@@ -715,8 +715,8 @@ TEST_F(DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
 +===============+===============+===============+===============+===============+======*/
 struct ElementUriTests : ::testing::Test
 {
-    BETEST_DECLARE_TC_SETUP
-    BETEST_DECLARE_TC_TEARDOWN
+    static void SetUpTestCase();
+    static void TearDownTestCase();
 
     ScopedDgnHost m_host;
     RefCountedPtr<Dgn::NamespaceAuthority> m_codeAuthority;
@@ -754,7 +754,7 @@ DgnDbTestUtils::SeedDbInfo ElementUriTests::s_seedFileInfo;
 // In this case, I just request the (root) seed file that my tests will use and make a note of it.
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_SETUP(ElementUriTests) 
+void ElementUriTests::SetUpTestCase() 
     {
     ScopedDgnHost tempHost;
     ElementUriTests::s_seedFileInfo = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(true, true));
@@ -764,7 +764,7 @@ BETEST_TC_SETUP(ElementUriTests)
 // Clean up what I did in my one-time setup
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-BETEST_TC_TEARDOWN(ElementUriTests)
+void ElementUriTests::TearDownTestCase()
     {
     // Note: leave your subdirectory in place. Don't remove it. That allows the 
     // base class to detect and throw an error if two groups try to use a directory of the same name.
