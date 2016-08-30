@@ -53,10 +53,14 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const;
             
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize);
+
+    private :
+
+        DataSourceStatus InitializeDataSourceAccount(DataSourceManager& dataSourceManager, const WString& directory);
         
     public : 
     
-        SMStreamingStore(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
+        SMStreamingStore(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"");
        
         virtual ~SMStreamingStore();
 
@@ -103,9 +107,9 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceAccount *dataSourceAccount, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
+        static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create(DataSourceManager& dataSourceManager, const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"")
         {
-        return new SMStreamingStore(dataSourceAccount, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
+        return new SMStreamingStore(dataSourceManager, path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path);
         }
         //Inherited from ISMDataStore - End
                              

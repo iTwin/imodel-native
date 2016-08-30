@@ -7555,19 +7555,19 @@ This method saves the points for streaming.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceAccount *dataSourceAccount, const WString& pi_pOutputDirPath, bool pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SavePointsToCloud(DataSourceManager *dataSourceManager, const WString& pi_pOutputDirPath, bool pi_pCompress)
     {
     if (0 == CreateDirectoryW(pi_pOutputDirPath.c_str(), NULL))
         {
         if (ERROR_PATH_NOT_FOUND == GetLastError()) return ERROR;
         }
 
-    this->SaveMasterHeaderToCloud(dataSourceAccount);
+    //this->SaveMasterHeaderToCloud(dataSourceManager);
     ISMDataStoreTypePtr<Extent3dType> dataStore(
  #ifndef VANCOUVER_API
-    new SMStreamingStore<Extent3dType>(dataSourceAccount, pi_pCompress)
+    new SMStreamingStore<Extent3dType>(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
    #else
-   SMStreamingStore<Extent3dType>::Create(dataSourceAccount, pi_pOutputDirPath, pi_pCompress)
+   SMStreamingStore<Extent3dType>::Create(*dataSourceManager, pi_pOutputDirPath, pi_pCompress)
    #endif
     );                    
 
@@ -7575,45 +7575,46 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveP
 
     return SUCCESS;
     }
-/**----------------------------------------------------------------------------
-This method saves the master header for streaming.
-
-@param
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount)
-    {
-    SMIndexMasterHeader<EXTENT> masterHeader;
-    this->GetDataStore()->LoadMasterHeader(&masterHeader, sizeof(masterHeader));
-
-    Json::Value masterHeaderJson;
-    masterHeaderJson["balanced"] = masterHeader.m_balanced;
-    masterHeaderJson["depth"] = (uint32_t)masterHeader.m_depth;
-    masterHeaderJson["rootNodeBlockID"] = masterHeader.m_rootNodeBlockID.m_integerID;
-    masterHeaderJson["splitThreshold"] = masterHeader.m_SplitTreshold;
-    masterHeaderJson["isTerrain"] = masterHeader.m_isTerrain;
-    masterHeaderJson["singleFile"] = false; // cloud format is always multifile
-
-    auto jsonBuffer = Json::StyledWriter().write(masterHeaderJson);
-
-    DataSourceStatus writeStatus;
-    DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
-
-    DataSource *dataSource = dataSourceAccount->getOrCreateDataSource(L"MasterHeader");
-    assert(dataSource != nullptr);
-
-    writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write);
-    assert(writeStatus.isOK());
-
-    writeStatus = dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
-    assert(writeStatus.isOK());
-
-    writeStatus = dataSource->close();
-    assert(writeStatus.isOK());
-
-    //dataSourceAccount->uploadBlobSync(dataSourceURL, reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
-
-    return SUCCESS;
-    }
+///**----------------------------------------------------------------------------
+//This method saves the master header for streaming.
+//
+//@param
+//-----------------------------------------------------------------------------*/
+//template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveMasterHeaderToCloud(DataSourceAccount *dataSourceAccount)
+//    {
+//    assert(false); // Please use streaming store for this!
+//    SMIndexMasterHeader<EXTENT> masterHeader;
+//    this->GetDataStore()->LoadMasterHeader(&masterHeader, sizeof(masterHeader));
+//
+//    Json::Value masterHeaderJson;
+//    masterHeaderJson["balanced"] = masterHeader.m_balanced;
+//    masterHeaderJson["depth"] = (uint32_t)masterHeader.m_depth;
+//    masterHeaderJson["rootNodeBlockID"] = masterHeader.m_rootNodeBlockID.m_integerID;
+//    masterHeaderJson["splitThreshold"] = masterHeader.m_SplitTreshold;
+//    masterHeaderJson["isTerrain"] = masterHeader.m_isTerrain;
+//    masterHeaderJson["singleFile"] = false; // cloud format is always multifile
+//
+//    auto jsonBuffer = Json::StyledWriter().write(masterHeaderJson);
+//
+//    DataSourceStatus writeStatus;
+//    DataSourceURL    dataSourceURL(L"MasterHeader.sscm");
+//
+//    DataSource *dataSource = dataSourceAccount->getOrCreateDataSource(L"MasterHeader");
+//    assert(dataSource != nullptr);
+//
+//    writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write);
+//    assert(writeStatus.isOK());
+//
+//    writeStatus = dataSource->write(reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
+//    assert(writeStatus.isOK());
+//
+//    writeStatus = dataSource->close();
+//    assert(writeStatus.isOK());
+//
+//    //dataSourceAccount->uploadBlobSync(dataSourceURL, reinterpret_cast<DataSourceBuffer::BufferData*>(&jsonBuffer[0]), jsonBuffer.size());
+//
+//    return SUCCESS;
+//    }
 
 #ifdef INDEX_DUMPING_ACTIVATED
 /**----------------------------------------------------------------------------
