@@ -236,13 +236,6 @@ int main(int argc, char *argv[])
             }
         else if (strstr(argv[i], "ftp://"))
             ftpUrls.push_back(std::string(argv[i]));
-        /*else if (strstr(argv[i], "-dbName:"))
-            {
-            substringPosition = strstr(argv[i], ":");
-            substringPosition++;
-            dbName = std::string(substringPosition);
-            necessaryInputs |= 1;
-            }*/
         else if (strstr(argv[i], "--connectionString:") || strstr(argv[i], "-cs:"))
             {
             std::string argument = std::string(argv[i]);
