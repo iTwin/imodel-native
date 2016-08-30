@@ -69,7 +69,7 @@ protected:
     Transform           m_tileToEcef;
     size_t              m_maxTilesPerDirectory;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory = 500);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory = 5000);
 
     virtual TileGeometryCacheP _GetGeometryCache() = 0;
 
@@ -123,7 +123,8 @@ private:
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
     void AppendUInt32(uint32_t value);
-    void WriteMetadataTree (Json::Value& val, TileNodeCR tile, double tolerance);
+    void WriteMetadataTree (Json::Value& val, TileNodeCR tile, size_t depth);
+    void WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth);
 
     Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP suffix);
