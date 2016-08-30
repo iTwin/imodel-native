@@ -118,7 +118,7 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
     root[JSON_GeometricError] = tile.GetTolerance();
     WriteBoundingVolume(root, tile);
 
-    root[JSON_Content]["url"] = Utf8String (tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str()).c_str();
+    root[JSON_Content]["url"] = Utf8String(m_context.GetTileUrl(tile, s_binaryDataExtension));
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
