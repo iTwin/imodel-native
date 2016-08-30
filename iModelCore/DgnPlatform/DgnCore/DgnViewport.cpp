@@ -1146,7 +1146,7 @@ void DgnViewport::SaveViewUndo()
         return;
 
     m_viewController->StoreToDefinition();
-    DgnEditElementCollector curr = m_viewController->GetDefinitionR();
+    DgnEditElementCollector curr = m_viewController->GetDefinitionR().MakeDeepCopy();
 
     if (0 == m_currentBaseline.size())
         {

@@ -2401,10 +2401,23 @@ protected:
      DGNPLATFORM_EXPORT void CopyFrom(DgnEditElementCollector const&);
 
 public:
+    //! Construct an empty collection
     DGNPLATFORM_EXPORT DgnEditElementCollector();
+    //! Create a copy of a collection, where the new collection holds pointers to the <em>same</em> elements as the source collection. @see MakeDeepCopy
     DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
+    //! Create a copy of a collection, where the new collection holds pointers to the <em>same</em> elements as the source collection. @see MakeDeepCopy
     DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
+    //! Destroy this collection
     DGNPLATFORM_EXPORT ~DgnEditElementCollector();
+
+    //! Make a "deep copy" of a this collection, so that the returned collection holds <em>copies of</em> the elements in the source collection.
+    DGNPLATFORM_EXPORT DgnEditElementCollector MakeDeepCopy()
+        {
+        DgnEditElementCollector newCollection;
+        for (auto el : *this)
+            newCollection.EditElement(*el);
+        return newCollection;
+        }
 
     //! Add the specified editable copy of an element to the collection. 
     //! @param el  The editable copy to be added
