@@ -3539,6 +3539,8 @@ DgnECInstancePtr DTMELEMENTECExtension::GetInstance (ElementHandleCR eh, UInt32 
 
 void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRecordsR changes, DgnECTxnInfoCR txnInfo, DgnECInstanceCreateContextCR context) const
     {
+    __super::_GetPotentialInstanceChanges(changes, txnInfo, context);
+
     bvector<DgnECInstancePtr> modified;
     RefCountedPtr<DTMElementDataCache> dataCache;
     ElementHandle eh (txnInfo.GetChangedElement ());
@@ -3548,6 +3550,13 @@ void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRec
         ElementHandle dtmEh (txnInfo.GetChangedElement ());
 
         TMSymbologyOverrideManager::GetReferencedElement (eh, dtmEh);
+
+        if (eh.GetElementType() == 107)
+            {
+            if (ElementHandlerManager::GetHandlerId(eh) == ElementHandlerId(TMElementMajorId, ELEMENTHANDLER_DTMOVERRIDESYMBOLOGY))
+                if (eh.GetElementRef() == dtmEh.GetElementRef())
+                    return;
+            }
 
         bool hasXAttributeChanged = false;
         for (auto const& txn : txnInfo.GetXAttrTxns ())
@@ -3569,7 +3578,6 @@ void DTMELEMENTECExtension::_GetPotentialInstanceChanges (DgnECInstanceChangeRec
 
         changes.AppendModifiedInstances (DgnECInstanceIterable::CreateFromVector (modified));
         }
-    __super::_GetPotentialInstanceChanges (changes, txnInfo, context);
     }
 
 void DTMELEMENTECExtension::_GenerateInstances (DgnElementECInstanceVector& instances, ElementHandleCR eh, ElementECEnablerListCR enablers, DgnECInstanceCreateContextCR context) const

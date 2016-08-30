@@ -29,7 +29,6 @@
     <Part Name="ElementHandlerNET" BMakeFile="elementhandler\handlerNET\handlerNET.mke">
         <SubPart PartName="ElementHandler"  />
         <SubPart PartName="TerrainModel"         PartFile="TerrainModel" />
-        <SubPart PartName="Ustation" PartFile="PowerPlatform" Repository="MstnPlatform" />
         <SubPart PartName="DgnPlatformNETAssembly"  PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
 
         <Bindings>

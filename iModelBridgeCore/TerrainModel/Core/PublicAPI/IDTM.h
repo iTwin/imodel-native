@@ -120,6 +120,8 @@ virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], i
 
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
 
+virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) = 0;
+
 virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
 
 /*__PUBLISH_SECTION_START__*/
@@ -145,6 +147,12 @@ BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d
 //! @param[in]  w2vMap           The world to view map
 //! @param[in]  testPoint           The point to project.
 BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
+
+//! Projects point on the DTM along a given direction
+//! @param[out]  pointOnDTM           Projected point.
+//! @param[in]  direction           The vector giving the direction of projection
+//! @param[in]  testPoint           The point to project.
+BENTLEYDTM_EXPORT bool IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint);
 
 //! Drapes a point onto the DTM along a vector.
 //! @param[out] endPt           Projected point.   
@@ -307,6 +315,9 @@ BENTLEYDTM_EXPORT void RemoveAllRestrictions();
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
+
+typedef std::function<void(DTMStatusInt status,double flatArea, double slopeArea)> DTMAreaValuesCallback;
+typedef std::function<bool()> DTMCancelProcessCallback;
 struct IDTM abstract : IRefCounted
 {
 //__PUBLISH_SECTION_END__
@@ -320,9 +331,11 @@ virtual IDTMContouring* _GetDTMContouring () = 0;
 virtual DTMStatusInt _GetRange(DRange3dR range) = 0;
 virtual BcDTMP _GetBcDTM() = 0;
 virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) = 0;
-virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints) = 0;
+virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) = 0;
+virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) = 0;
 virtual DTMStatusInt _GetTransformDTM (DTMPtr& transformedDTM, TransformCR transformation) = 0;
-virtual bool _GetTransformation (TransformR transformation) = 0;
+virtual bool         _GetTransformation (TransformR transformation) = 0;
+virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP) = 0;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -365,7 +378,9 @@ BENTLEYDTM_EXPORT DTMStatusInt GetBoundary (DTMPointArray& ret);
 //! @param[in] pts           The points of the area.
 //! @param[in] numPoints     The number of points of the area.
 //! @return error status.
-BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea (double& flatArea, double& slopeArea, const DPoint3d pts[], int numPoints);
+BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints);
+
+BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback);
 //__PUBLISH_SECTION_START__
 
 //! Gets a Transformed copy of the DTM.
@@ -378,6 +393,11 @@ BENTLEYDTM_EXPORT DTMStatusInt GetTransformDTM (DTMPtr& transformedDtm, Transfor
 //! @param[out] transformation The transformation.
 //! @return true if this is an identity transformation.
 BENTLEYDTM_EXPORT bool GetTransformation (TransformR transformation);
+
+//! Save this DTM to a geopak tin file.
+//! @param[in] geopak tin file name.
+//! @return true if save operation succeed.
+BENTLEYDTM_EXPORT DTMStatusInt ExportToGeopakTinFile(WCharCP fileNameP);
 
 //! Gets the BcDTM of the Current DTM if this is a BcDTM.
 //! @return the BcDTM.

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/Utils.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "StdAfx.h"
@@ -50,21 +50,6 @@ enum IntersectionType : long
     INTERSECTION_TYPE_Triangle  = 3,
     };
 
-/// <author>Piotr.Slowinski</author>                            <date>10/2011</date>
-inline DPoint3d operator- (DPoint3dCR p1, DPoint3dCR p2)
-    {
-    DPoint3d p = {p1.x - p2.x, p1.y - p2.y, p1.z - p2.z};
-    return p;
-    }
-
-/// <author>Piotr.Slowinski</author>                            <date>10/2011</date>
-inline DPoint3dR operator-= (DPoint3dR p1, DPoint3dCR p2)
-    {
-    p1.x -= p2.x;
-    p1.y -= p2.y;
-    p1.z -= p2.z;
-    return p1;
-    }
 
 DMatrix4d GetMatrixWorldToView(int view)
     {
@@ -322,7 +307,7 @@ bool     PrepText (TextBlockPtr& rtb, ElementHandleCR elHandle, DgnButtonEventCR
 
     cPt.z = cStoragePt.z;
     // Encode Labels
-    DPoint3d ptGO;
+    DVec3d ptGO;
     mdlModelRef_getGlobalOrigin (elHandle.GetModelRef(), &ptGO);
     cPt -= ptGO;
 
@@ -624,7 +609,7 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
 
                    if (numIntersectPts > 0)
                        {
-                       DPoint3d    pt;
+                       DVec3d originShift;
 
                        if (m_processFirstIntersection)
                            {
@@ -634,14 +619,16 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
 
                        if (m_sheet)
                            {
-                           pt = points[0];
+                           DPoint3d pt = points[0];
                            mdlTMatrix_transformPoint (&pt, &m_stu.GetTransform());
-                           pt -= m_globalOrigin;
+                           originShift = pt -m_globalOrigin;
                            }
                        else
-                           { pt =  m_activeUORs[0] - m_globalOrigin;}
+                           { 
+                           originShift = m_activeUORs[0] - m_globalOrigin;
+                           }
 
-                       m_textCollector.PreTraverse (pt.z * m_factor, GetViewport()->GetViewNumber());
+                       m_textCollector.PreTraverse (originShift.z * m_factor, GetViewport()->GetViewNumber());
                        for (DPoint3dCP intersectionPt = &intersectPtsA[0]; intersectionPt < &intersectPtsA[numIntersectPts]; ++intersectionPt)
                            { m_textCollector.OnIntersection (*intersectionPt, *this); }
                        }

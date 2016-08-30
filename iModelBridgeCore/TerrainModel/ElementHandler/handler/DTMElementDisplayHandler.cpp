@@ -1169,9 +1169,9 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
 
                 // Use different caches for each part of the DTM.
                 DTMPtr dtmPtr(DTMDataRef->GetDTMStorage(GetHull, context));
-                BcDTMP dtm = 0;
+                BcDTMP dtm = nullptr;
 
-                if (dtmPtr != 0)
+                if (dtmPtr.IsValid())
                     {
                     dtm = dtmPtr->GetBcDTM();
                     }
@@ -1411,9 +1411,9 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
             drawCutInfo->_SetWasNotCut (false);
 
         DPlane3d dplane;
-        cutPlane._GetPlane (dplane, true);
+        cutPlane._GetPlane(dplane, true);
 
-        if (dplane.normal.z == 0)
+        if (fabs(dplane.normal.z) < mgds_fc_nearZero)
             {
             CutGraphicsContainerCP       cutGraphics;
             if (NULL == (cutGraphics = context.GetCutGraphicsCache (thisElm, context.GetCurrDisplayPath(), cutPlane)))
@@ -1429,14 +1429,12 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                 RotMatrix matrix;
                 cutPlane._GetClipRange(clipMask, range2d, matrix);
 
-                double left;
-                double right;
-
                 DRange3d planeRange = DRange3d::From(range2d.low.x, range2d.low.y, 0, range2d.high.x, range2d.high.y, 0);
-                left = planeRange.low.x;
-                right = planeRange.high.x;
+                double left = planeRange.low.x;
+                double right = planeRange.high.x;
+                DVec3d xDir;
 
-                DVec3d xDir = DVec3d::FromNormalizedCrossProduct(dplane.normal, DVec3d::From(0, 0, 1));
+                matrix.GetColumn(xDir, 0);
                 DPoint3d res[2];
                 res[0] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, left);
                 res[1] = DPoint3d::FromSumOf(dplane.origin, 1, xDir, right);
@@ -1509,7 +1507,7 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
             return SUCCESS;
             }
         }
-    return ERROR;
+        return T_Super::_DrawCut(thisElm, cutPlane, context);
     }
 
 void DTMElementDisplayHandler::_GetPathDescription (ElementHandleCR element, WStringR string, const DisplayPath* path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr)

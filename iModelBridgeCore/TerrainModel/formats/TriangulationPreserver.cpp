@@ -22,6 +22,7 @@ TriangulationPreserver::TriangulationPreserver (BcDTMR dtm) : m_dtm (&dtm), m_dt
     m_numLinkErrors = 0;
     m_numLinkSwapFailed = 0;
     m_numLinksSwapped = 0;
+    m_numPointsUsed = 0;
     }
 
 void TriangulationPreserver::Initialize ()
@@ -43,6 +44,7 @@ void TriangulationPreserver::AddPoints (DPoint3dCP pts, int numPoints, int first
         m_ptIdTolocalId[firstId++] = (int)m_pts.size ();
         m_pts.push_back (*pts++);
         }
+    m_pointUsed.resize(m_pts.size());
     }
 
 void TriangulationPreserver::AddPoint (DPoint3dCR pt, int ptId)
@@ -56,22 +58,27 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
     if (numPoints != 3)
         return;
 
-    DPoint3d pts[4];
+    DPoint3d pts[3];
     pts[0] = m_pts[GetLocalId (ptNums[0])];
     pts[1] = m_pts[GetLocalId (ptNums[1])];
     pts[2] = m_pts[GetLocalId (ptNums[2])];
-    pts[3] = pts[0];
 
     int side = bcdtmMath_sideOf(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
 
     // Make sure it is the right orientation.
     if (side > 0)
-        std::swap(pts[2], pts[1]);
+        std::swap(ptNums[2], ptNums[1]);
 
-    DTMUserTag dtmUserTag = 0;
-    DTMFeatureId id;
-//    m_dtm->AddLinearFeature (DTMFeatureType::Breakline, pts, 4, dtmUserTag, &id);
-    m_stmDtm->AddLinearFeature (DTMFeatureType::GraphicBreak, pts, 4, dtmUserTag, &id);
+    for (int i = 0; i < 3; i++)
+        {
+        int localPtNum = GetLocalId(ptNums[i]);
+        if (!m_pointUsed[localPtNum])
+            {
+            m_pointUsed[localPtNum] = true;
+            m_numPointsUsed++;
+            }
+        m_pointIndex.push_back(localPtNum);
+        }
     }
 
 BcDTMPtr TriangulationPreserver::Finish ()
@@ -79,6 +86,30 @@ BcDTMPtr TriangulationPreserver::Finish ()
     if (m_stmDtm.IsNull ())
         return m_dtm;
 
+    if (m_numPointsUsed != (int)m_pts.size())
+        {
+        bvector<int> m_ptMapper;
+        m_ptMapper.resize(m_pts.size(), -1);
+        int nextNum = 0;
+        for (int i = 0; i < (int)m_pts.size(); i++)
+            {
+            if (m_pointUsed[i])
+                {
+                if (nextNum != i)
+                    m_pts[nextNum] = m_pts[i];
+
+                m_ptMapper[i] = nextNum;
+                nextNum++;
+                }
+            }
+        m_pts.resize(nextNum);
+        for (auto& pt : m_pointIndex)
+            {
+            pt = m_ptMapper[pt];
+            BeAssert(-1 != pt);
+            }
+        }
+    bcdtmObject_storeTrianglesInDtmObject(m_stmDtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_pts.data(), (int)m_pts.size(), m_pointIndex.data(), (int)m_pointIndex.size() / 3);
     // Recreate the triangulation.
     bcdtmObject_triangulateStmTrianglesDtmObject (m_stmDtm->GetTinHandle ());
     if (m_dtm->GetPointCount () == 0)
@@ -87,7 +118,6 @@ BcDTMPtr TriangulationPreserver::Finish ()
     // Add the void features to the TM.
     DTMFeatureEnumerator features (*m_stmDtm);
     bvector<DPoint3d> pts;
-
     // Add the Voids/Holes/Islands.
     for (const auto& feature : features)
         {
@@ -130,6 +160,11 @@ BcDTMPtr TriangulationPreserver::Finish ()
         m_dtm->AddPoints (m_pts);
         m_dtm->Triangulate ();
         }
+    else
+        {
+        m_dtm->AddPoints(m_pts);
+        }
+
     if (0)
         {
         DTMMeshEnumeratorPtr meshEnum = DTMMeshEnumerator::Create (*m_stmDtm);

@@ -35,6 +35,14 @@ DTMStatusInt IDTM::CalculateSlopeArea (double& flatArea, double& slopeArea, DPoi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Elenie.Godzaridis 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt IDTM::CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
+    {
+    return _CalculateSlopeArea(flatArea, slopeArea, pts, numPoints, progressiveCallback, isCancelledCallback);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sylvain.Pucci   08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 IDTMDraping* IDTM::GetDTMDraping ()
@@ -102,6 +110,11 @@ DTMStatusInt IDTMDraping::DrapeLinear (DTMDrapedLinePtr& ret, DPoint3dCP pts, in
 bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
     return _ProjectPoint(pointOnDTM, w2vMap, testPoint);
+    }
+
+bool IDTMDraping::IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    return _IntersectRay(pointOnDTM, direction, testPoint);
     }
 
 bool IDTMDraping::DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
@@ -188,6 +201,14 @@ void IDTMVolume::RemoveAllRestrictions()
 DTMStatusInt IDTM::GetRange (DRange3dR range)
     {
     return _GetRange (range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DTMStatusInt BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM::ExportToGeopakTinFile(WCharCP fileNameP)
+    {
+    return _ExportToGeopakTinFile(fileNameP);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/TerrainImporter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -117,8 +117,8 @@ void TerrainImporter::Callback::set (IImporterCallback^ value)
 ImportedTerrain^ TerrainImporter::ImportTerrain (System::String^ name)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (name);
-
     Bentley::TerrainModel::ImportedTerrain surface = m_unmanaged->m_importer->ImportTerrain (p);
+    System::GC::KeepAlive(name);
 
     Bentley::TerrainModelNET::DTM^ dtm = surface.GetTerrain() ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)surface.GetTerrain()) : nullptr;
     System::String^ description = surface.GetDescription ().GetWCharCP () ? gcnew System::String (surface.GetDescription ().GetWCharCP ()) : nullptr;
@@ -149,6 +149,7 @@ System::Collections::Generic::IEnumerable<ImportedTerrain^>^ TerrainImporter::Im
         pin_ptr<const wchar_t> p = PtrToStringChars (name);
 
         importList.push_back (WString(p));
+        System::GC::KeepAlive(name);
         }
     Bentley::TerrainModel::ImportedTerrainList list = m_unmanaged->m_importer->ImportTerrains (importList);
 
@@ -183,6 +184,7 @@ TerrainImporter^ TerrainImporter::CreateImporter (System::String^ filename)
     {
     pin_ptr<const wchar_t> p = PtrToStringChars (filename);
     TerrainImporterPtr importer = Bentley::TerrainModel::TerrainImporter::CreateImporter (p);
+    System::GC::KeepAlive(filename);
     // ToDo work out what importer it is and create an instance of that.
     if (importer.IsValid ())
         {

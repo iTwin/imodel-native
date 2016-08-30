@@ -6,9 +6,38 @@
 #       $Date: 2012/11/13 14:02:19 $
 #     $Author: Daryl.Holmwood $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
+%ifdef BMakeExportedMacros
+always:
+~@putenv BMakeExportedMacros=
+~@putenv BC_Assemblies=
+~@putenv BC_DESKTOP=
+~@putenv BC_LIB=
+~@putenv CustomAfterMicrosoftCommonTargets=
+~@putenv CustomBeforeMicrosoftCommonTargets=
+~@putenv IDEGlobalProperties=
+~@putenv MSBuildLoadMicrosoftTargetsReadOnly=
+~@putenv PkgDefApplicationConfigFile=
+~@putenv BCOPY_TEMP=
+~@putenv FrameworkDir=
+~@putenv FrameworkSDKDir=
+~@putenv FrameworkVersion=
+~@putenv INCLUDE=
+~@putenv LIB=
+~@putenv LIBPATH=
+~@putenv MSVCDir=
+~@putenv ToolSetPathsInjected==
+~@putenv USING_TARGET_ARCHITECTURE=
+~@putenv BUILD_USING_VS2012=
+~@putenv BUILD_USING_VS2013=
+~@putenv BUILD_USING_VS2015=
+
+~@putenv VisualStudioDir=
+~@putenv VisualStudioEdition=
+~@putenv VisualStudioVersion=
+%endif
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
 FoundationPolicyMki=$(SrcRoot)TerrainModel/privmki/TerrainModelPolicy.mki
