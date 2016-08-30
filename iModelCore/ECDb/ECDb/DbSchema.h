@@ -504,7 +504,7 @@ public:
 
     typedef std::unordered_map<Utf8String, std::unique_ptr<DbTable>, Utf8StringHash, Utf8StringEqual> TableMap;
 #else
-    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMap;
+    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMapByName;
 #endif
     typedef std::map<DbTableId, Utf8String> TableMapById;
 
@@ -512,7 +512,7 @@ public:
 
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
-    mutable TableMap m_tableMapByName;
+    mutable TableMapByName m_tableMapByName;
     mutable TableMapById m_tableMapById;
 
     mutable DbTable* m_nullTable;

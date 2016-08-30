@@ -27,7 +27,7 @@ ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_schemaManager(nullptr),
                             m_indexIdSequence(ecdb, "ec_indexidsequence"),
                             m_classmapIdSequence(ecdb, "ec_classmapidsequence"),
                             m_propertypathIdSequence(ecdb, "ec_propertypathidsequence"),
-                            m_issueReporter(ecdb), m_ecsqlFirstAccessMode(ECSqlQueryOptimizationOption::Interactive)
+                            m_issueReporter(ecdb)
     {
     m_schemaManager = std::unique_ptr<ECDbSchemaManager>(new ECDbSchemaManager(ecdb, *m_ecdbMap));
     }

@@ -1151,20 +1151,18 @@ BentleyStatus ECDbMap::SaveDbSchema() const
         return ERROR;
         }
 
-
     DbMapSaveContext ctx(GetECDb());
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapR classMap = *kvPair.second;
-            if (SUCCESS != classMap.Save(ctx))
+        if (SUCCESS != classMap.Save(ctx))
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
 
-
-    if (BE_SQLITE_OK != RepopulateClassHasTable(GetECDb()))
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))
         return ERROR;
 
     m_lightweightCache.Reset();

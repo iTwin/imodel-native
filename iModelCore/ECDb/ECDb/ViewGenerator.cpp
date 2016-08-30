@@ -72,17 +72,15 @@ BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
     {
     Statement stmt;
     stmt.Prepare(ecdb,
-                 "SELECT"
-                 "    ('DROP VIEW IF EXISTS _' || ec_Schema.Alias || '_' || ec_Class.Name)  AS UpdatableView"
-                 "    FROM ec_Class"
-                 "    INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
+                 "SELECT ('DROP VIEW IF EXISTS _' || ec_Schema.Alias || '_' || ec_Class.Name) "
+                 "FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP updtableViewSQL = stmt.GetValueText(0);
-        if (ecdb.ExecuteSql(updtableViewSQL) != BE_SQLITE_OK)
+        Utf8CP updatableViewSQL = stmt.GetValueText(0);
+        if (ecdb.ExecuteSql(updatableViewSQL) != BE_SQLITE_OK)
             {
-            BeAssert(false && "Failed to drop uptable view");
+            BeAssert(false && "Failed to drop updatable view");
             return ERROR;
             }
         }
@@ -177,17 +175,15 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     {
     Statement stmt;
     stmt.Prepare(ecdb,
-                 "SELECT"
-                 "    ('DROP VIEW IF EXISTS [' || ec_Schema.Alias || '.' || ec_Class.Name || '];') AS DebugView"
-                 "    FROM ec_Class"
-                 "    INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
+                 "SELECT ('DROP VIEW IF EXISTS [' || ec_Schema.Alias || '.' || ec_Class.Name || '];') FROM ec_Class "
+                 "INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
 
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP debugViewSQL = stmt.GetValueText(0);
-        if (ecdb.ExecuteSql(debugViewSQL) != BE_SQLITE_OK)
+        Utf8CP classViewSQL = stmt.GetValueText(0);
+        if (ecdb.ExecuteSql(classViewSQL) != BE_SQLITE_OK)
             {
-            BeAssert(false && "Failed to drop debug view");
+            BeAssert(false && "Failed to drop ECClass view");
             return ERROR;
             }
         }
@@ -605,8 +601,8 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
 
         ColumnMappedToPropertyList columnMapped;
-        bool generateDebugView = m_viewAccessStringList && m_captureViewAccessStringList;
-        if (generateDebugView)
+        const bool generateECClassView = m_viewAccessStringList && m_captureViewAccessStringList;
+        if (generateECClassView)
             {
             columnMapped = actualPropMap->QueryColumnInfo(
                 Enum::Or(ColumnMappedToProperty::LoadFlags::StrongType, Enum::Or(ColumnMappedToProperty::LoadFlags::Column, ColumnMappedToProperty::LoadFlags::AccessString)), true);
@@ -622,7 +618,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
 
         if (basePropMap->GetType() == PropertyMap::Type::ECClassId)
             {
-            if (generateDebugView)
+            if (generateECClassView)
                 m_viewAccessStringList->push_back(basePropMap->GetPropertyAccessString());
 
             ECClassIdPropertyMap const* ecclassIdPropertyMap = static_cast<ECClassIdPropertyMap  const*>(actualPropMap);
@@ -665,7 +661,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                     viewSql.Append("NULL ");
                 else
                     {
-                    if (generateDebugView)
+                    if (generateECClassView)
                         {
                         if (!columnMapped[i].GetColumn()->IsShared())
                             viewSql.Append(colSqlSnippets[i]);
@@ -687,7 +683,7 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
                     viewSql.AppendSpace().Append(aliasSqlSnippet);
                 }
 
-            if (generateDebugView)
+            if (generateECClassView)
                 {
                 for (auto const& columnInfo : columnMapped)
                     {

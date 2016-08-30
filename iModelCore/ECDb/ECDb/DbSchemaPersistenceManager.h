@@ -122,7 +122,9 @@ public:
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
-
+    static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
+    static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
+ 
     static bool IsTrue(int sqlInt) { return sqlInt != 0; }
     static int BoolToSqlInt(bool val) { return val ? 1 : 0; }
     };

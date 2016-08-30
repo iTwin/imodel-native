@@ -601,19 +601,15 @@ BentleyStatus ClassMap::InitializeDisableECInstanceIdAutogeneration()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::_Save(DbMapSaveContext& ctx)
+BentleyStatus ClassMap::Save(DbMapSaveContext& ctx)
     {
-    if (GetId().IsValid())
-        return SUCCESS;
-
-    if (ctx.IsAlreadySaved(*this))
+    if (!m_isDirty || ctx.IsAlreadySaved(*this) || GetId().IsValid())
         return SUCCESS;
 
     ECDbCR ecdb = GetECDbMap().GetECDb();
     ClassMapId baseClassMapid;
     std::set<PropertyMapCP> baseProperties;
     ctx.BeginSaving(*this);
-    //auto baseClassMap = GetBaseClassId () == 
     if (GetBaseClassId().IsValid())
         {
         auto baseClass = ecdb.Schemas().GetECClass(GetBaseClassId());
