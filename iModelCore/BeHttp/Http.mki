@@ -29,7 +29,7 @@ HttpHeaders + $(BeHttpPublicApiDir)ProxyHttpHandler.h
 #   Setup HTTP library
 #---------------------------------------------------------------------------------------+
 %if !defined (HTTP_LIB)
-        %if $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTARM"
+        %if $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx86" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTx64" || $(TARGET_PROCESSOR_ARCHITECTURE) == "WinRTARM"
                 HTTP_LIB = CASABLANCA
         %else
                 HTTP_LIB = CURL
