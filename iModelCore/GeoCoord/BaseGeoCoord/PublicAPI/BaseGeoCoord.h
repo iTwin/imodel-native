@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoCoord.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1947,7 +1947,32 @@ BASEGEOCOORD_EXPORTED static double     DegreesFromRadians
 double          inRadians
 );
 
+/*---------------------------------------------------------------------------------**//**
+* Calculates the longitude and latitude from ECEF coordinate.
+* @param    outLatLong      OUT     The calculated longitude,latitude,elevation.
+* @param    inXYZ           IN      The XYZ (ECEF) coordinates of this GCS.
+* @bsimethod                                                    Alain.Robert   2016/08
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED ReprojectStatus   LatLongFromXYZ
+(
+GeoPointR       outLatLong,
+DPoint3dCR      inXYZ
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Calculates the XYZ (ECEF) coordinates from the longitude, latitude and elevation.
+* @param    outXYZ      OUT     The calculated XYZ (ECEF) coordinates.
+* @param    inLatLong   IN      The latitude, longitude and elevation to convert
+* @bsimethod                                                    Alain.Robert   2016/08
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED ReprojectStatus   XYZFromLatLong
+(
+DPoint3dR       outXYZ,
+GeoPointCR      inLatLong
+) const;
+
 };
+
 
 /*__PUBLISH_SECTION_END__*/
 // NOTE: This was added to meet the Caltrans requirements for setting the Vertical Datum separately from the Datum.
@@ -2266,7 +2291,13 @@ BASEGEOCOORD_EXPORTED static int              CScalcMgrsFromLl (CSMilitaryGrid* 
 BASEGEOCOORD_EXPORTED static int              CScalcLlFromMgrs (CSMilitaryGrid* mg, GeoPoint2dP ll, const char* mgrsString);
 
 BASEGEOCOORD_EXPORTED static void             CSdeleteMgrs (CSMilitaryGrid* mg);
+
+BASEGEOCOORD_EXPORTED static void             CS_llhToXyz (DPoint3dP xyz, GeoPointCP llh, double e_rad, double e_sq);
+
+BASEGEOCOORD_EXPORTED static int              CS_xyzToLlh (GeoPointP llh , DPoint3dCP xyz, double e_rad, double e_sq);
+
 };
+
 
 
 typedef int (*DatumConvert3dFunc) (CSDatumConvert*, GeoPointCP in, GeoPointP out);
