@@ -1295,7 +1295,6 @@ BentleyStatus ECDbMap::SaveDbSchema() const
             }
         }
 
-
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))
         return ERROR;
 

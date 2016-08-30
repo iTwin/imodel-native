@@ -168,14 +168,11 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     if (SUCCESS != context.Initialize(m_map.GetDbSchemaR(), m_ecdb))
         return ERROR;
 
-    //Drop all debug views
     if (ViewGenerator::DropECClassViews(GetECDb()) != SUCCESS)
         return ERROR;
 
-    //Drop all updatable views
     if (ViewGenerator::DropUpdatableViews(GetECDb()) != SUCCESS)
         return ERROR;
-
 
     if (SUCCESS != BatchImportECSchemas(context, cache))
         return ERROR;
@@ -191,7 +188,6 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(ECSchemaCacheR cache) const
     if (MappingStatus::Error == m_map.MapSchemas(context))
         return ERROR;
 
-    //Drop all updatable/system  view which included trigger
     if (ViewGenerator::CreateUpdatableViews(GetECDb()) != SUCCESS)
         return ERROR;
 
@@ -215,7 +211,8 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
     for (ECSchemaP schema : schemas)
         {
         BeAssert(schema != nullptr);
-        if (schema == nullptr) continue;
+        if (schema == nullptr) 
+            continue;
 
         ECSchemaId id = ECDbSchemaPersistenceHelper::GetECSchemaId(m_ecdb, schema->GetName().c_str());
         if (schema->HasId() && (!id.IsValid() || id != schema->GetId()))
@@ -224,11 +221,9 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
             }
 
-
         BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
-    //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
     bvector<ECSchemaP> primarySchemas;
     bvector<ECSchemaP> suppSchemas;
     for (ECSchemaP schema : schemasToImport)
@@ -310,10 +305,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
         }
 
-    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
-        return ERROR;
-
-    return SUCCESS;
+    return DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
