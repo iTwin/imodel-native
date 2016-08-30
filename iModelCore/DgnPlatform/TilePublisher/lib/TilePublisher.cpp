@@ -112,10 +112,8 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, double tolerance)
+void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_t depth)
     {
-    root[JSON_GeometricError] = tile.GetTolerance();
-
     root["refine"] = "replace";
     root[JSON_GeometricError] = tile.GetTolerance();
     WriteBoundingVolume(root, tile);
@@ -124,13 +122,49 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, doubl
     if (!tile.GetChildren().empty())
         {
         root[JSON_Children] = Json::arrayValue;
-
-        for (auto& childTile : tile.GetChildren())
+        if (0 == --depth)
             {
-            Json::Value         child;
+            // Write children as seperate tilesets.
+            for (auto& childTile : tile.GetChildren())
+                {
+                Json::Value         childTileset;
 
-            WriteMetadataTree (child, *childTile, childTile->GetTolerance());
-            root[JSON_Children].append(child);
+                childTileset["asset"]["version"] = "0.0";
+
+                auto&   childRoot = childTileset[JSON_Root];
+                WriteMetadataTree (childRoot, *childTile, s_maxTilesetDepth);
+
+                Utf8String metadataStr = Json::FastWriter().write(childTileset);
+
+                WString     fileName = L"SubTree" + childTile->GetNameSuffix(), metadataRelativePath;
+                BeFileName::BuildName (metadataRelativePath, nullptr, nullptr, fileName.c_str(), s_metadataExtension);
+
+                BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), metadataRelativePath.c_str(), nullptr);
+
+                m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
+                m_outputFile.write(metadataStr.data(), metadataStr.size());
+                m_outputFile.close();
+
+                Json::Value         child;
+
+                child["refine"] = "replace";
+                child[JSON_GeometricError] = childTile->GetTolerance();
+                WriteBoundingVolume(child, *childTile);
+
+                child[JSON_Content]["url"] = Utf8String (metadataRelativePath.c_str()).c_str();
+                root[JSON_Children].append(child);
+                }
+            }
+        else
+            {
+            // Append children to this tileset.
+            for (auto& childTile : tile.GetChildren())
+                {
+                Json::Value         child;
+
+                WriteMetadataTree (child, *childTile, depth);
+                root[JSON_Children].append(child);
+                }
             }
         }
     }
@@ -183,6 +217,36 @@ template<typename T> void TilePublisher::AddBufferView(Json::Value& views, Utf8C
     memcpy(m_binaryData.data() + binaryDataSize, bufferData.data(), bufferDataSize);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth)
+    {
+    Json::Value val;
+
+    val["asset"]["version"] = "0.0";
+
+    if (!m_context.GetTileToEcef().IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+        auto&       transformValue = val[JSON_Root][JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
+    auto& root = val[JSON_Root];
+    WriteMetadataTree (root, m_tile, maxDepth);
+
+    Utf8String metadataStr = Json::FastWriter().write(val);
+
+    m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
+    m_outputFile.write(metadataStr.data(), metadataStr.size());
+    m_outputFile.close();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -190,31 +254,14 @@ PublisherContext::Status TilePublisher::Publish()
     {
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_metadataExtension).c_str(), nullptr);
-
+    
     if (0 == m_tile.GetDepth())
         {
-        Json::Value val;
-
-        val["asset"]["version"] = "0.0";
-
-        if (!m_context.GetTileToEcef().IsIdentity())
-            {
-            DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
-            auto&       transformValue = val[JSON_Root][JSON_Transform];
-
-            for (size_t i=0;i<4; i++)
-                for (size_t j=0; j<4; j++)
-                    transformValue.append (matrix.coff[j][i]);
-            }
-
-        auto& root = val[JSON_Root];
-        WriteMetadataTree (root, m_tile, m_tile.GetTolerance());
-
-        Utf8String metadataStr = Json::FastWriter().write(val);
-
-        m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
-        m_outputFile.write(metadataStr.data(), metadataStr.size());
-        m_outputFile.close();
+        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr),  s_maxTilesetDepth);
+#ifdef TILESET_STRUCTURE_TESTING
+        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"Single").c_str(), s_metadataExtension).c_str(), nullptr), 1);
+        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"Unified").c_str(), s_metadataExtension).c_str(), nullptr), 0xffff);
+#endif
         }
 
     // .b3dm file

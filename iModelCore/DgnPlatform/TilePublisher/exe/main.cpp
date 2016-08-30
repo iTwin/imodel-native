@@ -255,7 +255,7 @@ private:
     virtual TileGeometryCacheP _GetGeometryCache() override { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
 
-    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
+    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames, WCharCP suffix);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -316,7 +316,7 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& tileSetNames)
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& tileSetNames, WCharCP suffix)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -347,13 +347,13 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
     Utf8String       tileSetHtml;
 
     for (auto& tileSetName : tileSetNames)
-        tileSetHtml = tileSetHtml + Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), tileSetName.c_str());
+        tileSetHtml = tileSetHtml + Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), (tileSetName + suffix).c_str());
 
     // Produce the html file contents
     Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
 
     BeFileName htmlFileName = m_outputDir;
-    htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
+    htmlFileName.AppendString((m_rootName + suffix).c_str()).AppendExtension(L"html");
 
     std::ofstream htmlFile;
     htmlFile.open(Utf8String(htmlFileName.c_str()).c_str(), std::ios_base::trunc);
@@ -484,7 +484,12 @@ PublisherContext::Status TilesetPublisher::Publish()
 
     OutputStatistics(generator.GetStatistics());
 
-    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames);
+#ifdef TILESET_STRUCTURE_TESTING
+    // Temporary...
+    WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames, L"Single");
+    WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames, L"Unified");
+#endif
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames, L"");
     }
 
 /*---------------------------------------------------------------------------------**//**
