@@ -161,9 +161,9 @@ void ShowUsage()
     std::cout << "  -h, --help              Show this help message and exit" << std::endl;
     std::cout << "  -u, --update            Enable update mode" << std::endl;
     std::cout << "  -provider:PROVIDER      Set provider name" << std::endl;
-    std::cout << "  -dbName                 Set the name of the target database (Required)" << std::endl;
     std::cout << "  -cs, --connectionString Connection string to connect to the db (Required)" << std::endl;
     std::cout << "  if there are spaces in an argument, surround it with \"\" " << std::endl;
+    std::cout << "  as in \"-cs:Driver={SQL Server}(...)\" " << std::endl;
 
     std::cout << std::endl << "Press any key to exit." << std::endl;
     int n;
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     char* substringPosition;
     std::string dbName;
     std::string pwszConnStr;
-    int necessaryInputs = 0;
+    bool hasCString = false;
     ftpUrls.clear();
     for (int i = 0; i < argc; ++i)
         {
@@ -236,25 +236,31 @@ int main(int argc, char *argv[])
             }
         else if (strstr(argv[i], "ftp://"))
             ftpUrls.push_back(std::string(argv[i]));
-        else if (strstr(argv[i], "-dbName:"))
+        /*else if (strstr(argv[i], "-dbName:"))
             {
             substringPosition = strstr(argv[i], ":");
             substringPosition++;
             dbName = std::string(substringPosition);
             necessaryInputs |= 1;
-            }
+            }*/
         else if (strstr(argv[i], "--connectionString:") || strstr(argv[i], "-cs:"))
             {
             std::string argument = std::string(argv[i]);
-            size_t index = argument.find_first_of(":");
+            size_t index = argument.find(":");
             substringPosition = argv[i] + index;
             substringPosition ++;
             pwszConnStr = std::string(substringPosition);
-            necessaryInputs |= 2;
+            
+            size_t dbIndex = argument.find("Database=");
+            std::string dbWithExtra = argument.substr(dbIndex + 9);
+            dbIndex = dbWithExtra.find(";");
+            dbName = dbWithExtra.substr(0,dbIndex);
+
+            hasCString = true;
             }
         }
 
-    if (!(necessaryInputs & 1) || !(necessaryInputs & 2) )
+    if (!hasCString)
         {
         ShowUsage();
         return 0;
