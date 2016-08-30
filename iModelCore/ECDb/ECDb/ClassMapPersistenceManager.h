@@ -39,7 +39,7 @@ public:
             ECDbMap const& GetECDbMap() const { return m_ecdb.GetECDbImplR().GetECDbMap(); }
         };
 
-    BentleyStatus InsertClassMap(ClassMapId& classMapId, ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId);
+    BentleyStatus InsertClassMap(ClassMapId& classMapId, ECN::ECClassId classId, MapStrategyExtendedInfo const&, ClassMapId baseClassMapId);
     BentleyStatus TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist);
 
 private:
@@ -58,7 +58,7 @@ struct DbClassMapLoadContext : public NonCopyableClass
     {
     private:
         bool m_isValid;
-        ECDbMapStrategy m_mapStrategy;
+        MapStrategyExtendedInfo m_mapStrategyExtInfo;
         ClassMapId m_classMapId;
         ECN::ECClassId m_baseClassId;
         std::map<Utf8String, std::vector<DbColumn const*>> m_columnByAccessString;
@@ -75,7 +75,7 @@ struct DbClassMapLoadContext : public NonCopyableClass
         ClassMapCP GetBaseClassMap() const { return m_baseClassMap; }
         BentleyStatus SetBaseClassMap(ClassMapCR classMap);
         ECN::ECClassId const& GetBaseClassId() const { return m_baseClassId; }
-        ECDbMapStrategy const& GetMapStrategy() const { return m_mapStrategy; }
+        MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
 
         bool HasMappedProperties() const { return !m_columnByAccessString.empty(); }
         std::map<Utf8String, std::vector<DbColumn const*>> const& GetPropertyMaps() const { return m_columnByAccessString; }
@@ -104,8 +104,8 @@ struct DbMapSaveContext : public NonCopyableClass
         void BeginSaving(ClassMapCR classMap);
         void EndSaving(ClassMapCR classMap);
         ClassMapCP GetCurrent() const { return m_editStack.top(); }
-        BentleyStatus InsertClassMap(ClassMapId& classMapId, ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId);
-        BentleyStatus TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist);
+        BentleyStatus InsertClassMap(ClassMapId&, ECN::ECClassId, MapStrategyExtendedInfo const&, ClassMapId baseClassMapId);
+        BentleyStatus TryGetPropertyPathId(PropertyPathId&, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist);
     };
 
 

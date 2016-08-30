@@ -145,9 +145,9 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
+BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId classId, MapStrategyExtendedInfo const& mapStrategyExtInfo, ClassMapId baseClassMapId)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, BaseId, ClassId, MapStrategy, UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo) VALUES (?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -167,13 +167,22 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId
         stmt->BindId(2, baseClassMapId);
 
     stmt->BindId(3, classId);
-    stmt->BindInt(4, Enum::ToInt(mapStrategy.GetStrategy()));
-    stmt->BindInt(5, Enum::ToInt(mapStrategy.GetOptions()));
-    const int minSharedColCount = mapStrategy.GetMinimumSharedColumnCount();
-    if (minSharedColCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
-        stmt->BindInt(6, minSharedColCount);
+    stmt->BindInt(4, Enum::ToInt(mapStrategyExtInfo.GetStrategy()));
+    if (mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
+        {
+        TablePerHierarchyInfo const& tphInfo = mapStrategyExtInfo.GetTphInfo();
+        if (tphInfo.UseSharedColumns())
+            stmt->BindInt(5, DbSchemaPersistenceManager::BoolToSqlInt(true));
 
-    stmt->BindInt(7, mapStrategy.AppliesToSubclasses() ? 1 : 0);
+        if (tphInfo.GetSharedColumnCount() >= 0)
+            stmt->BindInt(6, tphInfo.GetSharedColumnCount());
+
+        if (!tphInfo.GetExcessColumnName().empty())
+            stmt->BindText(7, tphInfo.GetExcessColumnName(), Statement::MakeCopy::No);
+
+        if (tphInfo.GetJoinedTableInfo() != JoinedTableInfo::None)
+            stmt->BindInt(8, Enum::ToInt(tphInfo.GetJoinedTableInfo()));
+        }
 
     const DbResult stat = stmt->Step();
     if (stat != BE_SQLITE_DONE)
@@ -184,20 +193,13 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
     {
-#ifdef WIP_ECDB_PERF
-    auto itor = m_properytPathCache.find(std::make_tuple(rootPropertyId, accessString));
-    if (itor != m_properytPathCache.end())
-        {
-        id = (*itor).second;
-        return SUCCESS;
-        }
-#endif
-    auto stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to prepare statement");
@@ -235,10 +237,6 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
         BeAssert(false);
         return ERROR;
         }
-
-#ifdef WIP_ECDB_PERF
-    m_properytPathCache.insert(std::make_pair(std::make_pair(rootPropertyId, accessString), id));
-#endif
 
     return SUCCESS;
     }
@@ -320,12 +318,14 @@ BentleyStatus DbClassMapLoadContext::SetBaseClassMap(ClassMapCR classMap)
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ECDbCR ecdb, ECN::ECClassId classId)
     {
     loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, b.ClassId, A.MapStrategy, A.MapStrategyOptions, A.MapStrategyMinSharedColumnCount, A.MapStrategyAppliesToSubclasses FROM ec_ClassMap A LEFT JOIN  ec_ClassMap B ON B.Id = A.ParentId  WHERE A.ClassId = ?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT cm.Id, basecm.ClassId, cm.MapStrategy, cm.UseSharedColumns, cm.SharedColumnCount, cm.ExcessColumnName, cm.JoinedTableInfo "
+                                                      "FROM ec_ClassMap cm LEFT JOIN ec_ClassMap basecm ON basecm.Id = cm.BaseId WHERE cm.ClassId=?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
         return ERROR;
         }
+
     stmt->BindId(1, classId);
     if (stmt->Step() != BE_SQLITE_ROW)
         return ERROR;
@@ -333,16 +333,25 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, EC
     loadContext.m_baseClassMap = nullptr;
     loadContext.m_classMapId = stmt->GetValueId<ClassMapId>(0);
     loadContext.m_baseClassId = stmt->IsColumnNull(1) ? ECN::ECClassId() : stmt->GetValueId<ECN::ECClassId>(1);
-    const int minSharedColCount = stmt->IsColumnNull(4) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
-    if (SUCCESS != loadContext.m_mapStrategy.Assign(Enum::FromInt<ECDbMapStrategy::Strategy>(stmt->GetValueInt(2)),
-                                                    Enum::FromInt<ECDbMapStrategy::Options>(stmt->GetValueInt(3)),
-                                                    minSharedColCount,
-                                                    stmt->GetValueInt(5) == 1))
+
+    const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(2));
+    if (mapStrategy == MapStrategy::TablePerHierarchy)
         {
-        BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");
-        return ERROR;
+        const bool useSharedColumns = stmt->IsColumnNull(3) ? false : DbSchemaPersistenceManager::IsTrue(stmt->GetValueInt(3));
+        const int sharedColumnCount = stmt->IsColumnNull(4) ? -1 : stmt->GetValueInt(4);
+        Utf8CP excessColumnName = stmt->IsColumnNull(5) ? nullptr : stmt->GetValueText(5);
+        const JoinedTableInfo joinedTableInfo = stmt->IsColumnNull(6) ? JoinedTableInfo::None : Enum::FromInt<JoinedTableInfo>(stmt->GetValueInt(6));
+
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(TablePerHierarchyInfo(useSharedColumns, sharedColumnCount, excessColumnName, joinedTableInfo));
+        }
+    else
+        {
+        BeAssert(stmt->IsColumnNull(3) && stmt->IsColumnNull(4) && stmt->IsColumnNull(5) && stmt->IsColumnNull(6) &&
+                 "UseSharedColumns, SharedColumnCount, ExcessColumnName, JoinedTableInfo cols are expected to be NULL if MapStrategy is not TablePerHierarchy");
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
 
+    stmt = nullptr; //to release the statement.
     if (DbClassMapLoadContext::ReadPropertyMaps(loadContext, ecdb) != SUCCESS)
         return ERROR;
 
