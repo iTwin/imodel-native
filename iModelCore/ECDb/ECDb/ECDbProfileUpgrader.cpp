@@ -13,62 +13,75 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //*************************************** ECDbProfileUpgrader_XXX *********************************
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                                     Affan.Khan e    08/2016
+// @bsimethod                                                     Affan.Khan     08/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ECDbProfileUpgrader_3731::_Upgrade(ECDbCR ecdb) const
     {
-    //Get ECSchemaId of MetaSchema
-    //From Q4 files
-    DbResult stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_ClassHierarchy");
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    //this upgrader is mostly redundant to 3701 but needed to upgrade files created in older versions of Q4 software.
+    //3701 was created in Q2 AFTER Q4 files came into being, so the 3701 upgrader is only run for Q2 files, and not for Q4 files.
 
-    //From Q2 files
-    stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_cache_ClassHasTables");
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    //ec_ClassHierarchy table was introduced in Q4 and is now replaced by ec_cache_ClassHierarchy
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_ClassHierarchy"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Dropping table 'ec_ClassHierarchy' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
-    //From Q2 files
-    stat = ecdb.ExecuteSql("DROP TABLE IF EXISTS ec_cache_ClassHierarchy");
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    //if the file was already created with Q2 software, it already has the two cache tables.
+    if (!ecdb.TableExists(ECDB_CACHETABLE_ClassHasTables))
+        {
+        if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHasTables "("
+                                            "Id INTEGER PRIMARY KEY,"
+                                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)"))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Creating table '" ECDB_CACHETABLE_ClassHasTables "' failed. %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
 
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHasTables("
-                            "Id INTEGER PRIMARY KEY,"
-                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId ON ec_cache_ClassHasTables(ClassId);"
-                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON ec_cache_ClassHasTables(TableId);");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
+        if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId ON " ECDB_CACHETABLE_ClassHasTables "(ClassId);"
+                                            "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON " ECDB_CACHETABLE_ClassHasTables "(TableId);"))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Creating indexes on table '" ECDB_CACHETABLE_ClassHasTables "' failed. %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
     //ec_cache_ClassHierarchy
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHierarchy("
-                           "Id INTEGER PRIMARY KEY,"
-                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
-                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (!ecdb.TableExists(ECDB_CACHETABLE_ClassHierarchy))
+        {
+        if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHierarchy "("
+                                            "Id INTEGER PRIMARY KEY,"
+                                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                                            "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)"))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Creating table '" ECDB_CACHETABLE_ClassHierarchy "' failed. %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId);"
-                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId);");
-    if (BE_SQLITE_OK != stat)
-        return stat;
+        if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " ECDB_CACHETABLE_ClassHierarchy "(ClassId);"
+                                            "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " ECDB_CACHETABLE_ClassHierarchy "(BaseClassId);"))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Creating indexes on table '" ECDB_CACHETABLE_ClassHierarchy "' failed. %s", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
 
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ecdb))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Populating table '" ECDB_CACHETABLE_ClassHierarchy "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
-    stat = ECDbSchemaWriter::RepopulateClassHierarchyTable(ecdb);
-    if (BE_SQLITE_OK != stat)
-        return stat;
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ecdb))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Populating table '" ECDB_CACHETABLE_ClassHasTables "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
 
-    stat = ECDbMap::RepopulateClassHasTable(ecdb);
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
+    LOG.debug("ECDb profile upgrade: Created and populated tables " ECDB_CACHETABLE_ClassHierarchy " and " ECDB_CACHETABLE_ClassHasTables " if they did not exist yet.");
     return BE_SQLITE_OK;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    07/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -698,6 +711,65 @@ DbResult ECDbProfileUpgrader_3710::_Upgrade(ECDbCR ecdb) const
         }
 
     LOG.debug("ECDb profile upgrade: Updated column 'NotNullConstraint' in table 'ec_Column' for ECInstanceId columns.");
+    return BE_SQLITE_OK;
+    }
+
+//=======================================================================================
+// @bsiclass                                                 Affan.Khan      08/2016
+//+===============+===============+===============+===============+===============+======
+DbResult ECDbProfileUpgrader_3701::_Upgrade(ECDbCR ecdb) const
+    {
+    //Get ECSchemaId of MetaSchema
+    DbResult stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHasTables "("
+                                    "Id INTEGER PRIMARY KEY,"
+                                    "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                                    "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating table '" ECDB_CACHETABLE_ClassHasTables "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId ON " ECDB_CACHETABLE_ClassHasTables "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON " ECDB_CACHETABLE_ClassHasTables "(TableId);");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating indexes on table '" ECDB_CACHETABLE_ClassHasTables "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    //ec_cache_ClassHierarchy
+    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHierarchy "("
+                           "Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating table '" ECDB_CACHETABLE_ClassHierarchy "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " ECDB_CACHETABLE_ClassHierarchy "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " ECDB_CACHETABLE_ClassHierarchy "(BaseClassId);");
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Creating indexes on table '" ECDB_CACHETABLE_ClassHierarchy "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ecdb))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Populating table '" ECDB_CACHETABLE_ClassHierarchy "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ecdb))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Populating table '" ECDB_CACHETABLE_ClassHasTables "' failed. %s", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Created and populated tables " ECDB_CACHETABLE_ClassHierarchy " and " ECDB_CACHETABLE_ClassHasTables " if they did not exist yet.");
     return BE_SQLITE_OK;
     }
 

@@ -15,280 +15,62 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-bool DbMapSaveContext::IsAlreadySaved(ClassMapCR classMap) const
-    {
-    return m_savedClassMaps.find(classMap.GetClass().GetId()) != m_savedClassMaps.end();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-void DbMapSaveContext::BeginSaving(ClassMapCR classMap)
-    {
-    if (IsAlreadySaved(classMap))
-        return;
-
-    m_savedClassMaps[classMap.GetClass().GetId()] = &classMap;
-    m_editStack.push(&classMap);
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-void DbMapSaveContext::EndSaving(ClassMapCR classMap)
-    {
-    if (m_editStack.top() == &classMap)
-        {
-        m_editStack.pop();
-        }
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-DbClassMapSaveContext::DbClassMapSaveContext(DbMapSaveContext& ctx)
-    :m_classMapContext(ctx), m_classMap(*ctx.GetCurrent())
-    {
-    BeAssert(ctx.GetCurrent() != nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId)
-    {
-    PropertyPathId propertyPathId;
-    if (m_classMapContext.TryGetPropertyPathId(propertyPathId, rootPropertyId, accessString, true) != SUCCESS)
-        return ERROR;
-    ECDbCR ecdb = GetMapSaveContext().GetECDb();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_PropertyMap(ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)");
-    if (stmt == nullptr)
-        {
-        BeAssert(false && "Failed to get statement");
-        return ERROR;
-        }
-
-    stmt->BindId(1, m_classMap.GetId());
-    stmt->BindId(2, propertyPathId);
-    stmt->BindId(3, columnId);
-    if (stmt->Step() != BE_SQLITE_DONE)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
-    {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
-    if (stmt == nullptr)
-        {
-        BeAssert(false && "Failed to get statement");
-        return ERROR;
-        }
-
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetClassMapIdSequence().GetNextValue(classMapId))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    stmt->BindId(1, classMapId);
-    if (!baseClassMapId.IsValid())
-        stmt->BindNull(2);
-    else
-        stmt->BindId(2, baseClassMapId);
-
-    stmt->BindId(3, classId);
-    stmt->BindInt(4, Enum::ToInt(mapStrategy.GetStrategy()));
-    stmt->BindInt(5, Enum::ToInt(mapStrategy.GetOptions()));
-    const int minSharedColCount = mapStrategy.GetMinimumSharedColumnCount();
-    if (minSharedColCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
-        stmt->BindInt(6, minSharedColCount);
-
-    stmt->BindInt(7, mapStrategy.AppliesToSubclasses() ? 1 : 0);
-
-    const DbResult stat = stmt->Step();
-    if (stat != BE_SQLITE_DONE)
-        {
-        BeAssert(false && "Failed to save classmap");
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
-    {
-#ifdef WIP_ECDB_PERF
-    auto itor = m_properytPathCache.find(std::make_tuple(rootPropertyId, accessString));
-    if (itor != m_properytPathCache.end())
-        {
-        id = (*itor).second;
-        return SUCCESS;
-        }
-#endif
-    auto stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
-    if (stmt == nullptr)
-        {
-        BeAssert(false && "Failed to prepare statement");
-        return ERROR;
-        }
-    stmt->BindId(1, rootPropertyId);
-    stmt->BindText(2, accessString, Statement::MakeCopy::No);
-
-    if (stmt->Step() == BE_SQLITE_ROW)
-        {
-        id = stmt->GetValueId<PropertyPathId>(0);
-        return SUCCESS;
-        }
-
-    if (!addIfDoesNotExist)
-        return ERROR;
-
-    if (m_ecdb.GetECDbImplR().GetPropertyPathIdSequence().GetNextValue(id) != BE_SQLITE_OK)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_PropertyPath(Id, RootPropertyId, AccessString) VALUES(?,?,?)");
-    if (stmt == nullptr)
-        {
-        BeAssert(false && "Failed to prepare statement");
-        return ERROR;
-        }
-    stmt->BindId(1, id);
-    stmt->BindId(2, rootPropertyId);
-    stmt->BindText(3, accessString, Statement::MakeCopy::No);
-    if (stmt->Step() != BE_SQLITE_DONE)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-#ifdef WIP_ECDB_PERF
-    m_properytPathCache.insert(std::make_pair(std::make_pair(rootPropertyId, accessString), id));
-#endif
-
-    return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-std::vector<DbColumn const*> const* DbClassMapLoadContext::FindColumnByAccessString(Utf8CP accessString) const
-    {
-    auto itor = m_columnByAccessString.find(accessString);
-    if (itor != m_columnByAccessString.end())
-        return &(itor->second);
-
-    return nullptr;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
+// @bsimethod                                                    Affan.Khan        08/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx, ECDbCR ecdb)
+BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
-    if (!ctx.GetClassMapId().IsValid())
+    StopWatch timer(true);
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " ECDB_CACHETABLE_ClassHierarchy))
         return ERROR;
 
-    ctx.m_columnByAccessString.clear();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT  T.Name TableName, C.Name ColumnName , A.AccessString"
-                                                      " FROM ec_PropertyMap P"
-                                                      "     INNER JOIN ec_Column C ON C.Id = P.ColumnId"
-                                                      "     INNER JOIN ec_Table T ON T.Id = C.TableId"
-                                                      "     INNER JOIN ec_PropertyPath A ON A.Id = P.PropertyPathId"
-                                                      " WHERE P.ClassMapId = ? ORDER BY T.Name");
-    if (stmt == nullptr)
-        {
-        BeAssert(false && "Failed to get statement");
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("WITH RECURSIVE "
+                           "BaseClassList(ClassId, BaseClassId) AS "
+                           "("
+                           "   SELECT Id, Id FROM ec_Class"
+                           "   UNION"
+                           "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
+                           "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
+                           ")"
+                           "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"))
         return ERROR;
-        }
 
-    stmt->BindId(1, ctx.GetClassMapId());
-    DbSchema const& dbSchema = ecdb.GetECDbImplR().GetECDbMap().GetDbSchema();
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        Utf8CP  tableName = stmt->GetValueText(0);
-        Utf8CP  columName = stmt->GetValueText(1);
-        Utf8CP  accessString = stmt->GetValueText(2);
-
-        DbTable const* table = dbSchema.FindTable(tableName);
-        if (table == nullptr)
-            return ERROR;
-
-        DbColumn const* column = table->FindColumn(columName);
-        if (column == nullptr)
-            return ERROR;
-
-        ctx.m_columnByAccessString[accessString].push_back(column);
-        }
-
+    timer.Stop();
+    LOG.debugv("Re-populated table '" ECDB_CACHETABLE_ClassHierarchy "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DbClassMapLoadContext::SetBaseClassMap(ClassMapCR classMap)
-    {
-    if (classMap.GetClass().GetId() != m_baseClassId)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_baseClassMap = &classMap;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
+// @bsimethod                                                    Affan.Khan        08/2016
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ECDbCR ecdb, ECN::ECClassId classId)
+BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
-    loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, b.ClassId, A.MapStrategy, A.MapStrategyOptions, A.MapStrategyMinSharedColumnCount, A.MapStrategyAppliesToSubclasses FROM ec_ClassMap A LEFT JOIN  ec_ClassMap B ON B.Id = A.ParentId  WHERE A.ClassId = ?");
-    if (stmt == nullptr)
-        {
-        BeAssert(false && "Failed to get statement");
-        return ERROR;
-        }
-    stmt->BindId(1, classId);
-    if (stmt->Step() != BE_SQLITE_ROW)
+    StopWatch timer(true);
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " ECDB_CACHETABLE_ClassHasTables))
         return ERROR;
 
-    loadContext.m_baseClassMap = nullptr;
-    loadContext.m_classMapId = stmt->GetValueId<ClassMapId>(0);
-    loadContext.m_baseClassId = stmt->IsColumnNull(1) ? ECN::ECClassId() : stmt->GetValueId<ECN::ECClassId>(1);
-    const int minSharedColCount = stmt->IsColumnNull(4) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
-    if (SUCCESS != loadContext.m_mapStrategy.Assign(Enum::FromInt<ECDbMapStrategy::Strategy>(stmt->GetValueInt(2)),
-                                                    Enum::FromInt<ECDbMapStrategy::Options>(stmt->GetValueInt(3)),
-                                                    minSharedColCount,
-                                                    stmt->GetValueInt(5) == 1))
-        {
-        BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");
-        return ERROR;
-        }
+    Utf8String sql;
+    sql.Sprintf("INSERT INTO " ECDB_CACHETABLE_ClassHasTables " "
+                "SELECT NULL, ec_ClassMap.ClassId, ec_Table.Id FROM ec_PropertyMap "
+                "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+                "          INNER JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+                "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+                "    WHERE ec_ClassMap.MapStrategy <> %d "
+                "          AND ec_ClassMap.MapStrategy <> %d "
+                "          AND ec_Column.ColumnKind & %d = 0 "
+                "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id;",
+                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable),
+                Enum::ToInt(ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable),
+                Enum::ToInt(DbColumn::Kind::ECClassId));
 
-    if (DbClassMapLoadContext::ReadPropertyMaps(loadContext, ecdb) != SUCCESS)
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(sql.c_str()))
         return ERROR;
 
-    loadContext.m_isValid = true;
+    timer.Stop();
+    LOG.debugv("Re-populated " ECDB_CACHETABLE_ClassHasTables " in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
@@ -858,6 +640,280 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
 
     if (fkConstraint.GetOnUpdateAction() != ForeignKeyDbConstraint::ActionType::NotSpecified)
         ddl.append(" ON UPDATE ").append(ForeignKeyDbConstraint::ActionTypeToSql(fkConstraint.GetOnUpdateAction()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+bool DbMapSaveContext::IsAlreadySaved(ClassMapCR classMap) const
+    {
+    return m_savedClassMaps.find(classMap.GetClass().GetId()) != m_savedClassMaps.end();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+void DbMapSaveContext::BeginSaving(ClassMapCR classMap)
+    {
+    if (IsAlreadySaved(classMap))
+        return;
+
+    m_savedClassMaps[classMap.GetClass().GetId()] = &classMap;
+    m_editStack.push(&classMap);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+void DbMapSaveContext::EndSaving(ClassMapCR classMap)
+    {
+    if (m_editStack.top() == &classMap)
+        {
+        m_editStack.pop();
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+DbClassMapSaveContext::DbClassMapSaveContext(DbMapSaveContext& ctx)
+    :m_classMapContext(ctx), m_classMap(*ctx.GetCurrent())
+    {
+    BeAssert(ctx.GetCurrent() != nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootPropertyId, Utf8CP accessString, DbColumnId columnId)
+    {
+    PropertyPathId propertyPathId;
+    if (m_classMapContext.TryGetPropertyPathId(propertyPathId, rootPropertyId, accessString, true) != SUCCESS)
+        return ERROR;
+    ECDbCR ecdb = GetMapSaveContext().GetECDb();
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("INSERT INTO ec_PropertyMap(ClassMapId, PropertyPathId, ColumnId) VALUES (?,?,?)");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to get statement");
+        return ERROR;
+        }
+
+    stmt->BindId(1, m_classMap.GetId());
+    stmt->BindId(2, propertyPathId);
+    stmt->BindId(3, columnId);
+    if (stmt->Step() != BE_SQLITE_DONE)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId classId, ECDbMapStrategy const& mapStrategy, ClassMapId baseClassMapId)
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy, MapStrategyOptions, MapStrategyMinSharedColumnCount, MapStrategyAppliesToSubclasses) VALUES (?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to get statement");
+        return ERROR;
+        }
+
+    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetClassMapIdSequence().GetNextValue(classMapId))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    stmt->BindId(1, classMapId);
+    if (!baseClassMapId.IsValid())
+        stmt->BindNull(2);
+    else
+        stmt->BindId(2, baseClassMapId);
+
+    stmt->BindId(3, classId);
+    stmt->BindInt(4, Enum::ToInt(mapStrategy.GetStrategy()));
+    stmt->BindInt(5, Enum::ToInt(mapStrategy.GetOptions()));
+    const int minSharedColCount = mapStrategy.GetMinimumSharedColumnCount();
+    if (minSharedColCount != ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT)
+        stmt->BindInt(6, minSharedColCount);
+
+    stmt->BindInt(7, mapStrategy.AppliesToSubclasses() ? 1 : 0);
+
+    const DbResult stat = stmt->Step();
+    if (stat != BE_SQLITE_DONE)
+        {
+        BeAssert(false && "Failed to save classmap");
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
+    {
+#ifdef WIP_ECDB_PERF
+    auto itor = m_properytPathCache.find(std::make_tuple(rootPropertyId, accessString));
+    if (itor != m_properytPathCache.end())
+        {
+        id = (*itor).second;
+        return SUCCESS;
+        }
+#endif
+    auto stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to prepare statement");
+        return ERROR;
+        }
+    stmt->BindId(1, rootPropertyId);
+    stmt->BindText(2, accessString, Statement::MakeCopy::No);
+
+    if (stmt->Step() == BE_SQLITE_ROW)
+        {
+        id = stmt->GetValueId<PropertyPathId>(0);
+        return SUCCESS;
+        }
+
+    if (!addIfDoesNotExist)
+        return ERROR;
+
+    if (m_ecdb.GetECDbImplR().GetPropertyPathIdSequence().GetNextValue(id) != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_PropertyPath(Id, RootPropertyId, AccessString) VALUES(?,?,?)");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to prepare statement");
+        return ERROR;
+        }
+    stmt->BindId(1, id);
+    stmt->BindId(2, rootPropertyId);
+    stmt->BindText(3, accessString, Statement::MakeCopy::No);
+    if (stmt->Step() != BE_SQLITE_DONE)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+#ifdef WIP_ECDB_PERF
+    m_properytPathCache.insert(std::make_pair(std::make_pair(rootPropertyId, accessString), id));
+#endif
+
+    return SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+std::vector<DbColumn const*> const* DbClassMapLoadContext::FindColumnByAccessString(Utf8CP accessString) const
+    {
+    auto itor = m_columnByAccessString.find(accessString);
+    if (itor != m_columnByAccessString.end())
+        return &(itor->second);
+
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx, ECDbCR ecdb)
+    {
+    if (!ctx.GetClassMapId().IsValid())
+        return ERROR;
+
+    ctx.m_columnByAccessString.clear();
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT  T.Name TableName, C.Name ColumnName , A.AccessString"
+                                                      " FROM ec_PropertyMap P"
+                                                      "     INNER JOIN ec_Column C ON C.Id = P.ColumnId"
+                                                      "     INNER JOIN ec_Table T ON T.Id = C.TableId"
+                                                      "     INNER JOIN ec_PropertyPath A ON A.Id = P.PropertyPathId"
+                                                      " WHERE P.ClassMapId = ? ORDER BY T.Name");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to get statement");
+        return ERROR;
+        }
+
+    stmt->BindId(1, ctx.GetClassMapId());
+    DbSchema const& dbSchema = ecdb.GetECDbImplR().GetECDbMap().GetDbSchema();
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP  tableName = stmt->GetValueText(0);
+        Utf8CP  columName = stmt->GetValueText(1);
+        Utf8CP  accessString = stmt->GetValueText(2);
+
+        DbTable const* table = dbSchema.FindTable(tableName);
+        if (table == nullptr)
+            return ERROR;
+
+        DbColumn const* column = table->FindColumn(columName);
+        if (column == nullptr)
+            return ERROR;
+
+        ctx.m_columnByAccessString[accessString].push_back(column);
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus DbClassMapLoadContext::SetBaseClassMap(ClassMapCR classMap)
+    {
+    if (classMap.GetClass().GetId() != m_baseClassId)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    m_baseClassMap = &classMap;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ECDbCR ecdb, ECN::ECClassId classId)
+    {
+    loadContext.m_isValid = false;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT A.Id, b.ClassId, A.MapStrategy, A.MapStrategyOptions, A.MapStrategyMinSharedColumnCount, A.MapStrategyAppliesToSubclasses FROM ec_ClassMap A LEFT JOIN  ec_ClassMap B ON B.Id = A.ParentId  WHERE A.ClassId = ?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false && "Failed to get statement");
+        return ERROR;
+        }
+    stmt->BindId(1, classId);
+    if (stmt->Step() != BE_SQLITE_ROW)
+        return ERROR;
+
+    loadContext.m_baseClassMap = nullptr;
+    loadContext.m_classMapId = stmt->GetValueId<ClassMapId>(0);
+    loadContext.m_baseClassId = stmt->IsColumnNull(1) ? ECN::ECClassId() : stmt->GetValueId<ECN::ECClassId>(1);
+    const int minSharedColCount = stmt->IsColumnNull(4) ? ECDbClassMap::MapStrategy::UNSET_MINIMUMSHAREDCOLUMNCOUNT : stmt->GetValueInt(5);
+    if (SUCCESS != loadContext.m_mapStrategy.Assign(Enum::FromInt<ECDbMapStrategy::Strategy>(stmt->GetValueInt(2)),
+                                                    Enum::FromInt<ECDbMapStrategy::Options>(stmt->GetValueInt(3)),
+                                                    minSharedColCount,
+                                                    stmt->GetValueInt(5) == 1))
+        {
+        BeAssert(false && "Found invalid persistence values for ECDbMapStrategy");
+        return ERROR;
+        }
+
+    if (DbClassMapLoadContext::ReadPropertyMaps(loadContext, ecdb) != SUCCESS)
+        return ERROR;
+
+    loadContext.m_isValid = true;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
