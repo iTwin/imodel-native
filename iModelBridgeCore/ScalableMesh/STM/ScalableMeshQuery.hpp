@@ -2279,7 +2279,7 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsDataUpToDate() const
     {
     LOAD_NODE
 
-        return m_node->IsDirty();
+        return !m_node->IsDirty();
     }
 
 template <class POINT> void ScalableMeshNode<POINT>::_UpdateData() 

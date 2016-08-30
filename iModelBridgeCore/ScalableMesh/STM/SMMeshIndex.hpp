@@ -336,7 +336,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
     {
     HINVARIANTS;
     bool returnValue = true;
-    
+    if (!m_remainingUnappliedEdits.empty())
+        {
+        UpdateData();
+        }
     if (!m_destroyed)
         {
              
@@ -784,6 +787,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
     bvector<int32_t> clearedIndices;
     bmap<int32_t, int32_t> oldToNewIndices;
 
+    bvector<int32_t> newUvsIndices;
+    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvsIndicePtr = GetUVsIndicesPtr();
+
     for (size_t i = 0; i < ptsIndicePtr->size(); i += 3)
         {
         if (removedPts.count((*ptsIndicePtr)[i]-1) == 0 && removedPts.count((*ptsIndicePtr)[i + 1]-1) == 0 && removedPts.count((*ptsIndicePtr)[i + 2]-1) == 0)
@@ -796,16 +802,23 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveW
                     clearedPts.push_back((*ptsPtr)[(*ptsIndicePtr)[i + j] - 1]);
                     }
                 clearedIndices.push_back(oldToNewIndices[(*ptsIndicePtr)[i + j]]);
+
+                if (uvsIndicePtr.IsValid() && uvsIndicePtr->size() > 0)
+                    newUvsIndices.push_back((*uvsIndicePtr)[i + j]);
                 }
             }
         }
     ptsPtr->clear();
     ptsIndicePtr->clear();
+    if (uvsIndicePtr.IsValid())
+        uvsIndicePtr->clear();
     if (!clearedPts.empty())
         {
         ptsPtr->push_back(&clearedPts[0], clearedPts.size());
         if (!clearedIndices.empty())
             ptsIndicePtr->push_back(&clearedIndices[0], clearedIndices.size());
+        if (!newUvsIndices.empty())
+            uvsIndicePtr->push_back(&newUvsIndices[0], newUvsIndices.size());
         }
 
     //mark data not up to date
@@ -828,6 +841,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::UpdateD
         m_remainingUnappliedEdits.clear();
         }
 
+    GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID()); //we need to do that now since we set it not dirty afterward
     //mark data up to date
     SetDirty(false);
     }
@@ -4131,6 +4145,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
 
 template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
     {
+
     if (m_mesher2_5d != NULL)
         delete m_mesher2_5d;
 

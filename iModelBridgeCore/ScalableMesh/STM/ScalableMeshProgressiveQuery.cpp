@@ -868,11 +868,56 @@ public:
 
 static QueryProcessor s_queryProcessor;
 
+#define MAX_PRELOAD_OVERVIEW_LEVEL 1
 
+void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
+    {    
+    for (auto& node : m_overviewNodes)
+        {
+        assert(node->IsLoaded() == true);
+
+        if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips))
+            {
+            node->ApplyAllExistingClips();
+            node->RemoveDisplayDataFromCache();                    
+            node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);
+            assert(node->HasCorrectClipping(m_activeClips));                 
+            }
+        }        
+    }
+
+void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node)
+    {            
+    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node));
+    assert(meshNode->IsLoaded() == false);
+    meshNode->ApplyAllExistingClips();
+    meshNode->RemoveDisplayDataFromCache();                    
+    meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);                               
+    assert(meshNode->HasCorrectClipping(m_activeClips));  
+
+    m_overviewNodes.push_back(meshNode);
+        
+    if (meshNode->GetLevel() < MAX_PRELOAD_OVERVIEW_LEVEL)
+        {                
+        bvector<IScalableMeshNodePtr> childrenNodes(meshNode->GetChildrenNodes());
+
+        for (auto& childNode : childrenNodes)
+            {            
+            HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> node;
+            node = (dynamic_cast<ScalableMeshNode<DPoint3d>*>(childNode.get()))->GetNodePtr();            
+            PreloadOverview(node);
+            }
+        }            
+    }             
+ 
 ScalableMeshProgressiveQueryEngine::ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
     {
     m_scalableMeshPtr = scalableMeshPtr;
-    m_displayCacheManagerPtr = displayCacheManagerPtr;
+    m_displayCacheManagerPtr = displayCacheManagerPtr;            
+        
+    HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>> rootNodePtr(((ScalableMesh<DPoint3d>*)m_scalableMeshPtr.get())->GetRootNode());    
+
+    PreloadOverview(rootNodePtr);        
     }
 
 ScalableMeshProgressiveQueryEngine::~ScalableMeshProgressiveQueryEngine()
@@ -952,11 +997,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     //NEEDS_WORK_MST : Root node could be loaded at load time instead. 
     if (parentNodePtr == nullptr)
         {        
-        //assert(!"Should not occurs");
-        /*
-        IScalableMeshCachedDisplayNodePtr meshNodePtr = CachedDisplayNodeManager::GetManager().FindOrLoadNode<DPoint3d>(node, loadTexture, clipVisibilities);
-        lowerResOverviewNodes.push_back(meshNodePtr);        
-        */
+        assert(!"Should not occurs");               
         return;
         }
          
@@ -1011,8 +1052,7 @@ class NewQueryStartingNodeProcessor
 
         NewQueryStartingNodeProcessor()
             {
-            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;
-            //m_numWorkingThreads = 1;
+            m_numWorkingThreads = std::thread::hardware_concurrency() - 2;            
 
             m_lowerResOverviewNodes.resize(m_numWorkingThreads);
             m_requiredMeshNodes.resize(m_numWorkingThreads);        
@@ -1246,6 +1286,7 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
       
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr)
     {
+    //NEEDS_WORK_SM : What to do 
     //CachedDisplayNodeManager::GetManager().ClearCachedNodes(clearRanges, s_scalableMeshPtr);
 
     return SUCCESS;
@@ -1253,6 +1294,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<DR
 
 BentleyStatus ScalableMeshProgressiveQueryEngine::_ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr)
     {
+    //NEEDS_WORK_SM : What to do 
     //CachedDisplayNodeManager::GetManager().ClearCachedNodes(clipIds, s_scalableMeshPtr);
 
     return SUCCESS;
