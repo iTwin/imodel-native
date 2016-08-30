@@ -8569,9 +8569,6 @@
                 <Name>Switzerland</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2056</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>CH1903Plus_1.LV95</KeyName>
                   </Member>
                   <Member>
@@ -8581,10 +8578,16 @@
                     <KeyName>CH1903/GSB.LV03</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21781</KeyName>
+                    <KeyName>CH1903/GSB.LV03C-G</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21782</KeyName>
+                    <KeyName>CH1903/2.LV03C</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CH1903/2.LV03</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CH1903/2.LV03C-G</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -28254,6 +28257,15 @@
                   <Member>
                     <KeyName>CH1903.LV03</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>EPSG:2056</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:21781</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:21782</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -31601,25 +31613,16 @@
                 <Name>Switzerland</Name>
                 <Members>
                   <Member>
-                    <KeyName>LLCH1903</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>LLCH1903/GSB</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4149</KeyName>
+                    <KeyName>CH1903/2.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4150</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>CH1903Plus.LL</KeyName>
+                    <KeyName>CH1903Plus_1.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>CHTRF95.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4151</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4306</KeyName>
@@ -33550,6 +33553,21 @@
               </Member>
               <Member>
                 <KeyName>LL-Observatorio65</KeyName>
+              </Member>
+              <Member>
+                <KeyName>LLCH1903</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4149</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4150</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4151</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CH1903Plus.LL</KeyName>
               </Member>
             </Members>
           </Group>
