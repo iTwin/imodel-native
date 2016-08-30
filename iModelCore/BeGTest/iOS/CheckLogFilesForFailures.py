@@ -15,13 +15,15 @@ def checkLogFileForFailures(logfilename):
 
     lineNo = 0
     xctestproj = ''
-
+    lastLine = ''
     failed = False
     failedTests = ''
     comma = ''
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
     with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
+
+            lastLine = line
 
             lineNo = lineNo + 1
             if lineNo == 1:
@@ -32,7 +34,6 @@ def checkLogFileForFailures(logfilename):
 
             # We get ** test failed ** if the build or the prep or the tests failed
             if -1 != lline.find('** test failed **'):
-                print line,
                 failed = True
 
             err = errpat.search(line, re.IGNORECASE)
@@ -41,17 +42,21 @@ def checkLogFileForFailures(logfilename):
                 comma = ', '
                 failed = True
      
+    if lastLine.find('Executed') == -1:
+        failed = True
+
     if failed:
         if len(failedTests) != 0:
-            report = report + "*** FAILURES ***"    
-            report = report + "To debug, open"
+            report = report + "*** FAILURES ***\n"
+            report = report + "To debug, open\n"
             report = report + "    " + xctestproj
-            report = report + "and re-run the following tests:"
-            report = report + failedTests
+            report = report + "and re-run the following tests:\n"
+            report = report + failedTests + "\n"
         else:
-            report = report + "See " + logFileName + " for details"
+            report = report + "*** BUILD FAILURE OR CRASH ***\n"
+            report = report + "See " + logfilename + " for details\n"
     else:
-        report = report + "All tests passed."
+        report = report + lastLine
 
     return failed, report
 
@@ -68,8 +73,6 @@ if __name__ == '__main__':
     breakonfailure = False
     if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
         breakonfailure = True
-
-    print breakonfailure
 
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
         for file in files:
