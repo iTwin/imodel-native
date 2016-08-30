@@ -1154,10 +1154,8 @@ void DgnViewport::SaveViewUndo()
         return;
         }
 
-#ifdef WIP_VIEW_DEFINITION // *** Need DgnElement::IsEqual
-    if (curr == m_currentBaseline)
+    if (curr.Equals(m_currentBaseline))
         return; // nothing changed
-#endif
 
     if (m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();

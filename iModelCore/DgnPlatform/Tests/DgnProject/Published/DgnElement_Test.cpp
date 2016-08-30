@@ -1298,3 +1298,35 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         EXPECT_EQ(DgnDbStatus::Success, updateStatusC);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, EqualsTests)
+    {
+    SetupSeedProject();
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
+    ASSERT_TRUE(categoryId.IsValid());
+
+    SpatialModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    SpatialModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    ASSERT_TRUE(modelA.IsValid());
+    ASSERT_TRUE(modelB.IsValid());
+
+    GenericPhysicalObjectPtr elementA = GenericPhysicalObject::Create(*modelA, categoryId);
+    ASSERT_TRUE(elementA.IsValid());
+    
+    ASSERT_TRUE(elementA->Equals(*elementA)) << " An element should be equivalent to itself";
+    ASSERT_TRUE(elementA->Equals(*elementA->Clone())) << " An element should be equivalent to a copy of itself";
+    
+    GenericPhysicalObjectPtr elementB = GenericPhysicalObject::Create(*modelB, categoryId);
+    ASSERT_TRUE(elementB.IsValid());
+    ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
+    bset<Utf8String> ignoreProps;
+    ignoreProps.insert("ModelId");
+    ASSERT_TRUE(elementA->Equals(*elementB, ignoreProps));
+
+    elementB->SetUserLabel("label for b");
+    ASSERT_FALSE(elementA->Equals(*elementB, ignoreProps)) << " UserLabels should differ";
+    }
