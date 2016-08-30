@@ -2107,13 +2107,33 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidForStatementType(DgnDbR db, ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
+    {
+    auto propertyStatementType = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "PropertyStatementType");
+    auto stypeCA = prop.GetCustomAttribute(*propertyStatementType);
+    if (!stypeCA.IsValid())
+        return true;
+
+    ECN::ECValue stypeValue;
+    stypeCA->GetValue(stypeValue, "StatementTypes");
+
+    return 0 != ((uint32_t)stypeNeeded & stypeValue.GetInteger());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
     {
     // Common case: auto-handled properties
-    if (!IsCustomHandledProperty(name))
+    ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
+    if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
         {
+        if (!isValidForStatementType(GetDgnDb(), *ecprop, ECSqlClassParams::StatementType::Select))
+            return DgnDbStatus::BadRequest;
+
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
             return DgnDbStatus::Success;
@@ -2197,13 +2217,21 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         if (!isValidValue(*ecprop, value))
             return DgnDbStatus::BadArg;
 
+        if (!isValidForStatementType(GetDgnDb(), *ecprop, GetElementId().IsValid()? ECSqlClassParams::StatementType::Update: ECSqlClassParams::StatementType::Insert))
+            return DgnDbStatus::ReadOnly;
+
         auto autoHandledProps = GetAutoHandledProperties();
-        if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
+        if (nullptr == autoHandledProps)
             {
-            m_flags.m_autoHandledPropsDirty = true;
-            return DgnDbStatus::Success;
+            BeAssert(false);
+            return DgnDbStatus::BadArg;
             }
-        return DgnDbStatus::BadArg;
+
+        if (ECN::ECObjectsStatus::Success != autoHandledProps->SetValue(name, value))
+            return DgnDbStatus::BadArg; // probably a type mismatch
+        
+        m_flags.m_autoHandledPropsDirty = true;
+        return DgnDbStatus::Success;
         }
 
     if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name)
