@@ -43,7 +43,7 @@ public:
         DEFINE_T_SUPER(RasterModel::CreateParams);
 
         Utf8String m_fileId;
-        DMatrix4dCP m_transformP;
+        DMatrix4dCP m_transformP;   //&&MM doc what we expect in this transform.
 
         public:
             //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object

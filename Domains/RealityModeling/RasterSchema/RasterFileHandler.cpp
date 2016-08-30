@@ -107,7 +107,9 @@ RasterFileModelPtr RasterFileModelHandler::CreateRasterFileModel(RasterFileModel
     Utf8String resolvedName(fileName);
     Utf8String modelName(fileName.GetFileNameWithoutExtension().c_str());
 
-    // Open raster
+    // Open raster 
+    //&&MM &&ep We must restructure that Create so rasterFilePtr is not lost but somehow reuse as input parameter to RasterFileModel.  
+    // Otherwise the raster file is opened twice and this might be slow for network connection.
     RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
     if (rasterFilePtr == nullptr)
         {
