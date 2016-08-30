@@ -1241,12 +1241,15 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
+    //! Get the list of properties that are normally ignored when comparing elements for equality.
+    DGNPLATFORM_EXPORT static bset<Utf8String> const& GetStandardPropertyIgnoreList();
+
     //! Check if this element is equal to source. Two elements are considered to be "equal" if they are instances of the same ECClass and if their properties have equivalent data.
     //! The element's identity and user properties may be excluded from the comparison.
     //! @param source   The element to compare with
     //! @param ignore   Optional. The properties to exclude from the comparison.
     //! @return true if this element's properties are equivalent to the source element's properties.
-    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, bset<Utf8String> const& ignore = bset<Utf8String>()) const {return _Equals(source, ignore);}
+    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, bset<Utf8String> const& ignore = GetStandardPropertyIgnoreList()) const {return _Equals(source, ignore);}
 
     DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
 
@@ -2433,7 +2436,7 @@ public:
     //! @param other    The other collection
     //! @param ignore   Optional. The properties to exclude from the comparison.
     //! @return true if the collections are equivalent
-    DGNPLATFORM_EXPORT bool Equals(DgnEditElementCollector const& other, bset<Utf8String> const& ignore = bset<Utf8String>()) const;
+    DGNPLATFORM_EXPORT bool Equals(DgnEditElementCollector const& other, bset<Utf8String> const& ignore = DgnElement::GetStandardPropertyIgnoreList()) const;
 
     //! Add the specified editable copy of an element to the collection. 
     //! @param el  The editable copy to be added

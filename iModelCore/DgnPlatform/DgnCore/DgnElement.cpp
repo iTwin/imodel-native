@@ -988,6 +988,21 @@ bool DgnElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bset<Utf8String> const& DgnElement::GetStandardPropertyIgnoreList()
+    {
+    static std::once_flag s_ignoreListOnceFlag;
+    static bset<Utf8String>* s_ignoreList;
+    std::call_once(s_ignoreListOnceFlag, []()
+        {
+        s_ignoreList = new bset<Utf8String>();
+        s_ignoreList->insert("LastMod");
+        });
+    return *s_ignoreList;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::_Equals(DgnElementCR other, bset<Utf8String> const& ignore) const
     {
     if (&other == this)
