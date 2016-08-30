@@ -1246,7 +1246,9 @@ public:
     //! @param source   The element to compare with
     //! @param ignore   Optional. The properties to exclude from the comparison.
     //! @return true if this element's properties are equivalent to the source element's properties.
-    DGNPLATFORM_EXPORT virtual bool Equals(DgnElementCR source, bset<Utf8String> const& ignore = bset<Utf8String>()) const {return _Equals(source, ignore);}
+    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, bset<Utf8String> const& ignore = bset<Utf8String>()) const {return _Equals(source, ignore);}
+
+    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
 
     //! @name AppData Management
     //! @{
@@ -2417,21 +2419,15 @@ protected:
 public:
     //! Construct an empty collection
     DGNPLATFORM_EXPORT DgnEditElementCollector();
-    //! Create a copy of a collection, where the new collection holds pointers to the <em>same</em> elements as the source collection. @see MakeDeepCopy
+    //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
-    //! Create a copy of a collection, where the new collection holds pointers to the <em>same</em> elements as the source collection. @see MakeDeepCopy
+    //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
     //! Destroy this collection
     DGNPLATFORM_EXPORT ~DgnEditElementCollector();
 
-    //! Make a "deep copy" of a this collection, so that the returned collection holds <em>copies of</em> the elements in the source collection.
-    DGNPLATFORM_EXPORT DgnEditElementCollector MakeDeepCopy()
-        {
-        DgnEditElementCollector newCollection;
-        for (auto el : *this)
-            newCollection.EditElement(*el);
-        return newCollection;
-        }
+    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
+    DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, bset<Utf8String> const& ignore) const;
 
     //! See if this collection and \a other have the equivalement set of elements
     //! @param other    The other collection

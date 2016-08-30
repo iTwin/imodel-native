@@ -1146,7 +1146,7 @@ void DgnViewport::SaveViewUndo()
         return;
 
     m_viewController->StoreToDefinition();
-    DgnEditElementCollector curr = m_viewController->GetDefinitionR().MakeDeepCopy();
+    DgnEditElementCollector const& curr = m_viewController->GetDefinitionR();
 
     if (0 == m_currentBaseline.size())
         {
@@ -1154,8 +1154,31 @@ void DgnViewport::SaveViewUndo()
         return;
         }
 
+#ifdef DEBUG_VIEW_UNDO
+    bset<Utf8String> ignore;
+    ignore.insert("LastMod");
+    ignore.insert("CodeValue");
+    ignore.insert("CodeNameSpace");
+    ignore.insert("CodeAuthorityId");
+    ignore.insert("ModelId");
+    ignore.insert("ParentId");
+    ignore.insert("UserLabel");
+    ignore.insert("Descr");
+    ignore.insert("Source");
+    Utf8String currStr, newStr;
+    m_currentBaseline.DumpTwo(currStr, curr, ignore);
+    puts("DgnViewport::SaveViewUndo\n");
+    puts(currStr.c_str());
+    puts("------------------\n");
+#endif
+
     if (curr.Equals(m_currentBaseline))
+        {
+#ifdef DEBUG_VIEW_UNDO
+        puts("---- No change ----");
+#endif
         return; // nothing changed
+        }
 
     if (m_backStack.size() >= m_maxUndoSteps)
         m_backStack.pop_front();

@@ -1018,6 +1018,33 @@ bool DgnElement::_Equals(DgnElementCR other, bset<Utf8String> const& ignore) con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+    {
+    auto ecclass = GetElementClass();
+    str.append(ecclass->GetName().c_str());
+    str.append(Utf8PrintfString(" %lld {", GetElementId().GetValueUnchecked()).c_str());
+    Utf8CP comma = "";
+    for (auto prop : ecclass->GetProperties())
+        {
+        auto const& propName = prop->GetName();
+        if (ignore.find(propName.c_str()) != ignore.end())
+            continue;
+        ECN::ECValue value;
+        if (DgnDbStatus::Success == _GetPropertyValue(value, propName.c_str()))
+            {
+            str.append(propName.c_str());
+            str.append("=");
+            str.append(value.ToString().c_str());
+            str.append(comma);
+            comma = ", ";
+            }
+        }
+    str.append("}\n");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const
@@ -2874,7 +2901,7 @@ void DgnEditElementCollector::EmptyAll()
 void DgnEditElementCollector::CopyFrom(DgnEditElementCollector const& rhs)
     {
     for (auto el : rhs.m_elements)
-        AddElement(*el);
+        EditElement(*el);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2929,6 +2956,38 @@ bool DgnEditElementCollector::Equals(DgnEditElementCollector const& other, bset<
             return false;
         }
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const 
+    {
+    str.append("{\n");
+    for (auto el : *this)
+        {
+        str.append(Utf8PrintfString("%llx ", (uint64_t)(intptr_t)el).c_str());
+        el->Dump(str, ignore);
+        }
+    str.append("}\n");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, bset<Utf8String> const& ignore) const
+    {
+    str.append("{\n");
+    for (size_t i=0; i<m_elements.size(); ++i)
+        {
+        auto el = m_elements.at(i);
+        auto otherel = other.m_elements.at(i);
+        str.append(Utf8PrintfString("%llx ", (uint64_t)(intptr_t)el).c_str());
+        el->Dump(str, ignore);
+        str.append(Utf8PrintfString("%llx ", (uint64_t)(intptr_t)otherel).c_str());
+        otherel->Dump(str, ignore);
+        }
+    str.append("}\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
