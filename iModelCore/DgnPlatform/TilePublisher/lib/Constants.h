@@ -153,5 +153,3 @@ static double const s_qvExponentMultiplier  = 48.0,
 static const WCharCP s_metadataExtension    = L"json";
 static const WCharCP s_binaryDataExtension  = L"b3dm";
 
-
-static size_t   s_maxTilesetDepth = 5;

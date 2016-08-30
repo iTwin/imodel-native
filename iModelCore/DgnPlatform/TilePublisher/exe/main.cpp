@@ -276,8 +276,8 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName)
-        : PublisherContext(viewController, outputDir, tilesetName)
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -442,7 +442,9 @@ PublisherContext::Status TilesetPublisher::Publish()
         status = ConvertStatus(generator.GenerateTiles (*rootNode, s_toleranceInMeters, s_maxPointsPerTile));
         if (Status::Success == status)
             {
-            rootNode->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+            if (0 != GetMaxTilesPerDirectory())
+                rootNode->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+
             if (Status::Success == (status = ConvertStatus (generator.CollectTiles(*rootNode, *this))))
                 viewedTileSetNames.push_back (m_rootName);
             }
@@ -580,7 +582,10 @@ int wmain(int ac, wchar_t const** av)
     if (viewController.IsNull())
         return 1;
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName());
+    static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
+    static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
+
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory);
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

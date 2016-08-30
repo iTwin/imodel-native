@@ -132,7 +132,7 @@ void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, size_
                 childTileset["asset"]["version"] = "0.0";
 
                 auto&   childRoot = childTileset[JSON_Root];
-                WriteMetadataTree (childRoot, *childTile, s_maxTilesetDepth);
+                WriteMetadataTree (childRoot, *childTile, m_context.GetMaxTilesetDepth());
 
                 Utf8String metadataStr = Json::FastWriter().write(childTileset);
 
@@ -253,11 +253,10 @@ void TilePublisher::WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth
 PublisherContext::Status TilePublisher::Publish()
     {
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
-    BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_metadataExtension).c_str(), nullptr);
     
     if (0 == m_tile.GetDepth())
         {
-        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr),  s_maxTilesetDepth);
+        WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"").c_str(), s_metadataExtension).c_str(), nullptr), m_context.GetMaxTilesetDepth());
 #ifdef TILESET_STRUCTURE_TESTING
         WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"Single").c_str(), s_metadataExtension).c_str(), nullptr), 1);
         WriteTileset (BeFileName(nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath ((m_context.GetRootName() + L"Unified").c_str(), s_metadataExtension).c_str(), nullptr), 0xffff);
@@ -877,8 +876,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_maxTilesPerDirectory (maxTilesPerDirectory)
+PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_maxTilesetDepth (maxTilesetDepth), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -987,7 +986,9 @@ PublisherContext::Status   PublisherContext::PublishViewedModel (WStringCR tileS
 
     if (TileGenerator::Status::Success == status)
         {
-        rootTile->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+        if (0 != m_maxTilesPerDirectory)
+            rootTile->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
+
         status = generator.CollectTiles (*rootTile, collector);
         }
 
