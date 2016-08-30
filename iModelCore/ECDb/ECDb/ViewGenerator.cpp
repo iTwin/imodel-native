@@ -73,7 +73,7 @@ BentleyStatus ViewGenerator::DropUpdatableViews(ECDbCR ecdb)
     Statement stmt;
     stmt.Prepare(ecdb,
                  "SELECT"
-                 "    ('DROP VIEW IF EXISTS _' || ec_Schema.NamespacePrefix || '_' || ec_Class.Name)  AS UpdatableView"
+                 "    ('DROP VIEW IF EXISTS _' || ec_Schema.Alias || '_' || ec_Class.Name)  AS UpdatableView"
                  "    FROM ec_Class"
                  "    INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
 
@@ -178,7 +178,7 @@ BentleyStatus ViewGenerator::DropECClassViews(ECDbCR ecdb)
     Statement stmt;
     stmt.Prepare(ecdb,
                  "SELECT"
-                 "    ('DROP VIEW IF EXISTS [' || ec_Schema.NamespacePrefix || '.' || ec_Class.Name || '];') AS DebugView"
+                 "    ('DROP VIEW IF EXISTS [' || ec_Schema.Alias || '.' || ec_Class.Name || '];') AS DebugView"
                  "    FROM ec_Class"
                  "    INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId");
 

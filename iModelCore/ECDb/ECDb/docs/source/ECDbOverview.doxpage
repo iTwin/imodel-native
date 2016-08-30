@@ -336,7 +336,7 @@
 
     ## Features supported but not enforced
     - %ECDb only enforces the @ref BentleyApi::ECN::RelationshipMultiplicity "ECRelationshipConstraint multiplicities" 
-    common to databases: (0..1), (1..1), (0..N), (1..N).
+    common to databases: (0..1), (1..1), (0..*), (1..*).
     Abitrary numbers for the lower and upper bound of the multiplicity are not enforced.
     - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
 
@@ -346,9 +346,9 @@
     
     ## ECRelationshipClass Definition Consistency
     Technically, @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClasses" can be defined with incompatible 
-    values for multiplicity, strength and strength direction. The table shows what is actually allowed.
+    values for cardinality, strength and strength direction. The table shows what is actually allowed.
 
-    Multiplicity | Supported Strength | Supported Strength Direction
+    Cardinality  | Supported Strength | Supported Strength Direction
     ------------ | ------------------ | ----------------------------
     1:1          | Any                | @ref BentleyApi::ECN::Forward "Forward" or @ref BentleyApi::ECN::Backward "Backward"
     1:N          | @ref BentleyApi::ECN::Embedding "Embedding" | @ref BentleyApi::ECN::Forward "Forward"
@@ -365,7 +365,7 @@
     
     @b Rule:
     <b>Link Table</b> mapping is chosen if
-    - the multiplicity is N:N
+    - the cardinality is N:N
     - ECProperties are defined for the ECRelationshipClass
     - the @b LinkTableRelationshipMap custom attribute is present on the ECRelationshipClass (see also @ref CustomRelationshipMapDescription)
 
@@ -464,12 +464,12 @@
         - Entity ECClasses
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table.
-        - ECRelationshipClasses with multiplicity 1:1 or 0:N
+        - ECRelationshipClasses with cardinality 1:1 or 0:N
             - If source or target constraints end-up in a single table on each side then @b ForeignKey mapping will be used.
             - If source or target constraints end-up in more then one table on any side then @b LinkTable mapping will be used.
             - If relationship has at least one ECProperty it will be mapped using @b LinkTable mapping
-        - Relationship with multiplicity N:N is always mapped using the @b LinkTable mapping.
-        - A default index is created on the key columns in accordance with the multiplicity.
+        - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
+        - A default index is created on the key columns in accordance with the cardinality.
 
     @section CustomSchemaMapDescription Custom mapping or ECSchemas
 
@@ -641,13 +641,13 @@
     NavigationECProperty is considered. If neither is specified, %ECDb generates a column with a default name.
 
     @note ECDb by default creates a Foreign Key column with a Foreign Key constraint for the relationship and implies its NOT NULL and UNIQUE constraints 
-    from the ECRelationshipClass' multiplicity. If, however, the ECRelationshipClass specifies to use an existing column (either via 
+    from the ECRelationshipClass' cardinality. If, however, the ECRelationshipClass specifies to use an existing column (either via 
     using the @em ForeignKeyColumn property or because of using the MapStrategy 'ExistingTable'), the following
     restrictions exist:
         - the Foreign Key constraint will not be created and a warning will be logged.
-        - if the existing column is nullable but the relationship's multiplicity implies it to be not nullable, or vice versa, the ECSchema import will fail.
+        - if the existing column is nullable but the relationship's cardinality implies it to be not nullable, or vice versa, the ECSchema import will fail.
     
-    @note If the multiplicity implies unique-ness of the foreign key column a @em partial unique index will be created that applies to the ECRelationshipClass' rows of the shared column
+    @note If the cardinality implies unique-ness of the foreign key column a @em partial unique index will be created that applies to the ECRelationshipClass' rows of the shared column
     only.
 
     Description of the @b LinkTableRelationshipMap properties:
@@ -660,8 +660,8 @@
     - <b>TargetECClassIdColumn</b>: (optional) Defines the target constraint's ECClassId column. If this property is not set, %ECDb generates a column with a default name.
     In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
     - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
-    can be inserted. If true, duplicate relationship instances can be inserted. Multiplicity must not be violated though. E.g.
-    there cannot be duplicate relationships with a multiplicity of 1:1. @b Note: The flag is applied to subclasses of this relationship class, too.
+    can be inserted. If true, duplicate relationship instances can be inserted. Cardinality must not be violated though. E.g.
+    there cannot be duplicate relationships with a cardinality of 1:1. @b Note: The flag is applied to subclasses of this relationship class, too.
 
     ####Examples
 
@@ -672,10 +672,10 @@
                     <TargetECInstanceIdColumn>HardwareId</TargetECInstanceIdColumn>
                 </LinkTableRelationshipMap>
             </ECCustomAttributes>
-            <Source multiplicity="(0..N)" roleLabel="Employee using hardware" polymorphic="True">
+            <Source multiplicity="(0..*)" roleLabel="Employee using hardware" polymorphic="True">
                 <Class class="Employee" />
             </Source>
-            <Target multiplicity="(0..N)" roleLabel="Hardware assigned to employee" polymorphic="True">
+            <Target multiplicity="(0..*)" roleLabel="Hardware assigned to employee" polymorphic="True">
                 <Class class="Hardware" />
             </Target>
         </ECRelationshipClass>
@@ -690,7 +690,7 @@
             <Source multiplicity="(1..1)" polymorphic="True">
                 <Class class="Folder" />
             </Source>
-            <Target multiplicity="(0..N)" polymorphic="True">
+            <Target multiplicity="(0..*)" polymorphic="True">
                 <Class class="File" />
             </Target>
         </ECRelationshipClass>

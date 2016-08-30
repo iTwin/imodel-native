@@ -99,8 +99,8 @@ void MetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, ECSq
 
             continue;
             }
-        else if (colName.EqualsI("NamespacePrefix"))
-            ASSERT_STREQ(expectedSchema.GetAlias().c_str(), val.GetText()) << "ECSchemaDef.NamespacePrefix";
+        else if (colName.EqualsI("Alias"))
+            ASSERT_STREQ(expectedSchema.GetAlias().c_str(), val.GetText()) << "ECSchemaDef.Alias";
         else if (colName.EqualsI("VersionMajor"))
             ASSERT_EQ(expectedSchema.GetVersionMajor(), (uint32_t) val.GetInt()) << "ECSchemaDef.VersionMajor";
         else if (colName.EqualsI("VersionMinor"))

@@ -104,7 +104,7 @@ bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(ECDbCR db, Utf8CP al
     CachedStatementPtr stmt = nullptr;
     //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
     //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE NamespacePrefix=? COLLATE NOCASE"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Alias=? COLLATE NOCASE"))
         return false;
 
     stmt->BindText(1, alias, Statement::MakeCopy::No);
@@ -149,11 +149,11 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
                 break;
 
             case ResolveSchema::BySchemaAlias:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.NamespacePrefix=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Alias=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
                 break;
 
             default:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 COLLATE NOCASE OR s.NamespacePrefix=?1 COLLATE NOCASE) AND c.Name=?2 COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 COLLATE NOCASE OR s.Alias=?1 COLLATE NOCASE) AND c.Name=?2 COLLATE NOCASE";
                 break;
         }
 

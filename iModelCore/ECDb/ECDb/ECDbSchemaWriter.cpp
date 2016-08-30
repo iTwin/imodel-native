@@ -754,7 +754,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
 BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchema.GetId()))
@@ -2163,7 +2163,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("NamespacePrefix", schemaChange.GetAlias().GetNew().Value().c_str());
+        updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
         }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name
@@ -2198,18 +2198,24 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
 DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
     {
     StopWatch timer(true);
-    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
+    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_cache_ClassHierarchy");
     if (r != BE_SQLITE_OK)
         return r;
 
-    r = ecdb.ExecuteSql("WITH RECURSIVE "
-                        "BaseClassList(ClassId, BaseClassId) AS "
-                        "(SELECT Id, Id FROM ec_Class"
-                        " UNION"
-                        " SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
-                        " INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
-                        " ORDER BY 2)"
-                        " INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
+    r = ecdb.ExecuteSql(
+        "WITH RECURSIVE "
+        "  BaseClassList(ClassId, BaseClassId, Level, Ordinal) AS "
+        "  ( "
+        "  SELECT Id, Id, 1, 0 FROM ec_Class "
+        "  UNION "
+        "  SELECT DCL.ClassId, BC.BaseClassId, DCL.Level + 1, COALESCE(NULLIF(BC.Ordinal, 0), DCL.Ordinal) "
+        "     FROM BaseClassList DCL "
+        "          INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
+        "  ) "
+        "INSERT INTO ec_cache_ClassHierarchy "
+        "SELECT DISTINCT NULL Id, ClassId, BaseClassId "
+        "   FROM BaseClassList"
+        "       ORDER BY Ordinal DESC, Level DESC;");
 
     if (r != BE_SQLITE_OK)
         return r;

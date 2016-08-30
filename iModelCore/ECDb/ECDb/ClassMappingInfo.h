@@ -126,7 +126,7 @@ public:
 struct RelationshipMappingInfo : public ClassMappingInfo
     {
 public:
-    enum class Multiplicity
+    enum class Cardinality
         {
         ManyToMany,
         OneToMany,
@@ -143,7 +143,7 @@ public:
         };
 
 private:
-    Multiplicity m_multiplicity;
+    Cardinality m_cardinality;
     bool m_sourceColumnsMappingIsNull;
     RelationshipEndColumns m_sourceColumnsMapping;
     bool m_targetColumnsMappingIsNull;
@@ -162,7 +162,7 @@ private:
     BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
 
-    void DetermineMultiplicity();
+    void DetermineCardinality();
 
     std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
@@ -178,7 +178,7 @@ public:
 
     virtual ~RelationshipMappingInfo() {}
 
-    Multiplicity GetMultiplicity() const { return m_multiplicity; }
+    Cardinality GetCardinality() const { return m_cardinality; }
 
     CustomMapType GetCustomMapType() const { return m_customMapType; }
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_allowDuplicateRelationships; }

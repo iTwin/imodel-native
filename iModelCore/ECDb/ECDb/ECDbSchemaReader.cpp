@@ -633,7 +633,7 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     {
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_db.GetCachedStatement(stmt,
-        "SELECT S.Name, S.DisplayLabel,S.Description,S.NamespacePrefix,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
+        "SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
         "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
         "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
         "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId)"
