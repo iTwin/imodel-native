@@ -401,8 +401,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
     //auto* node = this;
     RunOnNextAvailableThread(std::bind([pi_pDataStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
         {
-        assert(false && "Make this compile on Vancouver!");
-#if 0
+#ifndef VANCOUVER_API
         // Save indices
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
 
@@ -457,6 +456,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMes
         // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)
         ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());
         node->SavePointDataToCloud(pDataStore);
+#else
+        assert(false && "Make this compile on Vancouver!");
 #endif
 
         SetThreadAvailableAsync(threadId);
@@ -4265,9 +4266,9 @@ Save cloud ready format
 -----------------------------------------------------------------------------*/
 template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
     {
-    //this->SaveMasterHeaderToCloud(dataSourceManager); // &&RB TODO: use store for this!
-
     ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress);
+
+    this->SaveMasterHeaderToCloud(pDataStore);
 
     static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->SaveMeshToCloud(pDataStore);
 

@@ -1067,20 +1067,20 @@ template <class DATATYPE, class EXTENT> HPMBlockID SMStreamingNodeDataStore<DATA
         swprintf(buffer, L"%sp_%llu.bin", m_pathToNodeData.c_str(), blockID.m_integerID);
         DataSourceURL    dataSourceURL(buffer);
 
-        bool created = false;
-        DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
+        //bool created = false;
+        //DataSourceBuffered *dataSource = dynamic_cast<DataSourceBuffered*>(m_dataSourceAccount->getOrCreateThreadDataSource(&created));
         //{
         //std::lock_guard<mutex> clk(s_consoleMutex);
         //if (!created) std::cout << "[" << std::this_thread::get_id() << "] A datasource is being reused by thread" << std::endl;
         //else std::cout<<"[" << std::this_thread::get_id() << "] New thread DataSource created" << std::endl;
         //}
-        //DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
+        DataSource *dataSource = m_dataSourceAccount->getOrCreateThreadDataSource();
         assert(dataSource != nullptr); // problem creating a new DataSource
 
-        dataSource->setSegmentSize(1024 * 32);
-
-        // Time I/O operation timeouts for threading
-        dataSource->setTimeout(DataSource::Timeout(10000));
+        //dataSource->setSegmentSize(1024 * 32);
+        //
+        //// Time I/O operation timeouts for threading
+        //dataSource->setTimeout(DataSource::Timeout(10000));
 
         writeStatus = dataSource->open(dataSourceURL, DataSourceMode_Write_Segmented);
         assert(writeStatus.isOK()); // problem opening a DataSource

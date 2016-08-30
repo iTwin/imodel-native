@@ -748,7 +748,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     // NEEDS_WORK_SM - Remove hardcoded azure dataset name
                     WString azureDatasetName(L"marseille\\");
-                    //WString azureDatasetName(L"quebeccity2\\");
+                    //WString azureDatasetName(L"marseille\\");
                     //WString azureDatasetName(L"quebectest2/");
 
                     // NEEDS_WORK_SM - Check existence of the following directories
