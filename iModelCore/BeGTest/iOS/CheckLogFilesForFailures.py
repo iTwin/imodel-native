@@ -20,7 +20,7 @@ def checkLogFileForFailures(logfilename):
     failedTests = ''
     comma = ''
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
-    with open(logFileName, 'r') as logfile:
+    with open(logfilename, 'r') as logfile:
         for line in logfile.readlines():
 
             lineNo = lineNo + 1
@@ -68,6 +68,8 @@ if __name__ == '__main__':
     breakonfailure = False
     if len(sys.argv) > 2 and int(sys.argv[2]) != 0:
         breakonfailure = True
+
+    print breakonfailure
 
     for root,dirs,files in os.walk (dir, topdown=True, onerror=None, followlinks=True):
         for file in files:

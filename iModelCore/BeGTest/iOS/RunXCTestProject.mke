@@ -49,12 +49,12 @@ always:
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
     echo $(XCODEPROJ)>$(logfile)
-    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &>> $(logfile)
+    -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile)
     python $(baseDir)CheckForRetry.py $(logfile) > ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt
     %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
         |Retrying...
         echo $(XCODEPROJ)>$(logfile)
-        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' &>> $(logfile)
+        -xcodebuild test -project $(XCODEPROJ) -scheme BeTestiOS -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile)
     %endif
 
 BreakOnFailure = 0
@@ -63,7 +63,7 @@ BreakOnFailure = 0
 %endif
 
 always:
-    python $(baseDIr)CheckResultsForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
+    python $(baseDIr)CheckLogFilesForFailures.py $[@dir $(logFile)] $(BreakOnFailure)
 
 always:
     ~linkfile "$(BuildContext)Delivery/XCTest/Logs/$(XCTEST_LOGFILE_NAME)=$(logFile)"
