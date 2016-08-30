@@ -1,19 +1,10 @@
-/*******************************************************************************
-/* ODBCSQL: a sample program that implements an ODBC command line interpreter.
-/*
-/* USAGE:   ODBCSQL DSN=<dsn name>   or
-/*          ODBCSQL FILEDSN=<file dsn> or
-/*          ODBCSQL DRIVER={driver name}
-/*
-/*
-/* Copyright(c) Microsoft Corporation.   This is a WDAC sample program and
-/* is not suitable for use in production environments.   
-/*
-/******************************************************************************/
-/* Modules:
-/*      Main                Main driver loop, executes queries.
-/*      HandleError         Show ODBC error messages
-/******************************************************************************/
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: RealityPlatform/FtpTraverser/FtpTraverser.cpp $
+|
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 
 #include <windows.h>
 #include <sql.h>
@@ -29,10 +20,6 @@
 #include <RealityPlatform/FtpTraverser/FtpTraverser.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
-
-/*****************************************/
-/* Some constants                        */
-/*****************************************/
 
 ServerConnection::ServerConnection()
     {
@@ -842,7 +829,6 @@ void ServerConnection::HandleDiagnosticRecord (SQLHANDLE      hHandle,
                          sizeof(Msg),
                          &MsgLen) != SQL_NO_DATA)
     {
-        // Hide data truncated..
         if (strncmp((CHAR*)SqlState, "01004", 5))
         {
             fwprintf(stderr, L"\n%hs %hs (%d)\n", SqlState, Msg, NativeError);
