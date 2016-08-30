@@ -277,8 +277,11 @@ private:
     };
 public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName)
-        : PublisherContext(viewController, outputDir, tilesetName) { }
-
+        : PublisherContext(viewController, outputDir, tilesetName)
+        {
+        // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
+        m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+        }
 
     Status Publish();
 

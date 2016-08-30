@@ -831,12 +831,11 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_dataDir(m_outputDir), m_maxTilesPerDirectory (maxTilesPerDirectory)
+    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_maxTilesPerDirectory (maxTilesPerDirectory)
     {
-    // m_outputDir holds the .html file + shared scripts
-    // m_dataDir = m_outputDir/m_rootName/ - holds the json + b3dm files
+    // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
-    m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+    m_dataDir = m_outputDir;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -845,7 +844,7 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
 PublisherContext::Status PublisherContext::Setup()
     {
     // Ensure directories exist and are writable
-    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
+    if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
         return Status::CantWriteToBaseDirectory;
 
     bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
