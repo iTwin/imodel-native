@@ -72,6 +72,7 @@ protected:
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory = 500);
 
     virtual TileGeometryCacheP _GetGeometryCache() = 0;
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
 
     TILEPUBLISHER_EXPORT Status Setup();
 
@@ -88,6 +89,7 @@ public:
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
 
     TileGeometryCacheP GetGeometryCache() { return _GetGeometryCache(); }
+    WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
 };
 
 //=======================================================================================

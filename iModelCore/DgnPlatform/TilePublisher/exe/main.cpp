@@ -253,6 +253,7 @@ private:
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual TileGeometryCacheP _GetGeometryCache() override { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
 
     Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
