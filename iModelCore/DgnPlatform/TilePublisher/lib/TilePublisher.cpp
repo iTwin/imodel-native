@@ -836,25 +836,6 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::Setup()
-    {
-    // Ensure directories exist and are writable
-    if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
-        return Status::CantWriteToBaseDirectory;
-
-    bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
-    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(m_dataDir.c_str()))
-        return Status::CantCreateSubDirectory;
-    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
-        return Status::CantCreateSubDirectory;
-
-    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
-        return Status::CantCreateSubDirectory;
 
     // For now use view center... maybe should use the DgnDb range center.
     DPoint3d        origin = m_viewController.GetCenter ();
@@ -892,6 +873,25 @@ PublisherContext::Status PublisherContext::Setup()
 
         m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status PublisherContext::Setup()
+    {
+    // Ensure directories exist and are writable
+    if (m_outputDir != m_dataDir && BeFileNameStatus::Success != BeFileName::CheckAccess(m_outputDir, BeFileNameAccess::Write))
+        return Status::CantWriteToBaseDirectory;
+
+    bool dataDirExists = BeFileName::DoesPathExist(m_dataDir);
+    if (dataDirExists && BeFileNameStatus::Success != BeFileName::EmptyDirectory(m_dataDir.c_str()))
+        return Status::CantCreateSubDirectory;
+    else if (!dataDirExists && BeFileNameStatus::Success != BeFileName::CreateNewDirectory(m_dataDir))
+        return Status::CantCreateSubDirectory;
+
+    if (BeFileNameStatus::Success != BeFileName::CheckAccess(m_dataDir, BeFileNameAccess::Write))
+        return Status::CantCreateSubDirectory;
 
     return Status::Success;
     }
