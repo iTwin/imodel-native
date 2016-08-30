@@ -132,10 +132,12 @@ RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
     return retcode;
     }
 
-RETCODE ServerConnection::FetchScopeIdentity(SQLINTEGER &id, SQLLEN &len)
+SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, char* tableName,SQLLEN &len)
     {
-    RETCODE retCode;
-    ExecuteSQL("SELECT SCOPE_IDENTITY() as [SCOPE_IDENTITY]");
+    SQLRETURN retCode;
+    CHAR ident[256];
+    sprintf(ident, "SELECT IDENT_CURRENT('%s') as [SCOPE_IDENTITY]", tableName);
+    ExecuteSQL(ident);
     SQLBindCol(hStmt, 1, SQL_INTEGER, &id, 2, &len);
     TryODBC(hStmt, SQL_HANDLE_STMT, retCode = SQLFetch(hStmt));
     ReleaseStmt();
@@ -340,8 +342,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
     SQLINTEGER metadataId;
     SQLLEN len;
-    if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
-        FetchScopeIdentity(metadataId, len);
+    
+    FetchTableIdentity(metadataId, "[FTPIndex].[dbo].[Metadatas]", len);
     
     FtpThumbnailCR thumbnail = data.GetThumbnail();
 
@@ -369,8 +371,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     retCode = ExecuteSQL(hStmt);
     ReleaseStmt();
     SQLINTEGER thumbnailId;
-    if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
-        FetchScopeIdentity(thumbnailId, len);
+    
+    FetchTableIdentity(thumbnailId, "[FTPIndex].[dbo].[Thumbnails]", len);
         
     FtpServerCR server = data.GetServer();
     Utf8StringCR url = server.GetUrl();
@@ -380,8 +382,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     retCode = ExecuteSQL(serverCheckQuery);
     if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
         {
-            SQLBindCol(hStmt, 1, SQL_INTEGER, &serverId, 2, &len);
-            retCode = SQLFetch(hStmt);
+        SQLBindCol(hStmt, 1, SQL_INTEGER, &serverId, 2, &len);
+        retCode = SQLFetch(hStmt);
         }
     ReleaseStmt();
 
@@ -409,8 +411,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
         retCode = ExecuteSQL(hStmt);
         ReleaseStmt();
 
-        if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
-            FetchScopeIdentity(serverId, len);
+        FetchTableIdentity(serverId, "[FTPIndex].[dbo].[Servers]", len);
         }
     
     CHAR existingEntityBaseQuery[512];
@@ -456,7 +457,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
 
     if(!hasExisting)
-        FetchScopeIdentity(entityId, len);
+        FetchTableIdentity(entityId, "[FTPIndex].[dbo].[SpatialEntityBases]", len);
 
     SQLINTEGER dataSize = (int)data.GetSize();
     CHAR spatialDataSourceQuery[512];
@@ -471,8 +472,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     retCode = ExecuteSQL(spatialDataSourceQuery);
     ReleaseStmt();
     SQLINTEGER dataSourceId;
-    if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
-        FetchScopeIdentity(dataSourceId, len);
+    
+    FetchTableIdentity(dataSourceId, "[FTPIndex].[dbo].[SpatialDataSources]", len);
 
     ReleaseStmt();
 

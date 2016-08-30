@@ -58,7 +58,7 @@ public:
     RETCODE ExecuteSQL(CHAR* query);
     RETCODE ExecuteSQL(SQLHSTMT stmt);
     RETCODE ExecutePrepared();
-    RETCODE FetchScopeIdentity(SQLINTEGER &id, SQLLEN &len);
+    SQLRETURN FetchTableIdentity(SQLINTEGER &id, char* tableName, SQLLEN &len);
     void ReleaseStmt();
     bool IsDuplicate(Utf8CP file);
     bool IsMirror(Utf8CP file);
