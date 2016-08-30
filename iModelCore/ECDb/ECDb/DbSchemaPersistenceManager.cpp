@@ -764,14 +764,6 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ClassMapId& classMapId, ECClassId
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
     {
-#ifdef WIP_ECDB_PERF
-    auto itor = m_properytPathCache.find(std::make_tuple(rootPropertyId, accessString));
-    if (itor != m_properytPathCache.end())
-        {
-        id = (*itor).second;
-        return SUCCESS;
-        }
-#endif
     auto stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath  WHERE RootPropertyId =? AND AccessString = ?");
     if (stmt == nullptr)
         {
@@ -810,10 +802,6 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
         BeAssert(false);
         return ERROR;
         }
-
-#ifdef WIP_ECDB_PERF
-    m_properytPathCache.insert(std::make_pair(std::make_pair(rootPropertyId, accessString), id));
-#endif
 
     return SUCCESS;
     }
