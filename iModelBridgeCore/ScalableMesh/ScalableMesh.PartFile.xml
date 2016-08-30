@@ -20,6 +20,8 @@
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
         </Bindings>
     </Part>
 
