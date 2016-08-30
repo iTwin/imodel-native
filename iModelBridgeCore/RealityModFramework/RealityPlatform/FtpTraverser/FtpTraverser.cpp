@@ -36,11 +36,23 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 ServerConnection::ServerConnection()
     {
+    s_instance = this;
+    }
+
+ServerConnection* ServerConnection::s_instance = nullptr;
+ServerConnection& ServerConnection::GetInstance()
+    {
+    if (nullptr == s_instance)
+        s_instance = new ServerConnection();
+    return *s_instance;
+    }
+
+void ServerConnection::SetStrings(const char* dbName, const char* pwszConnStr)
+    {
+    m_dbName = dbName;
     hEnv = NULL; 
     hDbc = NULL; 
     hStmt = NULL;
-
-    SQLCHAR*      pwszConnStr = (SQLCHAR*)"Driver={SQL Server};Server=NAOU10714QBC\\SQLEXPRESS;Database=FTPIndex;Trusted_Connection=Yes;UID=User;PWD=Password3;";
 
     if (SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &hEnv) == SQL_ERROR)
         {
@@ -70,7 +82,7 @@ ServerConnection::ServerConnection()
         SQL_HANDLE_DBC,
         SQLDriverConnect(hDbc,
         NULL,
-        pwszConnStr,
+        (SQLCHAR*)pwszConnStr,
         SQL_NTS,
         NULL,
         0,
@@ -81,15 +93,6 @@ ServerConnection::ServerConnection()
         SQL_HANDLE_DBC,
         SQLAllocHandle(SQL_HANDLE_STMT, hDbc, &hStmt));
 
-    s_instance = this;
-    }
-
-ServerConnection* ServerConnection::s_instance = nullptr;
-ServerConnection& ServerConnection::GetInstance()
-    {
-    if (nullptr == s_instance)
-        s_instance = new ServerConnection();
-    return *s_instance;
     }
 
 /*******************************************/
@@ -132,7 +135,7 @@ RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
     return retcode;
     }
 
-SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, char* tableName,SQLLEN &len)
+SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len)
     {
     SQLRETURN retCode;
     CHAR ident[256];
@@ -155,9 +158,12 @@ void ShowUsage()
     {
     std::cout << "Usage: ftptraversalenginenet.exe [options] FtpUrl [DualFtpUrl]" << std::endl <<std::endl;
     std::cout << "Options:" << std::endl;
-    std::cout << "  -h, --help             Show this help message and exit" << std::endl;
-    std::cout << "  -u, --update           Enable update mode" << std::endl;
-    std::cout << "  -provider:PROVIDER     Set provider name" << std::endl;
+    std::cout << "  -h, --help              Show this help message and exit" << std::endl;
+    std::cout << "  -u, --update            Enable update mode" << std::endl;
+    std::cout << "  -provider:PROVIDER      Set provider name" << std::endl;
+    std::cout << "  -dbName                 Set the name of the target database (Required)" << std::endl;
+    std::cout << "  -cs, --connectionString Connection string to connect to the db (Required)" << std::endl;
+    std::cout << "  if there are spaces in an argument, surround it with \"\" " << std::endl;
 
     std::cout << std::endl << "Press any key to exit." << std::endl;
     int n;
@@ -209,6 +215,9 @@ int main(int argc, char *argv[])
     std::string provider;
     std::vector<std::string> ftpUrls = std::vector<std::string>(ftpUrlCount);
     char* substringPosition;
+    std::string dbName;
+    std::string pwszConnStr;
+    int necessaryInputs = 0;
     ftpUrls.clear();
     for (int i = 0; i < argc; ++i)
         {
@@ -227,6 +236,28 @@ int main(int argc, char *argv[])
             }
         else if (strstr(argv[i], "ftp://"))
             ftpUrls.push_back(std::string(argv[i]));
+        else if (strstr(argv[i], "-dbName:"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            dbName = std::string(substringPosition);
+            necessaryInputs |= 1;
+            }
+        else if (strstr(argv[i], "--connectionString:") || strstr(argv[i], "-cs:"))
+            {
+            std::string argument = std::string(argv[i]);
+            size_t index = argument.find_first_of(":");
+            substringPosition = argv[i] + index;
+            substringPosition ++;
+            pwszConnStr = std::string(substringPosition);
+            necessaryInputs |= 2;
+            }
+        }
+
+    if (!(necessaryInputs & 1) || !(necessaryInputs & 2) )
+        {
+        ShowUsage();
+        return 0;
         }
 
     FtpStatus status = FtpStatus::UnknownError;
@@ -251,7 +282,7 @@ int main(int argc, char *argv[])
             std::cout << "Retrieving data" << std::endl;
             std::cout << "*****************" << std::endl << std::endl;
 
-            client->SetObserver(new FtpTraversalObserver(updateMode, dualMode));
+            client->SetObserver(new FtpTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str()));
             status = client->GetData();
             if (status != FtpStatus::Success)
                 {
@@ -273,8 +304,10 @@ int main(int argc, char *argv[])
 
 
 
-FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode) : IFtpTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
-    {}
+FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : IFtpTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
+    {
+    ServerConnection::GetInstance().SetStrings(dbName, pwszConnStr);
+    }
 
 void FtpTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
     {
@@ -324,14 +357,15 @@ void FtpTraversalObserver::OnDataExtracted(RealityPlatform::FtpDataCR data)
 void ServerConnection::Save(FtpDataCR data, bool dualMode)
     {
     CHAR preQuery[512];
-    sprintf(preQuery, "SELECT * FROM [FTPIndex].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", data.GetUrl().c_str());
+    sprintf(preQuery, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, data.GetUrl().c_str());
     if (HasEntries(preQuery))
         return;
 
     FtpMetadataCR metadata = data.GetMetadata();
 
     CHAR metadataQuery[2048];
-    sprintf(metadataQuery, "INSERT INTO [FTPIndex].[dbo].[Metadatas] ([Provenance],[Description],[ContactInformation],[Legal],[RawMetadataFormat],[RawMetadata]) VALUES ('%s', '%s', '%s', '%s', '%s', '')",
+    sprintf(metadataQuery, "INSERT INTO [%s].[dbo].[Metadatas] ([Provenance],[Description],[ContactInformation],[Legal],[RawMetadataFormat],[RawMetadata]) VALUES ('%s', '%s', '%s', '%s', '%s', '')",
+        m_dbName,
         metadata.GetProvenance().c_str(),
         metadata.GetDescription().c_str(),
         metadata.GetContactInfo().c_str(),
@@ -343,7 +377,10 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     SQLINTEGER metadataId;
     SQLLEN len;
     
-    FetchTableIdentity(metadataId, "[FTPIndex].[dbo].[Metadatas]", len);
+    CHAR tableName[128];
+    sprintf(tableName, "[%s].[dbo].[Metadatas]", m_dbName);
+
+    FetchTableIdentity(metadataId, tableName, len);
     
     FtpThumbnailCR thumbnail = data.GetThumbnail();
 
@@ -354,7 +391,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
         dataArray[i] = thumbnailBytes[i];
 
     CHAR thumbnailQuery[1000000];
-    sprintf(thumbnailQuery, "INSERT INTO [FTPIndex].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailWidth], [ThumbnailHeight], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailData]) VALUES ('%s', '%s', %d, %d, '%ls', '%s', ?)",
+    sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailWidth], [ThumbnailHeight], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailData]) VALUES ('%s', '%s', %d, %d, '%ls', '%s', ?)",
+        m_dbName,
         thumbnail.GetProvenance().c_str(),
         thumbnail.GetFormat().c_str(),
         thumbnail.GetWidth(),
@@ -372,13 +410,14 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
     SQLINTEGER thumbnailId;
     
-    FetchTableIdentity(thumbnailId, "[FTPIndex].[dbo].[Thumbnails]", len);
+    sprintf(tableName, "[%s].[dbo].[Thumbnails]", m_dbName);
+    FetchTableIdentity(thumbnailId, tableName, len);
         
     FtpServerCR server = data.GetServer();
     Utf8StringCR url = server.GetUrl();
     SQLINTEGER serverId;
     CHAR serverCheckQuery[512];
-    sprintf(serverCheckQuery, "SELECT [Id] FROM [FTPIndex].[dbo].[Servers] WHERE [URL] = '%s'", url.c_str());
+    sprintf(serverCheckQuery, "SELECT [Id] FROM [%s].[dbo].[Servers] WHERE [URL] = '%s'", m_dbName, url.c_str());
     retCode = ExecuteSQL(serverCheckQuery);
     if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
         {
@@ -390,7 +429,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     if (retCode != SQL_SUCCESS)
         {
         CHAR serverQuery[1024];
-        sprintf(serverQuery, "INSERT INTO [FTPIndex].[dbo].[Servers] ([CommunicationProtocol], [Name], [URL], [ServerContactInformation], [Legal], [Online], [LastCheck], [LastTimeOnLine], [Latency], [State], [Type], [MeanReachabilityStats]) VALUES ('%s', '%s', '%s', '%s', '%s', %d, ?, ?, %f, '%s', '%s', 0)",
+        sprintf(serverQuery, "INSERT INTO [%s].[dbo].[Servers] ([CommunicationProtocol], [Name], [URL], [ServerContactInformation], [Legal], [Online], [LastCheck], [LastTimeOnLine], [Latency], [State], [Type], [MeanReachabilityStats]) VALUES ('%s', '%s', '%s', '%s', '%s', %d, ?, ?, %f, '%s', '%s', 0)",
+            m_dbName,
             server.GetProtocol().c_str(),
             server.GetName().c_str(),
             url.c_str(),
@@ -411,11 +451,12 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
         retCode = ExecuteSQL(hStmt);
         ReleaseStmt();
 
-        FetchTableIdentity(serverId, "[FTPIndex].[dbo].[Servers]", len);
+        sprintf(tableName, "[%s].[dbo].[Servers]", m_dbName);
+        FetchTableIdentity(serverId, tableName, len);
         }
     
     CHAR existingEntityBaseQuery[512];
-    sprintf(existingEntityBaseQuery, "SELECT [Id] FROM [FTPIndex].[dbo].[SpatialEntityBases] WHERE [Name] = '%s'", data.GetName().c_str());
+    sprintf(existingEntityBaseQuery, "SELECT [Id] FROM [%s].[dbo].[SpatialEntityBases] WHERE [Name] = '%s'", m_dbName, data.GetName().c_str());
     retCode = ExecuteSQL(existingEntityBaseQuery);
     bool hasExisting = false;
     SQLINTEGER entityId;
@@ -429,7 +470,8 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
 
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "INSERT INTO [FTPIndex].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 0), ?, %d, %d)",
+    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 0), ?, %d, %d)",
+        m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),
         data.GetProvider().c_str(),
@@ -457,11 +499,15 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
 
     if(!hasExisting)
-        FetchTableIdentity(entityId, "[FTPIndex].[dbo].[SpatialEntityBases]", len);
+        {
+        sprintf(tableName, "[%s].[dbo].[SpatialEntityBases]", m_dbName);
+        FetchTableIdentity(entityId, tableName, len);
+        }
 
     SQLINTEGER dataSize = (int)data.GetSize();
     CHAR spatialDataSourceQuery[512];
-    sprintf(spatialDataSourceQuery, "INSERT INTO [FTPIndex].[dbo].[SpatialDataSources] ([MainURL], [CompoundType], [FileSize], [DataSourceType], [LocationInCompound], [Server_Id]) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
+    sprintf(spatialDataSourceQuery, "INSERT INTO [%s].[dbo].[SpatialDataSources] ([MainURL], [CompoundType], [FileSize], [DataSourceType], [LocationInCompound], [Server_Id]) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
+        m_dbName,
         data.GetUrl().c_str(),
         data.GetCompoundType().c_str(),
         dataSize,
@@ -473,19 +519,21 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
     SQLINTEGER dataSourceId;
     
-    FetchTableIdentity(dataSourceId, "[FTPIndex].[dbo].[SpatialDataSources]", len);
+    sprintf(tableName, "[%s].[dbo].[SpatialDataSources]", m_dbName);
+    FetchTableIdentity(dataSourceId, tableName, len);
 
     ReleaseStmt();
 
     if (dualMode && hasExisting)
         {
         CHAR existingEntityQuery[512];
-        sprintf(existingEntityQuery, "SELECT * FROM [FTPIndex].[dbo].[SpatialEntities] WHERE [Id] = %d", entityId);
+        sprintf(existingEntityQuery, "SELECT * FROM [%s].[dbo].[SpatialEntities] WHERE [Id] = %d", m_dbName, entityId);
         
         if (HasEntries(existingEntityQuery))
             {
             CHAR existingSourceQuery[512];
-            sprintf(existingSourceQuery, "INSERT INTO [FTPIndex].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
+            sprintf(existingSourceQuery, "INSERT INTO [%s].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
+                m_dbName,
                 entityId,
                 dataSourceId);
 
@@ -496,16 +544,20 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     else
         {
         CHAR entityQuery[255];
-        sprintf(entityQuery, "IF NOT EXISTS(SELECT * FROM [FTPIndex].[dbo].[SpatialEntities] WHERE [Id] = %d) INSERT INTO [FTPIndex].[dbo].[SpatialEntities] ([Id]) VALUES (%d)",
+        sprintf(entityQuery, "IF NOT EXISTS(SELECT * FROM [%s].[dbo].[SpatialEntities] WHERE [Id] = %d) INSERT INTO [%s].[dbo].[SpatialEntities] ([Id]) VALUES (%d)",
+            m_dbName,
             entityId,
+            m_dbName,
             entityId);
         ExecuteSQL(entityQuery);
         ReleaseStmt();
 
         CHAR existingSourceQuery[512];
-        sprintf(existingSourceQuery, "IF NOT EXISTS(SELECT * FROM [FTPIndex].[dbo].[SpatialEntitySpatialDataSources] WHERE [SpatialEntity_Id] = %d AND [SpatialDataSource_Id] = %d) INSERT INTO [FTPIndex].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
+        sprintf(existingSourceQuery, "IF NOT EXISTS(SELECT * FROM [%s].[dbo].[SpatialEntitySpatialDataSources] WHERE [SpatialEntity_Id] = %d AND [SpatialDataSource_Id] = %d) INSERT INTO [%s].[dbo].[SpatialEntitySpatialDataSources] ([SpatialEntity_Id], [SpatialDataSource_Id]) VALUES (%d, %d)",
+            m_dbName,
             entityId,
             dataSourceId,
+            m_dbName,
             entityId,
             dataSourceId);
 
@@ -518,7 +570,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
 void ServerConnection::Update(FtpDataCR data)
     {
     CHAR preQuery[512]; 
-    sprintf(preQuery, "SELECT [Id] FROM [FTPIndex].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", data.GetUrl().c_str());
+    sprintf(preQuery, "SELECT [Id] FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, data.GetUrl().c_str());
     RETCODE retCode = ExecuteSQL(preQuery);
     SQLINTEGER sourceId;
     SQLLEN len;
@@ -537,7 +589,8 @@ void ServerConnection::Update(FtpDataCR data)
 
     const char* url = data.GetUrl().c_str();
     CHAR sourceQuery[512];
-    sprintf(sourceQuery, "UPDATE [FTPIndex].[dbo].[SpatialDataSources] SET [MainURL] = '%s', [CompoundType] = '%s', [FileSize] = %d, [DataSourceType] = '%s', [LocationInCompound] = '%s' WHERE [MainUrl] = '%s'",
+    sprintf(sourceQuery, "UPDATE [%s].[dbo].[SpatialDataSources] SET [MainURL] = '%s', [CompoundType] = '%s', [FileSize] = %d, [DataSourceType] = '%s', [LocationInCompound] = '%s' WHERE [MainUrl] = '%s'",
+        m_dbName,
         url,
         data.GetCompoundType().c_str(),
         (int)data.GetSize(),
@@ -548,7 +601,7 @@ void ServerConnection::Update(FtpDataCR data)
     ReleaseStmt();
 
     CHAR serverIdQuery[512];
-    sprintf(serverIdQuery, "SELECT [Server_Id] FROM [FTPIndex].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", url);
+    sprintf(serverIdQuery, "SELECT [Server_Id] FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, url);
     ExecuteSQL(serverIdQuery);
     SQLINTEGER serverId;
     SQLBindCol(hStmt, 1, SQL_INTEGER, &serverId, 2, &len);
@@ -558,7 +611,8 @@ void ServerConnection::Update(FtpDataCR data)
     FtpServerCR server = data.GetServer();
 
     CHAR serverQuery[512];
-    sprintf(serverQuery, "UPDATE [FTPIndex].[dbo].[Servers] SET [CommunicationProtocol] = '%s', [Name] = '%s', [URL] = '%s', [ServerContactInformation] = '%s', [Legal] = '%s', [Online] = %d, [LastCheck] = ?, [LastTimeOnline] = ?, [Latency] = %f, [State] = '%s', [Type] = '%s' WHERE [Id] = %d",
+    sprintf(serverQuery, "UPDATE [%s].[dbo].[Servers] SET [CommunicationProtocol] = '%s', [Name] = '%s', [URL] = '%s', [ServerContactInformation] = '%s', [Legal] = '%s', [Online] = %d, [LastCheck] = ?, [LastTimeOnline] = ?, [Latency] = %f, [State] = '%s', [Type] = '%s' WHERE [Id] = %d",
+        m_dbName,
         server.GetProtocol().c_str(),
         server.GetName().c_str(),
         server.GetUrl().c_str(),
@@ -580,7 +634,8 @@ void ServerConnection::Update(FtpDataCR data)
 
     SQLINTEGER entityId;
     CHAR entityIdQuery[256];
-    sprintf(entityIdQuery, "SELECT [SpatialEntity_Id] FROM [FTPIndex].[dbo].[SpatialEntitySpatialDataSources] WHERE [SpatialDataSource_id] = %d",
+    sprintf(entityIdQuery, "SELECT [SpatialEntity_Id] FROM [%s].[dbo].[SpatialEntitySpatialDataSources] WHERE [SpatialDataSource_id] = %d",
+        m_dbName,
         sourceId);
     ExecuteSQL(entityIdQuery);
     SQLBindCol(hStmt, 1, SQL_INTEGER, &entityId, 2, &len);
@@ -589,7 +644,8 @@ void ServerConnection::Update(FtpDataCR data)
 
     DateTimeCR date = data.GetDate();
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "UPDATE [FTPIndex].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Footprint] = geometry::STPolyFromText(?, 0), [Date] = '%d-%d-%d' WHERE [Id] = %d",
+    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Footprint] = geometry::STPolyFromText(?, 0), [Date] = '%d-%d-%d' WHERE [Id] = %d",
+        m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),
         data.GetProvider().c_str(),
@@ -614,7 +670,7 @@ void ServerConnection::Update(FtpDataCR data)
 
     SQLINTEGER metadataId;
     CHAR metaIdQuery[256];
-    sprintf(metaIdQuery, "SELECT [Metadata_Id] FROM [FTPIndex].[dbo].[SpatialEntityBases] WHERE [Id] = %d", entityId);
+    sprintf(metaIdQuery, "SELECT [Metadata_Id] FROM [%s].[dbo].[SpatialEntityBases] WHERE [Id] = %d", m_dbName, entityId);
     ExecuteSQL(metaIdQuery);
     SQLBindCol(hStmt, 1, SQL_INTEGER, &metadataId, 2, &len);
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
@@ -622,7 +678,8 @@ void ServerConnection::Update(FtpDataCR data)
     
     FtpMetadataCR metadata = data.GetMetadata();
     CHAR metadataQuery[512];
-    sprintf(metadataQuery, "UPDATE [FTPIndex].[dbo].[Metadatas] SET [Provenance] = '%s', [Description] = '%s', [ContactInformation] = '%s', [Legal] = '%s', [RawMetadataFormat] = '%s', [RawMetadata] = '' WHERE [Id] = %d",
+    sprintf(metadataQuery, "UPDATE [%s].[dbo].[Metadatas] SET [Provenance] = '%s', [Description] = '%s', [ContactInformation] = '%s', [Legal] = '%s', [RawMetadataFormat] = '%s', [RawMetadata] = '' WHERE [Id] = %d",
+        m_dbName,
         metadata.GetProvenance().c_str(),
         metadata.GetDescription().c_str(),
         metadata.GetContactInfo().c_str(),
@@ -635,7 +692,7 @@ void ServerConnection::Update(FtpDataCR data)
 
     SQLINTEGER thumbnailId;
     CHAR thumbIdQuery[256];
-    sprintf(thumbIdQuery, "SELECT [Thumbnail_Id] FROM [FTPIndex].[dbo].[SpatialEntityBases] WHERE [Id] = %d", entityId);
+    sprintf(thumbIdQuery, "SELECT [Thumbnail_Id] FROM [%s].[dbo].[SpatialEntityBases] WHERE [Id] = %d", m_dbName, entityId);
     ExecuteSQL(thumbIdQuery);
     SQLBindCol(hStmt, 1, SQL_INTEGER, &thumbnailId, 2, &len);
     TryODBC(hStmt, SQL_HANDLE_STMT, SQLFetch(hStmt));
@@ -643,7 +700,8 @@ void ServerConnection::Update(FtpDataCR data)
 
     FtpThumbnailCR thumbnail = data.GetThumbnail();
     CHAR thumbQuery[100000];
-    sprintf(thumbQuery, "UPDATE [FTPIndex].[dbo].[Thumbnails] SET [ThumbnailProvenance] = '%s', [ThumbnailFormat] = '%s', [ThumbnailWidth] = %d, [ThumbnailHeight] = %d, [ThumbnailStamp] = ?, [ThumbnailGenerationDetails] = '%s', [ThumbnailData] = ? WHERE [Id] = %d",
+    sprintf(thumbQuery, "UPDATE [%s].[dbo].[Thumbnails] SET [ThumbnailProvenance] = '%s', [ThumbnailFormat] = '%s', [ThumbnailWidth] = %d, [ThumbnailHeight] = %d, [ThumbnailStamp] = ?, [ThumbnailGenerationDetails] = '%s', [ThumbnailData] = ? WHERE [Id] = %d",
+        m_dbName,
         thumbnail.GetProvenance().c_str(),
         thumbnail.GetFormat().c_str(),
         thumbnail.GetWidth(),
@@ -697,7 +755,7 @@ SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
 bool ServerConnection::IsDuplicate(Utf8CP file)
     {
     CHAR wszInput[512];
-    sprintf(wszInput, "SELECT * FROM [FTPIndex].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", file);
+    sprintf(wszInput, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE [MainURL] = '%s'", m_dbName, file);
     
     return HasEntries(wszInput);
     }
@@ -706,7 +764,7 @@ bool ServerConnection::IsMirror(Utf8CP file)
     {
     /*size_t lastPos = file.find_last_of("/\\");
     CHAR wszInput[512];
-    sprintf(wszInput, "SELECT * FROM [FTPIndex].[dbo].[SpatialDataSources] WHERE CONTAINS([MainURL], '%s'", file.substr(lastPos + 1));
+    sprintf(wszInput, "SELECT * FROM [%s].[dbo].[SpatialDataSources] WHERE CONTAINS([MainURL], '%s'", m_dbName, file.substr(lastPos + 1));
 
         return HasEntries(wszInput);*/
         return false; //function is never called

@@ -28,7 +28,7 @@ struct FtpTraversalObserver: public IFtpTraversalObserver
     bool m_updateMode = false;
 public:
 
-    FtpTraversalObserver(bool dualMode, bool updateMode);
+    FtpTraversalObserver(bool dualMode, bool updateMode, const char* dbName, const char* pwszConnStr);
 
     virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file);
     virtual void OnFileDownloaded(Utf8CP file);
@@ -45,6 +45,7 @@ private:
     SQLHENV     hEnv;
     SQLHDBC     hDbc;
     SQLHSTMT    hStmt;
+    const char* m_dbName;
     static ServerConnection* s_instance;
     void OpenConnection();
     void HandleDiagnosticRecord(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
@@ -52,13 +53,14 @@ private:
 public:
     static ServerConnection& GetInstance();
     ServerConnection();
+    void SetStrings(const char* dbName, const char* pwszConnStr);
     void TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x);
     SQL_TIMESTAMP_STRUCT PackageDateTime(DateTimeCR date);
     SQL_DATE_STRUCT PackageDate(DateTimeCR dateTime);
     RETCODE ExecuteSQL(CHAR* query);
     RETCODE ExecuteSQL(SQLHSTMT stmt);
     RETCODE ExecutePrepared();
-    SQLRETURN FetchTableIdentity(SQLINTEGER &id, char* tableName, SQLLEN &len);
+    SQLRETURN FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len);
     void ReleaseStmt();
     bool IsDuplicate(Utf8CP file);
     bool IsMirror(Utf8CP file);
