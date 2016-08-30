@@ -66,9 +66,10 @@ protected:
     WString             m_rootName;
     Transform           m_dbToTile;
     Transform           m_tileToEcef;
+    size_t              m_maxTilesetDepth;
     size_t              m_maxTilesPerDirectory;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesPerDirectory = 5000);
+    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t s_maxTilesetDepth = 5, size_t maxTilesPerDirectory = 5000);
 
     virtual TileGeometryCacheP _GetGeometryCache() = 0;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
@@ -83,6 +84,7 @@ public:
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
+    size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
     TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
