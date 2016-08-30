@@ -389,6 +389,9 @@
     <ClInclude Include="LightweightCache.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="ClassMapPersistenceManager.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -714,6 +717,9 @@
       <Filter>ECDbMap</Filter>
     </ClCompile>
     <ClCompile Include="ClassMappingInfoHelper.cpp">
+      <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassMapPersistenceManager.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

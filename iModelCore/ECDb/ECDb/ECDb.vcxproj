@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
+    <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="ClassMappingInfoHelper.cpp" />
     <ClCompile Include="DbSchema.cpp" />
@@ -139,6 +140,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
+    <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />

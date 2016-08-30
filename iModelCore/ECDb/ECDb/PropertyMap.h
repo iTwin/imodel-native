@@ -11,7 +11,7 @@
 #include "DbSchema.h"
 #include "ECDbSystemSchemaHelper.h"
 #include "ECSql/NativeSqlBuilder.h"
-#include "DbSchemaPersistenceManager.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 enum class TraversalFeedback
@@ -149,6 +149,9 @@ struct ColumnMappedToProperty
         PropertyMapCP GetPropertyMap() const { BeAssert(Enum::Contains(m_loadFlag, LoadFlags::PropertyMap)); return m_propertyMap; }
     };
 typedef std::vector<ColumnMappedToProperty> ColumnMappedToPropertyList;
+
+struct DbClassMapLoadContext;
+struct DbClassMapSaveContext;
 
 //=======================================================================================
 // @bsimethod                                                   affan.khan        03/2012

@@ -17,41 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_schemaImportContext(nullptr), m_lightweightCache(*this)
     {}
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan   05/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-DbResult ECDbMap::RepopulateClassHasTable(ECDbCR ecdb)
-    {
-    StopWatch timer(true);
-    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_cache_ClassHasTables");
-    if (r != BE_SQLITE_OK)
-        return r;
-
-    r = ecdb.ExecuteSql(
-        SqlPrintfString(
-            "INSERT INTO ec_cache_ClassHasTables "
-            "    SELECT  NULL, ec_ClassMap.ClassId , ec_Table.Id "
-            "    FROM ec_PropertyMap "
-            "          INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-            "          INNER JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-            "          INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-            "    WHERE ec_ClassMap.MapStrategy <> %d "
-            "          AND ec_ClassMap.MapStrategy <> %d "
-            "          AND ec_Column.ColumnKind & %d = 0 "
-            "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id; ",
-            Enum::ToInt(MapStrategy::ForeignKeyRelationshipInSourceTable),
-            Enum::ToInt(MapStrategy::ForeignKeyRelationshipInTargetTable),
-            Enum::ToInt(DbColumn::Kind::ECClassId)
-        ).GetUtf8CP()
-    );
-
-    if (r != BE_SQLITE_OK)
-        return r;
-
-    timer.Stop();
-    LOG.debugv("Re-populated ec_cache_ClassHasTables in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
-    return BE_SQLITE_OK;
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
