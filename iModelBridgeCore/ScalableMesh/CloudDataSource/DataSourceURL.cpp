@@ -18,6 +18,10 @@ DataSourceURL::DataSourceURL(const std::wstring &str) : std::wstring(str)
 
 }
 
+void DataSourceURL::overrideDefaultSeparator(const std::wstring& separator)
+    {
+    m_separator = separator;
+    }
 
 bool DataSourceURL::isWindowsFilePath(void) const
 {
@@ -187,11 +191,20 @@ DataSourceStatus DataSourceURL::collapseDirectories(DataSourceURL & result) cons
     return DataSourceStatus();
 }
 
+bool DataSourceURL::endsWithSeparator()
+    {
+    bool endsWithSeparator = true;
+    if (length() < m_separator.length()) return !endsWithSeparator;
+    for (auto c1 = rbegin(), c2 = m_separator.rbegin(); c2 != m_separator.rend() && endsWithSeparator; c1++, c2++)
+        endsWithSeparator = *c1 == *c2;
+    return endsWithSeparator;
+    }
+
 DataSourceStatus DataSourceURL::append(const DataSourceURL & path)
 {
-    if (length() > 0 && path.length() > 0 && (*this)[length() - 1] != DATA_SOURCE_URL_SEPARATOR && (*this)[length() - 1] != DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR)
+    if (length() > 0 && path.length() > 0 && !endsWithSeparator() && (*this)[length() - 1] != DATA_SOURCE_URL_WINDOWS_FILE_SEPARATOR)
     {
-        *this += DATA_SOURCE_URL_SEPARATOR;
+        *this += m_separator;
     }
 
     *this += path;

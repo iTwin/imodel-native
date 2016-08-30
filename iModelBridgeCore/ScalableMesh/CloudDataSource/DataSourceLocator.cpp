@@ -19,7 +19,7 @@ DataSourceLocator::DataSourceLocator(DataSourceLocator & locator)
 
 void DataSourceLocator::getURL(DataSourceURL &url)
 {
-    url = getPrefixPath();
+    url.append(getPrefixPath());
 
     url.append(getSubPath());
 }

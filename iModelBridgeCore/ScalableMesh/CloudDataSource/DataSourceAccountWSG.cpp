@@ -1,10 +1,9 @@
 #include "stdafx.h"
 #include <assert.h>
-#include "DataSourceAccountWSG.h"
-#include "DataSourceWSG.h"
+#include "include/DataSourceAccountWSG.h"
+#include "include/DataSourceWSG.h"
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
-#include "include\DataSourceAccountWSG.h"
 
 
 DataSourceAccountWSG::DataSourceAccountWSG(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
@@ -98,6 +97,7 @@ void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
     url.append(this->wsgRepository);
     url.append(this->wsgSchema);
     url.append(this->wsgClassName);
+    url.append(this->wsgOrganizationID);
     url.append(prefix);
 
     DataSourceAccount::setPrefixPath(url);
@@ -107,8 +107,12 @@ void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
 DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize)
 {
     DataSourceURL    url;
+    url.overrideDefaultSeparator(L"~2F");
 
     dataSource.getURL(url);
+
+    // indicate that we want to download the data (instead of just information about the data)
+    url += L"/$file";
 
     return downloadBlobSync(url, dest, readSize, destSize);
 }
