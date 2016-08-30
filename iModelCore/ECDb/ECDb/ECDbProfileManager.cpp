@@ -99,16 +99,6 @@ DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& 
     if (stat != BE_SQLITE_OK)
         return stat;       //File is no ECDb file, i.e. doesn't have the ECDb profile
 
-    //Statement stmt;
-    //stmt.Prepare(ecdb, "SELECT NULL FROM sqlite_master WHERE Name = 'ix_ec_ClassMap_ClassId' AND type = 'index'");
-    //if (stmt->Step() == BE_SQLITE_DONE)
-    //    {
-    //    if (ecdb.ExecuteSql("CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId)") != BE_SQLITE_OK)
-    //        {
-
-    //        }
-    //    }
-
     const SchemaVersion expectedVersion = GetExpectedVersion();
     bool profileNeedsUpgrade = false;
     stat = ECDb::CheckProfileVersion(profileNeedsUpgrade, expectedVersion, actualProfileVersion, GetMinimumSupportedVersion(), openParams.IsReadonly(), PROFILENAME);
@@ -169,6 +159,9 @@ DbResult ECDbProfileManager::RunUpgraders(ECDbCR ecdb, SchemaVersion const& curr
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ECDbProfileUpgrader>> upgraders;
+    if (currentProfileVersion < SchemaVersion(3, 7, 0, 1))
+        upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3701()));
+
     if (currentProfileVersion < SchemaVersion(3, 7, 1, 0))
         upgraders.push_back(std::unique_ptr<ECDbProfileUpgrader>(new ECDbProfileUpgrader_3710()));
 
@@ -555,30 +548,31 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
 
     if (BE_SQLITE_OK != stat)
         return stat;
+
     //ec_cache_ClassHasTables
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHasTables("
+    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHasTables "("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId_TableId ON ec_cache_ClassHasTables(ClassId);"
-                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON ec_cache_ClassHasTables(TableId);");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId_TableId ON " ECDB_CACHETABLE_ClassHasTables "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON " ECDB_CACHETABLE_ClassHasTables "(TableId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_cache_ClassHierarchy
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_cache_ClassHierarchy("
+    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHierarchy "("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON ec_cache_ClassHierarchy(ClassId);"
-                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON ec_cache_ClassHierarchy(BaseClassId);");
-   }
+    return ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " ECDB_CACHETABLE_ClassHierarchy "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " ECDB_CACHETABLE_ClassHierarchy "(BaseClassId);");
+    }
 
 
 //*************************************** ECDbProfileManager::ProfileUpgradeContext *************************

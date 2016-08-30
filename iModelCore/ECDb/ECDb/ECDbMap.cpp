@@ -1297,7 +1297,7 @@ BentleyStatus ECDbMap::SaveDbSchema() const
         }
 
 
-    if (BE_SQLITE_OK != RepopulateClassHasTable(GetECDb()))
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))
         return ERROR;
 
     m_lightweightCache.Reset();
