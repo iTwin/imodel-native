@@ -99,7 +99,6 @@ private:
     DbSchemaPersistenceManager();
     ~DbSchemaPersistenceManager();
 
-
     static bool IsTableChanged(ECDbCR, DbTable const&);
 
     static BentleyStatus CreateTable(ECDbCR, DbTable const&);

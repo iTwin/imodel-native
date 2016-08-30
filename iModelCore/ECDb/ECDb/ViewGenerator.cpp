@@ -593,12 +593,10 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
         if (m_prepareContext && !m_prepareContext->GetSelectionOptions().IsSelected(actualPropMap->GetPropertyAccessString()))
             continue;
 
-
         auto aliasSqlSnippets = basePropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
         BeAssert(actualPropMap->GetTable() != nullptr);
         auto colSqlSnippets = actualPropMap->ToNativeSql(actualPropMap->GetTable()->GetName().c_str(), ECSqlType::Select, false);
         auto colSqlSnippetsWithoutTableNames = actualPropMap->ToNativeSql(nullptr, ECSqlType::Select, false);
-
 
         ColumnMappedToPropertyList columnMapped;
         const bool generateECClassView = m_viewAccessStringList && m_captureViewAccessStringList;
@@ -615,14 +613,13 @@ BentleyStatus ViewGenerator::AppendViewPropMapsToQuery(NativeSqlBuilder& viewSql
             return ERROR;
             }
 
-
         if (basePropMap->GetType() == PropertyMap::Type::ECClassId)
             {
             if (generateECClassView)
                 m_viewAccessStringList->push_back(basePropMap->GetPropertyAccessString());
 
             ECClassIdPropertyMap const* ecclassIdPropertyMap = static_cast<ECClassIdPropertyMap  const*>(actualPropMap);
-            if (generateDebugView)
+            if (generateECClassView)
                 m_viewAccessStringList->push_back(basePropMap->GetPropertyAccessString());
 
             if (second)
