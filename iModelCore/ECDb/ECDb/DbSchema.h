@@ -480,30 +480,11 @@ public:
         Index,
         Trigger
         };
-#ifdef USE_HASH_TABLE
-    struct Utf8StringHash
-        {
-        std::size_t operator()(Utf8String const& str) const
-            {
-            return std::hash_value(str.c_str());
-            }
-        };
 
-    struct Utf8StringEqual
-        {
-        bool operator()(Utf8String const& lhs, Utf8String const& rhs) const
-            {
-            return lhs.EqualsIAscii(rhs.c_str());
-            }
-        };
-
-    typedef std::unordered_map<Utf8String, std::unique_ptr<DbTable>, Utf8StringHash, Utf8StringEqual> TableMap;
-#else
     typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMapByName;
-#endif
     typedef std::map<DbTableId, Utf8String> TableMapById;
 
-    private:
+private:
 
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
@@ -515,7 +496,7 @@ public:
     mutable bset<Utf8CP, CompareIUtf8Ascii> m_usedIndexNames;
     mutable bool m_indexesLoaded;
     mutable bool m_syncTableCacheNames;
-private:
+
     BentleyStatus LoadTable(Utf8StringCR name, DbTable*& tableP) const;
     BentleyStatus LoadColumns(DbTable& table) const;
     BentleyStatus InsertTable(DbTable const& table) const;
