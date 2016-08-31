@@ -733,16 +733,4 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
 
-    <Part Name="TileServerExe" BentleyBuildMakeFile="TileServer/exe/TileServer.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="TilePublisherLib" />
-        <SubPart PartName="DgnPlatformSqlang" />
-        <Bindings>
-            <Assemblies>Delivery/TileServer$(exeext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Product Name="TileServer" SaveProduct="true">
-        <SubPart PartName="TileServerExe" />
-        <Directories DirectoryListName="TilePublisherDirs" />
-    </Product>
 </BuildContext>
