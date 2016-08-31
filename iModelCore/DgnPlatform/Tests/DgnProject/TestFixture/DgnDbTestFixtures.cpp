@@ -280,14 +280,14 @@ void DgnDbTestFixture::SetUpCameraView(DgnDbR dgnDb, DgnModelR model, ElementAli
 
     ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
 
-    CameraViewController viewController (view);
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.LookAtVolume(elementBox, nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
-    viewController.ChangeCategoryDisplay(categoryId, true);
-    viewController.ChangeModelDisplay(model.GetModelId(), true);
+    CameraViewControllerPtr viewController = view.LoadViewController()->ToCameraViewP();
+    viewController->SetStandardViewRotation(StandardView::Iso);
+    viewController->LookAtVolume(elementBox, nullptr, &viewMargin);
+    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
+    viewController->ChangeCategoryDisplay(categoryId, true);
+    viewController->ChangeModelDisplay(model.GetModelId(), true);
 
-    EXPECT_EQ(DgnDbStatus::Success, viewController.Save());
+    EXPECT_EQ(DgnDbStatus::Success, viewController->Save());
     }
 
 

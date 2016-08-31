@@ -83,18 +83,28 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
 protected:
+    mutable bvector<DgnModelId> m_modelIds;
+    mutable bool m_isLoaded;
+
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
-    explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus WriteModelIds() const;
+
+    explicit ModelSelector(CreateParams const& params) : T_Super(params), m_isLoaded(false) {}
 public:
     //! Construct a new modelselector. You should then call SetModelIds.
     ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
-    //! Define the selector to contain a single DgnModelId. @note this must be persistent. @note This writes to the bim directly.
-    DGNPLATFORM_EXPORT DgnDbStatus SetModelId(DgnModelId mid);
-    //! Define the selector to contain the specified DgnModelIds. @note this must be persistent. @note This writes to the bim directly.
-    DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(DgnModelIdSet const& models); //!< Define the selector to contain the specified DgnModelIds. @note this must be persistent.
+    //! Set the list of models to be just one model. This method does not write to the bim but merely caches the list in memory.
+    DGNPLATFORM_EXPORT void SetModelId(DgnModelId mid);
+    //! Set the list of models. This method does not write to the bim but merely caches the list in memory.
+    DGNPLATFORM_EXPORT void SetModelIds(DgnModelIdSet const& models) {m_modelIds.assign(models.begin(), models.end()); m_isLoaded=true;}
     //! Query the DgnModelIds that are in this selector
     DGNPLATFORM_EXPORT DgnModelIdSet GetModelIds() const;
     //! Query if the specified DgnModelId is in this selector
@@ -116,15 +126,25 @@ struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
     friend struct dgn_ElementHandler::CategorySelectorDef;
 protected:
-    explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
+    mutable bvector<DgnCategoryId> m_categoryIds;
+    mutable bool m_isLoaded;
+
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus WriteCategoryIds() const;
+
+    explicit CategorySelector(CreateParams const& params) : T_Super(params), m_isLoaded(false) {}
 public:
     //! Construct a new CategorySelector prior to inserting it.
     CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
-    //! Set the list of categories. @note that this element must be persisent in order for this function to succeed. @note This writes to the bim directly.
-    DGNPLATFORM_EXPORT DgnDbStatus SetCategoryIds(DgnCategoryIdSet const&);
+    //! Set the list of categories. This method does not write to the bim but merely caches the list in memory.
+    void SetCategoryIds(DgnCategoryIdSet const& categories) {m_categoryIds.assign(categories.begin(), categories.end()); m_isLoaded=true;}
     //! Get the list of categories.
     DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
     //! Query if the selector includes the specified category

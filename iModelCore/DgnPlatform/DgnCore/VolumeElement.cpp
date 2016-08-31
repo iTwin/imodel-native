@@ -402,7 +402,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
-    QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP>(viewport.GetSpatialViewControllerP());
+    QueryViewController* viewController = viewport.GetViewControllerR().ToQueryViewP();
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     

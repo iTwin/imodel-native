@@ -297,14 +297,14 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
 
         ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
         
-        OrthographicViewController viewController(view);
-        viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        viewController.ChangeModelDisplay(modelId, true);
+        OrthographicViewControllerPtr viewController = view.LoadViewController()->ToOrthographicViewP();
+        viewController->SetStandardViewRotation(StandardView::Top);
+        viewController->LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
+        viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+        viewController->ChangeCategoryDisplay(categoryId, true);
+        viewController->ChangeModelDisplay(modelId, true);
 
-        EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
+        EXPECT_TRUE(DgnDbStatus::Success == viewController->Save());
         }
 
     // Read the element back out, modify, and rewrite.

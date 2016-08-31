@@ -410,12 +410,10 @@ public:
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
     SheetViewControllerP ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! perform the equivalent of a dynamic_cast to a QueryViewController.
     //! @return a valid QueryViewControllerCP, or nullptr if this is not a query view
     virtual QueryViewControllerCP _ToQueryView() const {return nullptr;}
     QueryViewControllerP ToQueryViewP() {return const_cast<QueryViewControllerP>(_ToQueryView());}
-*/
 
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
@@ -429,10 +427,8 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! determine whether this is a query view
     bool IsQueryView() const {return nullptr != _ToQueryView();}
-    */
 
     //! Get the ViewFlags.
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
@@ -884,9 +880,7 @@ protected:
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
 
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     QueryViewControllerCP _ToQueryView() const override {return this;}
-*/
     DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT void _InvalidateScene() override;
@@ -964,6 +958,8 @@ protected:
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
+    OrthographicViewControllerCP _ToOrthographicView() const override {return this;}
+
     DPoint3d _GetOrigin() const override {return m_origin;}
     DVec3d _GetDelta() const override {return m_delta;}
     RotMatrix _GetRotation() const override {return m_rotation;}
@@ -1062,6 +1058,7 @@ protected:
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
+
     DPoint3d _GetOrigin() const override { return m_origin; }
     DVec3d _GetDelta() const override { return m_delta; }
     RotMatrix _GetRotation() const override { return m_rotation; }
