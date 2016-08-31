@@ -71,6 +71,8 @@ $(o)SpatioTemporalData$(oext) : $(baseDir)SpatioTemporalData.cpp $(baseDir)Spati
 
 $(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(PublicApiDir)FtpTraversalEngine.h ${MultiCompileDepends}
 
+$(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(PublicApiDir)HttpTraversalEngine.h ${MultiCompileDepends}
+
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
 #
@@ -93,6 +95,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
