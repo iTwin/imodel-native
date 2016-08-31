@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
-#include "../lib/TilePublisher.h"   // ###TODO: API dir...
+#include <DgnPlatform/TilePublisher/TilePublisher.h>
 #include "Constants.h"
 
 #if defined(TILE_PUBLISHER_PROFILE)
