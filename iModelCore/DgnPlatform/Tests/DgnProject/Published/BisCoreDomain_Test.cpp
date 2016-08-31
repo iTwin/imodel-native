@@ -42,6 +42,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         bvector<Utf8String> expectedColumnNames;
         expectedColumnNames.push_back("Id");
         expectedColumnNames.push_back("ECClassId");
+        expectedColumnNames.push_back("FederationGuid");
         expectedColumnNames.push_back("CodeAuthorityId");
         expectedColumnNames.push_back("CodeNamespace");
         expectedColumnNames.push_back("CodeValue");
@@ -76,6 +77,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.Contains("[FederationGuid] BLOB UNIQUE,"));
         ASSERT_TRUE(ddl.Contains("[CodeAuthorityId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[CodeNamespace] TEXT NOT NULL COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[CodeValue] TEXT COLLATE NOCASE,"));

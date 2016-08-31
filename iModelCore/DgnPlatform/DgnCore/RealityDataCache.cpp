@@ -102,7 +102,7 @@ BentleyStatus Cache::OpenAndPrepare(BeFileNameCR fileName)
     if (BE_SQLITE_OK != result)
         {
         Db::CreateParams createParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, false, DefaultTxn::Yes);
-        if (BeSQLite::BE_SQLITE_OK != (result = m_db.CreateNewDb(fileName, BeSQLite::BeGuid(), createParams)))
+        if (BeSQLite::BE_SQLITE_OK != (result = m_db.CreateNewDb(fileName, BeSQLite::BeGuid(true), createParams)))
             {
             BeAssert(false);
             return ERROR;
@@ -126,4 +126,3 @@ BentleyStatus Cache::OpenAndPrepare(BeFileNameCR fileName)
     
     return SUCCESS;
     }
-

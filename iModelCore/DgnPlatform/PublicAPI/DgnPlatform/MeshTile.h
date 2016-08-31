@@ -57,7 +57,8 @@ struct TileTextureImage : RefCountedBase
         ImageCR GetImage() const { return m_image; }
         uint32_t GetWidth() const { return GetImage().GetWidth(); }
         uint32_t GetHeight() const { return GetImage().GetHeight(); }
-        bool GetHasAlpha() const { return m_hasAlpha; }
+        bool GetHasAlpha() const { return m_hasAlpha; }
+
 
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
     };

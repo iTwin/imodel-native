@@ -201,7 +201,7 @@ void ComponentModelPerfTest::Developer_CreateCMs()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-static void insertBoxesElement(DgnElementId& eid, SpatialModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
+static void insertBoxesElement(DgnElementId& eid, PhysicalModelR physicalTestModel, DgnCategoryId testCategoryId, DPoint3dCR placementOrigin, DPoint3dCR sizeOfBlock, bvector<DPoint3d> const& originsOfBlocks)
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(physicalTestModel, testCategoryId);
 

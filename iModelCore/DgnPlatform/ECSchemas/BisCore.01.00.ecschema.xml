@@ -426,6 +426,14 @@
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
+                        <Name>ix_bis_Element_FederationGuid</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>FederationGuid</string>
+                        </Properties>
+                        <Where>IndexedColumnsAreNotNull</Where>
+                    </DbIndex>
+                    <DbIndex>
                         <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
@@ -449,6 +457,18 @@
             </ClassHasCurrentTimeStampProperty>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="FederationGuid" typeName="binary">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.02.00">
+                    <IsNullable>True</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+                <CustomHandledProperty/>
+                <PropertyStatementType>
+                    <StatementTypes>6</StatementTypes>
+                </PropertyStatementType>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesElementCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03">
@@ -457,7 +477,7 @@
                 </HideProperty>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>6</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty>
@@ -474,7 +494,7 @@
                 </HideProperty>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>6</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
@@ -487,7 +507,7 @@
                 </PropertyMap>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>6</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
@@ -499,7 +519,7 @@
                 </HideProperty>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>2</StatementTypes>
+                    <StatementTypes>2</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty>
@@ -511,7 +531,7 @@
                 </HideProperty>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>6</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECNavigationProperty> 
@@ -525,7 +545,7 @@
                 </PropertyMap>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>6</StatementTypes>
+                    <StatementTypes>6</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
@@ -533,7 +553,7 @@
             <ECCustomAttributes>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>0</StatementTypes>
+                    <StatementTypes>0</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>
@@ -544,7 +564,7 @@
                 </DateTimeInfo>
                 <CustomHandledProperty/>
                 <PropertyStatementType>
-                  <StatementTypes>0</StatementTypes>
+                    <StatementTypes>0</StatementTypes>
                 </PropertyStatementType>
             </ECCustomAttributes>
         </ECProperty>

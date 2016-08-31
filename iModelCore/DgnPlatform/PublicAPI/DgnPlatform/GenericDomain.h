@@ -83,9 +83,9 @@ public:
     static GenericPhysicalObjectPtr Create(CreateParams const& params) {return new GenericPhysicalObject(params);}
 
     //! Create an instance of a GenericPhysicalObject from a model and DgnCategoryId, using the default values for all other parameters.
-    //! @param[in] model The SpatialModel for the new GenericPhysicalObject.
+    //! @param[in] model The PhysicalModel for the new GenericPhysicalObject.
     //! @param[in] categoryId The category for the new GenericPhysicalObject.
-    DGNPLATFORM_EXPORT static GenericPhysicalObjectPtr Create(SpatialModelR model, DgnCategoryId categoryId);
+    DGNPLATFORM_EXPORT static GenericPhysicalObjectPtr Create(PhysicalModelR model, DgnCategoryId categoryId);
 };
 
 //=======================================================================================

@@ -10,6 +10,7 @@
 
 #define BIS_ELEMENT_PROP_ECInstanceId "ECInstanceId"
 #define BIS_ELEMENT_PROP_ModelId "ModelId"
+#define BIS_ELEMENT_PROP_FederationGuid "FederationGuid"
 #define BIS_ELEMENT_PROP_CodeAuthorityId "CodeAuthorityId"
 #define BIS_ELEMENT_PROP_CodeNamespace "CodeNamespace"
 #define BIS_ELEMENT_PROP_CodeValue "CodeValue"
@@ -535,14 +536,14 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
         return DgnDbStatus::BadArg;
     if (!m_code.IsEmpty() && (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No)))
         {
-        BeAssert(false && "insert or update statement must include CodeValue property");
+        BeAssert(false && "INSERT or UPDATE statement must include CodeValue property");
         return DgnDbStatus::BadArg;
         }
 
     if ((ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthorityId), m_code.GetAuthority())) ||
         (ECSqlStatus::Success != statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No)))
         {
-        BeAssert(false && "insert or update statement must include CodeAuthority and CodeNamespace properties");
+        BeAssert(false && "INSERT or UPDATE statement must include CodeAuthority and CodeNamespace properties");
         return DgnDbStatus::BadArg;
         }
 
@@ -553,7 +554,19 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
 
     if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ParentId), m_parentId))
         {
-        BeAssert(false && "insert or update statement must include ParentId property");
+        BeAssert(false && "INSERT or UPDATE statement must include ParentId property");
+        return DgnDbStatus::BadArg;
+        }
+
+    ECSqlStatus bindStatus;
+    if (m_federationGuid.IsValid())
+        bindStatus = statement.BindBinary(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
+    else
+        bindStatus = statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid));
+
+    if (ECSqlStatus::Success != bindStatus)
+        {
+        BeAssert(false && "INSERT or UPDATE statement must include FederationGuid property");
         return DgnDbStatus::BadArg;
         }
 
@@ -562,7 +575,7 @@ DgnDbStatus DgnElement::BindParams(ECSqlStatement& statement, bool isForUpdate)
         if (ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ECInstanceId), m_elementId) ||
             ECSqlStatus::Success != statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ModelId), m_modelId))
             {
-            BeAssert(false && "insert statement must include ECInstanceId and ModelId properties");
+            BeAssert(false && "INSERT statement must include ECInstanceId and ModelId properties");
             return DgnDbStatus::BadArg;
             }
         }
@@ -919,10 +932,11 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    // Copying between DgnDbs is allowed. Caller must do Id remapping.
+    // Copying between DgnDbs is not allowed. Caller must do Id remapping.
     m_code      = other.m_code;
     m_userLabel = other.m_userLabel;
     m_parentId  = other.m_parentId;
+    // don't copy FederationGuid
     
     if (other.m_autoHandledProperties.IsValid())
         {
@@ -1410,7 +1424,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId);
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);

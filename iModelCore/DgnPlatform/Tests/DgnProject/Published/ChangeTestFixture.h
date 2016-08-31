@@ -20,7 +20,7 @@ protected:
     bool    m_wantTestDomain;
 
     DgnModelId m_testModelId;
-    SpatialModelPtr m_testModel;
+    PhysicalModelPtr m_testModel;
 
     DgnCategoryId m_testCategoryId;
 
@@ -35,7 +35,7 @@ protected:
         
     DgnCategoryId InsertCategory(Utf8CP categoryName);
     DgnAuthorityId InsertNamespaceAuthority(Utf8CP authorityName);
-    DgnElementId InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z);
+    DgnElementId InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z);
     
     void CreateDefaultView(DgnModelId defaultModelId);
     void UpdateDgnDbExtents();
