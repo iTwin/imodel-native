@@ -234,7 +234,7 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
                                     "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "DisplayLabel TEXT,"
                                     "Description TEXT,"
-                                    "NamespacePrefix TEXT UNIQUE NOT NULL COLLATE NOCASE,"
+                                    "Alias TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                                     "VersionDigit1 INTEGER NOT NULL,"
                                     "VersionDigit2 INTEGER NOT NULL,"
                                     "VersionDigit3 INTEGER NOT NULL)");
@@ -432,7 +432,8 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_BaseId ON ec_ClassMap(ClassId, BaseId) WHERE BaseId IS NOT NULL;"
-                           "CREATE INDEX ix_ec_ClassMap_BaseId ON ec_ClassMap(BaseId)");
+                           "CREATE INDEX ix_ec_ClassMap_BaseId ON ec_ClassMap(BaseId);"
+                           "CREATE INDEX ix_ec_ClassMap_ClassId ON ec_ClassMap(ClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -526,16 +527,29 @@ DbResult ECDbProfileManager::CreateECProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    //ec_ClassHierarchy
-    stat = ecdb.ExecuteSql("CREATE TABLE ec_ClassHierarchy("
+    //ec_cache_ClassHasTables
+    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHasTables "("
+                           "Id INTEGER PRIMARY KEY,"
+                           "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+                           "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHasTables_ClassId_TableId ON " ECDB_CACHETABLE_ClassHasTables "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHasTables_TableId ON " ECDB_CACHETABLE_ClassHasTables "(TableId);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //ec_cache_ClassHierarchy
+    stat = ecdb.ExecuteSql("CREATE TABLE " ECDB_CACHETABLE_ClassHierarchy "("
                            "Id INTEGER PRIMARY KEY,"
                            "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassHierarchy_ClassId_BaseClassId ON ec_ClassHierarchy(ClassId,BaseClassId);"
-                           "CREATE INDEX ix_ec_ClassHierarchy_BaseClassId ON ec_ClassHierarchy(BaseClassId);");
+    return ecdb.ExecuteSql("CREATE INDEX ix_ec_cache_ClassHierarchy_ClassId ON " ECDB_CACHETABLE_ClassHierarchy "(ClassId);"
+                           "CREATE INDEX ix_ec_cache_ClassHierarchy_BaseClassId ON " ECDB_CACHETABLE_ClassHierarchy "(BaseClassId);");
     }
 
 

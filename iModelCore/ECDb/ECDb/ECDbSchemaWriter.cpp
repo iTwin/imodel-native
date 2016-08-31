@@ -754,7 +754,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
 BentleyStatus ECDbSchemaWriter::InsertECSchemaEntry(ECSchemaCR ecSchema)
     {
     CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,NamespacePrefix,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
+    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchema.GetId()))
@@ -2163,7 +2163,7 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
             return ERROR;
             }
 
-        updateBuilder.AddSetExp("NamespacePrefix", schemaChange.GetAlias().GetNew().Value().c_str());
+        updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
         }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name
@@ -2188,35 +2188,6 @@ BentleyStatus ECDbSchemaWriter::UpdateECSchema(ECSchemaChange& schemaChange, ECS
         return ERROR;
 
     return UpdateECCustomAttributes(ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema, schemaId, schemaChange.CustomAttributes(), oldSchema, newSchema);
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-DbResult ECDbSchemaWriter::RepopulateClassHierarchyTable(ECDbCR ecdb)
-    {
-    StopWatch timer(true);
-    DbResult r = ecdb.ExecuteSql("DELETE FROM ec_ClassHierarchy");
-    if (r != BE_SQLITE_OK)
-        return r;
-
-    r = ecdb.ExecuteSql("WITH RECURSIVE "
-                        "BaseClassList(ClassId, BaseClassId) AS "
-                        "(SELECT Id, Id FROM ec_Class"
-                        " UNION"
-                        " SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
-                        " INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
-                        " ORDER BY 2)"
-                        " INSERT INTO ec_ClassHierarchy SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList");
-
-    if (r != BE_SQLITE_OK)
-        return r;
-
-    timer.Stop();
-    LOG.debugv("Re-populated ec_ClassHierarchy in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
-    return BE_SQLITE_OK;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -75,7 +75,6 @@ private:
     BeBriefcaseBasedIdSequence m_indexIdSequence;
     BeBriefcaseBasedIdSequence m_classmapIdSequence;
     BeBriefcaseBasedIdSequence m_propertypathIdSequence;
-
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     ECSqlStatementRegistry m_statementRegistry;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
@@ -111,11 +110,10 @@ private:
     DbResult InitializeSequences() const;
     DbResult ResetSequences(BeBriefcaseId* repoId = nullptr) const;
     std::vector<BeBriefcaseBasedIdSequence const*> GetSequences() const;
-
 public:
     ~Impl() {}
 
-    ECDbMap const& GetECDbMap() const { return *m_ecdbMap; }
+    ECDbMap const& GetECDbMap() const;
 
     BeBriefcaseBasedIdSequence& GetECInstanceIdSequence() { return m_ecInstanceIdSequence; }
     BeBriefcaseBasedIdSequence& GetECSchemaIdSequence() { return m_ecSchemaIdSequence; }

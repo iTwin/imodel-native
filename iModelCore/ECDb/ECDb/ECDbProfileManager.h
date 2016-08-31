@@ -11,6 +11,10 @@
 #include "ECDbProfileUpgrader.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+#define ECDB_CACHETABLE_ClassHierarchy "ec_cache_ClassHierarchy"
+#define ECDB_CACHETABLE_ClassHasTables "ec_cache_ClassHasTables"
+
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      12/2012
 //+===============+===============+===============+===============+===============+======

@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
@@ -120,7 +128,17 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
@@ -131,7 +149,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -144,7 +168,21 @@
     <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)Winx64\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\SubParts\UnitTests\Include\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <NMakeOutput>$(OutRoot)Winx64\product\ECDb-Gtest\ECDbTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4  re GUnitTests_*DgnDb BeGTestExe</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild GUnitTests_*DgnDb BeGTestExe -c</NMakeCleanCommandLine>
+    <IncludePath>$(IncludePath);$(SrcRoot)DgnPlatform\PublicApi\DgnPlatform\;$(SrcRoot)DgnPlatform\DgnCore\ECDb\</IncludePath>
+    <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Published\ECSql\;$(ProjectDir)\Performance\;$(ProjectDir)\BackDoor\PublicAPI\BackDoor\ECDb\;$(OutRoot)Winx64\build\UnitTests\ECDb\PublishedECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\BackDoorECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\build\UnitTests\ECDb\PerformanceECDbUnitTests\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\SubParts\UnitTests\Include\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Performance\;$(ProjectDir)\NonPublished\DgnDbECProvider\;$(ProjectDir)\NonPublished\PublicAPI\;$(ProjectDir)\NonPublished\ECDb\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\GUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\BUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeOutput>$(OutRoot)Winx64\product\BeGTest\bin\BeGTest.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions);BENTLEY_WIN32;</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(ProjectDir)\Published\;$(ProjectDir);$(ProjectDir)\Performance\;$(ProjectDir)\NonPublished\DgnDbECProvider\;$(ProjectDir)\NonPublished\PublicAPI\;$(ProjectDir)\NonPublished\ECDb\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\GUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\SubParts\BUnitTests\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\PublicAPI\;$(OutRoot)\Winx64\BuildContexts\BeSQLite\VendorAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

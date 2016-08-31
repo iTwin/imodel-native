@@ -30,21 +30,6 @@ private:
     DbSchemaPersistenceManager();
     ~DbSchemaPersistenceManager();
 
-    static DbResult ReadTables(DbSchema&, ECDbCR);
-    static DbResult ReadColumns(DbTable&, ECDbCR);
-    static BentleyStatus ReadIndexes(DbSchema&, ECDbCR);
-    static DbResult ReadClassMappings(DbSchema&, ECDbCR);
-    static DbResult ReadPropertyMappings(ClassDbMapping&, ECDbCR, DbSchema const&);
-    static DbResult ReadPropertyPaths(DbSchema&, ECDbCR);
-
-    static DbResult InsertTable(ECDbCR, DbTable const&);
-    static DbResult InsertColumn(ECDbCR, DbColumn const&, int columnOrdinal, int primaryKeyOrdinal);
-    static DbResult InsertIndex(ECDbCR, DbIndex const&);
-
-    static DbResult InsertClassMapping(ECDbCR, ClassDbMapping const&);
-    static DbResult InsertPropertyMapping(ECDbCR, PropertyDbMapping const&);
-    static DbResult InsertPropertyPath(ECDbCR, PropertyDbMapping::Path const&);
-
     static bool IsTableChanged(ECDbCR, DbTable const&);
 
     static BentleyStatus CreateTable(ECDbCR, DbTable const&);
@@ -61,16 +46,15 @@ private:
     static void DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignKeyDbConstraint const&);
     static void AppendColumnNamesToDdl(Utf8StringR ddl, std::vector<DbColumn const*> const&);
 
-    static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
 public:
-    static BentleyStatus Load(DbSchema&, ECDbCR, DbSchema::LoadState loadMode);
-    static BentleyStatus Save(ECDbCR, DbSchema const&);
+    static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
-    static BentleyStatus CreateOrUpdateIndexes(ECDbCR, DbSchema const&);
-
+    static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
+    static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
+ 
     static bool IsTrue(int sqlInt) { return sqlInt != 0; }
     static int BoolToSqlInt(bool val) { return val ? 1 : 0; }
     };

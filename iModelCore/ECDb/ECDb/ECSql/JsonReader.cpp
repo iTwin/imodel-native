@@ -433,11 +433,7 @@ RelatedItemsDisplaySpecificationsCache* RelatedItemsDisplaySpecificationsCache::
         return appData;
 
     appData = new RelatedItemsDisplaySpecificationsCache(ecdb);
-    if (SUCCESS != appData->Initialize())
-        {
-        delete appData;
-        return nullptr;
-        }
+    appData->Initialize();
 
     ecdb.AddAppData(RelatedItemsDisplaySpecificationsCache::GetKey(), appData, true);
     return appData;
@@ -446,23 +442,19 @@ RelatedItemsDisplaySpecificationsCache* RelatedItemsDisplaySpecificationsCache::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 05 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelatedItemsDisplaySpecificationsCache::Initialize()
+void RelatedItemsDisplaySpecificationsCache::Initialize()
     {
     RelationshipPathInfosByClass pathInfosByClass;
-    if (SUCCESS != GatherRelationshipPathInfos(pathInfosByClass))
-        return ERROR;
+    GatherRelationshipPathInfos(pathInfosByClass);
 
     RemoveDuplicates(pathInfosByClass);
     
-    if (SUCCESS != ExtractRelationshipPaths(pathInfosByClass))
-        return ERROR;
-
+    ExtractRelationshipPaths(pathInfosByClass);
+  
     SortRelationshipPaths(); // Only needed for ATPs to maintain stable order
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_TRACE))
         DumpCache();
-
-    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------------------

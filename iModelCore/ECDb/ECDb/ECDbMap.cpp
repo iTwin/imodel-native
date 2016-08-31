@@ -392,48 +392,31 @@ MappingStatus ECDbMap::DoMapSchemas()
     BeMutexHolder lock(m_mutex);
     classMap = nullptr;
 
-    if (!Enum::Contains(m_dbSchema.GetLoadState(), DbSchema::LoadState::Core))
+    DbClassMapLoadContext classMapLoadContext;
+    if (DbClassMapLoadContext::Load(classMapLoadContext, GetECDb(), ecClass.GetId()) != SUCCESS)
         {
-        if (DbSchemaPersistenceManager::Load(GetDbSchemaR(), m_ecdb, DbSchema::LoadState::Core) != SUCCESS)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-        }
-
-    std::vector<ClassDbMapping const*> const* classMaps = m_dbSchema.GetDbMappings().FindClassMappings(ecClass.GetId());
-    if (classMaps == nullptr)
+        //Failed to find classmap
         return SUCCESS;
-
-    if (classMaps->empty())
-        {
-        BeAssert(false && "Failed to find ClassDbMapping for given ECClass");
-        return ERROR;
         }
 
-    if (classMaps->size() > 1)
+    TablePerHierarchyInfo const& tphInfo = classMapLoadContext.GetMapStrategy().GetTphInfo();
+    const bool isJoinedTableMapping = tphInfo.IsValid() && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
+    if (classMapLoadContext.GetBaseClassId().IsValid() && !isJoinedTableMapping)
         {
-        BeAssert(false && "Feature of nested class map not implemented");
-        return ERROR;
-        }
-
-    ClassDbMapping const& classMapInfo = *classMaps->front();
-    ClassDbMapping const* baseClassMapInfo = classMapInfo.GetBaseClassMapping();
-    ECClassCP baseClass = baseClassMapInfo == nullptr ? nullptr : GetECDb().Schemas().GetECClass(baseClassMapInfo->GetClassId());
-    ClassMap const* baseClassMap = nullptr;
-    if (baseClass != nullptr)
-        {
-        ClassMapPtr baseClassMapPtr = nullptr;
-        if (SUCCESS != TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
+        ECClassCP baseClass =  GetECDb().Schemas().GetECClass(classMapLoadContext.GetBaseClassId());
+        if (baseClass != nullptr)
             {
-            BeAssert(false);
-            return ERROR;
+            ClassMapPtr baseClassMapPtr = nullptr;
+            if (SUCCESS != TryGetClassMap(baseClassMapPtr, ctx, *baseClass))
+                return ERROR;
+
+            if (classMapLoadContext.SetBaseClassMap(*baseClassMapPtr) != SUCCESS)
+                return ERROR;
             }
-        baseClassMap = baseClassMapPtr.get();
         }
 
     bool setIsDirty = false;
-    MapStrategyExtendedInfo const& mapStrategy = classMapInfo.GetMapStrategy();
+    MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
         classMapTmp = NotMappedClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
@@ -450,16 +433,15 @@ MappingStatus ECDbMap::DoMapSchemas()
         else
             classMapTmp = ClassMap::Create(ecClass, *this, mapStrategy, setIsDirty);
         }
-    classMapTmp->SetId(classMapInfo.GetId());
-
+    classMapTmp->SetId(classMapLoadContext.GetClassMapId());
+    classMapTmp->SetBaseClassId(classMapLoadContext.GetBaseClassId());
     if (MappingStatus::Error == AddClassMap(classMapTmp))
         {
         BeAssert(false);
         return ERROR;
         }
 
-    std::set<ClassMap const*> loadGraph;
-    if (SUCCESS != classMapTmp->Load(loadGraph, ctx, classMapInfo, baseClassMap))
+    if (SUCCESS != classMapTmp->Load(ctx, classMapLoadContext))
         {
         BeAssert(false);
         return ERROR;
@@ -771,9 +753,8 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
     int nUpdated = 0;
     int nWasUpToDate = 0;
 
-    for (auto& pair : GetDbSchemaR().GetTables())
+    for (DbTable const* table : GetDbSchemaR().GetCachedTables())
         {
-        DbTable* table = pair.second.get();
         const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table);
         switch (result)
             {
@@ -810,8 +791,6 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
     {
     if (AssertIfIsNotImportingSchema())
         return ERROR;
-
-    BeAssert(Enum::Contains(m_dbSchema.GetLoadState(), DbSchema::LoadState::Indexes));
 
     std::vector<DbIndex const*> indexes;
     for (std::unique_ptr<DbIndex> const& indexPtr : m_dbSchema.GetIndexes())
@@ -883,7 +862,7 @@ BentleyStatus ECDbMap::CreateOrUpdateIndexesInDb() const
             }
         }
 
-    return DbSchemaPersistenceManager::CreateOrUpdateIndexes(m_ecdb, m_dbSchema);
+    return m_dbSchema.CreateOrUpdateIndexes();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1131,18 +1110,24 @@ BentleyStatus ECDbMap::SaveDbSchema() const
 
     BeMutexHolder lock(m_mutex);
     StopWatch stopWatch(true);
+    if (m_dbSchema.SaveOrUpdateTables() != SUCCESS)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
+    DbMapSaveContext ctx(GetECDb());
     for (bpair<ECClassId, ClassMapPtr> const& kvPair : m_classMapDictionary)
         {
         ClassMapR classMap = *kvPair.second;
-        if (SUCCESS != classMap.Save(*m_schemaImportContext))
+        if (SUCCESS != classMap.Save(ctx))
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
 
-    if (SUCCESS != DbSchemaPersistenceManager::Save(m_ecdb, m_dbSchema))
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))
         return ERROR;
 
     m_lightweightCache.Reset();
