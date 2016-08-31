@@ -10,7 +10,7 @@ HAVE_PERMISSION_TO_COMPILE_AT_W3=1
 %include mdl.mki
 %include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
-programName = Bentley.logging.interop-2.0
+programName = Bentley.logging.interop
 
 prodSrc                 = $(_MakeFilePath)
 

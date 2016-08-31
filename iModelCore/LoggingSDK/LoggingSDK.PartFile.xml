@@ -34,9 +34,9 @@
         <SubPart PartName="LoggingNativeLog4cxx" />
     </Part>
 
-    <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static">
+    <Part Name="LoggingManagedInterface" BMakeFile="src\managed\interface\interface.mke" ExcludeLibType="Static" ApiNumber="G06">
         <Bindings>
-            <Assemblies>Delivery\Bentley.logging-2.0$(shlibext)</Assemblies>
+            <Assemblies>Delivery\Bentley.logging$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
@@ -55,12 +55,12 @@
         </Bindings>
     </Part>
 
-    <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static">
+    <Part Name="LoggingManagedInterop" BMakeFile="src\managed\interop\interop.mke" ExcludeLibType="Static" ApiNumber="G06">
         <SubPart PartName="BentleyDll"              PartFile="Bentley"    Repository="Bentley" />
         <SubPart PartName="LoggingManagedInterface"/>
         <Bindings>
-          <Libs>Delivery\Bentley.Logging.interop-2.0$(libext)</Libs>
-          <Assemblies>Delivery\Bentley.Logging.interop-2.0$(shlibext)</Assemblies>
+          <Libs>Delivery\Bentley.Logging.interop$(libext)</Libs>
+          <Assemblies>Delivery\Bentley.Logging.interop$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 

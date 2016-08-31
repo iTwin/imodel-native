@@ -2,13 +2,13 @@
 #
 #     $Source: src/managed/interface/interface.mke $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 %include $(SrcRoot)LoggingSdk/mki/LoggingSdkCommon.mki
 
-programName     = Bentley.logging-2.0
+programName     = Bentley.logging$(DLM_API_NUMBER)
 prodSrc         = $(_MakeFilePath)
 
 always:
