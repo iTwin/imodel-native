@@ -5045,6 +5045,127 @@ double  value
 };
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+struct VerticalDatumConverter
+{
+private:
+    bool            m_inputLatLongInNAD27;      // which latLongs are considered to be in NAD27.
+    bool            m_fromNGVD29toNAVD88;       // direction
+    VertDatumCode   m_fromVDC;
+    VertDatumCode   m_toVDC;
+
+public:
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
+    {
+    BeAssert (inputVdc != outputVdc);
+
+    m_fromVDC = inputVdc;
+    m_toVDC = outputVdc;
+
+    // These two parameters are only used if NAVD88 to/from NGVD29 is to be performed.
+    m_inputLatLongInNAD27 = inputIsInNAD27;
+    m_fromNGVD29toNAVD88  = (vdcNGVD29 == inputVdc);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+~VerticalDatumConverter ()
+    {
+    if (!BaseGCS::IsLibraryInitialized())
+        return;
+
+    CSvrtconCls();
+    CS_geoidCls();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Barry.Bentley                   09/09
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   ConvertElevation
+(
+GeoPointR   outLatLong,
+GeoPointCR  inLatLong
+)
+    {
+    if (!BaseGCS::IsLibraryInitialized())
+        return GEOCOORDERR_GeoCoordNotInitialized;
+
+    // The process of datum conversion can be complex here depending on the set of in/out
+    // vertical datums. Note that the vdcFromDatum value indicates that the ellipsoidal height is
+    // used. This height is related to the horizontal datum and conversion may be necessary
+    // using CSMAP prior to application of the vertical datum.
+    // All other vertical datums supported are Geoid based (orthometric)
+    // Here is a map of sequence to be applied
+    //      VERT1             VERT2
+    //   vdcFromDatum    vdcFromDatum      - CSMAP should take care of vertical elevation changes. The vertical datum should not exist
+    //   vdcFromDatum    vdcNAVD88         - Should not happen. Application of NAVD88 implies that source is NGVD29 
+    //   vdcFromDatum    vdcNGVD29         - Should not happen. Application of NGVD29 implies that source is NAVD88 
+    //   vdcFromDatum    vdcGeoid          - First ellipsoidal height change must be applied then Geoid value at location added to result.
+    //   vdcNAVD88       vdcNGVD29         - Normal VERTCON application.
+    //   vdcNAVD88       vdcGeoid          - We do nothing. We consider NAVD88 to be coincident to Geoid
+    //   vdcNGVD29       vdcGeoid          - We do nothing. We consider NGVD29 to be coincident to Geoid
+    
+    // vdcGeoid    vdcGeoid - In this specific case we remove Geoid elev, apply ellipsoidal height diff then apply Geoid at new location.
+    //                        although this case would give approximatively the same result the slight
+    //                        lat/long value may introduce a very small change in elevation.
+
+    // If we have NGVD29 to NAVD88 conversion
+    if ((m_fromVDC == vdcNGVD29 || m_fromVDC == vdcNAVD88) && (m_toVDC == vdcNGVD29 || m_toVDC == vdcNAVD88) && (m_toVDC != m_fromVDC))
+        {
+        // The CSvrtcon29To88 function takes as input the Lat/Long in NAD27.
+        double  elevationDelta;
+        if (0 == CSvrtcon29To88 (&elevationDelta, (m_inputLatLongInNAD27 ? (const double *) &inLatLong : (const double *) &outLatLong)))
+            {
+            // Notice that ellipsoidal elevation changes are discarded in this case since the datum pair fully specifies the
+            // elevation delta to be applied.
+            if (m_fromNGVD29toNAVD88)
+                outLatLong.elevation = inLatLong.elevation + elevationDelta;
+            else
+                outLatLong.elevation = inLatLong.elevation - elevationDelta;
+            return SUCCESS;
+            }
+
+        // Something went wrong in VERTCON application
+        return GEOCOORDERR_VerticalDatumConversion;
+
+        }
+    // Otherwise if either vertical datum is NAVD88 or NGVD29  but the other is not then we do nothing
+    else if (m_fromVDC != vdcNGVD29 && m_fromVDC != vdcNAVD88 && m_toVDC != vdcNGVD29 && m_toVDC != vdcNAVD88)
+        {
+        // The ellipsoidal height diff is already applied but additions and substraction are commutative so we do not care
+        // about the order of application given we use the proper lat/long combination.
+        // In every case the output point should already have a meaningful elevation to correct.
+        double  elevationDelta;
+        if (m_fromVDC == vdcGeoid)
+            {
+            if (0 == CS_geoidHgt((const double *) &inLatLong, &elevationDelta))
+                outLatLong.elevation += elevationDelta;
+            else
+                return GEOCOORDERR_VerticalDatumConversion;
+            }
+
+        if (m_toVDC == vdcGeoid)
+            {
+            if (0 == CS_geoidHgt((double *) &outLatLong, &elevationDelta))
+                outLatLong.elevation -= elevationDelta;
+            else
+                return GEOCOORDERR_VerticalDatumConversion;
+            }
+        }
+        
+        
+    return SUCCESS;
+    }
+
+};
+
 /*=================================================================================**//**
 *
 * The static variable and these 3 static functions are uniquely intended for use
@@ -12207,7 +12328,32 @@ DPoint3dCR      inXYZ
     if (NULL == m_csParameters)
         return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
+
+
     CSMap::CS_xyzToLlh (&outLatLong, &inXYZ, m_csParameters->datum.e_rad, m_csParameters->datum.ecent * m_csParameters->datum.ecent);
+
+    if (vdcFromDatum != GetVerticalDatumCode())
+        {
+        // Elevation is not ellipsoid based which is the result of the previous function
+        // We must convert
+        VertDatumCode elevationDatumCode = GetVerticalDatumCode();
+
+        // If elevation datum is NGVD29 based then we need to initialize the vertical datum conversion.
+        if (vdcNGVD29 == elevationDatumCode)
+            if (0 != CSvrtconInit())
+                return REPROJECT_CSMAPERR_VerticalDatumConversionError;
+
+        VerticalDatumConverter* vertConverter =  new VerticalDatumConverter (IsNAD27(), vdcFromDatum, elevationDatumCode);
+            
+        GeoPoint inLatLong = {outLatLong.longitude, outLatLong.latitude, outLatLong.elevation};
+
+        vertConverter->ConvertElevation (outLatLong, inLatLong);
+
+        // I know that not caching the vertical datum converter may prove inefficient for multiple calls
+        // but I elected not to clutter the BaseGCS class with yet another cached member since GeoCentric conversion
+        // is rare and if used will be few. If usage proves me wrong feel free to add required member.
+        delete vertConverter;
+        }
 
     return REPROJECT_Success;
     }
@@ -12224,7 +12370,30 @@ GeoPointCR      inLatLong
     if (NULL == m_csParameters)
         return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
 
-	CSMap::CS_llhToXyz (&outXYZ, &inLatLong, m_csParameters->datum.e_rad, m_csParameters->datum.ecent * m_csParameters->datum.ecent);
+    GeoPoint effectInLatLong = inLatLong;
+
+    if (vdcFromDatum != GetVerticalDatumCode())
+        {
+        // Elevation is not ellipsoid based which is the required input of the geocentric function
+        // We must convert
+        VertDatumCode elevationDatumCode = GetVerticalDatumCode();
+
+        // If elevation datum is NGVD29 based then we need to initialize the vertical datum conversion.
+        if (vdcNGVD29 == elevationDatumCode)
+            if (0 != CSvrtconInit())
+                return REPROJECT_CSMAPERR_VerticalDatumConversionError;
+
+        VerticalDatumConverter* vertConverter =  new VerticalDatumConverter (IsNAD27(), elevationDatumCode, vdcFromDatum);
+            
+        vertConverter->ConvertElevation (effectInLatLong, inLatLong);
+
+        // I know that not caching the vertical datum converter may prove inefficient for multiple calls
+        // but I elected not to clutter the BaseGCS class with yet another cached member since GeoCentric conversion
+        // is rare and if used will be few. If usage proves me wrong feel free to add required member.
+        delete vertConverter;
+        }
+
+	CSMap::CS_llhToXyz (&outXYZ, &effectInLatLong, m_csParameters->datum.e_rad, m_csParameters->datum.ecent * m_csParameters->datum.ecent);
 
     return REPROJECT_Success;
     }
@@ -12374,126 +12543,7 @@ T_WStringVector*   BaseGCS::GetEllipsoidNames
     return ellipsoidNames;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct VerticalDatumConverter
-{
-private:
-    bool            m_inputLatLongInNAD27;      // which latLongs are considered to be in NAD27.
-    bool            m_fromNGVD29toNAVD88;       // direction
-    VertDatumCode   m_fromVDC;
-    VertDatumCode   m_toVDC;
 
-public:
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCode outputVdc)
-    {
-    BeAssert (inputVdc != outputVdc);
-
-    m_fromVDC = inputVdc;
-    m_toVDC = outputVdc;
-
-    // These two parameters are only used if NAVD88 to/from NGVD29 is to be performed.
-    m_inputLatLongInNAD27 = inputIsInNAD27;
-    m_fromNGVD29toNAVD88  = (vdcNGVD29 == inputVdc);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-~VerticalDatumConverter ()
-    {
-    if (!BaseGCS::IsLibraryInitialized())
-        return;
-
-    CSvrtconCls();
-    CS_geoidCls();
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   ConvertElevation
-(
-GeoPointR   outLatLong,
-GeoPointCR  inLatLong
-)
-    {
-    if (!BaseGCS::IsLibraryInitialized())
-        return GEOCOORDERR_GeoCoordNotInitialized;
-
-    // The process of datum conversion can be complex here depending on the set of in/out
-    // vertical datums. Note that the vdcFromDatum value indicates that the ellipsoidal height is
-    // used. This height is related to the horizontal datum and conversion may be necessary
-    // using CSMAP prior to application of the vertical datum.
-    // All other vertical datums supported are Geoid based (orthometric)
-    // Here is a map of sequence to be applied
-    //      VERT1             VERT2
-    //   vdcFromDatum    vdcFromDatum      - CSMAP should take care of vertical elevation changes. The vertical datum should not exist
-    //   vdcFromDatum    vdcNAVD88         - Should not happen. Application of NAVD88 implies that source is NGVD29 
-    //   vdcFromDatum    vdcNGVD29         - Should not happen. Application of NGVD29 implies that source is NAVD88 
-    //   vdcFromDatum    vdcGeoid          - First ellipsoidal height change must be applied then Geoid value at location added to result.
-    //   vdcNAVD88       vdcNGVD29         - Normal VERTCON application.
-    //   vdcNAVD88       vdcGeoid          - We do nothing. We consider NAVD88 to be coincident to Geoid
-    //   vdcNGVD29       vdcGeoid          - We do nothing. We consider NGVD29 to be coincident to Geoid
-    
-    // vdcGeoid    vdcGeoid - In this specific case we remove Geoid elev, apply ellipsoidal height diff then apply Geoid at new location.
-    //                        although this case would give approximatively the same result the slight
-    //                        lat/long value may introduce a very small change in elevation.
-
-    // If we have NGVD29 to NAVD88 conversion
-    if ((m_fromVDC == vdcNGVD29 || m_fromVDC == vdcNAVD88) && (m_toVDC == vdcNGVD29 || m_toVDC == vdcNAVD88) && (m_toVDC != m_fromVDC))
-        {
-        // The CSvrtcon29To88 function takes as input the Lat/Long in NAD27.
-        double  elevationDelta;
-        if (0 == CSvrtcon29To88 (&elevationDelta, (m_inputLatLongInNAD27 ? (const double *) &inLatLong : (const double *) &outLatLong)))
-            {
-            // Notice that ellipsoidal elevation changes are discarded in this case since the datum pair fully specifies the
-            // elevation delta to be applied.
-            if (m_fromNGVD29toNAVD88)
-                outLatLong.elevation = inLatLong.elevation + elevationDelta;
-            else
-                outLatLong.elevation = inLatLong.elevation - elevationDelta;
-            return SUCCESS;
-            }
-
-        // Something went wrong in VERTCON application
-        return GEOCOORDERR_VerticalDatumConversion;
-
-        }
-    // Otherwise if either vertical datum is NAVD88 or NGVD29  but the other is not then we do nothing
-    else if (m_fromVDC != vdcNGVD29 && m_fromVDC != vdcNAVD88 && m_toVDC != vdcNGVD29 && m_toVDC != vdcNAVD88)
-        {
-        // The ellipsoidal height diff is already applied but additions and substraction are commutative so we do not care
-        // about the order of application given we use the proper lat/long combination.
-        // In every case the output point should already have a meaningful elevation to correct.
-        double  elevationDelta;
-        if (m_fromVDC == vdcGeoid)
-            {
-            if (0 == CS_geoidHgt((const double *) &inLatLong, &elevationDelta))
-                outLatLong.elevation += elevationDelta;
-            else
-                return GEOCOORDERR_VerticalDatumConversion;
-            }
-
-        if (m_toVDC == vdcGeoid)
-            {
-            if (0 == CS_geoidHgt((double *) &outLatLong, &elevationDelta))
-                outLatLong.elevation -= elevationDelta;
-            else
-                return GEOCOORDERR_VerticalDatumConversion;
-            }
-        }
-        
-        
-    return SUCCESS;
-    }
-
-};
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -14571,6 +14621,18 @@ WStringR       DatumAsASC
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/06
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP    Datum::GetGroup (WStringR groupName) const
+    {
+    groupName.clear();
+
+    if (NULL != m_datumDef)
+        groupName.AssignA (m_datumDef->group);
+
+    return groupName.c_str();
+    }
 
 /*=================================================================================**//**
 *
