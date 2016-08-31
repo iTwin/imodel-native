@@ -246,7 +246,7 @@ TEST_F(BeSQLiteDbTests, SetGuids)
     SetupDb(L"SetGuids.db");
 
     EXPECT_FALSE (m_db.QueryProjectGuid().IsValid());
-    BeGuid projGuid;
+    BeGuid projGuid(true);
     m_db.SaveProjectGuid(projGuid);
     BeGuid projGuidOut = m_db.QueryProjectGuid();
 
@@ -264,12 +264,12 @@ TEST_F(BeSQLiteDbTests, SetGuids)
 
     //create a new Db with explicit BeSQLite::BeGuid value
     Db db2;
-    BeSQLite::BeGuid dbGuid2(false), dbGuid3(false);
-    dbGuid2.Init(400, 100);
+    BeSQLite::BeGuid dbGuid2(100, 400), dbGuid3(false);
 
     BeFileName dbName2 = getDbFilePath(L"new.db");
     if (BeFileName::DoesPathExist(dbName2))
         BeFileName::BeDeleteFile(dbName2);
+
     m_result = db2.CreateNewDb(dbName2.GetNameUtf8().c_str(), dbGuid2);
     dbGuid3 = db2.GetDbGuid();
     EXPECT_TRUE (dbGuid3.IsValid());

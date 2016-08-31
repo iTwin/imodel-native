@@ -210,14 +210,15 @@ struct BeGuid
     union{struct _GUID g; uint64_t u[2]; uint32_t i[4]; uint8_t b[16];} m_guid;
 
     //! Construct a new BeGuid. Optionally, initialize to a new unique value.
-    //! @param[in] createValue if true, the BeGuid will hold a new globally unique value, otherwise the value is invalid (all zeros).
-    explicit BeGuid(bool createValue=true) {if (createValue) Create(); else Invalidate();}
+    //! @param[in] createValue if true, the BeGuid will hold a new globally unique value, otherwise the value is invalid (all zeros)
+    //! @note The default constructor initializes the BeGuid to be invalid.
+    explicit BeGuid(bool createValue=false) {if (createValue) Create(); else Invalidate();}
 
-    //! Initialize this BeGuid from two 64 bit values. Caller must ensure these values constitute a valid BeGuid.
-    void Init(uint64_t u1, uint64_t u0){m_guid.u[0]=u0; m_guid.u[1]=u1;}
+    //! Construct and initialize a BeGuid from two 64 bit values. Caller must ensure these values constitute a valid BeGuid.
+    BeGuid(uint64_t u0, uint64_t u1) {m_guid.u[0]=u0; m_guid.u[1]=u1;}
 
-    //! Initialize this BeGuid from four 32 bit values. Caller must ensure these values constitute a valid BeGuid.
-    void Init(uint32_t i3, uint32_t i2, uint32_t i1, uint32_t i0){m_guid.i[0]=i0; m_guid.i[1]=i1; m_guid.i[2]=i2; m_guid.i[3]=i3;}
+    //! Construct and initialize a BeGuid from four 32 bit values. Caller must ensure these values constitute a valid BeGuid.
+    BeGuid(uint32_t i0, uint32_t i1, uint32_t i2, uint32_t i3) {m_guid.i[0]=i0; m_guid.i[1]=i1; m_guid.i[2]=i2; m_guid.i[3]=i3;}
 
     //! Compare two BeGuids for equality
     bool operator==(BeGuid const& rhs) const {return rhs.m_guid.u[0]==m_guid.u[0] && rhs.m_guid.u[1]==m_guid.u[1];}

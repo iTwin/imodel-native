@@ -132,6 +132,7 @@ void BeGuid::Create()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String BeGuid::ToString() const
     {
+    BeAssert(IsValid());
     return Utf8PrintfString("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                     m_guid.b[0], m_guid.b[1], m_guid.b[2], m_guid.b[3], m_guid.b[4], m_guid.b[5], m_guid.b[6], m_guid.b[7],
                     m_guid.b[8], m_guid.b[9], m_guid.b[10], m_guid.b[11], m_guid.b[12], m_guid.b[13], m_guid.b[14], m_guid.b[15]);
@@ -325,7 +326,23 @@ Utf8CP      Statement::GetValueText(int col)    {return (Utf8CP) sqlite3_column_
 int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stmt, col);}
 int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
 double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
-BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetValueBlob(col), sizeof(guid)); return guid;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid Statement::GetValueGuid(int col)    
+    {
+    if (IsColumnNull(col)) 
+        return BeGuid();
+
+    int columnBytes = GetColumnBytes(col);
+    if (columnBytes != sizeof(BeGuid))
+        return BeGuid();
+
+    BeGuid guid; 
+    memcpy(&guid, GetValueBlob(col), sizeof(guid));
+    return guid;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   08/15
@@ -346,8 +363,20 @@ Utf8CP      DbValue::GetValueText() const             {return (Utf8CP)sqlite3_va
 int         DbValue::GetValueInt() const              {return sqlite3_value_int(m_val);}
 int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
-BeGuid      DbValue::GetValueGuid() const {BeGuid guid; memcpy(&guid, GetValueBlob(), sizeof(guid)); return guid;}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeGuid DbValue::GetValueGuid() const 
+    {
+    int valueBytes = GetValueBytes();
+    if (valueBytes != sizeof(BeGuid))
+        return BeGuid();
+
+    BeGuid guid; 
+    memcpy(&guid, GetValueBlob(), sizeof(guid)); 
+    return guid;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
@@ -1330,9 +1359,9 @@ DbResult Db::SaveBriefcaseId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::ChangeDbGuid(BeGuid id)
+void Db::ChangeDbGuid(BeGuid guid)
     {
-    m_dbFile->m_dbGuid = id;
+    m_dbFile->m_dbGuid = guid;
     SaveBeDbGuid();
     }
 
