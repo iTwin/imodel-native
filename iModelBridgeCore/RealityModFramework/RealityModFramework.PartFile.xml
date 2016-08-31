@@ -373,6 +373,7 @@
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="managedtests"                   Path=""/>
 
