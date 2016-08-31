@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
-CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid().ToString())
+CachedResponseKey CreateTestResponseKey(ICachingDataSourcePtr ds, Utf8StringCR rootName = "StubResponseKeyRoot", Utf8StringCR keyName = BeGuid(true).ToString())
     {
     auto txn = ds->StartCacheTransaction();
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot(rootName.c_str()), keyName);

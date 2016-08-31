@@ -37,7 +37,7 @@ void CachingDataSourceTests::SetUp()
 
 BeFileName GetTestCachePath()
     {
-    BeFileName cachePath = StubFilePath("TestWSCache-" + BeGuid().ToString() + ".ecdb");
+    BeFileName cachePath = StubFilePath("TestWSCache-" + BeGuid(true).ToString() + ".ecdb");
     CacheEnvironment env = StubCacheEnvironemnt();
 
     cachePath.BeDeleteFile();
@@ -600,7 +600,7 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
             auto relClass = txn.GetCache().GetAdapter().GetECRelationshipClass("Issue.IssueAttachmentRel");
             ECInstanceKey result(resultClass->GetId(), txn.GetCache().GetAdapter().FindInstance(resultClass));
             Json::Value properties;
-            properties["FileName"] = Utf8PrintfString("Test-%d-%s.txt", i, BeGuid().ToString().c_str());
+            properties["FileName"] = Utf8PrintfString("Test-%d-%s.txt", i, BeGuid(true).ToString().c_str());
             auto attachment = txn.GetCache().GetChangeManager().CreateObject(*attachmentClass, properties);
             auto relationship = txn.GetCache().GetChangeManager().CreateRelationship(*relClass, result, attachment);
             ASSERT_TRUE(relationship.IsValid());

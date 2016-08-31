@@ -61,7 +61,7 @@ m_isSyncActive(false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ChangeManager::CreateRemoteId()
     {
-    return LocalInstanceIdPrefix + BeGuid().ToString();
+    return LocalInstanceIdPrefix + BeGuid(true).ToString();
     }
 
 /*--------------------------------------------------------------------------------------+
