@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #using <mscorlib.dll>
-#using <Bentley.logging-2.0.dll>
+#using <Bentley.loggingG06.dll>
 
 namespace ManagedApi = ::Bentley::Logging;
 namespace ManagedProviderApi = ::Bentley::Logging::Provider;
