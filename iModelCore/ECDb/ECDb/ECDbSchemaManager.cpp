@@ -298,9 +298,6 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     for (ECSchemaCP schema : schemaPrepareContext.GetImportingSchemas())
         {
-        if (BeTest::IsInitialized())                                    // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-            printf("!!!!!!!!!!!! Import schema %s\n", schema->GetName().c_str());    // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-
         if (SUCCESS != schemaWriter.Import(schemaPrepareContext, *schema))
             return ERROR;
         }

@@ -25,16 +25,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
         return ERROR;
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(
-        "WITH RECURSIVE "
-         "BaseClassList(ClassId, BaseClassId) AS "
-         "("
-         "   SELECT Id, Id FROM ec_Class"
-         "   UNION"
-         "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
-         "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
-         ")"
-         "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"))
-/*                        "WITH RECURSIVE "
+                        "WITH RECURSIVE "
                         "  BaseClassList(ClassId, BaseClassId, Level, Ordinal) AS "
                         "  ("
                         "  SELECT Id, Id, 1, 0 FROM ec_Class "
@@ -43,11 +34,22 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
                         "  FROM BaseClassList DCL INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId "
                         "  )"
                         "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " "
-                        "SELECT DISTINCT NULL Id, ClassId, BaseClassId FROM BaseClassList ORDER BY Ordinal DESC, Level DESC;"))*/
+                        "SELECT DISTINCT NULL Id, ClassId, BaseClassId FROM BaseClassList ORDER BY Ordinal DESC, Level DESC;"))
         {
         return ERROR;
         }
 
+    /* Old SQL in case needed until LWC issue is solved:
+    //       "WITH RECURSIVE "
+    "BaseClassList(ClassId, BaseClassId) AS "
+    "("
+    "   SELECT Id, Id FROM ec_Class"
+    "   UNION"
+    "   SELECT DCL.ClassId, BC.BaseClassId FROM BaseClassList DCL"
+    "       INNER JOIN ec_ClassHasBaseClasses BC ON BC.ClassId = DCL.BaseClassId"
+    ")"
+    "INSERT INTO " ECDB_CACHETABLE_ClassHierarchy " SELECT NULL Id, ClassId, BaseClassId FROM BaseClassList"
+    */
     timer.Stop();
     LOG.debugv("Re-populated table '" ECDB_CACHETABLE_ClassHierarchy "' in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
