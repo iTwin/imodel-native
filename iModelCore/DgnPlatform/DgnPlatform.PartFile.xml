@@ -471,7 +471,7 @@
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/DgnPlatform/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/DgnPlatformUwpTest"/>
         </Bindings>
     </Part>
 
