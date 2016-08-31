@@ -91,6 +91,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
+    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
 
     DGNPLATFORM_EXPORT DgnDbStatus WriteModelIds() const;
 
@@ -133,6 +134,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
+    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
 
     DGNPLATFORM_EXPORT DgnDbStatus WriteCategoryIds() const;
 

@@ -403,6 +403,38 @@ void CategorySelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+    {
+    if (!T_Super::_Equals(rhsElement, ignore))
+        return false;
+
+    auto const& rhs = (CategorySelector const&)rhsElement;
+    if (!m_isLoaded)
+        GetCategoryIds();
+    if (!rhs.m_isLoaded)
+        rhs.GetCategoryIds();
+    return m_categoryIds == rhs.m_categoryIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*@bsimethod                                    Sam.Wilson                      08 / 16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ModelSelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+    {
+    if (!T_Super::_Equals(rhsElement, ignore))
+        return false;
+
+    auto const& rhs = (ModelSelector const&)rhsElement;
+    if (!m_isLoaded)
+        GetModelIds();
+    if (!rhs.m_isLoaded)
+        rhs.GetModelIds();
+    return m_modelIds == rhs.m_modelIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void ModelSelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
     {
     T_Super::_Dump(str, ignore);

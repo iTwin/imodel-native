@@ -88,6 +88,7 @@
 #define BIS_REL_ModelDrivesModel            "ModelDrivesModel"
 #define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
+#define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
