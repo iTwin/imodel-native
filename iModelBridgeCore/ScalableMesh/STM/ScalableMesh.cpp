@@ -746,15 +746,28 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     bool isVirtualGroups = false; // Streaming without node grouping by default
                     isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
 
-                    // NEEDS_WORK_SM - Remove hardcoded azure dataset name
-                    WString azureDatasetName(L"marseille\\");
-                    //WString azureDatasetName(L"marseille\\");
-                    //WString azureDatasetName(L"quebectest2/");
-
                     // NEEDS_WORK_SM - Check existence of the following directories
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
-                    auto position = m_path.find_last_of(L".stm");
-                    WString streamingSourcePath = (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : azureDatasetName);
+                    WString streamingSourcePath;
+                    WString cloudIndicator(L"_cloud");
+                    //= (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : path.GetFileNameWithoutExtension());
+                    BeFileName path(m_path);
+                    WString datasetName = path.GetFileNameWithoutExtension();
+                    bool isCloud = path.Contains(cloudIndicator);
+                    if (isCloud)
+                        {
+                        datasetName.resize(datasetName.length() - cloudIndicator.length());
+                        }
+                    if (isCloud && !s_stream_from_disk)
+                        {
+                        streamingSourcePath += datasetName;
+                        }
+                    else
+                        {
+                        streamingSourcePath += path.GetDirectoryName();
+                        streamingSourcePath += L"cloud\\";
+                        streamingSourcePath += datasetName;
+                        }
 
 #ifndef VANCOUVER_API                                       
                     dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
@@ -1992,45 +2005,28 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
-    s_stream_from_disk = true;
-    s_stream_from_grouped_store = false;
+    WString path;
+    if (uploadToAzure)
+        {
+        // Setup streaming stores to use server (Azure or WSG)
+        s_stream_from_disk = false;
 
-    // &&RB TODO: this should now be done in the streaming store
-    //DataSourceAccount *   account;
-    //if (uploadToAzure)
-    //    {
-    //    // create an Azure account to upload this mesh to
-    //    DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
-    //    DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
-    //    DataSourceService                       *   serviceAzure;
-    //
-    //    // Get the Azure service
-    //    serviceAzure = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
-    //    if (serviceAzure == nullptr)
-    //        return ERROR_SERVICE_DOES_NOT_EXIST;
-    //    // Create an account on Azure
-    //    account = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
-    //    if (account == nullptr)
-    //        return ERROR_ACCOUNT_DISABLED;
-    //    }
-    //else
-    //    {
-    //    DataSourceService  *   serviceLocalFile;
-    //
-    //    if ((serviceLocalFile = this->GetDataSourceManager().getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-    //        return ERROR_SERVICE_DOES_NOT_EXIST;
-    //
-    //    // Create an account on the file service streaming
-    //    if ((account = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-    //        return ERROR_ACCOUNT_DISABLED;
-    //    }
-    //
-    //assert(account != nullptr);
+        path += outContainerName + L"/" + outDatasetName;
+        }
+    else
+        {
+        // Setup streaming stores to use local disk (relative to attached stm file location)
+        s_stream_from_disk = true;
 
-    //// Set up default container
-    //account->setPrefixPath(DataSourceURL((outContainerName + L"/" + outDatasetName).c_str()));
+        const auto smFileName = BeFileName(this->GetPath());
+        path += smFileName.GetDirectoryName();
+        path += L"cloud\\";
+        path += smFileName.GetFileNameWithoutExtension();
+        }
+    
+    //s_stream_from_grouped_store = false;
 
-    return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), outContainerName + L"/" + outDatasetName, false);
+    return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
     }
 
 #ifdef SCALABLE_MESH_ATP

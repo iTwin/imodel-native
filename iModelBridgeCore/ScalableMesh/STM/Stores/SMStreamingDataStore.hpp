@@ -48,12 +48,13 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        if (0 == CreateDirectoryW(m_dataSourceAccount->getPrefixPath().c_str(), NULL))
+        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
-        
-        if (0 == CreateDirectoryW((WString(m_dataSourceAccount->getPrefixPath().c_str()) + m_pathToHeaders).c_str(), NULL))
+        path.append(DataSourceURL(m_pathToHeaders.c_str()));
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
@@ -73,11 +74,11 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         DataSourceService                       *   serviceLocalFile;
 
         if ((serviceLocalFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
         // Create an account on the file service streaming
         if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalFileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
 
@@ -99,11 +100,11 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
         if (serviceWSG == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
         accountWSG = serviceWSG->createAccount(DataSourceAccount::AccountName(L"WSGAccount"), accountIdentifier, accountKey);
         if (accountWSG == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         Utf8String token1 = ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken();
         assert(!token1.empty());
@@ -117,50 +118,39 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     else
         {
         // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
+        // NEEDS_WORK_SM_STREAMING: How to specify identifier and key?
         DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
         DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
         DataSourceService                       *   serviceAzure;
         DataSourceAccount                       *   accountAzure;
         DataSourceAccount                       *   accountCaching;
         DataSourceService                       *   serviceFile;
-
         //  DataSourceAccount                       *   accountCaching;
-        //  DataSourceBuffer::BufferSize                testDataSize = 1024 * 1024 * 8;
 
-        // Get the Azure service
+        // Setup Azure account
         serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"));
         if (serviceAzure == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Create an account on Azure
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
         accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
         if (accountAzure == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Set ScalableMesh's DataSource
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
         this->SetDataSourceAccount(accountAzure);
 
-        /*
-        // Create an Azure specific DataSource
-        dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
-        if (dataSourceAzure == nullptr)
-        return DataSourceStatus(DataSourceStatus::Status_Error);
-        // Blobs will be split up into segments of this size
-        dataSourceAzure->setSegmentSize(1024 * 64);
-        // Time I/O operation timeouts for threading
-        dataSourceAzure->setTimeout(DataSource::Timeout(100000));
-        */
-
-        // Get the file service
+        // Setup Caching service
         if ((serviceFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Create an account on the file service for caching
+            return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
+
         if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"CacheAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
-            return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
-        // Set prefix for caching account data sources
+            return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
         accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\CacheAzure"));
 
         //  accountAzure->setCacheRootURL(DataSourceURL(L"C:\\Temp\\CacheAzure"));
         // Set up local file based caching
         accountAzure->setCaching(*accountCaching, DataSourceURL());
+
         // Set up default container
         accountAzure->setPrefixPath(DataSourceURL((WString(L"scalablemeshtest/") + directory).c_str()));
         }
@@ -1045,7 +1035,9 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only        
-        if (0 == CreateDirectoryW((WString(m_dataSourceAccount->getPrefixPath().c_str()) + m_pathToNodeData).c_str(), NULL))
+        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
+        path.append(DataSourceURL(m_pathToNodeData.c_str()));
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }        
@@ -1389,7 +1381,9 @@ template <class DATATYPE, class EXTENT> StreamingNodeTextureStore<DATATYPE, EXTE
         {
         // Create base directory structure to store information if not already done
         // NEEDS_WORK_SM_STREAMING : directory/file functions are Windows only
-        if (0 == CreateDirectoryW((WString(m_dataSourceAccount->getPrefixPath().c_str()) + m_path).c_str(), NULL))
+        DataSourceURL path = m_dataSourceAccount->getPrefixPath();
+        path.append(DataSourceURL(m_path.c_str()));
+        if (0 == CreateDirectoryW(path.c_str(), NULL))
             {
             assert(ERROR_PATH_NOT_FOUND != GetLastError());
             }
