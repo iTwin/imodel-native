@@ -31,9 +31,6 @@ HRFSRTMLineEditor::HRFSRTMLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
     m_pRasterFile = static_cast<HRFSRTMFile*>(GetRasterFile().GetPtr());
 
     m_ExactBytesPerRow = m_pRasterFile->m_Width * 2;
-
-
-    m_DataOffset = 0;
     }
 
 //-----------------------------------------------------------------------------

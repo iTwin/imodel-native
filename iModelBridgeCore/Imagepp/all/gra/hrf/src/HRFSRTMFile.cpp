@@ -332,20 +332,10 @@ bool HRFSRTMFile::Open()
 //-----------------------------------------------------------------------------
 bool HRFSRTMFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     {
-    // Validation if it's possible to add a page
-    HPRECONDITION(CountPages() == 0);
-    HPRECONDITION(pi_pPage != 0);
+    //Read-only file format
+    HASSERT(false);
 
-    // Add the page descriptor to the list
-    HRFRasterFile::AddPage(pi_pPage);
-
-    HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
-    HFCPtr<HRFResolutionDescriptor> pResolutionDescriptor = pPageDescriptor->GetResolutionDescriptor(0);
-
-    // Set the image file information.
-    m_Width = (uint32_t) pResolutionDescriptor->GetWidth();
-
-    return true;
+    return false;
     }
 
 //-----------------------------------------------------------------------------
@@ -365,7 +355,6 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFSRTMFile::GetCapabilities() const
 //-----------------------------------------------------------------------------
 void HRFSRTMFile::CreateDescriptors()
     {
-    // Create Page and Resolution Description/Capabilities for this file.
     HFCPtr<HRFResolutionDescriptor>     pResolution;
     HFCPtr<HRFPageDescriptor>           pPage;
 
@@ -421,7 +410,7 @@ void HRFSRTMFile::CreateDescriptors()
         m_Width,                       // Width,
         m_Width,                       // Height,
         m_Width,                       // BlockWidth,
-        m_Width,                       // BlockHeight,
+        1,                             // BlockHeight,
         0,                             // BlocksDataFlag
         HRFBlockType::LINE);          // BlockType
 
@@ -450,7 +439,6 @@ void HRFSRTMFile::CreateDescriptors()
 //-----------------------------------------------------------------------------
 const HGF2DWorldIdentificator HRFSRTMFile::GetWorldIdentificator() const
     {
-    //return HGF2DWorld_GEOTIFFUNKNOWN;
 	return HGF2DWorld_HMRWORLD;
     }
 
