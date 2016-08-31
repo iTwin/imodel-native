@@ -357,11 +357,12 @@ struct Publish3mxTexture : Render::Texture
 //=======================================================================================
 struct  PublishTileNode : TileNode
 {
-    NodePtr              m_node;
-    Transform            m_transform;
+    ScenePtr            m_scene;
+    NodePtr             m_node;
+    Transform           m_transform;
 
-    PublishTileNode(NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
-                     m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
+    PublishTileNode(SceneR scene, NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
+                    m_scene (&scene), m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -376,7 +377,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
             continue;
 
         PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
-        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighing (it is baked into the capture).
+        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighting (it is baked into the capture).
 
         if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
             polyface->BuildPerFaceNormals();
@@ -390,10 +391,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
 
         if (nullptr != publishGeometry &&
             nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
-            {
-            Image   image (publishTexture->m_source, publishTexture->m_format, publishTexture->m_bottomUp);
-            tileTexture = new TileTextureImage (std::move(image), false);
-            }
+            tileTexture = new TileTextureImage (publishTexture->m_source, false);
 
         TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
         TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
@@ -436,20 +434,16 @@ RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, Transform
             range.Extend (child->GetRange());
 
     toTile.Multiply (range, range);
-    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (node, toTile, range, depth, siblingIndex, tolerance, parent);
 
-    static size_t s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
+    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
 
-    if (node._HasChildren() && depth < s_depthLimit)
+    if (nullptr != node._GetChildren() && depth < s_depthLimit)
         {
+        size_t                  childIndex = 0;
+
         depth++;
-
-        Tile::ChildTiles    children = *node._GetChildren();
-        size_t              childIndex = 0;
-
-        // node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
-
-        for (auto& child : children)
+        for (auto& child : *node._GetChildren())
             tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
         }
 
