@@ -40,6 +40,11 @@
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
+    <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->
+    <Part Name="BeCurlShim" ExcludePlatforms="WinRT*">
+        <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>
+    </Part>
+    
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="FollyShim" ExcludePlatforms="Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 

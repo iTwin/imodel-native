@@ -121,10 +121,10 @@ bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Image TileTextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
+ImageSource TileTextureImage::Load(TileDisplayParamsCR params, DgnDbR db)
     {
     DgnTextureCPtr tex = params.QueryTexture(db);
-    return tex.IsValid() ? Image(tex->GetImageSource()) : Image();
+    return tex.IsValid() ? tex->GetImageSource() : ImageSource();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,7 +135,7 @@ void TileTextureImage::ResolveTexture(TileDisplayParamsR params, DgnDbR db)
     if (params.TextureImage().IsValid())
         return;
 
-    Image               renderImage  = TileTextureImage::Load(params, db);
+    ImageSource renderImage  = TileTextureImage::Load(params, db);
 
     if (renderImage.IsValid())
         params.TextureImage() = new TileTextureImage(std::move(renderImage));

@@ -1438,18 +1438,27 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         {
         DPoint3d org;
         DVec3d delta;
-        AxisAlignedBox3d range = rdlModel.QueryModelRange();
-        if (!range.IsEmpty())
+
+        // The "imageViewRect" is typically a subrange of "projectViewRect".
+        // While you might think the data (i.e. image) will honor the imageViewRect, it instead is always based on 0,0; but we should trust the extent provided by imageViewRect.
+        // Further, it is scaled to preserve its original aspect ratio.
+        // Knowing this, we must adjust the view origin to make the shifted data appear as though it were offset like imageViewRect specifies.
+        // Ideally we should be refactoring this API, but we don't want to on the Q2 branch.
+        
+        DPoint2d actualImageDim;
+        if (imageViewRect.Width() > imageViewRect.Height())
             {
-            range.Extend(range.XLength() * 0.1);   // add in a margin of 10%
-            delta.Init(range.XLength(), range.YLength());
-            org.Init(range.low.x, range.low.y);
+            actualImageDim.x = imageViewRect.Width();
+            actualImageDim.y = imageViewRect.Width() * (1.0 / projectViewRect.Aspect());
             }
         else
             {
-            org.Init(0,0);
-            delta.Init(1024,1024);
+            actualImageDim.y = imageViewRect.Height();
+            actualImageDim.x = imageViewRect.Height() * projectViewRect.Aspect();
             }
+        
+        org.Init(projectViewRect.Left() - (projectViewRect.Width() - actualImageDim.x) / 2.0, projectViewRect.Top() - (projectViewRect.Height() - actualImageDim.y) / 2.0);
+        delta.Init(projectViewRect.Width(), projectViewRect.Height());
 
         controller->SetOrigin(org);
         controller->SetDelta(delta);

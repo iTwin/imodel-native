@@ -112,43 +112,29 @@ void TilePublisher::WriteBoundingVolume(Json::Value& val, TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteMetadata(Json::Value& val, TileNodeCR tile, double tolerance)
+void TilePublisher::WriteMetadataTree (Json::Value& root, TileNodeCR tile, double tolerance)
     {
-    val["asset"]["version"] = "0.0";
-    val[JSON_GeometricError] = tile.GetTolerance();
+    root[JSON_GeometricError] = tile.GetTolerance();
 
-    static double       s_toleranceRatio = 1.0;
-
-    auto& root = val[JSON_Root];
     root["refine"] = "replace";
-    root[JSON_GeometricError] = tile.GetTolerance() * s_toleranceRatio;
+    root[JSON_GeometricError] = tile.GetTolerance();
     WriteBoundingVolume(root, tile);
-
-    if (0 == m_tile.GetDepth() && !m_context.GetTileToEcef().IsIdentity())
-        {
-        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
-        auto&       transformValue = val[JSON_Root][JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
-        }
 
     root[JSON_Content]["url"] = Utf8String (tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str()).c_str();
     if (!tile.GetChildren().empty())
+        {
         root[JSON_Children] = Json::arrayValue;
 
-    for (auto& childTile : tile.GetChildren())
-        {
-        Json::Value         child;
+        for (auto& childTile : tile.GetChildren())
+            {
+            Json::Value         child;
 
-        child[JSON_Content]["url"] = Utf8String (childTile->GetRelativePath (m_context.GetRootName().c_str(), s_metadataExtension).c_str()).c_str();
-        child[JSON_GeometricError] = childTile->GetTolerance();
-        WriteBoundingVolume(child, *childTile);
-
-        root[JSON_Children].append(child);
+            WriteMetadataTree (child, *childTile, childTile->GetTolerance());
+            root[JSON_Children].append(child);
+            }
         }
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -204,15 +190,32 @@ PublisherContext::Status TilePublisher::Publish()
     {
     BeFileName  binaryDataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_binaryDataExtension).c_str(), nullptr);
     BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_tile.GetRelativePath (m_context.GetRootName().c_str(), s_metadataExtension).c_str(), nullptr);
-    Json::Value val;
 
-    WriteMetadata(val, m_tile, m_tile.GetTolerance());
+    if (0 == m_tile.GetDepth())
+        {
+        Json::Value val;
 
-    Utf8String metadataStr = Json::FastWriter().write(val);
+        val["asset"]["version"] = "0.0";
 
-    m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
-    m_outputFile.write(metadataStr.data(), metadataStr.size());
-    m_outputFile.close();
+        if (!m_context.GetTileToEcef().IsIdentity())
+            {
+            DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+            auto&       transformValue = val[JSON_Root][JSON_Transform];
+
+            for (size_t i=0;i<4; i++)
+                for (size_t j=0; j<4; j++)
+                    transformValue.append (matrix.coff[j][i]);
+            }
+
+        auto& root = val[JSON_Root];
+        WriteMetadataTree (root, m_tile, m_tile.GetTolerance());
+
+        Utf8String metadataStr = Json::FastWriter().write(val);
+
+        m_outputFile.open(Utf8String(metadataFileName.c_str()).c_str(), std::ios_base::trunc);
+        m_outputFile.write(metadataStr.data(), metadataStr.size());
+        m_outputFile.close();
+        }
 
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
@@ -315,7 +318,7 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
 +---------------+---------------+---------------+---------------+---------------+------*/
  Utf8String TilePublisher::AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP  suffix)
     {
-    bool        hasAlpha = textureImage.GetHasAlpha();
+    bool        hasAlpha = textureImage.GetImageSource().GetFormat() == ImageSource::Format::Png;
 
     Utf8String  textureId = Utf8String ("texture_") + suffix;
     Utf8String  imageId   = Utf8String ("image_")   + suffix;
@@ -327,18 +330,17 @@ void TilePublisher::AddExtensions(Json::Value& rootNode)
     rootNode["textures"][textureId]["sampler"] = "sampler_0";
     rootNode["textures"][textureId]["source"] = imageId;
 
+    Image image (textureImage.GetImageSource());
+
     rootNode["images"][imageId] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["mimeType"] = "image/jpeg";
 
-    static const    int s_jpegQuality = 50;
-    ImageSource     imageSource (textureImage.GetImage(), hasAlpha ? ImageSource::Format::Png : ImageSource::Format::Jpeg, s_jpegQuality);
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = image.GetHeight();
+    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = image.GetWidth();
 
-    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["height"] = textureImage.GetHeight();
-    rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["width"] = textureImage.GetWidth();
-
-    ByteStream const& imageData = imageSource.GetByteStreamR();
+    ByteStream const& imageData = textureImage.GetImageSource().GetByteStream();
 
     rootNode["bufferViews"][bvImageId] = Json::objectValue;
     rootNode["bufferViews"][bvImageId]["buffer"] = "binary_glTF";
@@ -556,14 +558,14 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
     RgbFactor       specularColor = { 1.0, 1.0, 1.0 };
     double          specularExponent = s_qvFinish * s_qvExponentMultiplier;
     uint32_t        rgbInt  = 0xffffff;
-    RgbFactor       rgb;
-    double          alpha = 1.0;
+    double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
     Utf8String      materialName = Utf8String ("Material_") + suffix;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
 
     if (nullptr != displayParams)
         {
         rgbInt = displayParams->GetFillColor();
+        RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
 
         if (!isPolyline && displayParams->GetMaterialId().IsValid())
             {
@@ -596,8 +598,6 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, TileDisplayParamsC
             }
         else
             {
-            RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
-            double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
             auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
             materialColor.append(rgb.red);
@@ -681,11 +681,11 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     for (auto const& uv : mesh.Params())
         {
         uvs.push_back((float)uv.x);
-        uvs.push_back((float)uv.y);         // Needs work - Flip - based on image orientation.
+        uvs.push_back((float)1.0-uv.y);         // Needs work - Flip - based on image orientation.
         }
 
     bvector<float> normals;
-    if (nullptr != mesh.GetDisplayParams() || !mesh.GetDisplayParams()->GetIgnoreLighting())
+    if (nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())
         {
         normals.reserve(mesh.Normals().size() * 3);
         for (auto const& norm : mesh.Normals())
@@ -933,6 +933,7 @@ PublisherContext::Status   PublisherContext::PublishViewedModel (WStringCR tileS
         return Status::NotImplemented;
 
     TileNodePtr     rootTile;
+
     auto            status = generateMeshTiles->_GenerateMeshTiles (rootTile, m_dbToTile);
 
     if (TileGenerator::Status::Success == status)
