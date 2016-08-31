@@ -1,0 +1,17 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: LinearReferencing.mki $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName                         = LinearReferencing
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __LINEARREFERENCING_BUILD__
+%include cdefapnd.mki

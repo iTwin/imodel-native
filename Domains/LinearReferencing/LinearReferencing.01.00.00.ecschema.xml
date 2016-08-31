@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="LinearReferencing" alias="lr" version="01.00.00" description="Base schema for Linear Referencing." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M"/>
+    <KindOfQuantity typeName="OFFSET" displayLabel="OFFSET" persistenceUnit="M"/>
+    <ECEntityClass typeName="ILinearElement" description="Interface to be mixed-in by Element-subclasses meant to play the role of Linear-Elements." modifier="Abstract">
+        <ECProperty propertyName="StartValue" typeName="double" kindOfQuantity="LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ILinearElementSource" description="Interface to be mixed-in by Element-subclasses meant to provide Linear-Elements." modifier="Abstract"/>
+    <ECRelationshipClass typeName="ILinearElementSourceOwnsILinearElements" strength="embedding">
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="ILinearElementSource"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="ILinearElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ILinearElementSourceRefersToIReferents" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="ILinearElementSource"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="IReferent"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ILinearEntityOwnsILinearlyLocatedAttributions" modifier="Abstract" strength="embedding">
+        <Source multiplicity="(0..1)" polymorphic="true">
+            <Class class="ILinearElementSource"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="ILinearlyLocatedAttribution"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ILinearlyLocated" modifier="Abstract"/>
+    <ECRelationshipClass typeName="ILinearlyLocatedAlongILinearElement" strength="referencing">
+        <Source multiplicity="(0..*)" polymorphic="true">
+            <Class class="ILinearlyLocated"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true">
+            <Class class="ILinearElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ILinearlyLocatedAttribution" description="Interface to be mixed-in by Element-subclasses representing properties that apply to only a portion of a Linear-Element-Source." modifier="Abstract">
+        <BaseClass>ILinearlyLocated</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ILinearlyLocatedElement" description="Interface to be mixed-in by Element-subclasses located along a Linear-Element-Source." modifier="Abstract">
+        <BaseClass>ILinearlyLocated</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="IReferent" description="Interface to be mixed-in by Element-subclasses that can play the role of a Referent (known location along a Linear-Element)." modifier="Abstract">
+        <ECProperty propertyName="RestartValue" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECNavigationProperty propertyName="LinearlyLocatedElement" relationshipName="IReferentToILinearlyLocatedElement" direction="forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="IReferentToILinearlyLocatedElement" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="IReferent"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true">
+            <Class class="ILinearlyLocatedElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ILinearlyLocatedOwnsLocations" strength="embedding">
+        <Source multiplicity="(1..1)" polymorphic="true">
+            <Class class="ILinearlyLocated"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true">
+            <Class class="LinearlyReferencedLocation"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECStructClass typeName="DistanceExpression">
+        <ECProperty propertyName="DistanceAlongFromStart" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="LateralOffsetFromILinearElement" typeName="double" kindOfQuantity="OFFSET"/>
+        <ECProperty propertyName="VerticalOffsetFromILinearElement" typeName="double" kindOfQuantity="OFFSET"/>
+        <ECProperty propertyName="DistanceAlongFromReferent" typeName="double" kindOfQuantity="LENGTH"/>
+    </ECStructClass>
+    <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed">
+        <BaseClass>LinearlyReferencedLocation</BaseClass>
+        <ECStructProperty propertyName="AtPosition" typeName="DistanceExpression"/>
+        <ECNavigationProperty propertyName="FromReferent" relationshipName="LinearlyLocatedEntityLocationRefersToReferent" direction="forward"/>        
+    </ECEntityClass>
+    <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
+        <BaseClass>LinearlyReferencedLocation</BaseClass>
+        <ECStructProperty propertyName="FromPosition" typeName="DistanceExpression"/>
+        <ECNavigationProperty propertyName="FromPositionFromReferent" relationshipName="LinearlyLocatedEntityLocationRefersToReferent" direction="forward"/>
+        <ECStructProperty propertyName="ToPosition" typeName="DistanceExpression"/>
+        <ECNavigationProperty propertyName="ToPositionFromReferent" relationshipName="LinearlyLocatedEntityLocationRefersToReferent" direction="forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="LinearlyReferencedLocationRefersToReferent" strength="referencing">
+        <Source multiplicity="(0..*)" polymorphic="true">
+            <Class class="LinearlyReferencedLocation"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true">
+            <Class class="IReferent"/>
+        </Target>
+    </ECRelationshipClass>
+    
+    <!-- Offset and towards referent-support to be added when needed
+    <ECEntityClass typeName="IOffsetReferent" description="Interface to be mixed-in by Element-subclasses that can play the role of a Referent to be used to establish offset positions by projecting (laterally or vertically) to it along a vector perpendicular to the reference line (Linear-Element) from the distance-along point." modifier="Abstract"/>
+    <ECStructClass typeName="DistanceExpression">
+        <ECProperty propertyName="LateralOffsetDistanceFromOffsetReferent" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="VerticalOffsetDistanceFromOffsetReferent" typeName="double" kindOfQuantity="LENGTH"/>
+    </ECStructClass>
+    <ECEntityClass typeName="LinearlyReferencedAtLocation" modifier="Sealed">
+        <ECNavigationProperty propertyName="TowardsReferent" relationshipName="LinearlyLocatedEntityLocationRefersToReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="LateralOffsetReferent" relationshipName="LinearlyLocatedEntityLocationRefersToOffsetReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="VerticalOffsetReferent" relationshipName="LinearlyLocatedEntityLocationRefersToOffsetReferent" direction="forward"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="LinearlyReferencedFromToLocation" modifier="Sealed">
+        <ECNavigationProperty propertyName="FromPositionTowardsReferent" relationshipName="LinearlyLocatedEntityLocationRefersToReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="FromPositionLateralOffsetReferent" relationshipName="LinearlyLocatedEntityLocationRefersToOffsetReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="FromPositionVerticalOffsetReferent" relationshipName="LinearlyLocatedEntityLocationRefersToOffsetReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="ToPositionTowardsReferent" relationshipName="LinearlyLocatedEntityLocationRefersToReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="ToPositionLateralOffsetReferent" relationshipName="LinearlyLocatedEntityLocationRefersToOffsetReferent" direction="forward"/>
+        <ECNavigationProperty propertyName="ToPositionVerticalOffsetReferent" relationshipName="LinearlyLocatedEntityLocationRefersToOffsetReferent" direction="forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="LinearlyLocatedEntityLocationRefersToOffsetReferent" strength="referencing">
+        <Source multiplicity="(0..*)" polymorphic="true">
+            <Class class="LinearlyLocatedEntityLocation"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true">
+            <Class class="IOffsetReferent"/>
+        </Target>
+    </ECRelationshipClass>
+    -->
+
+</ECSchema>
