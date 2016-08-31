@@ -8,6 +8,7 @@
 #pragma once
 
 #include <Bentley/Bentley.h>
+#include <Bentley/BeFileName.h>
 #include <Bentley/bvector.h>
 #include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>

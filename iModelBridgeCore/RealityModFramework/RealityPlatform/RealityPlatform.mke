@@ -95,7 +95,6 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
-                       $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)PointoolsVortexAPI$(libext)
