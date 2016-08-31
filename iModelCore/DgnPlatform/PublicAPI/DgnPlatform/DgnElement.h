@@ -2260,8 +2260,18 @@ public:
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
-    // Function to allow apps such as Navigator to try to resolve URIs created in Graphite05 for things like issues and clashes.
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdGraphiteURI(Utf8CP uri) const;
+    //! @private Allow Navigator to try to resolve URIs created in this version and in Graphite05 for things like issues and clashes.
+    //! @param uri The encoded URI that was created by CreateElementUri or by a previous version of Graphite.
+    //! @return The ID of the element identified by the URI or an invalid ID if no element in this Db matches the URI's query parameters.
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByURI(Utf8CP uri) const;
+
+    //! @private Allow Navigator to create a URI that can be stored outside of the Db and resolved later.
+    //! @praam[out] uriStr  The encoded URI
+    //! @param[in] el       The element that is to be the target of the URI
+    //! @param[in] fallBackOnV8Id   If  true, V8 provenance is used as a fallback if the element does not have a code
+    //! @param[in] fallBackOnDgnDbId   If  true, the element's DgnDb element ID is used as a fallback if the element does not have a code or provenance. This is not recommended if the Db will be re-created by a publisher.
+    //! @return non-zero error status if the URI could not be created, because it has neither a Code nor V8 provenance and IDs are not an acceptable fallback.
+    DGNPLATFORM_EXPORT BentleyStatus CreateElementUri(Utf8StringR uriStr, DgnElementCR el, bool fallBackOnV8Id, bool fallBackOnDgnDbId=false) const;
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCode const& code) const;

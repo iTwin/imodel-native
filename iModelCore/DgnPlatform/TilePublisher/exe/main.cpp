@@ -262,16 +262,19 @@ private:
         Utf8String          m_taskName;
         TilesetPublisher&   m_publisher;
         uint32_t            m_lastNumCompleted = 0xffffffff;
+        DgnModelCP          m_model;
         
-        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
-        virtual void _SetTaskName(TileGenerator::TaskName task) override;
         virtual bool _WasAborted() override { return PublisherContext::Status::Success != m_publisher.GetTileStatus(); }
     public:
-        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher) { }
+        explicit ProgressMeter(TilesetPublisher& publisher) : m_publisher(publisher), m_model (nullptr) { }
+        virtual void _SetModel (DgnModelCP model) { m_model = model; }
+        virtual void _SetTaskName(TileGenerator::TaskName task) override;
+        virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
     TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName)
         : PublisherContext(viewController, outputDir, tilesetName) { }
+
 
     Status Publish();
 
@@ -383,8 +386,13 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
     else
         {
         m_lastNumCompleted = completed;
-        uint32_t pctComplete = static_cast<double>(completed)/total * 100;
-        printf("\n%s: %u%% (%u/%u)%s", m_taskName.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
+        uint32_t    pctComplete = static_cast<double>(completed)/total * 100;
+        Utf8String  modelNameString;   
+
+        if (nullptr != m_model)
+            modelNameString = " (" +  m_model->GetName() + ")";
+
+        printf("\n%s%s: %u%% (%u/%u)%s", m_taskName.c_str(), modelNameString.c_str(), pctComplete, completed, total, completed == total ? "\n" : "");
         }
     }
 
@@ -443,10 +451,14 @@ PublisherContext::Status TilesetPublisher::Publish()
 
         DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
 
+
         if (viewedModel.IsValid())
             {
             WString tileSetName;
             
+            progressMeter._SetModel (viewedModel.get());
+            progressMeter._SetTaskName (TileGenerator::TaskName::CollectingGeometry);       // Needs work -- meter progress in model publisher.
+            progressMeter._IndicateProgress (0, 1);
             tileSetName.AssignA (viewedModel->GetName().c_str());
 
             if (Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
