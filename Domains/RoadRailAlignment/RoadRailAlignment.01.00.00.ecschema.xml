@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="RoadRailAlignment" alias="rralign" version="01.00.00" description="Base schema for the Alignment domain in light of Road and Rail applications." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
+    <ECEntityClass typeName="Alignment" modifier="Sealed">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>lr:ILinearElement</BaseClass>
+        <ECNavigationProperty propertyName="HorizontalAlignment" relationshipName="AlignmentOwnsHorizontal" direction="forward"/>
+        <ECNavigationProperty propertyName="MainVerticalAlignment" relationshipName="AlignmentRefersToMainVertical" direction="forward"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AlignmentHorizontal">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
+        <ECProperty propertyName="Length" typeName="double" kindOfQuantity="lr:LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AlignmentVertical">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="AlignmentModel">
+        <BaseClass>bis:Model</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="Alignment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="AlignmentHorizontal"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing">
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="Alignment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="AlignmentVertical"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="AlignmentOwnsVerticals" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false">
+            <Class class="Alignment"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false">
+            <Class class="AlignmentVertical"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="AlignmentStation" modifier="Sealed">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>lr:IReferent</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+    </ECEntityClass>
+</ECSchema>

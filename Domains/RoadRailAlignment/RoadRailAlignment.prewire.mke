@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: RoadRailAlignment.prewire.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+
+$(BuildContext)PublicAPI/RoadRailAlignment : $(_MakeFilePath)PublicAPI/RoadRailAlignment
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/RoadRailAlignment.01.00.00.ecschema.xml : $(_MakeFilePath)RoadRailAlignment.01.00.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

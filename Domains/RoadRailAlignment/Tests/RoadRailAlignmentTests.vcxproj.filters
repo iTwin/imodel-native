@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Build Files">
+      <UniqueIdentifier>{33fb07d5-cd41-4887-baec-fb982d402d40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\BackDoor">
+      <UniqueIdentifier>{1474b20a-7075-4184-9419-d8ecefcccc54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\NonPublished">
+      <UniqueIdentifier>{03168481-2845-4dd2-beab-f24fa3b87383}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Published">
+      <UniqueIdentifier>{922937b5-4d5d-428a-ae89-69f466823063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\BackDoor">
+      <UniqueIdentifier>{9d0ef1af-9ad1-473d-b04a-694535e76e62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\NonPublished">
+      <UniqueIdentifier>{d7c1462f-97fe-4505-86c4-4710812d2dea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Published">
+      <UniqueIdentifier>{06228f12-2bf4-4a2c-a564-de114ecac1e8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\RoadRailAlignment\BackDoor.h">
+      <Filter>Header Files\BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\RoadRailAlignment\RoadRailAlignmentTests.h">
+      <Filter>Header Files\BackDoor</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BackDoor\RoadRailAlignmentProjectHost.cpp">
+      <Filter>Source Files\BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\RoadRailAlignment_Test.cpp">
+      <Filter>Source Files\NonPublished</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ignore_list.txt">
+      <Filter>Build Files</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Build Files">
+      <UniqueIdentifier>{33fb07d5-cd41-4887-baec-fb982d402d40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PublicAPI">
+      <UniqueIdentifier>{35719188-0452-4914-871c-c87ef7bdf45f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RoadRailAlignment.mke">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="RoadRailAlignment.mki">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="RoadRailAlignment.prewire.mke">
+      <Filter>Build Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RoadRailAlignmentInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignmentApi.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\Alignment.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentModel.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="RoadRailAlignment.01.00.00.ecschema.xml" />
+    <Xml Include="RoadRailAlignment.PartFile.xml">
+      <Filter>Build Files</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RoadRailAlignmentInternal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Alignment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AlignmentModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

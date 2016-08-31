@@ -1,0 +1,76 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: RoadRailAlignment.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include mdl.mki
+%include $(SrcRoot)DgnDomains/RoadRailAlignment/RoadRailAlignment.mki
+
+#--------------------------------------------------------------------------------------
+#   Macros
+#--------------------------------------------------------------------------------------
+appSrc              = $(_MakeFilePath)
+appPublicApi        = $(appSrc)PublicAPI/$(appName)/
+MultiCompileDepends = $(_MakeFileSpec) $(appSrc)RoadRailAlignmentInternal.h $(appPublicApi)RoadRailAlignmentApi.h
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Pre-compiled header
+#----------------------------------------------------------------------
+PchCompiland        = $(appSrc)RoadRailAlignmentInternal.cpp
+PchOutputDir        = $(o)
+PchExtraOptions     = -Zm160
+PchExplicitDepends  = $(MultiCompileDepends)
+
+%if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
+    # Avoid internal compiler error in GCC using windows ndk toolchain
+    GCC_NO_PRE_COMPILED_HEADER = 1
+%endif
+
+CompileOptionsMki =$(SrcRoot)DgnDomains/RoadRailAlignment/RoadRailAlignment.mki
+%include $(CompileOptionsMki)
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)Alignment$(oext) : $(_MakeFilePath)Alignment.cpp ${MultiCompileDepends} $(appPublicApi)Alignment.h
+
+$(o)AlignmentModel$(oext) : $(_MakeFilePath)AlignmentModel.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentModel.h
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_OBJECT_PCH              = $(o)RoadRailAlignmentInternal$(oext) 
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES            = $(BuildContext)SubParts/Libs/$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeom$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BaseGeoCoord$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)LinearReferencing$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+

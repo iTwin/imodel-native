@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="RoadRailAlignment" BentleyBuildMakeFile="RoadRailAlignment.mke">
+        <SubPart PartName="PublicAPI"/>
+        <SubPart PartName="LinearReferencing"            PartFile="LinearReferencing"         Repository="DgnDomains-LinearReferencing"/>
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="RoadRailAlignment.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="RoadRailAlignment"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/RoadRailAlignment*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RoadRailAlignmentPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
+          BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+        <SubPart PartName="RoadRailAlignment"/>
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/RoadRailAlignment"/>
+        </Bindings>
+    </Part>
+
+    <!-- ********************************************************************************************** -->
+    <!-- Unit tests -->
+    <!-- ********************************************************************************************** -->
+    <Part Name="SupportForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+        <SubPart PartName="RoadRailAlignment"/>
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="RoadRailAlignment" SubPartDirectory="UnitTests/RoadRailAlignment"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="SupportForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+        <SubPart PartName="BackdoorForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published">
+        <SubPart PartName="BackdoorForUnitTests" />
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
+        </Bindings>
+    </Part>
+
+    <!-- Define the collection of all unit tests. -->
+    <Part Name="Tests">
+        <!-- Specify the unit tests to include in the test suite: -->
+        <SubPart PartName="UnitTests-NonPublished"/>
+        <SubPart PartName="UnitTests-Published"/>
+    </Part>
+
+    <Product Name="RoadRailAlignment-Tests">
+        <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="Tests"/>
+        <!-- Lay out the Tests test product according to the standard BeGTest layout: -->
+        <Directories Repository="BeGTest" PartFile="BeGTest" DirectoryListName="CollectionProduct"/>
+        <Directories DirectoryListName="Tests"/>
+    </Product>
+
+    <ProductDirectoryList ListName="Tests">
+        <ProductDirectory Name="ApplicationRoot" Path=""/>
+    </ProductDirectoryList>
+
+    <!-- Build a gtest exe to run the tests -->
+    <Product Name="Gtest-RoadRailAlignment-Tests">
+        <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="Gtest"/>
+    </Product>
+
+    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="RoadRailAlignment-Tests"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/RoadRailAlignmentTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/RoadRailAlignmentTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/Gtest-RoadRailAlignment-Tests/RoadRailAlignmentTests -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RoadRailAlignmentTests -dGTEST_SHOW_PROGRESS" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="Gtest-RoadRailAlignment-Tests" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+    </Part>
+
+    <!-- This part runs RoadRailAlignmentTests on platforms that support it. -->
+    <Part Name="RoadRailAlignment-Tested">
+        <SubPart PartName="RunGtest" />
+    </Part>
+
+</BuildContext>
