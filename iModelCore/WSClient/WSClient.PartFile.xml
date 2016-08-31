@@ -65,6 +65,7 @@
     </Part>
 
     <Part Name="WebServicesCache-PublicAPI" BentleyBuildMakeFile="CachePrewire.mke">
+        <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
             <PublicAPI Domain="WebServices" />
         </Bindings>
@@ -455,6 +456,9 @@
 
     <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=WSClient-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="WSClient-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/WSClient-iOSXCTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- *********************************************************** -->
