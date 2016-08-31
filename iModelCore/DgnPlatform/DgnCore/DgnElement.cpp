@@ -2152,6 +2152,11 @@ DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) cons
         }
 
     // Rare: custom-handled properties
+    if (0 == strcmp(BIS_ELEMENT_PROP_FederationGuid, name))
+        {
+        value.SetBinary((Byte*)&m_federationGuid, sizeof(m_federationGuid));
+        return DgnDbStatus::Success;
+        }
     if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name))
         {
         value.SetUtf8CP(GetCode().GetValue().c_str());

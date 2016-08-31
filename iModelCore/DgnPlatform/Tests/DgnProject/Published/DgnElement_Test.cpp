@@ -1418,7 +1418,7 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_TRUE(elementA.IsValid());
     
     ASSERT_TRUE(elementA->Equals(*elementA)) << " An element should be equivalent to itself";
-    ASSERT_TRUE(elementA->Equals(*elementA->Clone())) << " An element should be equivalent to a copy of itself";
+    ASSERT_TRUE(elementA->Equals(*elementA->CopyForEdit())) << " An element should be equivalent to a copy of itself";
     
     GenericPhysicalObjectPtr elementB = GenericPhysicalObject::Create(*modelB, categoryId);
     ASSERT_TRUE(elementB.IsValid());
