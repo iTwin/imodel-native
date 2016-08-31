@@ -1077,6 +1077,37 @@ BeFileName CachingDataSource::GetMetaSchemaPath()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                  
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::DownloadAndCacheFiles
+(
+bset<ObjectId> filesToDownload,
+FileCache fileCacheLocation,
+CachingDataSource::LabeledProgressCallback onProgress,
+ICancellationTokenPtr ct
+)
+    {
+    auto task = std::make_shared<DownloadFilesTask>(
+        shared_from_this(), 
+        std::move(filesToDownload), 
+        fileCacheLocation, 
+        std::move(onProgress), 
+        ct);
+
+    m_cacheAccessThread->Push(task);
+
+    auto result = std::make_shared <BatchResult>();
+    return task->Then(m_cacheAccessThread, [=]
+        {
+        *result = task->GetResult();
+        })
+   ->Then<BatchResult>([=]
+        {
+        return *result;
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::FileResult> CachingDataSource::GetFile
@@ -1095,13 +1126,13 @@ ICancellationTokenPtr ct
         BeAssert(false && "DataOrigin::RemoteOrCachedData is not supported yet");
         }
 
-    auto result = std::make_shared <FileResult>();
+    auto finalResult = std::make_shared <FileResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
         if (ct->IsCanceled())
             {
-            result->SetError(Status::Canceled);
+            finalResult->SetError(Status::Canceled);
             return;
             }
 
@@ -1119,13 +1150,13 @@ ICancellationTokenPtr ct
                 cachedFilePath = txn.GetCache().ReadFilePath(objectId);
                 if (!cachedFilePath.empty())
                     {
-                    result->SetSuccess(FileData(cachedFilePath, DataOrigin::CachedData));
+                    finalResult->SetSuccess(FileData(cachedFilePath, DataOrigin::CachedData));
                     return;
                     }
                 }
             if (cachedFilePath.empty() && DataOrigin::CachedData == origin)
                 {
-                result->SetError(Error(Status::DataNotCached));
+                finalResult->SetError(Error(Status::DataNotCached));
                 return;
                 }
             }
@@ -1133,35 +1164,36 @@ ICancellationTokenPtr ct
         bset<ObjectId> filesToDownload;
         filesToDownload.insert(objectId);
 
-        auto task = std::make_shared<DownloadFilesTask>(shared_from_this(), std::move(filesToDownload), cacheLocation, std::move(onProgress), ct);
-
-        m_cacheAccessThread->Push(task);
-
-        task->Then(m_cacheAccessThread, [=]
+        DownloadAndCacheFiles(
+            filesToDownload,
+            cacheLocation,
+            onProgress,
+            ct)
+        ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
             {
-            if (!task->IsSuccess())
+            if (!result.IsSuccess())
                 {
-                result->SetError(task->GetError());
+                finalResult->SetError(result.GetError());
                 }
-            else if (!task->GetFailedObjects().empty())
+            else if (!result.GetValue().empty())
                 {
-                result->SetError(task->GetFailedObjects().front().GetError());
+                finalResult->SetError(result.GetValue().front().GetError());
                 }
             else
                 {
                 auto txn = StartCacheTransaction();
                 BeFileName cachedFilePath = txn.GetCache().ReadFilePath(objectId);
-                result->SetSuccess(FileData(cachedFilePath, DataOrigin::RemoteData));
+                finalResult->SetSuccess(FileData(cachedFilePath, DataOrigin::RemoteData));
                 }
             });
         })
-            ->Then<FileResult>([=]
+        ->Then<FileResult>([=]
             {
-            return *result;
+            return *finalResult;
             });
     }
 
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+   
 * @bsimethod                                    Dalius.Dobravolskas             09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<CachingDataSource::BatchResult> CachingDataSource::CacheFiles
@@ -1175,13 +1207,13 @@ ICancellationTokenPtr ct
     {
     ct = CreateCancellationToken(ct);
 
-    auto result = std::make_shared <BatchResult>();
+    auto finalResult = std::make_shared <BatchResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
         if (ct->IsCanceled())
             {
-            result->SetError(Status::Canceled);
+            finalResult->SetError(Status::Canceled);
             return;
             }
 
@@ -1207,30 +1239,23 @@ ICancellationTokenPtr ct
 
         if (filesToDownload.size() == 0)
             {
-            result->SetSuccess(FailedObjects());
+            finalResult->SetSuccess(FailedObjects());
             return;
             }
 
-        auto task = std::make_shared<DownloadFilesTask>
-            (
-            shared_from_this(),
-            std::move(filesToDownload),
+        DownloadAndCacheFiles(
+            filesToDownload,
             fileCacheLocation,
-            std::move(onProgress),
-            ct
-            );
-
-        m_cacheAccessThread->Push(task);
-
-        task->Then(m_cacheAccessThread, [=]
+            onProgress,
+            ct)->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
             {
-            *result = task->GetResult();
+            *finalResult = result;
             });
         })
-            ->Then<BatchResult>([=]
-            {
-            return *result;
-            });
+        ->Then<BatchResult>([=]
+        {
+        return *finalResult;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
