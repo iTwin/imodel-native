@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/QueryView.h>
 
 #define PROPNAME_Descr "Descr"
 #define PROPNAME_Source "Source"
@@ -99,7 +98,7 @@ ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr CameraViewDefinition::_SupplyController() const
     {
-    return new DgnQueryView(*this);
+    return new CameraViewController(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,8 +366,7 @@ size_t ViewDefinition::QueryCount(DgnDbR db, Iterator::Options const& opts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T_Desired> static bool isEntryOfClass(ViewDefinition::Entry const& entry)
     {
-    auto stmt = entry.GetStatement();
-    DgnDbP db = nullptr != stmt ? const_cast<DgnDbP>(static_cast<DgnDbCP>(stmt->GetECDb())) : nullptr; // ugh constness.
+    DgnDbP db = entry.GetDgnDb();
     if (nullptr == db)
         return false;
 

@@ -65,7 +65,7 @@ virtual T_FaceAttachmentsVec& _GetFaceAttachmentsVecR() = 0;
 virtual T_FaceToSubElemIdMap& _GetFaceToSubElemIdMapR() = 0;
 };
 
-typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
+//typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference counted type to manage the life-cycle of the ISolidKernelEntity.
 
 //=======================================================================================
 //! ISolidKernelEntity represents a boundary representation body (BRep). A BRep is
@@ -158,7 +158,7 @@ ISolidKernelEntityPtr Clone() const {return _Clone();}
 
 }; // ISolidKernelEntity
 
-typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to manage the life-cycle of the ISubEntity.
+//typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to manage the life-cycle of the ISubEntity.
 
 //=======================================================================================
 //! ISubEntity represents a topological BRep entity. The ISubEntity can refer to a
@@ -183,16 +183,29 @@ protected:
 virtual bool _IsEqual (ISubEntityCR) const = 0;
 //! @private
 virtual SubEntityType _GetSubEntityType() const = 0;
+//! @private
+virtual GeometricPrimitivePtr _GetGeometry() const = 0;
+//! @private
+virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
+//! @private
+virtual Render::GraphicBuilderPtr _GetGraphic(ViewContextR) const = 0;
 
 public:
 
-//! Compare sub-entities to see if they refer to the same topology.
-//! @return true if entities are equal.
+//! @return Compare sub-entities and return true if they refer to the same topology.
 bool IsEqual (ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
 
-//! Get the topology type for this sub-entity.
-//! @return The sub-entity type.
+//! @return The topology type for this sub-entity.
 SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
+
+//! @return A GeometricPrimitive representing the geometry of this sub-entity.
+GeometricPrimitivePtr GetGeometry() const {return _GetGeometry();}
+
+//! @return A GeometricPrimitive for the parent of this sub-entity.
+GeometricPrimitiveCPtr GetParentGeometry() const {return _GetParentGeometry();}
+
+//! @return A Render::Graphic representing this sub-entity.
+Render::GraphicBuilderPtr GetGraphic(ViewContextR context) const {return _GetGraphic(context);}
 
 }; // ISubEntity
 

@@ -241,14 +241,11 @@ struct AutoHandledPropertiesCollection
     ECN::ECPropertyIterable m_props;
     ECN::ECPropertyIterable::const_iterator m_end;
     ECN::ECClassCP m_customHandledProperty;
-    ECN::ECClassCP m_propertyStatementType;
+    ECN::ECClassCP m_autoHandledProperty;
     ECSqlClassParams::StatementType m_stype;
     bool m_wantCustomHandledProps;
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
-
-    bool HasCustomHandledProperty(ECN::ECPropertyCR) const;
-    ECSqlClassParams::StatementType GetStatementType(ECN::ECPropertyCR) const;
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {
@@ -1126,6 +1123,12 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP name) const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValues(ECN::IECInstanceCR);
+    DGNPLATFORM_EXPORT virtual bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const;
+    //! Test if the value of the specified property on this element is equivalent to the value of the same property on the other element
+    //! @param prop The property to be compared
+    //! @param other The other element
+    //! @param ignore The list of properties to be ignored
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore) const;
 
     //! Construct a DgnElement from its params
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
@@ -1237,6 +1240,18 @@ public:
 
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
+
+    //! Get the list of properties that are normally ignored when comparing elements for equality.
+    DGNPLATFORM_EXPORT static bset<Utf8String> const& GetStandardPropertyIgnoreList();
+
+    //! Check if this element is equal to source. Two elements are considered to be "equal" if they are instances of the same ECClass and if their properties have equivalent data.
+    //! The element's identity and user properties may be excluded from the comparison.
+    //! @param source   The element to compare with
+    //! @param ignore   Optional. The properties to exclude from the comparison.
+    //! @return true if this element's properties are equivalent to the source element's properties.
+    DGNPLATFORM_EXPORT bool Equals(DgnElementCR source, bset<Utf8String> const& ignore = GetStandardPropertyIgnoreList()) const {return _Equals(source, ignore);}
+
+    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
 
     //! @name AppData Management
     //! @{
@@ -1656,6 +1671,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnUpdateFinished() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
     virtual uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
+    DGNPLATFORM_EXPORT virtual bool _EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const&) const;
 
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
     GeometryStreamCR GetGeometryStream() const {return m_geom;}
@@ -2251,8 +2267,18 @@ public:
     //! Query the DgnModelId of the specified DgnElementId.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
 
-    // Function to allow apps such as Navigator to try to resolve URIs created in Graphite05 for things like issues and clashes.
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdGraphiteURI(Utf8CP uri) const;
+    //! @private Allow Navigator to try to resolve URIs created in this version and in Graphite05 for things like issues and clashes.
+    //! @param uri The encoded URI that was created by CreateElementUri or by a previous version of Graphite.
+    //! @return The ID of the element identified by the URI or an invalid ID if no element in this Db matches the URI's query parameters.
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByURI(Utf8CP uri) const;
+
+    //! @private Allow Navigator to create a URI that can be stored outside of the Db and resolved later.
+    //! @praam[out] uriStr  The encoded URI
+    //! @param[in] el       The element that is to be the target of the URI
+    //! @param[in] fallBackOnV8Id   If  true, V8 provenance is used as a fallback if the element does not have a code
+    //! @param[in] fallBackOnDgnDbId   If  true, the element's DgnDb element ID is used as a fallback if the element does not have a code or provenance. This is not recommended if the Db will be re-created by a publisher.
+    //! @return non-zero error status if the URI could not be created, because it has neither a Code nor V8 provenance and IDs are not an acceptable fallback.
+    DGNPLATFORM_EXPORT BentleyStatus CreateElementUri(Utf8StringR uriStr, DgnElementCR el, bool fallBackOnV8Id, bool fallBackOnDgnDbId=false) const;
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCodeCR code) const;
@@ -2411,17 +2437,30 @@ struct ElementAssemblyUtil
 struct DgnEditElementCollector
 {
 protected:
-     bset<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them 
+     bvector<DgnElementP> m_elements; // The editable elements in the set. We manage their refcounts as we add and remove them 
      bmap<DgnElementId,DgnElementP> m_ids; // The Elements in the set that have IDs. Child elements will always have IDs. Some top-level elements may not have an Id.
 
      DGNPLATFORM_EXPORT void EmptyAll();
      DGNPLATFORM_EXPORT void CopyFrom(DgnEditElementCollector const&);
 
 public:
+    //! Construct an empty collection
     DGNPLATFORM_EXPORT DgnEditElementCollector();
+    //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector(DgnEditElementCollector const&);
+    //! Create a copy of a collection of elements. Note that the new collection will have its own copies of the elements.
     DGNPLATFORM_EXPORT DgnEditElementCollector& operator=(DgnEditElementCollector const&);
+    //! Destroy this collection
     DGNPLATFORM_EXPORT ~DgnEditElementCollector();
+
+    DGNPLATFORM_EXPORT void Dump(Utf8StringR str, bset<Utf8String> const& ignore) const;
+    DGNPLATFORM_EXPORT void DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, bset<Utf8String> const& ignore) const;
+
+    //! See if this collection and \a other have the equivalement set of elements
+    //! @param other    The other collection
+    //! @param ignore   Optional. The properties to exclude from the comparison.
+    //! @return true if the collections are equivalent
+    DGNPLATFORM_EXPORT bool Equals(DgnEditElementCollector const& other, bset<Utf8String> const& ignore = DgnElement::GetStandardPropertyIgnoreList()) const;
 
     //! Add the specified editable copy of an element to the collection. 
     //! @param el  The editable copy to be added
@@ -2473,10 +2512,10 @@ public:
     size_t size() {return m_elements.size();}
 
     //! Get an iterator pointing to the beginning of the collection
-    bset<DgnElementP>::const_iterator begin() const {return m_elements.begin();}
+    bvector<DgnElementP>::const_iterator begin() const {return m_elements.begin();}
 
     //! Get an iterator pointing to the end of the collection
-    bset<DgnElementP>::const_iterator end() const {return m_elements.end();}
+    bvector<DgnElementP>::const_iterator end() const {return m_elements.end();}
 
     //! Insert or update all elements in the collection. Elements with valid ElementIds are updated. Elements with no ElementIds are inserted. 
     //! @param[out] anyInserts  Optional. If not null, then true is returned if any element in the collection had to be inserted.

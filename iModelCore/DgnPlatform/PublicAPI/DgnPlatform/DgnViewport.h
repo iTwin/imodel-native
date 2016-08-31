@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
  <p>A ViewContext holds the state of an operation performed on one or more elements in a DgnViewport.
- <p>A DgnQueryView is used to query and display elements from SpatialModels. 
+ <p>A SpatialViewController of some kind is used to query and display elements from SpatialModels. 
 
   <h2>%DgnViewport Coordinates</h2>
   Coordinate information can be exchanged with Viewports using the various coordinate systems defined in DgnCoordSystem.
@@ -480,10 +480,12 @@ public:
     SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
     SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
+    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! If this view is a query view, get the query view controller.
     DgnQueryViewCP GetQueryViewCP() {return (DgnQueryViewCP) GetViewController()._ToQueryView();}
     //! If this view is a query view, get a writeable pointer to the query view controller.
     DgnQueryViewP GetQueryViewP() {return (DgnQueryViewP) GetQueryViewCP();}
+    */
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.

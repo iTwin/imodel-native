@@ -977,6 +977,103 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore) const
+    {
+    auto const& propName = prop.GetName();
+
+    if (propName.Equals("UserProperties")) // _GetPropertyValue does not work for user props
+        {
+        if (nullptr == m_userProperties)
+            LoadUserProperties();
+        if (nullptr == other.m_userProperties)
+            other.LoadUserProperties();
+        return m_userProperties->ToString().Equals(other.m_userProperties->ToString());
+        }
+
+    ECN::ECValue value, othervalue;
+    if (DgnDbStatus::Success != _GetPropertyValue(value, propName.c_str())
+     || DgnDbStatus::Success != other._GetPropertyValue(othervalue, propName.c_str()))
+        return false;
+    return value.Equals(othervalue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<Utf8String> const& DgnElement::GetStandardPropertyIgnoreList()
+    {
+    static std::once_flag s_ignoreListOnceFlag;
+    static bset<Utf8String>* s_ignoreList;
+    std::call_once(s_ignoreListOnceFlag, []()
+        {
+        s_ignoreList = new bset<Utf8String>();
+        s_ignoreList->insert("LastMod");
+        });
+    return *s_ignoreList;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnElement::_Equals(DgnElementCR other, bset<Utf8String> const& ignore) const
+    {
+    if (&other == this)
+        return true;
+
+    auto ecclass = GetElementClass();
+    if (ecclass != other.GetElementClass())
+        return false;
+
+    // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
+    if (ignore.find("ECInstanceId") == ignore.end() && ignore.find("Id") == ignore.end())
+        {
+        if (GetElementId() != other.GetElementId())
+            return false;
+        }
+
+    for (auto prop : ecclass->GetProperties())
+        {
+        auto const& propName = prop->GetName();
+        if (ignore.find(propName) != ignore.end())
+            continue;
+
+        if (!_EqualProperty(*prop, other, ignore))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+    {
+    auto ecclass = GetElementClass();
+    str.append(ecclass->GetName().c_str());
+    str.append(Utf8PrintfString(" %lld {", GetElementId().GetValueUnchecked()).c_str());
+    Utf8CP comma = "";
+    for (auto prop : ecclass->GetProperties())
+        {
+        auto const& propName = prop->GetName();
+        if (ignore.find(propName.c_str()) != ignore.end())
+            continue;
+        ECN::ECValue value;
+        if (DgnDbStatus::Success == _GetPropertyValue(value, propName.c_str()))
+            {
+            str.append(propName.c_str());
+            str.append("=");
+            str.append(value.ToString().c_str());
+            str.append(comma);
+            comma = ", ";
+            }
+        }
+    str.append("}\n");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const
@@ -2024,12 +2121,29 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidForStatementType(DgnDbR db, ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
+    {
+    auto propertyStatementType = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
+    auto stypeCA = prop.GetCustomAttribute(*propertyStatementType);
+    if (!stypeCA.IsValid())
+        return true;
+
+    ECN::ECValue stypeValue;
+    stypeCA->GetValue(stypeValue, "StatementTypes");
+
+    return 0 != ((uint32_t)stypeNeeded & stypeValue.GetInteger());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) const
     {
     // Common case: auto-handled properties
-    if (!IsCustomHandledProperty(name))
+    ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
+    if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
         {
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
@@ -2038,14 +2152,20 @@ DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) cons
         }
 
     // Rare: custom-handled properties
+    if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name))
+        {
+        value.SetUtf8CP(GetCode().GetValue().c_str());
+        return DgnDbStatus::Success;
+        }
     if (0 == strcmp(BIS_ELEMENT_PROP_CodeNamespace, name))
         {
-        //Json::Value json(Json::objectValue);
-        //GetCode().ToJson(json);
-        //value.SetUtf8CP(Json::FastWriter::ToString(json).c_str());
-        //return DgnDbStatus::Success;
-        // *** TBD: Create a IECInstance from the dgn.Code struct class and return it
-        return DgnDbStatus::BadRequest;
+        value.SetUtf8CP(GetCode().GetNamespace().c_str());
+        return DgnDbStatus::Success;
+        }
+    if (0 == strcmp(BIS_ELEMENT_PROP_CodeAuthorityId, name))
+        {
+        value.SetLong(GetCode().GetAuthority().GetValueUnchecked());
+        return DgnDbStatus::Success;
         }
     if (0 == strcmp("Id", name) || 0 == strcmp(BIS_ELEMENT_PROP_ECInstanceId, name))
         {
@@ -2108,24 +2228,29 @@ DgnDbStatus DgnElement::_SetPropertyValue(Utf8CP name, ECN::ECValueCR value)
         if (!isValidValue(*ecprop, value))
             return DgnDbStatus::BadArg;
 
+        if (!isValidForStatementType(GetDgnDb(), *ecprop, GetElementId().IsValid()? ECSqlClassParams::StatementType::Update: ECSqlClassParams::StatementType::Insert))
+            return DgnDbStatus::ReadOnly;
+
         auto autoHandledProps = GetAutoHandledProperties();
-        if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
+        if (nullptr == autoHandledProps)
             {
-            m_flags.m_autoHandledPropsDirty = true;
-            return DgnDbStatus::Success;
+            BeAssert(false);
+            return DgnDbStatus::BadArg;
             }
-        return DgnDbStatus::BadArg;
+
+        if (ECN::ECObjectsStatus::Success != autoHandledProps->SetValue(name, value))
+            return DgnDbStatus::BadArg; // probably a type mismatch
+        
+        m_flags.m_autoHandledPropsDirty = true;
+        return DgnDbStatus::Success;
         }
 
-    if (0 == strcmp(BIS_ELEMENT_PROP_CodeNamespace, name))
+    if (0 == strcmp(BIS_ELEMENT_PROP_CodeValue, name)
+     || 0 == strcmp(BIS_ELEMENT_PROP_CodeNamespace, name)
+     || 0 == strcmp(BIS_ELEMENT_PROP_CodeAuthorityId, name))
         {
-        //Json::Value json(Json::objectValue);
-        //if (!Json::Reader::Parse(value.ToString(), json))
-        //    return DgnDbStatus::BadArg;
-        //DgnCode code;
-        //code.FromJson(json);
-        //return SetCode(code);
-        return DgnDbStatus::BadRequest;
+        // *** NEEDS WORK: I don't think we should change the parts of a code individually.
+        return DgnDbStatus::ReadOnly;
         }
     if (0 == strcmp("Id", name) || 0 == strcmp(BIS_ELEMENT_PROP_ECInstanceId, name))
         {
@@ -2830,7 +2955,7 @@ void DgnEditElementCollector::EmptyAll()
 void DgnEditElementCollector::CopyFrom(DgnEditElementCollector const& rhs)
     {
     for (auto el : rhs.m_elements)
-        AddElement(*el);
+        EditElement(*el);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2846,17 +2971,77 @@ DgnElementPtr DgnEditElementCollector::AddElement(DgnElementR el)
             return existing;
         }
 
-    auto ins = m_elements.insert(&el);
-    if (!ins.second) // not inserted, because it's already in there?
-        return *ins.first;
-
+    // If we already have this exact same pointer, then don't add it again.
+    auto ifound = std::find(m_elements.begin(), m_elements.end(), &el);
+    if (ifound != m_elements.end())
+        return &el;
+    
     // This element is new. Insert it into the collection.
+    m_elements.push_back(&el);
     el.AddRef();
 
     if (eid.IsValid())
         m_ids[eid] = &el;
 
     return &el;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnEditElementCollector::Equals(DgnEditElementCollector const& other, bset<Utf8String> const& ignore) const
+    {
+    if (this == &other)
+        return true;
+    size_t n = m_elements.size();
+    if (other.m_elements.size() != n)
+        return false;
+    for (size_t i=0; i<n; ++i)
+        {
+        auto el = m_elements.at(i);
+        auto otherel = other.m_elements.at(i);
+        if (nullptr == el || nullptr == otherel)
+            {
+            if (nullptr == el && nullptr == otherel)
+                continue;
+            return false;
+            }
+        if (!el->Equals(*otherel, ignore))
+            return false;
+        }
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const 
+    {
+    str.append("{\n");
+    for (auto el : *this)
+        {
+        str.append(Utf8PrintfString("%llx ", (uint64_t)(intptr_t)el).c_str());
+        el->Dump(str, ignore);
+        }
+    str.append("}\n");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnEditElementCollector::DumpTwo(Utf8StringR str, DgnEditElementCollector const& other, bset<Utf8String> const& ignore) const
+    {
+    str.append("{\n");
+    for (size_t i=0; i<m_elements.size(); ++i)
+        {
+        auto el = m_elements.at(i);
+        auto otherel = other.m_elements.at(i);
+        str.append(Utf8PrintfString("%llx ", (uint64_t)(intptr_t)el).c_str());
+        el->Dump(str, ignore);
+        str.append(Utf8PrintfString("%llx ", (uint64_t)(intptr_t)otherel).c_str());
+        otherel->Dump(str, ignore);
+        }
+    str.append("}\n");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2902,8 +3087,11 @@ DgnElementPtr DgnEditElementCollector::FindElementByClass(ECN::ECClassCR ecclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnEditElementCollector::RemoveElement(DgnElementR el) 
     {
-    if (0 == m_elements.erase(&el))
+    auto ifound = std::find(m_elements.begin(), m_elements.end(), &el);
+    if (ifound == m_elements.end())
         return;
+
+    m_elements.erase(ifound);
 
     DgnElementId eid = el.GetElementId();
     if (eid.IsValid())
@@ -3229,6 +3417,30 @@ DgnDbStatus GeometryStream::BindGeometryStream(bool& multiChunkGeometryStream, S
         }
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometricElement::_EqualProperty(ECN::ECPropertyCR prop, DgnElementCR other, bset<Utf8String> const& ignore) const
+    {
+    if (!prop.GetName().Equals(GEOM_GeometryStream))
+        {
+        return T_Super::_EqualProperty(prop, other, ignore);
+        }
+
+    if (ignore.find(GEOM_GeometryStream) != ignore.end())
+        return true;
+
+    GeometricElement const* othergeom = static_cast<GeometricElement const*>(&other);
+
+    uint32_t size = m_geom.GetSize();
+    if (othergeom->m_geom.GetSize() != size)
+        return false;
+
+    auto data = m_geom.GetData();
+    auto otherdata = othergeom->m_geom.GetData();
+    return 0 == memcmp(data, otherdata, size);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -858,7 +858,7 @@ struct DGN_rtree : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
-        auto matcher = (DgnQueryView::SpatialQuery*) info.m_args[0].GetValueInt64();
+        auto matcher = (QueryViewController::SpatialQuery*) info.m_args[0].GetValueInt64();
         return matcher->_TestRTree(info);
         }
     DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}

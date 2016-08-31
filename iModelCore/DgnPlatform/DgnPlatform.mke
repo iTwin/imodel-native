@@ -361,7 +361,7 @@ $(CoreObjs)DocumentationDomain$(oext) :             $(DgnCoreDir)DocumentationDo
 
 $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(DgnPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
 
-$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
+$(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 

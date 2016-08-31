@@ -67,7 +67,6 @@ BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAsp
         double requiredWidth = rect.Height() * targetAspectRatio;
         double adj = requiredWidth - requestedWidth;
         rect.Inset((int)(-adj/2.0), 0);
-        BeAssert(0 == BeNumerical::Compare(rect.Width(), requiredWidth));
         }
     else
         {
@@ -75,10 +74,7 @@ BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAsp
         double requiredHeight = rect.Width() / targetAspectRatio;
         double adj = requiredHeight - requestedHeight;
         rect.Inset(0, (int)(-adj/2.0));
-        BeAssert(0 == BeNumerical::Compare(rect.Height(), requiredHeight));
         }
-
-    BeAssert(0 == BeNumerical::Compare(rect.Aspect(), targetAspectRatio));
 
     return rect;
     }
@@ -301,9 +297,9 @@ Render::Plan::Plan(DgnViewportCR vp)
     m_fraction  = vp.GetFrustumFraction();
     m_aaLines   = vp.WantAntiAliasLines();
     m_aaText    = vp.WantAntiAliasText();
-    DgnQueryViewCP qv = const_cast<DgnViewportR>(vp).GetQueryViewCP();
-    if (nullptr != qv)
-        m_activeVolume = qv->GetActiveVolume();
+    SpatialViewControllerCP sv = vp.GetSpatialViewControllerCP();
+    if (nullptr != sv)
+        m_activeVolume = sv->GetActiveVolume();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -674,7 +674,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE GeometricModel : DgnModel
 {
     DEFINE_T_SUPER(DgnModel);
-    friend struct DgnQueryView;
+    friend struct QueryViewController;
 
 public:
     //=======================================================================================

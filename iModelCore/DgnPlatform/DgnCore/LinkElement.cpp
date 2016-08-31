@@ -10,7 +10,7 @@
 #include <DgnPlatform/LinkElement.h>
 
 #define URLLINK_Url "Url"
-#define URLLINK_Label "Label"
+#define URLLINK_UserLabel "UserLabel"
 #define URLLINK_Description "Descr"
 
 #define EMBEDDEDFILELINK_Name "Name"
@@ -311,7 +311,7 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
         whereClause.append(URLLINK_Url "=?");
         
     if (label)
-        whereClause.empty() ? whereClause.append(URLLINK_Label "=?") : whereClause.append(" AND " URLLINK_Label "=?");
+        whereClause.empty() ? whereClause.append(URLLINK_UserLabel "=?") : whereClause.append(" AND " URLLINK_UserLabel "=?");
 
     if (description) 
         whereClause.empty() ? whereClause.append(URLLINK_Description "=?") : whereClause.append(" AND " URLLINK_Description " =?");

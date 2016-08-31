@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/VolumeElement.h>
-#include    <DgnPlatform/QueryView.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -319,25 +318,16 @@ FenceParams VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialO
 DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
-    CameraViewDefinitionPtr cameraView;
+    SpatialViewDefinitionCPtr spatialView;
     for (auto view : ViewDefinition::MakeIterator(project))
         {
-        if (!view.IsCameraView())
-            continue;
-        auto viewDef = ViewDefinition::QueryView(view.GetId(), project);
-        if (!viewDef.IsValid())
-            continue;
-        cameraView = const_cast<CameraViewDefinition*>(viewDef->ToCameraView());
-        if (cameraView.IsValid())
+        if ((spatialView = view.GetSpatialViewDefinition()).IsValid())
             break;
         }
-    if (!cameraView.IsValid())
+    if (!spatialView.IsValid())
         return nullptr;
 
-    DgnQueryViewP viewController = new DgnQueryView(*cameraView);
-    viewController->LoadFromDefinition();
-
-    return new NonVisibleViewport (nullptr, *viewController);
+    return new NonVisibleViewport (nullptr, *spatialView->LoadViewController());
     }
     
 //--------------------------------------------------------------------------------------
@@ -412,7 +402,7 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
-    DgnQueryViewP viewController = dynamic_cast<DgnQueryViewP> (&viewport.GetViewControllerR());
+    QueryViewControllerP viewController = dynamic_cast<QueryViewControllerP>(viewport.GetSpatialViewControllerP());
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
@@ -421,9 +411,14 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
     bool wasCameraOn = viewController->IsCameraOn();
     viewController->SetCameraOn (false); 
-#endif
     viewport.SynchWithViewController (false); 
-    
+%else
+    if (viewController->IsCameraView())
+        {
+        BeAssert(false && "VolumeElement can't work with camera views?");
+        }
+#endif
+
     FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
     
     // Prepare element query by range, and by what's visible in the view

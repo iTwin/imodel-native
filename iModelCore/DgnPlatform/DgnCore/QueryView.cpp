@@ -49,7 +49,7 @@ Frustum::Frustum(DRange3dCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::DgnQueryView(CameraViewDefinition const& def) : T_Super(def)
+QueryViewController::QueryViewController(SpatialViewDefinition const& def) : T_Super(def)
     {
     m_viewSQL = "SELECT e.Id FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
                 "WHERE g.ElementId=e.Id AND InVirtualSet(@vset,e.ModelId,g.CategoryId) AND e.Id=@elId";
@@ -58,7 +58,7 @@ DgnQueryView::DgnQueryView(CameraViewDefinition const& def) : T_Super(def)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::~DgnQueryView()
+QueryViewController::~QueryViewController()
     {
     RequestAbort(true);
     }
@@ -67,7 +67,7 @@ DgnQueryView::~DgnQueryView()
 * QueryViews decorate the copyright messages from reality models, if any.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_DrawDecorations(DecorateContextR context)
+void QueryViewController::_DrawDecorations(DecorateContextR context)
     {
     DrawGroundPlane(context);
 
@@ -134,7 +134,7 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnQueryView::_GetViewedExtents(DgnViewportCR vp) const
+AxisAlignedBox3d QueryViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
     AxisAlignedBox3d box = GetDgnDb().Units().GetProjectExtents();
     box.Extend(GetGroundExtents(vp));
@@ -144,7 +144,7 @@ AxisAlignedBox3d DgnQueryView::_GetViewedExtents(DgnViewportCR vp) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RequestAbort(bool wait)
+void QueryViewController::RequestAbort(bool wait)
     {
     DgnDb::VerifyClientThread();
 
@@ -159,7 +159,7 @@ void DgnQueryView::RequestAbort(bool wait)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
+void QueryViewController::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
     {
     BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
     BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
@@ -170,7 +170,7 @@ void DgnQueryView::_OnUpdate(DgnViewportR vp, UpdatePlan const& plan)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
+void QueryViewController::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& plan)
     {
     Frustum frust = viewport.GetFrustum(DgnCoordSystem::World, true);
     if (plan.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
@@ -193,7 +193,7 @@ void DgnQueryView::QueueQuery(DgnViewportR viewport, UpdatePlan::Query const& pl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
+void SpatialViewController::AssignActiveVolume(ClipPrimitiveR volume)
     {
     m_activeVolume = &volume;
     }
@@ -201,7 +201,7 @@ void DgnQueryView::AssignActiveVolume(ClipPrimitiveR volume)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::ClearActiveVolume()
+void SpatialViewController::ClearActiveVolume()
     {
     m_activeVolume = nullptr;
     }
@@ -209,7 +209,7 @@ void DgnQueryView::ClearActiveVolume()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
+void QueryViewController::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
     {
     RequestAbort(true);
     m_noQuery = exclusive;
@@ -219,7 +219,7 @@ void DgnQueryView::SetAlwaysDrawn(DgnElementIdSet const& newSet, bool exclusive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::ClearAlwaysDrawn()
+void QueryViewController::ClearAlwaysDrawn()
     {
     RequestAbort(true);
     m_special.m_always.clear();
@@ -229,7 +229,7 @@ void DgnQueryView::ClearAlwaysDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
+void QueryViewController::SetNeverDrawn(DgnElementIdSet const& newSet)
     {
     RequestAbort(true);
     m_special.m_never = newSet; // NB: copies values
@@ -238,7 +238,7 @@ void DgnQueryView::SetNeverDrawn(DgnElementIdSet const& newSet)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::ClearNeverDrawn()
+void QueryViewController::ClearNeverDrawn()
     {
     RequestAbort(true);
     m_special.m_never.clear();
@@ -247,7 +247,7 @@ void DgnQueryView::ClearNeverDrawn()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
+void QueryViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
     if (onOff == m_viewedModels.Contains(modelId))
         return;
@@ -270,7 +270,7 @@ void DgnQueryView::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_OnCategoryChange(bool singleEnabled)
+void QueryViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     RequestAbort(true);
@@ -279,7 +279,7 @@ void DgnQueryView::_OnCategoryChange(bool singleEnabled)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::ElementsQuery::TestElement(DgnElementId elId)
+bool QueryViewController::ElementsQuery::TestElement(DgnElementId elId)
     {
     if (IsNever(elId))
         return false;
@@ -294,7 +294,7 @@ bool DgnQueryView::ElementsQuery::TestElement(DgnElementId elId)
 * virtual method bound to the "InVirtualSet(@vset,e.ModelId,g.CategoryId)" SQL function for view query.
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const
+bool QueryViewController::_IsInSet(int nVals, DbValue const* vals) const
     {
     BeAssert(nVals == 2);   // we need ModelId and Category
 
@@ -305,14 +305,14 @@ bool DgnQueryView::_IsInSet(int nVals, DbValue const* vals) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_OnAttachedToViewport(DgnViewportR)
+void QueryViewController::_OnAttachedToViewport(DgnViewportR)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_DrawView(ViewContextR context)
+void QueryViewController::_DrawView(ViewContextR context)
     {
     if (m_activeVolume.IsValid())
         context.SetActiveVolume(*m_activeVolume);
@@ -338,7 +338,7 @@ void DgnQueryView::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_InvalidateScene()
+void QueryViewController::_InvalidateScene()
     {
     RequestAbort(false);
     }
@@ -346,7 +346,7 @@ void DgnQueryView::_InvalidateScene()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::NonSceneQuery::NonSceneQuery(DgnQueryViewR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query())
+QueryViewController::NonSceneQuery::NonSceneQuery(QueryViewControllerCR view, FrustumCR frustum, DgnViewportCR vp) : RangeQuery(view, frustum, vp, UpdatePlan::Query())
     {
     if (0.0 != view.GetNonSceneLODSize()) // do we want to filter small elements during progressive phase?
         {
@@ -360,7 +360,7 @@ DgnQueryView::NonSceneQuery::NonSceneQuery(DgnQueryViewR view, FrustumCR frustum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::ProgressiveTask::ProgressiveTask(DgnQueryViewR view, DgnViewportCR vp) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp), m_view(view)
+QueryViewController::ProgressiveTask::ProgressiveTask(QueryViewControllerR view, DgnViewportCR vp) : m_rangeQuery(view, vp.GetFrustum(DgnCoordSystem::World, true), vp), m_view(view)
     {
     }
 
@@ -370,7 +370,7 @@ DgnQueryView::ProgressiveTask::ProgressiveTask(DgnQueryViewR view, DgnViewportCR
 * are in the scene if we abort
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
+void QueryViewController::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
     {
     context.SetNoStroking(true); // tell the context to not create any graphics - just return existing ones
     DgnElements& pool = GetDgnDb().Elements();
@@ -402,7 +402,7 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_CreateTerrain(TerrainContextR context) 
+void QueryViewController::_CreateTerrain(TerrainContextR context) 
     {
     DgnDb::VerifyClientThread();
 
@@ -430,7 +430,7 @@ void DgnQueryView::_CreateTerrain(TerrainContextR context)
 * Create the scene and potentially schedule progressive tasks
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_CreateScene(SceneContextR context)
+void QueryViewController::_CreateScene(SceneContextR context)
     {
     DgnDb::VerifyClientThread();
 
@@ -523,16 +523,16 @@ void DgnQueryView::_CreateScene(SceneContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::_IsSceneReady() const
+bool QueryViewController::_IsSceneReady() const
     {
     return m_results.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Visit all of the elements in a DgnQueryView. This is used for picking, etc.
+* Visit all of the elements in a QueryViewController. This is used for picking, etc.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_VisitAllElements(ViewContextR context)
+void QueryViewController::_VisitAllElements(ViewContextR context)
     {
     RangeQuery rangeQuery(*this, context.GetFrustum(), *context.GetViewport(), UpdatePlan::Query()); // NOTE: the context may have a smaller frustum than the view
 
@@ -541,7 +541,7 @@ void DgnQueryView::_VisitAllElements(ViewContextR context)
     if (m_noQuery)
         {
         // we're only showing a fixed set of elements. Don't perform a query, just get the results (created in ctor of RangeQuery)
-        DgnQueryView::QueryResultsPtr results = rangeQuery.GetResults();
+        QueryViewController::QueryResultsPtr results = rangeQuery.GetResults();
 
         for (auto& thisScore : results->m_scores)
             {
@@ -614,7 +614,7 @@ void DgnQueryQueue::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::RemovePending(DgnQueryViewCR view)
+void DgnQueryQueue::RemovePending(QueryViewControllerCR view)
     {
     DgnDb::VerifyClientThread();
 
@@ -657,7 +657,7 @@ void DgnQueryQueue::Add(Task& task)
 * Note: Must be called on client thread with query queue mutex held!
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryQueue::HasActiveOrPending(DgnQueryViewCR view)
+bool DgnQueryQueue::HasActiveOrPending(QueryViewControllerCR view)
     {
     if (m_active.IsValid() && m_active->IsForView(view))
         return true;
@@ -674,7 +674,7 @@ bool DgnQueryQueue::HasActiveOrPending(DgnQueryViewCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::WaitFor(DgnQueryViewCR view)
+void DgnQueryQueue::WaitFor(QueryViewControllerCR view)
     {
     DgnDb::VerifyClientThread();
 
@@ -751,7 +751,7 @@ void DgnQueryQueue::Process()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RangeQuery::_Go()
+void QueryViewController::RangeQuery::_Go()
     {
     DgnDb::VerifyQueryThread();
     m_view.m_results = DoQuery();
@@ -760,7 +760,7 @@ void DgnQueryView::RangeQuery::_Go()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
+void QueryViewController::RangeQuery::AddAlwaysDrawn(QueryViewControllerCR view)
     {
     if (!HasAlwaysList())
         return;
@@ -782,7 +782,7 @@ void DgnQueryView::RangeQuery::AddAlwaysDrawn(DgnQueryViewCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
+QueryViewController::QueryResultsPtr QueryViewController::RangeQuery::DoQuery()
     {
     StopWatch watch(true);
     m_view.SetAbortQuery(false); // gets turned on by client thread
@@ -859,7 +859,7 @@ DgnQueryView::QueryResultsPtr DgnQueryView::RangeQuery::DoQuery()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RTreeMatchFunction::Within DgnQueryView::SpatialQuery::TestVolume(FrustumCR box, RTree3dValCP coords)
+RTreeMatchFunction::Within QueryViewController::SpatialQuery::TestVolume(FrustumCR box, RTree3dValCP coords)
     {
     if (!m_boundingRange.Intersects(*coords) || !SkewTest(coords)) // quick test for entirely outside axis-aligned bounding range
         return RTreeMatchFunction::Within::Outside;
@@ -882,7 +882,7 @@ RTreeMatchFunction::Within DgnQueryView::SpatialQuery::TestVolume(FrustumCR box,
 * callback function for "MATCH DGN_rTree(?1)" against the spatial index
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
+int QueryViewController::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
     {
     BeAssert(6 == info.m_nCoord);
     info.m_within = RTreeMatchFunction::Within::Outside;
@@ -920,7 +920,7 @@ int DgnQueryView::RangeQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion DgnQueryView::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+ProgressiveTask::Completion QueryViewController::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     m_thisBatch = 0; // restart every pass
     m_batchSize = context.GetUpdatePlan().GetQuery().GetTargetNumElements();
@@ -974,7 +974,7 @@ ProgressiveTask::Completion DgnQueryView::ProgressiveTask::_DoProgressive(Progre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::_DoHeal(HealContext& context)
+void QueryViewController::_DoHeal(HealContext& context)
     {
     if (!m_scene.IsValid() || m_scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
        return;
@@ -1006,7 +1006,7 @@ void DgnQueryView::_DoHeal(HealContext& context)
 * For range queries, we only enable this after we've found our maximum number of hits.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
+void QueryViewController::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
     {
     BSIRect screenRect = vp.GetViewRect();
     if (screenRect.Width() > 0 && screenRect.Height() > 0)
@@ -1021,7 +1021,7 @@ void DgnQueryView::RangeQuery::SetSizeFilter(DgnViewportCR vp, double size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) :
+QueryViewController::RangeQuery::RangeQuery(QueryViewControllerCR view, FrustumCR frustum, DgnViewportCR vp, UpdatePlan::Query const& plan) :
         SpatialQuery(&view.m_special, view.GetActiveVolume().get()), DgnQueryQueue::Task(view, plan)
     {
     m_count = 0;
@@ -1055,7 +1055,7 @@ DgnQueryView::RangeQuery::RangeQuery(DgnQueryViewCR view, FrustumCR frustum, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
+bool QueryViewController::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
     {
     npcOut.x = (m_localToNpc.coff[0][0] * localIn.x + m_localToNpc.coff[0][1] * localIn.y + m_localToNpc.coff[0][2] * localIn.z + m_localToNpc.coff[0][3]);
     npcOut.y = (m_localToNpc.coff[1][0] * localIn.x + m_localToNpc.coff[1][1] * localIn.y + m_localToNpc.coff[1][2] * localIn.z + m_localToNpc.coff[1][3]);
@@ -1079,7 +1079,7 @@ bool DgnQueryView::RangeQuery::ComputeNPC(DPoint3dR npcOut, DPoint3dCR localIn)
 * Algorithm by: Dieter Schmalstieg and Erik Pojar - ACM Transactions on Graphics.
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR box)
+bool QueryViewController::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR box)
     {
     // Note - This routine is VERY time critical - Most of the calls to the geomlib
     // functions have been replaced with inline code as VTune had showed them as bottlenecks.
@@ -1236,7 +1236,7 @@ static inline void exchangeAndNegate(double& dbl1, double& dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryView::SpatialQuery::SkewTest(RTree3dValCP testRange)
+bool QueryViewController::SpatialQuery::SkewTest(RTree3dValCP testRange)
     {
     if (!m_doSkewTest || testRange->Intersects(m_backFace))
         return true;
@@ -1320,7 +1320,7 @@ bool DgnQueryView::SpatialQuery::SkewTest(RTree3dValCP testRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::SpatialQuery::SetFrustum(FrustumCR frustum)
+void QueryViewController::SpatialQuery::SetFrustum(FrustumCR frustum)
     {
     DRange3d range = frustum.ToRange();
     m_boundingRange.FromRange(range);
@@ -1342,7 +1342,7 @@ void DgnQueryView::SpatialQuery::SetFrustum(FrustumCR frustum)
 * this method must be called from the client thread.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::SpatialQuery::Start(DgnQueryViewCR view)
+void QueryViewController::SpatialQuery::Start(QueryViewControllerCR view)
     {
     view.GetDgnDb().GetCachedStatement(m_rangeStmt, "SELECT ElementId FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId MATCH DGN_rTree(?1)");
     m_rangeStmt->BindInt64(1, (uint64_t) this);
@@ -1353,7 +1353,7 @@ void DgnQueryView::SpatialQuery::Start(DgnQueryViewCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryView::ElementsQuery::Start(DgnQueryViewCR view)
+void QueryViewController::ElementsQuery::Start(QueryViewControllerCR view)
     {
     view.GetDgnDb().GetCachedStatement(m_viewStmt, view.m_viewSQL.c_str());
     int vSetCol = m_viewStmt->GetParameterIndex("@vset");
@@ -1367,7 +1367,7 @@ void DgnQueryView::ElementsQuery::Start(DgnQueryViewCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnQueryView::SpatialQuery::StepRtree()
+DgnElementId QueryViewController::SpatialQuery::StepRtree()
     {
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);

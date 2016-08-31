@@ -930,19 +930,24 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                     }
                 }
 
-#ifdef WIP_VIEW_DEFINITION // *** Must handle 2D and 3D models differently
             // and we must delete all of its views
             for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options()))
                 {
                 auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
-                if (view.IsValid())
+                if (view.IsValid() && view->ViewsModel(GetModelId()))
                     {
+                    // *** WIP_VIEW_DEFINITION *** I wish I didn't have to put this hard-wired logic here regarding the way that view definitions refer to models
+                    DgnElementCPtr dependent;
+                    SpatialViewDefinitionCP spatialView = view->ToSpatialView();
+                    if (nullptr == spatialView)
+                        dependent = view.get();
+                    else
+                        dependent = GetDgnDb().Elements().GetElement(spatialView->GetModelSelectorId());
                     auto stat = view->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
                     if (RepositoryStatus::Success != stat)
                         return stat;
                     }
                 }
-#endif
 
             break;
             }

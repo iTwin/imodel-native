@@ -10,7 +10,6 @@
 
 #include "DgnDb.h"
 #include <DgnPlatform/LinkElement.h>
-#include <DgnPlatform/QueryView.h>
 #include "DgnView.h"
 
 /** @addtogroup DgnMarkupProjectGroup Markups and Redlines

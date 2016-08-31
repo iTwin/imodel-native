@@ -13,6 +13,7 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 #include "ECSqlStatementIterator.h"
+#include "Render.h"
 
 #define BIS_CLASS_ViewDefinition "ViewDefinition"
 #define BIS_CLASS_ViewDefinition3d "ViewDefinition3d"
@@ -233,6 +234,7 @@ public:
     private:
         Entry(BeSQLite::EC::ECSqlStatement* stmt=nullptr) : ECSqlStatementEntry(stmt) { }
     public:
+        DgnDbP GetDgnDb() const { auto stmt = GetStatement(); return (nullptr != stmt) ? const_cast<DgnDbP>(static_cast<DgnDbCP>(stmt->GetECDb())) : nullptr; }
         DgnViewId GetId() const { return m_statement->GetValueId<DgnViewId>(0); } //!< The view ID
         Utf8CP GetName() const { return m_statement->GetValueText(1); } //!< The name of the view
         DgnViewSource GetSource() const { return static_cast<DgnViewSource>(m_statement->GetValueInt(2)); } //!< The view source
@@ -244,6 +246,30 @@ public:
         DGNPLATFORM_EXPORT bool IsSpatialView() const;
         DGNPLATFORM_EXPORT bool IsDrawingView() const;
         DGNPLATFORM_EXPORT bool IsSheetView() const;
+
+        template <typename VIEW_TYPE>
+        RefCountedCPtr<VIEW_TYPE> GetViewDefinition(bool (ViewDefinition::Entry::*TestFunc)() const, VIEW_TYPE const* (ViewDefinition::*ToFunc)() const) const
+            {
+            DgnDbP db = this->GetDgnDb();
+            if (!(this->*TestFunc)() || (nullptr == db))
+                return nullptr;
+            auto vc = ViewDefinition::QueryView(this->GetId(), *db);
+            if (!vc.IsValid())
+                {
+                BeAssert(false);
+                return nullptr;
+                }
+            return ((*vc).*ToFunc)();
+            }
+
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Sam.Wilson                      08/16
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        DrawingViewDefinitionCPtr      GetDrawingViewDefinition()      const {return GetViewDefinition(&Entry::IsDrawingView, &ViewDefinition::ToDrawingView);}
+        SheetViewDefinitionCPtr        GetSheetViewDefinition()        const {return GetViewDefinition(&Entry::IsSheetView,   &ViewDefinition::ToSheetView);}
+        SpatialViewDefinitionCPtr      GetSpatialViewDefinition()      const {return GetViewDefinition(&Entry::IsSpatialView, &ViewDefinition::ToSpatialView);}
+        CameraViewDefinitionCPtr       GetCameraViewDefinition()       const {return GetViewDefinition(&Entry::IsCameraView,  &ViewDefinition::ToCameraView);}
+        OrthographicViewDefinitionCPtr GetOrthographicViewDefinition() const {return GetViewDefinition(&Entry::IsOrthographicView, &ViewDefinition::ToOrthographicView);}
     };
 
     //! An iterator over the view definitions stored in a DgnDb

@@ -123,7 +123,8 @@ private:
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
     void AppendUInt32(uint32_t value);
-    void WriteMetadata(Json::Value&, TileNodeCR, double tolerance);
+    void WriteMetadataTree (Json::Value& val, TileNodeCR tile, double tolerance);
+
     Utf8String AddMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, bool isPolyline, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, Utf8CP suffix);
 
