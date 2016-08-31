@@ -4754,7 +4754,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='Abstract'>"
                     "        <ECCustomAttributes>"
@@ -4787,16 +4787,16 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest1.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
+                AssertIndex(db, "ix_base_code", false, "ts1_Base", {"Code"});
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='Abstract'>"
                     "        <ECCustomAttributes>"
@@ -4841,16 +4841,16 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest2.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"});
+                AssertIndex(db, "ix_sub1_prop", false, "ts2_Base", {"Sub1_Prop"});
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='Abstract'>"
                     "        <ECCustomAttributes>"
@@ -4888,19 +4888,19 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest3.ecdb");
                 ASSERT_FALSE(asserted);
 
                 ECClassId baseClassId = db.Schemas().GetECClassId("TestSchema", "Base");
                 Utf8String indexWhereClause;
                 indexWhereClause.Sprintf("ECClassId<>%llu", baseClassId.GetValue());
-                AssertIndex(db, "uix_sub1_code", true, "ts_Base", {"Code"}, indexWhereClause.c_str());
+                AssertIndex(db, "uix_sub1_code", true, "ts3_Base", {"Code"}, indexWhereClause.c_str());
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='Abstract'>"
                     "        <ECCustomAttributes>"
@@ -4951,10 +4951,10 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 SchemaItem secondSchemaTestItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts4_2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
                     "    <ECEntityClass typeName='Sub4' modifier='None'>"
-                    "        <BaseClass>ts:Sub3</BaseClass>"
+                    "        <BaseClass>ts4:Sub3</BaseClass>"
                     "        <ECProperty propertyName='Sub4_Prop' typeName='double' />"
                     "    </ECEntityClass>"
                     "</ECSchema>", true, "");
@@ -4965,17 +4965,17 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 {
                 ECDb ecdb;
                 bool asserted = false;
-                AssertSchemaImport(ecdb, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(ecdb, asserted, testItem, "userdefinedindextest4.ecdb");
                 ASSERT_FALSE(asserted);
                 ecdb.SaveChanges();
                 ecdbFilePath = ecdb.GetDbFileName();
                 sub3ClassId = ecdb.Schemas().GetECClassId("TestSchema", "Sub3");
 
-                AssertIndex(ecdb, "uix_base_code", true, "ts_Base", {"Code"});
+                AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
                 Utf8String indexWhereClause;
                 indexWhereClause.Sprintf("ECClassId=%llu", sub3ClassId.GetValue());
-                AssertIndex(ecdb, "uix_sub3_prop", true, "ts_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
+                AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
                 }
 
                 //after second import new subclass in hierarchy must be reflected by indices
@@ -4987,19 +4987,19 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 ASSERT_FALSE(asserted);
 
                 //This index is not affected as index is still applying to entire hierarchy
-                AssertIndex(ecdb, "uix_base_code", true, "ts_Base", {"Code"});
+                AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
                 //This index must include the new subclass Sub4
                 ECClassId sub4ClassId = ecdb.Schemas().GetECClassId("TestSchema2", "Sub4");
                 Utf8String indexWhereClause;
                 indexWhereClause.Sprintf("ECClassId=%llu OR ECClassId=%llu", sub3ClassId.GetValue(), sub4ClassId.GetValue());
-                AssertIndex(ecdb, "uix_sub3_prop", true, "ts_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
+                AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='None'>"
                     "        <ECCustomAttributes>"
@@ -5041,16 +5041,16 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest5.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"sc01"});
+                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"sc01"});
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='None'>"
                     "        <ECCustomAttributes>"
@@ -5097,20 +5097,20 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest6.ecdb");
                 ASSERT_FALSE(asserted);
 
                 ECClassId sub1ClassId = db.Schemas().GetECClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
                 Utf8String indexWhereClause;
                 indexWhereClause.Sprintf("ECClassId=%llu OR ECClassId=%llu", sub1ClassId.GetValue(), sub11ClassId.GetValue());
-                AssertIndex(db, "uix_sub1_aid", true, "ts_Base", {"sc01"}, indexWhereClause.c_str());
+                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc01"}, indexWhereClause.c_str());
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECEntityClass typeName='Base' modifier='None'>"
                     "        <ECCustomAttributes>"
@@ -5160,20 +5160,20 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest7.ecdb");
                 ASSERT_FALSE(asserted);
 
                 ECClassId sub1ClassId = db.Schemas().GetECClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
                 Utf8String indexWhereClause;
                 indexWhereClause.Sprintf("ECClassId=%llu OR ECClassId=%llu", sub1ClassId.GetValue(), sub11ClassId.GetValue());
-                AssertIndex(db, "uix_sub1_aid", true, "ts_Base", {"AId"}, indexWhereClause.c_str());
+                AssertIndex(db, "uix_sub1_aid", true, "ts7_Base", {"AId"}, indexWhereClause.c_str());
                 }
 
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                     "    <ECStructClass typeName='ElementCode' modifier='None'>"
                     "        <ECProperty propertyName='AuthorityId' typeName='long' />"
@@ -5206,16 +5206,16 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest8.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "uix_element_code", true, "ts_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
+                AssertIndex(db, "uix_element_code", true, "ts8_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
                 }
 
                 {
                 SchemaItem testItem("Index on abstract classes - Schema 1",
                                     "<?xml version='1.0' encoding='utf-8'?>"
-                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                                     "    <ECEntityClass typeName='Root' modifier='Abstract'>"
                                     "        <ECCustomAttributes>"
@@ -5344,12 +5344,12 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest9.ecdb");
                 ASSERT_FALSE(asserted);
 
                 SchemaItem secondSchema("Index on abstract classes - Schema 2",
                                         "<?xml version='1.0' encoding='utf-8'?>"
-                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts9_2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
                                         "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
                                         "    <ECEntityClass typeName='Sub3'>"
@@ -5394,28 +5394,28 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 ASSERT_FALSE(asserted);
 
                 //class hierarchy with shared table
-                AssertIndex(db, "uix_root", true, "ts_Root", {"RootProp"});
+                AssertIndex(db, "uix_root", true, "ts9_Root", {"RootProp"});
 
                 //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-                AssertIndex(db, "uix_interface_ts_Sub", true, "ts_Sub", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts_Sub2", true, "ts_Sub2", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts2_Sub3", true, "ts2_Sub3", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts9_Sub", true, "ts9_Sub", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts9_Sub2", true, "ts9_Sub2", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts9_2_Sub3", true, "ts9_2_Sub3", {"InterfaceProp"});
 
-                AssertIndex(db, "uix_sub", true, "ts_Sub", {"SubProp"});
-                AssertIndex(db, "uix_sub2", true, "ts_Sub2", {"Sub2Prop"});
-                AssertIndex(db, "uix_sub3", true, "ts2_Sub3", {"Sub3Prop"});
+                AssertIndex(db, "uix_sub", true, "ts9_Sub", {"SubProp"});
+                AssertIndex(db, "uix_sub2", true, "ts9_Sub2", {"Sub2Prop"});
+                AssertIndex(db, "uix_sub3", true, "ts9_2_Sub3", {"Sub3Prop"});
 
                 ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
                 ASSERT_TRUE(subSubClass != nullptr);
                 Utf8String indexWhere;
                 indexWhere.Sprintf("ECClassId=%llu", subSubClass->GetId().GetValue());
-                AssertIndex(db, "uix_subsub", true, "ts_Sub", {"SubSubProp"}, indexWhere.c_str());
+                AssertIndex(db, "uix_subsub", true, "ts9_Sub", {"SubSubProp"}, indexWhere.c_str());
 
                 //class hierarchy without shared table
-                AssertIndex(db, "uix_rootunshared_ts_SubUnshared", true, "ts_SubUnshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_rootunshared_ts2_Sub2Unshared", true, "ts2_Sub2Unshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_subunshared", true, "ts_SubUnshared", {"SubUnsharedProp"});
-                AssertIndex(db, "uix_sub2unshared", true, "ts2_Sub2Unshared", {"Sub2UnsharedProp"});
+                AssertIndex(db, "uix_rootunshared_ts9_SubUnshared", true, "ts9_SubUnshared", {"RootUnsharedProp"});
+                AssertIndex(db, "uix_rootunshared_ts9_2_Sub2Unshared", true, "ts9_2_Sub2Unshared", {"RootUnsharedProp"});
+                AssertIndex(db, "uix_subunshared", true, "ts9_SubUnshared", {"SubUnsharedProp"});
+                AssertIndex(db, "uix_sub2unshared", true, "ts9_2_Sub2Unshared", {"Sub2UnsharedProp"});
                 }
 
     }
