@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <LinearReferencingInternal.h>
 
+HANDLER_DEFINE_MEMBERS(LinearlyReferencedAtLocationHandler)
+HANDLER_DEFINE_MEMBERS(LinearlyReferencedFromToLocationHandler)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

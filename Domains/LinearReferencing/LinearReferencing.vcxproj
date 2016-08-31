@@ -125,6 +125,7 @@
     <ClInclude Include="PublicAPI\LinearReferencing\ILinearElement.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearlyReferencedLocation.h" />
     <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingApi.h" />
+    <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingDomain.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="LinearReferencing.mke" />
@@ -135,6 +136,7 @@
     <ClCompile Include="DistanceExpression.cpp" />
     <ClCompile Include="ILinearElement.cpp" />
     <ClCompile Include="LinearlyReferencedLocation.cpp" />
+    <ClCompile Include="LinearReferencingDomain.cpp" />
     <ClCompile Include="LinearReferencingInternal.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

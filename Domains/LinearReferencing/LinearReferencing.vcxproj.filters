@@ -38,6 +38,9 @@
     <ClInclude Include="PublicAPI\LinearReferencing\DistanceExpression.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\LinearReferencing\LinearReferencingDomain.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="LinearReferencing.mke">
@@ -61,6 +64,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LinearReferencingInternal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LinearReferencingDomain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

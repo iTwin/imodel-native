@@ -70,6 +70,8 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BLR_CLASS_ILinearElement                                    "ILinearElement"
 #define BLR_CLASS_ILinearlyLocated                                  "ILinearlyLocated"
+#define BLR_CLASS_LinearlyReferencedAtLocation                      "LinearlyReferencedAtLocation"
+#define BLR_CLASS_LinearlyReferencedFromToLocation                  "LinearlyReferencedFromToLocation"
 #define BLR_CLASS_LinearlyReferencedLocation                        "LinearlyReferencedLocation"
 
 
@@ -115,3 +117,4 @@ LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedFromToLocation)
 #include "DistanceExpression.h"
 #include "LinearlyReferencedLocation.h"
 #include "ILinearElement.h"
+#include "LinearReferencingDomain.h"

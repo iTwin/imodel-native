@@ -14,12 +14,12 @@
 BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 
 //=======================================================================================
-//! Interface implemented by attribution-elements, representing values of a property
-//! of an ILinearElementSource which may apply to only part of it.
+//! Specifies where a linearly located element occurs or where a linearly located attribution applies. 
+//! @ingroup GROUP_LinearReferencing
 //=======================================================================================
 struct LinearlyReferencedLocation : Dgn::DgnElement::MultiAspect
 {
-DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
+    DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
 
 protected:
     LinearlyReferencedLocation();
@@ -28,12 +28,13 @@ protected:
 }; // LinearlyReferencedLocation
 
 //=======================================================================================
-//! Interface implemented by attribution-elements, representing values of a property
-//! of an ILinearElementSource which may apply to only part of it.
+//! Single location whose position is specified using linear referencing.
+//! @ingroup GROUP_LinearReferencing
 //=======================================================================================
 struct LinearlyReferencedAtLocation : LinearlyReferencedLocation
 {
-DEFINE_T_SUPER(LinearlyReferencedAtLocation)
+    DEFINE_T_SUPER(LinearlyReferencedAtLocation)
+    friend struct LinearlyReferencedAtLocationHandler;
 
 private:
     DistanceExpression m_atPosition;
@@ -52,12 +53,13 @@ public:
 }; // LinearlyReferencedAtLocation
 
 //=======================================================================================
-//! Interface implemented by attribution-elements, representing values of a property
-//! of an ILinearElementSource which may apply to only part of it.
+//! Range location whose position is specified using linear referencing.
+//! @ingroup GROUP_LinearReferencing
 //=======================================================================================
 struct LinearlyReferencedFromToLocation : LinearlyReferencedLocation
 {
-DEFINE_T_SUPER(LinearlyReferencedFromToLocation)
+    DEFINE_T_SUPER(LinearlyReferencedFromToLocation)
+    friend struct LinearlyReferencedFromToLocationHandler;
 
 private:
     DistanceExpression m_fromPosition, m_toPosition;
@@ -75,5 +77,31 @@ public:
 
     LINEARREFERENCING_EXPORT static LinearlyReferencedFromToLocationPtr Create(DistanceExpressionCR fromPosition, DistanceExpressionCR toPosition);
 }; // LinearlyReferencedFromToLocation
+
+
+//=======================================================================================
+//! Handler for LinearlyReferencedAtLocation Aspects
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct LinearlyReferencedAtLocationHandler : Dgn::dgn_AspectHandler::Aspect
+{
+DOMAINHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearlyReferencedAtLocation, LinearlyReferencedAtLocationHandler, Dgn::dgn_AspectHandler::Aspect, LINEARREFERENCING_EXPORT)
+
+protected:
+    RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new LinearlyReferencedAtLocation(); }
+}; // LinearlyReferencedAtLocationHandler
+
+
+//=======================================================================================
+//! Handler for LinearlyReferencedFromToLocation Aspects
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct LinearlyReferencedFromToLocationHandler : Dgn::dgn_AspectHandler::Aspect
+{
+DOMAINHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearlyReferencedFromToLocation, LinearlyReferencedFromToLocationHandler, Dgn::dgn_AspectHandler::Aspect, LINEARREFERENCING_EXPORT)
+
+protected:
+    RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new LinearlyReferencedFromToLocation(); }
+}; // LinearlyReferencedFromToLocationHandler
 
 END_BENTLEY_LINEARREFERENCING_NAMESPACE

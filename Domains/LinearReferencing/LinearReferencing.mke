@@ -49,6 +49,8 @@ $(o)ILinearElement$(oext) : $(_MakeFilePath)ILinearElement.cpp ${MultiCompileDep
 
 $(o)LinearlyReferencedLocation$(oext) : $(_MakeFilePath)LinearlyReferencedLocation.cpp ${MultiCompileDepends} $(appPublicApi)LinearlyReferencedLocation.h
 
+$(o)LinearReferencingDomain$(oext) : $(_MakeFilePath)LinearReferencingDomain.cpp ${MultiCompileDepends} $(appPublicApi)LinearReferencingDomain.h
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
