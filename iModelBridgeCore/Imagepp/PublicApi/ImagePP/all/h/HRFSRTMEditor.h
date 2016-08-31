@@ -46,17 +46,13 @@ class HRFSRTMLineEditor : public HRFResolutionEditor
 
         // Constructor
         HRFSRTMLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
-                         uint32_t              pi_Page,
-                         uint16_t       pi_Resolution,
-                         HFCAccessMode         pi_AccessMode);
+                         uint32_t               pi_Page,
+                         uint16_t               pi_Resolution,
+                         HFCAccessMode          pi_AccessMode);
     private:
 
         HFCPtr<HRFSRTMFile>    m_pRasterFile;
-
-        uint32_t                    m_DataOffset;
-
-        // 0 if bits per row not multiple of 8
-        uint32_t                    m_ExactBytesPerRow;
+        uint32_t               m_ExactBytesPerRow;
 
         // Methods Disabled
         HRFSRTMLineEditor(const HRFSRTMLineEditor& pi_rObj);
@@ -91,7 +87,7 @@ class HRFSRTMImageEditor : public HRFResolutionEditor
         // Constructor
         HRFSRTMImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                           uint32_t              pi_Page,
-                          uint16_t       pi_Resolution,
+                          uint16_t              pi_Resolution,
                           HFCAccessMode         pi_AccessMode);
     private:
 

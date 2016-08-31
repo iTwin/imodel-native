@@ -20,20 +20,17 @@
 // Construction
 //-----------------------------------------------------------------------------
 HRFSRTMLineEditor::HRFSRTMLineEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
-                                   uint32_t              pi_Page,
-                                   uint16_t       pi_Resolution,
-                                   HFCAccessMode         pi_AccessMode)
-                                   : HRFResolutionEditor(pi_rpRasterFile,
-                                   pi_Page,
-                                   pi_Resolution,
-                                   pi_AccessMode)
+                                    uint32_t               pi_Page,
+                                    uint16_t               pi_Resolution,
+                                    HFCAccessMode          pi_AccessMode)
+: HRFResolutionEditor(pi_rpRasterFile,
+                      pi_Page,
+                      pi_Resolution,
+                      pi_AccessMode)
     {
     m_pRasterFile = static_cast<HRFSRTMFile*>(GetRasterFile().GetPtr());
 
     m_ExactBytesPerRow = m_pRasterFile->m_Width * 2;
-
-
-    m_DataOffset = 0;
     }
 
 //-----------------------------------------------------------------------------
@@ -49,8 +46,8 @@ HRFSRTMLineEditor::~HRFSRTMLineEditor()
 // Edition by Block
 //-----------------------------------------------------------------------------
 HSTATUS HRFSRTMLineEditor::ReadBlock(uint64_t pi_PosBlockX,
-                                    uint64_t pi_PosBlockY,
-                                    Byte*  po_pData)
+                                    uint64_t  pi_PosBlockY,
+                                    Byte*     po_pData)
     {
     HPRECONDITION(po_pData != 0);
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
@@ -92,10 +89,10 @@ HRFSRTMImageEditor::HRFSRTMImageEditor(HFCPtr<HRFRasterFile> pi_rpRasterFile,
                                      uint32_t              pi_Page,
                                      uint16_t       pi_Resolution,
                                      HFCAccessMode         pi_AccessMode)
-                                     : HRFResolutionEditor(pi_rpRasterFile,
-                                     pi_Page,
-                                     pi_Resolution,
-                                     pi_AccessMode)
+: HRFResolutionEditor(pi_rpRasterFile,
+                      pi_Page,
+                      pi_Resolution,
+                      pi_AccessMode)
     {
     m_pRasterFile = static_cast<HRFSRTMFile*>(GetRasterFile().GetPtr());
     }
@@ -113,9 +110,9 @@ HRFSRTMImageEditor::~HRFSRTMImageEditor()
 // Edition by Block
 //-----------------------------------------------------------------------------
 
-HSTATUS HRFSRTMImageEditor::ReadBlock(uint64_t       pi_PosBlockX,
-                                     uint64_t       pi_PosBlockY,
-                                     Byte*          po_pData)
+HSTATUS HRFSRTMImageEditor::ReadBlock(uint64_t pi_PosBlockX,
+                                      uint64_t pi_PosBlockY,
+                                      Byte*    po_pData)
     {
     HPRECONDITION(m_AccessMode.m_HasReadAccess);
     HPRECONDITION(po_pData != 0);

@@ -203,9 +203,9 @@ Utf8String HRFSRTMCreator::GetExtensions() const
 // Public (HRFSRTMCreator)
 // allow to Open an image file
 //-----------------------------------------------------------------------------
-HFCPtr<HRFRasterFile> HRFSRTMCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
-                                            HFCAccessMode   pi_AccessMode,
-                                            uint64_t       pi_Offset) const
+HFCPtr<HRFRasterFile> HRFSRTMCreator::Create(const HFCPtr<HFCURL>&  pi_rpURL,
+                                             HFCAccessMode          pi_AccessMode,
+                                             uint64_t               pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
 
@@ -223,7 +223,7 @@ HFCPtr<HRFRasterFile> HRFSRTMCreator::Create(const HFCPtr<HFCURL>& pi_rpURL,
 // Opens the file and verifies if it is the right type
 //-----------------------------------------------------------------------------
 bool HRFSRTMCreator::IsKindOfFile(const HFCPtr<HFCURL>& pi_rpURL,
-                                 uint64_t             pi_Offset) const
+                                  uint64_t              pi_Offset) const
     {
     HPRECONDITION(pi_rpURL != 0);
 
@@ -270,9 +270,9 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFSRTMCreator::GetCapabilities()
 //-----------------------------------------------------------------------------
 
 HRFSRTMFile::HRFSRTMFile(const HFCPtr<HFCURL>& pi_rURL,
-                       HFCAccessMode         pi_AccessMode,
-                       uint64_t             pi_Offset)
-                       : HRFRasterFile(pi_rURL, pi_AccessMode, pi_Offset)
+                       HFCAccessMode           pi_AccessMode,
+                       uint64_t                pi_Offset)
+: HRFRasterFile(pi_rURL, pi_AccessMode, pi_Offset)
     {
     // The ancestor store the access mode
     m_IsOpen = false;
@@ -332,20 +332,10 @@ bool HRFSRTMFile::Open()
 //-----------------------------------------------------------------------------
 bool HRFSRTMFile::AddPage(HFCPtr<HRFPageDescriptor> pi_pPage)
     {
-    // Validation if it's possible to add a page
-    HPRECONDITION(CountPages() == 0);
-    HPRECONDITION(pi_pPage != 0);
+    //Read-only file format
+    HASSERT(false);
 
-    // Add the page descriptor to the list
-    HRFRasterFile::AddPage(pi_pPage);
-
-    HFCPtr<HRFPageDescriptor> pPageDescriptor = GetPageDescriptor(0);
-    HFCPtr<HRFResolutionDescriptor> pResolutionDescriptor = pPageDescriptor->GetResolutionDescriptor(0);
-
-    // Set the image file information.
-    m_Width = (uint32_t) pResolutionDescriptor->GetWidth();
-
-    return true;
+    return false;
     }
 
 //-----------------------------------------------------------------------------
@@ -365,7 +355,6 @@ const HFCPtr<HRFRasterFileCapabilities>& HRFSRTMFile::GetCapabilities() const
 //-----------------------------------------------------------------------------
 void HRFSRTMFile::CreateDescriptors()
     {
-    // Create Page and Resolution Description/Capabilities for this file.
     HFCPtr<HRFResolutionDescriptor>     pResolution;
     HFCPtr<HRFPageDescriptor>           pPage;
 
@@ -405,10 +394,6 @@ void HRFSRTMFile::CreateDescriptors()
     pFlipModel->SetYScaling(-1.0);
     pTransfoModel = pFlipModel->ComposeInverseWithDirectOf(*pTransfoModel);
 
-    //TODO : Set NoDataValue? The line below doesn't work, due to const...We eould have to const cast, not sure if this is appropriate...
-    //pPixelType->GetChannelOrg().GetChannelPtr(0)->SetNoDataValue(-32768);
-
-    //TODO : See if block type, block access, width and height can be different.
     // Create Resolution Descriptor
     pResolution = new HRFResolutionDescriptor(
         GetAccessMode(),               // AccessMode,
@@ -425,9 +410,9 @@ void HRFSRTMFile::CreateDescriptors()
         m_Width,                       // Width,
         m_Width,                       // Height,
         m_Width,                       // BlockWidth,
-        m_Width,                       // BlockHeight,
+        1,                             // BlockHeight,
         0,                             // BlocksDataFlag
-        HRFBlockType::LINE);          // BlockType
+        HRFBlockType::LINE);           // BlockType
 
 
     pPage = new HRFPageDescriptor(GetAccessMode(),
@@ -454,7 +439,6 @@ void HRFSRTMFile::CreateDescriptors()
 //-----------------------------------------------------------------------------
 const HGF2DWorldIdentificator HRFSRTMFile::GetWorldIdentificator() const
     {
-    //return HGF2DWorld_GEOTIFFUNKNOWN;
 	return HGF2DWorld_HMRWORLD;
     }
 
@@ -464,8 +448,8 @@ const HGF2DWorldIdentificator HRFSRTMFile::GetWorldIdentificator() const
 // File manipulation
 //-----------------------------------------------------------------------------
 HRFResolutionEditor* HRFSRTMFile::CreateResolutionEditor(uint32_t       pi_Page,
-                                                        uint16_t pi_Resolution,
-                                                        HFCAccessMode  pi_AccessMode)
+                                                         uint16_t       pi_Resolution,
+                                                         HFCAccessMode  pi_AccessMode)
     {
     // Verify that the page number is 0, because we have one image per file
     HPRECONDITION(GetPageDescriptor(pi_Page) != 0);
