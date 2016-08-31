@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatform\DgnPlatformApi.h>
@@ -4079,18 +4079,7 @@ LocalTransformerP   localTransformer
     // correctly, grouping the doubles and filling in the holes so just requires a memcpy.
     memcpy (&type66Element->appData[1], &type66, sizeof (GeoCoordType66));
     
-    // The ProjectionParams union was also set up correctly to allow a simple memcpy for every type of projection EXCEPT the Sys34 projection.
-    if ( (COORDSYS_SYS34 == type66.projType) || (COORDSYS_S3499 == type66.projType) || (COORDSYS_S3401 == type66.projType) )
-        {
-        // Sys34 and Sys34-1999
-        byte*   outputData   = (byte*) &type66Element->appData[429];
-        memcpy (outputData,   &projectionParams.sys34.zoneNo, 4);
-        memcpy (outputData+4, &projectionParams.sys34.x_off,  176);
-        }
-    else
-        {
-        memcpy (&type66Element->appData[429], &projectionParams, sizeof(ProjectionParams));
-        }
+    memcpy (&type66Element->appData[429], &projectionParams, sizeof(ProjectionParams));
 
     return SUCCESS;
     }
