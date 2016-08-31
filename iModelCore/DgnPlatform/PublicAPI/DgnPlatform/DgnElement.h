@@ -241,14 +241,11 @@ struct AutoHandledPropertiesCollection
     ECN::ECPropertyIterable m_props;
     ECN::ECPropertyIterable::const_iterator m_end;
     ECN::ECClassCP m_customHandledProperty;
-    ECN::ECClassCP m_propertyStatementType;
+    ECN::ECClassCP m_autoHandledProperty;
     ECSqlClassParams::StatementType m_stype;
     bool m_wantCustomHandledProps;
 
     AutoHandledPropertiesCollection(ECN::ECClassCR eclass, DgnDbR db, ECSqlClassParams::StatementType stype, bool wantCustomHandledProps);
-
-    bool HasCustomHandledProperty(ECN::ECPropertyCR) const;
-    ECSqlClassParams::StatementType GetStatementType(ECN::ECPropertyCR) const;
 
     struct Iterator : std::iterator<std::input_iterator_tag, ECN::ECPropertyCP>
         {

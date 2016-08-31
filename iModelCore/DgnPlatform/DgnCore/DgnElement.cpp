@@ -2111,7 +2111,7 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isValidForStatementType(DgnDbR db, ECN::ECPropertyCR prop, ECSqlClassParams::StatementType stypeNeeded)
     {
-    auto propertyStatementType = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "PropertyStatementType");
+    auto propertyStatementType = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
     auto stypeCA = prop.GetCustomAttribute(*propertyStatementType);
     if (!stypeCA.IsValid())
         return true;
@@ -2131,9 +2131,6 @@ DgnDbStatus DgnElement::_GetPropertyValue(ECN::ECValueR value, Utf8CP name) cons
     ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
     if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
         {
-        if (!isValidForStatementType(GetDgnDb(), *ecprop, ECSqlClassParams::StatementType::Select))
-            return DgnDbStatus::BadRequest;
-
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
             return DgnDbStatus::Success;

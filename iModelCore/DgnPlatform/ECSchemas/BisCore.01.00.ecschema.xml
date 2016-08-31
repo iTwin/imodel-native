@@ -54,7 +54,7 @@
         <ECArrayProperty propertyName="Restrictions" typeName="string" description="List of actions which are not permitted when the associated handler is not available" minOccurs="0" maxOccurs="unbounded"/>
     </ECCustomAttributeClass>
 
-    <!-- Must match the ECSqlClassParams::StatementType enum -->
+    <!-- Restrictions that may be applied to a CustomHandledProperty. Must match the ECSqlClassParams::StatementType enum -->
     <ECEnumeration typeName="CustomHandledPropertyStatementType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="None"/>
         <ECEnumerator value="1" displayLabel="Select"/>
@@ -66,11 +66,17 @@
     </ECEnumeration>
 
     <ECCustomAttributeClass typeName="CustomHandledProperty" description="Applied to an element's property to indicate that the property's value is handled specially by a C++ class." appliesTo="AnyProperty">
+      <ECProperty propertyName="StatementTypes" typeName="CustomHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="PropertyStatementType" description="Applied to an element's property to indicate the kinds of statements in which the property should appear." appliesTo="AnyProperty">
-      <!-- The kinds of statements in which the property should appear. -->
-      <ECProperty propertyName="StatementTypes" typeName="CustomHandledPropertyStatementType"/>
+    <!-- Restrictions that may be applied to an AutoHandledProperty. Must match the ECSqlClassParams::StatementType enum -->
+    <ECEnumeration typeName="AutoHandledPropertyStatementType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="3" displayLabel="ReadOnly = Select|Insert"/>
+        <ECEnumerator value="7" displayLabel="All = Select | Insert | Update"/>
+    </ECEnumeration>
+
+    <ECCustomAttributeClass typeName="AutoHandledProperty" description="Applied to an element's property to indicate that select, update, and insert of the property's value are handled automatically by the platform." appliesTo="AnyProperty">
+        <ECProperty propertyName="StatementTypes" typeName="AutoHandledPropertyStatementType"/>
     </ECCustomAttributeClass>
 
   <!-- ////////////////////////////////////////////////////////////////////////////// -->
@@ -455,10 +461,9 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>6</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="CodeNamespace" typeName="string">
@@ -472,10 +477,9 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>6</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="CodeValue" displayLabel="Code" typeName="string">
@@ -485,10 +489,9 @@
                     <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>6</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
@@ -497,10 +500,9 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>2</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward">
@@ -509,10 +511,9 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>6</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty> 
         <ECProperty propertyName="UserLabel" typeName="string">
@@ -523,18 +524,16 @@
                     <Collation>NoCase</Collation>
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>6</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="UserProperties" typeName="string" extendedTypeName="AdHocJson">
             <ECCustomAttributes>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>0</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="LastMod"  displayLabel="Last Modified" typeName="dateTime">
@@ -542,10 +541,9 @@
                 <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.12">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>0</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1431,10 +1429,9 @@
                     <If2D>True</If2D>
                     <If3D>True</If3D>
                 </HideProperty>
-                <CustomHandledProperty/>
-                <PropertyStatementType>
+                <CustomHandledProperty>
                   <StatementTypes>0</StatementTypes>
-                </PropertyStatementType>
+                </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1489,10 +1486,9 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Data" typeName="int">
           <ECCustomAttributes>
-            <CustomHandledProperty/>
-            <PropertyStatementType>
+            <CustomHandledProperty>
               <StatementTypes>3</StatementTypes>
-            </PropertyStatementType>
+            </CustomHandledProperty>
           </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
