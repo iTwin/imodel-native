@@ -4951,8 +4951,8 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 SchemaItem secondSchemaTestItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts4_2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+                    "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts42' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts4' />"
                     "    <ECEntityClass typeName='Sub4' modifier='None'>"
                     "        <BaseClass>ts4:Sub3</BaseClass>"
                     "        <ECProperty propertyName='Sub4_Prop' typeName='double' />"
@@ -4973,8 +4973,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 AssertIndex(ecdb, "uix_base_code", true, "ts4_Base", {"Code"});
 
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId=%llu", sub3ClassId.GetValue());
+                Utf8String indexWhereClause = "ECClassId=" + sub3ClassId.ToString();
                 AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
                 }
 
@@ -4991,8 +4990,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 //This index must include the new subclass Sub4
                 ECClassId sub4ClassId = ecdb.Schemas().GetECClassId("TestSchema2", "Sub4");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId=%llu OR ECClassId=%llu", sub3ClassId.GetValue(), sub4ClassId.GetValue());
+                Utf8String indexWhereClause = "ECClassId=" + sub3ClassId.ToString() + " OR ECClassId=" + sub4ClassId.ToString();
                 AssertIndex(ecdb, "uix_sub3_prop", true, "ts4_Base", {"Sub3_Prop"}, indexWhereClause.c_str());
                 }
 
@@ -5102,8 +5100,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECClassId sub1ClassId = db.Schemas().GetECClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId=%llu OR ECClassId=%llu", sub1ClassId.GetValue(), sub11ClassId.GetValue());
+                Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
                 AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc01"}, indexWhereClause.c_str());
                 }
 
@@ -5165,8 +5162,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECClassId sub1ClassId = db.Schemas().GetECClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("ECClassId=%llu OR ECClassId=%llu", sub1ClassId.GetValue(), sub11ClassId.GetValue());
+                Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
                 AssertIndex(db, "uix_sub1_aid", true, "ts7_Base", {"AId"}, indexWhereClause.c_str());
                 }
 
@@ -5349,9 +5345,9 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 SchemaItem secondSchema("Index on abstract classes - Schema 2",
                                         "<?xml version='1.0' encoding='utf-8'?>"
-                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts9_2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts92' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                                        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+                                        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts9' />"
                                         "    <ECEntityClass typeName='Sub3'>"
                                         "        <ECCustomAttributes>"
                                         "            <ClassMap xmlns='ECDbMap.01.00'>"
@@ -5366,8 +5362,8 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                                         "                 </Indexes>"
                                         "            </ClassMap>"
                                         "        </ECCustomAttributes>"
-                                        "       <BaseClass>ts:Root</BaseClass>"
-                                        "       <BaseClass>ts:Interface</BaseClass>"
+                                        "       <BaseClass>ts9:Root</BaseClass>"
+                                        "       <BaseClass>ts9:Interface</BaseClass>"
                                         "        <ECProperty propertyName='Sub3Prop' typeName='int' />"
                                         "    </ECEntityClass>"
                                         "    <ECEntityClass typeName='Sub2Unshared'>"
@@ -5384,7 +5380,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                                         "                 </Indexes>"
                                         "            </ClassMap>"
                                         "        </ECCustomAttributes>"
-                                        "       <BaseClass>ts:RootUnshared</BaseClass>"
+                                        "       <BaseClass>ts9:RootUnshared</BaseClass>"
                                         "        <ECProperty propertyName='Sub2UnsharedProp' typeName='int' />"
                                         "    </ECEntityClass>"
                                         " </ECSchema>");
@@ -5399,23 +5395,23 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
                 AssertIndex(db, "uix_interface_ts9_Sub", true, "ts9_Sub", {"InterfaceProp"});
                 AssertIndex(db, "uix_interface_ts9_Sub2", true, "ts9_Sub2", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts9_2_Sub3", true, "ts9_2_Sub3", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts92_Sub3", true, "ts92_Sub3", {"InterfaceProp"});
 
                 AssertIndex(db, "uix_sub", true, "ts9_Sub", {"SubProp"});
                 AssertIndex(db, "uix_sub2", true, "ts9_Sub2", {"Sub2Prop"});
-                AssertIndex(db, "uix_sub3", true, "ts9_2_Sub3", {"Sub3Prop"});
+                AssertIndex(db, "uix_sub3", true, "ts92_Sub3", {"Sub3Prop"});
 
                 ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
                 ASSERT_TRUE(subSubClass != nullptr);
-                Utf8String indexWhere;
-                indexWhere.Sprintf("ECClassId=%llu", subSubClass->GetId().GetValue());
+                Utf8String indexWhere = "ECClassId=" + subSubClass->GetId().ToString();
+
                 AssertIndex(db, "uix_subsub", true, "ts9_Sub", {"SubSubProp"}, indexWhere.c_str());
 
                 //class hierarchy without shared table
                 AssertIndex(db, "uix_rootunshared_ts9_SubUnshared", true, "ts9_SubUnshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_rootunshared_ts9_2_Sub2Unshared", true, "ts9_2_Sub2Unshared", {"RootUnsharedProp"});
+                AssertIndex(db, "uix_rootunshared_ts92_Sub2Unshared", true, "ts92_Sub2Unshared", {"RootUnsharedProp"});
                 AssertIndex(db, "uix_subunshared", true, "ts9_SubUnshared", {"SubUnsharedProp"});
-                AssertIndex(db, "uix_sub2unshared", true, "ts9_2_Sub2Unshared", {"Sub2UnsharedProp"});
+                AssertIndex(db, "uix_sub2unshared", true, "ts92_Sub2Unshared", {"Sub2UnsharedProp"});
                 }
 
     }
@@ -6042,8 +6038,8 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 ASSERT_FALSE(asserted);
 
                 ECClassId b1ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B1");
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([sc03] IS NOT NULL) AND (ECClassId=%llu)", b1ClassId.GetValue());
+                Utf8String indexWhereClause = "([sc03] IS NOT NULL) AND(ECClassId = " + b1ClassId.ToString() + ")";
+
                 AssertIndexExists(ecdb, "ix_ts_B_fk_ts_Rel1N_target", false);
                 AssertIndex(ecdb, "ix_ts_B_fk_ts_Rel1NNoKeyProp_target", false, "ts_B", {"ForeignECInstanceId_ts_Rel1NNoKeyProp"}, "([ForeignECInstanceId_ts_Rel1NNoKeyProp] IS NOT NULL)");
                 AssertIndex(ecdb, "ix_ts_B_ecclassid", false, "ts_B", {"ECClassId"});
@@ -6302,8 +6298,9 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 ECClassId b2ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B2");
 
                 //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
-                Utf8String indexWhereClause;
-                indexWhereClause.Sprintf("([ForeignECInstanceId_ts_RelNonPoly] IS NOT NULL) AND (ECClassId=%llu OR ECClassId=%llu)", b1ClassId.GetValue(), b2ClassId.GetValue());
+                Utf8String indexWhereClause = "([ForeignECInstanceId_ts_RelNonPoly] IS NOT NULL) AND (ECClassId=" +
+                                b1ClassId.ToString() + " OR ECClassId=" + b2ClassId.ToString() + ")";
+
                 AssertIndex(ecdb, "uix_ts_B_fk_ts_RelNonPoly_target", true, "ts_B", {"ForeignECInstanceId_ts_RelNonPoly"}, indexWhereClause.c_str());
 
                 //RelPoly must include index on B11 as the constraint is polymorphic
@@ -9288,7 +9285,7 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRelationshi
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
 
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND SourceECClassId=%llu", unit_3D->GetId().GetValue());
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND SourceECClassId=%s", unit_3D->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
@@ -9359,10 +9356,11 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     //Delete Statements
     {
     Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(),
+                  item->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
     //verify Deltion
-    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
     }
     sp.Cancel();
@@ -9432,16 +9430,16 @@ TEST_F(ECDbMappingTestFixture, AddDerivedClassOfConstraintsForNNRelationship)
     //Delete Statements
     {
     Utf8String ecsql;
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
     //Verify Deletion
-    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
 
-    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %lld AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
+    ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit_3D->GetId().ToString().c_str(), item_3D->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
     //Verify Deletion
-    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
+    ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
     AssertAndExecuteECSql(ecdb, ecsql.c_str());
     }
     }

@@ -1394,9 +1394,9 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
     stmt.Finalize();
 
     //delete relationship
-    ecsql.Sprintf("DELETE FROM %s.%s WHERE SourceECInstanceId=%llu AND SourceECClassId=%llu AND TargetECInstanceId=%llu AND TargetECClassId=%llu",
-                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().GetValue(), sourceKey.GetECClassId().GetValue(),
-                  targetKey.GetECInstanceId().GetValue(), targetKey.GetECClassId().GetValue());
+    ecsql.Sprintf("DELETE FROM %s.%s WHERE SourceECInstanceId=%s AND SourceECClassId=%s AND TargetECInstanceId=%s AND TargetECClassId=%s",
+                  schemaName, relationshipClassName, sourceKey.GetECInstanceId().ToString().c_str(), sourceKey.GetECClassId().ToString().c_str(),
+                  targetKey.GetECInstanceId().ToString().c_str(), targetKey.GetECClassId().ToString().c_str());
 
     if (expectedReadonly)
         {

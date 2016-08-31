@@ -35,14 +35,3 @@ ECSchemaUpdateTests.Add_Delete_ECProperty_SharedColumns
 
 #TFS 485920
 ECRelationshipInheritanceTestFixture.BasicCRUD
-
-ECDbMappingTestFixture.UserDefinedIndexTest
-    # DgnDb0601Dev, DEBUG, WinX64 (after merge)
-    # [ RUN      ] ECDbMappingTestFixture.UserDefinedIndexTest
-    # ...
-    # F:\DgnDb0601Dev\src-staging\ECDb\Tests\Published\SchemaImportTestFixture.cpp(140): error:       Expected: expectedDdl.c_str()
-    #       Which is: "CREATE UNIQUE INDEX [uix_interface_ts_Sub] ON [ts_Sub]([InterfaceProp])"
-    # To be equal to: stmt.GetValueText(0)
-    #       Which is: "CREATE UNIQUE INDEX [uix_interface_ts_Sub] ON [ts_Sub]([InterfaceProp]) WHERE ECClassId=58"
-    # Ignoring case
-    # [  FAILED  ] ECDbMappingTestFixture.UserDefinedIndexTest (8342 ms)
