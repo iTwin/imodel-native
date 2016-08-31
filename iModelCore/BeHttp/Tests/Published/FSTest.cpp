@@ -32,7 +32,7 @@ BeFileName FSTest::StubFilePath(Utf8StringCR customFileName)
     if (customFileName.empty())
         {
         BeSQLite::BeSQLiteLib::Initialize(GetTempDir());
-        fileName = BeFileName(BeSQLite::BeGuid().ToString() + ".txt");
+        fileName = BeFileName(BeSQLite::BeGuid(true).ToString() + ".txt");
         }
     else
         {
