@@ -5,15 +5,14 @@
 #
 #----------------------------------------------------------------------
 ASSEMBLY_NAME             = Bentley.RealityDbECPlugin.Tests
-#%include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
 nunitDir    = $(OutputRootDir)/BuildContexts/RealityModFramework/SubParts/nunit_2.6.4/
 
-EXECUTE_ATP           = 1
-ProductTestDir                      = $(OutputRootDir)Product/RealityContextServicesTests/
+EXECUTE_ATP     = 1
+ProductTestDir  = $(OutputRootDir)Product/RealityContextServicesTests/
 
 # $(o) is needed for Nunit.mki
-o                                   = $(ProductTestDir)
+o = $(ProductTestDir)
 
 COVERAGE_OUTPUTDIR = $(ProductTestDir)Results/coverage/
 EXECUTION_OUTPUTDIR = $(ProductTestDir)Results/execution/
