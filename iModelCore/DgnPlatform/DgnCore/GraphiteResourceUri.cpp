@@ -634,7 +634,7 @@ static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encod
     if (!authorityId.IsValid())
         return DgnElementId();
 
-    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE(Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=?)");
+    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=?)");
     codestmt->BindId(1, authorityId);
     codestmt->BindText(2, ns.c_str(), Statement::MakeCopy::No);
     codestmt->BindText(3, codeValue.c_str(), Statement::MakeCopy::No);
@@ -681,7 +681,7 @@ static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::
         // Maybe the property was identified in the V8 schema as the BusinessKey and that the converter converted it into the element's Code. Try that as a fallback.
         // Unfortunately, we have no way of knowing what namespace value to use, since that depends on the value of the "guest" command-line parameter that was 
         // passed to the converter, which we cannot detect now.
-        CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE(Code_Value=?)");
+        CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE(Code_Value=?)");
         codestmt->BindText(1, propvalue.GetString().c_str(), Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == codestmt->Step())
             return codestmt->GetValueId<DgnElementId>(0);
