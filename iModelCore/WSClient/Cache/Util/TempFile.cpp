@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Util/TempFile.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@ TempFile::TempFile(BeFileNameCR tempDir, Utf8StringCR fileName)
     BeFileName directory;
     directory
         .AppendToPath(tempDir)
-        .AppendToPath(BeFileName(BeSQLite::BeGuid().ToString()))
+        .AppendToPath(BeFileName(BeSQLite::BeGuid(true).ToString()))
         .AppendSeparator();
 
     m_filePath

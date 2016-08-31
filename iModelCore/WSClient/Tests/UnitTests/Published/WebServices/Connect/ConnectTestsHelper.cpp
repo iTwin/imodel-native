@@ -55,7 +55,7 @@ Utf8String StubSamlTokenXML(uint32_t validMinutes, Utf8StringCR stubCertificate,
         Utf8String(notBeforeDate.ToString()).c_str(),
         Utf8String(notOnOrAfterDate.ToString()).c_str(),
         stubCertificate.c_str(),
-        BeGuid().ToString().c_str(),
+        BeGuid(true).ToString().c_str(),
         attributesStr.c_str()
         );
 

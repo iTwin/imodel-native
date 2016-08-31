@@ -111,8 +111,8 @@ ECInstanceKeyMultiMap StubECInstanceKeyMultiMap(const std::vector<ECInstanceKey>
 CachedResponseKey StubInstancesInCache(
     IDataSourceCache& cache,
     StubInstances& instances,
-    Utf8StringCR root = BeGuid().ToString(),
-    Utf8String responseName = BeGuid().ToString());
+    Utf8StringCR root = BeGuid(true).ToString(),
+    Utf8String responseName = BeGuid(true).ToString());
 
 ECInstanceKey StubRelationshipInCache(
     IDataSourceCache& cache,

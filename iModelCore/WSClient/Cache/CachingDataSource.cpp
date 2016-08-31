@@ -460,7 +460,7 @@ WSInfo CachingDataSource::GetServerInfo(CacheTransactionCR txn)
 TempFilePtr CachingDataSource::GetTempFileForSchema(SchemaKeyCR schemaKey)
     {
     if (schemaKey.m_schemaName.empty())
-        return GetTempFile(BeGuid().ToString(), ObjectId());
+        return GetTempFile(BeGuid(true).ToString(), ObjectId());
 
     Utf8String schemaFileName = schemaKey.m_schemaName + "." + schemaKey.GetLegacyVersionString() + ".ecschema.xml";
     return GetTempFile(schemaFileName, ObjectId());
