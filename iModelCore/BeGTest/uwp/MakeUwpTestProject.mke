@@ -124,7 +124,9 @@ DLM_NO_SIGN         = 1
 DLM_NO_DEF          = 1
 DLM_NO_DLS          = 1
 DLM_NOENTRY         = 0
-LINKER_LIBRARIES    = $[@wildcard $(collectionLibsDir)*$(libext)]
+
+# Manually list vccorlib first to avoid LNK2038.
+LINKER_LIBRARIES = vccorlib.lib $[@wildcard $(collectionLibsDir)*$(libext)]
 
 %include dlmlink.mki
 
