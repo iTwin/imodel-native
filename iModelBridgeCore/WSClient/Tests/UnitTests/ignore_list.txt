@@ -50,6 +50,11 @@ ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
     # [ RUN      ] ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True
     # <Crash, no output or stack printed>
 
+ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag
+    # DgnDb61-16Q3, WinX64, DEBUG
+    # [ RUN      ] ChangeManagerTests.SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag
+    # <Crash, no output or stack printed>
+
 CachingDataSourceTests.SyncCachedData_AlreadyCachedInstanceReturnedFromQuery_QueryProviderIsNotCalledAgainWithSameInstance
     # DgnDb61-16Q2-Dev, WinX86, DEBUG
     # <Hung, no output printed>
