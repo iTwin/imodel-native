@@ -7,6 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
 
+HANDLER_DEFINE_MEMBERS(AlignmentHandler)
+HANDLER_DEFINE_MEMBERS(AlignmentHorizontalHandler)
+HANDLER_DEFINE_MEMBERS(AlignmentVerticalHandler)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,9 +30,9 @@ double Alignment::_GetLength() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-HorizontalAlignmentCPtr Alignment::QueryHorizontal() const
+AlignmentHorizontalCPtr Alignment::QueryHorizontal() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT HorizontalAlignment FROM " RRA_CLASS_Alignment " WHERE ElementId = ?");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT HorizontalAlignment FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " WHERE ECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -36,15 +40,15 @@ HorizontalAlignmentCPtr Alignment::QueryHorizontal() const
     if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
         return nullptr;
 
-    return HorizontalAlignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    return AlignmentHorizontal::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-VerticalAlignmentCPtr Alignment::QueryMainVertical() const
+AlignmentVerticalCPtr Alignment::QueryMainVertical() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT VerticalAlignment FROM " RRA_CLASS_Alignment " WHERE ElementId = ?");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT VerticalAlignment FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " WHERE ECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -52,15 +56,25 @@ VerticalAlignmentCPtr Alignment::QueryMainVertical() const
     if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
         return nullptr;
 
-    return VerticalAlignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    return AlignmentVertical::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementIdSet Alignment::QueryVerticalAlignmentIds() const
+DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
     {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentOwnsVerticals) " WHERE SourceECInstanceId = ?");
+    BeAssert(stmt.IsPrepared());
 
+    stmt.BindId(1, GetElementId());
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.insert(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**

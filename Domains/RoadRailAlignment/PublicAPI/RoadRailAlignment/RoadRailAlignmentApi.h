@@ -50,11 +50,11 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // ECSchema name and relative path
 //-----------------------------------------------------------------------------------------
-#define RRA_SCHEMA_NAME                             "RoadRailAlignment"
-#define RRA_SCHEMA_FILE                             L"RoadRailAlignment.01.00.00.ecschema.xml"
-#define RRA_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
-#define RRA_SCHEMA(name)                            RRA_SCHEMA_NAME "." name
-#define RRA_SCHEMA_CODE(name)                       RRA_SCHEMA_NAME "_" name
+#define BRRA_SCHEMA_NAME                             "RoadRailAlignment"
+#define BRRA_SCHEMA_FILE                             L"RoadRailAlignment.01.00.00.ecschema.xml"
+#define BRRA_SCHEMA_LOCATION                         L"ECSchemas/Domain/"
+#define BRRA_SCHEMA(name)                            BRRA_SCHEMA_NAME "." name
+#define BRRA_SCHEMA_CODE(name)                       BRRA_SCHEMA_NAME "_" name
 
 
 //-----------------------------------------------------------------------------------------
@@ -62,18 +62,32 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Elements
-#define RRA_CLASS_Alignment                                         "Alignment"
-#define RRA_CLASS_AlignmentHorizontal                               "AlignmentHorizontal"
-#define RRA_CLASS_AlignmentModel                                    "AlignmentModel"
-#define RRA_CLASS_AlignmentVertical                                 "AlignmentVertical"
+#define BRRA_CLASS_Alignment                                         "Alignment"
+#define BRRA_CLASS_AlignmentHorizontal                               "AlignmentHorizontal"
+#define BRRA_CLASS_AlignmentModel                                    "AlignmentModel"
+#define BRRA_CLASS_AlignmentVertical                                 "AlignmentVertical"
+
+
+// Relationships
+#define BRRA_REL_AlignmentOwnsVerticals                              "AlignmentOwnsVerticals"
 
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
 //-----------------------------------------------------------------------------------------
 #define DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(__name__) \
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(RRA_SCHEMA_NAME, RRA_CLASS_##__name__)); } \
-    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetECClass(RRA_SCHEMA_NAME, RRA_CLASS_##__name__)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR db) { return Dgn::DgnClassId(db.Schemas().GetECClassId(BRRA_SCHEMA_NAME, BRRA_CLASS_##__name__)); } \
+    static ECN::ECClassCP QueryClass(Dgn::DgnDbCR db) { return (db.Schemas().GetECClass(BRRA_SCHEMA_NAME, BRRA_CLASS_##__name__)); }
+
+
+//-----------------------------------------------------------------------------------------
+// Macro to declare Get, GetForEdit, Insert, Update methods on elements. Pointers (Ptr, CPtr) must be defined.
+//-----------------------------------------------------------------------------------------
+#define DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(__name__) \
+    ROADRAILALIGNMENT_EXPORT static __name__##CPtr Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
+    ROADRAILALIGNMENT_EXPORT static __name__##Ptr  GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); } \
+    ROADRAILALIGNMENT_EXPORT        __name__##CPtr Insert(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Insert< __name__ >(*this, stat); } \
+    ROADRAILALIGNMENT_EXPORT        __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr) { return GetDgnDb().Elements().Update< __name__ >(*this, stat); }   
 
 
 //-----------------------------------------------------------------------------------------
@@ -108,3 +122,4 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentVertical)
 //-----------------------------------------------------------------------------------------
 #include "AlignmentModel.h"
 #include "Alignment.h"
+#include "RoadRailAlignmentDomain.h"

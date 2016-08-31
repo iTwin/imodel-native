@@ -47,6 +47,8 @@ $(o)Alignment$(oext) : $(_MakeFilePath)Alignment.cpp ${MultiCompileDepends} $(ap
 
 $(o)AlignmentModel$(oext) : $(_MakeFilePath)AlignmentModel.cpp ${MultiCompileDepends} $(appPublicApi)AlignmentModel.h
 
+$(o)RoadRailAlignmentDomain$(oext) : $(_MakeFilePath)RoadRailAlignmentDomain.cpp ${MultiCompileDepends} $(appPublicApi)RoadRailAlignmentDomain.h
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/RoadRailAlignment/AlignmentModel.h $
+|     $Source: PublicAPI/RoadRailAlignment/RoadRailAlignmentDomain.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,19 +9,18 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "RoadRailAlignmentApi.h"
-
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 //=======================================================================================
-//! 
+//! The DgnDomain for the RoadRailAlignment schema.
+//! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct AlignmentModel : Dgn::SpatialModel
+struct RoadRailAlignmentDomain : Dgn::DgnDomain
 {
-DGNMODEL_DECLARE_MEMBERS(BRRA_CLASS_AlignmentModel, Dgn::SpatialModel);
+DOMAIN_DECLARE_MEMBERS(RoadRailAlignmentDomain, ROADRAILALIGNMENT_EXPORT)
 
-protected:
-    explicit AlignmentModel(CreateParams const& params) : T_Super(params) {}
-}; // AlignmentModel
+public:
+    RoadRailAlignmentDomain();
+}; // RoadRailAlignmentDomain
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

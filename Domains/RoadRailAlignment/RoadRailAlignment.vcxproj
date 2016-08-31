@@ -27,6 +27,7 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\Alignment.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentModel.h" />
     <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignmentApi.h" />
+    <ClInclude Include="PublicAPI\RoadRailAlignment\RoadRailAlignmentDomain.h" />
     <ClInclude Include="RoadRailAlignmentInternal.h" />
   </ItemGroup>
   <ItemGroup>
@@ -36,6 +37,7 @@
   <ItemGroup>
     <ClCompile Include="Alignment.cpp" />
     <ClCompile Include="AlignmentModel.cpp" />
+    <ClCompile Include="RoadRailAlignmentDomain.cpp" />
     <ClCompile Include="RoadRailAlignmentInternal.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -142,23 +142,33 @@ BeFileName RoadRailAlignmentProjectHost::BuildProjectFileName(WCharCP baseName)
 //---------------------------------------------------------------------------------------
 DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelId& modelId, DgnViewId& viewId)
     {
-    BeFileName assetsRootDirectory;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDirectory);
-
-    CreateConceptualDgnDbParams createDgnDbParams;
+    CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
     createDgnDbParams.SetProjectName("RoadRailAlignmentProject");
     createDgnDbParams.SetProjectDescription("Created by RoadRailAlignmentProjectHost");
     createDgnDbParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
-    createDgnDbParams.SetAssetsRootDir(assetsRootDirectory);
-    createDgnDbParams.SetDefaultSpatialModelName("RoadRailAlignmentProjectHost-SpatialModel");
-    createDgnDbParams.SetDefaultViewName("TestView");
 
     DbResult createStatus;
     BeFileName fileName = BuildProjectFileName(baseName);
+    DgnDbPtr projectPtr = DgnDb::CreateDgnDb(&createStatus, fileName, createDgnDbParams);
+    if (!projectPtr.IsValid() || DbResult::BE_SQLITE_OK != createStatus)
+        return nullptr;
 
-    DgnDbPtr projectPtr = ConceptualDomain::CreateConceptualProject(&createStatus, fileName, createDgnDbParams, modelId, viewId);
-    if (!projectPtr.IsValid() || (DbResult::BE_SQLITE_OK != createStatus))
+    BeFileName assetsRootDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsRootDir);
+
+    BeFileName schemaRootDir = assetsRootDir;
+    schemaRootDir.AppendToPath(L"ECSchemas\\Domain\\");
+
+    DgnDbStatus status;
+    BeFileName lrSchemaFileName = schemaRootDir;
+    lrSchemaFileName.AppendToPath(BLR_SCHEMA_FILE);    
+    if (DgnDbStatus::Success != (status = LinearReferencing::LinearReferencingDomain::GetDomain().ImportSchema(*projectPtr, lrSchemaFileName)))
+        return nullptr;
+
+    BeFileName alignSchemaFileName = schemaRootDir;
+    alignSchemaFileName.AppendToPath(BRRA_SCHEMA_FILE);
+    if (DgnDbStatus::Success != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
         return nullptr;
 
     return projectPtr;

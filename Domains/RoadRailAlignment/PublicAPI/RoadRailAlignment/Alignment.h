@@ -15,10 +15,12 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 //=======================================================================================
 //! Main Linear-Element used in Road & Rail applications.
+//! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
 struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ILinearElement
 {
-DGNELEMENT_DECLARE_MEMBERS(RRA_CLASS_Alignment, Dgn::SpatialLocationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Dgn::SpatialLocationElement);
+    friend struct AlignmentHandler;
 
 protected:
     //! @private
@@ -29,19 +31,22 @@ protected:
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelR model);
 
-    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr QueryHorizontal() const;
-    ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr QueryMainVertical() const;
-    ROADRAILALIGNMENT_EXPORT DgnElementIdSet QueryVerticalAlignmentIds() const;
+    ROADRAILALIGNMENT_EXPORT AlignmentHorizontalCPtr QueryHorizontal() const;
+    ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr QueryMainVertical() const;
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentVerticalIds() const;
 }; // Alignment
 
 //=======================================================================================
 //! Horizontal piece of an Alignment.
+//! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
 struct AlignmentHorizontal : Dgn::SpatialLocationElement
 {
-DGNELEMENT_DECLARE_MEMBERS(RRA_CLASS_AlignmentHorizontal, Dgn::SpatialLocationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentHorizontal, Dgn::SpatialLocationElement);
+    friend struct AlignmentHorizontalHandler;
 
 private:
     CurveVectorCPtr m_geometry;
@@ -51,10 +56,11 @@ protected:
     explicit AlignmentHorizontal(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit AlignmentHorizontal(CreateParams const& params, CurveVectorCR geometry) : T_Super(params), m_geometry(geometry) {}
+    explicit AlignmentHorizontal(CreateParams const& params, CurveVectorCR geometry) : T_Super(params), m_geometry(&geometry) {}
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentHorizontal)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentHorizontal)
     ROADRAILALIGNMENT_EXPORT static AlignmentHorizontalPtr Create(AlignmentCR alignment, CurveVectorCR horizontalGeometry);
 
     ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const { return *m_geometry; }
@@ -62,10 +68,12 @@ public:
 
 //=======================================================================================
 //! Vertical/Profile piece(s) associated to an Alignment.
+//! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
 struct AlignmentVertical : Dgn::SpatialLocationElement
 {
-DGNELEMENT_DECLARE_MEMBERS(RRA_CLASS_AlignmentVertical, Dgn::SpatialLocationElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentVertical, Dgn::SpatialLocationElement);
+    friend struct AlignmentVerticalHandler;
 
 private:
     CurveVectorCPtr m_geometry;
@@ -75,13 +83,42 @@ protected:
     explicit AlignmentVertical(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit AlignmentVertical(CreateParams const& params, CurveVectorCR geometry) : T_Super(params), m_geometry(geometry) {}
+    explicit AlignmentVertical(CreateParams const& params, CurveVectorCR geometry) : T_Super(params), m_geometry(&geometry) {}
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentVertical)
+    DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentVertical)
     ROADRAILALIGNMENT_EXPORT static AlignmentVerticalPtr Create(AlignmentCR alignment, CurveVectorCR verticalGeometry);
 
     ROADRAILALIGNMENT_EXPORT CurveVectorCR GetGeometry() const { return *m_geometry; }
 }; // AlignmentVertical
+
+
+//=================================================================================
+//! ElementHandler for Alignment Elements
+//! @ingroup GROUP_RoadRailAlignment
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Alignment, AlignmentHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+}; //AlignmentHandler
+
+//=================================================================================
+//! ElementHandler for AlignmentHorizontal Elements
+//! @ingroup GROUP_RoadRailAlignment
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentHorizontalHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentHorizontal, AlignmentHorizontal, AlignmentHorizontalHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+}; // AlignmentHorizontalHandler
+
+//=================================================================================
+//! ElementHandler for AlignmentVertical Elements
+//! @ingroup GROUP_RoadRailAlignment
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentVerticalHandler : Dgn::dgn_ElementHandler::SpatialLocation
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentVertical, AlignmentVertical, AlignmentVerticalHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+}; // AlignmentVerticalHandler
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
