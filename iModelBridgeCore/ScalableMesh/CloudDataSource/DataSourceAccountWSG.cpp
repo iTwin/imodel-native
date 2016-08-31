@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include <assert.h>
+#include <curl/curl.h>
+#include <locale>
+#include <codecvt>
 #include "include/DataSourceAccountWSG.h"
 #include "include/DataSourceWSG.h"
 #include <cpprest/rawptrstream.h>
@@ -89,7 +92,7 @@ void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
     url.append(this->getAccountIdentifier());
     if (!this->wsgPort.empty())
         {
-                                                            // using the += operator prevents appending an unwanted / separator
+        // using the += operator prevents appending an unwanted separator
         url += (L":" + this->wsgPort);
         }
     url.append(this->wsgVersion);
@@ -98,7 +101,8 @@ void DataSourceAccountWSG::setPrefixPath(const DataSourceURL &prefix)
     url.append(this->wsgSchema);
     url.append(this->wsgClassName);
     url.append(this->wsgOrganizationID);
-    url.append(prefix);
+    // the organization ID must be followed by a custom separator understood by WSG
+    url += (L"~2F" + prefix);
 
     DataSourceAccount::setPrefixPath(url);
     }
@@ -117,22 +121,61 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSource &dataSource, 
     return downloadBlobSync(url, dest, readSize, destSize);
 }
 
-DataSourceStatus DataSourceAccountWSG::downloadBlobSync(const DataSourceURL &/*url*/, DataSourceBuffer::BufferData * /*dest*/, DataSourceBuffer::BufferSize &/*readSize*/, DataSourceBuffer::BufferSize /*size*/)
+DataSourceStatus DataSourceAccountWSG::downloadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-    DataSourceStatus    status;
-    DataSourceURL        blobPath;
-
     try
     {
-    // implement curl download
-    throw;
+    CURL *curl_handle;
+
+    struct CURLDataMemoryBuffer buffer;
+    buffer.data = dest;
+    buffer.size = 0;
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_handle = curl_easy_init();
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, this->CURLWriteDataCallback);
+
+    std::string utf8URL = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(url);
+
+    std::string utf8Token = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->accountKey);
+    std::string authToken = "Authorization: Token ";
+    authToken.append(utf8Token);
+
+    std::string certificatePath = this->getAccountSSLCertificatePath();
+
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, authToken.c_str());
+
+    curl_easy_setopt(curl_handle, CURLOPT_URL, utf8URL.c_str());
+    curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl_handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0/*1*/);        // &&RB TODO : Ask Francis.Boily about his server certificate
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);
+    curl_easy_setopt(curl_handle, CURLOPT_CAINFO, certificatePath.c_str());
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&buffer);
+    
+    /* get it! */
+    CURLcode res = curl_easy_perform(curl_handle);
+
+    /* check for errors */
+    if (CURLE_OK != res)
+        {
+        //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        throw;
+        }
+    
+    curl_easy_cleanup(curl_handle);
+    curl_global_cleanup();
+    
+    assert(buffer.size <= size);
+    readSize = buffer.size;
     }
     catch (...)
     {
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
     }
 
-    //return DataSourceStatus();
+    return DataSourceStatus();
 }
 
 DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &/*url*/, DataSourceBuffer::BufferData * /*source*/, DataSourceBuffer::BufferSize /*size*/)
@@ -150,3 +193,18 @@ DataSourceStatus DataSourceAccountWSG::uploadBlobSync(const DataSourceURL &/*url
 
     //return DataSourceStatus();
 }
+
+size_t DataSourceAccountWSG::CURLWriteDataCallback(void * contents, size_t size, size_t nmemb, void * userp)
+    {
+    size_t realsize = size * nmemb;
+    struct CURLDataMemoryBuffer *mem = (struct CURLDataMemoryBuffer *)userp;
+    
+    //assert(mem->memory->capacity() >= mem->memory->size() + realsize);
+    
+    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
+    //mem->memory->insert(mem->memory->end(), (uint8_t*)contents, (uint8_t*)contents + realsize);
+    memcpy(mem->data, (uint8_t*)contents, realsize);
+    mem->size = realsize;
+    
+    return realsize;
+    }

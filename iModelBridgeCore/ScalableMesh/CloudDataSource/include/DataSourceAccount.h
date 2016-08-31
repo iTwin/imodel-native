@@ -18,6 +18,7 @@ public:
     typedef std::wstring                AccountName;
     typedef std::wstring                AccountIdentifier;
     typedef std::wstring                AccountKey;
+    typedef std::string                 AccountSSLCertificatePath;
 
 protected:
 
@@ -27,6 +28,7 @@ protected:
     AccountName                         accountName;
     AccountIdentifier                   accountIdentifier;
     AccountKey                          accountKey;
+    AccountSSLCertificatePath           accountSSLCertificatePath;
     DataSourceURL                       prefixPath;
 
     DataSourceTransferScheduler         transferScheduler;
@@ -38,9 +40,9 @@ protected:
     virtual unsigned int                getDefaultNumTransferTasks      (void);
 
 public:
-CLOUD_EXPORT                            DataSourceAccount               (void);
-CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account);
-CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+    CLOUD_EXPORT                            DataSourceAccount               (void);
+    CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account);
+    CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
    virtual                             ~DataSourceAccount               (void);
 
@@ -50,16 +52,19 @@ CLOUD_EXPORT                            DataSourceAccount               (const S
     virtual DataSourceStatus            setAccount                      (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
             
     void                                setServiceName                  (const ServiceName &name);
-CLOUD_EXPORT    const ServiceName &     getServiceName                  (void) const;
+    CLOUD_EXPORT    const ServiceName &     getServiceName                  (void) const;
 
     void                                setAccountName                  (const AccountName &name);
-CLOUD_EXPORT    const AccountName &     getAccountName                  (void) const;
+    CLOUD_EXPORT    const AccountName &     getAccountName                  (void) const;
 
     void                                setAccountIdentifier            (const AccountIdentifier &identifier);
     const AccountIdentifier &           getAccountIdentifier            (void) const;
 
     void                                setAccountKey                   (const AccountKey &key);
     const AccountKey                    getAccountKey                   (void) const;
+
+    CLOUD_EXPORT    void                setAccountSSLCertificatePath    (const AccountSSLCertificatePath &path);
+    const AccountSSLCertificatePath     getAccountSSLCertificatePath    (void) const;
 
     virtual      DataSource       *     createDataSource                (void) = 0;
     CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name);

@@ -72,4 +72,12 @@ public:
         DataSourceStatus                    downloadBlobSync                    (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
         DataSourceStatus                    downloadBlobSync                    (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+
+private :
+       struct CURLDataMemoryBuffer {
+           DataSourceBuffer::BufferData* data;
+           size_t                size;
+           };
+    
+       static size_t CURLWriteDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
 };

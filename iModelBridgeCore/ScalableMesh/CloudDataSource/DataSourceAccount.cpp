@@ -116,6 +116,16 @@ const DataSourceAccount::AccountKey DataSourceAccount::getAccountKey(void) const
     return accountKey;
     }
 
+void DataSourceAccount::setAccountSSLCertificatePath(const AccountSSLCertificatePath & path)
+    {
+    accountSSLCertificatePath = path;
+    }
+
+const DataSourceAccount::AccountSSLCertificatePath DataSourceAccount::getAccountSSLCertificatePath(void) const
+    {
+    return accountSSLCertificatePath;
+    }
+
 DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
     {
     return getDataSourceManager().createDataSource(name, *this);

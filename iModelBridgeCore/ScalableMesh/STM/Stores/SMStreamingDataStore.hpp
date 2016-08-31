@@ -89,6 +89,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         assert(!tokenUtf8.empty());
 
         WString token(tokenUtf8.c_str(), BentleyCharEncoding::Utf8);
+
+        Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
+
         DataSourceService                       *   serviceWSG;
         DataSourceAccount                       *   accountWSG;
         DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server
@@ -106,6 +109,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         assert(!token1.empty());
 
         accountWSG->setPrefixPath(L"Production_Graz_3MX~2FScene~2F");
+
+        accountWSG->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+
         this->SetDataSourceAccount(accountWSG);
         }
     else
@@ -1345,84 +1351,6 @@ void StreamingDataBlock::DecompressPoints(uint8_t* pi_CompressedData, uint32_t p
                                                                  pi_UncompressedDataSize);
     assert(unCompressedDataSize != 0 && pi_UncompressedDataSize == unCompressedDataSize);
     }
-
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//size_t StreamingDataBlock::WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-//    {
-//    size_t realsize = size * nmemb;
-//    struct MemoryStruct *mem = (struct MemoryStruct *)userp;
-//
-//    assert(mem->memory->capacity() >= mem->memory->size() + realsize);
-//
-//    //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
-//    mem->memory->insert(mem->memory->end(), (Byte*)contents, (Byte*)contents + realsize);
-//
-//    return realsize;
-//    }
-//
-//// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//void StreamingDataBlock::LoadFromFileSystem(const WString& m_pFilename)
-//    {
-//    CURL *curl_handle;
-//    bool retCode = true;
-//    struct MemoryStruct chunk;
-//    const int maxCountData = 100000;
-//    Utf8String blockUrl = "http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/";
-//    Utf8String name;
-//    BeStringUtilities::WCharToUtf8(name, m_pFilename.c_str());
-//    blockUrl += name;
-//
-//    chunk.memory = this;
-//    chunk.memory->reserve(maxCountData);
-//    chunk.size = 0;
-//    curl_global_init(CURL_GLOBAL_ALL);
-//    curl_handle = curl_easy_init();
-//
-//    // NEEDS_WORK_SM_STREAMING: Remove this when streaming works reasonably well
-//    //std::lock_guard<std::mutex> lock(fileMutex);
-//    //BeFile file;
-//    //if (BeFileStatus::Success == OPEN_FILE(file, L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node", BeFileAccess::ReadWrite) ||
-//    //    BeFileStatus::Success == file.Create(L"C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\FitView.node"))
-//    //    {
-//    //    file.SetPointer(0, BeFileSeekOrigin::End);
-//    //    auto node_location = L"http://realitydatastreaming.azurewebsites.net/Mesh/c1sub_scalablemesh/" + block_name + L"\n";
-//    //    Utf8String utf8_node_location;
-//    //    BeStringUtilities::WCharToUtf8(utf8_node_location, node_location.c_str());
-//    //    file.Write(NULL, utf8_node_location.c_str(), (uint32_t)utf8_node_location.length());
-//    //    }
-//    //else
-//    //    {
-//    //    assert(!"Problem creating nodes file");
-//    //    }
-//    //
-//    //file.Close();
-//
-//    curl_easy_setopt(curl_handle, CURLOPT_URL, blockUrl.c_str());
-//    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-//    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-//    //    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-//
-//    /* get it! */
-//    CURLcode res = curl_easy_perform(curl_handle);
-//    /* check for errors */
-//    if (CURLE_OK != res)
-//        {
-//        retCode = false;
-//        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-//        assert(false);
-//        }
-//
-//    curl_easy_cleanup(curl_handle);
-//    curl_global_cleanup();
-//
-//    assert(!chunk.memory->empty() && chunk.memory->size() <= 1000000);
-//
-//    uint32_t uncompressedSize = reinterpret_cast<uint32_t&>((*chunk.memory)[0]);
-//    uint32_t sizeData = (uint32_t)chunk.memory->size() - sizeof(uint32_t);
-//
-//    this->DecompressPoints(&(*chunk.memory)[0] + sizeof(uint32_t), sizeData, uncompressedSize);
-//    }
-
 
 template <class DATATYPE, class EXTENT> Texture& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
     {

@@ -57,6 +57,24 @@ struct WsgTokenAdmin
         }
     };
 
+struct SSLCertificateAdmin
+    {
+    private:
+        std::function<Utf8String(void)> m_getSSLCertificatePath;
+
+    public:
+        SSLCertificateAdmin()
+            {
+            }
+        SSLCertificateAdmin(std::function<Utf8String(void)> SSLCertificatePathGetter)
+            : m_getSSLCertificatePath(SSLCertificatePathGetter)
+            {
+            }
+        Utf8String GetSSLCertificatePath()
+            {
+            return m_getSSLCertificatePath();
+            }
+    };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 

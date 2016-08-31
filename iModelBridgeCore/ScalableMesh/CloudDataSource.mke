@@ -109,6 +109,7 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 #----------------------------------------------------------------------
 
 LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)wastorage.lib
 
 #--------------------------------------------------------------------------------------

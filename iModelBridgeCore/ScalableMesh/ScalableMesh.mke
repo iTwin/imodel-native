@@ -415,7 +415,6 @@ DLM_OBJECT_FILES    = $(cppObjects)
 #SCALABLE_MESH_DGN=1
 
 LINKER_LIBRARIES_DELAYLOADED  = \
-    $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
     ws2_32.lib \

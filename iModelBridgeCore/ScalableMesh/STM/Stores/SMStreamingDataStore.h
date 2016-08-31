@@ -144,19 +144,6 @@ public:
     void DecompressPoints(uint8_t* pi_CompressedData, uint32_t pi_CompressedDataSize, uint32_t pi_UncompressedDataSize);
         
 private:
-    // NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//    struct MemoryStruct {
-//        bvector<Byte>* memory;
-//        size_t         size;
-//        };
-//
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//    static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp);
-//
-// NEEDS_WORK_SM_STREAMING: Move this to the CloudDataSource?
-//    void LoadFromFileSystem(const WString& m_pFilename);
-
-private:
 
     bool m_pIsLoading = false;
     bool m_pIsLoaded = false;

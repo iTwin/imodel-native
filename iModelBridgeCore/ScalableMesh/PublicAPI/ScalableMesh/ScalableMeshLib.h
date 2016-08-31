@@ -29,11 +29,14 @@ public:
 
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
             WsgTokenAdmin*                m_wsgTokenAdmin;
+            SSLCertificateAdmin*          m_sslCertificateAdmin;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
 
             BENTLEY_SM_EXPORT virtual WsgTokenAdmin& _SupplyWsgTokenAdmin();
+
+            BENTLEY_SM_EXPORT virtual SSLCertificateAdmin& _SupplySSLCertificateAdmin();
 
         public:
             Host()
@@ -41,8 +44,10 @@ public:
                 m_scalableTerrainModelAdmin = 0;                              
                 }
 
-            ScalableMeshAdmin&  GetScalableMeshAdmin()             { return *m_scalableTerrainModelAdmin; }
-            WsgTokenAdmin&      GetWsgTokenAdmin()                 { return *m_wsgTokenAdmin; }
+            ScalableMeshAdmin&      GetScalableMeshAdmin()              { return *m_scalableTerrainModelAdmin; }
+            WsgTokenAdmin&          GetWsgTokenAdmin()                  { return *m_wsgTokenAdmin; }
+            SSLCertificateAdmin&    GetSSLCertificateAdmin()            { return *m_sslCertificateAdmin; }
+            
         //! Returns true if this Host has been initialized; otherwise, false
         bool IsInitialized () {return 0 != m_scalableTerrainModelAdmin;}
 

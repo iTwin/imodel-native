@@ -24,6 +24,7 @@
     </Part>
 
     <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke">
+        <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
         <SubPart PartName="AzureSDK" />
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
@@ -44,7 +45,6 @@
         <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
         <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="CloudDataSource" />
-        <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
        <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
