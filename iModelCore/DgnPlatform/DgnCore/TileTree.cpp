@@ -21,9 +21,10 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct TileCache : RealityData::Cache
 {
-    uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
+    uint64_t m_allowedSize;// = (1024*1024*1024); // 1 Gb
     virtual BentleyStatus _Prepare() const override;
     virtual BentleyStatus _Cleanup() const override;
+    TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
 };
 
 //=======================================================================================
@@ -182,7 +183,6 @@ BentleyStatus TileData::SaveToDb() const
     auto cache = m_root.GetCache();
     if (!cache.IsValid())
         {
-        BeAssert(false);
         return ERROR;
         }
 
@@ -284,12 +284,12 @@ BentleyStatus Root::DeleteCacheFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::CreateCache()
+void Root::CreateCache(uint64_t maxSize)
     {
     if (!IsHttp()) 
         return;
 
-    m_cache = new TileCache();
+    m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
         m_cache = nullptr;
     }
@@ -326,7 +326,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl) : m_db(db), m_rootUrl(rootUrl), m_location(location)
+Root::Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP system) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(system)
     {
     m_isHttp = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
 
@@ -366,7 +366,7 @@ void Tile::SetAbandoned() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
     {
-    if (!IsReady())
+    if (m_children.empty())
         return;
 
     if (m_childrenLastUsed > olderThan) // have we used this node's children recently?
@@ -381,7 +381,7 @@ void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) cons
     for (auto const& child : m_children)
         child->SetAbandoned();
 
-    m_loadState.store(LoadState::NotLoaded);
+    _OnChildrenUnloaded();
     m_children.clear();
     }
 
@@ -389,7 +389,7 @@ void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) cons
 * Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
+Tile::DrawComplete Tile::Draw(DrawArgsR args, int depth) const
     {
     bool tooCoarse = true;
 
@@ -401,7 +401,7 @@ Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
             _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
-            return VisitComplete::Yes;
+            return DrawComplete::Yes;
             }
 
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
@@ -410,8 +410,8 @@ Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
         tooCoarse = pixelSize > GetMaximumSize();
         }
 
-    VisitComplete completed = VisitComplete::Yes;
-    auto children = _GetChildren(); // returns nullptr if this node's children are not yet valid
+    DrawComplete completed = DrawComplete::Yes;
+    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
         // this node is too coarse for current view, don't draw it and instead draw its children
@@ -419,25 +419,25 @@ Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
 
         for (auto const& child : *children)
             {
-            if (VisitComplete::Yes != child->Visit(args, depth+1))
-                completed = VisitComplete::No;
+            if (DrawComplete::Yes != child->Draw(args, depth+1))
+                completed = DrawComplete::No;
             }
 
-        if (VisitComplete::Yes == completed)
-            return VisitComplete::Yes;
+        if (DrawComplete::Yes == completed)
+            return DrawComplete::Yes;
         }
     
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
-    completed = _Draw(args, depth);
+    completed = _DrawGraphics(args, depth);
 
     if (!_HasChildren()) // this is a leaf node - we're done
         return completed;
 
-    if (!tooCoarse && completed==VisitComplete::Yes)
+    if (!tooCoarse && completed==DrawComplete::Yes)
         {
         // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
         _UnloadChildren(args.m_purgeOlderThan);
-        return VisitComplete::Yes;
+        return DrawComplete::Yes;
         }
 
     // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
@@ -456,7 +456,7 @@ ElementAlignedBox3d Tile::ComputeRange() const
     if (m_range.IsValid())
         return m_range;
 
-    auto const* children = _GetChildren(); // only returns fully loaded children
+    auto const* children = _GetChildren(true); // only returns fully loaded children
     if (nullptr != children)
         {
         for (auto const& child : *children)
@@ -474,7 +474,7 @@ int Tile::CountTiles() const
     {
     int count = 1;
 
-    auto const* children = _GetChildren(); // only returns fully loaded children
+    auto const* children = _GetChildren(false); // only returns fully loaded children
     if (nullptr != children)
         {
         for (auto const& child : *children)

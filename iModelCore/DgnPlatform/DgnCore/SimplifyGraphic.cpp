@@ -1941,14 +1941,14 @@ void SimplifyGraphic::_AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoin
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  2/2016
 //----------------------------------------------------------------------------------------
-void SimplifyGraphic::_AddTile(Render::TextureCR tile, DPoint3dCP corners)
+void SimplifyGraphic::_AddTile(Render::TextureCR tile, TileCorners const& corners)
     {
     DPoint3d    shapePoints[5];
 
-    shapePoints[0] = shapePoints[4] = corners[0];
-    shapePoints[1] = corners[1];
-    shapePoints[2] = corners[2];
-    shapePoints[3] = corners[3];
+    shapePoints[0] = shapePoints[4] = corners.m_pts[0];
+    shapePoints[1] = corners.m_pts[1];
+    shapePoints[2] = corners.m_pts[2];
+    shapePoints[3] = corners.m_pts[3];
 
     _AddShape(5, shapePoints, true);
     }

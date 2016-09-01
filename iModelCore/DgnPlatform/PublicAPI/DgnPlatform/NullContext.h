@@ -51,7 +51,7 @@ struct NullContext : ViewContext
         void _AddBody(ISolidKernelEntityCR) override {}
         void _AddTextString(TextStringCR text) override {}
         void _AddTextString2d(TextStringCR text, double zDepth) override {}
-        void _AddTile(Render::TextureCR tile, DPoint3dCP corners) override {}
+        void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR) override {}

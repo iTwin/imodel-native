@@ -1216,7 +1216,7 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
 
     if (score < 0.0)
         {
-        BeAssert(false);
+//        BeAssert(false);
         score = 0.0;
         }
 
