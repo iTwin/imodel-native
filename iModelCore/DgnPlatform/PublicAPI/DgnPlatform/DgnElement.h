@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Definition; struct Subject;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct Subject;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -443,22 +443,24 @@ public:
     struct CreateParams
     {
     public:
-        DgnDbR          m_dgndb;
-        DgnModelId      m_modelId;
-        DgnClassId      m_classId;
-        DgnCode         m_code;
-        Utf8String      m_userLabel;
-        DgnElementId    m_id;
-        DgnElementId    m_parentId;
+        DgnDbR              m_dgndb;
+        DgnModelId          m_modelId;
+        DgnClassId          m_classId;
+        DgnCode             m_code;
+        BeSQLite::BeGuid    m_federationGuid;
+        Utf8String          m_userLabel;
+        DgnElementId        m_id;
+        DgnElementId        m_parentId;
 
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent) {SetUserLabel(label);}
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
+            : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent), m_federationGuid(federationGuid) {SetUserLabel(label);}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetCode(DgnCode code) {m_code = code;}                 //!< Set the DgnCode for elements created with this CreateParams
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
+        void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnElement created with this CreateParams
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
 
@@ -767,13 +769,14 @@ protected:
     };
 
     mutable BeAtomic<uint32_t> m_refCount;
-    DgnDbR        m_dgndb;
-    DgnElementId  m_elementId;
-    DgnElementId  m_parentId;
-    DgnModelId    m_modelId;
-    DgnClassId    m_classId;
-    DgnCode       m_code;
-    Utf8String    m_userLabel;
+    DgnDbR m_dgndb;
+    DgnElementId m_elementId;
+    DgnElementId m_parentId;
+    DgnModelId m_modelId;
+    DgnClassId m_classId;
+    DgnCode m_code;
+    BeSQLite::BeGuid m_federationGuid;
+    Utf8String m_userLabel;
     mutable ECN::IECInstancePtr m_autoHandledProperties;
     mutable Flags m_flags;
     mutable ECN::AdHocJsonContainerP m_userProperties;
@@ -1300,6 +1303,12 @@ public:
     //! Get a pointer to the ECClass of this DgnElement.
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
+    //! Get the FederationGuid of this DgnElement.
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+    //! Set the FederationGuid for this DgnElement.
+    //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
+    DGNPLATFORM_EXPORT void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;}
+
     //! Get the DgnElementId of the parent of this element.
     //! @see SetParentId
     //! @return Id will be invalid if this element does not have a parent element.
@@ -1623,15 +1632,16 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         DgnCategoryId   m_category; //!< The category to which the element belongs
 
         //! Construct from the supplied parameters
-        //! @param[in]      db       The DgnDb in which the element is to reside
-        //! @param[in]      modelId  The Id of the model in which the element is to reside
-        //! @param[in]      classId  The Id of the element's ECClass
-        //! @param[in]      category The category to which the element belongs
-        //! @param[in]      code     The element's code
-        //! @param[in]      label    (Optional) element label
-        //! @param[in]      parent   (Optional) Id of this element's parent element
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId())
-            : T_Super(db, modelId, classId, code, label, parent), m_category(category) {}
+        //! @param[in] db The DgnDb in which the element is to reside
+        //! @param[in] modelId The Id of the model in which the element is to reside
+        //! @param[in] classId The Id of the element's ECClass
+        //! @param[in] category The category to which the element belongs
+        //! @param[in] code The element's code
+        //! @param[in] label (Optional) element label
+        //! @param[in] parent (Optional) Id of this element's parent element
+        //! @param[in] federationGuid (Optional) FederationGuid for this element
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid(false))
+            : T_Super(db, modelId, classId, code, label, parent, federationGuid), m_category(category) {}
 
         //! Constructor from base params. Chiefly for internal use.
         //! @param[in]      params   The base element parameters
@@ -2046,6 +2056,53 @@ protected:
 };
 
 //=======================================================================================
+//! A Document is an InformationContentElement that identifies the content of a document.
+//! The realized form of a document is called a DocumentCarrier (different class than Document). 
+//! For example, a will is a legal document.  The will published into a PDF file is an ElectronicDocumentCopy.
+//! The will printed onto paper is a PrintedDocumentCopy.
+//! In this example, the Document only identifies, names, and tracks the content of the will.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Document, InformationContentElement)
+    friend struct dgn_ElementHandler::Document;
+
+protected:
+    explicit Document(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Drawing : Document
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Drawing, Document)
+    friend struct dgn_ElementHandler::Drawing;
+
+protected:
+    explicit Drawing(CreateParams const& params) : T_Super(params) {}
+
+public:
+    // WIP: need to add static Create method!
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
+    friend struct dgn_ElementHandler::Sheet;
+
+protected:
+    explicit Sheet(CreateParams const& params) : T_Super(params) {}
+
+public:
+    // WIP: need to add static Create method!
+};
+
+//=======================================================================================
 //! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
 //! For example, a paper document or an electronic file is an information carrier.
 //! The content is tracked separately from the carrier.
@@ -2087,6 +2144,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Subject : DefinitionElement
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
@@ -2273,7 +2331,7 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus CreateElementUri(Utf8StringR uriStr, DgnElementCR el, bool fallBackOnV8Id, bool fallBackOnDgnDbId=false) const;
 
     //! Query for the DgnElementId of the element that has the specified code
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCode const& code) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnCodeCR code) const;
 
     //! Query for the DgnElementId of the element that has the specified code
     DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnAuthorityId codeAuthorityId, Utf8StringCR codeValue, Utf8StringCR nameSpace="") const;
@@ -2313,6 +2371,13 @@ public:
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
     template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
+
+    //! Query for a DgnElement in this DgnDb by its FederationGuid. The element is loaded from the database if necessary.
+    //! @note It is always more efficient to find elements by their DgnElementId if it is available.
+    //! @return Invalid if the element is not found.
+    //! @see GetElement
+    //! @see DgnElement::CopyForEdit
+    DGNPLATFORM_EXPORT DgnElementCPtr QueryElementByFederationGuid(BeSQLite::BeGuidCR federationGuid) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}

@@ -42,6 +42,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         bvector<Utf8String> expectedColumnNames;
         expectedColumnNames.push_back("Id");
         expectedColumnNames.push_back("ECClassId");
+        expectedColumnNames.push_back("FederationGuid");
         expectedColumnNames.push_back("CodeAuthorityId");
         expectedColumnNames.push_back("CodeNamespace");
         expectedColumnNames.push_back("CodeValue");
@@ -76,6 +77,7 @@ TEST_F(BisCoreDomainTests, ValidateDomainSchemaDDL)
         ASSERT_TRUE(ddl.Contains("[ECClassId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[ParentId] INTEGER,"));
         ASSERT_TRUE(ddl.Contains("[ModelId] INTEGER NOT NULL,"));
+        ASSERT_TRUE(ddl.Contains("[FederationGuid] BLOB UNIQUE,"));
         ASSERT_TRUE(ddl.Contains("[CodeAuthorityId] INTEGER NOT NULL,"));
         ASSERT_TRUE(ddl.Contains("[CodeNamespace] TEXT NOT NULL COLLATE NOCASE,"));
         ASSERT_TRUE(ddl.Contains("[CodeValue] TEXT COLLATE NOCASE,"));
@@ -208,4 +210,41 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, repositoryModel->GetCode().GetNamespace().c_str());
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, dictionaryModel->GetCode().GetNamespace().c_str());
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, groupInformationModel->GetCode().GetNamespace().c_str());
+
+    // make sure that Delete against the root Subject fails
+        {
+        SubjectCPtr subject = m_db->Elements().GetRootSubject();
+        ASSERT_TRUE(subject.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus status = subject->Delete();
+        BeTest::SetFailOnAssert(true);
+        ASSERT_NE(DgnDbStatus::Success, status);
+        }
+
+    // make sure that Delete against the RepositoryModel fails
+        {
+        DgnModelPtr model = m_db->Models().GetModel(DgnModel::RepositoryModelId());
+        ASSERT_TRUE(model.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus status = model->Delete();
+        BeTest::SetFailOnAssert(true);
+        ASSERT_NE(DgnDbStatus::Success, status);
+        }
+
+    // make sure that Delete against the DictionaryModel fails
+        {
+        DgnModelPtr model = m_db->Models().GetModel(DgnModel::DictionaryId());
+        ASSERT_TRUE(model.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus status = model->Delete();
+        BeTest::SetFailOnAssert(true);
+        ASSERT_NE(DgnDbStatus::Success, status);
+        }
+
+    // ensure the the root Subject still exists
+        {
+        m_db->Memory().PurgeUntil(0);
+        SubjectCPtr subject = m_db->Elements().GetRootSubject();
+        ASSERT_TRUE(subject.IsValid());
+        }
     }

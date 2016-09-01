@@ -713,9 +713,12 @@ void RedlineModel::_WriteJsonProperties(Json::Value& val) const
     {
     T_Super::_WriteJsonProperties(val);
 
-    Json::Value json(Json::objectValue);
-    m_assoc.ToPropertiesJson(json);
-    val["RedlineModel_Assoc"] = json;
+    if (m_assoc.GetViewId().IsValid())
+        {
+        Json::Value json(Json::objectValue);
+        m_assoc.ToPropertiesJson(json);
+        val["RedlineModel_Assoc"] = json;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -724,7 +727,9 @@ void RedlineModel::_WriteJsonProperties(Json::Value& val) const
 void RedlineModel::_ReadJsonProperties(Json::Value const& val)
     {
     T_Super::_ReadJsonProperties(val);
-    m_assoc.FromPropertiesJson(val["RedlineModel_Assoc"]);
+
+    if (val.isMember("RedlineModel_Assoc"))
+        m_assoc.FromPropertiesJson(val["RedlineModel_Assoc"]);
     }
 
 /*---------------------------------------------------------------------------------**//**

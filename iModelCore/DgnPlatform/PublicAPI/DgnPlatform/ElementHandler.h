@@ -141,6 +141,24 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationCarrierElement, InformationCarrierElement, InformationCarrier, Element, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for Document
+    struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Document, Dgn::Document, Document, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Drawing
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Document
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Drawing, Dgn::Drawing, Drawing, Document, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for Sheet
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Sheet, Dgn::Sheet, Sheet, Document, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for DefinitionElement
     struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {

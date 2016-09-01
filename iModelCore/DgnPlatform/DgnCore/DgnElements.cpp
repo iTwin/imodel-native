@@ -1000,7 +1000,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
-    m_code(params.m_code), m_userLabel(params.m_userLabel), m_parentId(params.m_parentId), m_userProperties(nullptr)
+    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_userLabel(params.m_userLabel), m_userProperties(nullptr)
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
     }
@@ -1124,8 +1124,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    enum Column : int {ClassId=0,ModelId=1,CodeAuthorityId=2,CodeNamespace=3,CodeValue=4,UserLabel=5,ParentId=6};
-    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,ParentId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    enum Column : int {ClassId=0,ModelId=1,CodeAuthorityId=2,CodeNamespace=3,CodeValue=4,UserLabel=5,ParentId=6,FederationGuid=7};
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,ParentId,FederationGuid FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1139,7 +1139,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     code,
                     stmt->GetValueText(Column::UserLabel), 
-                    stmt->GetValueId<DgnElementId>(Column::ParentId));
+                    stmt->GetValueId<DgnElementId>(Column::ParentId),
+                    stmt->GetValueGuid(Column::FederationGuid));
 
     createParams.SetElementId(elementId);
 
@@ -1159,6 +1160,19 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
     BeDbMutexHolder _v(m_mutex);
     DgnElementCP element = FindElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid) const
+    {
+    if (!federationGuid.IsValid())
+        return nullptr;
+
+    CachedStatementPtr statement = GetStatement("SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE FederationGuid=?");
+    statement->BindGuid(1, federationGuid);
+    return (BE_SQLITE_ROW != statement->Step()) ? nullptr : GetElement(statement->GetValueId<DgnElementId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

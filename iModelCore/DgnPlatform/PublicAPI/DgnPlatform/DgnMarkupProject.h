@@ -99,9 +99,9 @@ struct MarkupDomain : Dgn::DgnDomain
 struct DgnProjectAssociationData
     {
 private:
-    Utf8String  m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
-    BeSQLite::BeGuid m_guid;             //! The GUID of the DgnDb.
-    uint64_t    m_lastModifiedTime; //! The last-modification time of the DgnDb
+    Utf8String m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
+    BeSQLite::BeGuid m_guid; //! The GUID of the DgnDb.
+    uint64_t m_lastModifiedTime; //! The last-modification time of the DgnDb
 
 public:
     DGNPLATFORM_EXPORT DgnProjectAssociationData();             //!< Construct an empty object. See DgnMarkupProject::GetAssociation
@@ -478,9 +478,9 @@ private:
 public:
     //! ctor
     //! @param[in] dgnProject   The DgnDb which is the target of this markup.
-    //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If invalid (the default), a new BeProjectGuid is created.
+    //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
+    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
 
     //! Get the subject DgnDb
     DgnDbR GetSubjectDgnProject() const {return m_dgnDb;}

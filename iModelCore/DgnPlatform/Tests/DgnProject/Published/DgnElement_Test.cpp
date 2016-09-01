@@ -1221,8 +1221,8 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
     EXPECT_TRUE(categoryId.IsValid());
 
-    SpatialModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
-    SpatialModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
     EXPECT_TRUE(modelA.IsValid());
     EXPECT_TRUE(modelB.IsValid());
 
@@ -1300,6 +1300,106 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, FederationGuid)
+    {
+    SetupSeedProject();
+
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
+    EXPECT_TRUE(model.IsValid());
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    EXPECT_TRUE(categoryId.IsValid());
+
+    DgnElementId elementId;
+    BeGuid federationGuid(true);
+    BeGuid updatedFederationGuid(true);
+
+    // Quick BeGuid tests
+    EXPECT_TRUE(BeGuid(true).IsValid());
+    EXPECT_FALSE(BeGuid().IsValid());
+    EXPECT_NE(federationGuid, updatedFederationGuid);
+    EXPECT_EQ(federationGuid, BeGuid(federationGuid.m_guid.u[0], federationGuid.m_guid.u[1]));
+    EXPECT_EQ(federationGuid, BeGuid(federationGuid.m_guid.i[0], federationGuid.m_guid.i[1], federationGuid.m_guid.i[2], federationGuid.m_guid.i[3]));
+    
+    // test that FederationGuid is initialized as invalid
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
+        EXPECT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
+        }
+
+    // test error conditions for QueryElementByFederationGuid
+    EXPECT_FALSE(m_db->Elements().QueryElementByFederationGuid(BeGuid()).IsValid()) << "Should not find an element by an invalid FederationGuid";
+    EXPECT_FALSE(m_db->Elements().QueryElementByFederationGuid(BeGuid(true)).IsValid()) << "Should not find an element by an unused FederationGuid";
+
+    // flush cache and re-check element
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementCPtr element = m_db->Elements().GetElement(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_FALSE(element->GetFederationGuid().IsValid());
+        }
+
+    // test when FederationGuid is specified
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        EXPECT_TRUE(element.IsValid());
+        element->SetFederationGuid(federationGuid);
+        EXPECT_TRUE(element->GetFederationGuid().IsValid()) << "FederationGuid should be valid after SetFederationGuid";
+        EXPECT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        EXPECT_EQ(elementId.GetValue(), m_db->Elements().QueryElementByFederationGuid(federationGuid)->GetElementId().GetValue()) << "Should be able to query for an element by its FederationGuid";
+
+        GenericPhysicalObjectPtr element2 = GenericPhysicalObject::Create(*model, categoryId);
+        EXPECT_TRUE(element2.IsValid());
+        element2->SetFederationGuid(federationGuid);
+        EXPECT_FALSE(element->Insert().IsValid()) << "Cannot insert a second element with a duplicate FederationGuid";
+        m_db->SaveChanges();
+        }
+
+    // flush cache and re-check element
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_TRUE(element->GetFederationGuid().IsValid());
+        EXPECT_EQ(element->GetFederationGuid(), federationGuid);
+
+        element->SetFederationGuid(updatedFederationGuid);
+        EXPECT_TRUE(element->Update().IsValid());
+        m_db->SaveChanges();
+        }
+
+    // flush cache and verify set/update to updated value
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_TRUE(element->GetFederationGuid().IsValid());
+        EXPECT_EQ(element->GetFederationGuid(), updatedFederationGuid);
+        EXPECT_TRUE(m_db->Elements().QueryElementByFederationGuid(updatedFederationGuid).IsValid());
+        EXPECT_FALSE(m_db->Elements().QueryElementByFederationGuid(federationGuid).IsValid());
+
+        element->SetFederationGuid(BeGuid()); // set FederationGuid to null
+        EXPECT_TRUE(element->Update().IsValid());
+        m_db->SaveChanges();
+        }
+
+    // flush cache and verify set/update to null value
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementCPtr element = m_db->Elements().GetElement(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_FALSE(element->GetFederationGuid().IsValid());
+        }
+    }
+    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, EqualsTests)
@@ -1309,8 +1409,8 @@ TEST_F(DgnElementTests, EqualsTests)
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
     ASSERT_TRUE(categoryId.IsValid());
 
-    SpatialModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
-    SpatialModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
     ASSERT_TRUE(modelA.IsValid());
     ASSERT_TRUE(modelB.IsValid());
 
@@ -1318,7 +1418,7 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_TRUE(elementA.IsValid());
     
     ASSERT_TRUE(elementA->Equals(*elementA)) << " An element should be equivalent to itself";
-    ASSERT_TRUE(elementA->Equals(*elementA->Clone())) << " An element should be equivalent to a copy of itself";
+    ASSERT_TRUE(elementA->Equals(*elementA->CopyForEdit())) << " An element should be equivalent to a copy of itself";
     
     GenericPhysicalObjectPtr elementB = GenericPhysicalObject::Create(*modelB, categoryId);
     ASSERT_TRUE(elementB.IsValid());
@@ -1330,3 +1430,4 @@ TEST_F(DgnElementTests, EqualsTests)
     elementB->SetUserLabel("label for b");
     ASSERT_FALSE(elementA->Equals(*elementB, ignoreProps)) << " UserLabels should differ";
     }
+

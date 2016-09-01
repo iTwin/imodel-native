@@ -1171,7 +1171,7 @@ struct LocksManagerTest : RepositoryManagerTest
         {
         DgnDbR db = model.GetDgnDb();
         DgnCategoryId catId = DgnCategory::QueryHighestCategoryId(db);
-        return GenericPhysicalObject::Create(*model.ToSpatialModelP(), catId);
+        return GenericPhysicalObject::Create(*model.ToPhysicalModelP(), catId);
         }
 
     DgnElementPtr Create2dElement(DgnModelR model)

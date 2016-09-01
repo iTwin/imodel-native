@@ -82,7 +82,7 @@ void ChangeTestFixture::_CreateDgnDb()
     ASSERT_TRUE(model.IsValid());
     m_testModelId = model->GetModelId();
 
-    m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
+    m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
 
     m_testCategoryId =  InsertCategory("TestCategory");
@@ -112,7 +112,7 @@ void ChangeTestFixture::OpenDgnDb()
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 
-    m_testModel = m_testDb->Models().Get<SpatialModel>(m_testModelId);
+    m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
     ASSERT_TRUE(m_testModel.IsValid());
 
     if (!m_testAuthorityId.IsValid())
@@ -174,7 +174,7 @@ DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId ChangeTestFixture::InsertPhysicalElement(SpatialModelR model, DgnCategoryId categoryId, int x, int y, int z)
+DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z)
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 

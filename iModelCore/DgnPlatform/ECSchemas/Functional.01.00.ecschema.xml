@@ -29,4 +29,14 @@
         <BaseClass>FunctionalElement</BaseClass>
     </ECEntityClass>
 
+    <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="bis:PhysicalElement"/>
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="true">
+            <Class class="FunctionalElement"/>
+        </Target>
+    </ECRelationshipClass>
+
 </ECSchema>

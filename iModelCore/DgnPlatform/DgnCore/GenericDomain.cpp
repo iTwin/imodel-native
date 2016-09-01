@@ -63,7 +63,7 @@ DgnDbStatus GenericDomain::ImportSchema(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2016
 //---------------------------------------------------------------------------------------
-GenericPhysicalObjectPtr GenericPhysicalObject::Create(SpatialModelR model, DgnCategoryId categoryId)
+GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, DgnCategoryId categoryId)
     {
     DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
 
