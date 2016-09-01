@@ -857,3 +857,157 @@ DgnDbStatus CameraViewDefinition::SetStandardViewDirection(StandardView standard
     return SetViewDirection(yprFromStandardRotation(standardView));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static DRange3d getViewVolume(GeometricModelCR model, DRange3dCP viewVolume)
+    {
+    if (nullptr != viewVolume)
+        return *viewVolume;
+
+    DRange3d modelRange;
+    modelRange = model.QueryModelRange();
+    if (modelRange.IsEmpty())
+        modelRange.InitFromMinMax(-1.0, 10.0);
+    return modelRange;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void displayAllCategories(ViewControllerR controller, DgnDbR db)
+    {
+    for (auto const& categoryId : DgnCategory::QueryCategories(db))
+        controller.ChangeCategoryDisplay(categoryId, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void lookAtViewVolume(ViewControllerR controller, GeometricModelCR model, DRange3dCP viewVolume)
+    {
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+    controller.LookAtVolume(getViewVolume(model, viewVolume), nullptr, &viewMargin);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static Utf8String getUniqueViewName(DgnModelR model, Utf8CP nameIn)
+    {
+    DgnDbR db = model.GetDgnDb();
+    Utf8String baseName;
+    if (nullptr == nameIn)
+        baseName = model.GetCode().GetValue();
+    else
+        baseName = nameIn;
+
+    Utf8String tmpStr(baseName);
+
+    if (!tmpStr.empty() && !ViewDefinition::QueryViewId(tmpStr,db).IsValid())
+        return tmpStr;
+
+    bool addDash = !tmpStr.empty();
+    int index = 0;
+    size_t lastDash = tmpStr.find_last_of('-');
+    if (lastDash != Utf8String::npos)
+        {
+        if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastDash], "-%d", &index) == 1)
+            addDash = false;
+        else
+            index = 0;
+        }
+
+    Utf8String uniqueName;
+    do
+        {
+        uniqueName.assign(tmpStr);
+        if (addDash)
+            uniqueName.append("-");
+        uniqueName.append(Utf8PrintfString("%d", ++index));
+        } while (ViewDefinition::QueryViewId(uniqueName,db).IsValid());
+
+    return uniqueName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void initViewOfSpatialModel(SpatialViewDefinition& viewDef, SpatialModelR model, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    ViewControllerPtr viewController = viewDef.LoadViewController();
+
+    viewController->ChangeModelDisplay(model.GetModelId(), true);
+
+    displayAllCategories(*viewController, model.GetDgnDb());
+
+    lookAtViewVolume(*viewController, model, viewVolume);
+
+    viewController->SetStandardViewRotation(rot);
+
+    auto& viewFlags = viewController->GetViewFlagsR();
+    viewFlags.SetRenderMode(renderMode);
+
+    viewController->StoreToDefinition();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+OrthographicViewDefinitionPtr OrthographicViewDefinition::MakeViewOfModel(SpatialModelR model, Utf8CP nameIn, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    OrthographicViewDefinitionPtr newViewDef = new OrthographicViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn));
+    initViewOfSpatialModel(*newViewDef, model, viewVolume, rot, renderMode);
+    return newViewDef;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+CameraViewDefinitionPtr CameraViewDefinition::MakeViewOfModel(SpatialModelR model, Utf8CP nameIn, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    CameraViewDefinitionPtr newViewDef = new CameraViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn));
+    initViewOfSpatialModel(*newViewDef, model, viewVolume, rot, renderMode);
+    return newViewDef;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void initViewOf2dModel(ViewDefinition2d& viewDef, GraphicalModel2dR model, DRange3dCP viewVolume)
+    {
+    ViewControllerPtr viewController = viewDef.LoadViewController();
+
+    displayAllCategories(*viewController, model.GetDgnDb());
+
+    lookAtViewVolume(*viewController, model, nullptr);
+
+    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+
+    viewController->StoreToDefinition();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/15
+//---------------------------------------------------------------------------------------
+DrawingViewDefinitionPtr DrawingViewDefinition::MakeViewOfModel(DrawingModel& model, Utf8CP nameIn)
+    {
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn), model.GetModelId());
+    initViewOf2dModel(*view, model, nullptr);
+    return view;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/15
+//---------------------------------------------------------------------------------------
+SheetViewDefinitionPtr SheetViewDefinition::MakeViewOfModel(SheetModel& model, Utf8CP nameIn)
+    {
+    SheetViewDefinitionPtr view = new SheetViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn), model.GetModelId());
+    initViewOf2dModel(*view, model, nullptr);
+    return view;
+    }
+
+OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr; }
+CameraViewControllerPtr CameraViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToCameraViewP() : nullptr; }
+DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr; }
+SheetViewControllerPtr SheetViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToSheetViewP() : nullptr; }

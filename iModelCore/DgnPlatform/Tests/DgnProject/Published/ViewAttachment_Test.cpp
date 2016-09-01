@@ -136,8 +136,8 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
     annoElem->SetAnnotation(&anno);
     EXPECT_TRUE(annoElem->Insert().IsValid());
 
-    DrawingViewController viewController(GetDrawingViewDef(db));
-    SetupAndSaveViewController(viewController, *annoElem, drawingId, viewRot);
+    DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
+    SetupAndSaveViewController(*viewController, *annoElem, drawingId, viewRot);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,8 +169,8 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     EXPECT_EQ(SUCCESS, builder->Finish(*geomEl));
     EXPECT_TRUE(el->Insert().IsValid());
 
-    DrawingViewController viewController(GetDrawingViewDef(db));
-    SetupAndSaveViewController(viewController, *geomEl, drawingId, viewRot);
+    DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
+    SetupAndSaveViewController(*viewController, *geomEl, drawingId, viewRot);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,8 +261,8 @@ TEST_F(ViewAttachmentTest, Geom)
     SheetViewDefinition sheetView(db, "MySheetView", m_sheetId);
     sheetView.Insert();
 
-    SheetViewController viewController(sheetView);
-    SetupAndSaveViewController(viewController, *cpAttach, m_sheetId);
+    SheetViewControllerPtr viewController = sheetView.LoadViewController();
+    SetupAndSaveViewController(*viewController, *cpAttach, m_sheetId);
 
     db.SaveChanges();
     }

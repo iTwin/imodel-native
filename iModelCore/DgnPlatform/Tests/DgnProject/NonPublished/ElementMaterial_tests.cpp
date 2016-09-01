@@ -126,7 +126,7 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
 
     DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode());
 
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
+    SpatialModelPtr model = m_db->Models().Get<SpatialModel>(m_defaultModelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
@@ -150,8 +150,5 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
     EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
-    Placement3d placement = builder->GetPlacement3d();
-
-    SetUpCameraView(*m_db, *model, placement.GetElementBox(), m_defaultCategoryId);
-    m_db->SaveSettings();   
+    DgnDbTestUtils::InsertCameraView(*model, nullptr, &builder->GetPlacement3d().GetElementBox());
     }

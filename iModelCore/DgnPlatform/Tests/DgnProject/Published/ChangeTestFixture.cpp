@@ -202,7 +202,7 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     viewRow.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_testDb, "Default", defaultModelId));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
-    CameraViewControllerPtr viewController = viewRow.LoadViewController()->ToCameraViewP();
+    CameraViewControllerPtr viewController = viewRow.LoadViewController();
     viewController->SetStandardViewRotation(StandardView::Iso);
     viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 

@@ -73,7 +73,7 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("2D Model")));
+        RefCountedPtr<DrawingModel> model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("2D Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
@@ -99,19 +99,8 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DrawingViewDefinition view(*db, "TextAnnotation2dTest-BasicCrud", modelId);
-        EXPECT_TRUE(view.Insert().IsValid());
-
-        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-        
-        DrawingViewController viewController(view);
-        viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        viewController.ChangeModelDisplay(modelId, true);
-
-        EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
+        auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
+        EXPECT_TRUE(viewDef->Insert().IsValid());
         }
 
     // Read the element back out, modify, and rewrite.
@@ -291,20 +280,8 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        OrthographicViewDefinition view(*db, "TextAnnotation3dTest-BasicCrud");
-        view.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*db, "TextAnnotation3dTest-BasicCrud", modelId));
-        EXPECT_TRUE(view.Insert().IsValid());
-
-        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-        
-        OrthographicViewControllerPtr viewController = view.LoadViewController()->ToOrthographicViewP();
-        viewController->SetStandardViewRotation(StandardView::Top);
-        viewController->LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController->ChangeCategoryDisplay(categoryId, true);
-        viewController->ChangeModelDisplay(modelId, true);
-
-        EXPECT_TRUE(DgnDbStatus::Success == viewController->Save());
+        auto range = insertedAnnotationElement->CalculateRange3d();
+        DgnDbTestUtils::InsertCameraView(*model, "TextAnnotation3dTest-BasicCrud", &range, StandardView::Top, Render::RenderMode::Wireframe);
         }
 
     // Read the element back out, modify, and rewrite.

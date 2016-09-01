@@ -1440,7 +1440,9 @@ DPoint3d CameraViewController::_GetTargetPoint() const
 //---------------------------------------------------------------------------------------
 CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
     {
-    return dynamic_cast<CameraViewDefinition&>(GetViewDefinition());
+    auto def = GetViewDefinition().ToCameraView();
+    BeAssert(nullptr != def);
+    return *const_cast<CameraViewDefinitionP>(def);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1448,7 +1450,9 @@ CameraViewDefinition& CameraViewController::GetCameraViewDefinition() const
 //---------------------------------------------------------------------------------------
 OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefinition() const
     {
-    return dynamic_cast<OrthographicViewDefinition&>(GetViewDefinition());
+    auto def = GetViewDefinition().ToOrthographicView();
+    BeAssert(nullptr != def);
+    return *const_cast<OrthographicViewDefinitionP>(def);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1456,7 +1460,9 @@ OrthographicViewDefinition& OrthographicViewController::GetOrthographicViewDefin
 //---------------------------------------------------------------------------------------
 SpatialViewDefinition& SpatialViewController::GetSpatialViewDefinition() const
     {
-    return dynamic_cast<SpatialViewDefinition&>(GetViewDefinition());
+    auto def = GetViewDefinition().ToSpatialView();
+    BeAssert(nullptr != def);
+    return *const_cast<SpatialViewDefinitionP>(def);
     }
 
 //---------------------------------------------------------------------------------------

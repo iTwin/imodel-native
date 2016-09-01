@@ -444,6 +444,20 @@ public:
     //! @param name A unique name for this view definition
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, CreateCode(name), QueryClassId(db))) {}
 
+    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
+
+    //! Utility method to create a view of a specified model.
+    //! By default, all categories are turned on.
+    //! @param model    The model that should appear in the view
+    //! @param viewName Optional. The name of the view. Defaults to the name of the model.
+    //! @param viewVolume Optional. The view volume. Defaults to the range of the model.
+    //! @param rot      Optional. The view rotation. Defaults to Iso.
+    //! @param renderMode Optional. The view's render model. Defaults to SmoothShade
+    //! @return a new, non-persistent view definition
+    //! @note It is up to the caller to call Insert on the new view definition if desired in order to make it persistent.
+    DGNPLATFORM_EXPORT static OrthographicViewDefinitionPtr MakeViewOfModel(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr,
+                                                                      StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
+
     //! Look up the ECClass ID used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition)); }
 
@@ -480,6 +494,20 @@ public:
     //! @param name A unique name for this view definition
     CameraViewDefinition(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, CreateCode(name), QueryClassId(db))) {}
 
+    //! Utility method to create a view of a specified model.
+    //! By default, all categories are turned on.
+    //! @param model    The model that should appear in the view
+    //! @param viewName Optional. The name of the view. Defaults to the name of the model.
+    //! @param viewVolume Optional. The view volume. Defaults to the range of the model.
+    //! @param rot      Optional. The view rotation. Defaults to Iso.
+    //! @param renderMode Optional. The view's render model. Defaults to SmoothShade
+    //! @return a new, non-persistent view definition
+    //! @note It is up to the caller to call Insert on the new view definition if desired in order to make it persistent.
+    DGNPLATFORM_EXPORT static CameraViewDefinitionPtr MakeViewOfModel(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr,
+                                                    StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
+
+    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
+
     //! Look up the ECClass ID used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
 
@@ -500,7 +528,6 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
     DGNPLATFORM_EXPORT DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
     DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
-
                                                                                                                                                                           //! Set the view direction to one of the standard rotations
     DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
 };
@@ -561,6 +588,10 @@ public:
     //! Construct a DrawingViewDefinition prior to inserting it
     DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) {;}
 
+    DGNPLATFORM_EXPORT static DrawingViewDefinitionPtr MakeViewOfModel(DrawingModel& model, Utf8CP name);
+
+    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
+
     //! Look up the ECClass ID used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition)); }
 };
@@ -588,6 +619,10 @@ public:
 
     //! Construct a new SheetViewDefinition prior to inserting it
     SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) {;}
+
+    DGNPLATFORM_EXPORT static SheetViewDefinitionPtr MakeViewOfModel(SheetModel& model, Utf8CP name);
+
+    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition)); }

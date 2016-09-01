@@ -898,10 +898,10 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
-public:
     DGNPLATFORM_EXPORT QueryViewController(SpatialViewDefinition const&);
     DGNPLATFORM_EXPORT ~QueryViewController();
 
+public:
     //! Get the Level-of-Detail filtering size for scene creation for this QueryViewController. This is the size, in pixels, of one side of a square. 
     //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
     double GetSceneLODSize() const {return m_sceneLODSize;}
@@ -948,6 +948,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : QueryViewController
     {
     DEFINE_T_SUPER(QueryViewController);
+    friend struct OrthographicViewDefinition;
 
 protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
@@ -968,11 +969,12 @@ protected:
     void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
     void _AdjustAspectRatio(double windowAspect, bool expandView) override {AdjustAspectRatio(m_origin, m_delta, m_rotation, windowAspect, expandView);}
-public:
+
     //! Construct a new OrthographicViewController
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT OrthographicViewController(OrthographicViewDefinition const& definition);
 
+public:
     DGNPLATFORM_EXPORT OrthographicViewDefinition& GetOrthographicViewDefinition() const;
     };
 
@@ -1043,6 +1045,7 @@ This is what the parameters to the camera methods, and the values stored by Came
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : QueryViewController
 {
     DEFINE_T_SUPER(QueryViewController);
+    friend struct CameraViewDefinition;
 
 protected:
     DPoint3d m_origin;                 //!< Back origin
@@ -1069,16 +1072,16 @@ protected:
     bool _IsEyePointAbove(double elevation) const override { return GetEyePoint().z > elevation; }
     DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
 
-public:
-    void VerifyFocusPlane();
-
     //! Construct a new CameraViewController
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT CameraViewController(CameraViewDefinition const& definition);
 
+public:
     DGNPLATFORM_EXPORT CameraViewDefinition& GetCameraViewDefinition() const;
 
-/** @name Camera */
+    void VerifyFocusPlane();
+
+    /** @name Camera */
 /** @{ */
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT double CalcLensAngle();
@@ -1273,8 +1276,9 @@ protected:
     DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
 
-public:
     DGNPLATFORM_EXPORT ViewController2d(ViewDefinition2d const& def);
+
+public:
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
     DVec2d GetDelta2d() const {return m_delta;}
@@ -1294,11 +1298,11 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DrawingViewController : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
-
+    friend struct DrawingViewDefinition;
+protected:
     DrawingViewControllerCP _ToDrawingView() const override {return this;}
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
 
-public:
     //! Construct a new DrawingViewController.
     DGNPLATFORM_EXPORT DrawingViewController(DrawingViewDefinition const& def);
 };
@@ -1424,11 +1428,11 @@ public:
 struct SheetViewController : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
+    friend struct SheetViewDefinition;
 
 protected:
     SheetViewControllerCP _ToSheetView() const override {return this;}
 
-public:
     //! Construct a new SheetViewController.
     DGNPLATFORM_EXPORT SheetViewController(SheetViewDefinition const& def);
 };
