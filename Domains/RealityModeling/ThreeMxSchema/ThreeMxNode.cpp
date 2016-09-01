@@ -28,7 +28,7 @@ Utf8String Node::GetChildFile() const
 * Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::VisitComplete Node::_Draw(DrawArgsR args, int depth) const
+Tile::DrawComplete Node::_DrawGraphics(DrawArgsR args, int depth) const
     {
     // This node is either fine enough for the current view or has no loaded children. We'll draw it.
     if (!m_geometry.empty()) // if we have geometry, draw it now
@@ -37,7 +37,7 @@ Tile::VisitComplete Node::_Draw(DrawArgsR args, int depth) const
             geom->Draw(args);
         }
 
-    return VisitComplete::Yes;
+    return DrawComplete::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**

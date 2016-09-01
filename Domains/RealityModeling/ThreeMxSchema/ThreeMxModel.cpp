@@ -30,7 +30,7 @@ BentleyStatus Scene::ReadSceneFile(SceneInfo& sceneInfo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Scene::LoadScene()
     {
-    CreateCache();
+    CreateCache(1024*1024*1024); // 1 GB
 
     SceneInfo sceneInfo;
     if (SUCCESS != ReadSceneFile(sceneInfo))
@@ -155,7 +155,7 @@ ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContex
         {
         auto stat = node.second->GetLoadState();
         if (stat == Tile::LoadState::Ready)
-            node.second->Visit(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
+            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
         else if (stat != Tile::LoadState::NotFound)
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
@@ -420,11 +420,11 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
 
-    if (nullptr != node._GetChildren())
+    if (nullptr != node._GetChildren(false))
         {
         size_t childIndex = 0;
 
-        for (auto& child : *node._GetChildren())
+        for (auto& child : *node._GetChildren(false))
             tileNode.GetChildren().push_back(TileNode(child->GetRange(), depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
         }
 
@@ -435,7 +435,7 @@ TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector
 
     depth++;
 
-    Tile::ChildTiles    children = *node._GetChildren();
+    Tile::ChildTiles    children = *node._GetChildren(false);
     size_t              childIndex = 0;
 
     node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
@@ -457,7 +457,7 @@ TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileColle
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    TileTree::TilePtr     publishNode = scene->GetRoot()->_GetChildren()->front();
+    TileTree::TilePtr publishNode = scene->GetRootTile()->_GetChildren(false)->front();
 
     return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr);
     }
