@@ -624,26 +624,8 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
                                                                                     Log&                                  log) const override
         {
         const WString DestCoordSysKeyName = L"";
-
-        SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
-        const ScalableMeshData& data = sourceImportConf->GetReplacementSMData();
-        __int64 maximumNumberOfPoints = data.GetMaximumNbPoints();
-
-        double scaleFactor; 
-        uint64_t demNumberPoints;
-
-        sourceBase.GetPointExtractor().GetNumberOfPoints(&demNumberPoints);
-
-        if ((__int64)demNumberPoints > maximumNumberOfPoints)
-            {
-            scaleFactor = sqrt((double)maximumNumberOfPoints / demNumberPoints);
-            }
-        else
-            {
-            scaleFactor = 1;
-            }
-
-        //scaleFactor = 1;
+                        
+        double scaleFactor = 1;
         
         // TDORAY: CreateXYZPointsIterator should take a const WString as input but could not be changed due to 8.11.7 backward compatibility issues
         auto_ptr<HUTDEMRasterXYZPointsIterator>
