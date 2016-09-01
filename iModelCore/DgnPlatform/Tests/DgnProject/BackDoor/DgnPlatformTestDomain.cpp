@@ -18,6 +18,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestPhysicalTypeHandler)
 HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
@@ -348,6 +349,15 @@ TestGroupPtr TestGroup::Create(DgnDbR db, DgnModelId modelId, DgnCategoryId cate
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TestPhysicalTypePtr TestPhysicalType::Create(DgnDbR db)
+    {
+    DgnClassId classId = db.Domains().GetClassId(TestPhysicalTypeHandler::GetHandler());
+    return new TestPhysicalType(CreateParams(db, DgnModel::DictionaryId(), classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
@@ -475,15 +485,15 @@ ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId ro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
+DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(DPTEST_SCHEMA_NAME, "DgnPlatform Test Schema", 1)
     {
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestPhysicalTypeHandler::GetHandler());
     RegisterHandler(TestElement2dHandler::GetHandler());
     RegisterHandler(TestGroupHandler::GetHandler());
     RegisterHandler(TestUniqueAspectHandler::GetHandler());
     RegisterHandler(TestMultiAspectHandler::GetHandler());
     RegisterHandler(TestElementDrivesElementHandler::GetHandler());
-
 
     RegisterHandler(TestElementSub1Handler::GetHandler());
     RegisterHandler(TestElementSub2Handler::GetHandler());

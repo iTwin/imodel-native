@@ -309,7 +309,7 @@ PhysicalModelPtr DgnDbTestUtils::InsertPhysicalModel(DgnDbR db, DgnCodeCR modelC
     MUST_HAVE_HOST(nullptr);
 
     SubjectCPtr rootSubject = db.Elements().GetRootSubject();
-    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, modelCode.GetValueCP()); // create a placeholder Subject for this DgnModel to describe
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, Utf8PrintfString("Subject for %s", modelCode.GetValueCP()).c_str()); // create a placeholder Subject for this DgnModel to describe
     EXPECT_TRUE(modelSubject.IsValid());
     PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, modelCode);
     EXPECT_TRUE(model.IsValid());

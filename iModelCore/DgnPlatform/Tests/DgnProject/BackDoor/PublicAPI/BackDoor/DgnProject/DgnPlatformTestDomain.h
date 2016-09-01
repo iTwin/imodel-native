@@ -38,6 +38,8 @@
 #define DPTEST_TEST_ELEMENT_PointProperty3 "TestPointProperty3"  
 #define DPTEST_TEST_ELEMENT_PointProperty4 "TestPointProperty4"  
 
+#define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
+
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 
 #ifdef WIP_ELEMENT_ITEM // *** pending redesign
@@ -196,6 +198,38 @@ typedef TestGroup const& TestGroupCR;
 struct TestGroupHandler : Dgn::dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_TEST_GROUP_CLASS_NAME, TestGroup, TestGroupHandler, Dgn::dgn_ElementHandler::Physical, )
+};
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestPhysicalType : Dgn::PhysicalType
+{
+    DGNELEMENT_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalType, Dgn::PhysicalType)
+    friend struct TestPhysicalTypeHandler;
+
+protected:
+    explicit TestPhysicalType(CreateParams const& params) : T_Super(params) {}
+
+public:
+    static RefCountedPtr<TestPhysicalType> Create(Dgn::DgnDbR);
+
+    Utf8String GetStringProperty() const {return GetPropertyValueString("StringProperty");}
+    void SetStringProperty(Utf8CP s) {SetPropertyValue("StringProperty", s);}
+
+    int32_t GetIntProperty() const {return GetPropertyValueInt32("IntProperty");}
+    void SetIntProperty(int32_t i) {SetPropertyValue("IntProperty", i);}
+};
+
+typedef RefCountedPtr<TestPhysicalType> TestPhysicalTypePtr;
+typedef RefCountedCPtr<TestPhysicalType> TestPhysicalTypeCPtr;
+
+//=======================================================================================
+// @bsiclass                                                     Shaun.Sewall    08/16
+//=======================================================================================
+struct TestPhysicalTypeHandler : Dgn::dgn_ElementHandler::PhysicalType
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(DPTEST_CLASS_TestPhysicalType, TestPhysicalType, TestPhysicalTypeHandler, Dgn::dgn_ElementHandler::PhysicalType, )
 };
 
 //=======================================================================================

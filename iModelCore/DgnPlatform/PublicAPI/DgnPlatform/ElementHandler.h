@@ -165,6 +165,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DefinitionElement, DefinitionElement, Definition, InformationContent, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for PhysicalType
+    struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, Dgn::PhysicalType, PhysicalType, Definition, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for Subject
     struct EXPORT_VTABLE_ATTRIBUTE Subject : Definition
     {

@@ -326,4 +326,14 @@
         <ECProperty propertyName='StringProperty' typeName='string' />
         <ECProperty propertyName='IntProperty' typeName='int' />
     </ECClass>
+
+    <ECClass typeName="TestPhysicalType" isDomainClass="True">
+        <BaseClass>bis:PhysicalType</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="StringProperty" typeName="string" />
+        <ECProperty propertyName="IntProperty" typeName="int" />
+    </ECClass>
+
 </ECSchema>

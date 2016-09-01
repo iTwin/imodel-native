@@ -1400,6 +1400,109 @@ TEST_F(DgnElementTests, FederationGuid)
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, PhysicalTypeCRUD)
+    {
+    SetupSeedProject();
+
+    DgnElementId physicalTypeId[3];
+    DgnElementId elementId;
+
+    // insert some sample PhysicalTypes
+    for (int32_t i=0; i<_countof(physicalTypeId); i++)
+        {
+        TestPhysicalTypePtr physicalType = TestPhysicalType::Create(*m_db);
+        ASSERT_TRUE(physicalType.IsValid());
+        physicalType->SetUserLabel(Utf8PrintfString("PhysicalType%d", i).c_str());
+        physicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
+        physicalType->SetIntProperty(i);
+        ASSERT_TRUE(physicalType->Insert().IsValid());
+        physicalTypeId[i] = physicalType->GetElementId();
+        }
+
+    // flush cache to make sure PhysicalTypes were inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        for (int32_t i=0; i<_countof(physicalTypeId); i++)
+            {
+            TestPhysicalTypePtr physicalType = m_db->Elements().GetForEdit<TestPhysicalType>(physicalTypeId[i]);
+            ASSERT_TRUE(physicalType.IsValid());
+            ASSERT_STREQ(physicalType->GetStringProperty().c_str(), Utf8PrintfString("String%d", i).c_str());
+            ASSERT_EQ(physicalType->GetIntProperty(), i);
+
+            physicalType->SetStringProperty(Utf8PrintfString("Updated%d", i).c_str());
+            physicalType->SetIntProperty(i+100);
+            ASSERT_TRUE(physicalType->Update().IsValid());
+            }
+        }
+
+    // flush cache to make sure PhysicalTypes were updated properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        for (int32_t i=0; i<_countof(physicalTypeId); i++)
+            {
+            TestPhysicalTypeCPtr physicalType = m_db->Elements().Get<TestPhysicalType>(physicalTypeId[i]);
+            ASSERT_TRUE(physicalType.IsValid());
+            ASSERT_STREQ(physicalType->GetStringProperty().c_str(), Utf8PrintfString("Updated%d", i).c_str());
+            ASSERT_EQ(physicalType->GetIntProperty(), i+100);
+            }
+        }
+
+    // create a PhysicalElement and set its PhysicalType
+        {
+        DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+        ASSERT_TRUE(categoryId.IsValid());
+
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
+        ASSERT_TRUE(model.IsValid());
+
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetPhysicalType().IsValid());
+        element->SetPhysicalType(physicalTypeId[0]);
+        ASSERT_TRUE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_TRUE(element->GetPhysicalType().IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        }
+
+    // flush cache to make sure the PhysicalElement's PhysicalType was inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->GetPhysicalType().IsValid());
+        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[0].GetValue());
+
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1]));
+        ASSERT_TRUE(element->Update().IsValid());
+        }
+
+    // flush cache to make sure the PhysicalElement's PhysicalType was updated properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->GetPhysicalType().IsValid());
+        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[1].GetValue());
+
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId()));
+        ASSERT_TRUE(element->Update().IsValid());
+        }
+
+    // flush cache to make sure the PhysicalElement's PhysicalType was cleared properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->GetPhysicalType().IsValid());
+        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnElementTests, EqualsTests)
@@ -1430,4 +1533,3 @@ TEST_F(DgnElementTests, EqualsTests)
     elementB->SetUserLabel("label for b");
     ASSERT_FALSE(elementA->Equals(*elementB, ignoreProps)) << " UserLabels should differ";
     }
-

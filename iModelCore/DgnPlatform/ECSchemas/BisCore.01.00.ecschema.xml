@@ -588,6 +588,9 @@
 
     <ECEntityClass typeName="PhysicalType" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="PhysicalElementIsOfType" strength="referencing">
         <Source cardinality="(0,N)" polymorphic="true">
@@ -849,6 +852,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
+        <ECNavigationProperty propertyName="PhysicalType" relationshipName="PhysicalElementIsOfType" direction="Forward">
+        </ECNavigationProperty>
     </ECEntityClass>
     <ECEntityClass typeName="SpatialLocationElement" modifier="Abstract">
         <!-- A SpatialElement that identifies a "tracked" real world location but has no mass and cannot be "touched" -->

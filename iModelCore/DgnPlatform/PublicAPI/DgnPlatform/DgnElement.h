@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct Subject;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct PhysicalType; struct Subject;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -1854,8 +1854,19 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : SpatialElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalElement, SpatialElement)
     friend struct dgn_ElementHandler::Physical;
+
 protected:
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Set the PhysicalType for this PhysicalElement
+    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId) {return SetPropertyValue("PhysicalType", physicalTypeId);}
+    //! Get the DgnElementId of the PhysicalType for this PhysicalElement
+    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
+    DgnElementId GetPhysicalTypeId() const {return GetPropertyValueId<DgnElementId>("PhysicalType");}
+    //! Get the PhysicalType for this PhysicalElement
+    //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
+    DGNPLATFORM_EXPORT PhysicalTypeCPtr GetPhysicalType() const;
 };
 
 //=======================================================================================
@@ -2129,6 +2140,22 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
     virtual DefinitionElementCP _ToDefinitionElement() const override final {return this;}
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A PhysicalType typically corresponds to a @em type of physical object that can be ordered from a catalog.
+//! The PhysicalType system is also a database normalization strategy because properties that are the same
+//! across all instances are stored with the PhysicalType versus being repeated per PhysicalElement instance.
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalType : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_PhysicalType, DefinitionElement)
+    friend struct dgn_ElementHandler::PhysicalType;
+
+protected:
+    explicit PhysicalType(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

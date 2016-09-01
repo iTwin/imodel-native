@@ -60,6 +60,7 @@
 #define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
+#define BIS_CLASS_PhysicalType              "PhysicalType"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
 #define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
