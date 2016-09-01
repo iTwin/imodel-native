@@ -1564,4 +1564,79 @@ TEST_F(SchemaDeserializationTest, ExpectInvalidSchemaAndDuplicateStatusWhenLoadi
     VerifyWidgetsSchema(schema3);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedClassComesBeforeBaseClass)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='C' modifier='sealed'>"
+        "       <BaseClass>B</BaseClass>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='A' modifier='abstract'></ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
+        "   <ECRelationshipClass typeName='ARelC' modifer='sealed'>"
+        "       <BaseClass>ARelB</BaseClass>"
+        "       <Source multiplicity='(1..1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(1..*)' polymorphic='True'>"
+        "           <Class class='C' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='abstract'>"
+        "       <Source multiplicity='(1..1)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    EXPECT_TRUE(schema.IsValid());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCase)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A' modifier='abstract'>"
+        "       <ECProperty propertyName='Prop' typeName='string'></ECProperty>"
+        "   </ECEntityClass>"
+        "   <ECEntityClass typeName='B' modifier='sealed'>"
+        "       <BaseClass>A</BaseClass>"
+        "       <ECProperty propertyName='PROP' typeName='string'></ECProperty>"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+
+    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema2' version='01.00' nameSpacePrefix='ts2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='C' isDomainClass='true'>"
+        "       <ECProperty propertyName='Prop' typeName='string'></ECProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='D' isDomainClass='true'>"
+        "       <BaseClass>C</BaseClass>"
+        "       <ECProperty propertyName='PROP' typeName='string'></ECProperty>"
+        "   </ECClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema2;
+    status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

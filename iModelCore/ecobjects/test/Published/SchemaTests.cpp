@@ -1390,6 +1390,51 @@ TEST_F(ClassTest, CanOverrideBasePropertiesInDerivedClass)
 
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ClassTest, ExpectFailureWhenOverridePropertyConflicts)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP base;
+    ECEntityClassP derived;
+    ECEntityClassP derived2;
+    ECEntityClassP derived3;
+
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    schema->CreateEntityClass(base, "Base");
+    schema->CreateEntityClass(derived, "Derived");
+    schema->CreateEntityClass(derived2, "Derived2");
+    schema->CreateEntityClass(derived3, "Derived3");
+
+    PrimitiveECPropertyP derivedStringProp;
+    PrimitiveECPropertyP derivedStringProp2;
+    PrimitiveECPropertyP baseIntProp;
+    PrimitiveECPropertyP derivedIntPropUpperCase;
+    PrimitiveECPropertyP derivedIntPropUpperCase2;
+
+    base->CreatePrimitiveProperty(baseIntProp, "Prop", PRIMITIVETYPE_Integer);
+
+    derived->AddBaseClass(*base);
+    ECObjectsStatus status = derived->CreatePrimitiveProperty(derivedStringProp, "Prop", PRIMITIVETYPE_String);
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
+    ASSERT_EQ(0, derived->GetPropertyCount(false));
+
+    status = derived->CreatePrimitiveProperty(derivedIntPropUpperCase, "PROP", PRIMITIVETYPE_Integer);
+    ASSERT_EQ(ECObjectsStatus::CaseCollision, status);
+    ASSERT_EQ(0, derived->GetPropertyCount(false));
+
+    derived2->CreatePrimitiveProperty(derivedStringProp2, "Prop", PRIMITIVETYPE_String);
+    status = derived2->AddBaseClass(*base);
+    ASSERT_EQ(ECObjectsStatus::DataTypeMismatch, status);
+    ASSERT_EQ(1, derived2->GetPropertyCount(false));
+
+    derived3->CreatePrimitiveProperty(derivedIntPropUpperCase2, "PROP", PRIMITIVETYPE_Integer);
+    status = derived3->AddBaseClass(*base);
+    ASSERT_EQ(ECObjectsStatus::CaseCollision, status);
+    ASSERT_EQ(1, derived2->GetPropertyCount(false));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -583,8 +583,16 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 pProperty->SetName(newName);
                 }
             }
-        else if (!baseProperty->GetName().Equals(pProperty->GetName()) && resolveConflicts)
-            pProperty->SetName(baseProperty->GetName());
+        else if (!baseProperty->GetName().Equals(pProperty->GetName()))
+            {
+            if (resolveConflicts)
+                pProperty->SetName(baseProperty->GetName());
+            else
+                {
+                LOG.errorv("Case-collision between %s:%s and %s:%s", baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str(), GetFullName(), pProperty->GetName().c_str());
+                return ECObjectsStatus::CaseCollision;
+                }
+            }
         pProperty->SetBaseProperty (baseProperty);
         }
 
