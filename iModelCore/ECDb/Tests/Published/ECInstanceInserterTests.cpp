@@ -344,7 +344,7 @@ void ExecuteECSqlCommand(ECSqlStatement& stmt, ECDbR db, Utf8CP ecsql)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertCurrentTimeStamp(ECDbR ecdb, ECInstanceId const& id, bool expectedIsNull, Utf8CP assertMessage)
+void AssertCurrentTimeStamp(ECDbR ecdb, ECInstanceId id, bool expectedIsNull, Utf8CP assertMessage)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT LastMod FROM ecsql.ClassWithLastModProp WHERE ECInstanceId=?"));

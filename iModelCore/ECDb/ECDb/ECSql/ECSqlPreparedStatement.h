@@ -155,9 +155,9 @@ public:
 
         ECSqlBinder* GetECInstanceIdBinder () const { return m_ecInstanceIdBinder; }
         bool HasUserProvidedECInstanceId () const {return m_userProvidedECInstanceId.IsValid ();}
-        ECInstanceId const& GetUserProvidedECInstanceId () const { return m_userProvidedECInstanceId; }
+        ECInstanceId GetUserProvidedECInstanceId () const { return m_userProvidedECInstanceId; }
 
-        void SetBoundECInstanceId (ECInstanceId const& ecinstanceId) {m_userProvidedECInstanceId = ecinstanceId;}
+        void SetBoundECInstanceId (ECInstanceId ecinstanceId) {m_userProvidedECInstanceId = ecinstanceId;}
         void ResetBoundECInstanceId ()
             {
             if (m_ecInstanceIdBinder != nullptr)

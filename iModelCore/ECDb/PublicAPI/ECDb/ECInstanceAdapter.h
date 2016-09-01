@@ -243,7 +243,7 @@ public:
     //! @param[in] ecInstanceId Id of the ECInstance to delete
     //! @return SUCCESS in case of successful execution of the underlying ECSQL. This means,
     //! SUCCESS is also returned if the specified ECInstance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Delete(ECInstanceId const& ecInstanceId) const;
+    ECDB_EXPORT BentleyStatus Delete(ECInstanceId ecInstanceId) const;
 
     //! Deletes the given ECInstance.
     //! @param[in] ecInstance ECInstance to delete

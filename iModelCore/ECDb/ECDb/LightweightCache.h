@@ -113,7 +113,7 @@ struct StorageDescription  final: NonCopyableClass
         size_t m_rootHorizontalPartitionIndex;
         size_t m_rootVerticalPartitionIndex;
 
-        explicit StorageDescription(ECN::ECClassId const& classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0), m_rootVerticalPartitionIndex(0) {}
+        explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0), m_rootVerticalPartitionIndex(0) {}
 
         Partition* AddHorizontalPartition(DbTable const&, bool isRootPartition);
         Partition* AddVerticalPartition(DbTable const&, bool isRootPartition);
@@ -136,7 +136,7 @@ struct StorageDescription  final: NonCopyableClass
         std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
         bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
         bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
-        ECN::ECClassId const& GetClassId() const { return m_classId; }
+        ECN::ECClassId GetClassId() const { return m_classId; }
 
         BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias = nullptr) const;
     };

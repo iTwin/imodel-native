@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus AddRowToRtree(ECDbR ecdb, ECInstanceId const& id, DRange2dCR boundingBox)
+BentleyStatus AddRowToRtree(ECDbR ecdb, ECInstanceId id, DRange2dCR boundingBox)
     {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO demo_rtree VALUES(?,?,?,?,?)"))

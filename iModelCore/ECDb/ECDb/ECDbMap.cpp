@@ -743,7 +743,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
     IdSet<DbColumnId> modifiedColumnIds;
     for (bpair<ECClassId, bool> const& kvPair : endTableRelClassIds)
         {
-        ECClassId const& relClassId = kvPair.first;
+        ECClassId relClassId = kvPair.first;
         const bool impliesNotNullOnFkCol = kvPair.second;
         if (SUCCESS != EvaluateColumnNotNullConstraints(modifiedColumnIds, relClassId, impliesNotNullOnFkCol))
             return ERROR;
@@ -767,7 +767,7 @@ BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle    07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints(IdSet<DbColumnId>& modifiedColumnIds, ECN::ECClassId const& endTableRelClassId, bool impliesNotNullOnFkColumn) const
+BentleyStatus ECDbMap::EvaluateColumnNotNullConstraints(IdSet<DbColumnId>& modifiedColumnIds, ECN::ECClassId endTableRelClassId, bool impliesNotNullOnFkColumn) const
     {
     ClassMap const* classMap = GetClassMap(endTableRelClassId);
     if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipEndTable)

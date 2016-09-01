@@ -296,7 +296,7 @@ IECSqlArrayBinder& SystemPropertyECSqlBinder::_BindArray(uint32_t initialCapacit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::FailIfConstraintClassIdViolation(ECN::ECClassId const& constraintClassId) const
+ECSqlStatus SystemPropertyECSqlBinder::FailIfConstraintClassIdViolation(ECN::ECClassId constraintClassId) const
     {
     if (!IsEnsureConstraints() || (m_systemProperty != ECSqlSystemProperty::SourceECClassId && m_systemProperty != ECSqlSystemProperty::TargetECClassId))
         return ECSqlStatus::Success;

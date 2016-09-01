@@ -82,7 +82,7 @@ BentleyStatus JsonUpdater::Update(JsonValueCR jsonValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR jsonValue) const
+BentleyStatus JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue) const
     {
     if (m_ecClass.GetRelationshipClassCP() != nullptr)
         {
@@ -103,7 +103,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
+BentleyStatus JsonUpdater::Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
@@ -125,7 +125,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, JsonValueCR js
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Shaun.Sewall                    01 / 2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, RapidJsonValueCR jsonValue) const
+BentleyStatus JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue) const
     {
     if (m_ecClass.GetRelationshipClassCP() != nullptr)
         {
@@ -146,7 +146,7 @@ BentleyStatus JsonUpdater::Update(ECInstanceId const& instanceId, RapidJsonValue
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                10/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus  JsonUpdater::Update(ECInstanceId const& instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
+BentleyStatus  JsonUpdater::Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const
     {
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
