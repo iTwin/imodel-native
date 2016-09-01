@@ -296,9 +296,6 @@ protected:
     //! Get the editable ViewDefinition used by this ViewController
     DGNPLATFORM_EXPORT ViewDefinitionR GetViewDefinition() const;
 
-    //! Called prior to save to make sure that all definition elements are in m_definitionElements.
-    virtual void _CacheDefinition() { GetViewDefinition(); GetCategorySelector(); GetDisplayStyle(); }
-
     //! Make sure that all definition element relationships are persistent. Called as part of SaveDefinition. 
     DGNPLATFORM_EXPORT virtual void _FixUpDefinitionRelationships();
 
@@ -369,7 +366,7 @@ public:
 
     //! Get copies of the definition elements used by this controller. You may store these definition elements in an undo stack or write them to the database. 
     //! Or, you may modify these elements and then call Load.
-    DgnEditElementCollector& GetDefinitionR() {_CacheDefinition(); return m_definitionElements;}
+    DgnEditElementCollector& GetDefinitionR() {StoreToDefinition(); return m_definitionElements;}
 
     //! Save the current state of this ViewController to a new view name. After this call succeeds, this ViewController is
     //! directed at the new view, and the previous view's state is unchanged.
@@ -651,9 +648,6 @@ protected:
 
     //! Get the editable ModelSelector used by this ViewController
     DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector() const;
-
-    //! Called prior to save to make sure that all definition elements are in m_definitionElements.
-    void _CacheDefinition() override {T_Super::_CacheDefinition(); GetModelSelector(); }
 
     void LoadEnvironment();
     DGNPLATFORM_EXPORT void SaveEnvironment();

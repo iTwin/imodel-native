@@ -1495,8 +1495,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
     // as the DgnDb view. That makes for a smoother transition from DgnDb vew to redline view. 
     controller->AdjustAspectRatio(projectViewRect.Aspect(), true);
 
-    controller->StoreToDefinition();
-    controller->GetDefinitionR().Write();
+    controller->Save();
 
     return controller;
     }
