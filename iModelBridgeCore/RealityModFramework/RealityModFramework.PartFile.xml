@@ -201,7 +201,7 @@
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
-        <!--needed for the moment-->
+        <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
@@ -241,14 +241,13 @@
         <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
 
-        <!--Not deliver-->
-        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="managedtests"               Deliver="false"/>
         <!--notices/ review if notices need to be delivered--> 
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
 
-        <!--needed for the moment-->
+        <!--needed for the moment from LkgsVancouver -->
+        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="managedtests"               Deliver="false"/>
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
@@ -299,7 +298,7 @@
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
         <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
         
-        <!--needed for the moment-->
+        <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
         <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
         <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
@@ -370,11 +369,10 @@
         <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
         <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
 
-        <!--needed for the moment-->
+        <!--needed for the moment from LkgsVancouver -->
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="managedtests"                   Path=""/>
 
@@ -398,9 +396,14 @@
         </Bindings>
     </Part>
 
+    <ProductDirectoryList ListName="RealityModFramework-GtestDir" >
+        <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
+    </ProductDirectoryList>
+
     <Product Name="RealityModFramework-Gtest" >
         <SubPart PartName="Gtest"/>
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="RealityModFramework-GtestDir"/>
     </Product>
 
     <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/RealityModFramework-Gtest/RealityModFrameworkTest -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/RealityModFramework" OnlyPlatforms="x86,x64,MacOs*,Linux*">
