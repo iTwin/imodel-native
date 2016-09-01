@@ -358,7 +358,7 @@ struct StaticMeta : StaticMetaBase {
 
   inline static ThreadEntry* getThreadEntry() {
 #ifdef FOLLY_TLD_USE_FOLLY_TLS
-    static FOLLY_TLS ThreadEntry* threadEntryCache{nullptr};
+    static FOLLY_TLS ThreadEntry* threadEntryCache = nullptr;
     if (UNLIKELY(threadEntryCache == nullptr)) {
       threadEntryCache = instance().threadEntry_();
     }
