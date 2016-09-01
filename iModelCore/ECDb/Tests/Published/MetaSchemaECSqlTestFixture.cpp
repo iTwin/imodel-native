@@ -33,6 +33,10 @@ private:
 
 protected:
     void AssertSchemaDefs();
+    void AssertClassHasBaseClasses (ECClassContainer& ecClasses);
+    void GetAllBaseClassNames (ECClassP ecClass, std::vector<Utf8String>& classNames, int* classCount);
+    bool ContainsClassName (Utf8String searchedClassName, std::vector<Utf8String>& classNames);
+    void VerifyECDbPropertyInheritance(ECClassCP ecClass);
     };
 
 //---------------------------------------------------------------------------------
@@ -870,6 +874,257 @@ TEST_F(MetaSchemaECSqlTestFixture, ECClassId)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT * from ec.ECSchemaDef WHERE ECClassId IS NOT NULL"));
+     }
+ 
+/*---------------------------------------------------------------------------------------
+<summary>Creates a class chain and add properties and then verifies if they
+come in the expected sequence.</summary>
+<Scenario>
+This is the class hierarchy used in this test. The numbers indicate override priority,
+and the letters indicate ECClass name and their inital properties, e.g.
+"4cd" represents the ECClass named "cd" which has ECProperties named "c" and "d"
+and which is 4th overall in override priority... it can override properties from ECClass
+"kl", but not properties from "ab".
+
+//     3ab 4cd 6gh 7ij
+//       \/      \/
+//       2ef    5kl
+//          \  /
+//          1mn
+</scenario>
+@bsimethod                              Zakary.Olyarnik                         08/16
+-------------+---------------+---------------+---------------+---------------+---------*/
+TEST_F(MetaSchemaECSqlTestFixture, TestPropertyOverrides)
+    {
+    // helper method: inserts a pre-defined schema into ECDb
+    auto importSchema = [](ECDbCR db, ECN::ECSchemaCR schemaIn)
+        {
+        ECN::ECSchemaPtr imported = nullptr;
+        ASSERT_EQ(ECObjectsStatus::Success, schemaIn.CopySchema(imported));
+        ASSERT_EQ(ECObjectsStatus::Success, imported->SetName(schemaIn.GetName()));
+        ASSERT_EQ(ECObjectsStatus::Success, imported->SetAlias(schemaIn.GetAlias()));
+        ECN::ECSchemaReadContextPtr contextPtr = ECN::ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(ECObjectsStatus::Success, contextPtr->AddSchema(*imported));
+        ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(contextPtr->GetCache()));
+        db.Schemas().CreateECClassViewsInDb();
+        };
+
+    // create schema
+    ECSchemaPtr testSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(testSchema, "testSchema", "ts", 1, 0, 0));
+
+    ECEntityClassP ab = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ab, "AB"));
+    ECEntityClassP cd = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(cd, "CD"));
+    ECEntityClassP ef = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ef, "EF"));
+    ECEntityClassP gh = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(gh, "GH"));
+    ECEntityClassP ij = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(ij, "IJ"));
+    ECEntityClassP kl = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(kl, "KL"));
+    ECEntityClassP mn = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, testSchema->CreateEntityClass(mn, "MN"));
+
+    // add base classes
+    ef->AddBaseClass(*ab);
+    ef->AddBaseClass(*cd);
+    kl->AddBaseClass(*gh);
+    kl->AddBaseClass(*ij);
+    mn->AddBaseClass(*ef);
+    mn->AddBaseClass(*kl);
+
+    // add properties to classes
+    PrimitiveECPropertyP primitiveProperty = nullptr;
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "a", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "b", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, cd->CreatePrimitiveProperty(primitiveProperty, "c", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, cd->CreatePrimitiveProperty(primitiveProperty, "d", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "e", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "f", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "i", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "j", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "k", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "l", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "m", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "n", PRIMITIVETYPE_String));
+    
+    // create ECDb with test schema, then read it back out to update local copy
+    ECDbR ecdb = SetupECDb("PropertyOverrides.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    importSchema(ecdb, *testSchema);
+    ECSchemaCP readOutSchema = ecdb.Schemas().GetECSchema("testSchema");
+    ECClassCP readOutmn = readOutSchema->GetClassCP("MN");
+
+    // compare local copy properties with ECSql-retrieved properties
+    VerifyECDbPropertyInheritance(readOutmn);
+
+    // add some duplicate properties to mn, overriding those from the base classes 
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "b", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "d", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "f", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "j", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "k", PRIMITIVETYPE_String));
+
+    // re-import and read out schema, then validate through ECSql
+    importSchema(ecdb, *testSchema);
+    readOutSchema = ecdb.Schemas().GetECSchema("testSchema");
+    readOutmn = readOutSchema->GetClassCP("MN");
+    VerifyECDbPropertyInheritance(readOutmn);
+
+    // override more properties of base classes (add eacg to kl, iab to gh, l to ef, g to ij and gh to ab)
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "e", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "a", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "c", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, kl->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "a", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "b", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, gh->CreatePrimitiveProperty(primitiveProperty, "i", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ef->CreatePrimitiveProperty(primitiveProperty, "l", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ij->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "g", PRIMITIVETYPE_String));
+    ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
+
+    // re-import and read out schema, then validate through ECSql
+    importSchema(ecdb, *testSchema);
+    readOutSchema = ecdb.Schemas().GetECSchema("testSchema");
+    readOutmn = readOutSchema->GetClassCP("MN");
+    VerifyECDbPropertyInheritance(readOutmn);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Zakary.Olyarnik                     08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void MetaSchemaECSqlTestFixture::VerifyECDbPropertyInheritance(ECClassCP ecClass)
+    {
+    // retrieve all local, inherited, and overridden properties from a given class
+    ECSqlStatement propertyStatement;
+    ASSERT_EQ(ECSqlStatus::Success, propertyStatement.Prepare(GetECDb(), "SELECT p.ECInstanceId FROM ec.ECClassDef c1 "
+        "JOIN ec.ClassHasAllBaseClasses rel ON rel.SourceECInstanceId = c1.ECInstanceId "
+        "JOIN ec.ECClassDef c2 ON c2.ECInstanceId = rel.TargetECInstanceId "
+        "INNER JOIN ec.ECPropertyDef p ON p.ClassId = c2.ECInstanceId "
+        "WHERE c1.ECInstanceId=? "
+        "ORDER BY rel.ECInstanceId"));
+    ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindId(1, ecClass->GetId()));
+
+    // iterate through properties using ECObjects' GetProperties() and compare to ECSql-retrieved properties
+    for (ECPropertyCP prop : ecClass->GetProperties(true))
+        {
+        ASSERT_EQ(propertyStatement.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(propertyStatement.GetValueId<ECPropertyId>(0), prop->GetId());
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                              Arturas.Januska     08/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (MetaSchemaECSqlTestFixture, ECClassHasBaseClasses)
+    {
+    SetupECDb ("metaschematests.ecdb", BeFileName (L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE (GetECDb ().IsDbOpen ());
+
+    // Import DiamondInheritance.01.00.ecschema.xml
+    ECSchemaPtr s1;
+    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
+    ctx->AddSchemaLocater (GetECDb ().GetSchemaLocater ());
+    ECDbTestUtility::ReadECSchemaFromDisk (s1, ctx, L"DiamondInheritance.01.00.ecschema.xml");
+    ASSERT_EQ (SUCCESS, GetECDb ().Schemas ().ImportECSchemas (ctx->GetCache ())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+    
+    // Acquire ECSqlTest and DiamondInheritance schemas
+    ECSchemaCP eCSqlTetSchema = GetECDb ().Schemas ().GetECSchema ("ECSqlTest");
+    ECSchemaCP diamondInheritanceSchema = GetECDb ().Schemas ().GetECSchema ("DiamondInheritance");
+
+    auto testSchmaClasses = eCSqlTetSchema->GetClasses ();
+    auto diamondSchemaClasses = diamondInheritanceSchema->GetClasses ();
+
+    AssertClassHasBaseClasses (testSchmaClasses);
+    AssertClassHasBaseClasses (diamondSchemaClasses);
+    }
+
+void MetaSchemaECSqlTestFixture::AssertClassHasBaseClasses (ECClassContainer& ecClasses)
+    {
+    for each (ECClassP ecClass in ecClasses)
+        {
+        if (!ecClass->HasBaseClasses ())
+            continue;
+
+        // class names used for testing because schemas used in test does not have classes that inherit from classes in other schemas, and class name must be unique per schema
+        std::vector<Utf8String> classNames;
+        classNames.push_back (ecClass->GetName ());
+        int expectedClassCount = 1;
+        int* expectedClassCountP = &expectedClassCount;
+        GetAllBaseClassNames (ecClass, classNames, expectedClassCountP);
+
+        ECSqlStatement classStatement;
+        ASSERT_EQ (ECSqlStatus::Success, classStatement.Prepare (GetECDb (), "SELECT c2.Name, c2.* FROM ec.ECClassDef c1 "
+                                                                 "JOIN ec.ClassHasAllBaseClasses h ON h.SourceECInstanceId = c1.ECInstanceId "
+                                                                 "JOIN ec.ECClassDef c2 ON c2.ECInstanceId = h.TargetECInstanceId "
+                                                                 "WHERE c1.Name=?"));
+
+        ASSERT_EQ (ECSqlStatus::Success, classStatement.BindText (1, ecClass->GetName ().c_str (), IECSqlBinder::MakeCopy::No));
+
+        int actualClassCount = 0;
+
+        while (BE_SQLITE_ROW == classStatement.Step ())
+            {
+            Utf8String className = Utf8String (classStatement.GetValueText (0));
+
+            if (!ContainsClassName (className, classNames))
+                {
+                Utf8String errorData = "";
+                errorData = "ECClass: \"" + className + "\" Was not found in expected classes:\n";
+
+                for each (auto expectedClassName in classNames)
+                    errorData += expectedClassName + "\n";
+
+                ASSERT_TRUE (false) << errorData;
+                }
+
+            actualClassCount++;
+            }
+
+        ASSERT_EQ (actualClassCount, expectedClassCount);
+        }
+    }
+
+void MetaSchemaECSqlTestFixture::GetAllBaseClassNames (ECClassP ecClass, std::vector<Utf8String>& classNames, int* classCount)
+    {
+    if (!ecClass->HasBaseClasses ())
+        return;
+
+    auto baseClasses = ecClass->GetBaseClasses ();
+
+    for each (auto baseClass in baseClasses)
+        {
+        bool ecClassAlreadyAdded = false;
+
+        for each (auto className in classNames)
+            {
+            if (className == baseClass->GetName ())
+                ecClassAlreadyAdded = true;
+            }
+
+        if (ecClassAlreadyAdded)
+            continue;
+
+        (*classCount)++;
+        classNames.push_back (baseClass->GetName ());
+        GetAllBaseClassNames (baseClass, classNames, classCount);
+        }
+    }
+
+bool MetaSchemaECSqlTestFixture::ContainsClassName (Utf8String searchedClassName, std::vector<Utf8String>& classNames)
+    {
+    for each (Utf8String className in classNames)
+        if (searchedClassName == className)
+            return true;
+
+    return false;
     }
 
 END_ECDBUNITTESTS_NAMESPACE

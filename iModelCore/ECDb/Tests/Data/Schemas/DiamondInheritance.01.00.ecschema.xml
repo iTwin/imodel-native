@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="DiamondInheritance" nameSpacePrefix="diaminh" version="01.00" description="" displayLabel="" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+    <ECEntityClass typeName="BaseC" displayLabel="">
+        <ECProperty propertyName="B1" typeName="string"/>
+        <ECProperty propertyName="B2" typeName="string"/>
+        <ECProperty propertyName="B3" typeName="string"/>
+        <ECProperty propertyName="B4" typeName="string"/>
+        <ECProperty propertyName="B5" typeName="string"/>
+        <ECProperty propertyName="B6" typeName="string"/>
+        <ECProperty propertyName="B7" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C1L1" displayLabel="">
+        <BaseClass>BaseC</BaseClass>
+        <ECProperty propertyName="C111" typeName="string"/>
+        <ECProperty propertyName="C112" typeName="string"/>
+        <ECProperty propertyName="C113" typeName="string"/>
+        <ECProperty propertyName="C114" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C1L2" displayLabel="">
+        <BaseClass>C1L1</BaseClass>
+        <ECProperty propertyName="B1" typeName="string"/>
+        <ECProperty propertyName="B2" typeName="string"/>
+        <ECProperty propertyName="C111" typeName="string"/>
+        <ECProperty propertyName="C112" typeName="string"/>
+        <ECProperty propertyName="C121" typeName="string"/>
+        <ECProperty propertyName="C122" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C1L3" displayLabel="">
+        <BaseClass>C1L2</BaseClass>
+        <ECProperty propertyName="B2" typeName="string"/>
+        <ECProperty propertyName="B5" typeName="string"/>
+        <ECProperty propertyName="B7" typeName="string"/>
+        <ECProperty propertyName="C111" typeName="string"/>
+        <ECProperty propertyName="C121" typeName="string"/>
+        <ECProperty propertyName="C132" typeName="string"/>
+        <ECProperty propertyName="C133" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C2L1" displayLabel="">
+        <BaseClass>BaseC</BaseClass>
+        <ECProperty propertyName="B2" typeName="string"/>
+        <ECProperty propertyName="B3" typeName="string"/>
+        <ECProperty propertyName="B7" typeName="string"/>
+        <ECProperty propertyName="C211" typeName="string"/>
+        <ECProperty propertyName="C212" typeName="string"/>
+        <ECProperty propertyName="C213" typeName="string"/>
+        <ECProperty propertyName="C214" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C2L2" displayLabel="">
+        <BaseClass>C2L1</BaseClass>
+        <ECProperty propertyName="B3" typeName="string"/>
+        <ECProperty propertyName="C213" typeName="string"/>
+        <ECProperty propertyName="C214" typeName="string"/>
+        <ECProperty propertyName="C221" typeName="string"/>
+        <ECProperty propertyName="C222" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="C1_2L4_3" displayLabel="">
+        <ECProperty propertyName="B4" typeName="string"/>
+        <ECProperty propertyName="D1" typeName="string"/>
+        <BaseClass>C1L3</BaseClass>
+        <BaseClass>C2L2</BaseClass>
+    </ECEntityClass>
+</ECSchema>

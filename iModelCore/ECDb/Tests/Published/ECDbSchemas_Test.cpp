@@ -122,6 +122,24 @@ TEST_F(ECDbSchemaTests, LoadECSchemas)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Arturas.Januska                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECDbSchemaTests, ImportDiamondInheritanceECSchema)
+    {
+	ECDbTestProject test;
+	ECDbR ecdb = test.Create ("importecschema.ecdb");
+
+	ECSchemaPtr s1;
+	ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
+	ECDbTestUtility::ReadECSchemaFromDisk (s1, ctx, L"DiamondInheritance.01.00.ecschema.xml", nullptr);
+	ASSERT_TRUE (s1.IsValid ());
+
+	//now import test schema where the table already exists for the ECClass
+	ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (ctx->GetCache ())) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
+	ASSERT_TRUE (ecdb.Schemas ().ContainsECSchema ("DiamondInheritance")) << "DiamondInheritance schema should have been imported successfully.";
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int GetColumnCount(DbR db, Utf8CP table)
