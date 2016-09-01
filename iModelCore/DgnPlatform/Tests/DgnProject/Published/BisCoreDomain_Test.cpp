@@ -211,17 +211,40 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, dictionaryModel->GetCode().GetNamespace().c_str());
     ASSERT_STREQ(BIS_ECSCHEMA_NAME, groupInformationModel->GetCode().GetNamespace().c_str());
 
-    //// make sure that Delete against the root Subject fails
-    //    {
-    //    SubjectCPtr subject = m_db->Elements().GetRootSubject();
-    //    ASSERT_TRUE(subject.IsValid());
-    //    ASSERT_NE(DgnDbStatus::Success, subject->Delete());
-    //    }
+    // make sure that Delete against the root Subject fails
+        {
+        SubjectCPtr subject = m_db->Elements().GetRootSubject();
+        ASSERT_TRUE(subject.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus status = subject->Delete();
+        BeTest::SetFailOnAssert(true);
+        ASSERT_NE(DgnDbStatus::Success, status);
+        }
 
-    //// ensure the the root Subject still exists
-    //    {
-    //    m_db->Memory().PurgeUntil(0);
-    //    SubjectCPtr subject = m_db->Elements().GetRootSubject();
-    //    ASSERT_TRUE(subject.IsValid());
-    //    }
+    // make sure that Delete against the RepositoryModel fails
+        {
+        DgnModelPtr model = m_db->Models().GetModel(DgnModel::RepositoryModelId());
+        ASSERT_TRUE(model.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus status = model->Delete();
+        BeTest::SetFailOnAssert(true);
+        ASSERT_NE(DgnDbStatus::Success, status);
+        }
+
+    // make sure that Delete against the DictionaryModel fails
+        {
+        DgnModelPtr model = m_db->Models().GetModel(DgnModel::DictionaryId());
+        ASSERT_TRUE(model.IsValid());
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus status = model->Delete();
+        BeTest::SetFailOnAssert(true);
+        ASSERT_NE(DgnDbStatus::Success, status);
+        }
+
+    // ensure the the root Subject still exists
+        {
+        m_db->Memory().PurgeUntil(0);
+        SubjectCPtr subject = m_db->Elements().GetRootSubject();
+        ASSERT_TRUE(subject.IsValid());
+        }
     }

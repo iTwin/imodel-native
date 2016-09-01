@@ -284,6 +284,20 @@ DgnDbStatus Subject::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Subject::_OnDelete() const
+    {
+    if (GetDgnDb().Elements().GetRootSubjectId() == GetElementId())
+        {
+        BeAssert(false); // can't delete the root Subject
+        return DgnDbStatus::WrongElement;
+        }
+        
+    return T_Super::_OnDelete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8CP label, Utf8CP description)
     {
     DgnDbR db = parentSubject.GetDgnDb();

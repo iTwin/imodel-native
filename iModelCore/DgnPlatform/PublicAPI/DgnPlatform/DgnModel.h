@@ -984,6 +984,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RepositoryModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_RepositoryModel, DefinitionModel);
 protected:
+    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The RepositoryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit RepositoryModel(CreateParams const& params) : T_Super(params) {}
@@ -1003,8 +1004,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DictionaryModel : DefinitionModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DictionaryModel, DefinitionModel);
 protected:
-    virtual DgnDbStatus _OnDelete() override { return DgnDbStatus::WrongModel; }
-    virtual void _OnDeleted() override { BeAssert(false && "The dictionary model cannot be deleted"); }
+    virtual DgnDbStatus _OnDelete() override {BeAssert(false && "The DictionaryModel cannot be deleted"); return DgnDbStatus::WrongModel;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
     DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const override;
 public:

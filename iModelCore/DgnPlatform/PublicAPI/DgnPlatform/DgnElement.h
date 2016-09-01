@@ -2142,6 +2142,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Subject : DefinitionElement
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
 
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 
