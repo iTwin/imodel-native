@@ -553,6 +553,8 @@ $(o)HUTImportFromFileExportToFile$(oext) : $(ippGraDir)hut/src/HUTImportFromFile
 
 $(o)HUTImportFromRasterExportToFile$(oext) : $(ippGraDir)hut/src/HUTImportFromRasterExportToFile.cpp $(ippAllInc)HUTImportFromRasterExportToFile.h ${MultiCompileDepends}
 
+$(o)HUTLandSat8ToRGBA$(oext) : $(ippGraDir)hut/src/HUTLandSat8ToRGBA.cpp $(ippAllInc)HUTLandSat8ToRGBA.h ${MultiCompileDepends}
+
 $(o)HPSInternalNodes$(oext) : $(ippGraDir)hps/src/HPSInternalNodes.cpp $(ippGraDir)hps/src/HPSInternalNodes.h $(ippAllInc)HPSValueNode.h ${MultiCompileDepends}
 
 $(o)HPSNode$(oext) : $(ippGraDir)hps/src/HPSNode.cpp $(ippAllInc)HPSNode.h $(ippGraDir)hps/src/HPSInternalNodes.h ${MultiCompileDepends}
