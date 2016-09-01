@@ -6670,7 +6670,6 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
         }
     }
 
-#ifdef SCALABLE_MESH_ATP
 //=======================================================================================
 // @bsimethod                                                   Richard.Bois 04/16
 //=======================================================================================
@@ -6696,7 +6695,6 @@ uint64_t SMPointIndexNode<POINT, EXTENT>::GetNextID() const
 
     return childID;
     }
-#endif
 
 #ifdef INDEX_DUMPING_ACTIVATED
 
@@ -7653,7 +7651,6 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::DumpOctTre
     }
 #endif
 
-#ifdef SCALABLE_MESH_ATP
 template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::SetNextID(const uint64_t& id)
     {
     assert(id != uint64_t(-1) && id > 0);
@@ -7664,7 +7661,6 @@ template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNex
     {
     return GetRootNode()->GetNextID();
     }
-#endif
 
 #ifdef __HMR_DEBUG
 /**----------------------------------------------------------------------------
