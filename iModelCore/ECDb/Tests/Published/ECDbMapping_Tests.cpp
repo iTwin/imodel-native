@@ -5202,8 +5202,8 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 ECClassId b11ClassId = ecdb.Schemas().GetECClassId("TestSchema", "B11");
 
                 //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
-                indexWhereClause.Sprintf("([ForeignECInstanceId_ts_RelNonPoly] IS NOT NULL) AND (ECClassId=%llu OR ECClassId=%llu)", b1ClassId.GetValue(), b2ClassId.GetValue());
-                                b1ClassId.ToString() + " OR ECClassId=" + b2ClassId.ToString() + ")";
+                Utf8String indexWhereClause;
+                indexWhereClause.Sprintf("([ForeignECInstanceId_ts8_RelNonPoly] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
 
                 AssertIndex(ecdb, "uix_ts8_B_fk_ts8_RelNonPoly_target", true, "ts8_B", {"ForeignECInstanceId_ts8_RelNonPoly"}, indexWhereClause.c_str());
 
