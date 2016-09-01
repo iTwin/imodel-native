@@ -184,6 +184,8 @@ virtual bool _IsEqual (ISubEntityCR) const = 0;
 //! @private
 virtual SubEntityType _GetSubEntityType() const = 0;
 //! @private
+virtual DRange3d _GetSubEntityRange() const = 0;
+//! @private
 virtual GeometricPrimitivePtr _GetGeometry() const = 0;
 //! @private
 virtual GeometricPrimitiveCPtr _GetParentGeometry() const = 0;
@@ -197,6 +199,9 @@ bool IsEqual (ISubEntityCR subEntity) const {return _IsEqual(subEntity);}
 
 //! @return The topology type for this sub-entity.
 SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
+
+//! @return The axis aligned bounding box for the sub-entity.
+DRange3d GetSubEntityRange() const {return _GetSubEntityRange();}
 
 //! @return A GeometricPrimitive representing the geometry of this sub-entity.
 GeometricPrimitivePtr GetGeometry() const {return _GetGeometry();}
