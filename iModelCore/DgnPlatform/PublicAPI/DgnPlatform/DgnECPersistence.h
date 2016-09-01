@@ -109,11 +109,15 @@ struct DgnECPersistence : NonCopyableClass
 public:
     //! Helper utility to get all the EC information associated with an element
     //! @param [out] jsonInstances  Information on the element in the JSON format.
-    //! @param [out] jsonDisplayInfo to properly display the element information in the JSON format.
+    //!              The properties are formatted strings that include unit labels 
+    //!              if specified. 
+    //! @param [out] jsonDisplayInfo Additional presentation meta-data to properly 
+    //!              format the properties in the instances. 
     //! @param [in] elementId Id of Element to get information on. 
     //! @param [in] dgndb DgnDb
+    //! @see JsonReader::Read, JsonECSqlSelectAdapter::ReadInstance for more
+    //! information on the format of the JSON. 
     DGNPLATFORM_EXPORT static BentleyStatus GetElementInfo (JsonValueR jsonInstances, JsonValueR jsonDisplayInfo, DgnElementId elementId, DgnDbCR dgndb);
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
