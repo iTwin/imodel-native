@@ -575,15 +575,6 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="InformationCarrierElement" modifier="Abstract">
-        <!-- Proxy for information carriers in the physical world.  For example, printed copies of documents or electronic files -->
-        <BaseClass>Element</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-
     <ECEntityClass typeName="DefinitionElement" modifier="Abstract">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
@@ -702,6 +693,49 @@
             </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
+
+    <ECEntityClass typeName="Document" modifier="Abstract">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Drawing">
+        <BaseClass>Document</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Sheet">
+        <BaseClass>Document</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="InformationCarrierElement" modifier="Abstract">
+        <!-- Proxy for information carriers in the physical world.  For example, printed copies of documents or electronic files -->
+        <BaseClass>Element</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DocumentCarrier" modifier="Abstract">
+        <BaseClass>InformationCarrierElement</BaseClass>
+        <ECCustomAttributes>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <SharedColumnCount>16</SharedColumnCount>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="GeometricElement" modifier="Abstract">
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>

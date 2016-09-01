@@ -357,8 +357,6 @@ $(CoreObjs)BisCoreDomain$(oext) :                   $(DgnCoreDir)BisCoreDomain.c
 
 $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(DgnPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
 
-$(CoreObjs)DocumentationDomain$(oext) :             $(DgnCoreDir)DocumentationDomain.cpp $(DgnPlatformAPISrc)DocumentationDomain.h ${MultiCompileDepends}
-
 $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(DgnPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
 
 $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(ViewControllerDepends) ${MultiCompileDepends}

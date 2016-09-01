@@ -36,7 +36,7 @@ END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Definition; struct Subject;};
+namespace dgn_ElementHandler {struct Element; struct Geometric2d; struct Geometric3d; struct Physical; struct SpatialLocation; struct Annotation2d; struct DrawingGraphic; struct Group; struct InformationContent; struct InformationCarrier; struct Document; struct Drawing; struct Sheet; struct Definition; struct Subject;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
@@ -2051,6 +2051,53 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationContentElement : DgnElement
 protected:
     virtual InformationContentElementCP _ToInformationContentElement() const override final {return this;}
     explicit InformationContentElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! A Document is an InformationContentElement that identifies the content of a document.
+//! The realized form of a document is called a DocumentCarrier (different class than Document). 
+//! For example, a will is a legal document.  The will published into a PDF file is an ElectronicDocumentCopy.
+//! The will printed onto paper is a PrintedDocumentCopy.
+//! In this example, the Document only identifies, names, and tracks the content of the will.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Document : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Document, InformationContentElement)
+    friend struct dgn_ElementHandler::Document;
+
+protected:
+    explicit Document(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Drawing : Document
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Drawing, Document)
+    friend struct dgn_ElementHandler::Drawing;
+
+protected:
+    explicit Drawing(CreateParams const& params) : T_Super(params) {}
+
+public:
+    // WIP: need to add static Create method!
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Sheet : Document
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Sheet, Document)
+    friend struct dgn_ElementHandler::Sheet;
+
+protected:
+    explicit Sheet(CreateParams const& params) : T_Super(params) {}
+
+public:
+    // WIP: need to add static Create method!
 };
 
 //=======================================================================================
