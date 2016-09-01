@@ -692,7 +692,7 @@ bool ECInstanceAdapterHelper::HasReadonlyPropertiesAreUpdatableOption(ECDbCR ecd
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECInstanceAdapterHelper::SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId const& ecInstanceId)
+BentleyStatus ECInstanceAdapterHelper::SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId ecInstanceId)
     {
     if (!ecInstanceId.IsValid())
         return ERROR;

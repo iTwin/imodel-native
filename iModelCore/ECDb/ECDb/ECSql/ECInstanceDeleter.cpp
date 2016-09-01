@@ -52,10 +52,7 @@ void ECInstanceDeleter::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Carole.MacDonald                   02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceDeleter::Delete
-(
-    ECInstanceId const& ecInstanceId
-) const
+BentleyStatus ECInstanceDeleter::Delete(ECInstanceId ecInstanceId) const
     {
     if (!IsValid())
         {

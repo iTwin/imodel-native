@@ -70,11 +70,11 @@ struct DbClassMapLoadContext : public NonCopyableClass
         DbClassMapLoadContext() :m_isValid(false), m_baseClassMap(nullptr) {}
         ~DbClassMapLoadContext() {}
 
-        ClassMapId const& GetClassMapId() const { return m_classMapId; }
+        ClassMapId GetClassMapId() const { return m_classMapId; }
 
         ClassMapCP GetBaseClassMap() const { return m_baseClassMap; }
         BentleyStatus SetBaseClassMap(ClassMapCR classMap);
-        ECN::ECClassId const& GetBaseClassId() const { return m_baseClassId; }
+        ECN::ECClassId GetBaseClassId() const { return m_baseClassId; }
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
 
         bool HasMappedProperties() const { return !m_columnByAccessString.empty(); }

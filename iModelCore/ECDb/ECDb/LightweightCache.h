@@ -43,9 +43,9 @@ struct LightweightCache final: NonCopyableClass
         mutable bmap<ECN::ECClassId, bset<DbTable const*>> m_tablesPerClassId;
 
         ECDbMap const& m_map;
-        ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId classId)  const;
-        bset<DbTable const*> const& LoadClassIdsPerTable(ECN::ECClassId iid) const;
-        std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const& tbl) const;
+        ClassIdsPerTableMap const& LoadHorizontalPartitions(ECN::ECClassId)  const;
+        bset<DbTable const*> const& LoadTablesForClassId(ECN::ECClassId) const;
+        std::vector<ECN::ECClassId> const& LoadClassIdsPerTable(DbTable const&) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadRelationshipConstraintClasses(ECN::ECClassId relationshipId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& LoadConstraintClassesForRelationships(ECN::ECClassId constraintClassId) const;
 
@@ -53,7 +53,7 @@ struct LightweightCache final: NonCopyableClass
         explicit LightweightCache(ECDbMap const& map);
         ~LightweightCache() {}
         std::vector<ECN::ECClassId> const& GetClassesForTable(DbTable const&) const;
-        bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId classId) const;
+        bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;
         ClassIdsPerTableMap const& GetHorizontalPartitionsForClass(ECN::ECClassId) const;
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
         //@remarks: AnyClass constraints are ignored.
@@ -115,10 +115,11 @@ struct StorageDescription  final: NonCopyableClass
         Partition* AddHorizontalPartition(DbTable const&, bool isRootPartition);
         Partition* AddVerticalPartition(DbTable const&, bool isRootPartition);
 
-
     public:
+        static std::unique_ptr<StorageDescription> Create(ClassMap const&, LightweightCache const& lwmc);
+
         ~StorageDescription() {}
-        StorageDescription(StorageDescription&&);
+
         std::vector<Partition> const& GetVerticalPartitions() const { return m_verticalPartitions; }
 
         //! Returns nullptr, if more than one non-virtual partitions exist.
@@ -135,7 +136,6 @@ struct StorageDescription  final: NonCopyableClass
         ECN::ECClassId GetClassId() const { return m_classId; }
 
         BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const&, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName = false, Utf8CP tableAlias = nullptr) const;
-        static std::unique_ptr<StorageDescription> Create(ClassMap const&, LightweightCache const& lwmc);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

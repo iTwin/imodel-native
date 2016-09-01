@@ -130,9 +130,9 @@ TEST_F(ECDbSymbolProviderTests, GetECClassId)
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue value;
-    instance->GetValue(value, "my_class_id");
-    EXPECT_TRUE(value.IsString());
-    EXPECT_STREQ(Utf8PrintfString("%" PRIu64, testClass->GetId().GetValue()).c_str(), value.GetUtf8CP());
+    ASSERT_EQ(ECObjectsStatus::Success, instance->GetValue(value, "my_class_id"));
+    ASSERT_TRUE(value.IsString());
+    ASSERT_STREQ(testClass->GetId().ToString().c_str(), value.GetUtf8CP());
     }
 
 

@@ -21,7 +21,7 @@ struct ECSqlStatementBase;
 struct ECSqlBinder : IECSqlBinder
     {
 private:
-    std::function<void (ECInstanceId const& bindValue)> m_onBindRepositoyBasedIdEventHandler;
+    std::function<void (ECInstanceId bindValue)> m_onBindRepositoyBasedIdEventHandler;
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlTypeInfo m_typeInfo;
     int m_mappedSqlParameterCount;
@@ -41,7 +41,7 @@ protected:
     //Part of initialization. Must only called in constructor.
     void SetMappedSqlParameterCount (int mappedSqlParameterCount) { m_mappedSqlParameterCount = mappedSqlParameterCount; }
         
-    std::function<void (ECInstanceId const& bindValue)> GetOnBindBriefcaseBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
+    std::function<void (ECInstanceId bindValue)> GetOnBindBriefcaseBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
     std::vector<IECSqlBinder*>* GetOnBindEventHandlers () { return m_onBindEventHandlers.get(); }
 
     ECSqlStatus ReportError(DbResult sqliteStat, Utf8CP errorMessageHeader = nullptr) const;
@@ -66,7 +66,7 @@ public:
     ECSqlStatus OnBeforeStep ();
     void OnClearBindings ();
     ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
-    void SetOnBindBriefcaseBasedIdEventHandler (std::function<void (ECInstanceId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
+    void SetOnBindBriefcaseBasedIdEventHandler (std::function<void (ECInstanceId bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
     };
 
 //=======================================================================================

@@ -601,7 +601,7 @@ public:
     //! @param[in] jsonValue the instance data
     //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, JsonValueCR jsonValue) const;
+    ECDB_EXPORT BentleyStatus Update(ECInstanceId instanceId, JsonValueCR jsonValue) const;
 
     //! Update  a relationship instance from the specified jsonValue and source/target keys
     //! @param[in] instanceId the ECInstanceId of the instance to update
@@ -610,14 +610,14 @@ public:
     //! @param[in] targetKey ECInstanceKey for the target of the relationship
     //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
+    ECDB_EXPORT BentleyStatus Update(ECInstanceId instanceId, JsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
 
     //! Update an instance from the specified jsonValue
     //! @param[in] instanceId the ECInstanceId of the instance to update
     //! @param[in] jsonValue the instance data
     //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Update (ECInstanceId const& instanceId, RapidJsonValueCR jsonValue) const;
+    ECDB_EXPORT BentleyStatus Update (ECInstanceId instanceId, RapidJsonValueCR jsonValue) const;
 
     //! Update  a relationship instance from the specified jsonValue and source/target keys
     //! @param[in] instanceId the ECInstanceId of the instance to update
@@ -626,7 +626,7 @@ public:
     //! @param[in] targetKey ECInstanceKey for the target of the relationship
     //! @return SUCCESS in case of successful execution of the underlying ECSQL UPDATE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Update(ECInstanceId const& instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
+    ECDB_EXPORT BentleyStatus Update(ECInstanceId instanceId, RapidJsonValueCR jsonValue, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey) const;
 };
 
 //=======================================================================================
@@ -655,7 +655,7 @@ public:
     //! @param[in] instanceId the ECInstanceId of the instance to delete
     //! @return SUCCESS in case of successful execution of the underlying ECSQL DELETE. This means,
     //! SUCCESS is also returned if the specified instance does not exist in the file. ERROR otherwise.
-    ECDB_EXPORT BentleyStatus Delete (ECInstanceId const& instanceId) const;
+    ECDB_EXPORT BentleyStatus Delete (ECInstanceId instanceId) const;
 };
 
 

@@ -844,7 +844,7 @@ int64_t ECDbTestUtility::JulianDayToCommonEraTicks(double jd)
 // @bsimethod                                   Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbTestUtility::SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId const& instanceId)
+BentleyStatus ECDbTestUtility::SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId instanceId)
     {
     if (!instanceId.IsValid())
         return ERROR;

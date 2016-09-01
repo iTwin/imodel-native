@@ -264,13 +264,13 @@ public:
             : m_instance (instance)
             {}
 
-        ECInstanceInfo (ECN::IECInstanceCR instance, ECInstanceId const& instanceId)
+        ECInstanceInfo (ECN::IECInstanceCR instance, ECInstanceId instanceId)
             : m_instance (instance), m_instanceId (instanceId)
             {}
 
         ECN::IECInstanceCR GetInstance () const {return m_instance;}
         bool HasInstanceId () const {return m_instanceId.IsValid ();}
-        ECInstanceId const& GetInstanceId () const { return m_instanceId; }
+        ECInstanceId GetInstanceId () const { return m_instanceId; }
         };
 private:
     ECInstanceAdapterHelper ();
@@ -304,7 +304,7 @@ public:
     //! @param[in,out] instance ECInstance on which the id is set
     //! @param[out] ecInstanceId Id to set
     //! @return SUCCESS or ERROR
-    static BentleyStatus SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId const& ecInstanceId);
+    static BentleyStatus SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId ecInstanceId);
 
     //! Creates an empty ECInstance for the given class. Supports relationship classes, too.
     static ECN::IECInstancePtr CreateECInstance(ECN::ECClassCR);

@@ -50,7 +50,7 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-bset<DbTable const*> const& LightweightCache::LoadClassIdsPerTable(ECN::ECClassId classId) const
+bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassId classId) const
     {
     auto itor = m_tablesPerClassId.find(classId);
     if (itor != m_tablesPerClassId.end())
@@ -233,7 +233,7 @@ std::vector<ECClassId> const& LightweightCache::GetClassesForTable(DbTable const
 //---------------------------------------------------------------------------------------
 bset<DbTable const*> const& LightweightCache::GetVerticalPartitionsForClass(ECN::ECClassId classId) const
     {
-    return LoadClassIdsPerTable(classId);
+    return LoadTablesForClassId(classId);
     }
 
 //---------------------------------------------------------------------------------------

@@ -49,7 +49,7 @@ private:
 
     bool IsEnsureConstraints() const { return m_constraints != nullptr; }
 
-    ECSqlStatus FailIfConstraintClassIdViolation(ECN::ECClassId const& constraintClassId) const;
+    ECSqlStatus FailIfConstraintClassIdViolation(ECN::ECClassId constraintClassId) const;
 
     Utf8CP SystemPropertyToString() const;
 

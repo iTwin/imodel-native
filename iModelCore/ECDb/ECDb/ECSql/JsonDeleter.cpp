@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonDeleter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -30,7 +30,7 @@ bool JsonDeleter::IsValid () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Ramanujam.Raman                 9/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus JsonDeleter::Delete (ECInstanceId const& ecInstanceId) const
+BentleyStatus JsonDeleter::Delete (ECInstanceId ecInstanceId) const
     {
     return m_ecinstanceDeleter.Delete (ecInstanceId);
     }

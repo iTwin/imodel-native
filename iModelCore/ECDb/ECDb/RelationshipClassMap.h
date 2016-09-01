@@ -26,7 +26,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         bool m_anyClassMatches;
 
     public:
-        RelationshipConstraintMap(ECDbMap const&, ECN::ECClassId const& relClassId, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR);
+        RelationshipConstraintMap(ECDbMap const&, ECN::ECClassId relClassId, ECN::ECRelationshipEnd, ECN::ECRelationshipConstraintCR);
 
         PropertyMapCP GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
         void SetECInstanceIdPropMap(PropertyMapCP ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }

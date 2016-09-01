@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/ECDbTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -125,7 +125,7 @@ struct ECDbTestUtility
         static void     AssertECDateTime(ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
         static void     AssertECDateTime(int64_t expectedCETicks, int64_t actualCETicks, Utf8CP assertMessageHeader);
 
-        static BentleyStatus SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId const& instanceId);
+        static BentleyStatus SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId instanceId);
 
         static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);
         static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false, bool skipReadOnlyProps = false);

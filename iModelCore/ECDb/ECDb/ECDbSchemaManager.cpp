@@ -53,7 +53,7 @@ bvector<ECSchemaCP> ECDbSchemaManager::GetECSchemas(bool loadSchemaEntities) con
     stmt = nullptr; // in case the child call needs to reuse this statement
 
     bvector<ECSchemaCP> schemas;
-    for (ECSchemaId const& schemaId : schemaIds)
+    for (ECSchemaId schemaId : schemaIds)
         {
         ECSchemaCP out = GetECSchema(schemaId, loadSchemaEntities);
         if (out == nullptr)
@@ -320,7 +320,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema(Utf8CP schemaName, bool loadSchemaEnti
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId const& schemaId, bool loadSchemaEntities) const
+ECSchemaCP ECDbSchemaManager::GetECSchema(ECSchemaId schemaId, bool loadSchemaEntities) const
     {
     return m_schemaReader->GetECSchema(schemaId, loadSchemaEntities);
     }
@@ -354,7 +354,7 @@ ECClassCP ECDbSchemaManager::GetECClass(Utf8CP schemaNameOrPrefix, Utf8CP classN
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass(ECClassId const& ecClassId) const
+ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
     return m_schemaReader->GetECClass(ecClassId);
     }
