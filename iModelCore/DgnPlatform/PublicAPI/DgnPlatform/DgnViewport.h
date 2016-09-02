@@ -66,7 +66,7 @@ struct FitViewParams
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
-    typedef std::deque<Utf8String> ViewStateStack;
+    typedef std::deque<Utf8String> ViewUndoStack;
     typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
@@ -139,8 +139,8 @@ protected:
     ProgressiveTasks m_terrainProgressiveTasks;
     DPoint3d        m_viewCmdTargetCenter;
     Utf8String      m_currentBaseline;
-    ViewStateStack  m_forwardStack;
-    ViewStateStack  m_backStack;
+    ViewUndoStack   m_forwardStack;
+    ViewUndoStack   m_backStack;
     EventHandlerList<Tracker> m_trackers;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
@@ -309,6 +309,9 @@ public:
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
     RotMatrixCR GetRotMatrix() const {return m_rotMatrix;}
+    DVec3d GetXVector() const {DVec3d v; GetRotMatrix().GetRow(v,0); return v;}
+    DVec3d GetYVector() const {DVec3d v; GetRotMatrix().GetRow(v,1); return v;}
+    DVec3d GetZVector() const {DVec3d v; GetRotMatrix().GetRow(v,2); return v;}
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
     BSIRect GetViewRect() const {return m_renderTarget->GetViewRect();}
@@ -447,7 +450,7 @@ public:
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    bool IsGridOn() const {return m_viewController->GetViewFlags().grid;}
+    bool IsGridOn() const {return GetViewFlags().m_grid;}
 
     //! Determine whether this viewport is a 3d view.
     //! @remarks Will be true only for a physical views.
@@ -552,7 +555,6 @@ public:
 
     static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
     static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
-    static double GetCameraPlaneRatio() {return 300.0;}
 };
 
 //=======================================================================================

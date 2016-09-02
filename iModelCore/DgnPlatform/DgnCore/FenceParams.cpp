@@ -83,11 +83,11 @@ virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray& entries, ClipPrimitiveCP clip) override
+virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override
     {
 #if defined (NEEDS_WORK)
 #endif
-    return new SimplifyGraphic(params, *this, *this);
+    return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);
     }
 
 virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...
@@ -160,7 +160,7 @@ virtual bool _CheckStop() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _DrawAreaPattern(ClipStencil& boundary) override
+virtual void _DrawAreaPattern(Render::GraphicBuilderR graphic, CurveVectorCR boundary, Render::GeometryParamsR params) override
     {
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     FenceParamsP    fp = m_graphic->GetFenceParamsP ();

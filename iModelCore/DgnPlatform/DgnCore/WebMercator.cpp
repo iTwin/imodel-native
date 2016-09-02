@@ -174,7 +174,7 @@ struct WebMercatorProgressive : ProgressiveTask
 struct DrawArgs
 {
     RenderContextR m_context;
-    Render::GraphicArray m_graphics;
+    Render::GraphicBranch m_graphics;
     TileList m_missing;
 
     DrawArgs(RenderContextR context) : m_context(context) {}
@@ -654,10 +654,11 @@ void DrawArgs::DrawGraphics(double bias)
 
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, bias));
-    auto group = m_context.CreateGroupNode(Graphic::CreateParams(nullptr, biasTrans), m_graphics, nullptr);
+
+    auto group = m_context.CreateBranch(m_graphics, &biasTrans);
     m_context.OutputGraphic(*group, nullptr);
 
-    BeAssert(m_graphics.m_entries.empty()); // the CreateGroupNode should have moved them
+    BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1100,7 +1101,9 @@ BentleyStatus TileData::LoadTile() const
     auto graphic = m_renderSys._CreateGraphic(Graphic::CreateParams(nullptr));
 
     ImageSource source(m_isJpeg ? ImageSource::Format::Jpeg : ImageSource::Format::Png, std::move(m_data));
-    auto texture = m_renderSys._CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No);
+    Texture::CreateParams textureParams;
+    textureParams.SetIsTileSection();
+    auto texture = m_renderSys._CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
     m_data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the TileCache.
 
     graphic->SetSymbology(m_color, m_color, 0);

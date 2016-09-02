@@ -176,9 +176,9 @@ TEST_F(ElementGeomPartTests, ElementUsesGeometryParts)
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementUsesGeometryParts)));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(1,stmt.GetValueInt(0));
+    ASSERT_EQ(1,(0xffffffffULL & stmt.GetValueInt64(0)));           // *** TRICKY: We are testing the low word, i.e., ignoring the briefcase id in the high word
     ASSERT_EQ(elementId.GetValue(), stmt.GetValueInt64(1));
-    ASSERT_EQ(existingPartId.GetValue(), (int64_t)stmt.GetValueInt(2));
+    ASSERT_EQ(existingPartId.GetValue(), stmt.GetValueInt64(2));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -285,7 +285,6 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
     EXPECT_TRUE(m_db->Elements().GetElement(elementId1).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(elementId2).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(elementId3).IsValid());
-    //m_db->Get
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -293,7 +292,7 @@ TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementGeomPartTests, GeomPart2d)
     {
-    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeomParts2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
     //Create a GeometryPart
     GeometricPrimitivePtr elGPtr = GeometricPrimitive::Create(*GeomHelper::computeShape2d());
@@ -308,13 +307,17 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(geomPartPtr->GetCode(), *m_db);
     EXPECT_TRUE(existingPartId.IsValid());
 
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*m_db,DgnModel::CreateModelCode("TestModel2d"));
+    ASSERT_TRUE(sheetModel.IsValid());
+    DgnModelId modelId = sheetModel->GetModelId();
+
     //Add two elements using this GeometryPart
-    DgnElementId elementId1 = InsertElementUsingGeometryPart2d( geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId1 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId1.IsValid());
 
-    DgnElementId elementId2 = InsertElementUsingGeometryPart2d( geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId2 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId2.IsValid());
 
-    DgnElementId elementId3 = InsertElement2d( m_defaultModelId, m_defaultCategoryId);
+    DgnElementId elementId3 = InsertElement2d(modelId, m_defaultCategoryId);
     EXPECT_TRUE(elementId3.IsValid());
     }

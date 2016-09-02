@@ -1318,7 +1318,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
     if (!polyface.IsValid())
         return;
 
-    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
+    polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != geom.GetEntityType());
 
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 
@@ -1802,8 +1802,10 @@ void SimplifyGraphic::_AddBSplineSurface(MSBsplineSurfaceCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
     {
-    // Modify this polyface to conform to the processor's facet options...
-    if (IGeometryProcessor::UnhandledPreference::Ignore != ((IGeometryProcessor::UnhandledPreference::Auto | IGeometryProcessor::UnhandledPreference::Facet) & m_processor._GetUnhandledPreference(geom, *this)))
+    // See if we need to modify this polyface to conform to the processor's facet options...
+    IGeometryProcessor::IncompatiblePolyfacePreference pref = m_processor._GetIncompatiblePolyfacePreference(geom, *this);
+
+    if (IGeometryProcessor::IncompatiblePolyfacePreference::Original != pref)
         {
         size_t maxPerFace;
 
@@ -1813,6 +1815,9 @@ void SimplifyGraphic::_AddPolyface(PolyfaceQueryCR geom, bool filled)
             (m_facetOptions->GetConvexFacetsRequired() && !geom.HasConvexFacets()) ||
             (geom.GetNumFacet(maxPerFace) > 0 && (int) maxPerFace > m_facetOptions->GetMaxPerFace()))
             {
+            if (IGeometryProcessor::IncompatiblePolyfacePreference::Ignore == pref)
+                return;
+
             IPolyfaceConstructionPtr builder = PolyfaceConstruction::New(*m_facetOptions);
 
             builder->AddPolyface(geom);

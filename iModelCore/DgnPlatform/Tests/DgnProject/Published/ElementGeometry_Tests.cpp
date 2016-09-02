@@ -14,7 +14,18 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GeometricPrimitiveTests : public DgnDbTestFixture
 {
+    static IFacetOptionsPtr CreateFacetOptions(double chordTolerance)
+        {
+        IFacetOptionsPtr opts = IFacetOptions::Create();
 
+        opts->SetChordTolerance(chordTolerance);
+        opts->SetMaxPerFace(3);
+        opts->SetCurvedSurfaceMaxPerFace(3);
+        opts->SetParamsRequired(true);
+        opts->SetNormalsRequired(true);
+
+        return opts;
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,3 +107,28 @@ TEST_F(GeometricPrimitiveTests, Create)
     EXPECT_STREQ(text->GetText().c_str(), getAsTexTString->GetText().c_str());
 
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeometricPrimitiveTests, FacetCounts)
+    {
+    double dz = 3.0;
+    double radius = 1.5;
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr solidPrimitive = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    ASSERT_TRUE(solidPrimitive.IsValid());
+
+    IFacetOptionsPtr opts = CreateFacetOptions(0.01);
+    Render::FacetCounter facetCounter(*opts);
+    size_t facetCountApprox = facetCounter.GetFacetCount(*solidPrimitive);
+
+    IPolyfaceConstructionPtr polyfaceBuilder = IPolyfaceConstruction::Create(*opts);
+    polyfaceBuilder->AddSolidPrimitive(*solidPrimitive);
+    PolyfaceHeaderPtr polyface = polyfaceBuilder->GetClientMeshPtr();
+    ASSERT_TRUE(polyface.IsValid());
+
+    size_t actualFacetCount = polyface->GetNumFacet();
+    EXPECT_EQ(facetCountApprox, actualFacetCount);
+    }
+

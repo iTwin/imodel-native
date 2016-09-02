@@ -47,11 +47,11 @@ DgnDbStatus DgnDbTestFixture::GetSeedDbCopy(BeFileNameR actualName, WCharCP newN
 * Project file name is the name of the test, mode is ReadWrite and it is Briefcase
 * @bsimethod                                     Majd.Uddin                   01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupSeedProject()
+void DgnDbTestFixture::SetupSeedProject(BeSQLite::Db::OpenMode mode, bool needBriefcase)
     {
     WString fileName (TEST_NAME, BentleyCharEncoding::Utf8);
     fileName.append(L".bim");
-    SetupSeedProject(fileName.c_str(), Db::OpenMode::ReadWrite);
+    SetupSeedProject(fileName.c_str(), mode, needBriefcase);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,12 +71,6 @@ void DgnDbTestFixture::SetupSeedProject(WCharCP inFileName, BeSQLite::Db::OpenMo
         {
         ASSERT_TRUE(m_db->IsBriefcase());
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
-        }
-
-    if (BeSQLite::Db::OpenMode::ReadWrite == mode )
-        {
-        auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
-        ASSERT_TRUE(DgnDbStatus::Success == status);
         }
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
@@ -171,7 +165,7 @@ void DgnDbTestFixture::OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode m
 * baseProjFile is the existing file and testProjFile is what we get
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase)
+void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode, bool needBriefcase, bool needTestDomain)
     {
     //** Force to copy the file in Sub-Directory of TestCase
     BeFileName testFileName(TEST_FIXTURE_NAME,BentleyCharEncoding::Utf8);
@@ -188,7 +182,7 @@ void DgnDbTestFixture::SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP t
         ASSERT_TRUE((Db::OpenMode::ReadWrite != mode) || m_db->Txns().IsTracking());
         }
 
-    if (BeSQLite::Db::OpenMode::ReadWrite == mode )
+    if (BeSQLite::Db::OpenMode::ReadWrite == mode && needTestDomain)
         {
         auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db);
         ASSERT_TRUE(DgnDbStatus::Success == status);

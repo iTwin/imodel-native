@@ -67,7 +67,6 @@ BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAsp
         double requiredWidth = rect.Height() * targetAspectRatio;
         double adj = requiredWidth - requestedWidth;
         rect.Inset((int)(-adj/2.0), 0);
-        BeAssert(0 == BeNumerical::Compare(rect.Width(), requiredWidth));
         }
     else
         {
@@ -75,10 +74,7 @@ BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAsp
         double requiredHeight = rect.Width() / targetAspectRatio;
         double adj = requiredHeight - requestedHeight;
         rect.Inset(0, (int)(-adj/2.0));
-        BeAssert(0 == BeNumerical::Compare(rect.Height(), requiredHeight));
         }
-
-    BeAssert(0 == BeNumerical::Compare(rect.Aspect(), targetAspectRatio));
 
     return rect;
     }
@@ -91,6 +87,7 @@ void Render::Queue::AddTask(Task& task)
     DgnDb::VerifyClientThread();
 
     BeMutexHolder mux(m_cv.GetMutex());
+
 
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
@@ -392,7 +389,6 @@ void GraphicList::ChangeOverride(Graphic& graphic, void* ovr, uint32_t ovrFlags)
             }
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16

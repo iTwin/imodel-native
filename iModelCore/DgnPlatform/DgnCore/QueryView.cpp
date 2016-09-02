@@ -69,6 +69,8 @@ DgnQueryView::~DgnQueryView()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryView::_DrawDecorations(DecorateContextR context)
     {
+    DrawGroundPlane(context);
+
     if (m_copyrightMsgs.empty())
         return;
 
@@ -132,9 +134,11 @@ void DgnQueryView::_DrawDecorations(DecorateContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d DgnQueryView::_GetViewedExtents() const
+AxisAlignedBox3d DgnQueryView::_GetViewedExtents(DgnViewportCR vp) const
     {
-    return m_dgndb.Units().GetProjectExtents();
+    AxisAlignedBox3d box = m_dgndb.Units().GetProjectExtents();
+    box.Extend(GetGroundExtents(vp));
+    return box;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -401,6 +405,8 @@ void DgnQueryView::AddtoSceneQuick(SceneContextR context, QueryResults& results,
 void DgnQueryView::_CreateTerrain(TerrainContextR context) 
     {
     DgnDb::VerifyClientThread();
+
+    T_Super::_CreateTerrain(context);
 
     m_copyrightMsgs.clear();
     auto& models = m_dgndb.Models();
@@ -1366,33 +1372,4 @@ DgnElementId DgnQueryView::SpatialQuery::StepRtree()
     auto rc=m_rangeStmt->Step();
     return (rc != BE_SQLITE_ROW) ? DgnElementId() : m_rangeStmt->GetValueId<DgnElementId>(0);
     }
-
-
-#if defined (NEEDS_WORK_REALTY_DATA)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void drawGroundPlane()
-    {
-    DRay3d viewRay;
-    viewRay.direction = GetZVector();
-
-    DPlane3d xyPlane = DPlane3d::FromOriginAndNormal(DPoint3d(0,0,elevation), DVec3d::From(0, 0, 1.0));
-
-    Frustum  worldFrust = vp.GetFrustum();
-    DRange3d groundRange = DRange3d::NullRange();
-
-    for (DPoint3dCR pt : worldFrust.m_pts)
-        {
-        DPoint3d xyzPt;
-        viewRay.origin = pt;
-        double param;
-        if (!viewRay.Intersect(xyzPt, param, xyPlane))
-            return;
-
-        xyRange.Extend(xyzPt);
-        }
-
-    }
-#endif
 

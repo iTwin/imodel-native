@@ -178,35 +178,35 @@ virtual void _SetEntityTransform (TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-KernelEntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
+EntityType ToEntityType(TopAbs_ShapeEnum shapeType) const
     {
     switch (shapeType)
         {
         case TopAbs_COMPOUND:
-            return ISolidKernelEntity::EntityType_Solid; // NEEDSWORK: Add enum value...
+            return ISolidKernelEntity::EntityType::Compound;
 
         case TopAbs_COMPSOLID:
         case TopAbs_SOLID:
-            return ISolidKernelEntity::EntityType_Solid;
+            return ISolidKernelEntity::EntityType::Solid;
 
         case TopAbs_SHELL:
         case TopAbs_FACE:
-            return ISolidKernelEntity::EntityType_Sheet;
+            return ISolidKernelEntity::EntityType::Sheet;
 
         case TopAbs_WIRE:
         case TopAbs_EDGE:
-            return ISolidKernelEntity::EntityType_Wire;
+            return ISolidKernelEntity::EntityType::Wire;
 
         case TopAbs_VERTEX:
         default:
-            return ISolidKernelEntity::EntityType_Minimal;
+            return ISolidKernelEntity::EntityType::Minimal;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-KernelEntityType _GetEntityType() const {return ToEntityType(OCBRepUtil::GetShapeType(m_shape));}
+EntityType _GetEntityType() const {return ToEntityType(OCBRepUtil::GetShapeType(m_shape));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2016
@@ -284,6 +284,20 @@ TopoDS_Shape const* SolidKernelUtil::GetShape(ISolidKernelEntityCR entity)
     return &ocEntity->GetShape();
 #else
     return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SolidKernelUtil::HasCurvedFaceOrEdge(ISolidKernelEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_OPENCASCADE)
+    TopoDS_Shape const* shape = GetShape(entity);
+    BeAssert(nullptr != shape);
+    return nullptr != shape ? OCBRep::HasCurvedFaceOrEdge(*shape) : false;
+#else
+    return false;
 #endif
     }
 

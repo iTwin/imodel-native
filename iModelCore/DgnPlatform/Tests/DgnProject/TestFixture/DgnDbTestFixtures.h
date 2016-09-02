@@ -51,17 +51,18 @@ public:
     virtual void TearDown(){ SaveDb(); }
     
     //! Initialize already converted/published bim/ibim file
-    void SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
+    void SetupWithPrePublishedFile(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false, bool needTestDomain = false);
     
     //! Initialize a seed file with the name provided
     void SetupSeedProject(WCharCP inFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     
     //! Initialize a seed file with the name same as Test_Name
-    void SetupSeedProject();
+    void SetupSeedProject( BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite, bool needBriefcase = false);
     
     static BeFileName CopyDb(WCharCP inputFileName, WCharCP outputFileName);
     static void OpenDb(DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode, bool needBriefcase = false);
     void CloseDb() { m_db->CloseDb(); }
+    DgnDbR GetDgnDb() { return *m_db; }
 
     static DgnDbStatus GetSeedDbCopy(BeFileNameR actualName, WCharCP newName);
 

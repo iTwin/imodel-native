@@ -161,6 +161,14 @@ public:
         Box     = 1 << 4, //!< Process TextString, Raster, and Mosasic as a simple rectangle.
     };
 
+    //! Specify how to process geometry that originated as a PolyfaceQuery and is not compatible with the current IFacetOptions.
+    enum class IncompatiblePolyfacePreference
+    {
+        Ignore   = 0, //!< Don't process a PolyfaceQuery that is not compatible with the current IFacetOptions.
+        Original = 1, //!< Process PolyfaceQuery as is. Use IFacetOptions only when creating a PolyfaceHeader from other geometry types in response to UnhandledPreference::Facet.
+        Modify   = 2, //!< Create a new PolyfaceHeader from PolyfaceQuery that complies with current IFacetOptions, this can be an expensive operation.
+    };
+
 //! Reason geometry is being processed which may allow the ElementHandler to optimize it's output.
 virtual DrawPurpose _GetProcessPurpose() const {return DrawPurpose::CaptureGeometry;}
 
@@ -182,6 +190,9 @@ virtual bool _IncludeWireframeEdges() {return true;}
 
 //! Whether to include face iso curves when UnhandledPreference::Curve is requested for a surface/solid geometric primitive.
 virtual bool _IncludeWireframeFaceIso() {return true;}
+
+//! Determine how geometry that originated as a PolyfaceQuery and is not compatible with the current IFacetOptions is treated.
+virtual IncompatiblePolyfacePreference _GetIncompatiblePolyfacePreference(PolyfaceQueryCR, SimplifyGraphic&) const {return IncompatiblePolyfacePreference::Modify;}
 
 //! Determine how geometry not specifically handled the geometry _Process method should be treated.
 virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const {return UnhandledPreference::Ignore;}

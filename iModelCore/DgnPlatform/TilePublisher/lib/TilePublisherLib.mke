@@ -1,0 +1,52 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: TilePublisher/lib/TilePublisherLib.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+SrcDir              = $(_MakeFilePath)
+SubpartLibs         = $(BuildContext)SubParts/Libs/
+o                   = $(OutputRootDir)Build/TilePublisher/
+appName             = TilePublisher
+
+always:
+    ~mkdir $(o)
+
+nameToDefine = __TILEPUBLISHER_LIB_BUILD__
+%include cdefapnd.mki
+
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
+                      $(SubpartLibs)BeSQLite.lib          \
+                      $(SubpartLibs)BeSQLiteEC.lib        \
+                      $(SubpartLibs)BeLibXml2.lib         \
+                      $(SubpartLibs)BentleyGeom.lib       \
+                      $(SubpartLibs)DgnPlatform.lib       \
+                      $(SubpartLibs)ECObjects.lib         \
+                      $(SubpartLibs)Units.lib             \
+                      $(SubpartLibs)BeJsonCpp.lib         \
+                      $(SubpartLibs)BaseGeoCoord.lib      \
+                      $(SubpartLibs)ThreeMx.lib           \
+                      $(SubpartLibs)BeFolly.lib           \
+
+DLM_NAME            = $(appName)
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_EXPORT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOINITFUNC      = 1
+DLM_NOENTRY         = 1
+
+%include $(sharedMki)LinkLibrary.mki
+

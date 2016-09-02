@@ -12,9 +12,8 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Umar.Hayat   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnColorTests : public GenericDgnModelTestFixture
+struct DgnColorTests : public DgnDbTestFixture
 {
-
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +21,8 @@ struct DgnColorTests : public GenericDgnModelTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorTests, TrueColors)
     {
-    DgnDbR db = *GetDgnDb(L"TrueColors");
+    SetupSeedProject();
+    DgnDbR db = GetDgnDb();
 
     DgnTrueColor color1(DgnTrueColor::CreateParams(db, ColorDef(255, 254, 253), "TestName1", "TestBook1"));
     EXPECT_TRUE(color1.Insert().IsValid());
@@ -187,4 +187,112 @@ TEST_F(DgnColorTests, RGB_TO_HSV)
 
     // Gray
     VERIFY_RGB_TO_HSV(/*RGB*/128, 128, 128,/*HSV*/0, 0, 50);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, ToRgbFactor)
+    {   
+    //White
+    ColorDef cc(255, 255, 255);
+    RgbFactor rgbf=ColorUtil::ToRgbFactor(cc);
+    ASSERT_TRUE(1 == rgbf.red);
+    ASSERT_TRUE(1 == rgbf.green);
+    ASSERT_TRUE(1 == rgbf.blue);
+   
+    // Black
+    ColorDef cc2(0, 0, 0);
+    rgbf = ColorUtil::ToRgbFactor(cc2);
+    ASSERT_TRUE(0 == rgbf.red);
+    ASSERT_TRUE(0 == rgbf.green);
+    ASSERT_TRUE(0 == rgbf.blue);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, FromRgbFactor)
+    {
+    RgbFactor rgbf;
+    rgbf.red   = 0;
+    rgbf.blue  = 0;
+    rgbf.green = 0;
+    ColorDef cc = ColorUtil::FromRgbFactor(rgbf);
+    ASSERT_TRUE(0 == cc.GetRed());
+    ASSERT_TRUE(0 == cc.GetGreen());
+    ASSERT_TRUE(0 == cc.GetBlue());
+
+    rgbf.red = 1;
+    rgbf.blue = 1;
+    rgbf.green = 1;
+    cc = ColorUtil::FromRgbFactor(rgbf);
+    ASSERT_TRUE(255 == cc.GetRed());
+    ASSERT_TRUE(255 == cc.GetGreen());
+    ASSERT_TRUE(255 == cc.GetBlue());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, ToFloatRgb)
+    {
+    //White
+    ColorDef cc(255, 255, 255);
+    FPoint3d fp = ColorUtil::ToFloatRgb(cc);
+    ASSERT_TRUE(1 == fp.x);
+    ASSERT_TRUE(1 == fp.y);
+    ASSERT_TRUE(1 == fp.z);
+
+    // Black
+    ColorDef cc2(0, 0, 0);
+    fp = ColorUtil::ToFloatRgb(cc2);
+    ASSERT_TRUE(0 == fp.x);
+    ASSERT_TRUE(0 == fp.y);
+    ASSERT_TRUE(0 == fp.z);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, FromFloatRgb)
+    {
+    FPoint3d fp;
+    fp.x = 0;
+    fp.y = 0;
+    fp.z = 0;
+    ColorDef cc = ColorUtil::FromFloatRgb(fp);
+    ASSERT_TRUE(0 == cc.GetRed());
+    ASSERT_TRUE(0 == cc.GetGreen());
+    ASSERT_TRUE(0 == cc.GetBlue());
+
+    fp.x = 1;
+    fp.y = 1;
+    fp.z = 1;
+    cc = ColorUtil::FromFloatRgb(fp);
+    ASSERT_TRUE(255 == cc.GetRed());
+    ASSERT_TRUE(255 == cc.GetGreen());
+    ASSERT_TRUE(255 == cc.GetBlue());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnColorTests, AdjustForContrast)
+    {
+     //White
+     ColorDef fg(255,255,255);
+     //Black
+     ColorDef bg(0, 0, 0);
+     //Red
+     ColorDef ac(255, 0, 0);
+     ColorDef cc = ColorUtil::AdjustForContrast(fg,bg,ac);
+     ASSERT_TRUE(fg == cc);
+
+     //Same background and foreground color
+     cc = ColorUtil::AdjustForContrast(fg,fg,ac);
+     ASSERT_TRUE(ColorDef(179,179,179) == cc);
+     //Maroon
+     fg.SetColors(128, 0, 0,0);
+     //Red
+     bg.SetColors(255,0,0,0);
+     //Yellow
+     ac.SetColors(255, 255, 0, 0);
+     cc = ColorUtil::AdjustForContrast(fg, bg, ac);
+     ASSERT_TRUE(ColorDef(128, 0, 0) == cc);
     }

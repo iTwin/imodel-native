@@ -275,7 +275,7 @@ protected:
     virtual BentleyStatus _SetTargetModel(GeometricModelP model) {return GetTargetModel()==model ? SUCCESS : ERROR;}
 
     //! Get the extent of the model(s) viewed by this view
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const;
 
     enum class CloseMe {No=0, Yes=1};
     //! called when one or more models are deleted
@@ -339,7 +339,7 @@ public:
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the axis-aliged extent of all of the possible elements visible in this view. For physical views, this is the "project extents".
-    AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
+    AxisAlignedBox3d GetViewedExtents(DgnViewportCR vp) const {return _GetViewedExtents(vp);}
 
     //! Load the settings of this view from persistent settings in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Load();
@@ -567,7 +567,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController
 
 protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
-    DVec3d m_delta;                    //!< The extent of the view frustum.
+    DVec3d m_delta;                    //!< The diagonal of the view frustum.
     RotMatrix m_rotation;              //!< Rotation of the view frustum.
     IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
 
@@ -677,10 +677,37 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : SpatialViewController
 {
     DEFINE_T_SUPER(SpatialViewController);
 
-    bool       m_isCameraOn;       //!< if true, m_camera is valid.
-    CameraInfo m_camera;           //!< Information about the camera lens used for the view.
+    struct EnvironmentDisplay
+    {
+        struct GroundPlane
+        {
+            bool m_enabled = false;
+            double m_elevation;
+            ColorDef m_aboveColor;
+            ColorDef m_belowColor;
+        };
+        struct SkyBox
+        {
+            bool m_enabled = false;
+            Utf8String m_jpegFile;
+            ColorDef m_zenithColor;
+            ColorDef m_nadirColor;
+            ColorDef m_groundColor;
+            ColorDef m_skyColor;
+            double m_groundExponent;
+            double m_skyExponent;
+        };
+        bool m_enabled = false;
+        GroundPlane m_groundPlane;
+        SkyBox m_skybox;
+
+    };
 
 protected:
+    bool m_isCameraOn;    //!< if true, m_camera is valid.
+    CameraInfo m_camera;  //!< Information about the camera lens used for the view.
+    Render::MaterialPtr m_skybox;
+    EnvironmentDisplay m_environment;
 
     virtual CameraViewControllerCP _ToCameraView() const override {return this;}
     DGNPLATFORM_EXPORT virtual void _OnTransform(TransformCR) override;
@@ -690,6 +717,16 @@ protected:
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings() const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings() override;
+    virtual void _CreateTerrain(TerrainContextR context) override {DrawSkyBox(context);}
+
+    void LoadEnvironment();
+    DGNPLATFORM_EXPORT void SaveEnvironment();
+    void LoadSkyBox(Render::SystemCR system);
+    Render::TexturePtr LoadTexture(Utf8CP fileName, Render::SystemCR system);
+    double GetGroundElevation() const;
+    AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
+    void DrawGroundPlane(DecorateContextR);
+    DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR); 
 
 public:
     void VerifyFocusPlane();
@@ -799,6 +836,11 @@ public:
     //! @note The focus distance, origin, and delta values are modified, but the view encloses the same volume and appears visually unchanged.
     DGNPLATFORM_EXPORT void CenterFocusDistance();
 
+    //! Determine whether the camera is above or below an elevation (postion along world-z axis).
+    //! @param[in] elevation The elevation to test
+    //! @return true if the camera is above the elevation. If the camera is not turned on, return true if the view is pointed "down" (the front is higher than the back).
+    bool IsCameraAbove(double elevation) const {return IsCameraOn() ? (GetEyePoint().z > elevation) : (GetZVector().z > 0);}
+
     //! Get the distance from the eyePoint to the front plane for this view.
     double GetFrontDistance() const {return GetBackDistance() - GetDelta().z;}
 
@@ -828,6 +870,20 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
+/** @} */
+
+/** @name Environment Display*/
+/** @{ */
+    //! Determine whether the Environment is displayed in this view. If false, neither Ground Plane nor SkyBox are displayed.
+    bool IsEnvironmentEnabled() const {return m_environment.m_enabled;}
+    //! Determine whether the SkyBox is displayed in this view.
+    bool IsSkyBoxEnabled() const {return IsEnvironmentEnabled() && m_environment.m_skybox.m_enabled;}
+    //! Determine whether the Ground Plane is displayed in this view.
+    bool IsGroundPlaneEnabled() const {return IsEnvironmentEnabled() && m_environment.m_groundPlane.m_enabled;}
+    //! Get the current values for the Environment Display for this view
+    EnvironmentDisplay GetEnvironmentDisplay() const {return m_environment;}
+    //! Change the current values for the Environment Display for this view
+    void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment=val; SaveEnvironment();}
 /** @} */
 
 };
@@ -888,7 +944,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    DPoint2d m_origin;       //!< The lower left front corner of the view frustum.
+    DPoint2d m_origin;       //!< The lower left corner of the view frustum.
     DVec2d   m_delta;        //!< The extent of the view frustum.
     double   m_rotAngle;     //!< Rotation of the view frustum.
 
@@ -1009,7 +1065,7 @@ private:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
-    virtual AxisAlignedBox3d _GetViewedExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
 
     void PushClipsForSpatialView(ViewContextR) const;
     void PopClipsForSpatialView(ViewContextR) const;

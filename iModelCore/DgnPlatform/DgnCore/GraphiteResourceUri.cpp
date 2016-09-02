@@ -10,22 +10,13 @@
 #define SCHEME_DgnResourceURI   "dgnresourceuri"
 #define SCHEME_DgnResourceURI_Length 14
 
-#define RT_DgnElements  "DgnElements"
-#define RT_DgnElements_Length   11
-#define RT_ECInstances  "ECInstances"
-#define RT_ECInstances_Length   11
+#define RT_DgnDb           "DgnDb"         // DgnDb0601 Code or ECClass + Property
+#define RT_DgnElements  "DgnElements"   // Graphite05xx ECClass + Property
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 struct DgnResourceURI
     {
-    //! Well known resource types. See DgnResourceURI::GetWellKnownResourceType
-    enum WellKnownResourceType
-        {
-        WELL_KNOWN_RESOURCE_TYPE_DgnElements=1,    //!< "DgnElements"
-        WELL_KNOWN_RESOURCE_TYPE_ECInstances=2     //!< "ECInstances"
-        };
-
     //! The result of parsing a Dgn URI string
     enum ParseStatus
         {
@@ -41,6 +32,7 @@ private:
 
 public:
     struct UriToken;
+    struct Builder;
     struct ParserBase;
     struct PathParser;
     struct QueryParser;
@@ -55,15 +47,6 @@ public:
     //! @remarks The string must be a relative URI following the syntax of DgnResourceURI.
     //! @note The string must be URI-encoded.
     DGNPLATFORM_EXPORT ParseStatus FromEncodedString (Utf8CP uriString);
-
-    //! Get this URI as a string. 
-    //! @return the URI as a string in encoded form.
-    DGNPLATFORM_EXPORT Utf8String ToEncodedString() const;
-
-    //! Get a well-known resource type
-    //! @param t    The type
-    //! @return The string that identifies the type
-    DGNPLATFORM_EXPORT static Utf8CP GetWellKnownResourceType (WellKnownResourceType t);
 
     //! Sets the scheme and the target file identifer as the path root.
     //! The scheme for a DgnResourceURI with an explicit target file is always "dgnresourceuri:".
@@ -91,6 +74,39 @@ public:
     DGNPLATFORM_EXPORT Utf8String GetFragment() const;
     };
 
+//=======================================================================================
+//! Helper class for building a DgnResourceURI.
+//! <h4>API Reference</h4>
+//! - #AppendPath adds a component to the path part of the URI.
+//! - #AppendQueryParameter adds a name=value pair to the query part of the URI.
+//! - #SetEncodedFragment adds a fragment to the URI.
+//! - Call #ToDgnResourceURI to create a DgnResourceURI when done.
+//! @nosubgrouping
+//=======================================================================================
+struct DgnResourceURI::Builder
+    {
+private:
+    Utf8String m_schemeAndTargetFile;
+    Utf8String m_path;
+    Utf8String m_query;
+    Utf8String m_fragment;
+
+    void InitQuery ();
+
+public:
+    Utf8String ToEncodedString () const;
+    void SetTargetFile (DgnDbR targetFile);
+    void AppendEncodedPath (Utf8CP newSegment);
+    void AppendPath (Utf8CP newSegment);
+    void AppendPath (Utf8StringCR newSegment);
+    void SetEncodedPath (Utf8CP newPath);
+    void AppendQueryParameter (Utf8CP key, Utf8CP value);
+    void AppendQueryParameter (Utf8StringCR key, Utf8StringCR value);
+    void AppendAndOperator ();
+    void SetEncodedQuery (Utf8CP newQuery);
+    void SetEncodedFragment (Utf8CP newFragment);
+    static Utf8String MakeFullECClassName (Utf8StringCR schemaName, Utf8StringCR className);
+    };
 
 //=======================================================================================
 //! A token parsed from the path or query part of a DgnResorceURI. This class is used by the parser classes.  
@@ -250,26 +266,6 @@ static Utf8String getEncodedTargetFile (DgnDbR targetFile)
     return BeStringUtilities::UriEncode(filename.c_str());
     }
 
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_NOT_YET_SUPPORTED
-static BentleyStatus findElementIdByProvenance (DgnElementId& eid, Utf8CP oldFileName, int64_t oldElementId, DgnProjectR project)
-    {
-    DgnProvenances prov = project.Provenance();
-
-    //  Look up the file
-    uint64_t oldFileId;
-    if (prov.QueryFileId (oldFileId, oldFileName) != SUCCESS)
-        return ERROR;
-
-    //  Look up the element
-    ElementProvenance eprov (oldFileId, oldElementId);
-    eid = prov.GetElement (eprov);
-    return eid.IsValid()? SUCCESS: ERROR;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -426,20 +422,6 @@ BentleyStatus DgnResourceURI::QueryParser::ParseQueryParameter (UriToken& propna
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP DgnResourceURI::GetWellKnownResourceType (WellKnownResourceType t) 
-    {
-    switch (t)
-        {
-        case WELL_KNOWN_RESOURCE_TYPE_DgnElements: return RT_DgnElements;
-        case WELL_KNOWN_RESOURCE_TYPE_ECInstances: return RT_ECInstances;
-        }
-    BeAssert (false);
-    return "";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnResourceURI::DgnResourceURI ()
     {
     }
@@ -563,95 +545,538 @@ Utf8String DgnResourceURI::GetFragment() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::QueryElementIdGraphiteURI(Utf8CP uriStr) const
+static BentleyStatus makeElementByProvenance(Utf8StringR uriStr, DgnElementCR el)
+    {
+#ifdef WIP_ELEMENTURI // *** reinstate file and element provenance tables
+    DgnDbR db = el.GetDgnDb();
+
+    Utf8String oldFileName;
+    DgnProvenances prov = m_file.GetDgnProject().Provenance();
+
+    ElementProvenance eprov = prov.QueryProvenance(eid);
+    if (!eprov.IsValid() || SUCCESS != prov.QueryFileName(oldFileName, eprov.GetOriginalFileId()))
+        return ERROR;
+
+    DgnResourceURI::Builder builder;
+    builder.AppendEncodedPath(RT_DgnDb);
+    builder.AppendQueryParameter("SourceId", oldFileName);
+    builder.AppendAndOperator();
+    builder.AppendQueryParameter("ElementId", (Utf8CP)Utf8PrintfString("%lld", eprov.GetOriginalElementId()));
+
+    uriStr = builder.ToEncodedString();
+    return SUCCESS;
+#endif
+    return BSIERROR; // *** TBD
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElementId findElementIdByProvenance(DgnDbR db, DgnResourceURI::QueryParser& queryParser, Utf8CP oldFileName)
+    {
+    //  Source=oldFileName&ElementId=oldElementId
+
+    char logical;
+    DgnResourceURI::UriToken elementidKeyword, oldElementId;
+    if (queryParser.ParseQueryParameter(elementidKeyword, oldElementId, logical) != SUCCESS
+        || logical != '&'
+        || !elementidKeyword.GetString().EqualsI("ElementId")
+        || oldElementId.GetType() != DgnResourceURI::UriToken::TYPE_UInt64)
+        {
+        BeDataAssert(false && "Invalid Provenance URI");
+        return DgnElementId();
+        }
+
+    //  This query is one of mine. From here on, I return SUCCESS to indicate that I handled it (even if the provenance can't be found).
+
+#ifdef WIP_ELEMENTURI // *** reinstate file and element provenance tables
+    DgnProvenances prov = project.Provenance();
+
+    //  Look up the file
+    uint64_t oldFileId;
+    if (prov.QueryFileId (oldFileId, oldFileName) != SUCCESS)
+        return DgnElementId();
+
+    //  Look up the element
+    ElementProvenance eprov (oldFileId, oldElementId);
+    eid = prov.GetElement (eprov);
+    return eid.IsValid()? SUCCESS: ERROR;
+#endif
+    BeAssert(false && "TBD");
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElementId queryElementIdByCodeComponents(DgnDbR db, Utf8StringCR encodedCodeValue, DgnResourceURI::QueryParser& queryParser)
+    {
+    auto codeValue = BeStringUtilities::UriDecode(encodedCodeValue.c_str());
+
+    DgnResourceURI::UriToken authkeyword, encodedauthname;
+    char unused;
+    if (queryParser.ParseQueryParameter(authkeyword, encodedauthname, unused, true) != SUCCESS)
+        {
+        BeDataAssert(false && "bad Code URI");
+        return DgnElementId();
+        }
+    auto authorityName = BeStringUtilities::UriDecode(encodedauthname.GetString().c_str());
+
+    DgnResourceURI::UriToken nskeyword, encodedns;
+    if (queryParser.ParseQueryParameter(nskeyword, encodedns, unused, true) != SUCCESS)
+        {
+        BeDataAssert(false && "bad Code URI");
+        return DgnElementId();
+        }
+    auto ns = BeStringUtilities::UriDecode(encodedns.GetString().c_str());
+
+    auto authorityId = db.Authorities().QueryAuthorityId(authorityName.c_str());
+    if (!authorityId.IsValid())
+        return DgnElementId();
+
+    CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE(Code_AuthorityId=? AND Code_Namespace=? AND Code_Value=?)");
+    codestmt->BindId(1, authorityId);
+    codestmt->BindText(2, ns.c_str(), Statement::MakeCopy::No);
+    codestmt->BindText(3, codeValue.c_str(), Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW == codestmt->Step())
+        return codestmt->GetValueId<DgnElementId>(0);
+
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::QueryParser& queryParser, DgnResourceURI::PathParser& pathParser, Utf8StringCR ecClassFullName, bool fallBackOnCode)
+    {
+    // 
+    //  Db/ECClass=schema.class&prop=value
+
+    Utf8String ecSchemaName, ecClassName;
+    if (pathParser.ParseFullECClassName(ecSchemaName, ecClassName, ecClassFullName.c_str()) != SUCCESS)
+        {
+        BeAssert(false && "invalid DgnElements/ECClass URI");
+        return DgnElementId();
+        }
+
+    ECN::ECClassCP ecClass = db.Schemas().GetECClass(ecSchemaName.c_str(), ecClassName.c_str());
+    if (ecClass == nullptr)
+        return DgnElementId();
+
+    DgnResourceURI::UriToken propname, propvalue;
+    char unused;
+    if (queryParser.ParseQueryParameter(propname, propvalue, unused, true) != SUCCESS) // NB: ECProperty values are always encoded as strings, never as integers
+        {
+        BeAssert(false && "invalid DgnElements/ECClass URI");
+        return DgnElementId();
+        }
+
+    auto stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(%s=?)", ecClass->GetECSqlName().c_str(), propname.GetString().c_str()).c_str());
+    stmt->BindText(1, propvalue.GetString().c_str(), EC::IECSqlBinder::MakeCopy::No);
+    if (BE_SQLITE_ROW == stmt->Step())
+        return stmt->GetValueId<DgnElementId>(0);
+
+    if (fallBackOnCode)
+        {
+        // Maybe the property was identified in the V8 schema as the BusinessKey and that the converter converted it into the element's Code. Try that as a fallback.
+        // Unfortunately, we have no way of knowing what namespace value to use, since that depends on the value of the "guest" command-line parameter that was 
+        // passed to the converter, which we cannot detect now.
+        CachedStatementPtr codestmt = db.GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE(Code_Value=?)");
+        codestmt->BindText(1, propvalue.GetString().c_str(), Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == codestmt->Step())
+            return codestmt->GetValueId<DgnElementId>(0);
+        }
+
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElementId queryElementIdFromDgnDbURI(DgnDbR db, DgnResourceURI& uri, DgnResourceURI::PathParser& pathParser)
+    {
+    switch (pathParser.ParseNextToken().GetType())
+        {
+        default: //  Unsupported path 
+            {
+            BeAssert(false && "bad DgnDb URI - unrecognized resource type");
+            return DgnElementId();
+            }
+
+        case DgnResourceURI::UriToken::TYPE_UInt64: //  /DgnElements/elementid
+            {
+            return DgnElementId(pathParser.GetCurToken().GetUInt64());
+            }
+
+        case DgnResourceURI::UriToken::TYPE_EOS:
+            break;  // It's a query. Handled below.
+        }
+
+    DgnResourceURI::QueryParser queryParser(uri.GetQuery());
+    DgnResourceURI::UriToken key, value;
+    char logical;
+    if (queryParser.ParseQueryParameter(key, value, logical) != SUCCESS)
+        {
+        BeAssert(false && "invalid Db URI");
+        return DgnElementId();
+        }
+
+    if (key.GetString().EqualsI("Code")) //  Db/Code=authority/namespace/
+        return queryElementIdByCodeComponents(db, value.GetString(), queryParser);
+    
+    if (key.GetString().EqualsI("SourceId"))
+        return findElementIdByProvenance(db, queryParser, value.GetString().c_str());
+
+    if (key.GetString().EqualsI("ECClass"))
+        return queryElementIdByClassAndProperty(db, queryParser, pathParser, value.GetString(), false);
+
+    // This domain does not recognize the query parameters. 
+    BeAssert(false && "Unrecognized URI type");
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnElementId queryElementIdFromGraphiteURI(DgnDbR db, DgnResourceURI& uri, DgnResourceURI::PathParser& pathParser)
+    {
+    switch (pathParser.ParseNextToken().GetType())
+        {
+        default: //  Unsupported path 
+            {
+            BeAssert(false && "bad DgnElements URI - unrecognized resource type");
+            return DgnElementId();
+            }
+             
+        case DgnResourceURI::UriToken::TYPE_UInt64: //  /DgnElements/elementid
+            {
+            //return DgnElementId(pathParser.GetCurToken().GetUInt64());
+            BeDataAssert(false && "We can't resolve raw DgnDb ElementIds from old files");
+            return DgnElementId();
+            }
+
+        case DgnResourceURI::UriToken::TYPE_EOS:
+            break;  // It's a query. Handled below.
+        }
+
+    DgnResourceURI::QueryParser queryParser(uri.GetQuery());
+    DgnResourceURI::UriToken key, value;
+    char logical;
+    if (queryParser.ParseQueryParameter(key, value, logical) != SUCCESS)
+        {
+        BeDataAssert(false && "invalid Graphite URI");
+        return DgnElementId();
+        }
+
+    if (key.GetString().EqualsI ("SourceId"))
+        return findElementIdByProvenance(db, queryParser, value.GetString().c_str());
+    
+    if (key.GetString().EqualsI ("ECClass"))
+        return queryElementIdByClassAndProperty(db, queryParser, pathParser, value.GetString(), true);
+
+    // This domain does not recognize the query parameters. 
+    BeAssert(false && "Unrecognized URI type");
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId DgnElements::QueryElementIdByURI(Utf8CP uriStr) const
     {
     DgnResourceURI uri;
     if (DgnResourceURI::PARSE_STATUS_SUCCESS != uri.FromEncodedString(uriStr))
         return DgnElementId();
 
-    //BeAssert (uri.CheckTargetFileMatches(GetDgnDb()) == SUCCESS);
-
-    //  -----------------------------  
-    //  Path
-    //  -----------------------------  
     DgnResourceURI::PathParser pathParser (uri.GetPath());
 
-    // /DgnElements... is the only kind of path that I support
-    if (pathParser.ParseNextToken().GetString() != RT_DgnElements)
-        return DgnElementId();
+    Utf8String resourceType = pathParser.ParseNextToken().GetString();
 
-    switch (pathParser.ParseNextToken().GetType())
-        {
-        default: //  Unsupported path 
-            return DgnElementId();
-             
-        case DgnResourceURI::UriToken::TYPE_UInt64: //  /DgnElements/elementid
-#ifdef WIP_NOT_YET_SUPPORTED
-            eid = DgnElementId (pathParser.GetCurToken().GetUInt64());
-            // *** WIP_URI - check that element exists!
-#endif
-            return DgnElementId();
-        
-        case DgnResourceURI::UriToken::TYPE_EOS:
-            break;  // try query below
-        }
+    if (resourceType == RT_DgnDb)
+        return queryElementIdFromDgnDbURI(GetDgnDb(), uri, pathParser);
 
-    //  -----------------------------  
-    //  Query          
-    //  -----------------------------  
-    DgnResourceURI::QueryParser queryParser (uri.GetQuery());
-    DgnResourceURI::UriToken key, value;
-    char logical;
-    if (queryParser.ParseQueryParameter (key, value, logical) != SUCCESS)
-        return DgnElementId();       // no query supplied? I don't have enough of a path to locate an element.
-
-    if (key.GetString().EqualsI ("SourceId"))
-        {
-#ifdef WIP_NOT_YET_SUPPORTED
-        //  DgnElements/Source=oldFileName&DgnElementId=oldElementId
-
-        Utf8String oldFilename = value.GetString();
-
-        DgnResourceURI::UriToken elementidKeyword, oldElementId;
-        if (queryParser.ParseQueryParameter (elementidKeyword, oldElementId, logical) != SUCCESS
-         || logical != '&'
-         || !elementidKeyword.GetString().EqualsI ("DgnElementId")
-         || oldElementId.GetType() != DgnResourceURI::UriToken::TYPE_UInt64)
-            return ERROR;
-
-        //  This query is one of mine. From here on, I return SUCCESS to indicate that I handled it (even if the provenance can't be found).
-
-        return findElementIdByProvenance (eid, oldFilename.c_str(), oldElementId.GetUInt64(), GetDgnDb().GetDgnProject());
-#endif
-        return DgnElementId();
-        }
-    else if (key.GetString().EqualsI ("ECClass"))
-        {
-        //  DgnElements/ECClass=schema.class&prop=value
-
-        Utf8String ecClassFullName = value.GetString();
-
-        Utf8String ecSchemaName, ecClassName;
-        if (pathParser.ParseFullECClassName (ecSchemaName, ecClassName, ecClassFullName.c_str()) != SUCCESS)
-            return DgnElementId();
-
-        //  This query is one of mine. From here on, I return SUCCESS to indicate that I handled it (even if the class or instance can't be found).
-
-        ECN::ECClassCP ecClass = GetDgnDb().Schemas().GetECClass(ecSchemaName.c_str(), ecClassName.c_str());
-        if (ecClass == nullptr)
-            return DgnElementId();
-
-        DgnResourceURI::UriToken propname, propvalue;
-        char unused;
-        if (queryParser.ParseQueryParameter (propname, propvalue, unused, true) != SUCCESS) // NB: ECProperty values are always encoded as strings, never as integers
-            return DgnElementId();
-
-        auto stmt = GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(%s=?)", ecClass->GetECSqlName().c_str(), propname.GetString().c_str()).c_str());
-        stmt->BindText(1, propvalue.GetString().c_str(), EC::IECSqlBinder::MakeCopy::Yes);
-        if (BE_SQLITE_ROW == stmt->Step())
-            return stmt->GetValueId<DgnElementId>(0);
-        }
-
-    // This domain does not recognize the query parameters. 
+    if (resourceType == RT_DgnElements)
+        return queryElementIdFromGraphiteURI(GetDgnDb(), uri, pathParser);
+    
+    BeAssert(false && "Unsupported resource  type");
     return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::InitQuery ()
+    {
+    if (m_query.empty())
+        m_query.append ("?");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnResourceURI::Builder::ToEncodedString () const
+    {
+    return m_schemeAndTargetFile + m_path + m_query + m_fragment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnResourceURI::Builder::MakeFullECClassName (Utf8StringCR schemaName, Utf8StringCR className)
+    {
+    Utf8String name (schemaName);
+    name.append(":");
+    name.append (className);
+    return name;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::SetTargetFile (DgnDbR targetFile)
+    {
+    m_schemeAndTargetFile = SCHEME_DgnResourceURI ":/";
+    m_schemeAndTargetFile.append (getEncodedTargetFile (targetFile));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::AppendEncodedPath (Utf8CP newSegment)
+    {
+    if (*newSegment != '/')
+        m_path.append ("/");
+    m_path.append (newSegment);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::AppendPath (Utf8CP newSegment)
+    {
+    AppendEncodedPath (BeStringUtilities::UriEncode (newSegment).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::AppendPath (Utf8StringCR newSegment)
+    {
+    AppendPath (newSegment.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::SetEncodedPath (Utf8CP newPath)
+    {
+    m_path = newPath;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::AppendQueryParameter (Utf8CP key, Utf8CP value)
+    {
+    InitQuery();
+    BeAssert (*key != '?');
+    m_query.append(BeStringUtilities::UriEncode(key)).append("=").append(BeStringUtilities::UriEncode(value));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::AppendQueryParameter (Utf8StringCR key, Utf8StringCR value)
+    {
+    AppendQueryParameter (key.c_str(), value.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::AppendAndOperator ()
+    {
+    BeAssert (!m_query.empty());
+    m_query.append ("&");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::SetEncodedQuery (Utf8CP newQuery)
+    {
+    if (*newQuery == '?')
+        m_query = newQuery;
+    else
+        {
+        InitQuery();
+        m_query.append (newQuery);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnResourceURI::Builder::SetEncodedFragment (Utf8CP newFragment)
+    {
+    m_fragment = newFragment;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus makeElementByCode(Utf8StringR uriStr, DgnElementCR el)
+    {
+    DgnCode code = el.GetCode();
+    if (!code.IsValid() || code.GetValue().empty())
+        return BSIERROR;
+
+    auto auth = el.GetCodeAuthority();
+    if (!auth.IsValid())
+        return BSIERROR;
+
+    DgnResourceURI::Builder builder;
+    builder.AppendEncodedPath(RT_DgnDb);
+    builder.AppendQueryParameter("Code", BeStringUtilities::UriEncode(code.GetValueCP()));
+    builder.AppendAndOperator();
+    builder.AppendQueryParameter("A", BeStringUtilities::UriEncode(auth->GetName().c_str()).c_str());
+    builder.AppendAndOperator();
+    builder.AppendQueryParameter("N", BeStringUtilities::UriEncode(code.GetNamespace().c_str()).c_str());
+
+    uriStr = builder.ToEncodedString();
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String getEcKeyPropertyName (ECN::ECClassCR ecClass, Utf8CP customAttributeName)
+    {
+    ECN::IECInstancePtr ca = ecClass.GetCustomAttribute (customAttributeName);
+    if (!ca.IsValid())
+        return "";
+    ECN::ECValue v;
+    ca->GetValue (v, "PropertyName");
+    if (v.IsNull())
+        {
+        ca->GetValue (v, "Property");      // CustomAttributes are inconsistent about this
+        if (v.IsNull())
+            return "";
+        }
+    return v.ToString();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String getPropertyAsString (DgnElementCR el, Utf8StringCR propName)
+    {
+    if (propName.length() == 0)
+        return "";
+
+    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT %s FROM %s WHERE(ECInstanceId=?)", 
+                                                                         propName.c_str(), 
+                                                                         el.GetElementClass()->GetECSqlName().c_str()).c_str());
+    stmt->BindId(1, el.GetElementId());
+    if (BE_SQLITE_ROW != stmt->Step())
+        return "";
+    return stmt->GetValueText(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidUniqueKey(DgnDbR db, ECN::ECClassCR ecClass, Utf8StringCR keyname, Utf8StringCR keyvalue)
+    {
+    if (0 == keyname.length() || 0 == keyvalue.length())
+        return false;
+
+    auto stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE([%s]=?)", 
+                                                              ecClass.GetECSqlName().c_str(), 
+                                                              keyname.c_str()).c_str());
+    stmt->BindText(1, keyvalue.c_str(), EC::IECSqlBinder::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return false; // cannot find element by this property
+
+    if (BE_SQLITE_ROW == stmt->Step())
+        return false; // property is not unique
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus makeElementByWellKnownECProperty(Utf8StringR uriStr, DgnElementCR el)
+    {
+    DgnDbR db = el.GetDgnDb();
+    auto ecClass = el.GetElementClass();
+
+    Utf8String keyName = getEcKeyPropertyName(*ecClass, "SyncIDSpecification"); // prefer syncid
+    Utf8String keyValue = getPropertyAsString(el, keyName);
+    if (!isValidUniqueKey(db, *ecClass, keyName, keyValue))
+        {
+        keyName = getEcKeyPropertyName(*ecClass, "GlobalIdSpecification");      // second, try globalid
+        keyValue = getPropertyAsString(el, keyName);
+        if (!isValidUniqueKey(db, *ecClass, keyName, keyValue))
+            {
+            keyName = getEcKeyPropertyName(*ecClass, "BusinessKeySpecification"); // last resort, use buskey
+            keyValue = getPropertyAsString(el, keyName);
+            if (!isValidUniqueKey(db, *ecClass, keyName, keyValue))
+                {
+                return BSIERROR;
+                }
+            }
+        }
+
+    DgnResourceURI::Builder builder;
+    builder.AppendEncodedPath (RT_DgnDb);
+    Utf8String className = DgnResourceURI::Builder::MakeFullECClassName(ecClass->GetSchema().GetName(), ecClass->GetName());
+    builder.AppendQueryParameter ("ECClass", className);
+    builder.AppendAndOperator();
+    builder.AppendQueryParameter (keyName, keyValue);
+    uriStr = builder.ToEncodedString();
+    return BSISUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus makeElementById (Utf8StringR uriStr, DgnElementId eid)
+    {
+    DgnResourceURI::Builder builder;
+    builder.AppendEncodedPath (RT_DgnDb);
+    builder.AppendEncodedPath (Utf8PrintfString("%lld", eid.GetValue()).c_str());
+    uriStr = builder.ToEncodedString();
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnElements::CreateElementUri (Utf8StringR uriStr, DgnElementCR el, bool fallBackOnV8Id, bool fallBackOnDgnDbId) const
+    {
+    // If the element has a primary ECInstance and if that instance has a business key or a guid, we normally prefer to base the URI on the instance
+    if (makeElementByCode(uriStr, el) == BSISUCCESS)
+        return BSISUCCESS;
+
+    if (makeElementByWellKnownECProperty(uriStr, el) == BSISUCCESS)
+        return BSISUCCESS;
+
+    if (fallBackOnV8Id)
+        {
+        if (makeElementByProvenance(uriStr, el) == BSISUCCESS)
+            return BSISUCCESS;
+        }
+
+    // If all else fails, we normally default to basing the URI on the current id
+    if (fallBackOnDgnDbId)
+        {
+        makeElementById (uriStr, el.GetElementId());
+        return SUCCESS;
+        }
+
+    //  I don't understand or can't impelement the strategy that the caller wants to use.
+    return ERROR;
     }

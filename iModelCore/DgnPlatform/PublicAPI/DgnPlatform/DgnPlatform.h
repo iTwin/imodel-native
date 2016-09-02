@@ -41,6 +41,12 @@
 #define GEOCOORD_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates {DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
+#define BENTLEY_RENDER_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_RENDER_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_RENDER_NAMESPACE
+
+#define BENTLEY_RENDER_REF_COUNTED_PTR(_sname_) \
+    BEGIN_BENTLEY_RENDER_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_RENDER_NAMESPACE
+
 #define TO_BOOL(x) (0 != (x))
 
 BENTLEY_NAMESPACE_TYPEDEFS(BitMask)
@@ -203,9 +209,12 @@ DGNPLATFORM_REF_COUNTED_PTR(DgnRevision)
 DGNPLATFORM_REF_COUNTED_PTR(DgnViewport)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingGraphic)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(GeometricPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(EmbeddedFileLink)
 DGNPLATFORM_REF_COUNTED_PTR(IBriefcaseManager)
 DGNPLATFORM_REF_COUNTED_PTR(IElemTopology)
+DGNPLATFORM_REF_COUNTED_PTR(ISolidKernelEntity)
+DGNPLATFORM_REF_COUNTED_PTR(ISubEntity)
 DGNPLATFORM_REF_COUNTED_PTR(LinkElement)
 DGNPLATFORM_REF_COUNTED_PTR(LinkModel)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
@@ -230,10 +239,10 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GradientSymb)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Graphic)
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(IGraphicBuilder)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicBuilder)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicList)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(GraphicParams)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(IGraphicBuilder)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ISprite)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Image)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ImageSource)
@@ -243,9 +252,9 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Material)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(OvrGraphicParams)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Plan)
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(System)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Target)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Task)
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(System)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Texture)
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Window)
 
@@ -554,16 +563,6 @@ enum class DgnCoordSystem
     World     = 3,     //!< Coordinates are relative to the world coordinate system for the physical elements in the DgnDb
 };
 
-enum class GradientFlags
-{
-    None         = 0,
-    Invert       = (1 << 0),
-    Outline      = (1 << 1),
-    AlwaysFilled = (1 << 2),
-};
-
-ENUM_IS_FLAGS(GradientFlags)
-
 enum class ClipMask
 {
     None  = 0,
@@ -843,6 +842,7 @@ public:
     static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
     static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
     static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
+    static ColorDef Brown()       {return ColorDef(0xa5,0x2a,0x2a);}
     static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
     static ColorDef MediumGrey()  {return ColorDef(0x88,0x88,0x88);}
     static ColorDef DarkGrey()    {return ColorDef(0x55,0x55,0x55);}
@@ -852,6 +852,7 @@ public:
     static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //<! Olive
     static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //<! Teal
     static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //<! Purple
+    static ColorDef DarkBrown()   {return ColorDef(0x8b,0x45,0x13);}
 
     static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //<! Bluish color used to denote unselected state
     static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //<! Orangish color used to denote selected state

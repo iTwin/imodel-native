@@ -243,6 +243,10 @@ $(CoreObjs)DgnViewport$(oext) :                     $(DgnCoreDir)DgnViewport.cpp
 
 $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(DgnPlatformAPISrc)Render.h ${MultiCompileDepends}
 
+$(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+
+$(CoreObjs)FacetCount$(oext) :                      $(DgnCoreDir)FacetCount.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
+
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)WebMercator$(oext) :                     $(DgnCoreDir)WebMercator.cpp $(contextDepends) $(WebMercatorDepends) $(RealityDataHandlerDepends) ${MultiCompileDepends}
@@ -289,7 +293,7 @@ $(CoreObjs)FenceParams$(oext) :                     $(DgnCoreDir)FenceParams.cpp
 
 $(CoreObjs)GParray$(oext) :                         $(DgnCoreDir)GParray.cpp $(DgnPlatformAPISrc)GPArray.h ${MultiCompileDepends}
 
-$(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp $(DgnPlatformAPISrc)GradientSettings.h ${MultiCompileDepends}
+$(CoreObjs)GradientSettings$(oext) :                $(DgnCoreDir)GradientSettings.cpp ${MultiCompileDepends}
 
 $(CoreObjs)UnitManager$(oext) :                     $(DgnCoreDir)UnitManager.cpp $(DgnPlatformAPISrc)UnitDefinition.h ${MultiCompileDepends}
 
@@ -350,6 +354,10 @@ $(CoreObjs)DgnDomain$(oext) :                       $(DgnCoreDir)DgnDomain.cpp $
 $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.cpp $(DgnPlatformAPISrc)GenericDomain.h ${MultiCompileDepends}
 
 $(CoreObjs)QueryView$(oext) :                       $(DgnCoreDir)QueryView.cpp $(DgnPlatformAPISrc)QueryView.h $(ViewControllerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
+
+$(CoreObjs)TileTree$(oext) :                        $(DgnCoreDir)TileTree.cpp $(DgnPlatformAPISrc)TileTree.h ${MultiCompileDepends}
 
 $(CoreObjs)DgnBaseDomain$(oext) :                   $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
@@ -697,4 +705,7 @@ $(BuildContext)Delivery/icons : $(DgnCoreDir)/icons
 # Last resort fonts that are required to be available to DgnPlatform.
 #----------------------------------------------------------------------
 $(BuildContext)Delivery/lastresortfonts : $(baseDir)LastResortFonts/lastresortfonts
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/SkyBox/SkyBox.jpg : $(baseDir)Assets/SkyBox.jpg
     $(LinkFirstDepToFirstTarget)

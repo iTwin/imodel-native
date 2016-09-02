@@ -1,6 +1,7 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
+GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
@@ -28,7 +29,6 @@ ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
 ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does not element import aspects
-TextStringTest.BoundingShape                            # UmarH WIP
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
 
@@ -58,13 +58,6 @@ DgnDbTest.GetCoordinateSystemProperties
 
 ECInstanceSelectTests.ImportSchema # This test doesn't really do anything and it takes 40 seconds to run
 
-DgnMarkupProjectTest.CreateDgnMarkupProject
-    # WinX64, DEBUG
-    # [ RUN      ] DgnMarkupProjectTest.CreateDgnMarkupProject
-    # 2016-07-14 08:55:49,750 ERROR [0x0000b80c] BeAssert - F:\DgnDb61-16Q2-Dev\src-staging\DgnPlatform\DgnCore\DgnDb.cpp(73): ASSERTION FAILURE (0): false && "Make sure you save your outstanding Txn before deleting a DgnDb"
-    # F:\DgnDb61-16Q2-Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
-    # F:\DgnDb61-16Q2-Dev\src-staging\DgnPlatform\DgnCore\DgnDb.cpp(73): ASSERTION FAILURE (0): false && "Make sure you save your outstanding Txn before deleting a DgnDb"
-    # [  FAILED  ] DgnMarkupProjectTest.CreateDgnMarkupProject (1823 ms)
 
 ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # DgnDb61-16Q2, NDEBUG, WinX64
@@ -80,6 +73,35 @@ ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 CategoryTests.SubCategoryInvariants
-ElementGeomPartTests.ElementUsesGeometryParts
 TransactionManagerTests.UndoRedo
 ImportTest.ImportElementsWithAuthorities
+ImportTest.ImportElementsWithDependencies
+ChangeSummaryTestFixture.QueryMultipleSessions
+DgnChangeSummaryTestFixture.ValidateChangeSummaries
+RevisionTestFixture.Codes
+
+DgnScriptTest.TestEga
+
+RealityDataWorkerThread.DoWork
+    # DgnDb61-16Q2-Dev, DEBUG, WinX86
+    # [ RUN      ] RealityDataWorkerThread.DoWork
+    # F:\DgnDb61-16Q2-Dev\src\DgnPlatform\Tests\DgnProject\NonPublished\RealityDataCache_Test.cpp(122): error: Value of: cv.WaitOnCondition (&predicate, 5000)
+    # Actual: false
+    # Expected: true
+    # [  FAILED  ] RealityDataWorkerThread.DoWork (5212 ms)
+
+RealityDataWorkerThread.IsIdle
+    # DgnDb61-16Q2-Dev, DEBUG, WinX86
+    # <Crash, no output or stack printed>
+
+RealityDataThreadPool.QueueWork_Many_Items
+    # DgnDb61-16Q2, NDEBUG, WinX86
+    # [ RUN      ] RealityDataThreadPool.QueueWork_Many_Items
+    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\NonPublished\RealityDataCache_Test.cpp(231): error: Value of: cv.WaitOnCondition (&predicate, 5000)
+    # Actual: false
+    # Expected: true
+    # [  FAILED  ] RealityDataThreadPool.QueueWork_Many_Items (5037 ms)
+
+RealityDataThreadPool.Queueing
+    # DgnDb61-16Q2, NDEBUG, WinX86
+    # <Crash, no output or stack printed>

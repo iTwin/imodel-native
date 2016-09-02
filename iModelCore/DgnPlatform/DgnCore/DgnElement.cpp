@@ -297,6 +297,10 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
+    // *** WIP_AUTO_HANDLED_PROPERTIES: We must not hold onto an IECInstance if a schema is imported and ECClasses are regenerated. 
+    // *** Since we don't get notified when that happens, we err on the safe side by discarding the auto-handled properties after every write.
+    m_autoHandledProperties = nullptr;
+
     GetModel()->_OnInsertedElement(*this);
     GetDgnDb().BriefcaseManager().OnElementInserted(GetElementId());
     }
@@ -562,7 +566,14 @@ DgnDbStatus DgnElement::_InsertInDb()
         }
 
     if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
-        UpdateAutoHandledProperties();
+        {
+        status = UpdateAutoHandledProperties();
+        if (DgnDbStatus::Success != status)
+            {
+            BeAssert(false && "Auto-handled properties update failed - see log for sql constraint errors, etc.");
+            return status;
+            }
+        }
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -603,7 +614,14 @@ DgnDbStatus DgnElement::_UpdateInDb()
         }
 
     if (m_autoHandledProperties.IsValid() && m_flags.m_autoHandledPropsDirty)
-        UpdateAutoHandledProperties();
+        {
+        status = UpdateAutoHandledProperties();
+        if (DgnDbStatus::Success != status)
+            {
+            BeAssert(false && "Auto-handled properties update failed - see log for sql constraint errors, etc.");
+            return status;
+            }
+        }
 
     if (m_userProperties)
         status = SaveUserProperties();
@@ -1957,12 +1975,13 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     {
+    // Common case: auto-handled properties
     if (!IsCustomHandledProperty(name))
         {
-        // Common case: auto-handled properties
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->GetValue(value, name))
             return DgnDbStatus::Success;
+        return DgnDbStatus::BadRequest;
         }
 
     // Rare: custom-handled properties
@@ -2005,19 +2024,44 @@ DgnDbStatus DgnElement::_GetProperty(ECN::ECValueR value, Utf8CP name) const
     }
     
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
+    {
+    if (value.IsNull())
+        {
+        ECN::ECDbPropertyMap propertyMap;
+        if (ECN::ECDbMapCustomAttributeHelper::TryGetPropertyMap(propertyMap, prop))
+            {
+            bool isNullable;
+            if (ECN::ECObjectsStatus::Success == propertyMap.TryGetIsNullable(isNullable) && !isNullable)
+                return false;
+            }
+        }
+
+    // *** TBD: do range validation
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     {
-    if (!IsCustomHandledProperty(name))
+    // Common case: auto-handled properties
+    ECN::ECPropertyCP ecprop = GetElementClass()->GetPropertyP(name);
+    if ((nullptr != ecprop) && !IsCustomHandledProperty(*ecprop))
         {
-        // Common case: auto-handled properties
+        if (!isValidValue(*ecprop, value))
+            return DgnDbStatus::BadArg;
+
         auto autoHandledProps = GetAutoHandledProperties();
         if (nullptr != autoHandledProps && ECN::ECObjectsStatus::Success == autoHandledProps->SetValue(name, value))
             {
             m_flags.m_autoHandledPropsDirty = true;
             return DgnDbStatus::Success;
             }
+        return DgnDbStatus::BadArg;
         }
 
     if (0 == strcmp(DGN_ELEMENT_PROPNAME_Code, name))
@@ -3233,12 +3277,12 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+DgnElementPtr DgnElements::CreateElement(DgnDbStatus* inStat, ECN::IECInstanceCR properties)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
     DgnClassId classId(properties.GetClass().GetId().GetValue());
-    auto handler = dgn_ElementHandler::Element::FindHandler(db, classId);
+    auto handler = dgn_ElementHandler::Element::FindHandler(GetDgnDb(), classId);
     if (nullptr == handler)
         {
         BeAssert(false);
@@ -3246,23 +3290,35 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
         return nullptr;
         }
 
+    return handler->_CreateNewElement(inStat, GetDgnDb(), properties);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+
     DgnModelId mid;
         {
         ECN::ECValue v;
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, DGN_ELEMENT_PROPNAME_ModelId) || v.IsNull())
             {
             stat = DgnDbStatus::BadArg;
-            return nullptr;
+            return CreateParams(db, DgnModelId(), DgnClassId());
             }
         mid = DgnModelId((uint64_t)v.GetLong());
         if (!mid.IsValid())
             {
             stat = DgnDbStatus::BadArg;
-            return nullptr;
+            return CreateParams(db, DgnModelId(), DgnClassId());
             }
         }
 
-    CreateParams params(db, mid, classId);
+    DgnClassId classId(properties.GetClass().GetId().GetValue());
+
+    DgnElement::CreateParams params(db, mid, classId);
 
     auto ecinstanceid = properties.GetInstanceId();                 // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
     if (!ecinstanceid.empty())
@@ -3271,13 +3327,19 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
         if (BSISUCCESS != BeStringUtilities::ParseUInt64(idvalue, ecinstanceid.c_str()))
             {
             stat = DgnDbStatus::BadArg;
-            return nullptr;
+            return CreateParams(db, DgnModelId(), DgnClassId());
             }
         params.SetElementId(DgnElementId(idvalue));
         }
 
-    auto ele = handler->Create(params);
+    return params;
+    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_SetProperties(ECN::IECInstanceCR properties)
+    {
 #ifdef WIP_AUTOHANDLED_PROPERTIES // *** ECValuesCollection does not return all properties!?
     ECValuesCollectionPtr propValues = ECValuesCollection::Create(properties);
     for (ECN::ECPropertyValue const& propValue : *propValues)
@@ -3289,11 +3351,11 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
 
         ECN::ECValueCR value = propValue.GetValue();
 #else
-    for (auto prop : ele->GetElementClass()->GetProperties(true))
+    for (auto prop : GetElementClass()->GetProperties(true))
         {
         Utf8StringCR propName = prop->GetName();
 
-        // Skip special properties that were passed in CreateParams. Generally, these are set once/read only properties.
+        // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
         if (propName.Equals(DGN_ELEMENT_PROPNAME_ModelId) || propName.Equals("Id") || propName.Equals(DGN_ELEMENT_PROPNAME_ECInstanceId))
             continue;
 
@@ -3304,7 +3366,8 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
 
         if (!value.IsNull())
             {
-            if (DgnDbStatus::Success != (stat = ele->_SetProperty(propName.c_str(), value)))
+            DgnDbStatus stat;
+            if (DgnDbStatus::Success != (stat = _SetProperty(propName.c_str(), value)))
                 {
                 if (DgnDbStatus::ReadOnly == stat) // Not sure what to do when caller wants to 
                     {
@@ -3314,11 +3377,29 @@ DgnElementPtr DgnElement::CreateElement(DgnDbStatus* inStat, DgnDbR db, ECN::IEC
                     {
                     BeAssert(false && "Failed to set property value. _SetProperties is probably missing a case.");
                     }
-                return nullptr;
+                return stat;
                 }
             }
         }
     
-    return ele;
+    return DgnDbStatus::Success;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr dgn_ElementHandler::Element::_CreateNewElement(DgnDbStatus* inStat, DgnDbR db, ECN::IECInstanceCR properties)
+    {
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
+    auto params = DgnElement::InitCreateParamsFromECInstance(inStat, db, properties);
+    if (!params.IsValid())
+        return nullptr;
+    auto ele = _CreateInstance(params);
+    if (nullptr == ele)
+        {
+        BeAssert(false && "when would a handler fail to construct an element?");
+        return nullptr;
+        }
+    stat = ele->_SetProperties(properties);
+    return (DgnDbStatus::Success == stat)? ele: nullptr;
+    }

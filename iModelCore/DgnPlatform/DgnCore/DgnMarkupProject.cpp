@@ -303,9 +303,9 @@ void SpatialRedlineViewController::SynchWithSubjectViewController()
     // There can only be one set of view flags. It will be used to initialize the viewport and qv. 
     // *** EXPERIMENTAL: Here, I force a couple of flags to suit the redline view better. Does this cause too much of a change in the subject view??
     m_viewFlags = m_subjectView.GetViewFlags();
-    m_viewFlags.weights = true;
-    m_viewFlags.acs = true;
-    m_viewFlags.grid = true;
+    m_viewFlags.m_weights = true;
+    m_viewFlags.m_acsTriad = true;
+    m_viewFlags.m_grid = true;
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)
@@ -438,10 +438,10 @@ GeometricModelP SpatialRedlineViewController::_GetTargetModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents() const
+AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR vp) const
     {
-    AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents();
-    AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents();
+    AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents(vp);
+    AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents(vp);
     AxisAlignedBox3d fullRange;
     fullRange.UnionOf(rdlRange, subjectRange);
     return fullRange;
@@ -1442,18 +1442,27 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         {
         DPoint3d org;
         DVec3d delta;
-        AxisAlignedBox3d range = rdlModel.QueryModelRange();
-        if (!range.IsEmpty())
+
+        // The "imageViewRect" is typically a subrange of "projectViewRect".
+        // While you might think the data (i.e. image) will honor the imageViewRect, it instead is always based on 0,0; but we should trust the extent provided by imageViewRect.
+        // Further, it is scaled to preserve its original aspect ratio.
+        // Knowing this, we must adjust the view origin to make the shifted data appear as though it were offset like imageViewRect specifies.
+        // Ideally we should be refactoring this API, but we don't want to on the Q2 branch.
+        
+        DPoint2d actualImageDim;
+        if (imageViewRect.Width() > imageViewRect.Height())
             {
-            range.Extend(range.XLength() * 0.1);   // add in a margin of 10%
-            delta.Init(range.XLength(), range.YLength());
-            org.Init(range.low.x, range.low.y);
+            actualImageDim.x = imageViewRect.Width();
+            actualImageDim.y = imageViewRect.Width() * (1.0 / projectViewRect.Aspect());
             }
         else
             {
-            org.Init(0,0);
-            delta.Init(1024,1024);
+            actualImageDim.y = imageViewRect.Height();
+            actualImageDim.x = imageViewRect.Height() * projectViewRect.Aspect();
             }
+        
+        org.Init(projectViewRect.Left() - (projectViewRect.Width() - actualImageDim.x) / 2.0, projectViewRect.Top() - (projectViewRect.Height() - actualImageDim.y) / 2.0);
+        delta.Init(projectViewRect.Width(), projectViewRect.Height());
 
         controller->SetOrigin(org);
         controller->SetDelta(delta);
@@ -1464,7 +1473,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         
         ViewFlags flags;
         memset(&flags, 0, sizeof(flags));
-        flags.weights = true;
+        flags.m_weights = true;
         controller->GetViewFlagsR() = flags;
 
         for (auto const& catId : DgnCategory::QueryCategories(rdlModel.GetDgnDb()))

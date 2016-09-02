@@ -555,7 +555,7 @@ bool GeometricPrimitive::IsSolid() const
             return GetAsPolyfaceHeader()->IsClosedByEdgePairing();
 
         case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType_Solid == GetAsISolidKernelEntity()->GetEntityType();
+            return ISolidKernelEntity::EntityType::Solid == GetAsISolidKernelEntity()->GetEntityType();
 
         default:
             return false;
@@ -582,7 +582,7 @@ bool GeometricPrimitive::IsSheet() const
             return !GetAsPolyfaceHeader()->IsClosedByEdgePairing();
 
         case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType_Sheet == GetAsISolidKernelEntity()->GetEntityType();
+            return ISolidKernelEntity::EntityType::Sheet == GetAsISolidKernelEntity()->GetEntityType();
 
         default:
             return false;
@@ -603,7 +603,7 @@ bool GeometricPrimitive::IsWire() const
             return GetAsCurveVector()->IsOpenPath();
 
         case GeometryType::SolidKernelEntity:
-            return ISolidKernelEntity::EntityType_Wire == GetAsISolidKernelEntity()->GetEntityType();
+            return ISolidKernelEntity::EntityType::Wire == GetAsISolidKernelEntity()->GetEntityType();
 
         default:
             return false;
@@ -613,30 +613,30 @@ bool GeometricPrimitive::IsWire() const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    Brien.Bastings  07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISolidKernelEntity::KernelEntityType GeometricPrimitive::GetKernelEntityType() const
+ISolidKernelEntity::EntityType GeometricPrimitive::GetBRepEntityType() const
     {
     switch (GetGeometryType())
         {
         case GeometryType::CurvePrimitive:
-            return ISolidKernelEntity::EntityType_Wire;
+            return ISolidKernelEntity::EntityType::Wire;
 
         case GeometryType::CurveVector:
-            return (GetAsCurveVector()->IsAnyRegionType() ? ISolidKernelEntity::EntityType_Sheet : (GetAsCurveVector()->IsOpenPath() ? ISolidKernelEntity::EntityType_Wire : ISolidKernelEntity::EntityType_Minimal));
+            return (GetAsCurveVector()->IsAnyRegionType() ? ISolidKernelEntity::EntityType::Sheet : (GetAsCurveVector()->IsOpenPath() ? ISolidKernelEntity::EntityType::Wire : ISolidKernelEntity::EntityType::Minimal));
 
         case GeometryType::BsplineSurface:
-            return ISolidKernelEntity::EntityType_Sheet;
+            return ISolidKernelEntity::EntityType::Sheet;
 
         case GeometryType::SolidPrimitive:
-            return GetAsISolidPrimitive()->GetCapped() ? ISolidKernelEntity::EntityType_Solid : ISolidKernelEntity::EntityType_Sheet;
+            return GetAsISolidPrimitive()->GetCapped() ? ISolidKernelEntity::EntityType::Solid : ISolidKernelEntity::EntityType::Sheet;
 
         case GeometryType::Polyface:
-            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? ISolidKernelEntity::EntityType_Solid : ISolidKernelEntity::EntityType_Sheet;
+            return GetAsPolyfaceHeader()->IsClosedByEdgePairing() ? ISolidKernelEntity::EntityType::Solid : ISolidKernelEntity::EntityType::Sheet;
 
         case GeometryType::SolidKernelEntity:
             return GetAsISolidKernelEntity()->GetEntityType();
 
         default:
-            return ISolidKernelEntity::EntityType_Minimal;
+            return ISolidKernelEntity::EntityType::Minimal;
         }
     }
 
@@ -1151,7 +1151,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             bvector<uint32_t> keyColors;
             bvector<double>   keyValues;
 
-            for (int i=0; i < gradient.GetNKeys(); i++)
+            for (uint32_t i=0; i < gradient.GetNKeys(); ++i)
                 {
                 double   keyValue;
                 ColorDef keyColor;
@@ -1184,6 +1184,89 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             }
 
         Append(Operation(OpCode::AreaFill, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        }
+
+    PatternParamsCP pattern;
+
+    if (nullptr != (pattern = elParams.GetPatternParams()))
+        {
+        FlatBufferBuilder fbb;
+
+        bvector<flatbuffers::Offset<FB::DwgHatchDefLine>> defLineOffsets;
+
+        if (0 != pattern->GetDwgHatchDef().size())
+            {
+            for (auto defLine : pattern->GetDwgHatchDef())
+                {
+                FB::DwgHatchDefLineBuilder dashBuilder(fbb);
+
+                auto dashes = fbb.CreateVector(defLine.m_dashes, defLine.m_nDashes);
+
+                dashBuilder.add_angle(defLine.m_angle);
+                dashBuilder.add_through((FB::DPoint2d*) &defLine.m_through);
+                dashBuilder.add_offset((FB::DPoint2d*) &defLine.m_offset);
+                dashBuilder.add_dashes(dashes);
+
+                defLineOffsets.push_back(dashBuilder.Finish());
+                }
+            }
+
+        flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>>> fbDefLines;
+        
+        if (0 != defLineOffsets.size())
+            fbDefLines = fbb.CreateVector(defLineOffsets);
+
+        FB::AreaPatternBuilder builder(fbb);
+
+        builder.add_origin((FB::DPoint3d*) &pattern->GetOrigin());
+
+        if (!pattern->GetOrientation().IsIdentity())
+            builder.add_rotation((FB::RotMatrix*) &pattern->GetOrientation());
+
+        if (pattern->GetSymbolId().IsValid())
+            {
+            builder.add_space1(pattern->GetPrimarySpacing());
+            builder.add_space2(pattern->GetSecondarySpacing());
+            builder.add_angle1(pattern->GetPrimaryAngle());
+            builder.add_scale(pattern->GetScale());
+            builder.add_symbolId(pattern->GetSymbolId().GetValueUnchecked());
+            }
+        else if (0 != pattern->GetDwgHatchDef().size())
+            {
+            builder.add_angle1(pattern->GetPrimaryAngle()); // NOTE: angle/scale baked into hatch def lines, saved for placement info...
+            builder.add_scale(pattern->GetScale());
+            builder.add_defLine(fbDefLines);
+            }
+        else
+            {
+            builder.add_space1(pattern->GetPrimarySpacing());
+            builder.add_space2(pattern->GetSecondarySpacing());
+            builder.add_angle1(pattern->GetPrimaryAngle());
+            builder.add_angle2(pattern->GetSecondaryAngle());
+            }
+
+        if (pattern->GetUseColor())
+            {
+            builder.add_useColor(true);
+            builder.add_color(pattern->GetColor().GetValue());
+            }
+
+        if (pattern->GetUseWeight())
+            {
+            builder.add_useWeight(true);
+            builder.add_weight(pattern->GetWeight());
+            }
+
+        if (pattern->GetInvisibleBoundary())
+            builder.add_invisibleBoundary(true);
+            
+        if (pattern->GetSnappable())
+            builder.add_snappable(true);
+
+        auto mloc = builder.Finish();
+
+        fbb.Finish(mloc);
+        Append(Operation(OpCode::Pattern, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
     // NEEDSWORK_WIP_MATERIAL - Not sure what we need to store per-geometry...
@@ -1564,7 +1647,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             if (FillDisplay::Never != fillDisplay)
                 {
                 double        transparency = ppfb->transparency();
-                GradientMode  mode = (GradientMode) ppfb->mode();
+                GradientSymb::Mode  mode = (GradientSymb::Mode) ppfb->mode();
 
                 if (transparency != elParams.GetFillTransparency())
                     {
@@ -1572,7 +1655,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     changed = true;
                     }
 
-                if (GradientMode::None == mode)
+                if (GradientSymb::Mode::None == mode)
                     {
                     if (ppfb->useColor())
                         {
@@ -1598,7 +1681,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     GradientSymbPtr gradientPtr = GradientSymb::Create();
 
                     gradientPtr->SetMode(mode);
-                    gradientPtr->SetFlags(ppfb->flags());
+                    gradientPtr->SetFlags((GradientSymb::Flags)ppfb->flags());
                     gradientPtr->SetShift(ppfb->shift());
                     gradientPtr->SetTint(ppfb->tint());
                     gradientPtr->SetAngle(ppfb->angle());
@@ -1607,13 +1690,72 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                     uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
                     bvector<ColorDef> keyColors;
 
-                    for (uint32_t iColor=0; iColor < nColors; iColor++)
+                    for (uint32_t iColor=0; iColor < nColors; ++iColor)
                         keyColors.push_back(ColorDef(colors[iColor]));
 
-                    gradientPtr->SetKeys((uint16_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                    gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
                     elParams.SetGradient(gradientPtr.get());
                     }
                 }
+            break;
+            }
+
+        case OpCode::Pattern:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+            PatternParamsPtr pattern = PatternParams::Create();
+
+            if (ppfb->has_origin())
+                pattern->SetOrigin(*((DPoint3dCP) ppfb->origin()));
+
+            if (ppfb->has_rotation())
+                pattern->SetOrientation(*((RotMatrixCP) ppfb->rotation()));
+
+            pattern->SetPrimarySpacing(ppfb->space1());
+            pattern->SetSecondarySpacing(ppfb->space2());
+            pattern->SetPrimaryAngle(ppfb->angle1());
+            pattern->SetSecondaryAngle(ppfb->angle2());
+            pattern->SetScale(ppfb->scale());
+
+            if (ppfb->useColor())
+                pattern->SetColor(ColorDef(ppfb->color()));
+
+            if (ppfb->useWeight())
+                pattern->SetWeight(ppfb->weight());
+
+            pattern->SetInvisibleBoundary(TO_BOOL(ppfb->invisibleBoundary()));
+            pattern->SetSnappable(TO_BOOL(ppfb->snappable()));
+            pattern->SetSymbolId(DgnGeometryPartId((uint64_t) ppfb->symbolId()));
+
+            if (ppfb->has_defLine())
+                {
+                flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>> const* fbDefLineOffsets = ppfb->defLine();
+                bvector<DwgHatchDefLine> defLines;
+
+                for (auto const& fbDefLine : *fbDefLineOffsets)
+                    {
+                    DwgHatchDefLine line;
+
+                    line.m_angle   = fbDefLine.angle();
+                    line.m_through = *((DPoint2dCP) fbDefLine.through());
+                    line.m_offset  = *((DPoint2dCP) fbDefLine.offset());
+                    line.m_nDashes = fbDefLine.dashes()->Length();
+
+                    if (0 != line.m_nDashes)
+                        memcpy(line.m_dashes, fbDefLine.dashes()->Data(), line.m_nDashes * sizeof(double));
+
+                    defLines.push_back(line);
+                    }
+
+                pattern->SetDwgHatchDef(defLines);
+                }
+
+            if (nullptr == elParams.GetPatternParams() || !(*elParams.GetPatternParams() == *pattern))
+                {
+                elParams.SetPatternParams(pattern.get());
+                changed = true;
+                }
+
             break;
             }
 
@@ -1886,7 +2028,6 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
         return DgnDbStatus::Success; // otherwise we end up writing a header for an otherwise empty stream...
 
     Writer writer(importer.GetDestinationDb());
-    Reader reader(importer.GetSourceDb());
     Collection collection(source.GetData(), source.GetSize());
 
     for (auto const& egOp : collection)
@@ -1918,15 +2059,40 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
-                DgnGeometryPartId geomPartId;
-                Transform     geomToElem;
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
 
-                if (reader.Get(egOp, geomPartId, geomToElem))
+                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->geomPartId())); // Trigger deep-copy if necessary
+                BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
+
+                FlatBufferBuilder remappedfbb;
+
+                auto mloc = FB::CreateGeometryPart(remappedfbb, remappedGeometryPartId.GetValueUnchecked(), ppfb->origin(), ppfb->yaw(), ppfb->pitch(), ppfb->roll());
+
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::GeometryPartInstance, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
+                break;
+                }
+
+            case OpCode::Pattern:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+
+                if (!ppfb->has_symbolId())
                     {
-                    DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(geomPartId); // Trigger deep-copy if necessary
-                    BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
-                    writer.Append(remappedGeometryPartId, &geomToElem);
+                    writer.Append(egOp);
+                    break;
                     }
+
+                DgnGeometryPartId remappedGeometryPartId = importer.RemapGeometryPartId(DgnGeometryPartId((uint64_t) ppfb->symbolId())); // Trigger deep-copy if necessary
+                BeAssert(remappedGeometryPartId.IsValid() && "Unable to deep-copy geompart!");
+
+                FlatBufferBuilder remappedfbb;
+
+                auto mloc = FB::CreateAreaPattern(remappedfbb, ppfb->origin(), ppfb->rotation(), ppfb->space1(), ppfb->space2(), ppfb->angle1(), ppfb->angle2(), ppfb->scale(), 
+                                                  ppfb->color(), ppfb->weight(), ppfb->useColor(), ppfb->useWeight(), ppfb->invisibleBoundary(), ppfb->snappable(),
+                                                  remappedGeometryPartId.GetValueUnchecked()); 
+                remappedfbb.Finish(mloc);
+                writer.Append(Operation(OpCode::Pattern, (uint32_t) remappedfbb.GetSize(), remappedfbb.GetBufferPointer()));
                 break;
                 }
 
@@ -2525,17 +2691,17 @@ static bool IsGeometryVisible(ViewContextR context, Render::GeometryParamsCR geo
     switch (geomParams.GetGeometryClass())
         {
         case DgnGeometryClass::Construction:
-            if (!viewFlags.constructions)
+            if (!viewFlags.m_constructions)
                 return false;
             break;
 
         case DgnGeometryClass::Dimension:
-            if (!viewFlags.dimensions)
+            if (!viewFlags.m_dimensions)
                 return false;
             break;
 
         case DgnGeometryClass::Pattern:
-            if (!viewFlags.patterns)
+            if (!viewFlags.m_patterns)
                 return false;
             break;
         }
@@ -2713,8 +2879,29 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!reader.Get(egOp, pts, nPts, boundary))
                     break;
-
+    
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+
+                if (FB::BoundaryType_Closed == boundary)
+                    {
+                    PatternParamsCP pattern;
+
+                    if (nullptr != (pattern = geomParams.GetPatternParams()))
+                        {
+                        if (context.WantAreaPatterns())
+                            {
+                            std::valarray<DPoint3d> localPoints3dBuf(nPts);
+
+                            for (int iPt = 0; iPt < nPts; ++iPt)
+                                localPoints3dBuf[iPt].Init(pts[iPt]);
+
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(&localPoints3dBuf[0], nPts)), geomParams);
+                            }
+                           
+                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                            break;
+                        }
+                    }
 
                 switch (boundary)
                     {
@@ -2750,6 +2937,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
+                if (FB::BoundaryType_Closed == boundary)
+                    {
+                    PatternParamsCP pattern;
+
+                    if (nullptr != (pattern = geomParams.GetPatternParams()))
+                        {
+                        if (context.WantAreaPatterns())
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateLineString(pts, nPts)), geomParams);
+                           
+                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                            break;
+                        }
+                    }
+
                 switch (boundary)
                     {
                     case FB::BoundaryType_None:
@@ -2782,6 +2983,20 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                     break;
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+
+                if (FB::BoundaryType_Closed == boundary)
+                    {
+                    PatternParamsCP pattern;
+
+                    if (nullptr != (pattern = geomParams.GetPatternParams()))
+                        {
+                        if (context.WantAreaPatterns())
+                            context.DrawAreaPattern(*currGraphic, *CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(arc)), geomParams);
+                           
+                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                            break;
+                        }
+                    }
 
                 if (!context.Is3dView())
                     {
@@ -2840,24 +3055,21 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, curvePtr))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (curvePtr->IsAnyRegionType() && SUCCESS == OCBRep::Create::TopoShapeFromCurveVector(shape, *curvePtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
+
+                if (curvePtr->IsAnyRegionType())
+                    {
+                    PatternParamsCP pattern;
+
+                    if (nullptr != (pattern = geomParams.GetPatternParams()))
+                        {
+                        if (context.WantAreaPatterns())
+                            context.DrawAreaPattern(*currGraphic, *curvePtr, geomParams);
+                           
+                        if (pattern->GetInvisibleBoundary() && FillDisplay::Never == geomParams.GetFillDisplay())
+                            break;
+                        }
+                    }
 
                 if (!context.Is3dView())
                     {
@@ -2882,23 +3094,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, meshData))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromPolyface(shape, meshData))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddPolyface(meshData, FillDisplay::Never != geomParams.GetFillDisplay());
                 break;
@@ -2917,23 +3112,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (!reader.Get(egOp, solidPtr))
                     break;
 
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromSolidPrimitive(shape, *solidPtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
-
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddSolidPrimitive(*solidPtr);
                 break;
@@ -2951,23 +3129,6 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
 
                 if (!reader.Get(egOp, surfacePtr))
                     break;
-
-#if defined (NOT_NOW_OCC_TESTING)
-                TopoDS_Shape shape;
-
-                if (SUCCESS == OCBRep::Create::TopoShapeFromBSurface(shape, *surfacePtr))
-                    {
-                    ISolidKernelEntityPtr entityPtr = SolidKernelUtil::CreateNewEntity(shape);
-
-                    DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
-                    currGraphic->AddBody(*entityPtr);
-                    break;
-                    }
-                else
-                    {
-                    geomParams.SetLineColor(ColorDef::Selected()); // Set failure color...
-                    }
-#endif
 
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
                 currGraphic->AddBSplineSurface(*surfacePtr);
@@ -3335,7 +3496,7 @@ bool GeometryCollection::Iterator::IsSurface() const
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType_Sheet == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            return (ISolidKernelEntity::EntityType::Sheet == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
 #endif
 
@@ -3370,7 +3531,7 @@ bool GeometryCollection::Iterator::IsSolid() const
             {
             auto ppfb = flatbuffers::GetRoot<FB::OCBRepData>(m_egOp.m_data);
 
-            return (ISolidKernelEntity::EntityType_Solid == ((ISolidKernelEntity::KernelEntityType) ppfb->brepType()));
+            return (ISolidKernelEntity::EntityType::Solid == ((ISolidKernelEntity::EntityType) ppfb->brepType()));
             }
 #endif
 
@@ -3687,16 +3848,58 @@ bool GeometryBuilder::Append(DgnSubCategoryId subCategoryId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::Append(GeometryParamsCR elParams)
+bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
     {
-    if (!m_elParams.GetCategoryId().IsValid())
-        return false;
+    // NOTE: Allow explicit symbology in GeometryPart's GeometryStream, sub-category won't be persisted...
+    if (!m_isPartCreate)
+        {
+        if (!m_elParams.GetCategoryId().IsValid())
+            return false;
 
-    if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
-        return false;
+        if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
+            return false;
 
-    if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
-        return false;
+        if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
+            return false;
+        }
+
+    if (elParams.IsTransformable())
+        {
+        if (CoordSystem::World == coord)
+            {
+            if (m_isPartCreate)
+                {
+                BeAssert(false); // Part GeometryParams must be supplied in local coordinates...
+                return false; 
+                }
+
+            // NOTE: Must defer applying transform until placement is computed from first geometric primitive...
+            if (m_havePlacement)
+                {
+                Transform   localToWorld = (m_is3d ? m_placement3d.GetTransform() : m_placement2d.GetTransform());
+                Transform   worldToLocal;
+
+                worldToLocal.InverseOf(localToWorld);
+
+                if (!worldToLocal.IsIdentity())
+                    {
+                    GeometryParams localParams(elParams);
+
+                    localParams.ApplyTransform(worldToLocal);
+
+                    return Append(localParams, CoordSystem::Local);
+                    }
+                }
+            }
+        else
+            {
+            if (!m_havePlacement)
+                {
+                BeAssert(false); // Caller can't supply local coordinates if we don't know what local is yet...
+                return false; 
+                }
+            }
+        }
 
     if (m_elParams == elParams)
         return true;
@@ -3788,6 +3991,7 @@ bool GeometryBuilder::ConvertToLocal(GeometricPrimitiveR geom)
         }
 
     Transform   localToWorld;
+    bool        transformParams = !m_havePlacement;
 
     if (!m_havePlacement)
         {
@@ -3837,6 +4041,10 @@ bool GeometryBuilder::ConvertToLocal(GeometricPrimitiveR geom)
     Transform worldToLocal;
 
     worldToLocal.InverseOf(localToWorld);
+
+    // NOTE: Apply world-to-local to GeometryParams for auto-placement data supplied in world coords...
+    if (transformParams && m_elParams.IsTransformable())
+        m_elParams.ApplyTransform(worldToLocal);
 
     return geom.TransformInPlace(worldToLocal);
     }
@@ -4427,6 +4635,39 @@ GeometryBuilderPtr GeometryBuilder::CreateWithAutoPlacement(DgnModelR model, Dgn
         return nullptr;
 
     return new GeometryBuilder(model.GetDgnDb(), categoryId, geomModel->Is3d());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryBuilderPtr GeometryBuilder::Create(DgnModelR model, DgnCategoryId categoryId, TransformCR transform)
+    {
+    if (!categoryId.IsValid())
+        return nullptr;
+
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel)
+        return nullptr;
+
+    DPoint3d origin;
+    YawPitchRollAngles angles;
+
+    if (!YawPitchRollAngles::TryFromTransform(origin, angles, transform))
+        return nullptr;
+
+    if (geomModel->Is3d())
+        {
+        Placement3d placement(origin, angles);
+
+        return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
+        }
+
+    if (0 != BeNumerical::Compare(origin.z, 0.0) || 0 != BeNumerical::Compare(angles.GetPitch().Degrees(), 0.0) || 0 != BeNumerical::Compare(angles.GetRoll().Degrees(), 0.0))
+        return nullptr; // Invalid transform for Placement2d...
+
+    Placement2d placement(DPoint2d::From(origin), angles.GetYaw());
+
+    return new GeometryBuilder(model.GetDgnDb(), categoryId, placement);
     }
 
 /*---------------------------------------------------------------------------------**//**

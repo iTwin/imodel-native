@@ -146,7 +146,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
     //=======================================================================================
     struct NonSceneQuery : RangeQuery
     {
-        NonSceneQuery(DgnQueryViewR view, FrustumCR frustum, DgnViewportCR vp);
+                          NonSceneQuery(DgnQueryViewR view, FrustumCR frustum, DgnViewportCR vp);
     };
 
     //=======================================================================================
@@ -167,6 +167,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnQueryView : CameraViewController, BeSQLite::Vi
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
 
+
 protected:
     bool m_noQuery = false;
     bool m_loading = false;
@@ -186,6 +187,7 @@ protected:
     void AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>&);
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
+
     DgnQueryViewCP _ToQueryView() const override {return this;}
     DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
@@ -201,7 +203,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
     DGNPLATFORM_EXPORT void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
     DGNPLATFORM_EXPORT FitComplete _ComputeFitRange(struct FitContext&) override;
-    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents() const override final; // Always DgnDb::Units().GetProjectExtents() for QueryViews, don't allow override.
+    DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override final; // For QueryViews, don't allow override.
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
 public:

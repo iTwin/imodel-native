@@ -60,7 +60,7 @@ struct NullContext : ViewContext
 
 protected:
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {return new NullGraphic();}
-    virtual Render::GraphicPtr _CreateGroupNode(Render::Graphic::CreateParams const& params, Render::GraphicArray&, ClipPrimitiveCP) override {return new NullGraphic();}
+    virtual Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP trans, ClipVectorCP clips) override {return new NullGraphic();}
 
 public:
     NullContext() {m_ignoreViewRange = true;}

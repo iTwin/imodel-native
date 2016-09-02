@@ -106,11 +106,15 @@ TEST_F(GeometryBuilderTests, CreateElement3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(GeometryBuilderTests, CreateElement2d)
     {
-    SetupWithPrePublishedFile(L"2dMetricGeneral.ibim", L"GeometryBuilderTests_CreateElement2d.ibim", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupSeedProject();
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnCode(),100);
+    SheetModelPtr sheetModel = DgnDbTestUtils::InsertSheetModel(*m_db, DgnModel::CreateModelCode("TestModel2d"));
+    ASSERT_TRUE(sheetModel.IsValid());
+    DgnModelId modelId = sheetModel->GetModelId();
 
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
+    DgnElementPtr el = TestElement2d::Create(*m_db, modelId, m_defaultCategoryId, DgnCode(), 100);
+
+    DgnModelP model = m_db->Models().GetModel(modelId).get();
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
