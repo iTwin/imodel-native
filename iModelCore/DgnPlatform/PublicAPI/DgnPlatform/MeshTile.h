@@ -338,6 +338,7 @@ public:
         : m_range(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent) { }
 
     DRange3dCR GetRange() const { return m_range; }
+    DPoint3d   GetCenter() const { return DPoint3d::FromInterpolate (m_range.low, .5, m_range.high); }
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }

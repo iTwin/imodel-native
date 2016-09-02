@@ -407,6 +407,7 @@ struct Material : RefCounted<NonCopyableClass>
         double m_val[2][3];
         Trans2x3() {}
         Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+        DGNPLATFORM_EXPORT Transform GetTransform() const;
     };
     struct TextureMapParams
     {
