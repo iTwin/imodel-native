@@ -37,6 +37,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 #define PRINT_MSG(...) 
 #endif
 
+#define SM_ACTIVATE_UPLOADER 0
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -922,6 +924,13 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     clipFileBase.AppendUtf8(std::to_string(GetModelId().GetValue()).c_str());
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
+
+#if SM_ACTIVATE_UPLOADER == 1
+    if (WString(L"upload_to_cloud").Equals(dgnProject.GetFileName().GetFileNameWithoutExtension()))
+        {
+        m_smPtr->ConvertToCloud(L"scalablemesh", smFilename.GetFileNameWithoutExtension(), true);
+        }
+#endif
     if (m_smPtr->IsTerrain())
         {
          ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
