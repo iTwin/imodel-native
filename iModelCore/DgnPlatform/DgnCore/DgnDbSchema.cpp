@@ -173,7 +173,7 @@ static void importBisCoreSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnElementId modeledElementId, DgnCode const& modelCode)
+static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnElementId modeledElementId, DgnCodeCR modelCode)
     {
     Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Visibility) VALUES(?,?,?,?,?,?,'',0)");
     stmt.BindId(1, modelId);
@@ -224,7 +224,7 @@ DbResult DgnDb::CreateRepositoryModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnElement(DgnDbR db, DgnElementId elementId, DgnClassId classId, DgnModelId modelId, DgnCode const& elementCode, Utf8CP label)
+static DbResult insertIntoDgnElement(DgnDbR db, DgnElementId elementId, DgnClassId classId, DgnModelId modelId, DgnCodeCR elementCode, Utf8CP label)
     {
     Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Element) " (Id,ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, elementId);
@@ -247,8 +247,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    DgnCode elementCode(DgnAuthorityId((uint64_t)1LL), "Root", BIS_CLASS_Subject);
-    return insertIntoDgnElement(*this, elementId, classId, modelId, elementCode, params.m_name.c_str());
+    return insertIntoDgnElement(*this, elementId, classId, modelId, DgnCode::CreateEmpty(), params.m_name.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,8 +258,7 @@ DbResult DgnDb::CreateRepositoryLink(CreateDgnDbParams const& params)
     DgnElementId elementId = Elements().GetRepositoryLinkId();
     DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    DgnCode elementCode(DgnAuthorityId((uint64_t)1LL), "RootSubject", BIS_CLASS_RepositoryLink);
-    return insertIntoDgnElement(*this, elementId, classId, modelId, elementCode, params.m_name.c_str());
+    return insertIntoDgnElement(*this, elementId, classId, modelId, DgnCode::CreateEmpty(), params.m_name.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
