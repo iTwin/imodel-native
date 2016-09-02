@@ -985,7 +985,6 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
     {
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1017,7 +1016,6 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1059,7 +1057,6 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                   "<ECSchema schemaName='Test3' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "  <ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1171,7 +1168,7 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    </Target>"
                                   "    <ECProperty propertyName='Ordinal' typeName='int' />"
                                   "  </ECRelationshipClass>"
-                                  "</ECSchema>", false, "Additional properties on rel subclass"),
+                                  "</ECSchema>", true, "Additional properties on rel subclass"), //only enforced in bim0100
                        "relinheritance5.ecdb");
 
     }

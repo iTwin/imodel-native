@@ -45,7 +45,7 @@ struct ECSchemaValidationRule
             CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
             SchemaNamespacePrefix,
             NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
-            ValidRelationshipConstraints
+            ValidRelationshipRule
             };
 
         //=======================================================================================
@@ -237,7 +237,7 @@ struct NoPropertiesOfSameTypeAsClassRule : ECSchemaValidationRule
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      07/2015
 //+===============+===============+===============+===============+===============+======
-struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
+struct ValidRelationshipRule : ECSchemaValidationRule
     {
     private:
         //=======================================================================================
@@ -248,9 +248,11 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
             enum class Kind
                 {
                 None = 0,
-                HasAnyClassConstraint = 1,
-                HasRelationshipClassAsConstraint = 2,
-                IncompleteConstraintDefinition = 4
+                MultiInheritance = 1,
+                HasAnyClassConstraint = 2,
+                HasRelationshipClassAsConstraint = 4,
+                IncompleteConstraintDefinition = 8,
+                HasKeyProperties = 16
                 };
 
             private:
@@ -289,8 +291,8 @@ struct ValidRelationshipConstraintsRule : ECSchemaValidationRule
         bool ValidateConstraint(ECN::ECRelationshipClassCR, ECN::ECRelationshipConstraintCR) const;
 
     public:
-        ValidRelationshipConstraintsRule();
-        ~ValidRelationshipConstraintsRule() {}
+        ValidRelationshipRule();
+        ~ValidRelationshipRule() {}
     };
 
 //=======================================================================================

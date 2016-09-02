@@ -52,7 +52,7 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::EC
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new CaseInsensitiveClassNamesRule()));
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipConstraintsRule()));
+    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipRule()));
 
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses())
@@ -451,13 +451,13 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString() const
     }
 
 //**********************************************************************
-// RelationshipConstraintIsNotARelationshipClassRule
+// ValidRelationshipRule
 //**********************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-ValidRelationshipConstraintsRule::ValidRelationshipConstraintsRule()
-    : ECSchemaValidationRule(Type::ValidRelationshipConstraints), m_error(nullptr)
+ValidRelationshipRule::ValidRelationshipRule()
+    : ECSchemaValidationRule(Type::ValidRelationshipRule), m_error(nullptr)
     {
     m_error = std::unique_ptr<Error>(new Error(GetType()));
     }
@@ -465,11 +465,17 @@ ValidRelationshipConstraintsRule::ValidRelationshipConstraintsRule()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
+bool ValidRelationshipRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
         return true;
+
+    if (relClass->GetBaseClasses().size() > 1)
+        {
+        m_error->AddInconsistency(*relClass, Error::Kind::MultiInheritance);
+        return false;
+        }
 
     return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
     }
@@ -477,7 +483,7 @@ bool ValidRelationshipConstraintsRule::_ValidateSchema(ECN::ECSchemaCR schema, E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
+bool ValidRelationshipRule::ValidateConstraint(ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
@@ -488,6 +494,7 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
         return false;
         }
 
+    const bool hasBaseClasses = relClass.HasBaseClasses();
     bool valid = true;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
@@ -504,6 +511,13 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
             m_error->AddInconsistency(relClass, Error::Kind::HasRelationshipClassAsConstraint, relClassAsConstraint);
             valid = false;
             }
+
+        //Only root classes can have key properties. Subclasses must not
+        if (hasBaseClasses && !constraintClass->GetKeys().empty())
+            {
+            m_error->AddInconsistency(relClass, Error::Kind::HasKeyProperties);
+            valid = false;
+            }
         }
 
     return valid;
@@ -513,7 +527,7 @@ bool ValidRelationshipConstraintsRule::ValidateConstraint(ECN::ECRelationshipCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> ValidRelationshipConstraintsRule::_GetError() const
+std::unique_ptr<ECSchemaValidationRule::Error> ValidRelationshipRule::_GetError() const
     {
     if (!m_error->HasInconsistencies())
         return nullptr;
@@ -523,18 +537,18 @@ std::unique_ptr<ECSchemaValidationRule::Error> ValidRelationshipConstraintsRule:
 
 
 //**********************************************************************
-// RelationshipConstraintIsNotARelationshipClassRule::Error
+// ValidRelationshipRule::Error
 //**********************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
+Utf8String ValidRelationshipRule::Error::_ToString() const
     {
     if (!HasInconsistencies())
         return "";
 
-    Utf8String str("Found ECRelationshipClasses with invalid constraint definitions. Conflicting ECRelationshipClasses: ");
+    Utf8String str("Found invalid ECRelationshipClasses: ");
     bool isFirstItem = true;
     for (Inconsistency const& inconsistency : m_inconsistencies)
         {
@@ -544,6 +558,9 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
         str.append("Relationship ").append(inconsistency.m_relationshipClass->GetFullName()).append(":");
 
         const Kind kind = inconsistency.m_kind;
+        if (Enum::Contains(kind, Kind::MultiInheritance))
+            str.append(" It has more than one base class which is not supported for ECRelationshipClasses.");
+
         if (Enum::Contains(kind, Kind::HasAnyClassConstraint))
             str.append(" AnyClass must not be used as constraint.");
 
@@ -555,6 +572,9 @@ Utf8String ValidRelationshipConstraintsRule::Error::_ToString() const
 
         if (Enum::Contains(kind, Kind::IncompleteConstraintDefinition))
             str.append(" At least one constraint definition is not complete.");
+
+        if (Enum::Contains(kind, Kind::HasKeyProperties))
+            str.append(" It has a base class, and at least one of its constraint classes defines a Key property. This is only allowed for ECRelationshipClasses which don't have any base classes.");
 
         isFirstItem = false;
         }

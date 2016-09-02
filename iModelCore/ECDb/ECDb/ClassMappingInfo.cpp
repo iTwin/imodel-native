@@ -548,23 +548,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     ECRelationshipClass const* relClass = m_ecClass.GetRelationshipClassCP();
     BeAssert(relClass != nullptr);
 
-    //TODO: This might be enforced by ECObjects eventually
-    if (m_ecClass.HasBaseClasses())
-        {
-        if (m_ecClass.GetBaseClasses().size() > 1)
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has more than one base class which is not supported for ECRelationshipClasses.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
-
-        if (HasKeyProperties(relClass->GetSource()) || HasKeyProperties(relClass->GetTarget()))
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class, and at least one of its constraint classes defines a Key property. This is only allowed for ECRelationshipClasses which don't have any base classes.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
+    BeAssert(relClass->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
 
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
