@@ -2089,6 +2089,30 @@ BASEGEOCOORD_EXPORTED static double     DegreesFromRadians
 double          inRadians
 );
 
+/*---------------------------------------------------------------------------------**//**
+* Calculates the longitude and latitude from ECEF coordinate.
+* @param    outLatLong      OUT     The calculated longitude,latitude,elevation.
+* @param    inXYZ           IN      The XYZ (ECEF) coordinates of this GCS.
+* @bsimethod                                                    Alain.Robert   2016/08
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED ReprojectStatus   LatLongFromXYZ
+(
+GeoPointR       outLatLong,
+DPoint3dCR      inXYZ
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Calculates the XYZ (ECEF) coordinates from the longitude, latitude and elevation.
+* @param    outXYZ      OUT     The calculated XYZ (ECEF) coordinates.
+* @param    inLatLong   IN      The latitude, longitude and elevation to convert
+* @bsimethod                                                    Alain.Robert   2016/08
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED ReprojectStatus   XYZFromLatLong
+(
+DPoint3dR       outXYZ,
+GeoPointCR      inLatLong
+) const;
+
 };
 
 enum LocalTransformType
@@ -2399,6 +2423,11 @@ BASEGEOCOORD_EXPORTED static int              CScalcMgrsFromLl (CSMilitaryGrid* 
 BASEGEOCOORD_EXPORTED static int              CScalcLlFromMgrs (CSMilitaryGrid* mg, GeoPoint2dP ll, const char* mgrsString);
 
 BASEGEOCOORD_EXPORTED static void             CSdeleteMgrs (CSMilitaryGrid* mg);
+
+BASEGEOCOORD_EXPORTED static void             CS_llhToXyz (DPoint3dP xyz, GeoPointCP llh, double e_rad, double e_sq);
+
+BASEGEOCOORD_EXPORTED static int              CS_xyzToLlh (GeoPointP llh , DPoint3dCP xyz, double e_rad, double e_sq);
+
 };
 
 

@@ -12299,6 +12299,41 @@ double      inRadians
     return inRadians /  s_radiansPerDegree;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   2016/08
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED ReprojectStatus   BaseGCS::LatLongFromXYZ
+(
+GeoPointR       outLatLong,
+DPoint3dCR      inXYZ
+) const
+    {
+    if (NULL == m_csParameters)
+        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
+    CSMap::CS_xyzToLlh (&outLatLong, &inXYZ, m_csParameters->datum.e_rad, m_csParameters->datum.ecent * m_csParameters->datum.ecent);
+
+    return REPROJECT_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   2016/08
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED ReprojectStatus   BaseGCS::XYZFromLatLong
+(
+DPoint3dR       outXYZ,
+GeoPointCR      inLatLong
+) const
+    {
+    if (NULL == m_csParameters)
+        return (ReprojectStatus)GEOCOORDERR_InvalidCoordSys;
+
+	CSMap::CS_llhToXyz (&outXYZ, &inLatLong, m_csParameters->datum.e_rad, m_csParameters->datum.ecent * m_csParameters->datum.ecent);
+
+    return REPROJECT_Success;
+    }
+
+
 #if defined (TRAVERSE_UNITS)
 typdef void (*UnitCallback)(void* callbackArg, CharCP unitName, CharCP pluralName, int system, double factor, int32_t epsgCode, int index);
 /*---------------------------------------------------------------------------------**//**
@@ -14707,6 +14742,9 @@ CSMilitaryGrid* CSMap::CSnewMgrs (double e_rad, double e_sq, short bessel) {retu
 int             CSMap::CScalcMgrsFromLl (CSMilitaryGrid* mg, char* result, int size, GeoPoint2dP ll, int precision) {return ::CScalcMgrsFromLl (mg, result, size, (double *)ll, precision); }
 int             CSMap::CScalcLlFromMgrs (CSMilitaryGrid* mg, GeoPoint2dP ll, const char* mgrsString) {return ::CScalcLlFromMgrs (mg, (double *)ll, mgrsString); }
 void            CSMap::CSdeleteMgrs (CSMilitaryGrid* mg) {::CSdeleteMgrs (mg);}
+void            CSMap::CS_llhToXyz (DPoint3dP xyz,const GeoPointCP llh, double e_rad, double e_sq) {::CS_llhToXyz((double*)xyz, (const double*)llh, e_rad, e_sq);}
+int             CSMap::CS_xyzToLlh (GeoPointP llh,const DPoint3dCP xyz, double e_rad, double e_sq) {return ::CS_xyzToLlh((double*)llh, (const double*)xyz, e_rad, e_sq);}
+
 
 #include "GCSLibrary.cpp"
 
