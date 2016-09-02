@@ -31,31 +31,28 @@ DEFINE_REF_COUNTED_PTR(MapRoot)
 
 //=======================================================================================
 //! Identifies a tile in the fixed WebMercator tiling system.
-// @bsiclass                                                    Sam.Wilson      10/2014
+// @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct TileId
 {
-    
     uint8_t  m_zoomLevel;
     uint32_t m_row;
     uint32_t m_column;
     TileId() {}
     TileId(uint8_t zoomLevel, uint32_t col, uint32_t row){m_zoomLevel=zoomLevel; m_column=col; m_row=row;}
-    bool operator<(TileId const& rhs) const;
-    TileId PlusOne() const {return TileId(m_zoomLevel, m_column+1, m_row+1); }
 };
 
 //=======================================================================================
-//! A map tile. May or may not have its graphics loaded.
+//! A web mercator map tile. May or may not have its graphics downloaded.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct MapTile : TileTree::Tile
 {
-    TileId m_id;
-    Render::IGraphicBuilder::TileCorners m_corners;
-    MapRootR m_mapRoot;
-    bool m_reprojected = false;
-    Render::GraphicPtr m_graphic;
+    TileId m_id;                                        //! tile id 
+    Render::IGraphicBuilder::TileCorners m_corners;     //! 4 corners of tile, in world coordinates
+    MapRootR m_mapRoot;                                 //! the MapRoot that loaded this tile.
+    bool m_reprojected = false;                         //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
+    Render::GraphicPtr m_graphic;                       //! the texture for this tile.
 
     StatusInt ReprojectCorners(GeoPoint*);
     TileId GetTileId() const {return m_id;}
@@ -72,20 +69,21 @@ struct MapTile : TileTree::Tile
 };
 
 //=======================================================================================
+//! The root of a multi-resolution web mercator map.
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct MapRoot : TileTree::Root
 {
-    ColorDef m_tileColor;
-    uint8_t m_maxZoom;
-    uint32_t m_maxSize;
-    Render::ImageSource::Format m_format;
-    Utf8String m_urlSuffix;
-    Transform m_mercatorToWorld;
+    ColorDef m_tileColor;                   //! for setting transparency
+    uint8_t m_maxZoom;                      //! the maximum zoom level for this map
+    uint32_t m_maxPixelSize;                //! the maximum size, in pixels, that a tile should stretched to. If the tile's size on screen is larger than this, use its children.
+    Render::ImageSource::Format m_format;   //! the format of the tile image source
+    Utf8String m_urlSuffix;                 //! any suffix to append to tile names. Usually includes key
+    Transform m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
 
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
-    uint32_t GetMaxSize() const {return m_maxSize;}
+    uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
             uint8_t maxZoom, uint32_t maxSize);
 };

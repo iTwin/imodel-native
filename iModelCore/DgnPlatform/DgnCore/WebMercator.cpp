@@ -292,7 +292,7 @@ MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_m
     if (parent)
         parent->ExtendRange(m_range);
 
-    m_maxSize = root.GetMaxSize();
+    m_maxSize = root.GetMaxPixelSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,7 +320,7 @@ Utf8String MapRoot::_ConstructTileName(TileCR tile)
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency, 
-        uint8_t maxZoom, uint32_t maxSize) : Root(db, trans, realityCacheName, rootUrl.c_str(), system), m_format(format), m_urlSuffix(urlSuffix), m_maxZoom(maxZoom), m_maxSize(maxSize)
+        uint8_t maxZoom, uint32_t maxSize) : Root(db, trans, realityCacheName, rootUrl.c_str(), system), m_format(format), m_urlSuffix(urlSuffix), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
     if (0.0 != transparency)

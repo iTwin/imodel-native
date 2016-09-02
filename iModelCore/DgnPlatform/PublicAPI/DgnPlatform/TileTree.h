@@ -140,7 +140,7 @@ public:
 // transform for the scene (that is, the tile graphics are always in the local coordinate system of the TileTree.)
 // If higher resolution tiles are needed but missing, the graphics for lower resolution tiles are
 // drawn and the missing tiles are requested for download (if necessary.) They are then added to the MissingNodes member. If the
-// MissingNodes list is not empty, we schedule a ProgressiveDisplay that checks for the arrival of the missing nodes and draws them (using
+// MissingNodes list is not empty, schedule a ProgressiveDisplay that checks for the arrival of the missing nodes and draws them (using
 // this class). Each iteration of ProgressiveDisplay starts with a list of previously-missing tiles and generates a new list of
 // still-missing tiles until all have arrived, or the view changes externally.
 // @bsiclass                                                    Keith.Bentley   05/16
