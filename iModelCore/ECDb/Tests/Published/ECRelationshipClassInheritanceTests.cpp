@@ -25,8 +25,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
     {
     Utf8String ecdbFilePath;
     {
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Model' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -87,54 +87,54 @@ TEST_F(ECRelationshipInheritanceTestFixture, BasicCRUD)
                           "    <ECProperty propertyName='Font' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='Model' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='Element' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='ModelHasGeometric3dElements' strength='embedding' modifier='Sealed'>"
                           "   <BaseClass>ModelHasElements</BaseClass>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='Model' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='Geometric3dElement' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='ModelHasLinkElements' strength='embedding' modifier='Sealed'>"
                           "   <BaseClass>ModelHasElements</BaseClass>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='Model' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='LinkElement' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='ElementDrivesElement' strength='referencing' modifier='Abstract'>"
-                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='Element' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='Element' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='InformationElementDrivesInformationElement' strength='referencing' modifier='Sealed'>"
                           "   <BaseClass>ElementDrivesElement</BaseClass>"
-                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='InformationElement' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='InformationElement' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='UrlLinkDrivesAnnotation3dElement' strength='referencing' modifier='Sealed'>"
                           "   <BaseClass>ElementDrivesElement</BaseClass>"
-                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='UrlLink' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='Annotation3dElement' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -378,8 +378,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
             bool asserted = false;
             AssertSchemaImport(ecdb, asserted,
                                SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                          "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                          "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                           "  <ECEntityClass typeName='Model' >"
                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                           "  </ECEntityClass>"
@@ -397,10 +397,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
                                           "  </ECEntityClass>"
                                           "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                           "      <Class class='Model' />"
                                           "    </Source>"
-                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                           "      <Class class='Element' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
@@ -411,10 +411,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "        </ClassMap>"
                                           "    </ECCustomAttributes>"
                                           "   <BaseClass>ModelHasElements</BaseClass>"
-                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                           "      <Class class='Model' />"
                                           "    </Source>"
-                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                           "      <Class class='PhysicalElement' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
@@ -425,10 +425,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "        </ClassMap>"
                                           "    </ECCustomAttributes>"
                                           "   <BaseClass>ModelHasElements</BaseClass>"
-                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                           "      <Class class='Model' />"
                                           "    </Source>"
-                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                           "      <Class class='PhysicalElement' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
@@ -451,8 +451,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
             bool asserted = false;
             AssertSchemaImport(ecdb, asserted,
                                SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                          "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                          "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                           "  <ECEntityClass typeName='Model' >"
                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                           "  </ECEntityClass>"
@@ -465,28 +465,28 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                           "                <MapStrategy>NotMapped</MapStrategy>"
                                           "        </ClassMap>"
                                           "    </ECCustomAttributes>"
-                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                           "      <Class class='Model' />"
                                           "    </Source>"
-                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                           "      <Class class='Element' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
                                           "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
                                           "   <BaseClass>ModelHasElements</BaseClass>"
-                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                           "      <Class class='Model' />"
                                           "    </Source>"
-                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                           "      <Class class='Element' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
                                           "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
                                           "   <BaseClass>ModelHasElements</BaseClass>"
-                                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                           "      <Class class='Model' />"
                                           "    </Source>"
-                                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                           "      <Class class='Element' />"
                                           "    </Target>"
                                           "  </ECRelationshipClass>"
@@ -513,16 +513,16 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     {
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
     "  </ECEntityClass>"
     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
     "    <ECCustomAttributes>"
-               "         <ClassMap xmlns='ECDbMap.02.00'>"
-               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-               "        </ClassMap>"
+    "         <ClassMap xmlns='ECDbMap.02.00'>"
+    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+    "        </ClassMap>"
     "    </ECCustomAttributes>"
     "    <ECProperty propertyName='Code' typeName='string' />"
     "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
@@ -532,35 +532,35 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
     "  </ECEntityClass>"
     "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-    "    <Source cardinality='(1,1)' polymorphic='True'>"
+    "    <Source multiplicity='(1..1)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Element' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
     "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source cardinality='(0,N)' polymorphic='True'>"
+    "    <Source multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclass must not imply link table if base class has FK mapping"));
 
     testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
     "  </ECEntityClass>"
     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
     "    <ECCustomAttributes>"
-               "         <ClassMap xmlns='ECDbMap.02.00'>"
-               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-               "        </ClassMap>"
+    "         <ClassMap xmlns='ECDbMap.02.00'>"
+    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+    "        </ClassMap>"
     "    </ECCustomAttributes>"
     "    <ECProperty propertyName='Code' typeName='string' />"
     "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
@@ -570,10 +570,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
     "  </ECEntityClass>"
     "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-    "    <Source cardinality='(1,1)' polymorphic='True'>"
+    "    <Source multiplicity='(1..1)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Element' />"
     "    </Target>"
     "  </ECRelationshipClass>"
@@ -582,26 +582,26 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
     "    </ECCustomAttributes>"
     "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source cardinality='(1,1)' polymorphic='True'>"
+    "    <Source multiplicity='(1..1)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclasses must not have ForeignKeyRelationshipMap even if it doesn't violate the base class mapping"));
 
     testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
     "  </ECEntityClass>"
     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
     "    <ECCustomAttributes>"
-               "         <ClassMap xmlns='ECDbMap.02.00'>"
-               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-               "        </ClassMap>"
+    "         <ClassMap xmlns='ECDbMap.02.00'>"
+    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+    "        </ClassMap>"
     "    </ECCustomAttributes>"
     "    <ECProperty propertyName='Code' typeName='string' />"
     "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
@@ -611,10 +611,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
     "  </ECEntityClass>"
     "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-    "    <Source cardinality='(1,N)' polymorphic='True'>"
+    "    <Source multiplicity='(1..*)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Element' />"
     "    </Target>"
     "  </ECRelationshipClass>"
@@ -623,26 +623,26 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>"
     "    </ECCustomAttributes>"
     "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source cardinality='(1,N)' polymorphic='True'>"
+    "    <Source multiplicity='(1..*)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping"));
 
     testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
     "  </ECEntityClass>"
     "  <ECEntityClass typeName='Element' modifier='Abstract' >"
     "    <ECCustomAttributes>"
-               "         <ClassMap xmlns='ECDbMap.02.00'>"
-               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-               "        </ClassMap>"
+    "         <ClassMap xmlns='ECDbMap.02.00'>"
+    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+    "        </ClassMap>"
     "    </ECCustomAttributes>"
     "    <ECProperty propertyName='Code' typeName='string' />"
     "    <ECNavigationProperty propertyName='ModelId' relationshipName='ModelHasElements' direction='Backward' />"
@@ -652,10 +652,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
     "  </ECEntityClass>"
     "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-    "    <Source cardinality='(0,N)' polymorphic='True'>"
+    "    <Source multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Element' />"
     "    </Target>"
     "  </ECRelationshipClass>"
@@ -664,18 +664,18 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
     "    </ECCustomAttributes>"
     "   <BaseClass>ModelHasElements</BaseClass>"
-    "    <Source cardinality='(0,1)' polymorphic='True'>"
+    "    <Source multiplicity='(0..1)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclass must not have ForeignKeyRelationshipMap if base class maps to link table"));
 
     testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -693,10 +693,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='Element' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -705,18 +705,18 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
                    "    </ECCustomAttributes>"
                    "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>", false, "Subclass must not have ForeignKeyRelationshipMap even if it doesn't violate the mapping type"));
 
     testSchemas.push_back(
-    SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-    "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
     "  </ECEntityClass>"
@@ -734,10 +734,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
     "  </ECEntityClass>"
     "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-    "    <Source cardinality='(0,1)' polymorphic='True'>"
+    "    <Source multiplicity='(0..1)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='Element' />"
     "    </Target>"
     "  </ECRelationshipClass>"
@@ -749,18 +749,18 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "    </ECCustomAttributes>"
     "   <BaseClass>ModelHasElements</BaseClass>"
     "   <ECProperty propertyName='Prop1' typeName='string' />"
-    "    <Source cardinality='(0,1)' polymorphic='True'>"
+    "    <Source multiplicity='(0..1)' polymorphic='True'>"
     "      <Class class='Model' />"
     "    </Source>"
-    "    <Target cardinality='(0,N)' polymorphic='True'>"
+    "    <Target multiplicity='(0..*)' polymorphic='True'>"
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
     "</ECSchema>", false, "Subclass must not add ECProperties if base class has FK mapping"));
     
     testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -778,10 +778,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='Element' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -792,10 +792,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "        </ClassMap>"
                    "    </ECCustomAttributes>"
                    "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -803,8 +803,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
 
 
     testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -817,10 +817,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "            <MapStrategy>NotMapped</MapStrategy>"
                    "        </ClassMap>"
                    "    </ECCustomAttributes>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='Element' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -831,19 +831,19 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "        </ClassMap>"
                    "    </ECCustomAttributes>"
                    "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
                    "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
                    "   <BaseClass>ModelHasElements</BaseClass>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -851,8 +851,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
 
 
 /*    testSchemas.push_back(
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -865,10 +865,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "    <ECProperty propertyName='Geometry' typeName='Bentley.Geometry.Common.IGeometry' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='ModelHasElements' modifier='Sealed' strength='embedding'>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='Model' />"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='Element' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -954,9 +954,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
         };
 
     {
-    #define NAMESPACEPREFIX "ts1"
+    #define SCHEMAALIAS "ts1"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -964,10 +964,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Code' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -978,10 +978,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Code' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='CHasD' modifier='Sealed' strength='embedding'>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='C' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='D' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -989,19 +989,19 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB", RelClassIdExistenceMode::Persisted, false);
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_D", "RelECClassId_" NAMESPACEPREFIX "_CHasD", RelClassIdExistenceMode::Virtual, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_D", "RelECClassId_" SCHEMAALIAS "_CHasD", RelClassIdExistenceMode::Virtual, false);
     }
 
     {
-    #undef NAMESPACEPREFIX
-    #define NAMESPACEPREFIX "ts2"
+    #undef SCHEMAALIAS
+    #define SCHEMAALIAS "ts2"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1018,18 +1018,18 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -1037,19 +1037,19 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB", RelClassIdExistenceMode::Persisted, false);
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
     }
 
     {
-#undef NAMESPACEPREFIX
-#define NAMESPACEPREFIX "ts3"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts3"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1066,36 +1066,36 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
                           "    <BaseClass>AHasB</BaseClass>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='BSub' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasB1N' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasB1NSub' modifier='Sealed' strength='embedding'>"
                           "    <BaseClass>AHasB1N</BaseClass>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='BSub' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -1103,22 +1103,22 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8CP tableName = NAMESPACEPREFIX "_B";
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasB", RelClassIdExistenceMode::Persisted, false);
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasBSub", RelClassIdExistenceMode::DoesNotExist, false);
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
-    assertRelECClassId(ecdb, tableName, "RelECClassId_" NAMESPACEPREFIX "_AHasB1NSub", RelClassIdExistenceMode::DoesNotExist, false);
+    Utf8CP tableName = SCHEMAALIAS "_B";
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasB", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasBSub", RelClassIdExistenceMode::DoesNotExist, false);
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasB1N", RelClassIdExistenceMode::Persisted, true);
+    assertRelECClassId(ecdb, tableName, "RelECClassId_" SCHEMAALIAS "_AHasB1NSub", RelClassIdExistenceMode::DoesNotExist, false);
     }
 
     {
-#undef NAMESPACEPREFIX
-#define NAMESPACEPREFIX "ts4"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts4"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1135,18 +1135,18 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasBSub' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='BSub' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Abstract' strength='embedding'>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='BSub' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -1154,20 +1154,20 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub", RelClassIdExistenceMode::Persisted, false);
     //cardinality would imply NOT NULL on rel class id, but the column is shared by other base class rows, so no enforcement of NOT NULL.
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub1N", RelClassIdExistenceMode::Persisted, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub1N", RelClassIdExistenceMode::Persisted, false);
     }
 
     {
-#undef NAMESPACEPREFIX
-#define NAMESPACEPREFIX "ts5"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts5"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1184,26 +1184,26 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
-                          "    <Source cardinality='(0,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='BSub' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
-                          "    <Source cardinality='(1,1)' polymorphic='True'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='BSub' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -1211,21 +1211,21 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub", RelClassIdExistenceMode::Virtual, false);
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasB1N", RelClassIdExistenceMode::Virtual, true);
-    assertRelECClassId(ecdb, NAMESPACEPREFIX "_B", "RelECClassId_" NAMESPACEPREFIX "_AHasBSub1N", RelClassIdExistenceMode::Virtual, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub", RelClassIdExistenceMode::Virtual, false);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasB1N", RelClassIdExistenceMode::Virtual, true);
+    assertRelECClassId(ecdb, SCHEMAALIAS "_B", "RelECClassId_" SCHEMAALIAS "_AHasBSub1N", RelClassIdExistenceMode::Virtual, false);
     }
 
     {
     //LinkTable
-#undef NAMESPACEPREFIX
-#define NAMESPACEPREFIX "ts6"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts6"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1237,10 +1237,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='referencing'>"
-                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -1248,20 +1248,20 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    ASSERT_TRUE(ecdb.TableExists(NAMESPACEPREFIX "_AHasB"));
-    ASSERT_FALSE(ecdb.ColumnExists(NAMESPACEPREFIX "_AHasB", "ECClassId"));
+    ASSERT_TRUE(ecdb.TableExists(SCHEMAALIAS "_AHasB"));
+    ASSERT_FALSE(ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
    }
 
     {
     //LinkTable
-#undef NAMESPACEPREFIX
-#define NAMESPACEPREFIX "ts7"
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts7"
 
-    SchemaItem testSchema("<ECSchema schemaName='TestSchema' nameSpacePrefix='" NAMESPACEPREFIX "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='A' >"
                           "    <ECProperty propertyName='Name' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1273,19 +1273,19 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "    <ECProperty propertyName='Prop1' typeName='string' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='AHasB' modifier='Abstract' strength='referencing'>"
-                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
                           "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='referencing'>"
                           "    <BaseClass>AHasB</BaseClass>"
-                          "    <Source cardinality='(0,N)' polymorphic='True'>"
+                          "    <Source multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='A' />"
                           "    </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "      <Class class='B' />"
                           "    </Target>"
                           "  </ECRelationshipClass>"
@@ -1293,14 +1293,14 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" NAMESPACEPREFIX ".ecdb");
+    AssertSchemaImport(ecdb, asserted, testSchema, "relecclassid" SCHEMAALIAS ".ecdb");
     ASSERT_FALSE(asserted);
 
-    ASSERT_TRUE(ecdb.TableExists(NAMESPACEPREFIX "_AHasB"));
-    ASSERT_TRUE(ecdb.ColumnExists(NAMESPACEPREFIX "_AHasB", "ECClassId"));
+    ASSERT_TRUE(ecdb.TableExists(SCHEMAALIAS "_AHasB"));
+    ASSERT_TRUE(ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
     }
 
-#undef NAMESPACEPREFIX
+#undef SCHEMAALIAS
     }
 
 //---------------------------------------------------------------------------------------
@@ -1308,8 +1308,8 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships)
     {
-    ECDbCR ecdb = SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-               "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    ECDbCR ecdb = SetupECDb("ecrelinheritance_allowduplicaterelationships.ecdb", SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+               "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                "  <ECEntityClass typeName='A' >"
                "    <ECProperty propertyName='Name' typeName='string' />"
                "  </ECEntityClass>"
@@ -1322,19 +1322,19 @@ TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationshi
                "             <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
                "        </LinkTableRelationshipMap>"
                "    </ECCustomAttributes>"
-               "    <Source cardinality='(0,N)' polymorphic='True'>"
+               "    <Source multiplicity='(0..*)' polymorphic='True'>"
                "      <Class class='A' />"
                "    </Source>"
-               "    <Target cardinality='(0,N)' polymorphic='True'>"
+               "    <Target multiplicity='(0..*)' polymorphic='True'>"
                "      <Class class='B' />"
                "    </Target>"
                "  </ECRelationshipClass>"
                "  <ECRelationshipClass typeName='SubRel' modifier='Sealed' strength='referencing'>"
                "   <BaseClass>BaseRel</BaseClass>"
-               "    <Source cardinality='(0,N)' polymorphic='True'>"
+               "    <Source multiplicity='(0..*)' polymorphic='True'>"
                "      <Class class='A' />"
                "    </Source>"
-               "    <Target cardinality='(0,N)' polymorphic='True'>"
+               "    <Target multiplicity='(0..*)' polymorphic='True'>"
                "      <Class class='B' />"
                "    </Target>"
                "  </ECRelationshipClass>"

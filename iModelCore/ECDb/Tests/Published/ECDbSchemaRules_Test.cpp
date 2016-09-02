@@ -96,15 +96,15 @@ TEST_F(ECDbSchemaRules, Casing)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
+TEST_F(ECDbSchemaRules, SchemaAlias)
     {
     {
-    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' alias='123' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>",
-                      false, "Namespace prefix has to be an ECName.");
+                      false, "Alias has to be an ECName.");
     AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
     }
 
@@ -114,57 +114,57 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>",
-                      false, "Namespace prefix must not be unset.");
+                      false, "Alias must not be unset.");
     AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
     }
 
     {
-    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' alias='' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='TestClass' >"
                       "    <ECProperty propertyName='TestProperty' typeName='string' />"
                       "  </ECEntityClass>"
                       "</ECSchema>",
-                      false, "Namespace prefix must not be empty");
+                      false, "Alias must not be empty");
     AssertSchemaImport(testItem, "ecdbschemarules.ecdb");
     }
 
     {
-    SchemaItem testItem({"<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem testItem({"<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                  "  <ECEntityClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECEntityClass>"
                                  "</ECSchema>",
-                        "<ECSchema schemaName='Schema2' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                        "<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                         "  <ECEntityClass typeName='TestClass2' >"
                         "    <ECProperty propertyName='TestProperty' typeName='string' />"
                         "  </ECEntityClass>"
                         "</ECSchema>"}, 
-                       false, "Two schemas with same namespace prefix is not supported.");
+                       false, "Two schemas with same alias is not supported.");
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, testItem, "ecdbschemarules_duplicatensprefixes.ecdb");
+    AssertSchemaImport(ecdb, asserted, testItem, "ecdbschemarules_duplicateschemaaliases.ecdb");
     ASSERT_FALSE(asserted);
     }
 
     {
-    SchemaItem firstSchemaTestItem("<ECSchema schemaName='Schema1' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem firstSchemaTestItem("<ECSchema schemaName='Schema1' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                  "  <ECEntityClass typeName='TestClass1' >"
                                  "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                  "  </ECEntityClass>"
                                  "</ECSchema>",
                                  true, "");
 
-    SchemaItem secondSchemaTestItem("<ECSchema schemaName='Schema2' nameSpacePrefix='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem secondSchemaTestItem("<ECSchema schemaName='Schema2' alias='ns' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECEntityClass typeName='TestClass2' >"
                                   "    <ECProperty propertyName='TestProperty' typeName='string' />"
                                   "  </ECEntityClass>"
                                   "</ECSchema>",
-                                  false, "Two schemas with same namespace prefix is not supported.");
+                                  false, "Two schemas with same aliases is not supported.");
 
     ECDb ecdb;
     bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, firstSchemaTestItem, "ecdbschemarules_duplicatensprefixes.ecdb");
+    AssertSchemaImport(ecdb, asserted, firstSchemaTestItem, "ecdbschemarules_duplicateschemaaliases.ecdb");
     ASSERT_FALSE(asserted);
 
     AssertSchemaImport(asserted, ecdb, secondSchemaTestItem);
@@ -177,7 +177,7 @@ TEST_F(ECDbSchemaRules, SchemaNamespacePrefix)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, Instantiability)
     {
-    SchemaItem testItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    SchemaItem testItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "<ECEntityClass typeName='AbstractClass' modifier='Abstract'>"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "</ECEntityClass>"
@@ -188,10 +188,10 @@ TEST_F(ECDbSchemaRules, Instantiability)
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "</ECStructClass>"
                       "<ECRelationshipClass typeName='AbstractRel' modifier='Abstract'>"
-                        "    <Source cardinality='(0,1)' polymorphic='True'>"
+                        "    <Source multiplicity='(0..1)' polymorphic='True'>"
                         "      <Class class='DomainClass'/>"
                         "    </Source>"
-                        "    <Target cardinality='(0,N)' polymorphic='True'>"
+                        "    <Target multiplicity='(0..N)' polymorphic='True'>"
                         "      <Class class='DomainClass'/>"
                         "    </Target>"
                         "  </ECRelationshipClass>"
@@ -228,14 +228,14 @@ TEST_F(ECDbSchemaRules, Instantiability)
 TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
     {
     std::vector <SchemaItem> testItems {
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
         "  <ECStructClass typeName=\"TestClass\" >"
                  "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
                  "  </ECStructClass>"
                  "</ECSchema>",
                  false, "Property is of same type as class."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                  "  <ECStructClass typeName=\"Base\" >"
                  "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" />"
                  "  </ECStructClass>"
@@ -246,14 +246,14 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
                  "</ECSchema>",
                  false, "Property is of subtype of class."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                  "  <ECStructClass typeName=\"TestClass\" >"
                  "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECStructClass>"
                  "</ECSchema>",
                  false, "Property is array of class."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                  "  <ECStructClass typeName=\"Base\" >"
                  "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECStructClass>"
@@ -264,7 +264,7 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
                  "</ECSchema>",
                  false, "Property is of array of subclass of class."),
 
-        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+        SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                  "  <ECStructClass typeName=\"Base\" >"
                  "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
                  "  </ECStructClass>"
@@ -292,8 +292,8 @@ TEST_F(ECDbSchemaRules, PropertyOfSameTypeAsClass)
 TEST_F(ECDbSchemaRules, Relationship)
     {
     std::vector <SchemaItem> testItems {
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsc' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
         "  <ECEntityClass typeName='A'>"
         "    <ECProperty propertyName='Name' typeName='string' />"
         "  </ECEntityClass>"
@@ -301,18 +301,18 @@ TEST_F(ECDbSchemaRules, Relationship)
         "    <ECProperty propertyName='Id' typeName='string' />"
         "  </ECEntityClass>"
         "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
-        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "    <Source multiplicity='(0..1)' polymorphic='True'>"
         "      <Class class='bsc:AnyClass'/>"
         "    </Source>"
-        "    <Target cardinality='(0,1)' polymorphic='True'>"
+        "    <Target multiplicity='(0..1)' polymorphic='True'>"
         "      <Class class='B'/>"
         "    </Target>"
         "  </ECRelationshipClass>"
         "</ECSchema>",
         false, "AnyClass is not supported by ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsc' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                    "  <ECEntityClass typeName='A'>"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -320,18 +320,18 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "    <ECProperty propertyName='Id' typeName='string' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
-                   "    <Target cardinality='(0,1)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='bsc:AnyClass'/>"
                    "    </Target>"
                    "  </ECRelationshipClass>"
                    "</ECSchema>",
                    false, "AnyClass is not supported by ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                   "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsc' />"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                   "<ECSchemaReference name='Bentley_Standard_Classes' version='01.00' alias='bsc' />"
                    "  <ECEntityClass typeName='A'>"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -339,10 +339,10 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "    <ECProperty propertyName='Id' typeName='string' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
-                   "    <Source cardinality='(0,N)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='B'/>"
                    "      <Class class='bsc:AnyClass'/>"
                    "    </Target>"
@@ -350,7 +350,7 @@ TEST_F(ECDbSchemaRules, Relationship)
                    "</ECSchema>",
                    false, "AnyClass is not supported by ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
@@ -358,25 +358,25 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "    <ECProperty propertyName='Id' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
                  "  <ECRelationshipClass typeName='Rel2' modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='Rel1'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
@@ -384,25 +384,25 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "    <ECProperty propertyName='Id' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1' modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
                  "  <ECRelationshipClass typeName='Rel2' modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='Rel1'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='A'>"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
@@ -410,26 +410,26 @@ TEST_F(ECDbSchemaRules, Relationship)
                  "    <ECProperty propertyName='Id' typeName='string' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='Rel1'  modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
                  "  <ECRelationshipClass typeName='Rel2'  modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "      <Class class='Rel1'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='B'/>"
                  "    </Target>"
                  "  </ECRelationshipClass>"
                  "</ECSchema>",
                  false, "RelationshipClass constraint must not specify a relationship class."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -437,16 +437,16 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "    <ECProperty propertyName='Id' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
                     "    </Source>"
-                    "    <Target cardinality='(0,1)' polymorphic='True'>"
+                    "    <Target multiplicity='(0..1)' polymorphic='True'>"
                     "      <Class class='B'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
                     false, "Sealed RelationshipClass must at least specify one constraint class each."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -454,14 +454,14 @@ TEST_F(ECDbSchemaRules, Relationship)
                     "    <ECProperty propertyName='Id' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                    "    <Target cardinality='(0,1)' polymorphic='True'>"
+                    "    <Target multiplicity='(0..1)' polymorphic='True'>"
                     "      <Class class='B'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
                     false, "RelationshipClass constraint must not be left out."),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -469,16 +469,16 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Id' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
-                 "    <Source cardinality='(0,1)' polymorphic='True'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='True'>"
                  "      <Class class='A'/>"
                  "    </Source>"
-                 "    <Target cardinality='(0,1)' polymorphic='True'>"
+                 "    <Target multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
                 "</ECSchema>", true, "Abstract relationship class must have fully defined constraints"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -486,13 +486,13 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Id' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "    <Source multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
                 "  </ECRelationshipClass>"
                 "</ECSchema>", false, "Abstract relationship class must have fully defined constraints"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -500,13 +500,13 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Id' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
-                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "    <Target multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
                 "</ECSchema>", false, "Abstract relationship class must have fully defined constraints"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -514,28 +514,28 @@ TEST_F(ECDbSchemaRules, Relationship)
                 "    <ECProperty propertyName='Id' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
                    "  <ECRelationshipClass typeName='Rel2' modifier='Abstract'>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='B'/>"
                    "    </Target>"
                    "  </ECRelationshipClass>"
                    "  <ECRelationshipClass typeName='ConcreteRel' modifier='Sealed'>"
                    "    <BaseClass>Rel</BaseClass>"
                    "    <BaseClass>Rel2</BaseClass>"
-                   "    <Source cardinality='(0,1)' polymorphic='True'>"
+                   "    <Source multiplicity='(0..1)' polymorphic='True'>"
                    "      <Class class='A'/>"
                    "    </Source>"
-                   "    <Target cardinality='(0,N)' polymorphic='True'>"
+                   "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='B'/>"
                    "    </Target>"
                    "  </ECRelationshipClass>"
@@ -557,7 +557,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             {
             //(1,1):(1,1)
             ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -566,10 +566,10 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                "    <Source multiplicity='(1..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
-                "    <Target cardinality='(1,1)' polymorphic='True'>"
+                "    <Target multiplicity='(1..1)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
@@ -601,14 +601,14 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             bStmt.Reset();
             bStmt.ClearBindings();
 
-            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            //Test that child can have one parent at most (enforce (0..1) parent multiplicity)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a2Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,1)]> Max of (1,1) cardinality constraint is expected to be enforced";
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1..1):(1..1)]> Max of (1..1) multiplicity constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
 
@@ -616,13 +616,13 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,1)]> Max of (1,1) cardinality constraint is expected to be enforced";
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1..1):(1..1)]> Max of (1..1) multiplicity constraint is expected to be enforced";
             }
 
             {
             //(1,1):(1,N)
             ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -631,10 +631,10 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                "    <Source cardinality='(1,1)' polymorphic='True'>"
+                "    <Source multiplicity='(1..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
-                "    <Target cardinality='(1,N)' polymorphic='True'>"
+                "    <Target multiplicity='(1..*)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
@@ -662,7 +662,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             aStmt.Reset();
 
             ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetECInstanceId()));
-            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key)) << "[(1,1):(1,N)]> (1,N) cardinality is not expected to be violated by a second child" << bStmt.GetNativeSql() << " Error:" << ecdb.GetLastError().c_str();
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key)) << "[(1..1):(1..*)]> (1..*) multiplicity is not expected to be violated by a second child" << bStmt.GetNativeSql() << " Error:" << ecdb.GetLastError().c_str();
             bStmt.Reset();
             bStmt.ClearBindings();
 
@@ -673,7 +673,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1,1):(1,N)]> Max of (1,1) cardinality constraint is expected to be enforced";
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(1..1):(1..*)]> Max of (1..1) multiplicity constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
             }
@@ -681,7 +681,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             {
             //(0,1):(0,1)
             ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -689,10 +689,10 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Id' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "    <Source multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
-                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "    <Target multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
@@ -718,7 +718,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
             bStmt.Reset();
 
-            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            //Test that child can have one parent at most (enforce (0,1) parent multiplicity)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
@@ -733,7 +733,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) cardinality constraint is expected to be enforced";
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) multiplicity constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
 
@@ -741,13 +741,13 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a1Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b2Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b2Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) cardinality constraint is expected to be enforced";
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,1)]> Max of (0,1) multiplicity constraint is expected to be enforced";
             }
 
             {
             //(0,1):(0,N)
             ECDbR ecdb = SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -755,10 +755,10 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
                 "    <ECProperty propertyName='Id' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "    <Source multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
+                "    <Target multiplicity='(0..*)' polymorphic='True'>"
                 "      <Class class='B'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
@@ -784,7 +784,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key));
             bStmt.Reset();
 
-            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            //Test that child can have one parent at most (enforce (0,1) parent multiplicity)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
@@ -799,7 +799,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(2, a2Key.GetECClassId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(3, b1Key.GetECInstanceId()));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(4, b1Key.GetECClassId()));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,N)]> Max of (0,1) cardinality constraint is expected to be enforced";
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, relStmt.Step()) << "[(0,1):(0,N)]> Max of (0,1) multiplicity constraint is expected to be enforced";
             relStmt.Reset();
             relStmt.ClearBindings();
 
@@ -813,15 +813,15 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
         //** Unenforced cardinality for self-joins
             {
             ECDbR ecdb = SetupECDb("relcardinality_selfjoins.ecdb", SchemaItem(
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
+                "    <Source multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Source>"
-                "    <Target cardinality='(0,1)' polymorphic='True'>"
+                "    <Target multiplicity='(0..1)' polymorphic='True'>"
                 "      <Class class='A'/>"
                 "    </Target>"
                 "  </ECRelationshipClass>"
@@ -839,7 +839,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
             ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a3Key));
             aStmt.Reset();
 
-            //Test that child can have one parent at most (enforce (0,1) parent cardinality)
+            //Test that child can have one parent at most (enforce (0,1) parent multiplicity)
             ECSqlStatement relStmt;
             ASSERT_EQ(ECSqlStatus::Success, relStmt.Prepare(ecdb, "INSERT INTO ts.Rel(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES (?,?,?,?)"));
             ASSERT_EQ(ECSqlStatus::Success, relStmt.BindId(1, a1Key.GetECInstanceId()));
@@ -876,7 +876,7 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
 TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
     {
     std::vector <SchemaItem> testItems {
-        SchemaItem("<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECEntityClass typeName='Foo' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -887,10 +887,10 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "    <ECProperty propertyName='Width' typeName='long' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False'>"
                     "        <Class class='Foo' />"
                     "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True'>"
                     "         <Class class='Goo'/>"
                     "         <Class class='Hoo'/>"
                     "     </Target>"
@@ -899,7 +899,7 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     //we cannot yet enforce one class per constraint
                     //false, "Multiple constraint classes are not supported by EC3 and ECDb"),
                     true),
-        SchemaItem("<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='Foo' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -910,17 +910,17 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "    <ECProperty propertyName='Width' typeName='long' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False'>"
                     "        <Class class='Foo' />"
                     "         <Class class='Hoo'/>"
                     "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True'>"
                     "         <Class class='Goo'/>"
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
                     false, "Multiple constraint classes which map to more than one table on referenced side is not supported"),
-        SchemaItem("<ECSchema schemaName='TestSchema3' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='Base' >"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -932,18 +932,18 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "    <ECProperty propertyName='Width' typeName='long' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False'>"
                     "         <Class class='Hoo'/>"
                     "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True'>"
                     "         <Class class='Base'/>"
                     "         <Class class='Sub'/>"
                     "     </Target>"
                     "  </ECRelationshipClass>"
                     "</ECSchema>",
                     true, "Multiple constraint classes"),  //we cannot yet enforce one class per constraint
-        SchemaItem("<ECSchema schemaName='TestSchema4' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        SchemaItem("<ECSchema schemaName='TestSchema4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                     "  <ECEntityClass typeName='Base' >"
                     "     <ECCustomAttributes>"
                     "        <ClassMap xmlns='ECDbMap.02.00'>"
@@ -960,10 +960,10 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
                     "    <ECProperty propertyName='Width' typeName='long' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "     <Source multiplicity='(0..1)' polymorphic='False'>"
                     "         <Class class='Hoo'/>"
                     "     </Source>"
-                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "     <Target multiplicity='(0..*)' polymorphic='True'>"
                     "         <Class class='Base'/>"
                     "         <Class class='Sub'/>"
                     "     </Target>"
@@ -981,7 +981,7 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
 TEST_F(ECDbSchemaRules, RelationshipInheritance)
     {
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='Test1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                  "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -993,18 +993,18 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    <ECProperty propertyName='Geometry' typeName='binary' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Element' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
                                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
                                   "   <BaseClass>ModelHasElements</BaseClass>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='PhysicalElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
@@ -1012,7 +1012,7 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                        "reliinheritance1.ecdb");
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='Test2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                  "<ECSchema schemaName='Test2' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1024,28 +1024,28 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    <ECProperty propertyName='Geometry' typeName='binary' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Element' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
                                   "  <ECRelationshipClass typeName='ModelHasElements2' modifier='Abstract' strength='embedding'>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Element' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
                                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
                                   "   <BaseClass>ModelHasElements</BaseClass>"
                                   "   <BaseClass>ModelHasElements2</BaseClass>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='PhysicalElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
@@ -1053,7 +1053,7 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                        "reliinheritance2.ecdb");
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='Test3' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                  "<ECSchema schemaName='Test3' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1065,19 +1065,19 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    <ECProperty propertyName='Geometry' typeName='binary' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding'>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Element' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
                                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
                                   "   <BaseClass>ModelHasElements</BaseClass>"
-                                  "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='PhysicalElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
@@ -1085,8 +1085,8 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                        "relinheritance3.ecdb");
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='Test4' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                  "<ECSchema schemaName='Test4' alias='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                  "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1103,20 +1103,20 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    <ECProperty propertyName='Geometry' typeName='binary' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-                                  "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Element' />"
                                   "    </Target>"
                                   "    <ECProperty propertyName='Ordinal' typeName='int' />"
                                   "  </ECRelationshipClass>"
                                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
                                   "   <BaseClass>ModelHasElements</BaseClass>"
-                                  "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='PhysicalElement' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
@@ -1124,8 +1124,8 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                        "relinheritance4.ecdb");
 
     AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                  "<ECSchema schemaName='Test5' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                  "<ECSchema schemaName='Test5' alias='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                  "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Model' >"
                                   "    <ECProperty propertyName='Name' typeName='string' />"
                                   "  </ECEntityClass>"
@@ -1142,19 +1142,19 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    <ECProperty propertyName='Geometry' typeName='binary' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='referencing'>"
-                                  "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Element' />"
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
                                   "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
                                   "   <BaseClass>ModelHasElements</BaseClass>"
-                                  "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='Model' />"
                                   "    </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "      <Class class='PhysicalElement' />"
                                   "    </Target>"
                                   "    <ECProperty propertyName='Ordinal' typeName='int' />"
@@ -1170,7 +1170,7 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
 TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
     {
     std::vector <SchemaItem> testItems {
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECEntityClass typeName='Authority' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
                    "  </ECEntityClass>"
@@ -1178,10 +1178,10 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                    "    <ECProperty propertyName='ModelId' typeName='long' />"
                    "  </ECEntityClass>"
                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
-                   "     <Source cardinality='(0,1)' polymorphic='False'>"
+                   "     <Source multiplicity='(0..1)' polymorphic='False'>"
                    "        <Class class='Authority' />"
                    "     </Source>"
-                   "     <Target cardinality='(0,N)' polymorphic='True'>"
+                   "     <Target multiplicity='(0..*)' polymorphic='True'>"
                    "         <Class class='Element'>"
                    "             <Key>"
                    "                 <Property name='ModelId'/>"
@@ -1192,7 +1192,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                    "</ECSchema>",
                    false, "Key properties are no longer supported by EC3 and ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "  </ECEntityClass>"
@@ -1206,10 +1206,10 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                       "  </ECEntityClass>"
                       "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                      "    <Source cardinality='(0,1)' polymorphic='False'>"
+                      "    <Source multiplicity='(0..1)' polymorphic='False'>"
                       "        <Class class='Authority' />"
                       "     </Source>"
-                      "     <Target cardinality='(0,N)' polymorphic='True'>"
+                      "     <Target multiplicity='(0..*)' polymorphic='True'>"
                       "         <Class class='Element'>"
                       "             <Key>"
                       "                 <Property name='Code.AuthorityId'/>"
@@ -1220,7 +1220,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "</ECSchema>",
                  false, "Key properties are no longer supported by EC3 and ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                       "  <ECEntityClass typeName='Authority' >"
                       "    <ECProperty propertyName='Name' typeName='string' />"
                       "  </ECEntityClass>"
@@ -1234,10 +1234,10 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                       "  </ECEntityClass>"
                       "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                      "    <Source cardinality='(0,1)' polymorphic='False'>"
+                      "    <Source multiplicity='(0..1)' polymorphic='False'>"
                       "        <Class class='Authority' />"
                       "     </Source>"
-                      "     <Target cardinality='(0,N)' polymorphic='True'>"
+                      "     <Target multiplicity='(0..*)' polymorphic='True'>"
                       "         <Class class='Element'>"
                       "             <Key>"
                       "                 <Property name='Code'/>"
@@ -1248,7 +1248,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                       "</ECSchema>",
                    false, "Key properties are no longer supported by EC3 and ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                  "  <ECEntityClass typeName='Authority' >"
                  "    <ECProperty propertyName='Name' typeName='string' />"
                  "  </ECEntityClass>"
@@ -1262,10 +1262,10 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                  "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                  "  </ECEntityClass>"
                  "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                 "    <Source cardinality='(0,1)' polymorphic='False'>"
+                 "    <Source multiplicity='(0..1)' polymorphic='False'>"
                  "        <Class class='Authority' />"
                  "     </Source>"
-                 "     <Target cardinality='(0,N)' polymorphic='True'>"
+                 "     <Target multiplicity='(0..*)' polymorphic='True'>"
                  "         <Class class='Element'>"
                  "             <Key>"
                  "                 <Property name='AuthorityId'/>"
@@ -1277,7 +1277,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                    false, "Key properties are no longer supported by EC3 and ECDb"),
 
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='Authority' >"
                 "    <ECProperty propertyName='Name' typeName='string' />"
                 "  </ECEntityClass>"
@@ -1291,10 +1291,10 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                 "    <ECStructProperty propertyName='Code' typeName='ElementCode' />"
                 "  </ECEntityClass>"
                 "  <ECRelationshipClass typeName='AuthorityIssuesCode' strength='referencing' modifier='Sealed'>"
-                "    <Source cardinality='(0,1)' polymorphic='False'>"
+                "    <Source multiplicity='(0..1)' polymorphic='False'>"
                 "        <Class class='Authority' />"
                 "     </Source>"
-                "     <Target cardinality='(0,N)' polymorphic='True'>"
+                "     <Target multiplicity='(0..*)' polymorphic='True'>"
                 "         <Class class='Element'>"
                 "             <Key>"
                  "                 <Property name='ModelId'/>"
@@ -1307,7 +1307,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                    false, "Key properties are no longer supported by EC3 and ECDb"),
 
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -1315,10 +1315,10 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                     "    <ECProperty propertyName='Id' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Sealed'>"
-                    "    <Source cardinality='(0,N)' polymorphic='True'>"
+                    "    <Source multiplicity='(0..*)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
-                    "    <Target cardinality='(0,N)' polymorphic='True'>"
+                    "    <Target multiplicity='(0..*)' polymorphic='True'>"
                    "      <Class class='B'>"
                    "           <Key><Property name='Id'/></Key>"
                    "      </Class>"
@@ -1327,7 +1327,7 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                     "</ECSchema>", 
                    false, "Key properties are no longer supported by EC3 and ECDb"),
 
-        SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                     "  <ECEntityClass typeName='A'>"
                     "    <ECProperty propertyName='Name' typeName='string' />"
                     "  </ECEntityClass>"
@@ -1335,19 +1335,19 @@ TEST_F(ECDbSchemaRules, RelationshipKeyProperties)
                     "    <ECProperty propertyName='Id' typeName='string' />"
                     "  </ECEntityClass>"
                     "  <ECRelationshipClass typeName='Rel' modifier='Abstract'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
-                    "    <Target cardinality='(0,N)' polymorphic='True'>"
+                    "    <Target multiplicity='(0..*)' polymorphic='True'>"
                     "      <Class class='B'/>"
                     "    </Target>"
                     "  </ECRelationshipClass>"
                     "  <ECRelationshipClass typeName='SubRel' modifier='Sealed'>"
                     "    <BaseClass>Rel</BaseClass>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
                     "      <Class class='A'/>"
                     "    </Source>"
-                    "    <Target cardinality='(0,N)' polymorphic='True'>"
+                    "    <Target multiplicity='(0..*)' polymorphic='True'>"
                     "      <Class class='B'>"
                     "           <Key><Property name='Id'/></Key>"
                     "      </Class>"
@@ -1428,7 +1428,7 @@ void AssertRelationship(ECDbCR ecdb, ECDbTestFixture::SchemaItem const& schemaIt
 TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
     {
     std::vector<SchemaItem> unsupportedSchemas;
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                             "  </ECEntityClass>"
@@ -1436,17 +1436,17 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "    <ECProperty propertyName='ChildProp' typeName='long' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                            "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "    <Source multiplicity='(0..*)' polymorphic='True'>"
                                             "        <Class class='Parent' />"
                                             "     </Source>"
-                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Cardinality N:N and Embedding is not supported"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                            "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                            "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                             "  </ECEntityClass>"
@@ -1457,17 +1457,17 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "     <ECCustomAttributes>"
                                             "         <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
                                             "     </ECCustomAttributes>"
-                                            "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "    <Source multiplicity='(0..*)' polymorphic='True'>"
                                             "        <Class class='Parent' />"
                                             "     </Source>"
-                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "ForeignKeyRelationshipMap CA cannot applied to link table (as implied from cardinality N:N)"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                            "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                            "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='ParentProp' typeName='long' />"
                                             "  </ECEntityClass>"
@@ -1478,17 +1478,17 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "     <ECCustomAttributes>"
                                             "         <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
                                             "     </ECCustomAttributes>"
-                                            "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                            "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                             "        <Class class='Parent' />"
                                             "     </Source>"
-                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Target>"
                                             "    <ECProperty propertyName='RelProp' typeName='long' />"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "ForeignKeyRelationshipMap CA cannot applied to link table (as implied from additional property on relationship class)"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1504,16 +1504,16 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "    <ECProperty propertyName='C1' typeName='long' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                            "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                            "    <Source multiplicity='(0..1)' polymorphic='True'>"
                                             "        <Class class='Parent' />"
                                             "     </Source>"
-                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Referenced end maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent1' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1524,17 +1524,17 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "    <ECProperty propertyName='C1' typeName='long' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                            "    <Source cardinality='(0,1)' polymorphic='False'>"
+                                            "    <Source multiplicity='(0..1)' polymorphic='False'>"
                                             "        <Class class='Parent1' />"
                                             "        <Class class='Parent2' />"
                                             "     </Source>"
-                                            "     <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Referenced end maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1550,16 +1550,16 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "    <ECProperty propertyName='C1' typeName='long' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ChildHasParent' strength='embedding' strengthDirection='backward' modifier='Sealed'>"
-                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Source multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Source>"
-                                            "    <Target cardinality='(0,1)' polymorphic='True'>"
+                                            "    <Target multiplicity='(0..1)' polymorphic='True'>"
                                             "        <Class class='Parent' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Referenced end maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1575,16 +1575,16 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "    <ECProperty propertyName='C1' typeName='long' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ChildHasParent' strength='referencing' modifier='Sealed'>"
-                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Source multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Child' />"
                                             "     </Source>"
-                                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "        <Class class='Parent' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
                                             "</ECSchema>", false, "Target end of link table maps to more than one table"));
 
-    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+    unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"
                                             "    <ECProperty propertyName='Name' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1600,10 +1600,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "    <ECProperty propertyName='C1' typeName='long' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ChildHasParent' strength='referencing' modifier='Sealed'>"
-                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Source multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Parent' />"
                                             "     </Source>"
-                                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "        <Class class='Child' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
@@ -1620,7 +1620,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
     {
     std::vector<SchemaItem> supportedSchemas;
     supportedSchemas.push_back(SchemaItem("1:N and holding",
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                           "  <ECEntityClass typeName='Geometry' >"
                           "    <ECProperty propertyName='Type' typeName='string' />"
                           "  </ECEntityClass>"
@@ -1628,17 +1628,17 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "    <ECProperty propertyName='Stream' typeName='binary' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
-                          "     <Source cardinality='(0,N)' polymorphic='True'>"
+                          "     <Source multiplicity='(0..*)' polymorphic='True'>"
                           "         <Class class='Geometry' />"
                           "     </Source>"
-                          "    <Target cardinality='(0,1)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..1)' polymorphic='True'>"
                           "        <Class class='GeometryPart' />"
                           "     </Target>"
                           "  </ECRelationshipClass>"
                           "</ECSchema>"));
 
     supportedSchemas.push_back(SchemaItem("N:N and holding",
-                                            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Geometry' >"
                                             "    <ECProperty propertyName='Type' typeName='string' />"
                                             "  </ECEntityClass>"
@@ -1646,10 +1646,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                                             "    <ECProperty propertyName='Stream' typeName='binary' />"
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='GeometryHasParts' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
-                                            "     <Source cardinality='(0,N)' polymorphic='True'>"
+                                            "     <Source multiplicity='(0..*)' polymorphic='True'>"
                                             "         <Class class='Geometry' />"
                                             "     </Source>"
-                                            "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                            "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                             "        <Class class='GeometryPart' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
@@ -1660,8 +1660,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     {
     SchemaItem testSchema("Child hierarchy in SharedTable", 
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Parent' >"
                           "    <ECProperty propertyName='ParentProp' typeName='int' />"
                           "  </ECEntityClass>"
@@ -1682,10 +1682,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "    <ECProperty propertyName='ChildBProp' typeName='int' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "     <Source cardinality='(0,1)' polymorphic='True'>"
+                          "     <Source multiplicity='(0..1)' polymorphic='True'>"
                           "         <Class class='Parent' />"
                           "     </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "        <Class class='Child' />"
                           "     </Target>"
                           "  </ECRelationshipClass>"
@@ -1719,8 +1719,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     {
     SchemaItem testSchema("Parent hierarchy in SharedTable",
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Parent' >"
                           "     <ECCustomAttributes>"
                           "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -1741,10 +1741,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "    <ECProperty propertyName='ChildProp' typeName='int' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "     <Source cardinality='(0,1)' polymorphic='True'>"
+                          "     <Source multiplicity='(0..1)' polymorphic='True'>"
                           "         <Class class='Parent' />"
                           "     </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "        <Class class='Child' />"
                           "     </Target>"
                           "  </ECRelationshipClass>"
@@ -1778,8 +1778,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     {
     SchemaItem testSchema("Different Parents in SharedTable", 
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Parent1' >"
                           "     <ECCustomAttributes>"
                           "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -1802,11 +1802,11 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "    <ECProperty propertyName='ChildProp' typeName='int' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "    <Source cardinality='(0,1)' polymorphic='False'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='False'>"
                           "        <Class class='Parent1' />"
                           "        <Class class='Parent2' />"
                           "     </Source>"
-                          "     <Target cardinality='(0,N)' polymorphic='True'>"
+                          "     <Target multiplicity='(0..*)' polymorphic='True'>"
                           "         <Class class='Child' />"
                           "     </Target>"
                           "  </ECRelationshipClass>"
@@ -1840,8 +1840,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
 
     {
     SchemaItem testSchema("Children in different joined tables, but FK in primary table",
-                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                          "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                          "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                           "  <ECEntityClass typeName='Parent' >"
                           "    <ECProperty propertyName='ParentProp' typeName='int' />"
                           "  </ECEntityClass>"
@@ -1863,10 +1863,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_SupportedCases)
                           "    <ECProperty propertyName='ChildBProp' typeName='int' />"
                           "  </ECEntityClass>"
                           "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                          "     <Source cardinality='(0,1)' polymorphic='True'>"
+                          "     <Source multiplicity='(0..1)' polymorphic='True'>"
                           "         <Class class='Parent' />"
                           "     </Source>"
-                          "    <Target cardinality='(0,N)' polymorphic='True'>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True'>"
                           "        <Class class='Child' />"
                           "     </Target>"
                           "  </ECRelationshipClass>"
@@ -1904,7 +1904,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
     {
             {
             SchemaItem testSchema("Children in different tables",
-                                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                  "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                   "  <ECEntityClass typeName='Parent' >"
                                   "    <ECProperty propertyName='ParentProp' typeName='int' />"
                                   "  </ECEntityClass>"
@@ -1920,10 +1920,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
                                   "    <ECProperty propertyName='ChildBProp' typeName='int' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ParentHasChildren' strength='embedding' modifier='Sealed'>"
-                                  "     <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "     <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "         <Class class='Parent' />"
                                   "     </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "        <Class class='Child' />"
                                   "     </Target>"
                                   "  </ECRelationshipClass>"
@@ -1957,8 +1957,8 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
 
             {
             SchemaItem testSchema("Children in different joined tables, FK in joined tables",
-                                  "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                  "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                                  "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                  "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                   "  <ECEntityClass typeName='Parent' >"
                                   "    <ECProperty propertyName='ParentProp' typeName='int' />"
                                   "  </ECEntityClass>"
@@ -1980,10 +1980,10 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_ReadonlyCases)
                                   "    <ECProperty propertyName='GrandchildBProp' typeName='int' />"
                                   "  </ECEntityClass>"
                                   "  <ECRelationshipClass typeName='ParentHasGrandchildren' strength='referencing' modifier='Sealed'>"
-                                  "     <Source cardinality='(0,1)' polymorphic='True'>"
+                                  "     <Source multiplicity='(0..1)' polymorphic='True'>"
                                   "         <Class class='Parent' />"
                                   "     </Source>"
-                                  "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
                                   "        <Class class='GrandchildA' />"
                                   "        <Class class='GrandchildB' />"
                                   "     </Target>"
