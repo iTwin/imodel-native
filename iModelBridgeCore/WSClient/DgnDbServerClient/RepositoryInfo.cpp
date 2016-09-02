@@ -8,6 +8,7 @@
 #include <DgnDbServer/Client/RepositoryInfo.h>
 #include <DgnPlatform/TxnManager.h>
 #include "DgnDbServerUtils.h"
+#include <DgnDbServer/Client/Logging.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
@@ -104,6 +105,7 @@ DateTimeCR RepositoryInfo::GetCreatedDate() const
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repositoryInfo, Dgn::DgnDbCR db)
     {
+    const Utf8String methodName = "RepositoryInfo::ReadRepositoryInfo";
     Utf8String serverUrl;
     Utf8String id;
     BeSQLite::DbResult status;
@@ -115,7 +117,9 @@ DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repos
         repositoryInfo = RepositoryInfo(serverUrl, id);
         return DgnDbServerStatusResult::Success();
         }
-    return DgnDbServerStatusResult::Error(DgnDbServerError(db, status));
+    auto error = DgnDbServerError(db, status);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+    return DgnDbServerStatusResult::Error(error);
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,6 +127,7 @@ DgnDbServerStatusResult RepositoryInfo::ReadRepositoryInfo(RepositoryInfo& repos
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId const& briefcaseId)
     {
+    const Utf8String methodName = "RepositoryInfo::WriteRepositoryInfo";
     BeSQLite::DbResult status;
     Utf8String parentRevisionId = db.Revisions().GetParentRevisionId();
     status = db.ChangeBriefcaseId(briefcaseId);
@@ -139,7 +144,9 @@ DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, Repo
 
     if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         return DgnDbServerStatusResult::Success();
-    return DgnDbServerStatusResult::Error(DgnDbServerError(db, status));
+    auto error = DgnDbServerError(db, status);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+    return DgnDbServerStatusResult::Error(error);
     }
 
 //---------------------------------------------------------------------------------------

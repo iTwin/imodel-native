@@ -351,6 +351,9 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\Logging.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -558,9 +561,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\WebServices.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Client\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Client\ChunkedUploadRequest.h">
@@ -876,6 +876,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcase.h">
