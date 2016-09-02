@@ -11,6 +11,7 @@
 #define LOG_ERROR(...) {BeAssert(false); (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv(__VA_ARGS__);}
 
 BEGIN_UNNAMED_NAMESPACE
+USING_NAMESPACE_TILETREE
 
 static Utf8String GetMagicString() { return "3MXBO"; }
 
@@ -21,7 +22,7 @@ struct CtmContext
 {
     void* m_openCTM;
 
-    static bool ReadBytes(MxStreamBuffer& in, void* buf, uint32_t size)
+    static bool ReadBytes(StreamBuffer& in, void* buf, uint32_t size)
         {
         ByteCP start = in.GetCurrent();
         if (nullptr == in.Advance(size)) {BeAssert(false); return false;}
@@ -29,9 +30,9 @@ struct CtmContext
         return true;
         }
 
-    static CTMuint CTMCALL ReadFunc(void* buf, CTMuint count, void* userData) {return ReadBytes(*(MxStreamBuffer*)userData, buf, count) ? count : 0;}
+    static CTMuint CTMCALL ReadFunc(void* buf, CTMuint count, void* userData) {return ReadBytes(*(StreamBuffer*)userData, buf, count) ? count : 0;}
 
-    CtmContext(MxStreamBuffer& in, uint32_t offset) {m_openCTM=::ctmNewContext(CTM_IMPORT); in.SetPos(offset); ::ctmLoadCustom(m_openCTM, ReadFunc, &in);}
+    CtmContext(StreamBuffer& in, uint32_t offset) {m_openCTM=::ctmNewContext(CTM_IMPORT); in.SetPos(offset); ::ctmLoadCustom(m_openCTM, ReadFunc, &in);}
     ~CtmContext() {::ctmFreeContext(m_openCTM);}
 
     CTMenum GetError() {return ::ctmGetError(m_openCTM);}
@@ -105,7 +106,7 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
         return false;
         }
 
-    m_maxScreenDiameter = val.asDouble();
+    m_maxSize = val.asDouble();
     if (!readVectorEntry(pt, "resources", nodeResources))
         {
         LOG_ERROR("Cannot find \"resources\" entry");
@@ -127,12 +128,12 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
+BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene)
     {
     BeAssert(IsQueued());
-    m_childLoad.store(Node::ChildLoad::Loading);
+    m_loadState.store(LoadState::Loading);
 
-    BeAssert(m_childNodes.empty());
+    BeAssert(m_children.empty());
 
     bmap<Utf8String, int> textureIds, nodeIds;
     bmap<Utf8String, Utf8String> geometryNodeCorrespondence;
@@ -194,12 +195,9 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             for (size_t i = 0; i < nodeResources.size(); ++i)
                 geometryNodeCorrespondence[nodeResources[i]] = nodeName;
 
-            m_childNodes.push_back(nodeptr);
+            m_children.push_back(nodeptr);
             }
         }
-
-    if (nullptr == scene.m_renderSystem)
-        return SUCCESS; // if we dont have a render system, we don't get geometry
 
     Utf8String resourceType, resourceFormat, resourceName;
     uint32_t resourceSize;
@@ -231,7 +229,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
                 }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-            renderTextures[resourceName] = scene.m_renderSystem->_CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
+            renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes);
             }
         }
 
@@ -296,7 +294,7 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
             trimesh.m_textureUV  = (FPoint2d const*) ctm.GetFloatArray(CTM_UV_MAP_1);
             trimesh.m_texture    = texture->second;
 
-            m_childNodes[nodeId->second]->m_geometry.push_front(new Geometry(trimesh, scene));
+            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh));
             }
         }
 
@@ -306,12 +304,13 @@ BentleyStatus Node::DoRead(MxStreamBuffer& in, SceneR scene)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
+BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene)
     {
-    BeAssert(!AreChildrenValid());
+    BeAssert(!IsReady());
 
     if (SUCCESS != DoRead(in, scene))
         {
+        SetNotFound();
         BeAssert(false);
         return ERROR;
         }
@@ -324,7 +323,7 @@ BentleyStatus Node::Read3MXB(MxStreamBuffer& in, SceneR scene)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus SceneInfo::Read(MxStreamBuffer& buffer) 
+BentleyStatus SceneInfo::Read(StreamBuffer& buffer) 
     {
     Json::Value pt;
     Json::Reader reader;

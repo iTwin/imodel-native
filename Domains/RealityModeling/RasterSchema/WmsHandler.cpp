@@ -242,7 +242,7 @@ BentleyStatus WmsModel::_LoadQuadTree() const
 
     RasterSourcePtr pSource = WmsSource::Create(m_map);
     if(pSource.IsValid())
-        m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
+        m_rasterTreeP = RasterQuadTree::Create(*pSource, const_cast<WmsModel&>(*this));
 
     return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
     }
@@ -271,5 +271,14 @@ void WmsModel::_ReadJsonProperties(Json::Value const& v)
 AxisAlignedBox3d WmsModel::_QueryModelRange() const
     {
     return AxisAlignedBox3d(m_map.m_boundingBox);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  8/2016
+//----------------------------------------------------------------------------------------
+DMatrix4dCR WmsModel::_GetSourceToWorld() const
+    {
+    //&&MM TODO
+    return RasterModel::_GetSourceToWorld();
     }
 

@@ -42,8 +42,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)ThreeMxReader$(oext)  : $(SrcThreeMx)ThreeMxReader.cpp ${threeMxDepends} ${MultiCompileDepends}
 
-$(o)ThreeMxCache$(oext)   : $(SrcThreeMx)ThreeMxCache.cpp ${threeMxDepends}  ${MultiCompileDepends}
-
 $(o)ThreeMxNode$(oext)    : $(SrcThreeMx)ThreeMxNode.cpp ${threeMxDepends} ${MultiCompileDepends}
 
 $(o)ThreeMxModel$(oext)   : $(SrcThreeMx)ThreeMxModel.cpp ${threeMxDepends} ${MultiCompileDepends}
@@ -107,7 +105,7 @@ LINKER_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                    $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext) \
-                   $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(stlibext) \
+                   $(ContextSubpartsLibs)$(stlibprefix)BeHttp$(libext) \
                    $(ContextSubpartsLibs)$(stlibprefix)lzma$(stlibext)
 
 %if defined (BENTLEYCONFIG_FOLLY)

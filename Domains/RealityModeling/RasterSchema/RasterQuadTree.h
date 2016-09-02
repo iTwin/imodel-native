@@ -99,24 +99,10 @@ public:
         LowerRight  = 3,
         };
 
-    //&&MM TODO status. The goal is to avoid requesting over and over when errors occurs.
-    // Also when a request timeout we should somehow retry a number of time.
-    // Maybe we need flags? or 2 status. 
-//     enum class TileStatus
-//         {
-//         Unloaded,
-//         Requested,
-//         Loaded,
-//         ConnectionError,
-//         //Error,
-//         //Expired,
-//         OutOfDomain,    // reprojection error  
-//         };
-
     //! Create a root node(without a parent)
     static RasterTilePtr CreateRoot(RasterQuadTreeR tree);
 
-    // Raster 4 corners(UOR) in this order:
+    // Raster 4 corners(World) in this order:
     //  [0]  [1]
     //  [2]  [3]
     DPoint3dCP GetCorners() const { return m_corners; }
@@ -161,11 +147,10 @@ private:
     //! Allocate children according to the resolution description.
     void AllocateChildren();
 
-    static ReprojectStatus ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree);
 
     TileId m_tileId; 
-    DPoint3d m_corners[4];      // Corners in uor.  [0] [1]
-                                //                  [2] [3]
+    DPoint3d m_corners[4];      // Corners in World.  [0] [1]
+                                //                    [2] [3]
 
     RasterQuadTreeR m_tree;     // Hold a ref only.
 
@@ -189,21 +174,30 @@ private:
 // The tree structure use the rasterSource resolutions and tile to define the nodes.
 // Pixels are not resampled by this class it uses the 'source' object resolution and tiles size
 // to define the tree nodes.
+//
+// Raster Coordinate Systems:
+//
+//      - Physical: A pixel coordinate system that is aligned with the blocks in the raster file. Usually upper-left origin(slo 4)
+//      - Source: A pixel coordinate system with a lower-left origin.
+//      - World: The BIM file coordinate system that hold the raster model. Origin is Lower-left.
+
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
 struct RasterQuadTree : public RefCountedBase
 {
 public:
-    static RasterQuadTreePtr Create(RasterSourceR source, Dgn::DgnDbR dgnDb);
+    static RasterQuadTreePtr Create(RasterSourceR source, RasterModel& model);
 
     RasterTileR GetRoot() {return *m_pRoot;}
 
     RasterSourceR GetSource() {return *m_pSource;}
 
+    RasterModel& GetModel() { return m_model; }
+
     //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
     void QueryVisible(std::vector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
-    Dgn::DgnDbR GetDgnDb() {return m_dgnDb;}
+    Dgn::DgnDbR GetDgnDb() {return m_model.GetDgnDb();}
 
     void Draw (Dgn::RenderContextR context);
 
@@ -215,20 +209,19 @@ public:
 
     void DropGraphicsForViewport(Dgn::DgnViewportCR viewport);
 
-    DMatrix4dCR GetSourceToWorld() const { return m_sourceToWorld; }
+    DMatrix4dCR GetPhysicalToWorld() const { return m_physicalToWorld.M0; }
+    DMatrix4dCR GetWorldToPhysical() const { return m_physicalToWorld.M1; }
 
 private:
     
-    RasterQuadTree(RasterSourceR source, Dgn::DgnDbR dgnDb);
+    RasterQuadTree(RasterSourceR source, RasterModel& model);
 
-    StatusInt ComputeSourceToWorldTransform(DMatrix4dR sourceToWorld);
-
-    Dgn::DgnDbR m_dgnDb;                 
+    RasterModel& m_model;               // The model to which this instance is associated.
     RasterSourcePtr m_pSource; 
     RasterTilePtr m_pRoot;              // The lowest/coarser resolution. 
     RasterTileCache& m_tileCache;
     double m_visibleQualityFactor;
-    DMatrix4d m_sourceToWorld;          // including units change and reprojection.
+    DMap4d m_physicalToWorld;           // including units change and reprojection approximation is any
 };
 
 

@@ -43,7 +43,7 @@ public:
         DEFINE_T_SUPER(RasterModel::CreateParams);
 
         Utf8String m_fileId;
-        DMatrix4d* m_transformP;
+        DMatrix4dCP m_transformP;
 
         public:
             //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
@@ -54,7 +54,7 @@ public:
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileId File Id of the raster file.
             //! @param[in] transformP Transform of the raster file. This parameter can be null.
-            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4d* transformP) :
+            CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId, DMatrix4dCP transformP) :
                 T_Super(dgndb, RasterFileModel::QueryClassId(dgndb), code), m_fileId(fileId), m_transformP(transformP)
                 {}
         };
@@ -79,6 +79,8 @@ protected:
     virtual void            _ReadJsonProperties(Json::Value const&) override;
     virtual BentleyStatus   _LoadQuadTree() const override;
     virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
+
+    virtual DMatrix4dCR  _GetSourceToWorld() const override { return m_fileProperties.m_transform;}
 
 public:
 

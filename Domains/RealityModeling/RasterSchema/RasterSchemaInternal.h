@@ -14,6 +14,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <GeomSerialization/GeomLibsFlatBufferApi.h>
 
 #include <DgnPlatform/DgnDomain.h>
 #include <DgnPlatform/DgnGeoCoord.h>
@@ -73,12 +74,6 @@ RASTERSCHEMA_REF_COUNTED_PTR(RasterTile)
 
 RASTERSCHEMA_TYPEDEFS(RasterSource)
 RASTERSCHEMA_REF_COUNTED_PTR(RasterSource)
-
-RASTERSCHEMA_TYPEDEFS(DisplayTile)
-RASTERSCHEMA_REF_COUNTED_PTR(DisplayTile)
-
-RASTERSCHEMA_TYPEDEFS(Bitmap)
-RASTERSCHEMA_REF_COUNTED_PTR(Bitmap)
 
 //
 // Internal header files
