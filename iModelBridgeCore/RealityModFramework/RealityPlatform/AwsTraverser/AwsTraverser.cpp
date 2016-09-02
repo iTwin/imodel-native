@@ -37,12 +37,18 @@ struct CurlHolder
         CURL* Get() const { return m_curl; }
     };
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 ServerConnection::ServerConnection()
     {
     s_instance = this;
     }
 
 ServerConnection* ServerConnection::s_instance = nullptr;
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 ServerConnection& ServerConnection::GetInstance()
     {
     if (nullptr == s_instance)
@@ -51,6 +57,9 @@ ServerConnection& ServerConnection::GetInstance()
     }
 
 AwsPinger* AwsPinger::s_instance = nullptr;
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 AwsPinger& AwsPinger::GetInstance()
 {
     if (nullptr == s_instance)
@@ -58,13 +67,18 @@ AwsPinger& AwsPinger::GetInstance()
     return *s_instance;
 }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 AwsData::AwsData(std::string id, std::string downloadUrl, float cloudCover, DRange2d ftPrint, 
     float red, float green, float blue, float pan, SQLINTEGER sId, SQLINTEGER mId) :
 m_id(id), m_downloadUrl(downloadUrl), m_cloudCover(cloudCover), m_ftPrint(ftPrint),
 m_redSize(red), m_greenSize(green), m_blueSize(blue), m_panSize(pan), serverId(sId), metadataId(mId)
 {}
 
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::SetStrings(const char* dbName, const char* pwszConnStr)
     {
     m_dbName = dbName;
@@ -113,11 +127,9 @@ void ServerConnection::SetStrings(const char* dbName, const char* pwszConnStr)
 
     }
 
-/*******************************************/
-/* Macro to call ODBC functions and        */
-/* report an error on failure.             */
-/* Takes handle, handle type, and stmt     */
-/*******************************************/
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x)
     {
     RETCODE rc = x;
@@ -132,6 +144,9 @@ void ServerConnection::TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 RETCODE ServerConnection::ExecuteSQL(CHAR* query)
     {
     RETCODE retcode = 0;
@@ -142,6 +157,9 @@ RETCODE ServerConnection::ExecuteSQL(CHAR* query)
     return retcode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
     {
     RETCODE retcode = 0;
@@ -151,6 +169,9 @@ RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
     return retcode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len)
     {
     SQLRETURN retCode;
@@ -163,6 +184,9 @@ SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, const char* table
     return retCode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::ReleaseStmt()
     {
     TryODBC(hStmt,
@@ -170,6 +194,9 @@ void ServerConnection::ReleaseStmt()
         SQLFreeStmt(hStmt, SQL_CLOSE));
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 float FindSize(std::string html, std::string lookFor)
     {
     std::string relevantLine;
@@ -183,6 +210,9 @@ float FindSize(std::string html, std::string lookFor)
     return std::stof(relevantLine);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 size_t ParseXML(char* buf, size_t size, size_t nmemb, void* up)
     {
     std::string html = std::string(buf);
@@ -195,6 +225,9 @@ size_t ParseXML(char* buf, size_t size, size_t nmemb, void* up)
     return size * nmemb;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void AwsPinger::ReadPage(Utf8CP url, float& redSize, float& greenSize, float& blueSize, float& panSize)
     {
     curl_easy_setopt(m_curl, CURLOPT_URL, url);
@@ -212,6 +245,9 @@ void AwsPinger::ReadPage(Utf8CP url, float& redSize, float& greenSize, float& bl
     panSize = m_panSize;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 AwsPinger::AwsPinger()
     {
     m_certificatePath = BeFileName();
@@ -235,12 +271,18 @@ AwsPinger::AwsPinger()
     m_curl = curl_easy_init();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 AwsPinger::~AwsPinger()
     {
     curl_easy_cleanup(m_curl);
     curl_global_cleanup();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ShowUsage()
     {
     std::cout << "Usage: awstraverser.exe -f:[file] -cs:[connectionString] [options]" << std::endl << std::endl;
@@ -257,9 +299,12 @@ void ShowUsage()
     getch();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
     {
-    SetConsoleTitle((LPCTSTR)"HTTP Traversal Engine");
+    SetConsoleTitle((LPCTSTR)"AWS Traversal Engine");
 
     //auto argIt = argv;
 
@@ -413,6 +458,9 @@ int main(int argc, char *argv[])
     return 1;
 }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 SQLINTEGER ServerConnection::SaveServer(std::string url)
     {
     CHAR preQuery[512];
@@ -454,6 +502,9 @@ SQLINTEGER ServerConnection::SaveServer(std::string url)
     return id;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 SQLINTEGER ServerConnection::SaveMetadata()
 {
     CHAR preQuery[512];
@@ -480,6 +531,9 @@ SQLINTEGER ServerConnection::SaveMetadata()
     return id;
 }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::Save(AwsData awsdata)
     {
     CHAR existsQuery[256];
@@ -603,6 +657,9 @@ void ServerConnection::Save(AwsData awsdata)
 
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 SQL_TIMESTAMP_STRUCT ServerConnection::PackageDateTime(DateTimeCR date)
     {
     SQL_TIMESTAMP_STRUCT datetime;
@@ -622,6 +679,9 @@ SQL_TIMESTAMP_STRUCT ServerConnection::PackageDateTime(DateTimeCR date)
     return datetime;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
     {
     SQL_DATE_STRUCT date;
@@ -632,6 +692,9 @@ SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
     return date;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 bool ServerConnection::IsDuplicate(Utf8CP file)
     {
     CHAR wszInput[512];
@@ -640,6 +703,9 @@ bool ServerConnection::IsDuplicate(Utf8CP file)
     return HasEntries(wszInput);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 bool ServerConnection::HasEntries(CHAR* input)
     {
     RETCODE retCode = ExecuteSQL(input);
@@ -655,6 +721,9 @@ bool ServerConnection::HasEntries(CHAR* input)
     return hasEntries;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::Exit()
     {
 
@@ -681,15 +750,9 @@ void ServerConnection::Exit()
     exit(-1);
     }
 
-/************************************************************************
-/* HandleDiagnosticRecord : display error/warning information
-/*
-/* Parameters:
-/*      hHandle     ODBC handle
-/*      hType       Type of handle (HANDLE_STMT, HANDLE_ENV, HANDLE_DBC)
-/*      RetCode     Return code of failing command
-/************************************************************************/
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::HandleDiagnosticRecord(SQLHANDLE      hHandle,
     SQLSMALLINT    hType,
     RETCODE        RetCode)

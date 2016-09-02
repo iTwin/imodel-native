@@ -91,7 +91,6 @@ public:
     void Save(AwsData awsdata);
     SQLINTEGER SaveServer(std::string url);
     SQLINTEGER SaveMetadata();
-    //void Update(HttpDataCR data);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

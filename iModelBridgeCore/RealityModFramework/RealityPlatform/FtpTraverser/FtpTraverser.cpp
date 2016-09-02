@@ -21,11 +21,17 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 ServerConnection::ServerConnection()
     {
     s_instance = this;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 ServerConnection* ServerConnection::s_instance = nullptr;
 ServerConnection& ServerConnection::GetInstance()
     {
@@ -34,6 +40,9 @@ ServerConnection& ServerConnection::GetInstance()
     return *s_instance;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::SetStrings(const char* dbName, const char* pwszConnStr)
     {
     m_dbName = dbName;
@@ -82,11 +91,9 @@ void ServerConnection::SetStrings(const char* dbName, const char* pwszConnStr)
 
     }
 
-/*******************************************/
-/* Macro to call ODBC functions and        */
-/* report an error on failure.             */
-/* Takes handle, handle type, and stmt     */
-/*******************************************/
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x)
     {
     RETCODE rc = x;
@@ -101,8 +108,9 @@ void ServerConnection::TryODBC(SQLHANDLE h, SQLSMALLINT ht, RETCODE x)
         } 
     }
 
-
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 RETCODE ServerConnection::ExecuteSQL(CHAR* query)
     {
     RETCODE retcode = 0;
@@ -113,6 +121,9 @@ RETCODE ServerConnection::ExecuteSQL(CHAR* query)
     return retcode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
     {
     RETCODE retcode = 0;
@@ -122,6 +133,9 @@ RETCODE ServerConnection::ExecuteSQL(SQLHSTMT stmt)
     return retcode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, const char* tableName, SQLLEN &len)
     {
     SQLRETURN retCode;
@@ -134,6 +148,9 @@ SQLRETURN ServerConnection::FetchTableIdentity(SQLINTEGER &id, const char* table
     return retCode;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::ReleaseStmt()
     {
      TryODBC(hStmt,
@@ -141,6 +158,9 @@ void ServerConnection::ReleaseStmt()
          SQLFreeStmt(hStmt, SQL_CLOSE));
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ShowUsage()
     {
     std::cout << "Usage: ftptraverser.exe FtpUrl [DualFtpUrl] [options]" << std::endl <<std::endl;
@@ -156,6 +176,9 @@ void ShowUsage()
     getch();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 Utf8CP EnumString(FtpStatus status)
     {
     switch (status)
@@ -175,6 +198,9 @@ Utf8CP EnumString(FtpStatus status)
         }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
     {
     SetConsoleTitle((LPCTSTR)"FTP Traversal Engine");
@@ -287,13 +313,17 @@ int main(int argc, char *argv[])
     return 1;
     }
 
-
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 FtpTraversalObserver::FtpTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : IFtpTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
     {
     ServerConnection::GetInstance().SetStrings(dbName, pwszConnStr);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void FtpTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
     {
     if (nullptr == file)
@@ -323,6 +353,9 @@ void FtpTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP fi
     fileList.push_back(file);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void FtpTraversalObserver::OnFileDownloaded(Utf8CP file)
     {
     if (nullptr == file)
@@ -331,6 +364,9 @@ void FtpTraversalObserver::OnFileDownloaded(Utf8CP file)
     std::cout << "Status: Downloaded " << file << std::endl;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void FtpTraversalObserver::OnDataExtracted(RealityPlatform::FtpDataCR data)
     {
     if (m_updateMode)
@@ -339,6 +375,9 @@ void FtpTraversalObserver::OnDataExtracted(RealityPlatform::FtpDataCR data)
         ServerConnection::GetInstance().Save(data, m_dualMode);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::Save(FtpDataCR data, bool dualMode)
     {
     CHAR preQuery[512];
@@ -552,6 +591,9 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
 
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::Update(FtpDataCR data)
     {
     CHAR preQuery[512]; 
@@ -708,6 +750,9 @@ void ServerConnection::Update(FtpDataCR data)
     ReleaseStmt();
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 SQL_TIMESTAMP_STRUCT ServerConnection::PackageDateTime(DateTimeCR date)
     {
     SQL_TIMESTAMP_STRUCT datetime;
@@ -727,6 +772,9 @@ SQL_TIMESTAMP_STRUCT ServerConnection::PackageDateTime(DateTimeCR date)
     return datetime;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
     {
     SQL_DATE_STRUCT date;
@@ -737,6 +785,9 @@ SQL_DATE_STRUCT ServerConnection::PackageDate(DateTimeCR dateTime)
     return date;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 bool ServerConnection::IsDuplicate(Utf8CP file)
     {
     CHAR wszInput[512];
@@ -745,6 +796,9 @@ bool ServerConnection::IsDuplicate(Utf8CP file)
     return HasEntries(wszInput);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 bool ServerConnection::IsMirror(Utf8CP file)
     {
     /*size_t lastPos = file.find_last_of("/\\");
@@ -755,6 +809,9 @@ bool ServerConnection::IsMirror(Utf8CP file)
         return false; //function is never called
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 bool ServerConnection::HasEntries(CHAR* input)
     {
     RETCODE retCode = ExecuteSQL(input);
@@ -770,6 +827,9 @@ bool ServerConnection::HasEntries(CHAR* input)
     return hasEntries;
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::Exit()
     {
 
@@ -796,15 +856,9 @@ void ServerConnection::Exit()
     exit(-1);
     }
 
-/************************************************************************
-/* HandleDiagnosticRecord : display error/warning information
-/*
-/* Parameters:
-/*      hHandle     ODBC handle
-/*      hType       Type of handle (HANDLE_STMT, HANDLE_ENV, HANDLE_DBC)
-/*      RetCode     Return code of failing command
-/************************************************************************/
-
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    8/2016
+//-------------------------------------------------------------------------------------
 void ServerConnection::HandleDiagnosticRecord (SQLHANDLE      hHandle,    
                              SQLSMALLINT    hType,  
                              RETCODE        RetCode)
