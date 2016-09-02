@@ -140,9 +140,9 @@ HSTATUS HRFMapBoxTileEditor::ReadBlock(uint64_t pi_PosBlockX,
         
     char tempBuffer[300];
     int zoomFactor = MB_MAP_RESOLUTION - m_Resolution;
-    
-	sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, pi_PosBlockX / 256, pi_PosBlockY / 256, "access_token=pk%2EeyJ1IjoibWFwYm94YmVudGxleSIsImEiOiJjaWZvN2xpcW00ZWN2czZrcXdreGg2eTJ0In0%2Ef7c9GAxz6j10kZvL%5F2DBHg");
-	
+   
+    HASSERT(!"PROTOTYPE - NOT EXPECT TO BE CALL - TOKEN TO BE PROVIDED BY APPLICATION");
+    sprintf(tempBuffer, "http://api.mapbox.com/v4/mapbox.satellite/%i/%llu/%llu.png32?%s", zoomFactor, pi_PosBlockX / 256, pi_PosBlockY / 256, "access_token=TOKEN_FROM_APP");
 
     Utf8String tileUri(tempBuffer);
 
