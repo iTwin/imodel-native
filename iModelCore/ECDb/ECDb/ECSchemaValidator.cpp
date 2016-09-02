@@ -479,11 +479,13 @@ bool ValidRelationshipRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClass
             return false;
             }
 
+        /*Need to verify whether we can enforce this rule.
         if (relClass->GetPropertyCount(false) != 0)
             {
             m_error->AddInconsistency(*relClass, Error::Kind::HasAdditionalProperties);
             return false;
             }
+            */
         }
 
     return ValidateConstraint(*relClass, relClass->GetSource()) && ValidateConstraint(*relClass, relClass->GetTarget());
