@@ -342,7 +342,7 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     physicalCorners[0].y = physicalCorners[1].y = yMin;
     physicalCorners[2].y = physicalCorners[3].y = yMax;
     physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0;
-    m_tree.GetPhysicalToWorld().MultiplyAndRenormalize(m_corners, physicalCorners, 4);
+    m_tree.GetPhysicalToWorld().MultiplyAndRenormalize(m_corners.m_pts, physicalCorners, 4);
     }
 
 //----------------------------------------------------------------------------------------
@@ -425,7 +425,7 @@ bool RasterTile::Draw(DrawArgs& drawArgs)
     //  [0]  [1]
     //  [2]  [3]
     DPoint3d uvPts[4];
-    memcpy(uvPts, m_corners, sizeof(uvPts));
+    memcpy(uvPts, m_corners.m_pts, sizeof(uvPts));
     
     static bool s_DrawTileShape = false;
     if(s_DrawTileShape)
@@ -581,7 +581,7 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     // raster. (ex: 4 corners reprojection).  Is it faster?
     DPoint3d npcCorners[4];
     DPoint3d frustCorners[4];
-    memcpy(frustCorners, m_corners, sizeof(frustCorners));
+    memcpy(frustCorners, m_corners.m_pts, sizeof(frustCorners));
 
     viewContext.GetWorldToNpc().M0.MultiplyAndRenormalize(npcCorners, frustCorners, 4);
 
@@ -628,14 +628,14 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     double averageViewDiag = (viewDiag1 + viewDiag2) / 2.0;
     factor = averageViewDiag / physicalDiag;
 
-    DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners[0], 0.5, m_corners[3]);(void)centerPt;
+    DPoint3d centerPt = DPoint3d::FromInterpolate(m_corners.m_pts[0], 0.5, m_corners.m_pts[3]);(void)centerPt;
     double pixelSize = viewContext.GetPixelSizeAtPoint(&centerPt);(void)pixelSize;
 
     double widthView = viewCorners[1].DistanceXY(viewCorners[0]);(void)widthView;
     double heightView = viewCorners[3].DistanceXY(viewCorners[2]);(void)heightView;
 
-    double uorDiag1 = m_corners[3].DistanceXY(m_corners[0]);(void)uorDiag1;
-    double uorDiag2 = m_corners[2].DistanceXY(m_corners[1]);(void)uorDiag2;
+    double uorDiag1 = m_corners.m_pts[3].DistanceXY(m_corners.m_pts[0]);(void)uorDiag1;
+    double uorDiag2 = m_corners.m_pts[2].DistanceXY(m_corners.m_pts[1]);(void)uorDiag2;
     
 #endif
 
