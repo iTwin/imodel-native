@@ -168,6 +168,7 @@
     <ClCompile Include="Connect\IdentityTokenProvider.cpp" />
     <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbBriefcaseInfo.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbBriefcase.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbClient.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp" />
@@ -266,6 +267,7 @@
     <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcaseInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />

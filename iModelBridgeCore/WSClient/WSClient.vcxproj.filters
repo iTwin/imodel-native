@@ -483,6 +483,9 @@
     <ClCompile Include="ConnectC\IMSSearch\IMSSearchBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbBriefcaseInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1013,9 +1016,6 @@
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCCBufferGenPublic.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\ConnectC\CWSCC.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1092,6 +1092,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcaseInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

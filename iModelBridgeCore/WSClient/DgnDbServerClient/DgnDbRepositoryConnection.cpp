@@ -1036,6 +1036,95 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken) const
+    {
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
+    return QueryBriefcaseInfoInternal(query, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+    {
+    Utf8String filter;
+    filter.Sprintf("%s+eq+%u", ServerSchema::Property::BriefcaseId, briefcaseId);
+
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
+    query.SetFilter(filter);
+
+    return QueryBriefcaseInfoInternal(query, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcasesInfo
+(
+bvector<BeSQLite::BeBriefcaseId>& briefcaseIds,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    std::deque<ObjectId> queryIds;
+    for (auto& id : briefcaseIds)
+        {
+        Utf8String idString;
+        idString.Sprintf("%lu", id.GetValue());
+        queryIds.push_back(ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, idString));
+        }
+
+    bset<DgnDbBriefcasesInfoTaskPtr> tasks;
+    while (!queryIds.empty())
+        {
+        WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase);
+        query.AddFilterIdsIn(queryIds);
+        auto task = QueryBriefcaseInfoInternal(query, cancellationToken);
+
+        tasks.insert(task);
+        }
+
+    auto finalValue = std::make_shared<bvector<std::shared_ptr<DgnDbBriefcaseInfo>>>();
+
+    return AsyncTask::WhenAll(tasks)
+        ->Then<DgnDbBriefcasesInfoResult>([=]
+        {
+        for (auto& task : tasks)
+            {
+            if (!task->GetResult().IsSuccess())
+                return DgnDbBriefcasesInfoResult::Error(task->GetResult().GetError());
+
+            auto briefcaseInfo = task->GetResult().GetValue();
+            finalValue->insert(finalValue->end(), briefcaseInfo.begin(), briefcaseInfo.end());
+            }
+
+        return DgnDbBriefcasesInfoResult::Success(*finalValue);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbBriefcasesInfoTaskPtr DgnDbRepositoryConnection::QueryBriefcaseInfoInternal(WSQuery const& query, ICancellationTokenPtr cancellationToken) const
+    {
+    return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        ->Then<DgnDbBriefcasesInfoResult>([=] (const WSObjectsResult& result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbBriefcasesInfoResult::Error(result.GetError());
+
+        bvector<std::shared_ptr<DgnDbBriefcaseInfo>> briefcases;
+        for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+            {
+            briefcases.push_back(DgnDbBriefcaseInfo::FromJson(value));
+            }
+
+        return DgnDbBriefcasesInfoResult::Success(briefcases);
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerCodeLockSetTaskPtr DgnDbRepositoryConnection::QueryCodesLocksById
