@@ -1318,7 +1318,7 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(ISolidKernelEntityCR geom)
     if (!polyface.IsValid())
         return;
 
-    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != geom.GetEntityType());
+    polyface->SetTwoSided(ISolidKernelEntity::EntityType::Solid != geom.GetEntityType());
 
     bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
 

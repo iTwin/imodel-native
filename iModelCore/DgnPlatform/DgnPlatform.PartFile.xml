@@ -18,7 +18,7 @@
     <!-- Bind my own PublicAPI into BuildContext/PublicAPI. Note that this part does not cause any sub-part PublicAPIs to be bound. -->
     <!-- Also re-deliver some ECSchemas -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
-        <SubPart PartName="StandardSchemas" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
@@ -35,6 +35,11 @@
         <SubPart PartName="OpenCASCADE" PartFile="OpenCASCADE" Repository="Libsrc-OpenCASCADE"/>
     </Part>
 
+    <!-- We need this shim part because there is no LKG for WinRT, and thus WinRT builds cannot get a partfile from the LKG to see that the part excludes WinRT. -->
+    <Part Name="BeCurlShim" ExcludePlatforms="WinRT*">
+        <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>
+    </Part>
+    
     <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
     <Part Name="FollyShim" ExcludePlatforms="Linux*">
         <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/> 
@@ -689,12 +694,27 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="TilePublisherPrewire" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
         <SubPart PartName="DgnPlatformLib" />
-        <SubPart PartName="DgnPlatformSqlang" />
+        <Bindings>
+            <Files SubPartDirectory="TilePublisher/include/TilePublisher">Delivery/TilePublisher/TilePublisher.h</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+        <SubPart PartName="TilePublisherPrewire" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
-		<SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)TilePublisher$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)TilePublisher$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubPart PartName="TilePublisherLib" />
+        <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
             <Assemblies>Delivery/TilePublisher$(exeext)</Assemblies>
         </Bindings>

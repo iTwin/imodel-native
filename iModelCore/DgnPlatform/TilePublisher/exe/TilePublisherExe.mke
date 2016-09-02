@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: TilePublisher/TilePublisherExe.mke $
+#  $Source: TilePublisher/exe/TilePublisherExe.mke $
 #
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -8,21 +8,34 @@
 
 %include mdl.mki
 
+#----------------------------------------------------------------------------------------
+#   Set up dirs
+#----------------------------------------------------------------------------------------
 SrcDir              = $(_MakeFilePath)
 SubpartLibs         = $(BuildContext)SubParts/Libs/
 o                   = $(OutputRootDir)Build/TilePublisher/
-ContextDeliveryDir  = $(BuildContext)Delivery/
 appName             = TilePublisher
 
 always:
     ~mkdir $(o)
 
+#----------------------------------------------------------------------------------------
+#   Include TilePublisher.h
+#----------------------------------------------------------------------------------------
+libInclude = $(OutputRootDir)build/TilePublisher/
+cIncs += -I$(libInclude)
+
+$(libInclude)DgnPlatform/TilePublisher/TilePublisher.h : $(BuildContext)Delivery/TilePublisher/TilePublisher.h
+    $(msg)
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+#   Compile and link
+#----------------------------------------------------------------------------------------
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h $(SrcDir)TilePublisher.h ${MultiCompileDepends}
-
-$(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)TilePublisher.h ${MultiCompileDepends}
+$(o)main$(oext) : $(SrcDir)main.cpp $(SrcDir)Constants.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -42,8 +55,9 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)Units.lib             \
                       $(SubpartLibs)BeJsonCpp.lib         \
                       $(SubpartLibs)BaseGeoCoord.lib      \
-                      $(SubpartLIbs)ThreeMx.lib           \
-                      $(SubpartLIbs)BeFolly.lib           \
+                      $(SubpartLibs)ThreeMx.lib           \
+                      $(SubpartLibs)BeFolly.lib           \
+                      $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \
                       user32.lib                          \
 
