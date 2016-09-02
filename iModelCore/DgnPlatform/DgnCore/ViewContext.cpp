@@ -1274,7 +1274,7 @@ static int getGridPlaneViewIntersections(DPoint3dP intersections, DPoint3dCP pla
                         {NPC_011, NPC_001}
                         };
 
-    Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
+    Frustum frust = vp.GetFrustum();
 
     range.IntersectionOf(range, frust.ToRange());
     range.Get8Corners(frust.m_pts);
@@ -1403,7 +1403,7 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
         zCameraLimit = zCamera - camera.GetFocusDistance() * sizeLimit;
         }
 
-    Frustum corners = vp.GetFrustum(DgnCoordSystem::World, true);
+    Frustum corners = vp.GetFrustum();
     ClipPlane clipPlanes[6];
     ClipUtil::RangePlanesFromFrustum(clipPlanes, corners, true, true, false);
 

@@ -386,22 +386,40 @@ void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::ExtendRange(DRange3dCR childRange) const
+    {
+    if (childRange.IsContained(m_range))
+        return;
+
+    m_range.Extend(childRange);
+
+    if (nullptr != m_parent)
+        m_parent->ExtendRange(childRange);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::DrawComplete Tile::Draw(DrawArgsR args, int depth) const
+void Tile::Draw(DrawArgsR args, int depth) const
     {
     bool tooCoarse = true;
+
+    BeAssert(m_parent==nullptr || !m_parent->m_range.IsValid() || m_range.IsContained(m_parent->m_range));
 
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        box.TransformBy(args.m_location);
+        box = box.TransformBy(args.m_location);
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
-            _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
-            return DrawComplete::Yes;
+            if (_HasChildren())
+                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
+
+            return;
             }
 
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
@@ -410,7 +428,6 @@ Tile::DrawComplete Tile::Draw(DrawArgsR args, int depth) const
         tooCoarse = pixelSize > GetMaximumSize();
         }
 
-    DrawComplete completed = DrawComplete::Yes;
     auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
@@ -418,34 +435,28 @@ Tile::DrawComplete Tile::Draw(DrawArgsR args, int depth) const
         m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
 
         for (auto const& child : *children)
-            {
-            if (DrawComplete::Yes != child->Draw(args, depth+1))
-                completed = DrawComplete::No;
-            }
+            child->Draw(args, depth+1);
 
-        if (DrawComplete::Yes == completed)
-            return DrawComplete::Yes;
+        return;
         }
     
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
-    completed = _DrawGraphics(args, depth);
+    _DrawGraphics(args, depth);
 
     if (!_HasChildren()) // this is a leaf node - we're done
-        return completed;
+        return;
 
-    if (!tooCoarse && completed==DrawComplete::Yes)
+    if (!tooCoarse)
         {
         // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
         _UnloadChildren(args.m_purgeOlderThan);
-        return DrawComplete::Yes;
+        return;
         }
 
     // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
     // NOTE: add all missing tiles, even if they're already queued.
     if (!IsNotFound())
         args.m_missing.Insert(depth, this); 
-
-    return completed;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,10 +500,8 @@ int Tile::CountTiles() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)
     {
-    if (m_graphics.m_entries.empty())
+    if (m_graphics.m_entries.empty() && m_substitutes.m_entries.empty())
         return;
-
-    DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
 
     ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
@@ -500,12 +509,28 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_visibleEdges = false;
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
-    m_graphics.SetViewFlags(flags);
 
-    auto branch = m_context.CreateBranch(m_graphics, &m_location);
-    
-    BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
-    m_context.OutputGraphic(*branch, nullptr);
+    if (!m_graphics.m_entries.empty())
+        {
+        DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
+        m_graphics.SetViewFlags(flags);
+        auto branch = m_context.CreateBranch(m_graphics, &m_location);
+        BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
+        m_context.OutputGraphic(*branch, nullptr);
+        }
+
+    if (!m_substitutes.m_entries.empty())
+        {
+        DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
+        DPoint3d offset = {0.0, 0.0, -1};
+        Transform moveBack = Transform::From(offset);
+        Transform location = Transform::FromProduct(m_location, moveBack);
+
+        m_substitutes.SetViewFlags(flags);
+        auto branch = m_context.CreateBranch(m_substitutes, &location);
+        BeAssert(m_substitutes.m_entries.empty()); // CreateBranch should have moved them
+        m_context.OutputGraphic(*branch, nullptr);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

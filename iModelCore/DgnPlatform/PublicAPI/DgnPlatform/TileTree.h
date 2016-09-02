@@ -47,7 +47,6 @@ struct StreamBuffer : ByteStream
 struct Tile : RefCountedBase, NonCopyableClass
 {
     friend struct Root;
-    enum class DrawComplete {Yes=1, No=0};
     enum LoadState {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
     typedef bvector<TilePtr> ChildTiles;
 
@@ -63,11 +62,12 @@ protected:
 
 public:
     Tile(TileCP parent) : m_parent(parent), m_loadState(LoadState::NotLoaded) {}
+    DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetMaximumSize() const {return m_maxSize;}
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d GetRange() const {return m_range;}
-    DGNPLATFORM_EXPORT DrawComplete Draw(DrawArgsR, int depth) const;
+    DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
     LoadState GetLoadState() const {return (LoadState) m_loadState.load();}
     void SetIsReady() {return m_loadState.store(LoadState::Ready);}
     void SetIsQueued() const {return m_loadState.store(LoadState::Queued);}
@@ -88,7 +88,7 @@ public:
     virtual BentleyStatus _Read(StreamBuffer&, RootR) = 0;
     virtual bool _HasChildren() const = 0;
     virtual ChildTiles const* _GetChildren(bool load) const = 0;
-    virtual DrawComplete _DrawGraphics(DrawArgsR, int depth) const = 0;
+    virtual void _DrawGraphics(DrawArgsR, int depth) const = 0;
     virtual Utf8String _GetTileName() const = 0;
 };
 
@@ -152,6 +152,7 @@ struct DrawArgs
     Transform m_location;
     double m_scale;
     Render::GraphicBranch m_graphics;
+    Render::GraphicBranch m_substitutes;
     MissingNodes m_missing;
     TimePoint m_now;
     TimePoint m_purgeOlderThan;

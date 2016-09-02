@@ -409,7 +409,7 @@ void FrustumPlanes::Init(FrustumCR frustum)
 FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts, double tolerance) const
     {
     BeAssert(IsValid());
-
+		
     bool allInside = true;
     for (ClipPlaneCR plane : m_planes)
         {

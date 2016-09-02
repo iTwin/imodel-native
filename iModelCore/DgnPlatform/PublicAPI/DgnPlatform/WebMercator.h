@@ -46,7 +46,7 @@ struct TileId
 };
 
 //=======================================================================================
-//! A map tile. May or may not be loaded.
+//! A map tile. May or may not have its graphics loaded.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
 struct MapTile : TileTree::Tile
@@ -54,6 +54,7 @@ struct MapTile : TileTree::Tile
     TileId m_id;
     Render::IGraphicBuilder::TileCorners m_corners;
     MapRootR m_mapRoot;
+    bool m_reprojected = false;
     Render::GraphicPtr m_graphic;
 
     StatusInt ReprojectCorners(GeoPoint*);
@@ -61,12 +62,14 @@ struct MapTile : TileTree::Tile
     MapTile(MapRootR mapRoot, TileId id, MapTileCP parent);
 
     BentleyStatus _Read(TileTree::StreamBuffer&, TileTree::RootR) override;
+    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
+    void TryHigherRes(TileTree::DrawArgsR args) const;
     bool _HasChildren() const override;
+    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
     ChildTiles const* _GetChildren(bool load) const override;
-    DrawComplete _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override;
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   08/16
@@ -75,14 +78,16 @@ struct MapRoot : TileTree::Root
 {
     ColorDef m_tileColor;
     uint8_t m_maxZoom;
+    uint32_t m_maxSize;
     Render::ImageSource::Format m_format;
     Utf8String m_urlSuffix;
-    double m_elevation;
     Transform m_mercatorToWorld;
 
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
-    MapRoot(DgnDbR, double elevation, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint8_t maxZoom);
+    uint32_t GetMaxSize() const {return m_maxSize;}
+    MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
+            uint8_t maxZoom, uint32_t maxSize);
 };
 
 //=======================================================================================
