@@ -1159,7 +1159,7 @@ TEST_F(ECDbSchemaRules, RelationshipInheritance)
                                   "    </Target>"
                                   "    <ECProperty propertyName='Ordinal' typeName='int' />"
                                   "  </ECRelationshipClass>"
-                                  "</ECSchema>", false, "Additional properties on rel subclass"),
+                                  "</ECSchema>", false, "Additional properties on rel subclass"), 
                        "relinheritance5.ecdb");
 
     }
