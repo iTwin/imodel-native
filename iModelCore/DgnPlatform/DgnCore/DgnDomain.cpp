@@ -388,7 +388,9 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
-    return DgnClassId(m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str()));
+    DgnClassId classId = m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
+    BeAssert(classId.IsValid() && "ECClass associated with handler not found. Was its schema imported?");
+    return classId;
     }
 
 /*---------------------------------------------------------------------------------**//**

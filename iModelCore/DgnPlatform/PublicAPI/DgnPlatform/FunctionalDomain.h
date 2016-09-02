@@ -11,21 +11,25 @@
 #include <DgnPlatform/DgnDomain.h>
 
 DGNPLATFORM_TYPEDEFS(FunctionalModel)
+DGNPLATFORM_TYPEDEFS(FunctionalType)
 
 DGNPLATFORM_REF_COUNTED_PTR(FunctionalModel)
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 
-#define FUNCTIONAL_DOMAIN_ECSCHEMA_PATH             L"ECSchemas/Domain/Functional.01.00.ecschema.xml"
-#define FUNCTIONAL_DOMAIN_NAME                      "Functional"
-#define FUNCTIONAL_SCHEMA(className)                FUNCTIONAL_DOMAIN_NAME "." className
+#define FUNCTIONAL_DOMAIN_ECSCHEMA_PATH         L"ECSchemas/Domain/Functional.01.00.ecschema.xml"
+#define FUNCTIONAL_DOMAIN_NAME                  "Functional"
+#define FUNCTIONAL_SCHEMA(className)            FUNCTIONAL_DOMAIN_NAME "." className
 
-#define FUNC_CLASSNAME_FunctionalModel              "FunctionalModel"
-#define FUNC_CLASSNAME_FunctionalElement            "FunctionalElement"
-#define FUNC_CLASSNAME_FunctionalBreakdownElement   "FunctionalBreakdownElement"
-#define FUNC_CLASSNAME_FunctionalComponentElement   "FunctionalComponentElement"
+#define FUNC_CLASS_FunctionalModel              "FunctionalModel"
+#define FUNC_CLASS_FunctionalElement            "FunctionalElement"
+#define FUNC_CLASS_FunctionalBreakdownElement   "FunctionalBreakdownElement"
+#define FUNC_CLASS_FunctionalComponentElement   "FunctionalComponentElement"
+#define FUNC_CLASS_FunctionalType               "FunctionalType"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace func_ModelHandler {struct Functional;};
+namespace func_ElementHandler {struct FunctionalBreakdownElementHandler; struct FunctionalComponentElementHandler; struct FunctionalTypeHandler;};
 
 //=======================================================================================
 //! The Functional DgnDomain
@@ -51,7 +55,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE FunctionalModel : DgnModel
 {
-    DGNMODEL_DECLARE_MEMBERS(FUNC_CLASSNAME_FunctionalModel, DgnModel);
+    DGNMODEL_DECLARE_MEMBERS(FUNC_CLASS_FunctionalModel, DgnModel);
     friend struct func_ModelHandler::Functional;
 
 protected:
@@ -84,7 +88,9 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElement : FunctionalElement
 {
-    DEFINE_T_SUPER(FunctionalElement);
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalBreakdownElement, FunctionalElement)
+    friend struct func_ElementHandler::FunctionalBreakdownElementHandler;
+
 protected:
     explicit FunctionalBreakdownElement(CreateParams const& params) : T_Super(params) {}
 };
@@ -96,9 +102,34 @@ protected:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElement : FunctionalElement
 {
-    DEFINE_T_SUPER(FunctionalElement);
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComponentElement, FunctionalElement)
+    friend struct func_ElementHandler::FunctionalComponentElementHandler;
+
 protected:
     explicit FunctionalComponentElement(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Set the FunctionalType for this FunctionalComponentElement
+    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId) {return SetPropertyValue("FunctionalType", functionalTypeId);}
+    //! Get the DgnElementId of the FunctionalType for this FunctionalComponentElement
+    //! @return Will be invalid if there is no FunctionalType associated with this FunctionalComponentElement
+    DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("FunctionalType");}
+    //! Get the FunctionalType for this FunctionalComponentElement
+    //! @return Will be invalid if there is no FunctionalType associated with this FunctionalComponentElement
+    DGNPLATFORM_EXPORT FunctionalTypeCPtr GetFunctionalType() const;
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+// @bsiclass                                                    Shaun.Sewall    08/16
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE FunctionalType : DefinitionElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(FUNC_CLASS_FunctionalType, DefinitionElement)
+    friend struct func_ElementHandler::FunctionalTypeHandler;
+
+protected:
+    explicit FunctionalType(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -111,7 +142,35 @@ namespace func_ModelHandler
     //! @private
     struct EXPORT_VTABLE_ATTRIBUTE Functional : dgn_ModelHandler::Model
     {
-        MODELHANDLER_DECLARE_MEMBERS(FUNC_CLASSNAME_FunctionalModel, FunctionalModel, Functional, Model, DGNPLATFORM_EXPORT)
+        MODELHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalModel, FunctionalModel, Functional, Model, DGNPLATFORM_EXPORT)
+    };
+}
+
+//=======================================================================================
+//! The namespace that only contains ElementHandlers for the FunctionalDomain
+//! @private
+//=======================================================================================
+namespace func_ElementHandler
+{
+    //! The ElementHandler for FunctionalBreakdownElement
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalBreakdownElementHandler : dgn_ElementHandler::Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalBreakdownElement, FunctionalBreakdownElement, FunctionalBreakdownElementHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for FunctionalComponentElement
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalComponentElementHandler : dgn_ElementHandler::Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalComponentElement, FunctionalComponentElement, FunctionalComponentElementHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for FunctionalType
+    //! @private
+    struct EXPORT_VTABLE_ATTRIBUTE FunctionalTypeHandler : dgn_ElementHandler::Definition
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(FUNC_CLASS_FunctionalType, FunctionalType, FunctionalTypeHandler, dgn_ElementHandler::Definition, DGNPLATFORM_EXPORT)
     };
 }
 

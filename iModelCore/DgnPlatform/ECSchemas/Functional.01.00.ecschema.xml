@@ -23,11 +23,35 @@
 
     <ECEntityClass typeName="FunctionalBreakdownElement" modifier="Abstract">
         <BaseClass>FunctionalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="FunctionalComponentElement" modifier="Abstract">
         <BaseClass>FunctionalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="FunctionalType" relationshipName="FunctionalComponentIsOfType" direction="Forward">
+        </ECNavigationProperty>
     </ECEntityClass>
+
+    <ECEntityClass typeName="FunctionalType" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECRelationshipClass typeName="FunctionalComponentIsOfType" strength="referencing">
+        <Source cardinality="(0,N)" polymorphic="true">
+            <Class class="FunctionalComponentElement" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="false">
+            <Class class="FunctionalType"/>
+        </Target>
+    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>

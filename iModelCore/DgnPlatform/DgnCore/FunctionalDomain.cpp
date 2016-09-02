@@ -20,6 +20,13 @@ namespace func_ModelHandler
     HANDLER_DEFINE_MEMBERS(Functional)
     }
 
+namespace func_ElementHandler
+    {
+    HANDLER_DEFINE_MEMBERS(FunctionalBreakdownElementHandler)
+    HANDLER_DEFINE_MEMBERS(FunctionalComponentElementHandler)
+    HANDLER_DEFINE_MEMBERS(FunctionalTypeHandler)
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -28,6 +35,10 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 FunctionalDomain::FunctionalDomain() : DgnDomain(FUNCTIONAL_DOMAIN_NAME, "Functional Domain", 1) 
     {
     RegisterHandler(func_ModelHandler::Functional::GetHandler());
+
+    RegisterHandler(func_ElementHandler::FunctionalBreakdownElementHandler::GetHandler());
+    RegisterHandler(func_ElementHandler::FunctionalComponentElementHandler::GetHandler());
+    RegisterHandler(func_ElementHandler::FunctionalTypeHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -66,7 +77,7 @@ FunctionalModelPtr FunctionalModel::Create(DgnElementCR modeledElement)
         return nullptr;
         }
 
-    DgnCode code = DgnModel::CreateModelCode(FUNCTIONAL_SCHEMA(FUNC_CLASSNAME_FunctionalModel), modeledElement.GetElementId());
+    DgnCode code = DgnModel::CreateModelCode(FUNCTIONAL_SCHEMA(FUNC_CLASS_FunctionalModel), modeledElement.GetElementId());
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId(), code));
     if (!model.IsValid())
         {
@@ -96,4 +107,12 @@ DgnDbStatus FunctionalElement::_OnInsert()
     DgnModelPtr model = GetModel();
     FunctionalModelP funcModel = dynamic_cast<FunctionalModelP>(model.get());
     return (nullptr == funcModel) ? DgnDbStatus::WrongModel : T_Super::_OnInsert();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    08/2016
+//---------------------------------------------------------------------------------------
+FunctionalTypeCPtr FunctionalComponentElement::GetFunctionalType() const
+    {
+    return GetDgnDb().Elements().Get<FunctionalType>(GetFunctionalTypeId());
     }
