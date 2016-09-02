@@ -77,11 +77,17 @@ namespace IndexECPlugin.Source.Helpers
 
                 if ( requestedEntity.ID.Length != IndexConstants.USGSIdLenght )
                     {
-                    indexRequestedEntities.Add(requestedEntity);
+                    if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID && e.SpatialDataSourceID == requestedEntity.SpatialDataSourceID) )
+                        {
+                        indexRequestedEntities.Add(requestedEntity);
+                        }
                     }
                 else
                     {
-                    usgsRequestedEntities.Add(requestedEntity);
+                    if ( !indexRequestedEntities.Any(e => e.ID == requestedEntity.ID) )
+                        {
+                        usgsRequestedEntities.Add(requestedEntity);
+                        }
                     }
                 }
 
@@ -172,6 +178,9 @@ namespace IndexECPlugin.Source.Helpers
             IECClass wmsSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSSource");
             RelatedInstanceSelectCriteria wmsSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, wmsSourceClass), false);
 
+            IECClass multibandSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "MultibandSource");
+            RelatedInstanceSelectCriteria multibandSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, multibandSourceClass), false);
+
             IECRelationshipClass serverRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
             IECClass wmsServerClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSServer");
             RelatedInstanceSelectCriteria wmsServerRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(serverRelClass, RelatedInstanceDirection.Backward, wmsServerClass), false);
@@ -186,6 +195,7 @@ namespace IndexECPlugin.Source.Helpers
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(wmsSourceRelCrit);
+            query.SelectClause.SelectedRelatedInstances.Add(multibandSourceRelCrit);
             wmsSourceRelCrit.SelectedRelatedInstances.Add(wmsServerRelCrit);
 
             metadataRelCrit.SelectAllProperties = false;
@@ -198,6 +208,13 @@ namespace IndexECPlugin.Source.Helpers
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "DataSourceType"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "FileSize"));
             dataSourceRelCrit.SelectedProperties.Add(dataSourceClass.First(prop => prop.Name == "LocationInCompound"));
+
+            multibandSourceRelCrit.SelectAllProperties = false;
+            multibandSourceRelCrit.SelectedProperties = new List<IECProperty>();
+            multibandSourceRelCrit.SelectedProperties.Add(multibandSourceClass.First(prop => prop.Name == "RedBandURL"));
+            multibandSourceRelCrit.SelectedProperties.Add(multibandSourceClass.First(prop => prop.Name == "GreenBandURL"));
+            multibandSourceRelCrit.SelectedProperties.Add(multibandSourceClass.First(prop => prop.Name == "BlueBandURL"));
+            multibandSourceRelCrit.SelectedProperties.Add(multibandSourceClass.First(prop => prop.Name == "PanchromaticBandURL"));
 
             wmsSourceRelCrit.SelectAllProperties = false;
             wmsSourceRelCrit.SelectedProperties = new List<IECProperty>();
@@ -214,58 +231,105 @@ namespace IndexECPlugin.Source.Helpers
 
             var queriedSpatialEntities = m_executeQuery(queryModule, connection, query, null);
 
-            foreach ( IECInstance spatialEntity in queriedSpatialEntities )
+            //foreach ( IECInstance spatialEntity in queriedSpatialEntities )
+            foreach ( RequestedEntity requestedEntity in basicRequestedEntities )
                 {
-                RequestedEntity requestedEntity = basicRequestedEntities.First(e => e.ID == spatialEntity.GetPropertyValue("Id").StringValue);
+                IECInstance spatialEntity = queriedSpatialEntities.First(s => s.GetPropertyValue("Id").StringValue == requestedEntity.ID);
                 //IECRelationshipInstance firstWMSSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource");
                 if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource") )
                     {
+                    //This is a WMS source
                     WMSList.Add(CreateWMSSource(spatialEntity, coordinateSystem, requestedEntity));
+                    }
+                else if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "MultibandSource") )
+                    {
+                    //This is a multiband source
+                    throw new NotImplementedException();
+                    //MultibandList.Add(CreateMultibandSource(spatialEntity, requestedEntity));
                     }
                 else
                     {
-                    IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
-                    IECInstance firstMetadata = firstMetadataRel.Target;
+                    //This is a generic source, not needing any special treatment.
 
-                    IECRelationshipInstance dataSourceRel;
-                    if ( requestedEntity.SpatialDataSourceID == null )
-                        {
-                        dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
-                                                                                                           relInst.Target.ClassDefinition.Name == "SpatialDataSource");
-                        if ( dataSourceRel == null )
-                            {
-                            throw new OperationFailedException("The selected spatial entity does not have any related spatial data source.");
-                            }
-                        }
-                    else
-                        {
-                        dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
-                                                                                                           relInst.Target.ClassDefinition.Name == "SpatialDataSource" &&
-                                                                                                           relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
-                        if ( dataSourceRel == null )
-                            {
-                            throw new UserFriendlyException("The specified spatial dataSource ID is not related to the selected spatial entity");
-                            }
-                        }
+                    GenericInfo genericInfo = ExtractGenericInfo(spatialEntity, requestedEntity);
 
-                    IECInstance firstSpatialDataSource = dataSourceRel.Target;
-
-                    UInt64 filesize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : (UInt64) ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
-
-                    string uri = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
-                    string type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
-                    string copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
-                    string id = spatialEntity.GetPropertyValue("Id").StringValue;
                     string provider = "";
-                    string fileInCompound = (firstSpatialDataSource.GetPropertyValue("LocationInCompound") == null || firstSpatialDataSource.GetPropertyValue("LocationInCompound").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("LocationInCompound").StringValue;
                     string metadata = "";
-                    string classification = (spatialEntity.GetPropertyValue("Classification") == null || spatialEntity.GetPropertyValue("Classification").IsNull) ? null : spatialEntity.GetPropertyValue("Classification").StringValue;
-
                     List<string> sisterFiles = new List<string>();
-                    RDSNList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(uri, type, copyright, id, provider, filesize, fileInCompound, metadata, sisterFiles), classification));
+
+                    RDSNList.Add(new Tuple<RealityDataSourceNet, string>(RealityDataSourceNet.Create(genericInfo.URI, genericInfo.Type, genericInfo.Copyright, genericInfo.ID, provider, genericInfo.FileSize, genericInfo.FileInCompound, metadata, sisterFiles), genericInfo.Classification));
                     }
                 }
             }
+
+        private static GenericInfo ExtractGenericInfo(IECInstance spatialEntity, RequestedEntity requestedEntity)
+        {
+        GenericInfo genericInfo = new GenericInfo();
+
+        IECRelationshipInstance firstMetadataRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityBaseToMetadata");
+        IECInstance firstMetadata = firstMetadataRel.Target;
+
+        IECRelationshipInstance dataSourceRel;
+        if ( requestedEntity.SpatialDataSourceID == null )
+            {
+            dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                               relInst.Target.ClassDefinition.Name == "SpatialDataSource");
+            if ( dataSourceRel == null )
+                {
+                throw new OperationFailedException("The selected spatial entity does not have any related spatial data source.");
+                }
+            }
+        else
+            {
+            dataSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+                                                                                               relInst.Target.ClassDefinition.Name == "SpatialDataSource" &&
+                                                                                               relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
+            if ( dataSourceRel == null )
+                {
+                throw new UserFriendlyException("The specified spatial dataSource ID is not related to the selected spatial entity");
+                }
+            }
+
+        IECInstance firstSpatialDataSource = dataSourceRel.Target;
+
+        genericInfo.FileSize = (firstSpatialDataSource.GetPropertyValue("FileSize") == null || firstSpatialDataSource.GetPropertyValue("FileSize").IsNull) ? 0 : (UInt64) ((long) firstSpatialDataSource.GetPropertyValue("FileSize").NativeValue);
+        genericInfo.URI = firstSpatialDataSource.GetPropertyValue("MainURL").StringValue;
+        genericInfo.Type = firstSpatialDataSource.GetPropertyValue("DataSourceType").StringValue;
+        genericInfo.Copyright = (firstMetadata.GetPropertyValue("Legal") == null || firstMetadata.GetPropertyValue("Legal").IsNull) ? null : firstMetadata.GetPropertyValue("Legal").StringValue;
+        genericInfo.ID = spatialEntity.GetPropertyValue("Id").StringValue;
+        genericInfo.FileInCompound = (firstSpatialDataSource.GetPropertyValue("LocationInCompound") == null || firstSpatialDataSource.GetPropertyValue("LocationInCompound").IsNull) ? null : firstSpatialDataSource.GetPropertyValue("LocationInCompound").StringValue;
+        genericInfo.Classification = (spatialEntity.GetPropertyValue("Classification") == null || spatialEntity.GetPropertyValue("Classification").IsNull) ? null : spatialEntity.GetPropertyValue("Classification").StringValue;
+
+        return genericInfo;
+        }
+
+        //private static MultibandSource CreateMultibandSource (IECInstance spatialEntity, RequestedEntity requestedEntity)
+        //    {
+        //    IECRelationshipInstance multibandSourceRel;
+        //    if ( requestedEntity.SpatialDataSourceID == null )
+        //        {
+        //        multibandSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+        //                                                                            relInst.Target.ClassDefinition.Name == "MultibandSource");
+        //        }
+        //    else
+        //        {
+        //        multibandSourceRel = spatialEntity.GetRelationshipInstances().First(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" &&
+        //                                                                            relInst.Target.ClassDefinition.Name == "MultibandSource" &&
+        //                                                                            relInst.Target.InstanceId == requestedEntity.SpatialDataSourceID);
+        //        }
+
+        //    IECInstance multibandSource = multibandSourceRel.Target;
+
+        //    string redBandURL = (multibandSource.GetPropertyValue("RedBandURL") == null || multibandSource.GetPropertyValue("RedBandURL").IsNull) ? null : multibandSource.GetPropertyValue("RedBandURL").StringValue;
+        //    string greenBandURL = (multibandSource.GetPropertyValue("GreenBandURL") == null || multibandSource.GetPropertyValue("GreenBandURL").IsNull) ? null : multibandSource.GetPropertyValue("GreenBandURL").StringValue;
+        //    string blueBandURL = (multibandSource.GetPropertyValue("BlueBandURL") == null || multibandSource.GetPropertyValue("BlueBandURL").IsNull) ? null : multibandSource.GetPropertyValue("BlueBandURL").StringValue;
+
+        //    UInt64 redBandFileSize = (multibandSource.GetPropertyValue("RedBandFileSize") == null || multibandSource.GetPropertyValue("RedBandFileSize").IsNull) ? 0 : (UInt64) ((long) multibandSource.GetPropertyValue("RedBandFileSize").NativeValue);
+        //    UInt64 greenBandFileSize = (multibandSource.GetPropertyValue("GreenBandFileSize") == null || multibandSource.GetPropertyValue("GreenBandFileSize").IsNull) ? 0 : (UInt64) ((long) multibandSource.GetPropertyValue("GreenBandFileSize").NativeValue);
+        //    UInt64 blueBandFileSize = (multibandSource.GetPropertyValue("BlueBandFileSize") == null || multibandSource.GetPropertyValue("BlueBandFileSize").IsNull) ? 0 : (UInt64) ((long) multibandSource.GetPropertyValue("BlueBandFileSize").NativeValue);
+
+        //    throw new NotImplementedException();
+        //    }
 
         private static WmsSourceNet CreateWMSSource (IECInstance spatialEntity, string coordinateSystem, RequestedEntity requestedEntity)
             {
@@ -636,5 +700,6 @@ namespace IndexECPlugin.Source.Helpers
             };
 
             }
+
         }
     }

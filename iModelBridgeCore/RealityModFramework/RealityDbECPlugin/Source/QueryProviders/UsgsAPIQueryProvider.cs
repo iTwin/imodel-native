@@ -48,6 +48,13 @@ namespace IndexECPlugin.Source.QueryProviders
         Dictionary<IECClass, List<IECInstance>> m_storageForCaching;
         Dictionary<string, IECInstance> m_storedParents;
 
+        const string legalString = " courtesy of the U.S. Geological Survey";
+        const string subAPIString = "USGS";
+        const string rawMetadataFormatString = "FGDC";
+        const string rawMetadataURLEnding = "?format=fgdc";
+        const string dataProviderString = "USGS";
+        const string dataProviderNameString = "United States Geological Survey";
+
         /// <summary>
         /// UsgsAPIQueryProvider constructor
         /// </summary>
@@ -65,12 +72,6 @@ namespace IndexECPlugin.Source.QueryProviders
 
             m_storageForCaching = new Dictionary<IECClass, List<IECInstance>>();
 
-            int daysCacheIsValid;
-
-            if( !Int32.TryParse(ConfigurationRoot.GetAppSetting("RECPDaysCacheIsValid"), out daysCacheIsValid) )
-                {
-                daysCacheIsValid = 10;
-                }
             m_instanceCacheManager = cacheManager;
             }
 
@@ -248,9 +249,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         foreach ( IECInstance inst in cachedInstances )
                             {
                             inst["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + inst.InstanceId;
-                            inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + "?format=fgdc";
-                            inst["RawMetadataFormat"].StringValue = "FGDC";
-                            inst["SubAPI"].StringValue = "USGS";
+                            inst["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + inst.InstanceId + rawMetadataURLEnding;
+                            inst["RawMetadataFormat"].StringValue = rawMetadataFormatString;
+                            inst["SubAPI"].StringValue = subAPIString;
                             }
                         break;
                         }
@@ -642,12 +643,12 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
             instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
-            instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
-            instance["RawMetadataFormat"].StringValue = "FGDC";
-            instance["SubAPI"].StringValue = "USGS";
+            instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
+            instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
+            instance["SubAPI"].StringValue = subAPIString;
 
-            instance["DataProvider"].StringValue = "USGS";
-            instance["DataProviderName"].StringValue = "United States Geological Survey";
+            instance["DataProvider"].StringValue = dataProviderString;
+            instance["DataProviderName"].StringValue = dataProviderNameString;
 
             //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
             return instance;
@@ -743,7 +744,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( json["title"] != null )
                 {
-                instance["Legal"].StringValue = json["title"].Value<string>() + " courtesy of the U.S. Geological Survey";
+                instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
                 }
             //AccessConstraints
 
@@ -910,7 +911,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             //RawMetadataFormat
 
-            instance["RawMetadataFormat"].StringValue = "FGDC";
+            instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
 
             //DisplayStyle
 
@@ -948,7 +949,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             if ( json["title"] != null )
                 {
-                instance["Legal"].StringValue = json["title"].Value<string>() + " courtesy of the U.S. Geological Survey";
+                instance["Legal"].StringValue = json["title"].Value<string>() + legalString;
                 }
 
             //Lineage
@@ -1034,7 +1035,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 {
                 instance.ExtendedDataValueSetter.Add("Complete", false);
                 }
-
+            instance["ThumbnailURL"].StringValue = thumbnailURI;
 
             //ThumbnailFormat
 
@@ -1174,8 +1175,8 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["AccuracyResolutionDensity"].StringValue = "Unknown";
             instance["ResolutionInMeters"].StringValue = "Unknown";
 
-            instance["DataProvider"].StringValue = "USGS";
-            instance["DataProviderName"].StringValue = "United States Geological Survey";
+            instance["DataProvider"].StringValue = dataProviderString;
+            instance["DataProviderName"].StringValue = dataProviderNameString;
 
             //instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
 
@@ -1340,15 +1341,21 @@ namespace IndexECPlugin.Source.QueryProviders
                             {
                             instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                             }
-                        instance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
-                        instance["ThumbnailURL"].StringValue = jtoken.TryToGetString("previewGraphicURL");
-                        instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
-                        instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + "?format=fgdc";
-                        instance["RawMetadataFormat"].StringValue = "FGDC";
-                        instance["SubAPI"].StringValue = "USGS";
 
-                        instance["DataProvider"].StringValue = "USGS";
-                        instance["DataProviderName"].StringValue = "United States Geological Survey";
+                        instance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
+
+                        var urls = jtoken["urls"];
+                        if ( urls != null )
+                            {
+                            instance["ThumbnailURL"].StringValue = urls.TryToGetString("previewGraphicURL");
+                            }
+                        instance["MetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/" + instance.InstanceId;
+                        instance["RawMetadataURL"].StringValue = "https://www.sciencebase.gov/catalog/item/download/" + instance.InstanceId + rawMetadataURLEnding;
+                        instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
+                        instance["SubAPI"].StringValue = subAPIString;
+
+                        instance["DataProvider"].StringValue = dataProviderString;
+                        instance["DataProviderName"].StringValue = dataProviderNameString;
 
                         if ( item.Date.HasValue )
                             {
@@ -1473,9 +1480,17 @@ namespace IndexECPlugin.Source.QueryProviders
                 }
 
             SDSInstance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
+            SDSInstance["LocationInCompound"].StringValue = "Unknown";
+            var urls = jtoken["urls"];
+            if ( urls != null)
+                {
+                SDSInstance["MainURL"].StringValue = urls.TryToGetString("downloadURL");
+                }
+
             SEBInstance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
 
-            metadataInstance["RawMetadataFormat"].StringValue = "FGDC";
+            metadataInstance["Legal"].StringValue = item.Title + legalString;
+            metadataInstance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
 
             if ( item.Date.HasValue )
                 {
@@ -1484,8 +1499,8 @@ namespace IndexECPlugin.Source.QueryProviders
             SEBInstance["AccuracyResolutionDensity"].StringValue = item.Resolution;
             SEBInstance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
-            SEBInstance["DataProvider"].StringValue = "USGS";
-            SEBInstance["DataProviderName"].StringValue = "United States Geological Survey";
+            SEBInstance["DataProvider"].StringValue = dataProviderString;
+            SEBInstance["DataProviderName"].StringValue = dataProviderNameString;
 
             SEBInstance["Classification"].StringValue = classification;
 

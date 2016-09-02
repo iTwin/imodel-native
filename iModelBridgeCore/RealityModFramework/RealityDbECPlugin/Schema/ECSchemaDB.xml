@@ -451,6 +451,18 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
+		
+		<ECProperty propertyName="ThumbnailURL" typeName="string" >
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>ThumbnailURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>ThumbnailURL</OverrideColumnName>
+                    <CacheColumnName>ThumbnailURL</CacheColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>		
+		</ECProperty>
     </ECClass>
     
      <ECClass typeName="Metadata" isDomainClass="true">
@@ -887,6 +899,17 @@
             </ECCustomAttributes>
         </ECProperty>   
         
+		<ECProperty propertyName="OriginalId" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>OriginalId</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>OriginalId</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="RedBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -898,6 +921,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+		<ECProperty propertyName="RedBandFileSize" typeName="long">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>RedBandFileSize</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>RedBandFileSize</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="GreenBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -909,6 +943,17 @@
             </ECCustomAttributes>
         </ECProperty>
         
+		<ECProperty propertyName="GreenBandFileSize" typeName="long">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>GreenBandFileSize</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>GreenBandFileSize</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
         <ECProperty propertyName="BlueBandURL" typeName="string">
             <ECCustomAttributes>
                 <DBColumn>
@@ -919,6 +964,40 @@
                 </MimicDBColumn>
             </ECCustomAttributes>
         </ECProperty>
+		
+		<ECProperty propertyName="BlueBandFileSize" typeName="long">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>BlueBandFileSize</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>BlueBandFileSize</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
+        <ECProperty propertyName="PanchromaticBandURL" typeName="string">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>PanchromaticBandURL</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>PanchromaticBandURL</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
+		<ECProperty propertyName="PanchromaticBandFileSize" typeName="long">
+            <ECCustomAttributes>
+                <DBColumn>
+                    <ColumnName>PanchromaticBandFileSize</ColumnName>
+                </DBColumn>
+                <MimicDBColumn>
+                    <OverrideColumnName>PanchromaticBandFileSize</OverrideColumnName>
+                </MimicDBColumn>
+            </ECCustomAttributes>
+        </ECProperty>
+		
     </ECClass>
     
     <ECClass typeName="Server" isDomainClass="true">
