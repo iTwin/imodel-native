@@ -352,14 +352,14 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbBriefcasesInfoTaskPtr QueryAllBriefcasesInfo(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns briefcase info about specific briefcase.
-    //! @param[in] Id for queried briefcase
+    //! @param[in] briefcaseId for queried briefcase
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbBriefcasesInfoTaskPtr QueryBriefcaseInfo(BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns info about selected briefcases.
-    //! @param[in] collection of briefcase ids, for which to return briefcases info
+    //! @param[in] briefcasesIds for which to return briefcases info
     //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbBriefcasesInfoTaskPtr QueryBriefcasesInfo(bvector<BeSQLite::BeBriefcaseId>& briefcaseIds, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbBriefcasesInfoTaskPtr QueryBriefcasesInfo(bvector<BeSQLite::BeBriefcaseId>& briefcasesIds, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all codes and locks by ids.
     //! @param[in] codes
