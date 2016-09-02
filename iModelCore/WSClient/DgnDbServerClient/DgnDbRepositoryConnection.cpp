@@ -130,7 +130,7 @@ AuthenticationHandlerPtr authenticationHandler
     if (repository.GetId().empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
-        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepostioryName));
+        return CreateCompletedAsyncTask<DgnDbRepositoryConnectionResult>(DgnDbRepositoryConnectionResult::Error(DgnDbServerError::Id::InvalidRepositoryName));
         }
     if (repository.GetServerURL().empty())
         {
@@ -261,7 +261,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::OnPremiseFileUpload(BeFileNa
     if (objectId.remoteId.empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepostioryName)); //NEEDSWORK
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryName)); //NEEDSWORK
         }
 
     return m_wsRepositoryClient->SendUpdateFileRequest(objectId, filePath, callback, cancellationToken)
