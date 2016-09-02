@@ -70,7 +70,7 @@ struct DgnDbServerError : public Tasks::AsyncError
             FileAlreadyExists,
             DgnDbServerClientNotInitialized,
             InvalidServerURL,
-            InvalidRepostioryName,
+            InvalidRepositoryName,
             InvalidRepositoryConnection,
             InvalidRevision,
             BriefcaseIsReadOnly,
