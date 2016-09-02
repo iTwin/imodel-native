@@ -105,7 +105,7 @@ public:
     // Raster 4 corners(World) in this order:
     //  [0]  [1]
     //  [2]  [3]
-    DPoint3dCP GetCorners() const { return m_corners; }
+    Dgn::Render::IGraphicBuilder::TileCorners const& GetCorners() const { return m_corners; }
 
     //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
     bool Draw(DrawArgs& drawArgs);
@@ -149,9 +149,9 @@ private:
 
 
     TileId m_tileId; 
-    DPoint3d m_corners[4];      // Corners in World.  [0] [1]
-                                //                    [2] [3]
-
+    Dgn::Render::IGraphicBuilder::TileCorners m_corners; // Corners in World.  [0] [1]
+                                                         //                    [2] [3]
+                                
     RasterQuadTreeR m_tree;     // Hold a ref only.
 
 
