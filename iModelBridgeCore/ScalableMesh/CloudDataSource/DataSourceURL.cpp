@@ -18,9 +18,20 @@ DataSourceURL::DataSourceURL(const std::wstring &str) : std::wstring(str)
 
 }
 
-void DataSourceURL::overrideDefaultSeparator(const std::wstring& separator)
+void DataSourceURL::operator=(const DataSourceURL & url)
+    {
+    m_separator = url.m_separator;
+    this->std::wstring::operator=((std::wstring)url);
+    }
+
+void DataSourceURL::setSeparator(const std::wstring& separator)
     {
     m_separator = separator;
+    }
+
+std::wstring DataSourceURL::getSeparator() const
+    {
+    return m_separator;
     }
 
 bool DataSourceURL::isWindowsFilePath(void) const

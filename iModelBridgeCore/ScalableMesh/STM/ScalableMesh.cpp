@@ -748,7 +748,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
                     // NEEDS_WORK_SM - Check existence of the following directories
                     // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
-                    WString streamingSourcePath;
+                    WString streamingSourcePath(L"scalablemesh");
                     WString cloudIndicator(L"_cloud");
                     //= (s_stream_from_disk ? m_path.substr(0, position - 3) + L"_stream/" : path.GetFileNameWithoutExtension());
                     BeFileName path(m_path);
@@ -760,7 +760,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         }
                     if (isCloud && !s_stream_from_disk)
                         {
-                        streamingSourcePath += datasetName;
+                        streamingSourcePath += L"~2F" + datasetName;
                         }
                     else
                         {
@@ -2011,7 +2011,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
         // Setup streaming stores to use server (Azure or WSG)
         s_stream_from_disk = false;
 
-        path += outContainerName + L"/" + outDatasetName;
+        path += outContainerName;
+        path += s_stream_from_wsg ? L"~2F" : L"/";
+        path += outDatasetName;
         }
     else
         {

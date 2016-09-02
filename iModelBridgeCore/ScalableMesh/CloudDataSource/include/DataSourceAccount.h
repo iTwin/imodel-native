@@ -40,9 +40,9 @@ protected:
     virtual unsigned int                getDefaultNumTransferTasks      (void);
 
 public:
-    CLOUD_EXPORT                            DataSourceAccount               (void);
-    CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account);
-    CLOUD_EXPORT                            DataSourceAccount               (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+    CLOUD_EXPORT                        DataSourceAccount               (void);
+    CLOUD_EXPORT                        DataSourceAccount               (const ServiceName &service, const AccountName &account);
+    CLOUD_EXPORT                        DataSourceAccount               (const ServiceName &service, const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
    virtual                             ~DataSourceAccount               (void);
 
@@ -52,10 +52,10 @@ public:
     virtual DataSourceStatus            setAccount                      (const ServiceName &service, const AccountName &accountName, const AccountIdentifier &identifier, const AccountKey &key);
             
     void                                setServiceName                  (const ServiceName &name);
-    CLOUD_EXPORT    const ServiceName &     getServiceName                  (void) const;
+    CLOUD_EXPORT    const ServiceName & getServiceName                  (void) const;
 
     void                                setAccountName                  (const AccountName &name);
-    CLOUD_EXPORT    const AccountName &     getAccountName                  (void) const;
+    CLOUD_EXPORT    const AccountName & getAccountName                  (void) const;
 
     void                                setAccountIdentifier            (const AccountIdentifier &identifier);
     const AccountIdentifier &           getAccountIdentifier            (void) const;
@@ -80,6 +80,8 @@ public:
 
     virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);
     virtual DataSourceStatus            downloadBlobSync                (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+    virtual DataSourceStatus            uploadBlobSync                  (DataSource &dataSource, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
+    virtual DataSourceStatus            uploadBlobSync                  (DataSourceURL &dataSource, const std::wstring& filename, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
     virtual DataSourceStatus            uploadBlobSync                  (const DataSourceURL &blobPath, DataSourceBuffer::BufferData *source, DataSourceBuffer::BufferSize size);
 
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "stdafx.h"
 #include "DataSourceDefs.h"
 #include <Windows.h>
 
