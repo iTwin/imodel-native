@@ -1063,7 +1063,7 @@ bool DgnElement::_Equals(DgnElementCR other, bset<Utf8String> const& ignore) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+void DgnElement::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
     {
     auto ecclass = GetElementClass();
     str.append(ecclass->GetName().c_str());
@@ -1086,6 +1086,9 @@ void DgnElement::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
         }
     str.append("}\n");
     }
+
+
+void DgnElement::Dump(Utf8StringR str, bset<Utf8String> const& ignore) const {_Dump(str,ignore);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15

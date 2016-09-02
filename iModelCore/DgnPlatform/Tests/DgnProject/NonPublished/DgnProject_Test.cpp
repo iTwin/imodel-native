@@ -676,6 +676,7 @@ TEST(DgnProject, DuplicateElementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
     {
+    // *** WIP_TEST_DEPENDs_ON_CONVERTER - move this to DgnV8ConverterTests
     std::vector<Utf8String> dgndbFiles;
     dgndbFiles.push_back("79_Main.i.ibim");
     dgndbFiles.push_back("04_Plant.i.ibim");

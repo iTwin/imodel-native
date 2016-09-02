@@ -296,9 +296,6 @@ protected:
     //! Get the editable ViewDefinition used by this ViewController
     DGNPLATFORM_EXPORT ViewDefinitionR GetViewDefinition() const;
 
-    //! Called prior to save to make sure that all definition elements are in m_definitionElements.
-    virtual void _CacheDefinition() { GetViewDefinition(); GetCategorySelector(); GetDisplayStyle(); }
-
     //! Make sure that all definition element relationships are persistent. Called as part of SaveDefinition. 
     DGNPLATFORM_EXPORT virtual void _FixUpDefinitionRelationships();
 
@@ -369,7 +366,7 @@ public:
 
     //! Get copies of the definition elements used by this controller. You may store these definition elements in an undo stack or write them to the database. 
     //! Or, you may modify these elements and then call Load.
-    DgnEditElementCollector& GetDefinitionR() {_CacheDefinition(); return m_definitionElements;}
+    DgnEditElementCollector& GetDefinitionR() {StoreToDefinition(); return m_definitionElements;}
 
     //! Save the current state of this ViewController to a new view name. After this call succeeds, this ViewController is
     //! directed at the new view, and the previous view's state is unchanged.
@@ -410,12 +407,10 @@ public:
     virtual SheetViewControllerCP _ToSheetView() const {return nullptr;}
     SheetViewControllerP ToSheetViewP() {return const_cast<SheetViewControllerP>(_ToSheetView());}
 
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! perform the equivalent of a dynamic_cast to a QueryViewController.
     //! @return a valid QueryViewControllerCP, or nullptr if this is not a query view
     virtual QueryViewControllerCP _ToQueryView() const {return nullptr;}
     QueryViewControllerP ToQueryViewP() {return const_cast<QueryViewControllerP>(_ToQueryView());}
-*/
 
     //! determine whether this is a physical view
     bool IsSpatialView() const {return nullptr != _ToSpatialView();}
@@ -429,10 +424,8 @@ public:
     //! determine whether this is a sheet view
     bool IsSheetView() const {return nullptr != _ToSheetView();}
 
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     //! determine whether this is a query view
     bool IsQueryView() const {return nullptr != _ToQueryView();}
-    */
 
     //! Get the ViewFlags.
     Render::ViewFlags GetViewFlags() const {return m_viewFlags;}
@@ -655,9 +648,6 @@ protected:
 
     //! Get the editable ModelSelector used by this ViewController
     DGNPLATFORM_EXPORT ModelSelectorR GetModelSelector() const;
-
-    //! Called prior to save to make sure that all definition elements are in m_definitionElements.
-    void _CacheDefinition() override {T_Super::_CacheDefinition(); GetModelSelector(); }
 
     void LoadEnvironment();
     DGNPLATFORM_EXPORT void SaveEnvironment();
@@ -884,9 +874,7 @@ protected:
     bool AbortRequested() const {return m_abortQuery;} //!< @private
     void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
 
-    /* WIP_VIEW_DEFINITION -- who needs to know if this view is based on a query?
     QueryViewControllerCP _ToQueryView() const override {return this;}
-*/
     DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT void _InvalidateScene() override;
@@ -904,10 +892,10 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
 
-public:
     DGNPLATFORM_EXPORT QueryViewController(SpatialViewDefinition const&);
     DGNPLATFORM_EXPORT ~QueryViewController();
 
+public:
     //! Get the Level-of-Detail filtering size for scene creation for this QueryViewController. This is the size, in pixels, of one side of a square. 
     //! Elements whose aabb projects onto the view an area less than this box are skippped during scene creation.
     double GetSceneLODSize() const {return m_sceneLODSize;}
@@ -954,6 +942,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE OrthographicViewController : QueryViewController
     {
     DEFINE_T_SUPER(QueryViewController);
+    friend struct OrthographicViewDefinition;
 
 protected:
     DPoint3d m_origin;                 //!< The lower left back corner of the view frustum.
@@ -964,6 +953,8 @@ protected:
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
+    OrthographicViewControllerCP _ToOrthographicView() const override {return this;}
+
     DPoint3d _GetOrigin() const override {return m_origin;}
     DVec3d _GetDelta() const override {return m_delta;}
     RotMatrix _GetRotation() const override {return m_rotation;}
@@ -972,11 +963,12 @@ protected:
     void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     DGNPLATFORM_EXPORT void _OnTransform(TransformCR) override;
     void _AdjustAspectRatio(double windowAspect, bool expandView) override {AdjustAspectRatio(m_origin, m_delta, m_rotation, windowAspect, expandView);}
-public:
+
     //! Construct a new OrthographicViewController
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT OrthographicViewController(OrthographicViewDefinition const& definition);
 
+public:
     DGNPLATFORM_EXPORT OrthographicViewDefinition& GetOrthographicViewDefinition() const;
     };
 
@@ -1047,6 +1039,7 @@ This is what the parameters to the camera methods, and the values stored by Came
 struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : QueryViewController
 {
     DEFINE_T_SUPER(QueryViewController);
+    friend struct CameraViewDefinition;
 
 protected:
     DPoint3d m_origin;                 //!< Back origin
@@ -1062,6 +1055,7 @@ protected:
     DGNPLATFORM_EXPORT ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
+
     DPoint3d _GetOrigin() const override { return m_origin; }
     DVec3d _GetDelta() const override { return m_delta; }
     RotMatrix _GetRotation() const override { return m_rotation; }
@@ -1072,16 +1066,16 @@ protected:
     bool _IsEyePointAbove(double elevation) const override { return GetEyePoint().z > elevation; }
     DPoint3d _ComputeEyePoint(Frustum const&) const override {return GetEyePoint();}
 
-public:
-    void VerifyFocusPlane();
-
     //! Construct a new CameraViewController
     //! @param[in] definition the view definition
     DGNPLATFORM_EXPORT CameraViewController(CameraViewDefinition const& definition);
 
+public:
     DGNPLATFORM_EXPORT CameraViewDefinition& GetCameraViewDefinition() const;
 
-/** @name Camera */
+    void VerifyFocusPlane();
+
+    /** @name Camera */
 /** @{ */
     //! Calculate the lens angle formed by the current delta and focus distance
     DGNPLATFORM_EXPORT double CalcLensAngle();
@@ -1276,8 +1270,9 @@ protected:
     DGNPLATFORM_EXPORT void _StoreToDefinition() const override;
     DGNPLATFORM_EXPORT void _LoadFromDefinition() override;
 
-public:
     DGNPLATFORM_EXPORT ViewController2d(ViewDefinition2d const& def);
+
+public:
     double GetRotAngle() const {return m_rotAngle;}
     DPoint2d GetOrigin2d() const {return m_origin;}
     DVec2d GetDelta2d() const {return m_delta;}
@@ -1297,11 +1292,11 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DrawingViewController : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
-
+    friend struct DrawingViewDefinition;
+protected:
     DrawingViewControllerCP _ToDrawingView() const override {return this;}
     DGNPLATFORM_EXPORT bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
 
-public:
     //! Construct a new DrawingViewController.
     DGNPLATFORM_EXPORT DrawingViewController(DrawingViewDefinition const& def);
 };
@@ -1427,11 +1422,11 @@ public:
 struct SheetViewController : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
+    friend struct SheetViewDefinition;
 
 protected:
     SheetViewControllerCP _ToSheetView() const override {return this;}
 
-public:
     //! Construct a new SheetViewController.
     DGNPLATFORM_EXPORT SheetViewController(SheetViewDefinition const& def);
 };

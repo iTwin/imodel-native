@@ -83,18 +83,29 @@ struct EXPORT_VTABLE_ATTRIBUTE ModelSelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ModelSelector, DefinitionElement);
     friend struct dgn_ElementHandler::ModelSelectorDef;
 protected:
+    mutable bvector<DgnModelId> m_modelIds;
+    mutable bool m_isLoaded;
+
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
-    explicit ModelSelector(CreateParams const& params) : T_Super(params) {}
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
+    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus WriteModelIds() const;
+
+    explicit ModelSelector(CreateParams const& params) : T_Super(params), m_isLoaded(false) {}
 public:
     //! Construct a new modelselector. You should then call SetModelIds.
     ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
-    //! Define the selector to contain a single DgnModelId. @note this must be persistent. @note This writes to the bim directly.
-    DGNPLATFORM_EXPORT DgnDbStatus SetModelId(DgnModelId mid);
-    //! Define the selector to contain the specified DgnModelIds. @note this must be persistent. @note This writes to the bim directly.
-    DGNPLATFORM_EXPORT DgnDbStatus SetModelIds(DgnModelIdSet const& models); //!< Define the selector to contain the specified DgnModelIds. @note this must be persistent.
+    //! Set the list of models to be just one model. This method does not write to the bim but merely caches the list in memory.
+    DGNPLATFORM_EXPORT void SetModelId(DgnModelId mid);
+    //! Set the list of models. This method does not write to the bim but merely caches the list in memory.
+    DGNPLATFORM_EXPORT void SetModelIds(DgnModelIdSet const& models) {m_modelIds.assign(models.begin(), models.end()); m_isLoaded=true;}
     //! Query the DgnModelIds that are in this selector
     DGNPLATFORM_EXPORT DgnModelIdSet GetModelIds() const;
     //! Query if the specified DgnModelId is in this selector
@@ -116,15 +127,26 @@ struct EXPORT_VTABLE_ATTRIBUTE CategorySelector : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_CategorySelector, DefinitionElement);
     friend struct dgn_ElementHandler::CategorySelectorDef;
 protected:
-    explicit CategorySelector(CreateParams const& params) : T_Super(params) {}
+    mutable bvector<DgnCategoryId> m_categoryIds;
+    mutable bool m_isLoaded;
+
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR rhs) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT void _Dump(Utf8StringR str, bset<Utf8String> const& ignore) const override;
+    DGNPLATFORM_EXPORT bool _Equals(DgnElementCR rhs, bset<Utf8String> const&) const override;
+
+    DGNPLATFORM_EXPORT DgnDbStatus WriteCategoryIds() const;
+
+    explicit CategorySelector(CreateParams const& params) : T_Super(params), m_isLoaded(false) {}
 public:
     //! Construct a new CategorySelector prior to inserting it.
     CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
 
     Utf8String GetName() const { return GetCode().GetValue(); } //!< The name of the view definition
 
-    //! Set the list of categories. @note that this element must be persisent in order for this function to succeed. @note This writes to the bim directly.
-    DGNPLATFORM_EXPORT DgnDbStatus SetCategoryIds(DgnCategoryIdSet const&);
+    //! Set the list of categories. This method does not write to the bim but merely caches the list in memory.
+    void SetCategoryIds(DgnCategoryIdSet const& categories) {m_categoryIds.assign(categories.begin(), categories.end()); m_isLoaded=true;}
     //! Get the list of categories.
     DGNPLATFORM_EXPORT DgnCategoryIdSet GetCategoryIds() const;
     //! Query if the selector includes the specified category
@@ -422,6 +444,20 @@ public:
     //! @param name A unique name for this view definition
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, CreateCode(name), QueryClassId(db))) {}
 
+    DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
+
+    //! Utility method to create a view of a specified model.
+    //! By default, all categories are turned on.
+    //! @param model    The model that should appear in the view
+    //! @param viewName Optional. The name of the view. Defaults to the name of the model.
+    //! @param viewVolume Optional. The view volume. Defaults to the range of the model.
+    //! @param rot      Optional. The view rotation. Defaults to Iso.
+    //! @param renderMode Optional. The view's render model. Defaults to SmoothShade
+    //! @return a new, non-persistent view definition
+    //! @note It is up to the caller to call Insert on the new view definition if desired in order to make it persistent.
+    DGNPLATFORM_EXPORT static OrthographicViewDefinitionPtr MakeViewOfModel(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr,
+                                                                      StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
+
     //! Look up the ECClass ID used for OrthographicViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_OrthographicViewDefinition)); }
 
@@ -458,6 +494,20 @@ public:
     //! @param name A unique name for this view definition
     CameraViewDefinition(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, CreateCode(name), QueryClassId(db))) {}
 
+    //! Utility method to create a view of a specified model.
+    //! By default, all categories are turned on.
+    //! @param model    The model that should appear in the view
+    //! @param viewName Optional. The name of the view. Defaults to the name of the model.
+    //! @param viewVolume Optional. The view volume. Defaults to the range of the model.
+    //! @param rot      Optional. The view rotation. Defaults to Iso.
+    //! @param renderMode Optional. The view's render model. Defaults to SmoothShade
+    //! @return a new, non-persistent view definition
+    //! @note It is up to the caller to call Insert on the new view definition if desired in order to make it persistent.
+    DGNPLATFORM_EXPORT static CameraViewDefinitionPtr MakeViewOfModel(SpatialModelR model, Utf8CP viewName = nullptr, DRange3dCP viewVolume = nullptr,
+                                                    StandardView rot = StandardView::Iso, Render::RenderMode renderMode = Render::RenderMode::SmoothShade);
+
+    DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
+
     //! Look up the ECClass ID used for CameraViewDefinitions within the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition));}
 
@@ -478,7 +528,6 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetLensAngle(double v) {return SetPropertyValue("LensAngle", v);} //!< Set the camera lens angle in degrees
     DGNPLATFORM_EXPORT DgnDbStatus SetFocusDistance(double v) {return SetPropertyValue("FocusDistance", v);} //!< Set the camera focus distance in meters
     DGNPLATFORM_EXPORT DgnDbStatus SetViewDirection(YawPitchRollAnglesCR angles) {return SetPropertyValueYpr(angles, "DirectionYaw", "DirectionPitch", "DirectionRoll");} //!< Set the view direction
-
                                                                                                                                                                           //! Set the view direction to one of the standard rotations
     DGNPLATFORM_EXPORT DgnDbStatus SetStandardViewDirection(StandardView standardView);
 };
@@ -539,6 +588,10 @@ public:
     //! Construct a DrawingViewDefinition prior to inserting it
     DrawingViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) {;}
 
+    DGNPLATFORM_EXPORT static DrawingViewDefinitionPtr MakeViewOfModel(DrawingModel& model, Utf8CP name);
+
+    DGNPLATFORM_EXPORT DrawingViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
+
     //! Look up the ECClass ID used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition)); }
 };
@@ -566,6 +619,10 @@ public:
 
     //! Construct a new SheetViewDefinition prior to inserting it
     SheetViewDefinition(DgnDbR db, Utf8StringCR name, DgnModelId baseModelId) : T_Super(db, name, QueryClassId(db), baseModelId) {;}
+
+    DGNPLATFORM_EXPORT static SheetViewDefinitionPtr MakeViewOfModel(SheetModel& model, Utf8CP name);
+
+    DGNPLATFORM_EXPORT SheetViewControllerPtr LoadViewController(FillModels fillModels = FillModels::No) const;
 
     //! Look up the ECClass ID used for SheetViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetViewDefinition)); }

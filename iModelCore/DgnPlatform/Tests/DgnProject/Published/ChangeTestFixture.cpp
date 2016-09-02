@@ -202,21 +202,21 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     viewRow.SetModelSelector(*DgnDbTestUtils::InsertNewModelSelector(*m_testDb, "Default", defaultModelId));
     ASSERT_TRUE(viewRow.Insert().IsValid());
 
-    CameraViewController viewController(viewRow);
-    viewController.SetStandardViewRotation(StandardView::Iso);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
+    CameraViewControllerPtr viewController = viewRow.LoadViewController();
+    viewController->SetStandardViewRotation(StandardView::Iso);
+    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::SmoothShade);
 
     for (auto const& catId : DgnCategory::QueryCategories(*m_testDb))
-        viewController.ChangeCategoryDisplay(catId, true);
+        viewController->ChangeCategoryDisplay(catId, true);
 
     DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
     for (auto& entry : modIter)
         {
         DgnModelId modelId = entry.GetModelId();
-        viewController.ChangeModelDisplay(modelId, true);
+        viewController->ChangeModelDisplay(modelId, true);
         }
 
-    ASSERT_TRUE(DgnDbStatus::Success == viewController.Save());
+    ASSERT_TRUE(DgnDbStatus::Success == viewController->Save());
 
     DgnViewId viewId = viewRow.GetViewId();
     m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));

@@ -365,7 +365,7 @@ void AnnotationTableTest::SetUpTestCase()
     ASSERT_TRUE(textStyle->GetElementId().IsValid());
 
     // Create a 2d model
-    DgnModelPtr model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(TEST_MODEL_NAME)));
+    RefCountedPtr<DrawingModel> model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode(TEST_MODEL_NAME)));
     ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
     ASSERT_TRUE(model->GetModelId().IsValid());
@@ -374,22 +374,8 @@ void AnnotationTableTest::SetUpTestCase()
 #if defined (WANT_VIEW)
     // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
     //.........................................................................................
-    DrawingViewDefinition view(*db, "AnnotationTableTest", model->GetModelId());
-    EXPECT_TRUE(view.Insert().IsValid());
-
-    DRange3d  madeUpRange = DRange3d::From (DPoint3d::From(-10.0, -10.0, -10.0), DPoint3d::From(10.0, 10.0, 10.0));
-
-    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-
-    DrawingViewController viewController(view);
-    viewController.SetStandardViewRotation(StandardView::Top);
-    viewController.LookAtVolume(madeUpRange, nullptr, &viewMargin);
-    //viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-    viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-    viewController.ChangeCategoryDisplay(category.GetCategoryId(), true);
-    viewController.ChangeModelDisplay(model->GetModelId(), true);
-
-    EXPECT_TRUE(DgnDbStatus::Success == viewController.Save());
+    auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "AnnotationTableTest");
+    EXPECT_TRUE(viewDef->Insert().IsValid());
 #endif
 
     // Save the customized seed for use by all the tests in this group

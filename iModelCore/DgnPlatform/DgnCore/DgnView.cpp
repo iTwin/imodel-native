@@ -385,20 +385,124 @@ bool ViewDefinition::Entry::IsDrawingView() const { return isEntryOfClass<Drawin
 bool ViewDefinition::Entry::IsSheetView() const { return isEntryOfClass<SheetViewDefinition>(*this); }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void CategorySelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+    {
+    T_Super::_Dump(str, ignore);
+    str.append("{");
+    Utf8CP comma = "";
+    for (auto id : GetCategoryIds())
+        {
+        str.append(comma).append(id.ToString().c_str());
+        comma = ",";
+        }
+    str.append("}\n");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CategorySelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+    {
+    if (!T_Super::_Equals(rhsElement, ignore))
+        return false;
+
+    auto const& rhs = (CategorySelector const&)rhsElement;
+    if (!m_isLoaded)
+        GetCategoryIds();
+    if (!rhs.m_isLoaded)
+        rhs.GetCategoryIds();
+    return m_categoryIds == rhs.m_categoryIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*@bsimethod                                    Sam.Wilson                      08 / 16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ModelSelector::_Equals(DgnElementCR rhsElement, bset<Utf8String> const& ignore) const
+    {
+    if (!T_Super::_Equals(rhsElement, ignore))
+        return false;
+
+    auto const& rhs = (ModelSelector const&)rhsElement;
+    if (!m_isLoaded)
+        GetModelIds();
+    if (!rhs.m_isLoaded)
+        rhs.GetModelIds();
+    return m_modelIds == rhs.m_modelIds;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_Dump(Utf8StringR str, bset<Utf8String> const& ignore) const
+    {
+    T_Super::_Dump(str, ignore);
+    str.append("{");
+    Utf8CP comma = "";
+    for (auto id : GetModelIds())
+        {
+        str.append(comma).append(id.ToString().c_str());
+        comma = ",";
+        }
+    str.append("}\n");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
+void CategorySelector::_CopyFrom(DgnElementCR rhsElement) 
+    {
+    T_Super::_CopyFrom(rhsElement);
+
+    auto const& rhs = (CategorySelector const&)rhsElement;
+    m_categoryIds = rhs.m_categoryIds; 
+    m_isLoaded = rhs.m_isLoaded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CategorySelector::_InsertInDb()
+    {
+    auto status = T_Super::_InsertInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+    return WriteCategoryIds();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
+    {
+    auto status = T_Super::_OnUpdate(el);
+    if (DgnDbStatus::Success != status)
+        return status;
+    
+    auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE (SourceECInstanceId=?)");
+    delExisting->BindId(1, GetElementId());
+    delExisting->Step();
+
+    return WriteCategoryIds();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus CategorySelector::WriteCategoryIds() const
     {
     if (!GetElementId().IsValid())
+        {
+        BeAssert(false);
         return DgnDbStatus::MissingId;
-
-    // *** WIP_VIEW_DEFINITION: Delete all existing CategorySelectorRefersToCategories instances with Source = this
+        }
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
-    for (auto id : categories)
+    for (auto id : m_categoryIds)
         {
         statement->Reset();
         statement->ClearBindings();
@@ -413,12 +517,33 @@ DgnDbStatus CategorySelector::SetCategoryIds(DgnCategoryIdSet const& categories)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T>
+static BeSQLite::IdSet<T> vectorToSet (bvector<T> const& vec)
+    {
+    BeSQLite::IdSet<T> newSet;
+    for (auto id : vec)
+        {
+        auto res = newSet.insert(id);
+        BeAssert(res.second);
+        }
+    BeAssert(newSet.size() == vec.size());
+    return newSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryIdSet CategorySelector::GetCategoryIds() const
     {
+    if (m_isLoaded)
+        {
+        return vectorToSet(m_categoryIds);
+        }
+
+    m_isLoaded = true;
+
     if (!GetElementId().IsValid())
         return DgnCategoryIdSet();
-
-    DgnCategoryIdSet categories;
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE SourceECInstanceId=?");
     if (!statement.IsValid())
@@ -433,10 +558,10 @@ DgnCategoryIdSet CategorySelector::GetCategoryIds() const
         }
     while (BE_SQLITE_ROW == statement->Step())
         {
-        categories.insert(statement->GetValueId<DgnCategoryId>(0));
+        m_categoryIds.push_back(statement->GetValueId<DgnCategoryId>(0));
         }
 
-    return categories;
+    return vectorToSet(m_categoryIds);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -444,6 +569,11 @@ DgnCategoryIdSet CategorySelector::GetCategoryIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CategorySelector::ContainsCategoryId(DgnCategoryId cid) const
     {
+    if (m_isLoaded)
+        {
+        return std::find(m_categoryIds.begin(), m_categoryIds.end(), cid) != m_categoryIds.end();
+        }
+
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_CategorySelectorRefersToCategories) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     if (!statement.IsValid())
         {
@@ -503,11 +633,11 @@ DgnDbStatus CategorySelector::SetSubCategoryOverrides(bmap<DgnSubCategoryId, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::SetModelId(DgnModelId mid)
+void ModelSelector::SetModelId(DgnModelId mid)
     {
     DgnModelIdSet models;
     models.insert(mid);
-    return SetModelIds(models);
+    SetModelIds(models);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -557,20 +687,60 @@ DgnDbStatus ModelSelector::_OnDelete() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ModelSelector::_CopyFrom(DgnElementCR rhsElement) 
+    {
+    T_Super::_CopyFrom(rhsElement);
+
+    auto const& rhs = (ModelSelector const&)rhsElement;
+    m_modelIds = rhs.m_modelIds; 
+    m_isLoaded = rhs.m_isLoaded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::_InsertInDb()
+    {
+    auto status = T_Super::_InsertInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+    return WriteModelIds();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
+    {
+    auto status = T_Super::_OnUpdate(el);
+    if (DgnDbStatus::Success != status)
+        return status;
+    
+    auto delExisting = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE (SourceECInstanceId=?)");
+    delExisting->BindId(1, GetElementId());
+    delExisting->Step();
+
+    return WriteModelIds();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
+DgnDbStatus ModelSelector::WriteModelIds() const
     {
     if (!GetElementId().IsValid())
+        {
+        BeAssert(false);
         return DgnDbStatus::MissingId;
-
-    // *** WIP_VIEW_DEFINITION: Delete all existing ModelSelectorRefersToModels instances with Source = this
+        }
 
     auto statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
-    for (auto id : Models)
+    for (auto id : m_modelIds)
         {
         statement->Reset();
         statement->ClearBindings();
@@ -587,7 +757,12 @@ DgnDbStatus ModelSelector::SetModelIds(DgnModelIdSet const& Models)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelIdSet ModelSelector::GetModelIds() const
     {
-    DgnModelIdSet Models;
+    if (m_isLoaded)
+        {
+        return vectorToSet(m_modelIds);
+        }
+
+    m_isLoaded = true;
 
     if (!GetElementId().IsValid())
         {
@@ -607,10 +782,10 @@ DgnModelIdSet ModelSelector::GetModelIds() const
         }
     while (BE_SQLITE_ROW == statement->Step())
         {
-        Models.insert(statement->GetValueId<DgnModelId>(0));
+        m_modelIds.push_back(statement->GetValueId<DgnModelId>(0));
         }
 
-    return Models;
+    return vectorToSet(m_modelIds);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -618,6 +793,11 @@ DgnModelIdSet ModelSelector::GetModelIds() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ModelSelector::ContainsModelId(DgnModelId mid) const
     {
+    if (m_isLoaded)
+        {
+        return std::find(m_modelIds.begin(), m_modelIds.end(), mid) != m_modelIds.end();
+        }
+
     auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?");
     if (!statement.IsValid())
         {
@@ -677,3 +857,157 @@ DgnDbStatus CameraViewDefinition::SetStandardViewDirection(StandardView standard
     return SetViewDirection(yprFromStandardRotation(standardView));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static DRange3d getViewVolume(GeometricModelCR model, DRange3dCP viewVolume)
+    {
+    if (nullptr != viewVolume)
+        return *viewVolume;
+
+    DRange3d modelRange;
+    modelRange = model.QueryModelRange();
+    if (modelRange.IsEmpty())
+        modelRange.InitFromMinMax(-1.0, 10.0);
+    return modelRange;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void displayAllCategories(ViewControllerR controller, DgnDbR db)
+    {
+    for (auto const& categoryId : DgnCategory::QueryCategories(db))
+        controller.ChangeCategoryDisplay(categoryId, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void lookAtViewVolume(ViewControllerR controller, GeometricModelCR model, DRange3dCP viewVolume)
+    {
+    ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+    controller.LookAtVolume(getViewVolume(model, viewVolume), nullptr, &viewMargin);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static Utf8String getUniqueViewName(DgnModelR model, Utf8CP nameIn)
+    {
+    DgnDbR db = model.GetDgnDb();
+    Utf8String baseName;
+    if (nullptr == nameIn)
+        baseName = model.GetCode().GetValue();
+    else
+        baseName = nameIn;
+
+    Utf8String tmpStr(baseName);
+
+    if (!tmpStr.empty() && !ViewDefinition::QueryViewId(tmpStr,db).IsValid())
+        return tmpStr;
+
+    bool addDash = !tmpStr.empty();
+    int index = 0;
+    size_t lastDash = tmpStr.find_last_of('-');
+    if (lastDash != Utf8String::npos)
+        {
+        if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastDash], "-%d", &index) == 1)
+            addDash = false;
+        else
+            index = 0;
+        }
+
+    Utf8String uniqueName;
+    do
+        {
+        uniqueName.assign(tmpStr);
+        if (addDash)
+            uniqueName.append("-");
+        uniqueName.append(Utf8PrintfString("%d", ++index));
+        } while (ViewDefinition::QueryViewId(uniqueName,db).IsValid());
+
+    return uniqueName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void initViewOfSpatialModel(SpatialViewDefinition& viewDef, SpatialModelR model, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    ViewControllerPtr viewController = viewDef.LoadViewController();
+
+    viewController->ChangeModelDisplay(model.GetModelId(), true);
+
+    displayAllCategories(*viewController, model.GetDgnDb());
+
+    lookAtViewVolume(*viewController, model, viewVolume);
+
+    viewController->SetStandardViewRotation(rot);
+
+    auto& viewFlags = viewController->GetViewFlagsR();
+    viewFlags.SetRenderMode(renderMode);
+
+    viewController->StoreToDefinition();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+OrthographicViewDefinitionPtr OrthographicViewDefinition::MakeViewOfModel(SpatialModelR model, Utf8CP nameIn, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    OrthographicViewDefinitionPtr newViewDef = new OrthographicViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn));
+    initViewOfSpatialModel(*newViewDef, model, viewVolume, rot, renderMode);
+    return newViewDef;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+CameraViewDefinitionPtr CameraViewDefinition::MakeViewOfModel(SpatialModelR model, Utf8CP nameIn, DRange3dCP viewVolume, StandardView rot, Render::RenderMode renderMode)
+    {
+    CameraViewDefinitionPtr newViewDef = new CameraViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn));
+    initViewOfSpatialModel(*newViewDef, model, viewVolume, rot, renderMode);
+    return newViewDef;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      08/16
+//---------------------------------------------------------------------------------------
+static void initViewOf2dModel(ViewDefinition2d& viewDef, GraphicalModel2dR model, DRange3dCP viewVolume)
+    {
+    ViewControllerPtr viewController = viewDef.LoadViewController();
+
+    displayAllCategories(*viewController, model.GetDgnDb());
+
+    lookAtViewVolume(*viewController, model, nullptr);
+
+    viewController->GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
+
+    viewController->StoreToDefinition();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/15
+//---------------------------------------------------------------------------------------
+DrawingViewDefinitionPtr DrawingViewDefinition::MakeViewOfModel(DrawingModel& model, Utf8CP nameIn)
+    {
+    DrawingViewDefinitionPtr view = new DrawingViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn), model.GetModelId());
+    initViewOf2dModel(*view, model, nullptr);
+    return view;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Sam.Wilson      06/15
+//---------------------------------------------------------------------------------------
+SheetViewDefinitionPtr SheetViewDefinition::MakeViewOfModel(SheetModel& model, Utf8CP nameIn)
+    {
+    SheetViewDefinitionPtr view = new SheetViewDefinition(model.GetDgnDb(), getUniqueViewName(model, nameIn), model.GetModelId());
+    initViewOf2dModel(*view, model, nullptr);
+    return view;
+    }
+
+OrthographicViewControllerPtr OrthographicViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToOrthographicViewP() : nullptr; }
+CameraViewControllerPtr CameraViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToCameraViewP() : nullptr; }
+DrawingViewControllerPtr DrawingViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToDrawingViewP() : nullptr; }
+SheetViewControllerPtr SheetViewDefinition::LoadViewController(FillModels fill) const { auto vc = T_Super::LoadViewController(fill); return vc.IsValid() ? vc->ToSheetViewP() : nullptr; }

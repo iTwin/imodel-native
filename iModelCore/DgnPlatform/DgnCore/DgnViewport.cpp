@@ -1145,7 +1145,6 @@ void DgnViewport::SaveViewUndo()
     if (!m_undoActive)
         return;
 
-    m_viewController->StoreToDefinition();
     DgnEditElementCollector const& curr = m_viewController->GetDefinitionR();
 
     if (0 == m_currentBaseline.size())

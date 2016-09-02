@@ -899,6 +899,22 @@ void DgnModel::_OnDeleted()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void getElementsThatPointToModel(bset<DgnElementId>& dependents, DgnModelCR model)
+    {
+    BeSQLite::EC::CachedECSqlStatementPtr stmt;
+    if (model.Is2dModel())
+        stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_BaseModelForView2d) " WHERE SourceECInstanceId = ?");
+    else
+        stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT SourceECInstanceId As ModelSelectorId, SourceECClassId ModelSelectorClassId FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE TargetECInstanceId = ?");
+
+    stmt->BindId(1, model.GetModelId());
+    while (BE_SQLITE_ROW == stmt->Step())
+        dependents.insert(stmt->GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeSQLite::DbOpcode op) const
@@ -931,22 +947,14 @@ RepositoryStatus DgnModel::_PopulateRequest(IBriefcaseManager::Request& req, BeS
                 }
 
             // and we must delete all of its views
-            for (auto const& entry : ViewDefinition::MakeIterator(GetDgnDb(), ViewDefinition::Iterator::Options()))
+            bset<DgnElementId> dependents;
+            getElementsThatPointToModel(dependents, *this);
+            for (auto id : dependents)
                 {
-                auto view = ViewDefinition::QueryView(entry.GetId(), GetDgnDb());
-                if (view.IsValid() && view->ViewsModel(GetModelId()))
-                    {
-                    // *** WIP_VIEW_DEFINITION *** I wish I didn't have to put this hard-wired logic here regarding the way that view definitions refer to models
-                    DgnElementCPtr dependent;
-                    SpatialViewDefinitionCP spatialView = view->ToSpatialView();
-                    if (nullptr == spatialView)
-                        dependent = view.get();
-                    else
-                        dependent = GetDgnDb().Elements().GetElement(spatialView->GetModelSelectorId());
-                    auto stat = view->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
-                    if (RepositoryStatus::Success != stat)
-                        return stat;
-                    }
+                auto dependent = GetDgnDb().Elements().GetElement(id);
+                auto stat = dependent->PopulateRequest(req, BeSQLite::DbOpcode::Delete);
+                if (RepositoryStatus::Success != stat)
+                    return stat;
                 }
 
             break;
