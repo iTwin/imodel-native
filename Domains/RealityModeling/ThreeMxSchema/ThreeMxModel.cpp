@@ -371,35 +371,56 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
     {
     TileMeshList        tileMeshes;
 
-    for (auto& geometry : m_node->GetGeometry())
+    if (nullptr == m_node->_GetChildren())
         {
-        if (!geometry->GetPolyface().IsValid())
-            continue;
+        BeAssert (false);
+        return tileMeshes;
+        }
 
-        PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
-        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighting (it is baked into the capture).
+    if (
 
-        if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
-            polyface->BuildPerFaceNormals();
+    bmap <Publish3mxTexture*, TileTextureImagePtr>  textureImageMap;
+    for (auto& child : *m_node->_GetChildren())
+        {
+        NodeR       node = (NodeR) *child;
 
-        polyface->Transform (m_transform);
+        for (auto& geometry : node.GetGeometry())
+            {
+            if (!geometry->GetPolyface().IsValid())
+                continue;
 
-        Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
-        Publish3mxTexture*      publishTexture;
-        TileTextureImagePtr     tileTexture;
-        static bool             s_ignoreLighting = true;           // Acute3d models use the lighing at time of capture...
+            PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
+            static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighting (it is baked into the capture).
 
-        if (nullptr != publishGeometry &&
-            nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
-            tileTexture = new TileTextureImage (publishTexture->m_source, false);
+            if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
+                polyface->BuildPerFaceNormals();
 
-        TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
-        TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
+            polyface->Transform (m_transform);
 
-        for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
-            builder->AddTriangle(*visitor,DgnElementId(), false, twoSidedTriangles);
+            Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
+            Publish3mxTexture*      publishTexture;
+            TileTextureImagePtr     tileTexture;
+            static bool             s_ignoreLighting = true;           // Acute3d models use the lighing at time of capture...
 
-        tileMeshes.push_back(builder->GetMesh());
+            if (nullptr != publishGeometry &&
+                nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
+                {
+                auto const&   found = textureImageMap.find (publishTexture);
+                
+                if (found == textureImageMap.end())
+                    textureImageMap.Insert (publishTexture, tileTexture = new TileTextureImage (publishTexture->m_source, false));
+                else
+                    tileTexture = found->second;
+                }
+
+            TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
+            TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
+
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
+                builder->AddTriangle(*visitor,DgnElementId(), false, twoSidedTriangles);
+
+            tileMeshes.push_back(builder->GetMesh());
+            }
         }
     return tileMeshes;
     }
@@ -435,7 +456,7 @@ RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, Transform
 
     toTile.Multiply (range, range);
 
-    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
+    RefCountedPtr<PublishTileNode>  tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
     static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
 
     if (nullptr != node._GetChildren() && depth < s_depthLimit)
@@ -444,7 +465,8 @@ RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, Transform
 
         depth++;
         for (auto& child : *node._GetChildren())
-            tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
+            if (((NodeR) *child)._HasChildren())
+                tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
         }
 
     return tileNode;
