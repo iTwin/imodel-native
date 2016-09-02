@@ -70,7 +70,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -N0 r LinearReferencing</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -N0 r LinearReferencing</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p LinearReferencing -f LinearReferencing -r DgnDomains-LinearReferencing -ax64 re LinearReferencing -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>__LINEARREFERENCING_BUILD__</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\PublicAPI\;$(OutRoot)Winx64\BuildContexts\LinearReferencing\VendorAPI\;$(SrcRoot)DgnDomains\LinearReferencing\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

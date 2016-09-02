@@ -21,6 +21,7 @@ struct ILinearElement
 {
 protected:
     virtual double _GetLength() const = 0;
+    virtual double _GetStartValue() const = 0;
     virtual Dgn::DgnElementCR _ToElementLRImpl() const = 0;
 
 public:
@@ -29,6 +30,7 @@ public:
     Dgn::DgnElementP ToElementP() { return const_cast<Dgn::DgnElementP>(&_ToElementLRImpl()); }
 
     LINEARREFERENCING_EXPORT double GetLength() const { return _GetLength(); }
+    LINEARREFERENCING_EXPORT double GetStartValue() const { return _GetStartValue(); }
 }; // ILinearElement
 
 //=======================================================================================
