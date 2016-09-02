@@ -5,6 +5,10 @@
     <Part Name="RoadRailAlignment" BentleyBuildMakeFile="RoadRailAlignment.mke">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="LinearReferencing"            PartFile="LinearReferencing"         Repository="DgnDomains-LinearReferencing"/>
+        <Bindings>
+            <Libs Required="false">Delivery/$(libprefix)RoadRailAlignment$(libext)</Libs>
+            <Assemblies Required="false">Delivery/$(shlibprefix)RoadRailAlignment$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
 
     <Part Name="PublicAPI" BentleyBuildMakeFile="RoadRailAlignment.prewire.mke">
@@ -27,16 +31,15 @@
     <!-- ********************************************************************************************** -->
     <!-- Unit tests -->
     <!-- ********************************************************************************************** -->
-    <Part Name="SupportForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
-        <SubPart PartName="RoadRailAlignment"/>
+    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="RoadRailAlignment" SubPartDirectory="UnitTests/RoadRailAlignment"> Delivery/UnitTests/ignore_list.txt</Files>
-            <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
         </Bindings>
     </Part>
 
     <Part Name="BackdoorForUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
-        <SubPart PartName="SupportForUnitTests" />
+        <SubPart PartName="RoadRailAlignment"/>
+        <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="RoadRailAlignment/Backdoor" SourceName="Delivery/UnitTests/Objects/Backdoor"/>
         </Bindings>

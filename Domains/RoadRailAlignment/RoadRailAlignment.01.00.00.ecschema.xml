@@ -5,20 +5,31 @@
     <ECEntityClass typeName="Alignment" modifier="Sealed">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:ILinearElement</BaseClass>
-        <ECNavigationProperty propertyName="HorizontalAlignment" relationshipName="AlignmentOwnsHorizontal" direction="forward"/>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECNavigationProperty propertyName="MainVerticalAlignment" relationshipName="AlignmentRefersToMainVertical" direction="forward"/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentHorizontal">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentVertical">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentModel">
-        <BaseClass>bis:Model</BaseClass>
+        <BaseClass>bis:SpatialModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>

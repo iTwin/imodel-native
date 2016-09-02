@@ -140,7 +140,7 @@ BeFileName RoadRailAlignmentProjectHost::BuildProjectFileName(WCharCP baseName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    11/2014
 //---------------------------------------------------------------------------------------
-DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelId& modelId, DgnViewId& viewId)
+DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelId& modelId)
     {
     CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
@@ -171,6 +171,17 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName, DgnModelI
     if (DgnDbStatus::Success != (status = RoadRailAlignment::RoadRailAlignmentDomain::GetDomain().ImportSchema(*projectPtr, alignSchemaFileName)))
         return nullptr;
 
+    projectPtr->Schemas().CreateECClassViewsInDb();
+
+    auto& modelHandlerR = AlignmentModelHandler::GetHandler();
+    auto modelPtr = modelHandlerR.Create(DgnModel::CreateParams(*projectPtr, AlignmentModel::QueryClassId(*projectPtr), 
+        projectPtr->Elements().GetRootSubjectId(), AlignmentModel::CreateModelCode("Alignment Model")));
+
+    if (DgnDbStatus::Success != modelPtr->Insert())
+        return nullptr;
+
+    modelId = modelPtr->GetModelId();
+
     return projectPtr;
     }
 
@@ -198,7 +209,7 @@ RoadRailAlignmentProjectHostImpl::RoadRailAlignmentProjectHostImpl() : m_isIniti
     BeAssert((DgnPlatformLib::QueryHost() == NULL) && L"This means an old host is still registered. You should have terminated it first before creating a new host.");
 
     DgnPlatformLib::Initialize(*this, false);
-    DgnDomains::RegisterDomain(ConceptualDomain::GetDomain());
+    DgnDomains::RegisterDomain(RoadRailAlignmentDomain::GetDomain());
     m_isInitialized = true;
     }
 
@@ -240,7 +251,7 @@ void RoadRailAlignmentTestsFixture::TearDownTestCase()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModelId& modelId, DgnViewId& viewId, bool needsSetBriefcase)
+DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModelId& modelId, bool needsSetBriefcase)
     {
     BeAssert(nullptr != m_host);
 
@@ -252,8 +263,7 @@ DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModel
     if (!testSeedPath.DoesPathExist())
         {
         DgnModelId seedModelId;
-        DgnViewId seedViewId;
-        DgnDbPtr seedProject = m_host->CreateProject(testSeedName, seedModelId, seedViewId);
+        DgnDbPtr seedProject = m_host->CreateProject(testSeedName, seedModelId);
 
         //! Error
         if (seedProject.IsNull())
@@ -278,7 +288,6 @@ DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, DgnModel
         return nullptr;
 
     modelId = m_currentProject->Models().QueryFirstModelId();
-    viewId = SpatialViewDefinition::QueryViewId("TestView", *m_currentProject);
 
     if (needsSetBriefcase)
         {

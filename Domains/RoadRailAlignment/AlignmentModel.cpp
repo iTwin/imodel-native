@@ -7,3 +7,4 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
 
+HANDLER_DEFINE_MEMBERS(AlignmentModelHandler)

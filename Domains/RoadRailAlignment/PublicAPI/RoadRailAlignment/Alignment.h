@@ -27,16 +27,19 @@ protected:
     explicit Alignment(CreateParams const& params) : T_Super(params) {}
 
     virtual double _GetLength() const override;
+    virtual double _GetStartValue() const override { return 0.0; }
     virtual Dgn::DgnElementCR _ToElementLRImpl() const { return *this; }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
-    ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelR model);
+    ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelCR model);
 
     ROADRAILALIGNMENT_EXPORT AlignmentHorizontalCPtr QueryHorizontal() const;
     ROADRAILALIGNMENT_EXPORT AlignmentVerticalCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentVerticalIds() const;
+
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus SetMainVertical(AlignmentVerticalCR vertical);
 }; // Alignment
 
 //=======================================================================================

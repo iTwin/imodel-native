@@ -46,10 +46,21 @@
     <ClCompile Include="NonPublished\RoadRailAlignment_Test.cpp">
       <Filter>Source Files\NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="Published\AlignmentTest.cpp">
+      <Filter>Source Files\Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ignore_list.txt">
       <Filter>Build Files</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="prewire.mke">
+      <Filter>Build Files</Filter>
+    </None>
+    <None Include="BuildTests.mke">
+      <Filter>Build Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

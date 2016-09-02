@@ -62,15 +62,30 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Elements
-#define BRRA_CLASS_Alignment                                         "Alignment"
-#define BRRA_CLASS_AlignmentHorizontal                               "AlignmentHorizontal"
-#define BRRA_CLASS_AlignmentModel                                    "AlignmentModel"
-#define BRRA_CLASS_AlignmentVertical                                 "AlignmentVertical"
+#define BRRA_CLASS_Alignment                                        "Alignment"
+#define BRRA_CLASS_AlignmentHorizontal                              "AlignmentHorizontal"
+#define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
+#define BRRA_CLASS_AlignmentVertical                                "AlignmentVertical"
 
 
 // Relationships
-#define BRRA_REL_AlignmentOwnsVerticals                              "AlignmentOwnsVerticals"
+#define BRRA_REL_AlignmentOwnsVerticals                             "AlignmentOwnsVerticals"
 
+
+// Properties
+#define BRRA_PROP_Alignment_MainVerticalAlignment                   "MainVerticalAlignment"
+
+
+//-----------------------------------------------------------------------------------------
+// Category names
+//-----------------------------------------------------------------------------------------
+#define BRRA_CATEGORY_Alignment                                     "Alignment"
+
+
+//-----------------------------------------------------------------------------------------
+// Authority names
+//-----------------------------------------------------------------------------------------
+#define BRRA_AUTHORITY_Alignment                                    "Alignment"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects
@@ -109,6 +124,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentHorizontal)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
+ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentVertical)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)

@@ -14,9 +14,13 @@ HANDLER_DEFINE_MEMBERS(AlignmentVerticalHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentPtr Alignment::Create(AlignmentModelR model)
+AlignmentPtr Alignment::Create(AlignmentModelCR model)
     {
-    return new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), DgnCategoryId()));
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    return new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        RoadRailAlignmentDomain::QueryAlignmentCategoryId(model.GetDgnDb())));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -32,7 +36,7 @@ double Alignment::_GetLength() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentHorizontalCPtr Alignment::QueryHorizontal() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT HorizontalAlignment FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " WHERE ECInstanceId = ?");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " WHERE ParentId = ?");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -48,7 +52,7 @@ AlignmentHorizontalCPtr Alignment::QueryHorizontal() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentVerticalCPtr Alignment::QueryMainVertical() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT VerticalAlignment FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " WHERE ECInstanceId = ?");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT MainVerticalAlignment FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment) " WHERE ECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -78,6 +82,23 @@ DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Alignment::SetMainVertical(AlignmentVerticalCR vertical)
+    {
+    if (!vertical.GetElementId().IsValid())
+        return DgnDbStatus::BadElement;
+
+    if (vertical.GetParentId() != GetElementId())
+        return DgnDbStatus::WrongElement;
+
+    ECValue ecVal(vertical.GetElementId().GetValue());
+    SetPropertyValue(BRRA_PROP_Alignment_MainVerticalAlignment, ecVal);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveVectorCR horizontalGeometry)
@@ -85,7 +106,8 @@ AlignmentHorizontalPtr AlignmentHorizontal::Create(AlignmentCR alignment, CurveV
     if (!alignment.GetElementId().IsValid())
         return nullptr;
 
-    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), DgnCategoryId());
+    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), 
+        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb()));
     createParams.SetParentId(alignment.GetElementId());
 
     return new AlignmentHorizontal(createParams, horizontalGeometry);
@@ -99,7 +121,8 @@ AlignmentVerticalPtr AlignmentVertical::Create(AlignmentCR alignment, CurveVecto
     if (!alignment.GetElementId().IsValid())
         return nullptr;
 
-    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), DgnCategoryId());
+    CreateParams createParams(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), 
+        RoadRailAlignmentDomain::QueryAlignmentCategoryId(alignment.GetDgnDb()));
     createParams.SetParentId(alignment.GetElementId());
 
     return new AlignmentVertical(createParams, verticalGeometry);

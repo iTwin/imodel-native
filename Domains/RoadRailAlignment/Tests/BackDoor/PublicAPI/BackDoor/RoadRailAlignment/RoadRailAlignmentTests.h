@@ -23,7 +23,7 @@ private:
 
     void CleanOutputDirectory();
 
-    Dgn::DgnDbPtr CreateProject(WCharCP, Dgn::DgnModelId&, Dgn::DgnViewId&);
+    Dgn::DgnDbPtr CreateProject(WCharCP, Dgn::DgnModelId&);
     Dgn::DgnDbPtr OpenProject(WCharCP);
 
 public:
@@ -33,7 +33,6 @@ public:
     BeFileName GetOutputDirectory();
     BeFileName GetDgnPlatformAssetsDirectory();
     BeFileName BuildProjectFileName(WCharCP);
-    Dgn::DgnCategoryId CreateCategory(Dgn::DgnDbR);
 };
 
 //=======================================================================================
@@ -61,7 +60,7 @@ public:
     static RoadRailAlignmentProjectHost& GetHost() { return *m_host; }
 
     //! Creates and caches a fresh "created" file to make the whole process faster
-    static Dgn::DgnDbPtr CreateProject(WCharCP, Dgn::DgnModelId&, Dgn::DgnViewId&, bool needsSetBriefcase = false);
+    static Dgn::DgnDbPtr CreateProject(WCharCP, Dgn::DgnModelId&, bool needsSetBriefcase = false);
     //! Uses private static variable to hold the last opened project in memory.
     static Dgn::DgnDbPtr OpenProject(WCharCP, bool needsSetBriefcase = false);
 };
