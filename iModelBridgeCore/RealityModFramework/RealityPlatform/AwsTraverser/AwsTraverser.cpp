@@ -203,9 +203,13 @@ float FindSize(std::string html, std::string lookFor)
     size_t start, stop;
 
     start = html.find(lookFor);
+    if(start == std::string::npos)
+        return -10.0f;
     relevantLine = html.substr(start);
     start = relevantLine.find("(") + 1;
     stop = relevantLine.find("MB)");
+    if (start == std::string::npos || stop == std::string::npos)
+        return -10.0f;
     relevantLine = relevantLine.substr(start, (stop -start));
     return std::stof(relevantLine);
     }
@@ -446,12 +450,14 @@ int main(int argc, char *argv[])
             float greenSize = 0;
             float panSize = 0;
 
-            pinger.ReadPage(url, redSize, blueSize, greenSize, panSize);
+            pinger.ReadPage(url, redSize, greenSize, blueSize, panSize);
 
-            data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lat, min_lon, max_lat, max_lon), redSize, greenSize, blueSize, panSize, serverId, metadataId);
+            if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
+                {
+                data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lat, min_lon, max_lat, max_lon), redSize, greenSize, blueSize, panSize, serverId, metadataId);
 
-            ServerConnection::GetInstance().Save(*data);
-
+                ServerConnection::GetInstance().Save(*data);
+                }
             }while(getline(file, line));
         }
     else
