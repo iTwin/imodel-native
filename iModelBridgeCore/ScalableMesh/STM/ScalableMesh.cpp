@@ -810,10 +810,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
         if (hasPoints || !isSingleFile)
             {    
-
-
-         //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
+            //NEEDS_WORK_SM - Why correct filter is not saved?                                             
+            //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
             ISMDataStoreTypePtr<Extent3dType> dataStore;
@@ -1992,9 +1990,8 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-        //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
-        return false;
-
+    //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
+    return false;
     }
 
 /*----------------------------------------------------------------------------+

@@ -511,8 +511,6 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-
 StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
 
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
