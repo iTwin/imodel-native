@@ -89,6 +89,7 @@ public:
     void Exit();
 
     void Save(AwsData awsdata);
+    bool CheckExists(std::string id);
     SQLINTEGER SaveServer(std::string url);
     SQLINTEGER SaveMetadata();
     };

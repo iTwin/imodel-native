@@ -220,18 +220,19 @@ float FindSize(std::string html, std::string lookFor)
     
     stop = relevantLine.find("KB)");
     if (stop != std::string::npos)
-    {
+        {
         relevantLine = relevantLine.substr(start, (stop - start));
         return std::stof(relevantLine);
-    }
+        }
 
     stop = relevantLine.find("GB)");
     if (stop != std::string::npos)
-    {
+        {
         relevantLine = relevantLine.substr(start, (stop - start));
         return std::stof(relevantLine) * 1000000;
-    }
+        }
 
+    return -10.0f;
     }
 
 //-------------------------------------------------------------------------------------
@@ -395,14 +396,16 @@ int main(int argc, char *argv[])
 
     if(file.is_open())
         {
-        ServerConnection::GetInstance().SetStrings(dbName.c_str(), pwszConnStr.c_str());
+        ServerConnection& serverConnection = ServerConnection::GetInstance();
+
+        serverConnection.SetStrings(dbName.c_str(), pwszConnStr.c_str());
 
         getline(file, line); //header
 
         getline(file, line);
 
-        SQLINTEGER serverId = ServerConnection::GetInstance().SaveServer("https://s3-us-west-2.amazonaws.com/landsat-pds/L8/");
-        SQLINTEGER metadataId = ServerConnection::GetInstance().SaveMetadata();
+        SQLINTEGER serverId = serverConnection.SaveServer("https://s3-us-west-2.amazonaws.com/landsat-pds/L8/");
+        SQLINTEGER metadataId = serverConnection.SaveMetadata();
 
         size_t comma;
         std::string id, rest, downloadUrl;
@@ -416,6 +419,9 @@ int main(int argc, char *argv[])
             id = line.substr(0, comma);
             comma ++;
             rest = line.substr(comma);
+
+            if(serverConnection.CheckExists(id))
+                continue;
 
             comma = rest.find(",");
             comma++;
@@ -470,13 +476,15 @@ int main(int argc, char *argv[])
             float greenSize = 0;
             float panSize = 0;
 
+
+
             pinger.ReadPage(url, redSize, greenSize, blueSize, panSize);
 
             if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
                 {
                 data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lat, min_lon, max_lat, max_lon), redSize, greenSize, blueSize, panSize, serverId, metadataId);
 
-                ServerConnection::GetInstance().Save(*data);
+                serverConnection.Save(*data);
                 }
             }while(getline(file, line));
         }
@@ -563,18 +571,21 @@ SQLINTEGER ServerConnection::SaveMetadata()
     return id;
 }
 
+bool ServerConnection::CheckExists(std::string id)
+    {
+
+    CHAR existsQuery[256];
+    sprintf(existsQuery, "SELECT * FROM [%s].[dbo].[MultibandSources] WHERE [OriginalId] = '%s'", 
+        m_dbName,
+        id.c_str());
+    return HasEntries(existsQuery);
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
 //-------------------------------------------------------------------------------------
 void ServerConnection::Save(AwsData awsdata)
     {
-    CHAR existsQuery[256];
-    sprintf(existsQuery, "SELECT * FROM [%s].[dbo].[MultibandSources] WHERE [OriginalId] = '%s'", 
-        m_dbName,
-        awsdata.GetId().c_str());
-    if(HasEntries(existsQuery))
-        return;
-
     std::string downloadUrl = awsdata.GetUrl();
     size_t ext = downloadUrl.rfind("/");
     std::string baseUrl = downloadUrl.substr(0, ext + 1);
