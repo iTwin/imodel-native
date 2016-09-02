@@ -3447,6 +3447,16 @@ WStringR            DatumAsASC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED static DatumEnumeratorP CreateEnumerator();
 
+/*__PUBLISH_SECTION_END__*/
+
+/*---------------------------------------------------------------------------------**//**
+* Gets the group name to which the Datum belongs.
+* @return   The group to which the Datum belongs.
+* @bsimethod                                                    Alain.Robert   2016/07
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED WCharCP           GetGroup (WStringR group) const;
+/*__PUBLISH_SECTION_START__*/
+
 };
 
 /*=================================================================================**//**

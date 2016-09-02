@@ -419,8 +419,6 @@ TEST_P (GCSUnaryTester, WKTGenerationTest)
 	    projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator1UV  ||
 	    projectionCode == GeoCoordinates::BaseGCS::pcvHotineObliqueMercator2UV ||
         projectionCode == GeoCoordinates::BaseGCS::pcvTransverseMercatorDenmarkSys3401 ||
-        projectionCode == GeoCoordinates::BaseGCS::pcvTotalUniversalTransverseMercator ||  
-        projectionCode == GeoCoordinates::BaseGCS::pcvTotalTransverseMercatorBF ||
 	    projectionCode == GeoCoordinates::BaseGCS::pcvObliqueMercatorMinnesota)
         return;
 

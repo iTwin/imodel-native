@@ -1164,19 +1164,43 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
 
     // Check if datum name is known ...
     WString finalDatumName;
+    WString legacyName;
     DatumCP namedDatum = Datum::CreateDatum (name.c_str());
-    if (namedDatum == NULL || ! namedDatum->IsValid())
+    if (namedDatum != NULL && namedDatum->IsValid())
         {
-        // Datum not found ... try with authority ID if defined
+        // We need to make sure datum is not deprecated ... if it is there surely will be a replacement in look up table.
+        WString datumGroup;
+        namedDatum->GetGroup(datumGroup);
+        if (datumGroup != L"LEGACY")
+            finalDatumName = name;
+        else
+            legacyName = name; // We save in case we find nothing else
+        }
+
+    if (namedDatum != NULL)
+        namedDatum->Destroy();
+
+    if (finalDatumName.length() == 0)
+        {
+        // Datum not found or deprected ... try with authority ID if defined
         if (authorityID.length() > 0)
             {
             namedDatum = Datum::CreateDatum (authorityID.c_str());
             if (namedDatum != NULL && namedDatum->IsValid())
-                finalDatumName = authorityID;
+                {
+                // We need to make sure datum is not deprecated ... if it is there surely will be a replacement in look up table.
+                WString datumGroup;
+                namedDatum->GetGroup(datumGroup);
+                if (datumGroup != L"LEGACY")
+                    finalDatumName = authorityID;
+                else if (legacyName.length() == 0)
+                    legacyName = name; // We save in case we find nothing else
+                }
+
+            if (namedDatum != NULL)
+                namedDatum->Destroy();
             }
         }
-    else
-        finalDatumName = name;
 
 #if defined (GEOCOORD_ENHANCEMENT)
 
@@ -1189,7 +1213,18 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             {
             namedDatum = Datum::CreateDatum (alternateName.c_str());
             if (namedDatum != NULL && namedDatum->IsValid())
-                finalDatumName = alternateName;
+                {
+                // We need to make sure datum is not deprecated ... if it is there surely will be a replacement in look up table.
+                WString datumGroup;
+                namedDatum->GetGroup(datumGroup);
+                if (datumGroup != L"LEGACY")
+                    finalDatumName = alternateName;
+                else if (legacyName.length() == 0)
+                    legacyName = name; // We save in case we find nothing else
+                }
+
+            if (namedDatum != NULL)
+                namedDatum->Destroy();
             }
 
         // Either there is no alias or the alias is not good ... if authority ID is present ...
@@ -1198,13 +1233,26 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
             if (WKTDatumLookup (authorityID.c_str(), alternateName))
                 {
                 // Alternate name should be valid
-                namedDatum = Datum::CreateDatum (authorityID.c_str());
+                namedDatum = Datum::CreateDatum (alternateName.c_str());
                 if (namedDatum != NULL && namedDatum->IsValid())
-                    finalDatumName = authorityID;
+                    {
+                    WString datumGroup;
+                    namedDatum->GetGroup(datumGroup);
+                    if (datumGroup != L"LEGACY")
+                        finalDatumName = alternateName;
+                    else if (legacyName.length() == 0)
+                        legacyName = name; // We save in case we find nothing else
+                    }
+
+                if (namedDatum != NULL)
+                    namedDatum->Destroy();
                 }
             }
         }
 #endif
+
+    if (finalDatumName.length() == 0)
+        finalDatumName = legacyName; // If we found nothing else we use legacy name (if set)
 
     if (finalDatumName.length() != 0)
         {
@@ -2462,6 +2510,9 @@ BaseGCS::ProjectionCodeValue GetProjectionCodeFromWKTName (WStringR name) const
         ID = BaseGCS::pcvCassini;
     else if (upperMethodName == L"WINKEL_TRIPEL")
         ID = BaseGCS::pcvWinkelTripel;
+    else if (upperMethodName == L"UNIVERSAL TRANSVERSE MERCATOR SYSTEM")
+        ID = BaseGCS::pcvUniversalTransverseMercator;
+
 
 // The following known WKT names have no mapping to CSMAP entries.
 
@@ -2566,17 +2617,20 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
     WString upperParameterName = parameterName;
     std::transform(upperParameterName.begin(), upperParameterName.end(), upperParameterName.begin(), (int (*)(int))std::toupper);
 
-
     if ((upperParameterName == L"FALSE_EASTING") ||
-        (upperParameterName == L"FALSEEASTING"))
+        (upperParameterName == L"FALSEEASTING") ||
+         (upperParameterName == L"FALSE EASTING"))
         coordinateSystem.SetFalseEasting (parameterValue);
     else if ((upperParameterName == L"FALSE_NORTHING") ||
-             (upperParameterName == L"FALSENORTHING"))
+             (upperParameterName == L"FALSENORTHING") || 
+             (upperParameterName == L"FALSE NORTHING"))
         coordinateSystem.SetFalseNorthing (parameterValue);
     else if ((upperParameterName == L"LATITUDE_OF_ORIGIN") ||
              (upperParameterName == L"LATITUDE_OF_CENTER") ||
              (upperParameterName == L"CENTRAL_PARALLEL") ||
-             (upperParameterName == L"NATORIGINLAT"))
+             (upperParameterName == L"NATORIGINLAT") ||
+             (upperParameterName == L"LATITUDE OF NATURAL ORIGIN") ||
+             (upperParameterName == L"ORIGIN LATITUDE"))
         {
         if ((BaseGCS::pcvHotineObliqueMercator1XY == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvRectifiedSkewOrthomorphic == coordinateSystem.GetProjectionCode()))
@@ -2584,7 +2638,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         else
             coordinateSystem.SetOriginLatitude (parameterValue * conversionToDegree);
         }
-    else if (upperParameterName == L"CENTRAL_MERIDIAN")
+    else if ((upperParameterName == L"CENTRAL_MERIDIAN") ||
+             (upperParameterName == L"CENTRAL MERIDIAN"))
         {
         if ((BaseGCS::pcvObliqueCylindricalSwiss == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertConformalConicTwoParallel == coordinateSystem.GetProjectionCode()) ||
@@ -2599,7 +2654,9 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             coordinateSystem.SetCentralMeridian (parameterValue * conversionToDegree);
         }
     else if ((upperParameterName == L"SCALE_FACTOR") ||
-             (upperParameterName == L"SCALEATNATORIGIN"))
+             (upperParameterName == L"SCALEATNATORIGIN") ||
+             (upperParameterName == L"SCALE FACTOR AT NATURAL ORIGIN") ||
+             (upperParameterName == L"SCALE REDUCTION"))
         coordinateSystem.SetScaleReduction (parameterValue);
     else if (upperParameterName == L"STANDARD_PARALLEL_1")
         {
@@ -2612,22 +2669,26 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
         coordinateSystem.SetStandardParallel2 (parameterValue * conversionToDegree);
     else if (upperParameterName == L"AZIMUTH")
         coordinateSystem.SetAzimuth (parameterValue * conversionToDegree);
-        else if (upperParameterName == L"ZONENUMBER")
+    else if ((upperParameterName == L"ZONENUMBER") || (upperParameterName == L"UTM ZONE NUMBER (1 - 60)"))
         coordinateSystem.SetUTMZone ((int)parameterValue);
-        else if (upperParameterName == L"HEMISPHERE")
+    else if ((upperParameterName == L"HEMISPHERE") || (upperParameterName == L"HEMISPHERE, NORTH OR SOUTH"))
         {
         int hemisphere;
         if (parameterStringValue.length() == 0)
             hemisphere = 1;
         else if (parameterStringValue == L"N")
             hemisphere = 1;
+        else if (parameterStringValue == L"1.0")
+            hemisphere = 1;
         else
             hemisphere = -1;
         coordinateSystem.SetHemisphere (hemisphere);
         }
-        else if ((upperParameterName == L"LONGITUDE_OF_ORIGIN") ||
-                 (upperParameterName == L"LONGITUDE_OF_CENTER") ||
-                 (upperParameterName == L"NATORIGINLONG"))
+    else if ((upperParameterName == L"LONGITUDE_OF_ORIGIN") ||
+             (upperParameterName == L"LONGITUDE_OF_CENTER") ||
+             (upperParameterName == L"NATORIGINLONG") ||
+             (upperParameterName == L"LONGITUDE OF NATURAL ORIGIN") ||
+             (upperParameterName == L"ORIGIN LONGITUDE"))
         {
         switch (coordinateSystem.GetProjectionCode())
             {
@@ -2656,7 +2717,7 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             }
         }
 
-        else if (upperParameterName == L"HEIGHT") // Elevation
+    else if (upperParameterName == L"HEIGHT") // Elevation
         coordinateSystem.SetElevationAboveGeoid (parameterValue);
     else if (upperParameterName == L"PSEUDO_STANDARD_PARALLEL_1")
         coordinateSystem.SetStandardParallel1 (parameterValue * conversionToDegree);
@@ -9082,6 +9143,7 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     csDifferent             = false;
     verticalDatumDifferent  = false;
     localTransformDifferent = false;
+    bool TrMerToUTMCompare  = false;
 
     if (NULL == m_csParameters)
         return false;
@@ -9090,11 +9152,39 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
 
     // the projection codes have to match.
     if (m_csParameters->prj_code != compareTo.m_csParameters->prj_code)
-        SET_RETURN_OPT (csDifferent)
+        {
+        // Sometimes different methods can result in the same projection such as for a specific set of Transverse Mercator and UTM zone.
+        if ((cs_PRJCOD_TRMER == m_csParameters->prj_code) && (cs_PRJCOD_UTM == compareTo.m_csParameters->prj_code))
+            {
+            TrMerToUTMCompare = true;
+            double expectedFalseEasting = 500000.0;
+            double expectedFalseNorthing = (compareTo.m_csParameters->csdef.prj_prm2 == 1 ? 0.0 : 10000000.0);
+            double expectedCentralMeridian = (compareTo.m_csParameters->csdef.prj_prm1 - 30) * 6 - 3;
 
-    // the projection flags have to match.
-    if (m_csParameters->prj_flags != compareTo.m_csParameters->prj_flags)
-        SET_RETURN_OPT (csDifferent)
+            if (!doubleSame(m_csParameters->csdef.prj_prm1, expectedCentralMeridian) || 
+                !doubleSame(m_csParameters->csdef.x_off, expectedFalseEasting) ||
+                !doubleSame(m_csParameters->csdef.y_off, expectedFalseNorthing))
+                SET_RETURN_OPT (csDifferent)
+            }
+        else if ((cs_PRJCOD_UTM  == m_csParameters->prj_code) && (cs_PRJCOD_TRMER == compareTo.m_csParameters->prj_code))
+            {
+            TrMerToUTMCompare = true;
+            double expectedFalseEasting = 500000;
+            double expectedFalseNorthing = (m_csParameters->csdef.prj_prm2 == 1 ? 0.0 : 10000000.0);
+            double expectedCentralMeridian = (m_csParameters->csdef.prj_prm1 - 30) * 6 - 3;
+
+            if (!doubleSame(m_csParameters->csdef.prj_prm1, expectedCentralMeridian) || 
+                !doubleSame(m_csParameters->csdef.x_off, expectedFalseEasting) ||
+                !doubleSame(m_csParameters->csdef.y_off, expectedFalseNorthing))
+                SET_RETURN_OPT (csDifferent)
+            }
+        else
+            SET_RETURN_OPT (csDifferent)
+        }
+
+    // quads must match.
+    if (m_csParameters->csdef.quad != compareTo.m_csParameters->csdef.quad)
+        SET_RETURN (csDifferent)
 
     if (!HasEquivalentDatum (compareTo))
         SET_RETURN_OPT (datumDifferent)
@@ -9108,67 +9198,76 @@ bool            BaseGCS::Compare (BaseGCSCR compareTo, bool& datumDifferent, boo
     CSDefinition    thisDef    = m_csParameters->csdef;
     CSDefinition    compareDef = compareTo.m_csParameters->csdef;
 
-    // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
-    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
-        SET_RETURN (csDifferent)
-
-    // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
-    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
-        SET_RETURN (csDifferent)
-
-    // if the scale is not the same, they're not same units, can't be the same.
-    if (!doubleSame (thisDef.scale, compareDef.scale))
-        SET_RETURN (csDifferent)
-
-    // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
-    if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!doubleSame (thisDef.x_off, compareDef.x_off) || !doubleSame (thisDef.y_off, compareDef.y_off)) )
-        SET_RETURN (csDifferent)
-
-    // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
-    if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
-        SET_RETURN (csDifferent)
-
-    // quads must match.
-    if (thisDef.quad != compareDef.quad)
-        SET_RETURN (csDifferent)
-
-    // find which parameters are needed for the projection by using cs_prjprm, compare those.
-
-    // find the parameter map for this projection
-    struct cs_PrjprmMap_ *mp;
-    for (mp = cs_PrjprmMap; mp->prj_code != cs_PRJCOD_END; mp++)
+    // We compare parameter values except for lat/long for which the two parameters are only recommended longitude limits
+    // and of little importance or when we compare the equivalent set TRMER/UTM where parameters are different but already
+    // compared equivalent.
+    if (m_csParameters->prj_code != cs_PRJCOD_UNITY && !TrMerToUTMCompare)
         {
-        if (mp->prj_code == m_csParameters->prj_code)
-            break;
-        }
+        // the projection flags have to match.
+        if (m_csParameters->prj_flags != compareTo.m_csParameters->prj_flags)
+            SET_RETURN_OPT (csDifferent)
 
-    if (mp->prj_code == cs_PRJCOD_END)
-        return true;
+        // unless the prj_flgs says no origin longitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLNG)) && !doubleSame (thisDef.org_lng, compareDef.org_lng) )
+            SET_RETURN (csDifferent)
 
-    double *thisDouble;
-    double *compareDouble;
-    int     iParam;
-    for (iParam = 0, thisDouble = &thisDef.prj_prm1, compareDouble = &compareDef.prj_prm1; iParam < 24; iParam++, thisDouble++, compareDouble++)
-        {
-        // if the parameter index is 0, then that parameter's not used. There are never any embedded 0's so we can stop at the first one we encounter.
-        // NOTE: we don't need to know what it's used for, just that it is used.
-        int parameterIndex = mp->prm_types[iParam];
-        if (parameterIndex <= 0)
-            break;
+        // unless the prj_flgs says no origin latitude is used (note bit set means not used), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGLAT)) && !doubleSame (thisDef.org_lat, compareDef.org_lat) )
+            SET_RETURN (csDifferent)
 
-        // for the northern/southern hemisphere parameter, 0 and 1 are the same.
-        if (cs_PRMCOD_HSNS == parameterIndex)
-           {
-           if ( (*thisDouble >= 0.0) != (*compareDouble >= 0.0) )
-                SET_RETURN (csDifferent)
-           }
-        else
+        // if the scale is not the same, they're not same units, can't be the same.
+        if (!doubleSame (thisDef.scale, compareDef.scale))
+            SET_RETURN (csDifferent)
+
+        // unless the prj_flgs says no false easting/northing is used (note bit set means not use), they must be equal.
+        if ( (0 == (m_csParameters->prj_flags & cs_PRJFLG_ORGFLS)) && (!doubleSame (thisDef.x_off, compareDef.x_off) || !doubleSame (thisDef.y_off, compareDef.y_off)) )
+            SET_RETURN (csDifferent)
+
+        // if the prj_flgs says a scale reduction is used (note bit set used), they must be equal.
+        if ( (0 != (m_csParameters->prj_flags & cs_PRJFLG_SCLRED)) && !doubleSame (thisDef.scl_red, compareDef.scl_red))
+            SET_RETURN (csDifferent)
+
+
+    
+        // find which parameters are needed for the projection by using cs_prjprm, compare those.
+    
+    
+        // find the parameter map for this projection
+        struct cs_PrjprmMap_ *mp;
+        for (mp = cs_PrjprmMap; mp->prj_code != cs_PRJCOD_END; mp++)
             {
-            if (!doubleSame (*thisDouble, *compareDouble))
-                SET_RETURN (csDifferent)
+            if (mp->prj_code == m_csParameters->prj_code)
+                break;
+            }
+    
+        if (mp->prj_code == cs_PRJCOD_END)
+            return true;
+
+
+        double *thisDouble;
+        double *compareDouble;
+        int     iParam;
+        for (iParam = 0, thisDouble = &thisDef.prj_prm1, compareDouble = &compareDef.prj_prm1; iParam < 24; iParam++, thisDouble++, compareDouble++)
+            {
+            // if the parameter index is 0, then that parameter's not used. There are never any embedded 0's so we can stop at the first one we encounter.
+            // NOTE: we don't need to know what it's used for, just that it is used.
+            int parameterIndex = mp->prm_types[iParam];
+            if (parameterIndex <= 0)
+                break;
+
+            // for the northern/southern hemisphere parameter, 0 and 1 are the same.
+            if (cs_PRMCOD_HSNS == parameterIndex)
+               {
+               if ( (*thisDouble >= 0.0) != (*compareDouble >= 0.0) )
+                    SET_RETURN (csDifferent)
+               }
+            else
+                {
+                if (!doubleSame (*thisDouble, *compareDouble))
+                    SET_RETURN (csDifferent)
+                }
             }
         }
-
     return true;
     }
 
@@ -9495,7 +9594,12 @@ bvector<GeoPoint>&    shape
 
     switch (projectionCode)
         {
-        case pcvCassini : // Not so sure about this one ... check http://www.radicalcartography.net/?projectionref
+        case pcvCassini : 
+            {
+            return BaseGCSUtilGetRangeAboutMeridianAndEquator(shape, 
+                                                   GetCentralMeridian(), 80.0, 
+                                                   89.9);
+            }
         case pcvEckertIV :
         case pcvEckertVI :
         case pcvMillerCylindrical :
@@ -9552,18 +9656,18 @@ bvector<GeoPoint>&    shape
         case pcvPolarStereographicStandardLatitude :
         case pcvGnomonic :
         case pcvBipolarObliqueConformalConic :
-	    {
-	    // Eventually we will study more attentively how to
-	    // Compute the mathematical extent but for the moment we will limit to the
+            {
+            // Eventually we will study more attentively how to
+	        // Compute the mathematical extent but for the moment we will limit to the
             // user extent
-	    double minLongitude = GetMinimumUsefulLongitude();
-	    double maxLongitude = GetMaximumUsefulLongitude();
-	    double minLatitude = GetMinimumUsefulLatitude();
-	    double maxLatitude = GetMaximumUsefulLatitude();
-	    if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
-		{
-		return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
-		}
+            double minLongitude = GetMinimumUsefulLongitude();
+            double maxLongitude = GetMaximumUsefulLongitude();
+            double minLatitude = GetMinimumUsefulLatitude();
+            double maxLatitude = GetMaximumUsefulLatitude();
+            if ((minLongitude != maxLongitude) && (minLatitude != minLongitude))
+                {
+                return BaseGCSUtilGetRangeSpecified(shape, minLongitude, maxLongitude, minLatitude, maxLatitude);
+                }
 
             // Even though it cannot be computed, the domain must be set as the caller may not check the return status.
             BaseGCSUtilGetRangeAboutPrimeMeridianAndEquator (shape, 180.0, 89.9);
@@ -14330,6 +14434,20 @@ CSDatum*            Datum::GetCSDatum() const
     return m_csDatum;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Alain.Robert                   2016/07
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP            Datum::GetGroup(WStringR groupName) const
+    {
+
+    groupName.clear();
+
+    if (NULL != m_datumDef)
+        groupName.AssignA (m_datumDef->group);
+
+    return groupName.c_str();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   03/08
