@@ -4229,7 +4229,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 {
                 SchemaItem testItem(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                     "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                     "    <ECStructClass typeName='ElementCode' modifier='None'>"
                     "        <ECProperty propertyName='AuthorityId' typeName='long' />"
@@ -4262,13 +4262,13 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertSchemaImport(db, asserted, testItem, "userdefinedindextest8.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "uix_element_code", true, "ts8_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
+                AssertIndex(db, "uix_element_code", true, "ts7_Element", {"Code_AuthorityId", "Code_Namespace", "Code_Val"});
                 }
 
                 {
                 SchemaItem testItem("Index on abstract classes - Schema 1",
                                     "<?xml version='1.0' encoding='utf-8'?>"
-                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts9' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                     "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                     "    <ECEntityClass typeName='Root' modifier='Abstract'>"
                                     "        <ECCustomAttributes>"
@@ -4394,14 +4394,14 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                 ECDb db;
                 bool asserted = false;
-                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest9.ecdb");
+                AssertSchemaImport(db, asserted, testItem, "userdefinedindextest8.ecdb");
                 ASSERT_FALSE(asserted);
 
                 SchemaItem secondSchema("Index on abstract classes - Schema 2",
                                         "<?xml version='1.0' encoding='utf-8'?>"
-                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts92' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                        "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts82' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts9' />"
+                                        "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts8' />"
                                         "    <ECEntityClass typeName='Sub3'>"
                                         "        <ECCustomAttributes>"
                                         "            <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4416,8 +4416,8 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                                         "                 </Indexes>"
                                         "            </ClassMap>"
                                         "        </ECCustomAttributes>"
-                                        "       <BaseClass>ts9:Root</BaseClass>"
-                                        "       <BaseClass>ts9:Interface</BaseClass>"
+                                        "       <BaseClass>ts8:Root</BaseClass>"
+                                        "       <BaseClass>ts8:Interface</BaseClass>"
                                         "        <ECProperty propertyName='Sub3Prop' typeName='int' />"
                                         "    </ECEntityClass>"
                                         "    <ECEntityClass typeName='Sub2Unshared'>"
@@ -4434,7 +4434,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                                         "                 </Indexes>"
                                         "            </ClassMap>"
                                         "        </ECCustomAttributes>"
-                                        "       <BaseClass>ts9:RootUnshared</BaseClass>"
+                                        "       <BaseClass>ts8:RootUnshared</BaseClass>"
                                         "        <ECProperty propertyName='Sub2UnsharedProp' typeName='int' />"
                                         "    </ECEntityClass>"
                                         " </ECSchema>");
@@ -4444,28 +4444,28 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 ASSERT_FALSE(asserted);
 
                 //class hierarchy with shared table
-                AssertIndex(db, "uix_root", true, "ts9_Root", {"RootProp"});
+                AssertIndex(db, "uix_root", true, "ts8_Root", {"RootProp"});
 
                 //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
-                AssertIndex(db, "uix_interface_ts9_Sub", true, "ts9_Sub", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts9_Sub2", true, "ts9_Sub2", {"InterfaceProp"});
-                AssertIndex(db, "uix_interface_ts92_Sub3", true, "ts92_Sub3", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
+                AssertIndex(db, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
 
-                AssertIndex(db, "uix_sub", true, "ts9_Sub", {"SubProp"});
-                AssertIndex(db, "uix_sub2", true, "ts9_Sub2", {"Sub2Prop"});
-                AssertIndex(db, "uix_sub3", true, "ts92_Sub3", {"Sub3Prop"});
+                AssertIndex(db, "uix_sub", true, "ts8_Sub", {"SubProp"});
+                AssertIndex(db, "uix_sub2", true, "ts8_Sub2", {"Sub2Prop"});
+                AssertIndex(db, "uix_sub3", true, "ts82_Sub3", {"Sub3Prop"});
 
                 ECClassCP subSubClass = db.Schemas().GetECClass("TestSchema", "SubSub");
                 ASSERT_TRUE(subSubClass != nullptr);
                 Utf8String indexWhere = "ECClassId=" + subSubClass->GetId().ToString();
 
-                AssertIndex(db, "uix_subsub", true, "ts9_Sub", {"SubSubProp"}, indexWhere.c_str());
+                AssertIndex(db, "uix_subsub", true, "ts8_Sub", {"SubSubProp"}, indexWhere.c_str());
 
                 //class hierarchy without shared table
-                AssertIndex(db, "uix_rootunshared_ts9_SubUnshared", true, "ts9_SubUnshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_rootunshared_ts92_Sub2Unshared", true, "ts92_Sub2Unshared", {"RootUnsharedProp"});
-                AssertIndex(db, "uix_subunshared", true, "ts9_SubUnshared", {"SubUnsharedProp"});
-                AssertIndex(db, "uix_sub2unshared", true, "ts92_Sub2Unshared", {"Sub2UnsharedProp"});
+                AssertIndex(db, "uix_rootunshared_ts8_SubUnshared", true, "ts8_SubUnshared", {"RootUnsharedProp"});
+                AssertIndex(db, "uix_rootunshared_ts82_Sub2Unshared", true, "ts82_Sub2Unshared", {"RootUnsharedProp"});
+                AssertIndex(db, "uix_subunshared", true, "ts8_SubUnshared", {"SubUnsharedProp"});
+                AssertIndex(db, "uix_sub2unshared", true, "ts82_Sub2Unshared", {"Sub2UnsharedProp"});
                 }
 
     }
