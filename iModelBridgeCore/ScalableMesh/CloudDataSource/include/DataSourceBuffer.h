@@ -28,6 +28,7 @@ protected:
     ActivitySemaphore                   activitySemaphore;
 
     Buffer                              buffer;
+    std::mutex                          mutex;
 
     BufferData                        * externalBuffer;
     BufferSize                          externalBufferSize;
@@ -61,6 +62,8 @@ public:
 
                                         DataSourceBuffer                    (void);
                                         DataSourceBuffer                    (BufferSize size, BufferData *extBuffer = nullptr);
+
+                                        ~DataSourceBuffer                   ();
 
     void                                initializeSegments                  (void);
     void                                initializeSegments                  (BufferSize segmentSize);
