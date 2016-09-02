@@ -331,6 +331,13 @@ struct Publish3mxGeometry : Geometry
             m_normals.resize(args.m_numPoints);
             memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
             }
+
+        if (nullptr != args.m_textureUV)
+            {
+            m_textureUV.resize(args.m_numPoints);
+            memcpy(&m_textureUV.front(), args.m_textureUV, args.m_numPoints * sizeof(FPoint2d));
+            }
+            
         }
 };
 
@@ -350,11 +357,12 @@ struct Publish3mxTexture : Render::Texture
 //=======================================================================================
 struct  PublishTileNode : TileNode
 {
-    NodePtr              m_node;
-    Transform            m_transform;
+    ScenePtr            m_scene;
+    NodePtr             m_node;
+    Transform           m_transform;
 
-    PublishTileNode(NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
-                     m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
+    PublishTileNode(SceneR scene, NodeR node, TransformCR transform,  DRange3dCR range, size_t depth, size_t siblingIndex, double tolerance, TileNodeP parent) : 
+                    m_scene (&scene), m_node(&node), m_transform(transform), TileNode(range, depth, siblingIndex, tolerance, parent) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -369,22 +377,23 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
             continue;
 
         PolyfaceHeaderPtr   polyface = geometry->GetPolyface()->Clone();
+        static bool         s_supplyNormalsForLighting = true;         // Not needed as we are going to ignore lighting (it is baked into the capture).
 
-        if (0 == polyface->GetNormalCount())
+        if (s_supplyNormalsForLighting && 0 == polyface->GetNormalCount())
             polyface->BuildPerFaceNormals();
+
+        polyface->Transform (m_transform);
 
         Publish3mxGeometry*     publishGeometry = dynamic_cast <Publish3mxGeometry*> (geometry.get());
         Publish3mxTexture*      publishTexture;
         TileTextureImagePtr     tileTexture;
+        static bool             s_ignoreLighting = true;           // Acute3d models use the lighing at time of capture...
 
         if (nullptr != publishGeometry &&
             nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
-            {
-            Image   image (publishTexture->m_source, publishTexture->m_format, publishTexture->m_bottomUp);
-            tileTexture = new TileTextureImage (std::move(image), false);
-            }
+            tileTexture = new TileTextureImage (publishTexture->m_source, false);
 
-        TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture);
+        TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
         TileMeshBuilderPtr      builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
 
         for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); )
@@ -412,52 +421,63 @@ struct Publish3mxScene : Scene
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status publishModelTiles(TileGenerator::ITileCollector& collector, SceneR scene, NodeR node, size_t depth, size_t siblingIndex, TileNodeP parent) 
-    {
-    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (node.GetMaximumSize() / (2.0 * node.GetRadius()));
-    PublishTileNode         tileNode(node, scene.GetLocation(), node.GetRange(), depth, siblingIndex, tolerance, parent);
+RefCountedPtr<PublishTileNode> tileFromNode (NodeR node, SceneR scene, TransformCR toTile, size_t depth, size_t siblingIndex, TileNodeP parent)
+    { 
+    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node.GetMaximumSize());
+    DRange3d                range = node.GetRange();;
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
 
-    if (nullptr != node._GetChildren(false))
-        {
-        size_t childIndex = 0;
+    if (range.IsNull() && nullptr != node._GetChildren())     // No range set on root node...
+        for (auto& child : *node._GetChildren())
+            range.Extend (child->GetRange());
 
-        for (auto& child : *node._GetChildren(false))
-            tileNode.GetChildren().push_back(TileNode(child->GetRange(), depth+1, childIndex++, child->GetMaximumSize() / (2.0 * child->GetRadius()), &tileNode));
+    toTile.Multiply (range, range);
+
+    RefCountedPtr<PublishTileNode>     tileNode = new PublishTileNode (scene, node, toTile, range, depth, siblingIndex, tolerance, parent);
+    static size_t                   s_depthLimit = 0xffff;                    // Useful for limiting depth when debugging...
+
+    if (nullptr != node._GetChildren() && depth < s_depthLimit)
+        {
+        size_t                  childIndex = 0;
+
+        depth++;
+        for (auto& child : *node._GetChildren())
+            tileNode->GetChildren().push_back (tileFromNode ((NodeR) *child, scene, toTile, depth, childIndex++, tileNode.get()));
         }
 
-    TileGenerator::Status status = collector._AcceptTile(tileNode);
-
-    if (TileGenerator::Status::Success != status || !node._HasChildren())
-        return status;
-
-    depth++;
-
-    Tile::ChildTiles    children = *node._GetChildren(false);
-    size_t              childIndex = 0;
-
-    node.GetGeometry().clear();        // Free memory so that all geometry is not loaded at the same time.
-
-    for (auto& child : children)
-        if (TileGenerator::Status::Success != (status = publishModelTiles(collector, scene, (NodeR) *child, depth, childIndex++, &tileNode)))
-            return status;
-
-    return TileGenerator::Status::Success;
+    return tileNode;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status ThreeMxModel::_PublishModelTiles(TileGenerator::ITileCollector& collector) 
+TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, GetName().c_str(), m_sceneFile.c_str(), nullptr);
     
     if (SUCCESS != scene->LoadScene())                                                                                                                                                                
         return TileGenerator::Status::NoGeometry;
 
-    TileTree::TilePtr publishNode = scene->GetRootTile()->_GetChildren(false)->front();
-
-    return publishModelTiles(collector, *scene, (NodeR) *publishNode, 0, 0, nullptr);
+    Transform               modelToTile = Transform::FromProduct (transformDbToTile, scene->GetLocation());
+    
+    RefCountedPtr<PublishTileNode>  rootPublishTile = tileFromNode ((NodeR) *scene->GetRoot(), *scene, modelToTile, 0, 0, nullptr);
+    
+    rootTile = rootPublishTile;
+    return TileGenerator::Status::Success;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                          

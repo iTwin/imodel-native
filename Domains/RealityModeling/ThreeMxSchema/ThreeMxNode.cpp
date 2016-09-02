@@ -62,7 +62,8 @@ PolyfaceHeaderPtr Geometry::GetPolyface() const
     trimesh.m_numPoints = (int32_t) m_points.size();
     trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
     trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = nullptr;
+    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
+
     return trimesh.ToPolyface();
     }
 

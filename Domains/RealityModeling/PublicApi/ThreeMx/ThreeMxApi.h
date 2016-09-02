@@ -48,6 +48,7 @@ struct Geometry : RefCountedBase, NonCopyableClass
 protected:
     bvector<FPoint3d> m_points;
     bvector<FPoint3d> m_normals;
+    bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
     Dgn::Render::GraphicPtr m_graphic;
 
@@ -166,7 +167,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ThreeMxDomain : Dgn::DgnDomain
 // and sometimes users may want to "tweak" the location relative to their BIM, we store it in the model and use that.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
-struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IPublishModelTiles
+struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGenerateMeshTiles
 {
     DGNMODEL_DECLARE_MEMBERS("ThreeMxModel", SpatialModel);
     friend struct ModelHandler;
@@ -188,8 +189,7 @@ public:
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    THREEMX_EXPORT Dgn::Render::TileGenerator::Status _PublishModelTiles(Dgn::Render::TileGenerator::ITileCollector& collector) override;
-
+    THREEMX_EXPORT  Dgn::Render::TileGenerator::Status _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile) override;
     //! Set the name of the scene file for this 3MX model
     void SetSceneFile(Utf8CP name) {m_sceneFile = name;}
 
