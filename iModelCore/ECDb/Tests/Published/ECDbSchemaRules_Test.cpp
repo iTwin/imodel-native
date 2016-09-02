@@ -871,6 +871,114 @@ TEST_F(ECDbSchemaRules, RelationshipCardinality)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
+    {
+    std::vector <SchemaItem> testItems {
+        SchemaItem("<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Goo' >"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "        <Class class='Foo' />"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Goo'/>"
+                    "         <Class class='Hoo'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    //we cannot yet enforce one class per constraint
+                    //false, "Multiple constraint classes are not supported by EC3 and ECDb"),
+                    true),
+        SchemaItem("<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "  <ECEntityClass typeName='Foo' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Goo' >"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "        <Class class='Foo' />"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Goo'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    false, "Multiple constraint classes which map to more than one table on referenced side is not supported"),
+        SchemaItem("<ECSchema schemaName='TestSchema3' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "  <ECEntityClass typeName='Base' >"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Base'/>"
+                    "         <Class class='Sub'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                    true, "Multiple constraint classes"),  //we cannot yet enforce one class per constraint
+        SchemaItem("<ECSchema schemaName='TestSchema4' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                    "<ECSchemaReference name='ECDbMap' version='01.01' prefix='ecdbmap' />"
+                    "  <ECEntityClass typeName='Base' >"
+                    "     <ECCustomAttributes>"
+                    "        <ClassMap xmlns='ECDbMap.01.01'>"
+                    "                <MapStrategy>"
+                    "                   <Strategy>SharedTable</Strategy>"
+                    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
+                    "                </MapStrategy>"
+                    "        </ClassMap>"
+                    "     </ECCustomAttributes>"
+                    "    <ECProperty propertyName='Name' typeName='string' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Sub' >"
+                    "    <BaseClass>Base</BaseClass>"
+                    "    <ECProperty propertyName='Length' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECEntityClass typeName='Hoo' >"
+                    "    <ECProperty propertyName='Width' typeName='long' />"
+                    "  </ECEntityClass>"
+                    "  <ECRelationshipClass typeName='Rel' strength='referencing' modifier='Sealed'>"
+                    "     <Source cardinality='(0,1)' polymorphic='False'>"
+                    "         <Class class='Hoo'/>"
+                    "     </Source>"
+                    "     <Target cardinality='(0,N)' polymorphic='True'>"
+                    "         <Class class='Base'/>"
+                    "         <Class class='Sub'/>"
+                    "     </Target>"
+                    "  </ECRelationshipClass>"
+                    "</ECSchema>",
+                   true, "Multiple constraint classes")  //we cannot yet enforce one class per constraint
+        };
+
+    AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, RelationshipInheritance)
