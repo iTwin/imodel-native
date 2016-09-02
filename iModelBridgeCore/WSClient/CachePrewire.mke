@@ -2,12 +2,13 @@
 #
 #     $Source: CachePrewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
+# N.B. $(BuildContext)PublicAPI/WebServices/WebServices.h created by ClientPrewire.mke (WebServicesClient-PublicAPI part).
+
 always:
     !~@mkdir $(BuildContext)PublicAPI/WebServices
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/WebServices.h  =$(_MakeFilePath)/PublicAPI/WebServices/WebServices.h"
-    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Cache         	=$(_MakeFilePath)/PublicAPI/WebServices/Cache"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Cache=$(_MakeFilePath)/PublicAPI/WebServices/Cache"
