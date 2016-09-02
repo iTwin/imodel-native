@@ -28,6 +28,13 @@
             <Assemblies>Delivery/FtpTraverser.exe</Assemblies>
         </Bindings>
     </Part>
+    
+    <Part Name="AwsTraverser" BentleyBuildMakeFile="RealityPlatform\AwsTraverser\AwsTraverser.mke">
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Assemblies>Delivery/AwsTraverser.exe</Assemblies>
+        </Bindings>
+    </Part>
 
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="BentleyCrawlerLibNet"/>
@@ -100,6 +107,7 @@
         <SubPart PartName="DataHandlerTool" />
         <SubPart PartName="RealityServicesNet"/>
         <SubPart PartName="FtpTraverser"/>
+        <SubPart PartName="AwsTraverser"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
     </Part>
 

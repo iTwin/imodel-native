@@ -143,7 +143,7 @@ void ServerConnection::ReleaseStmt()
 
 void ShowUsage()
     {
-    std::cout << "Usage: ftptraversalenginenet.exe [options] FtpUrl [DualFtpUrl]" << std::endl <<std::endl;
+    std::cout << "Usage: ftptraverser.exe FtpUrl [DualFtpUrl] [options]" << std::endl <<std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << "  -h, --help              Show this help message and exit" << std::endl;
     std::cout << "  -u, --update            Enable update mode" << std::endl;
@@ -153,8 +153,7 @@ void ShowUsage()
     std::cout << "  as in \"-cs:Driver={SQL Server}(...)\" " << std::endl;
 
     std::cout << std::endl << "Press any key to exit." << std::endl;
-    int n;
-    std::cin >> n;
+    getch();
     }
 
 Utf8CP EnumString(FtpStatus status)
