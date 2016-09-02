@@ -103,6 +103,7 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 #----------------------------------------------------------------------
 
 LINKER_LIBRARIES_DELAYLOADED  = \
+	$(ContextSubpartsLibs)cpprest120_2_6.lib \
     $(ContextSubpartsLibs)wastorage.lib
 
 #--------------------------------------------------------------------------------------
