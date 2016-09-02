@@ -20,6 +20,7 @@
 
 
 BEGIN_IMAGEPP_NAMESPACE
+
 class HRFMapBoxCapabilities : public HRFRasterFileCapabilities
     {
 public:
@@ -70,23 +71,7 @@ protected:
 
 private:
     
-    // Members                           
-           
-    // Create the file
-    /*
-    void                    SaveMapBoxFile(bool pi_CloseFile);
-
-    bool                   Create();
-
-    HFCPtr<HRPPixelType>    CreatePixelTypeFromFile() const;
-    void                    SetPixelTypeToPage(HFCPtr<HRFResolutionDescriptor> pi_pResolutionDescriptor);
-    bool                   GetFileHeaderFromFile();
-    void                    SetFileHeaderToFile();
-    bool                   GetMapBoxInfoHeaderFromFile();
-    void                    SetMapBoxInfoHeaderToFile();
-    void                    GetPaletteFromFile();
-    void                    SetPaletteToFile();
-    */
+                  
     // Methods Disabled
     HRFMapBoxFile(const HRFMapBoxFile& pi_rObj);
     HRFMapBoxFile&             operator= (const HRFMapBoxFile& pi_rObj);
@@ -121,5 +106,6 @@ private:
     // Disabled methodes
     HRFMapBoxCreator();
     };
+
 END_IMAGEPP_NAMESPACE
 
