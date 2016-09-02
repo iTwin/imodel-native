@@ -1202,6 +1202,11 @@ public:
     ISMDataStoreTypePtr<EXTENT> GetDataStore();
 
     /**----------------------------------------------------------------------------
+     Returns the next node id available
+    -----------------------------------------------------------------------------*/
+    uint64_t GetNextNodeId();
+
+    /**----------------------------------------------------------------------------
      Forces an immmediate store (to minimize the chances of corruption
     -----------------------------------------------------------------------------*/
     virtual bool        Store();
@@ -1466,7 +1471,8 @@ protected:
 #endif
         };
        
-    ISMDataStoreTypePtr<EXTENT>              m_dataStore;
+    ISMDataStoreTypePtr<EXTENT> m_dataStore;
+    std::atomic<uint64_t>       m_nextNodeID;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;
