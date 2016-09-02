@@ -206,12 +206,32 @@ float FindSize(std::string html, std::string lookFor)
     if(start == std::string::npos)
         return -10.0f;
     relevantLine = html.substr(start);
-    start = relevantLine.find("(") + 1;
-    stop = relevantLine.find("MB)");
-    if (start == std::string::npos || stop == std::string::npos)
+    start = relevantLine.find("(");
+    if (start == std::string::npos)
         return -10.0f;
-    relevantLine = relevantLine.substr(start, (stop -start));
-    return std::stof(relevantLine);
+    start += 1;
+
+    stop = relevantLine.find("MB)");
+    if(stop != std::string::npos)
+        {
+        relevantLine = relevantLine.substr(start, (stop -start));
+        return std::stof(relevantLine) * 1000;
+        }
+    
+    stop = relevantLine.find("KB)");
+    if (stop != std::string::npos)
+    {
+        relevantLine = relevantLine.substr(start, (stop - start));
+        return std::stof(relevantLine);
+    }
+
+    stop = relevantLine.find("GB)");
+    if (stop != std::string::npos)
+    {
+        relevantLine = relevantLine.substr(start, (stop - start));
+        return std::stof(relevantLine) * 1000000;
+    }
+
     }
 
 //-------------------------------------------------------------------------------------
