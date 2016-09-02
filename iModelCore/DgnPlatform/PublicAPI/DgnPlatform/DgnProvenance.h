@@ -42,7 +42,7 @@ public:
 };
 
 //=======================================================================================
-//! Utility to create and query provenance of files originating from V8 dgn/.i.dgn-s
+//! Utility to create and query provenance of models originating from V8 dgn/.i.dgn-s
 // @bsiclass                                                  Ramanujam.Raman   08/16
 //=======================================================================================
 struct DgnV8ModelProvenance
@@ -57,7 +57,7 @@ struct DgnV8ModelProvenance
     DGNPLATFORM_EXPORT static void Delete(DgnModelId modelId, DgnDbR dgndb);
 
     //! Find an entry
-    DGNPLATFORM_EXPORT BentleyStatus FindFirst(uint32_t* v8FileId, int* v8ModelId, Utf8StringP v8ModelName, DgnModelId modelId, DgnDbCR dgndb);
+    DGNPLATFORM_EXPORT static BentleyStatus FindFirst(uint32_t* v8FileId, int* v8ModelId, Utf8StringP v8ModelName, DgnModelId modelId, DgnDbCR dgndb);
     };
 
 //=======================================================================================
