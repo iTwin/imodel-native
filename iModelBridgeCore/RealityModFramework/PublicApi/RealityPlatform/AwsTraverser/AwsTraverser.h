@@ -44,7 +44,7 @@ struct AwsData
 struct AwsPinger
     {
     static AwsPinger* s_instance;
-    BeFileName m_certificatePath;
+    Utf8String m_certificatePath;
     CURL* m_curl;
 
     void ReadPage(Utf8CP url, float& redSize, float& greenSize, float& blueSize, float& panSize);

@@ -230,10 +230,12 @@ size_t ParseXML(char* buf, size_t size, size_t nmemb, void* up)
 //-------------------------------------------------------------------------------------
 void AwsPinger::ReadPage(Utf8CP url, float& redSize, float& greenSize, float& blueSize, float& panSize)
     {
+    curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1); // Verify the SSL certificate.
+    curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 1);
     curl_easy_setopt(m_curl, CURLOPT_URL, url);
     curl_easy_setopt(m_curl, CURLOPT_CAINFO, m_certificatePath);
     curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, &ParseXML);
-    curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L); //tell curl to output its progress
+    //curl_easy_setopt(m_curl, CURLOPT_VERBOSE, 1L); //tell curl to output its progress
 
     curl_easy_perform(m_curl);
 
@@ -250,8 +252,6 @@ void AwsPinger::ReadPage(Utf8CP url, float& redSize, float& greenSize, float& bl
 //-------------------------------------------------------------------------------------
 AwsPinger::AwsPinger()
     {
-    m_certificatePath = BeFileName();
-
     // Set certificate path.
     WChar exePath[MAX_PATH];
     GetModuleFileNameW(NULL, exePath, MAX_PATH);
@@ -265,7 +265,13 @@ AwsPinger::AwsPinger()
 
     // Make sure directory exist.
     if (caBundlePath.DoesPathExist())
-        m_certificatePath = caBundlePath;
+        m_certificatePath = caBundlePath.GetNameUtf8();
+    else
+    {
+        std::cout << "symlink to cabundle.pem was not found in " << caBundlePath.GetName() << std::endl;
+        getch();
+        exit(-1);
+    }
 
     curl_global_init(CURL_GLOBAL_ALL); 
     m_curl = curl_easy_init();
