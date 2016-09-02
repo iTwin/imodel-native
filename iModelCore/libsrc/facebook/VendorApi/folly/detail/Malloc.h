@@ -23,7 +23,7 @@
 // BENTLEY_CHANGE
 // clang/iOS and MacOS: error: use of undeclared identifier 'xallocx'; I traced back to this file which seems to have a reasonable declaration that is otherwise used when compiling folly.
 // Was #if defined(__BE_FOLLY_DLL__)
-#if defined(__BE_FOLLY_DLL__) || defined(CREATE_STATIC_LIBRARIES) || defined(__APPLE__)
+#if defined(__BE_FOLLY_DLL__) || defined(CREATE_STATIC_LIBRARIES) || defined(__APPLE__) || defined(ANDROID)
 
 extern "C" {
 extern void* (*mallocx)(size_t, int) ;
