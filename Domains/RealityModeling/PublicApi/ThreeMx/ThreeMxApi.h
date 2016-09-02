@@ -107,7 +107,7 @@ private:
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SceneR scene);
 
     BentleyStatus _Read(Dgn::TileTree::StreamBuffer& buffer, Dgn::TileTree::RootR root) override {return Read3MXB(buffer, (SceneR) root);}
-    DrawComplete _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
+    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
 
 public:
@@ -116,8 +116,10 @@ public:
     bool _HasChildren() const override {return !m_childPath.empty();}
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
     void _OnChildrenUnloaded() const override {m_loadState.store(LoadState::NotLoaded);}
-    void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
-    ;
+    void _UnloadChildren(Dgn::TileTree::TimePoint olderThan) const override 
+        {
+        if (IsReady()) T_Super::_UnloadChildren(olderThan);
+        }
     Dgn::ElementAlignedBox3d ComputeRange();
     GeometryList& GetGeometry() {return m_geometry;}
 };

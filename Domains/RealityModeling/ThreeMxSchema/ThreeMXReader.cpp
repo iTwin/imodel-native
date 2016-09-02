@@ -119,6 +119,9 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     if (1 == children.size())
         m_childPath = children[0];
 
+    if (m_parent)
+        m_parent->ExtendRange(m_range);
+
     return true;
     }
 
