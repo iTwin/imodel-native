@@ -312,26 +312,32 @@ size_t FacetCounter::GetFacetCount(TopoDS_Shape const& shape) const
 
     for (TopExp_Explorer faceExplorer (shape, TopAbs_FACE); faceExplorer.More(); faceExplorer.Next())
         {
-        CurveVectorPtr boundaries;
-
-        ISolidPrimitivePtr solidPrimitive = OCBRep::ToSolidPrimitive(boundaries, (const TopoDS_Face&)faceExplorer.Current());
-        if (solidPrimitive.IsValid())
+        try
             {
-            facetCount += GetFacetCount(*solidPrimitive);
-            continue;
-            }
+            CurveVectorPtr boundaries;
 
-        CurveVectorPtr curveVector = OCBRep::ToCurveVector((const TopoDS_Face&)faceExplorer.Current());
-        if (curveVector.IsValid())
+            ISolidPrimitivePtr solidPrimitive = OCBRep::ToSolidPrimitive(boundaries, (const TopoDS_Face&)faceExplorer.Current());
+            if (solidPrimitive.IsValid())
+                {
+                facetCount += GetFacetCount(*solidPrimitive);
+                continue;
+                }
+
+            CurveVectorPtr curveVector = OCBRep::ToCurveVector((const TopoDS_Face&)faceExplorer.Current());
+            if (curveVector.IsValid())
+                {
+                facetCount += GetFacetCount(*curveVector);
+                continue;
+                }
+
+            // WIP: Bspline fix needed. Approximation tend to be way over (1000+ ratio)
+            MSBsplineSurfacePtr bspline = OCBRep::ToBsplineSurface(boundaries, (const TopoDS_Face&)faceExplorer.Current());
+            if (bspline.IsValid())
+                facetCount += GetFacetCount(*bspline);
+            }
+        catch (...)
             {
-            facetCount += GetFacetCount(*curveVector);
-            continue;
             }
-
-        // WIP: Bspline fix needed. Approximation tend to be way over (1000+ ratio)
-        MSBsplineSurfacePtr bspline = OCBRep::ToBsplineSurface(boundaries, (const TopoDS_Face&)faceExplorer.Current());
-        if (bspline.IsValid())
-            facetCount += GetFacetCount(*bspline);
         }
 
     return facetCount;

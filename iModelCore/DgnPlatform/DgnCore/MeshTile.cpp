@@ -586,16 +586,8 @@ BeFileNameStatus TileNode::GenerateSubdirectories (size_t maxTilesPerDirectory, 
 WString TileNode::GetRelativePath (WCharCP rootName, WCharCP extension) const
     {
     WString     relativePath;
-    if (0 == m_depth)
-        {
-        // Acute3d convenstion -- root tile gets root name.
-        BeFileName::BuildName (relativePath, nullptr, nullptr, rootName, extension);
-        }
-    else
-        {
-        WString     fileName = L"Tile" + GetNameSuffix();
-        BeFileName::BuildName (relativePath, nullptr, m_subdirectory.empty() ? nullptr : m_subdirectory.c_str(), fileName.c_str(), extension);
-        }
+
+    BeFileName::BuildName (relativePath, nullptr, m_subdirectory.empty() ? nullptr : m_subdirectory.c_str(), (rootName + GetNameSuffix()).c_str(), extension);
 
     return relativePath;
     }
