@@ -81,3 +81,16 @@ RealityDataThreadPool.QueueWork_Many_Items
 RealityDataThreadPool.Queueing
     # DgnDb61-16Q2, NDEBUG, WinX86
     # <Crash, no output or stack printed>
+
+RealityDataWorkerThread.IsBusy
+    # DgnDb61-16Q2-Dev, DEBUG, WinX86
+    # [ RUN      ] RealityDataWorkerThread.IsBusy
+    # F:\DgnDb61-16Q2-Dev\src\DgnPlatform\Tests\DgnProject\NonPublished\RealityDataCache_Test.cpp(173): error: Value of: cv.WaitOnCondition (&predicate, 5000)
+    # Actual: false
+    # Expected: true
+    # [  FAILED  ] RealityDataWorkerThread.IsBusy (5045 ms)
+
+RealityDataThreadPool.QueueWork_1_Item
+    # DgnDb61-16Q2-Dev, DEBUG, WinX86
+    # [ RUN      ] RealityDataThreadPool.QueueWork_1_Item
+    # <Crash, no output or stack printed>
