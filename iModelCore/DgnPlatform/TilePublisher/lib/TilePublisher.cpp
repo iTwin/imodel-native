@@ -221,9 +221,9 @@ void TilePublisher::WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth
 
     val["asset"]["version"] = "0.0";
 
-    if (false && !m_context.GetTileToEcef().IsIdentity())
+    if (!m_context.GetTilesetTransform().IsIdentity())
         {
-        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTilesetTransform());
         auto&       transformValue = val[JSON_Root][JSON_Transform];
 
         for (size_t i=0;i<4; i++)
@@ -881,6 +881,7 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     DPoint3d        origin = m_viewController.GetCenter ();
 
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
+    m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
 
@@ -1051,17 +1052,14 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
                 realityModelTilesets.append (tileValue);
             }
         }
-    
-    Transform       saveTileToEcef = GetTileToEcef();
 
-    if (!realityModelTilesets.empty())
-        m_tileToEcef = Transform::FromIdentity();       // We're going to create root below - avoid putting it on the element tileset as well.
+    if (realityModelTilesets.empty())
+        m_tilesetTransform = m_tileToEcef;       // If we are not creating a seperate root tile - apply the ECEF transform directly to the element tileset.
 
     WString     elementTileSetName = realityModelTilesets.empty() ? GetRootName() : L"Elements";
     Status      elementPublishStatus = PublishElements (elementTileSet, rootRange, elementTileSetName, generator, collector, toleranceInMeters);
 
-    m_tileToEcef = saveTileToEcef;
-        
+    m_tilesetTransform = Transform::FromIdentity();
     if (realityModelTilesets.empty())
         return elementPublishStatus;
 
