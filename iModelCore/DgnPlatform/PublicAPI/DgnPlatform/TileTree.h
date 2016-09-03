@@ -18,6 +18,49 @@
 
 BEGIN_TILETREE_NAMESPACE
 
+/**  @addtogroup GROUP_TileTree TileTree Module
+
+ A TileTree is an abstract class to manage a HLOD (hierarchical level of detail) tree of spatially coherent "3d tiles".
+
+It manages:
+   - loading (locally and via http)
+   - caching (in memory and on disk)
+   - displaying
+   - incremental asynchronous refinement
+
+The tree is represented in memory by two classes: TileTree::Root and TileTree::Tile. The tree is in a local
+coordinate system, but is positioned in BIM world space by a linear transform.
+
+The HLOD tree can subdivide space using any approach, but must obey the following rules:
+   a) there is one Root node, and it points to the root Tile
+   b) every Tile in the tree (other than the root tile) has one parent tile
+   c) every Tile encloses a volume defined by a tree-axis-aligned DRange3d. That range must be contained within its parent's range.
+   d) everything visible in a Tile must also be visible in one of its children (usually at higher detail). That is, either a
+      Tile is displayed or its children are displayed; never both.
+   e) Tiles may overlap, but generally it works best if they don't.
+
+Display algorithm:
+ Starting at the root Tile, intersect the Tile's range (in BIM world coordinates) against the view frustum. If the Tile's range
+ is completely outside the view frustum, stop. Otherwise, calculate the size, in pixels, of the Tile by dividing the
+ radius of a sphere enclosing the Tile's range by the size (in meters) of the pixel a the center of the Tile. If the pixel size is
+ less than the Tile's "maximum pixel size", or if it has no child Tiles, it is displayed. Otherwise, recursively display each of
+ its child Tiles.
+
+Tile Loading and Missing Tiles:
+ Tiles cannot be displayed until they are loaded. The root Tile is loaded synchronously, so it is always present. Otherwise,
+ tiles are loaded as they are needed, asynchronously (in another thread.) The status of the load process is communicated between
+ threads via the atomic member variable "m_loadState". When a tile is needed for a display request but is not loaded,
+ it is marked as "missing" and is placed in the download queue. Optionally, substitute (lower or higher resolution) Tiles
+ may be drawn to show an approximation of the missing tile. Periodically (on a timer event, in the main thread), the "_DoProgressive"
+ method of your ProgressiveTask object is drawn to check the list of missing tiles to see if they've arrived. If so, they should
+ be drawn (potentially creating a new set of missing tiles). When all tiles have arrived, the ProgressiveTask is removed.
+
+Tile Caching:
+ Tiles are cached both in memory and on disk (for HTTP requests.) The strategy for in-memory caching involves purging unused
+ Tiles during
+
+*/
+
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
@@ -94,7 +137,7 @@ public:
 
 /*=================================================================================**//**
 // The root of a tree of tiles. This object stores the location of the tree relative to the BIM. It also facilitates
-// local caching of Http-based tiles.
+// local caching of HTTP-based tiles.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
 struct Root : RefCountedBase, NonCopyableClass
@@ -113,25 +156,43 @@ protected:
     RealityData::CachePtr m_cache;
 
 public:
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestFile(Utf8StringCR, StreamBuffer&);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileCR);
+    virtual Utf8String _ConstructTileName(TileCR tile) {return m_rootDir + tile._GetTileName();}
+
     bool IsHttp() const {return m_isHttp;}
-    void Draw(DrawArgs& args) {m_rootTile->Draw(args, 0);}
-    void SetExpirationTime(std::chrono::seconds val) {m_expirationTime = val;} //! set expiration time for unused nodes
-    std::chrono::seconds GetExpirationTime() const {return m_expirationTime;} //! get expiration time for unused nodes
     bool IsLocatable() const {return m_locatable;}
     void SetLocatable(bool locatable) {m_locatable = locatable;}
     TransformCR GetLocation() const {return m_location;}
     RealityData::CachePtr GetCache() const {return m_cache;}
-    TilePtr GetRootTile() const {return m_rootTile;}
-    DgnDbR GetDgnDb() const {return m_db;}
+    TilePtr GetRootTile() const {return m_rootTile;} //! Get the root Tile of this Root
+    DgnDbR GetDgnDb() const {return m_db;} //! Get the DgnDb from which this Root was created.
     Dgn::Render::SystemP GetRenderSystem() {return m_renderSystem;}
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
-    DGNPLATFORM_EXPORT void CreateCache(uint64_t maxSize);
-    DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
-    DGNPLATFORM_EXPORT Root(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system);
 
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestFile(Utf8StringCR, StreamBuffer&);
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileCR);
-    virtual Utf8String _ConstructTileName(TileCR tile) {return m_rootDir + tile._GetTileName();}
+    //! Ctor for Root.
+    //! @param [in] db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()'
+    //! @param [in] location. The transform from tile coordinates to BIM world coordinates.
+    DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system);
+
+    //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
+    void SetExpirationTime(std::chrono::seconds val) {m_expirationTime = val;} 
+
+    //! Get expiration time for unused Tiles, in seconds.
+    std::chrono::seconds GetExpirationTime() const {return m_expirationTime;} 
+
+    //! Create a RealityData::Cache for Tiles from this Root. This will either create or open the SQLite file holding locally cached previously-downloaded versions of Tiles.
+    //! @note If this is not an HTTP root, this does nothing.
+    DGNPLATFORM_EXPORT void CreateCache(uint64_t maxSize); 
+
+    //! Delete, if present, the local SQLite file holding the cache of downloaded tiles.
+    //! @note This will first delete the local RealityData::Cache, aborting all outstanding requests and waiting for the queue to empty.
+    DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile();
+
+    //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
+    //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
+    //! @note This method must be called from the client thread
+    void Draw(DrawArgs& args) {m_rootTile->Draw(args, 0);}
 };
 
 //=======================================================================================

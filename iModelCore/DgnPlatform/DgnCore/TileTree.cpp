@@ -405,6 +405,8 @@ void Tile::ExtendRange(DRange3dCR childRange) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::Draw(DrawArgsR args, int depth) const
     {
+    DgnDb::VerifyClientThread();
+
     bool tooCoarse = true;
 
     BeAssert(m_parent==nullptr || !m_parent->m_range.IsValid() || m_range.IsContained(m_parent->m_range));
