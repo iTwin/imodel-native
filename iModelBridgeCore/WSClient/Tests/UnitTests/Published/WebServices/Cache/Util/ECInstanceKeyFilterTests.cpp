@@ -60,8 +60,8 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleInvalidClasses_SkipsInval
     auto ecClass = txn.GetCache().GetAdapter().GetECClass("TestSchema", "TestClass");
 
     ECInstanceKeyMultiMap instances;
-    instances.insert({ecClass->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass->GetId(), ECInstanceId(2)});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(2))});
 
     ECInstanceKeyMultiMap result;
     bset<ECClassCP> classes;
@@ -73,8 +73,8 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleInvalidClasses_SkipsInval
     txn.Commit();
 
     ASSERT_EQ(2, result.size());
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(2)));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClass_FiltersByClass)
@@ -85,9 +85,9 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClass_FiltersByClass)
     auto ecClass2 = txn.GetCache().GetAdapter().GetECClass("TestSchema", "TestClass2");
 
     ECInstanceKeyMultiMap instances;
-    instances.insert({ecClass->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass->GetId(), ECInstanceId(2)});
-    instances.insert({ecClass2->GetId(), ECInstanceId(1)});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(2))});
+    instances.insert({ecClass2->GetId(), ECInstanceId(UINT64_C(1))});
 
     ECInstanceKeyMultiMap result;
     ECInstanceKeyFilter filter(*ecClass);
@@ -96,8 +96,8 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClass_FiltersByClass)
     txn.Commit();
 
     ASSERT_EQ(2, result.size());
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(2)));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClasses_FiltersByClasses)
@@ -109,10 +109,10 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClasses_FiltersByClasses)
     auto ecClass3 = txn.GetCache().GetAdapter().GetECClass("TestSchema", "TestClass3");
 
     ECInstanceKeyMultiMap instances;
-    instances.insert({ecClass->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass2->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass2->GetId(), ECInstanceId(2)});
-    instances.insert({ecClass3->GetId(), ECInstanceId(1)});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass2->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass2->GetId(), ECInstanceId(UINT64_C(2))});
+    instances.insert({ecClass3->GetId(), ECInstanceId(UINT64_C(1))});
 
     ECInstanceKeyMultiMap result;
     bset<ECClassCP> classes;
@@ -124,9 +124,9 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClasses_FiltersByClasses)
     txn.Commit();
 
     ASSERT_EQ(3, result.size());
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(2)));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassPolymorphicaly_FiltersByClassAndItsDerived)
@@ -139,10 +139,10 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassPolymorphicaly_FiltersByC
        
 
     ECInstanceKeyMultiMap instances;
-    instances.insert({ecClass->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass2->GetId(), ECInstanceId(1)});
-    instances.insert({ecClassDerived->GetId(), ECInstanceId(1)});
-    instances.insert({ecClassDerived->GetId(), ECInstanceId(2)});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass2->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClassDerived->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClassDerived->GetId(), ECInstanceId(UINT64_C(2))});
 
     ECInstanceKeyMultiMap result;
     ECInstanceKeyFilter filter(*ecClass, true);
@@ -151,9 +151,9 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_OneClassPolymorphicaly_FiltersByC
     txn.Commit();
 
     ASSERT_EQ(3, result.size());
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(2)));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
 TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesPolymorphicaly_FiltersByClassesAndItsDerived)
@@ -166,12 +166,12 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesPolymorphicaly_Fil
     auto ecClassDerived = txn.GetCache().GetAdapter().GetECClass("TestSchema", "TestDerivedClass");
 
     ECInstanceKeyMultiMap instances;
-    instances.insert({ecClass->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass->GetId(), ECInstanceId(2)});
-    instances.insert({ecClass2->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass3->GetId(), ECInstanceId(1)});
-    instances.insert({ecClassDerived->GetId(), ECInstanceId(1)});
-    instances.insert({ecClassDerived->GetId(), ECInstanceId(2)});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(2))});
+    instances.insert({ecClass2->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass3->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClassDerived->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClassDerived->GetId(), ECInstanceId(UINT64_C(2))});
 
     ECInstanceKeyMultiMap result;
     bset<ECClassCP> classes;
@@ -183,11 +183,11 @@ TEST_F(ECInstanceKeyFilterTests, FilterByClass_MultipleClassesPolymorphicaly_Fil
     txn.Commit();
 
     ASSERT_EQ(5, result.size());
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(2)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(1)));
-    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(2)));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass->GetId(), ECInstanceId(UINT64_C(2))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClass2->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(UINT64_C(1))));
+    EXPECT_CONTAINS(result, ECInstanceKeyMultiMapPair(ecClassDerived->GetId(), ECInstanceId(UINT64_C(2))));
     }
 
 TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_EmptyLabelPassed_FindsNoInstances)
@@ -352,7 +352,7 @@ TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_MultipleClasses_Filt
     filter.AddAnyPropertiesLikeFilter([] (ECClassCR ecClass)
         {
         bset<Utf8String> propertiesToSearch;
-        if (ecClass.GetName().Equals(L"TestClass"))
+        if (ecClass.GetName().Equals("TestClass"))
             {
             propertiesToSearch.insert("TestProperty");
             propertiesToSearch.insert("TestProperty2");
@@ -380,8 +380,8 @@ TEST_F(ECInstanceKeyFilterTests, SetLimit_OnClassFilter_ReturnsLimitedInstances)
     auto ecClass = txn.GetCache().GetAdapter().GetECClass("TestSchema", "TestClass");
 
     ECInstanceKeyMultiMap instances;
-    instances.insert({ecClass->GetId(), ECInstanceId(1)});
-    instances.insert({ecClass->GetId(), ECInstanceId(2)});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(1))});
+    instances.insert({ecClass->GetId(), ECInstanceId(UINT64_C(2))});
 
     ECInstanceKeyMultiMap result;
     ECInstanceKeyFilter filter(*ecClass);
