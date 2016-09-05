@@ -1304,6 +1304,71 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemantics)
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted,
+                       SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                  "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                  "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                  "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                  "    <ECCustomAttributes>"
+                                  "       <ClassMap xmlns='ECDbMap.02.00'>"
+                                  "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                  "       </ClassMap>"
+                                  "    </ECCustomAttributes>"
+                                  "    <ECProperty propertyName='Code' typeName='string' />"
+                                  "    <ECNavigationProperty propertyName='ParentId' relationshipName='ElementOwnsChildElements' direction='Backward' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='BoltElement'>"
+                                  "    <BaseClass>Element</BaseClass>"
+                                  "    <ECProperty propertyName='BoltType' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
+                                  "    <BaseClass>Element</BaseClass>"
+                                  "    <ECProperty propertyName='ConnectionType' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
+                                  "    <BaseClass>ConnectionElement</BaseClass>"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
+                                  "    <BaseClass>ConnectionElement</BaseClass>"
+                                  "  </ECEntityClass>"
+                                  "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='Abstract' strength='embedding'>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                  "      <Class class='Element' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='Element' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                  "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                  "      <Class class='SteelBeamConnectionElement' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='BoltElement' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                  "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                  "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                  "      <Class class='PipeFlangeConnectionElement' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='BoltElement' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "</ECSchema>", true),
+                       "narrowingsemanticsrelinheritance.ecdb");
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InheritingAllowDuplicateRelationships)
