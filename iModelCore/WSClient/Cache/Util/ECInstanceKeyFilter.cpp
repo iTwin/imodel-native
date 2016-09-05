@@ -260,7 +260,7 @@ ICancellationTokenPtr ct
     auto sql = Utf8PrintfString(
         "SELECT GetECClassId(), ECInstanceId FROM ONLY %s "
         "WHERE %s",
-        ECSqlBuilder::ToECSqlSnippet(ecClass).c_str(),
+        ecClass.GetECSqlName().c_str(),
         m_whereClause.c_str());
 
     if (m_limit > 0)
@@ -276,8 +276,8 @@ ICancellationTokenPtr ct
             return ERROR;
         }
 
-    ECSqlStepStatus status;
-    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+    DbResult status;
+    while (DbResult::BE_SQLITE_ROW == (status = statement.Step()))
         {
         result.Insert(statement.GetValueId<ECClassId>(0), statement.GetValueId<ECInstanceId>(1));
 
@@ -285,7 +285,7 @@ ICancellationTokenPtr ct
             return SUCCESS;
         }
 
-    return ECSqlStepStatus::Done == status ? SUCCESS : ERROR;
+    return DbResult::BE_SQLITE_DONE == status ? SUCCESS : ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
