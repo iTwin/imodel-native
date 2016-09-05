@@ -44,3 +44,60 @@ TEST_F(ECDbHelperTests, ToECInstanceIdList_EmptyMap_EmptyString)
     ECInstanceKeyMultiMap map;
     EXPECT_STREQ("", ECDbHelper::ToECInstanceIdList(map.begin(), map.end()).c_str());
     }
+
+TEST_F(ECDbHelperTests, MergeMultiMaps_BothMapsEmpty_ReturnsEmpty)
+    {
+    ECInstanceKeyMultiMap map1;
+    ECInstanceKeyMultiMap map2;
+
+    auto mergedMap = ECDbHelper::MergeMultiMaps(map1, map2);
+
+    ASSERT_EQ(0, mergedMap.size());
+    }
+
+TEST_F(ECDbHelperTests, MergeMultiMaps_FirstMapEmpty_ReturnsSecondMap)
+    {
+    ECInstanceKeyMultiMap map1;
+    ECInstanceKeyMultiMap map2;
+    map2.insert({1, ECInstanceId(1)});
+
+    auto mergedMap = ECDbHelper::MergeMultiMaps(map1, map2);
+
+    ASSERT_EQ(1, mergedMap.size());
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(1, ECInstanceId(1)));
+    }
+
+TEST_F(ECDbHelperTests, MergeMultiMaps_SecondMapEmpty_ReturnsFirstMap)
+    {
+    ECInstanceKeyMultiMap map1;
+    map1.insert({1, ECInstanceId(1)});
+
+    ECInstanceKeyMultiMap map2;
+
+    auto mergedMap = ECDbHelper::MergeMultiMaps(map1, map2);
+
+    ASSERT_EQ(1, mergedMap.size());
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(1, ECInstanceId(1)));
+    }
+
+TEST_F(ECDbHelperTests, MergeMultiMaps_MultipleValues_ReturnsMerged)
+    {
+    ECInstanceKeyMultiMap map1;
+    map1.insert({1, ECInstanceId(1)});
+    map1.insert({1, ECInstanceId(2)});
+    map1.insert({2, ECInstanceId(1)});
+
+    ECInstanceKeyMultiMap map2;
+    map2.insert({1, ECInstanceId(1)});
+    map2.insert({1, ECInstanceId(3)});
+    map2.insert({3, ECInstanceId(1)});
+
+    auto mergedMap = ECDbHelper::MergeMultiMaps(map1, map2);
+
+    ASSERT_EQ(5, mergedMap.size());
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(1, ECInstanceId(1)));
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(1, ECInstanceId(2)));
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(1, ECInstanceId(3)));
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(2, ECInstanceId(1)));
+    EXPECT_CONTAINS(mergedMap, ECInstanceKeyMultiMapPair(3, ECInstanceId(1)));
+    }

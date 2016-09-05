@@ -754,9 +754,10 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChange
 
     SimpleWriteToFile("NewTestContent", cache.ReadFilePath(instanceKey));
 
-    EXPECT_EQ(SUCCESS, cache.GetChangeManager().DetectFileModification(instanceKey));
+    bool isFileModified = false;
+    EXPECT_EQ(SUCCESS, cache.GetChangeManager().DetectFileModification(instanceKey, isFileModified));
 
-    EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache.GetChangeManager().GetFileChange(instanceKey).GetChangeStatus());
+    EXPECT_TRUE(isFileModified);
     }
 
 #endif

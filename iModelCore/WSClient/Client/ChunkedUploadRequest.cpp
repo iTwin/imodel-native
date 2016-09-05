@@ -141,11 +141,12 @@ AsyncTaskPtr<void> ChunkedUploadRequest::SendHandshakeAndContinue(std::shared_pt
 
     // Setup Query/Handshake request
     if (!cuRequest->m_mainBody.IsNull())
-        {
+        { 
         request.GetHeaders().SetIfMatch(cuRequest->m_etag);
         request.GetHeaders().SetContentRange(Utf8PrintfString("bytes */%llu", cuRequest->m_mainBody->GetLength()).c_str());
-        Utf8String escapedFileName = HttpClient::EscapeString(cuRequest->m_mainBodyFileName);
-        request.GetHeaders().SetContentDisposition(Utf8PrintfString("attachment; filename=%s", escapedFileName.c_str()));
+
+        // Format based on https://www.ietf.org/rfc/rfc1806.txt, https://tools.ietf.org/html/rfc6266#ref-ISO-8859-1
+        request.GetHeaders().SetContentDisposition(Utf8PrintfString("attachment; filename=\"%s\"", cuRequest->m_mainBodyFileName.c_str()));
         }
 
     // Setup Handshake request

@@ -356,13 +356,9 @@ BentleyStatus ChangeManager::DetectFileModification(ECInstanceKeyCR instanceKey,
     if (SUCCESS != info.GetFileUpdateDate().ToUnixMilliseconds(updatedMs))
         return ERROR;
 
-    if (modifiedMs <= updatedMs)
-        return SUCCESS;
+    outIsModified = modifiedMs > updatedMs;
 
-    if (SUCCESS != MarkFileAsModified(info, syncStatus))
-        return ERROR;
-
-    return m_fileInfoManager.SaveInfo(info);
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
