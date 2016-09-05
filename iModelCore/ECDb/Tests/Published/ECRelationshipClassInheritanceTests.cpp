@@ -1306,7 +1306,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  09/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemantics)
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping)
     {
     ECDb ecdb;
     bool asserted = false;
@@ -1364,8 +1364,295 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemantics)
                                   "    </Target>"
                                   "  </ECRelationshipClass>"
                                   "</ECSchema>", true),
-                       "narrowingsemanticsrelinheritance.ecdb");
+                       "narrowingsemanticsrelinheritance_fkmapping.ecdb");
     ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
+    ECInstanceKey stealbeamConnKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(stealbeamConnKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionElement(Code,ConnectionType) VALUES('PipeFlangeConnection1','Steel')"));
+    ECInstanceKey pipeflangeConnKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(pipeflangeConnKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.BoltElement(Code,BoltType) VALUES('Bolt1','Dunno')"));
+    ECInstanceKey bolt1Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bolt1Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.BoltElement(Code,BoltType) VALUES('Bolt2','Dunno')"));
+    ECInstanceKey bolt2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bolt2Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //verify equality between leaf and base rel class
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
+                  stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(bolt1Key.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for ECSQL " << ecsql.c_str();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "The particular Bolt has already an ElementOwnsChildElement rel";
+    }
+
+//---------------------------------------------------------------------------------------
+// we actually want to disallow non-abstract base classes, but might need them for legacy schemas
+// @bsimethod                                   Krischan.Eberle                  09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsFKMapping_NonAbstractRelBaseClass)
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted,
+                        SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                    "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                    "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                    "    <ECCustomAttributes>"
+                                    "       <ClassMap xmlns='ECDbMap.02.00'>"
+                                    "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                    "       </ClassMap>"
+                                    "    </ECCustomAttributes>"
+                                    "    <ECProperty propertyName='Code' typeName='string' />"
+                                    "    <ECNavigationProperty propertyName='ParentId' relationshipName='ElementOwnsChildElements' direction='Backward' />"
+                                    "  </ECEntityClass>"
+                                    "  <ECEntityClass typeName='BoltElement'>"
+                                    "    <BaseClass>Element</BaseClass>"
+                                    "    <ECProperty propertyName='BoltType' typeName='string' />"
+                                    "  </ECEntityClass>"
+                                    "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
+                                    "    <BaseClass>Element</BaseClass>"
+                                    "    <ECProperty propertyName='ConnectionType' typeName='string' />"
+                                    "  </ECEntityClass>"
+                                    "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
+                                    "    <BaseClass>ConnectionElement</BaseClass>"
+                                    "  </ECEntityClass>"
+                                    "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
+                                    "    <BaseClass>ConnectionElement</BaseClass>"
+                                    "  </ECEntityClass>"
+                                    "  <ECRelationshipClass typeName='ElementOwnsChildElements' modifier='None' strength='embedding'>"
+                                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                    "      <Class class='Element' />"
+                                    "    </Source>"
+                                    "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                    "      <Class class='Element' />"
+                                    "    </Target>"
+                                    "  </ECRelationshipClass>"
+                                    "  <ECRelationshipClass typeName='SteelBeamConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                    "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                    "      <Class class='SteelBeamConnectionElement' />"
+                                    "    </Source>"
+                                    "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                    "      <Class class='BoltElement' />"
+                                    "    </Target>"
+                                    "  </ECRelationshipClass>"
+                                    "  <ECRelationshipClass typeName='PipeFlangeConnectionHasBolts' strength='embedding' modifier='Sealed'>"
+                                    "   <BaseClass>ElementOwnsChildElements</BaseClass>"
+                                    "    <Source multiplicity='(0..1)' polymorphic='True'>"
+                                    "      <Class class='PipeFlangeConnectionElement' />"
+                                    "    </Source>"
+                                    "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                    "      <Class class='BoltElement' />"
+                                    "    </Target>"
+                                    "  </ECRelationshipClass>"
+                                    "</ECSchema>", true),
+                        "narrowingsemanticsrelinheritance_fkmapping_nonabstractrelbaseclass.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
+    ECInstanceKey stealbeamConnKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(stealbeamConnKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionElement(Code,ConnectionType) VALUES('PipeFlangeConnection1','Steel')"));
+    ECInstanceKey pipeflangeConnKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(pipeflangeConnKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.BoltElement(Code,BoltType) VALUES('Bolt1','Dunno')"));
+    ECInstanceKey bolt1Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bolt1Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.BoltElement(Code,BoltType) VALUES('Bolt2','Dunno')"));
+    ECInstanceKey bolt2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bolt2Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.ElementOwnsChildElements(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //verify equality between leaf and base rel class
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementOwnsChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
+                    stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(bolt1Key.GetECInstanceId().GetValue(), stmt.GetValueId<ECInstanceId>(0).GetValue());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only one row expected for ECSQL " << ecsql.c_str();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionHasBolts(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "The particular Bolt has already an ElementOwnsChildElement rel";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  09/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted,
+                       SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                  "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                  "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                  "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+                                  "    <ECCustomAttributes>"
+                                  "       <ClassMap xmlns='ECDbMap.02.00'>"
+                                  "            <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                  "       </ClassMap>"
+                                  "    </ECCustomAttributes>"
+                                  "    <ECProperty propertyName='Code' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='BoltElement'>"
+                                  "    <BaseClass>Element</BaseClass>"
+                                  "    <ECProperty propertyName='BoltType' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='ConnectionElement' modifier='Abstract' >"
+                                  "    <BaseClass>Element</BaseClass>"
+                                  "    <ECProperty propertyName='ConnectionType' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='SteelBeamConnectionElement'>"
+                                  "    <BaseClass>ConnectionElement</BaseClass>"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='PipeFlangeConnectionElement'>"
+                                  "    <BaseClass>ConnectionElement</BaseClass>"
+                                  "  </ECEntityClass>"
+                                  "  <ECRelationshipClass typeName='ElementDrivesChildElements' modifier='Abstract' strength='referencing'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='Element' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='Element' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='SteelBeamConnectionDrivesBolt' modifier='Sealed' strength='referencing'>"
+                                  "   <BaseClass>ElementDrivesChildElements</BaseClass>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='SteelBeamConnectionElement' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='BoltElement' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='SteelBeamConnectionDrivesBolt2' modifier='Sealed' strength='referencing'>"
+                                  "   <BaseClass>ElementDrivesChildElements</BaseClass>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='SteelBeamConnectionElement' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='BoltElement' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='PipeFlangeConnectionDrivesBolt' modifier='Sealed' strength='referencing'>"
+                                  "   <BaseClass>ElementDrivesChildElements</BaseClass>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='PipeFlangeConnectionElement' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True'>"
+                                  "      <Class class='BoltElement' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "</ECSchema>", true),
+                       "narrowingsemanticsrelinheritance_linktable.ecdb");
+    ASSERT_FALSE(asserted);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionElement(Code,ConnectionType) VALUES('SteelBeamConnection1','Steel')"));
+    ECInstanceKey stealbeamConnKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(stealbeamConnKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionElement(Code,ConnectionType) VALUES('PipeFlangeConnection1','Steel')"));
+    ECInstanceKey pipeflangeConnKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(pipeflangeConnKey));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.BoltElement(Code,BoltType) VALUES('Bolt1','Dunno')"));
+    ECInstanceKey bolt1Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bolt1Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.BoltElement(Code,BoltType) VALUES('Bolt2','Dunno')"));
+    ECInstanceKey bolt2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bolt2Key));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionDrivesBolt(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SteelBeamConnectionDrivesBolt2(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, stealbeamConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, stealbeamConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //this should actually fail, but narrowing is not enforced for link tables (yet)
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.PipeFlangeConnectionDrivesBolt(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, pipeflangeConnKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, pipeflangeConnKey.GetECClassId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, bolt1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, bolt1Key.GetECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    //verify equality between leaf and base rel class
+    Utf8String ecsql;
+    ecsql.Sprintf("SELECT ECInstanceId, ECClassId FROM ONLY ts.ElementDrivesChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
+                  stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //For link tables ECDb doesn't enforce equality between base and leaf instances. They are standalone classes like regular classes
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
