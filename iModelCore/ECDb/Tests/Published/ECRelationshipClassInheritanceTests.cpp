@@ -1653,6 +1653,15 @@ TEST_F(ECRelationshipInheritanceTestFixture, NarrowingSemanticsLinkTable)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()); //For link tables ECDb doesn't enforce equality between base and leaf instances. They are standalone classes like regular classes
     stmt.Finalize();
+
+    //now do polymorphic query to see whether we catch the subclass instances
+    ecsql.Sprintf("SELECT count(*) FROM ts.ElementDrivesChildElements WHERE SourceECInstanceId=%s AND TargetECInstanceId=%s",
+                  stealbeamConnKey.GetECInstanceId().ToString().c_str(), bolt1Key.GetECInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(2, stmt.GetValueInt(0)); //one for SteelBeamConnectionDrivesBolt and one for SteelBeamConnectionDrivesBolt2
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
