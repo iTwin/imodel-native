@@ -123,7 +123,7 @@ struct ChangeManager : public IChangeManager
 
         WSCACHE_EXPORT BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) override;
         WSCACHE_EXPORT BentleyStatus ModifyFileName(ECInstanceKeyCR instanceKey, Utf8StringCR newFileName) override;
-        WSCACHE_EXPORT BentleyStatus DetectFileModification(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT BentleyStatus DetectFileModification(ECInstanceKeyCR instanceKey, bool& outIsModified) override;
 
         WSCACHE_EXPORT BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
 

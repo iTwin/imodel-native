@@ -15,195 +15,377 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceKeyFilter::FilterByWhereClause
+ECInstanceKeyFilter::ECInstanceKeyFilter()
+    {
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKeyFilter::ECInstanceKeyFilter(ECClassCR ecClass, bool polymorphically)
+    {
+    m_classesToFilter.insert(&ecClass);
+    m_classFilterAdded = true;
+    m_filterClasesPolymorphically = polymorphically;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceKeyFilter::ECInstanceKeyFilter(bset<ECClassCP> ecClasses, bool polymorphically)
+    {
+    m_classesToFilter = ecClasses;
+    m_classFilterAdded = true;
+    m_filterClasesPolymorphically = polymorphically;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::SetLimit(int limit)
+    {
+    m_limit = limit;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECInstanceKeyFilter::IsClassInFilter(ECClassCR ecClass)
+    {
+    if (!m_classFilterAdded)
+        return true;
+
+    for (auto searchClass : m_classesToFilter)
+        {
+        if (searchClass == nullptr)
+            continue;
+
+        if (m_filterClasesPolymorphically)
+            {
+            if (ecClass.Is(searchClass))
+                return true;
+            }
+        else
+            {
+            if (ecClass.GetId() == searchClass->GetId())
+                return true;
+            }
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::Filter
 (
-CacheTransactionCR txn,
-ECInstanceKeyMultiMap::const_iterator from,
-ECInstanceKeyMultiMap::const_iterator to,
+CacheTransactionCR txn, 
+const ECInstanceKeyMultiMap& instances, 
 ECInstanceKeyMultiMap& result,
-Utf8StringCR whereClause,
-const std::function<void(ECSqlStatement& statement, int firstArgIndex)>& bindArgs
+ICancellationTokenPtr ct
 )
     {
-    auto ecClassP = txn.GetCache().GetAdapter().GetECClass(from->first);
+    for (auto start = instances.begin(), end = start; start != instances.end(); start = end)
+        {
+        if (ct && ct->IsCanceled())
+            return SUCCESS;
 
+        end = instances.upper_bound(start->first);
+
+        auto ecClass = txn.GetCache().GetAdapter().GetECClass(start->first);
+        if (ecClass == nullptr)
+            return ERROR;
+
+        if (!IsClassInFilter(*ecClass))
+            continue;
+
+        ECInstanceIdSet idSet;
+        for (auto it = start; it != end; it++)
+            {
+            idSet.insert(it->second);
+            }
+
+        if (SUCCESS != DoFilter(txn, *ecClass, idSet, result, ct))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::Filter
+(
+CacheTransactionCR txn,
+ECClassCR ecClass,
+const bset<ECInstanceId>& instances,
+ECInstanceKeyMultiMap& result,
+ICancellationTokenPtr ct
+)
+    {
+    if (!IsClassInFilter(ecClass))
+        return SUCCESS;
+
+    ECInstanceIdSet idSet;
+    for (auto instanceId : instances)
+        idSet.insert(instanceId);
+
+    return DoFilter(txn, ecClass, idSet, result, ct);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::DoFilter
+(
+CacheTransactionCR txn,
+ECClassCR ecClass,
+const ECInstanceIdSet& instances,
+ECInstanceKeyMultiMap& result,
+ICancellationTokenPtr ct
+)
+    {
+    // No Filters added
+    if (m_whereClauseCallbacks.empty())
+        {
+        for (auto instanceId : instances)
+            {
+            if (m_limit <= 0 || result.size() < m_limit)
+                result.insert({ecClass.GetId(), instanceId});
+            }
+
+        return SUCCESS;
+        }
+
+    AddTmpWhereClauseCallbacks(instances);
+
+    if (SUCCESS != BuildWhereClause(ecClass))
+        return ERROR;
+
+    if (SUCCESS != ExecuteDbQuery(txn, ecClass, result, ct))
+        return ERROR;
+
+    m_tmpWhereClauseCallbacks.clear();
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::AddTmpWhereClauseCallbacks(const ECInstanceIdSet& instances)
+    {
+    m_tmpWhereClauseCallbacks.push_back([&] (ECClassCR ecClass, Utf8StringR outWhereClause, BindArgsCallback& outBindArgs)
+        {
+        outWhereClause = "InVirtualSet(? , ECInstanceId)";
+
+        outBindArgs = [&] (ECSqlStatement& statement, int firstArgIndex)
+            {
+            if (ECSqlStatus::Success == statement.BindInt64(firstArgIndex, (int64_t)&instances))
+                return SUCCESS;
+
+            return ERROR;
+            };
+
+        return SUCCESS;
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::BuildWhereClause(ECClassCR ecClass)
+    {
+    m_nextBindingIndex = 1;
+    m_whereClause = "";
+    m_bindArgsCallbacks.clear();
+
+    for (auto& callback : m_whereClauseCallbacks)
+        {
+        if (SUCCESS != AddWhereClauseSentence(ecClass, callback))
+            return ERROR;
+        }
+
+    for (auto& callback : m_tmpWhereClauseCallbacks)
+        {
+        if (SUCCESS != AddWhereClauseSentence(ecClass, callback))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::AddWhereClauseSentence(ECClassCR ecClass, const WhereClauseCallback& whereClauseCallback)
+    {
+    Utf8String whereSentence;
+    BindArgsCallback bindArgsCallback;
+    if (SUCCESS != whereClauseCallback(ecClass, whereSentence, bindArgsCallback))
+        return ERROR;
+
+    if (whereSentence.empty())
+        return SUCCESS;
+
+    if (!m_whereClause.empty())
+        m_whereClause += " AND ";
+
+    m_whereClause += "(" + whereSentence + ")";
+
+    int bindingCount = (int)std::count(whereSentence.begin(), whereSentence.end(), '?');
+    if (bindingCount <= 0)
+        return SUCCESS;
+
+    m_bindArgsCallbacks.push_back(std::bind(bindArgsCallback, std::placeholders::_1, m_nextBindingIndex));
+
+    m_nextBindingIndex += bindingCount;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECInstanceKeyFilter::ExecuteDbQuery
+(
+CacheTransactionCR txn,
+ECClassCR ecClass,
+ECInstanceKeyMultiMap& result,
+ICancellationTokenPtr ct
+)
+    {
     auto sql = Utf8PrintfString(
-        "SELECT ECInstanceId FROM %s "
-        "WHERE InVirtualSet(?, ECInstanceId) AND %s",
-        ecClassP->GetECSqlName().c_str(),
-        whereClause.c_str());
+        "SELECT GetECClassId(), ECInstanceId FROM ONLY %s "
+        "WHERE %s",
+        ECSqlBuilder::ToECSqlSnippet(ecClass).c_str(),
+        m_whereClause.c_str());
+
+    if (m_limit > 0)
+        sql += Utf8PrintfString(" LIMIT %d", m_limit);
 
     ECSqlStatement statement;
     if (SUCCESS != txn.GetCache().GetAdapter().PrepareStatement(statement, sql))
-        {
         return ERROR;
-        }
 
-    ECInstanceIdSet idSet;
-    for (auto it = from; it != to; it++)
+    for (auto callback : m_bindArgsCallbacks)
         {
-        idSet.insert(it->second);
+        if (SUCCESS != callback(statement))
+            return ERROR;
         }
 
-    statement.BindInt64(1, (int64_t)&idSet);
+    ECSqlStepStatus status;
+    while (ECSqlStepStatus::HasRow == (status = statement.Step()))
+        {
+        result.Insert(statement.GetValueId<ECClassId>(0), statement.GetValueId<ECInstanceId>(1));
 
-    bindArgs(statement, 2);
+        if (ct && ct->IsCanceled())
+            return SUCCESS;
+        }
 
-    return txn.GetCache().GetAdapter().ExtractECInstanceKeyMultiMapFromStatement(statement, 0, ecClassP->GetId(), result);
+    return ECSqlStepStatus::Done == status ? SUCCESS : ERROR;
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                  
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceKeyFilter::FilterByLabel
-(
-CacheTransactionCR txn,
-const ECInstanceKeyMultiMap& instances,
-ECInstanceKeyMultiMap& result,
-Utf8StringCR label
-)
+void ECInstanceKeyFilter::AddLabelFilter(Utf8StringCR label)
     {
-    for (auto start = instances.begin(); start != instances.end(); )
+    m_whereClauseCallbacks.push_back([=] (ECClassCR ecClass, Utf8StringR outWhereClause, BindArgsCallback& outBindArgs)
         {
-        auto rangeEnd = instances.upper_bound(start->first);
-
-        if (SUCCESS != FilterByLabel(txn, start, rangeEnd, result, label))
+        ECPropertyCP property = ecClass.GetInstanceLabelProperty();
+        if (nullptr == property)
             return ERROR;
 
-        start = rangeEnd;
-        }
+        Utf8String labelProperty(property->GetName());
+        if (labelProperty.empty())
+            return ERROR;
 
-    return SUCCESS;
-    }
+        outWhereClause = labelProperty + " = ?";
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceKeyFilter::FilterByLabelAndClass
-(
-CacheTransactionCR txn,
-const ECInstanceKeyMultiMap& instances,
-ECInstanceKeyMultiMap& result,
-Utf8StringCR label,
-ECClassCR ecClass
-)
-    {
-    bset<ECClassCP> ecClasses;
-    ecClasses.insert(&ecClass);
-
-    return FilterByLabelAndClass(txn, instances, result, label, ecClasses);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceKeyFilter::FilterByLabelAndClass
-(
-CacheTransactionCR txn,
-const ECInstanceKeyMultiMap& instances,
-ECInstanceKeyMultiMap& result,
-Utf8StringCR label,
-bset<ECClassCP> ecClasses
-)
-    {
-    for (auto ecClass : ecClasses)
-        {
-        if (ecClass == nullptr)
+        outBindArgs = [=] (ECSqlStatement& statement, int firstArgIndex)
             {
-            BeAssert(false);
-            continue;
-            }
+            if (ECSqlStatus::Success == statement.BindText(firstArgIndex, label.c_str(), IECSqlBinder::MakeCopy::No))
+                return SUCCESS;
 
-        auto range = instances.equal_range(ecClass->GetId());
-
-        if (SUCCESS != FilterByLabel(txn, range.first, range.second, result, label))
             return ERROR;
-        }
-       
-    return SUCCESS;
-    }
+            };
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceKeyFilter::FilterByLabel
-(
-CacheTransactionCR txn,
-ECInstanceKeyMultiMap::const_iterator from,
-ECInstanceKeyMultiMap::const_iterator to,
-ECInstanceKeyMultiMap& result,
-Utf8StringCR label
-)
-    {
-    auto ecClass = txn.GetCache().GetAdapter().GetECClass(from->first);
-    if (ecClass == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    ECPropertyCP property = ecClass->GetInstanceLabelProperty();
-    if (nullptr == property)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    Utf8String labelProperty(property->GetName());
-
-    if (labelProperty.empty())
         return SUCCESS;
-
-    Utf8String whereClause = labelProperty + " = ?";
-    return FilterByWhereClause (
-        txn,
-        from,
-        to,
-        result,
-        whereClause,
-        [&] (ECSqlStatement& statement, int firstArgIndex)
-        {
-        statement.BindText(firstArgIndex, label.c_str(), IECSqlBinder::MakeCopy::No);
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceKeyFilter::FilterWherePropertiesLike
+void ECInstanceKeyFilter::AddAnyPropertiesLikeFilter(bset<Utf8String> propertiesToSearch, Utf8StringCR searchTerm)
+    {
+    AddAnyPropertiesLikeFilter([=] (ECClassCR)
+        {
+        return propertiesToSearch;
+        }, searchTerm);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::AddAnyPropertiesLikeFilter
 (
-CacheTransactionCR txn,
-const ECInstanceKeyMultiMap& instances,
-ECInstanceKeyMultiMap& result,
-bset<Utf8String> properties,
-Utf8String searchTerm
+const std::function<bset<Utf8String>(ECClassCR ecClass)>& propertiesToSearch,
+Utf8StringCR searchTerm
 )
     {
-    Utf8String whereClause = "";
-    for (Utf8StringCR property : properties)
+    m_whereClauseCallbacks.push_back([=] (ECClassCR ecClass, Utf8StringR outWhereClause, BindArgsCallback& outBindArgs)
         {
-        if (!whereClause.empty())
+        auto properties = propertiesToSearch(ecClass);
+
+        for (Utf8StringCR property : properties)
             {
-            whereClause += " OR ";
+            if (!outWhereClause.empty())
+                {
+                outWhereClause += " OR ";
+                }
+
+            outWhereClause += "[" + property + "] LIKE ?";
             }
 
-        whereClause += "[" + property + "] LIKE ?";
-        }
-    whereClause = "(" + whereClause + ")";
-
-    searchTerm = "%" + searchTerm + "%";
-
-    return FilterByWhereClause(
-        txn,
-        instances.begin(),
-        instances.end(),
-        result,
-        whereClause,
-        [&] (ECSqlStatement& statement, int firstArgIndex)
-        {
-        for (int i = 0; i < properties.size(); i++)
+        outBindArgs = [=] (ECSqlStatement& statement, int firstArgIndex)
             {
-            statement.BindText(firstArgIndex + i, searchTerm.c_str(), IECSqlBinder::MakeCopy::No);
-            }
+            Utf8String searchValue = "%" + searchTerm + "%";
+
+            for (int i = 0; i < properties.size(); i++)
+                {
+                if (ECSqlStatus::Success != statement.BindText(firstArgIndex + i, searchValue.c_str(), IECSqlBinder::MakeCopy::Yes))
+                    return ERROR;
+                }
+            return SUCCESS;
+            };
+
+        return SUCCESS;
         });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::AddWhereClauseFilter(Utf8StringCR whereClause, const BindArgsCallback& bindArgsCallback)
+    {
+    m_whereClauseCallbacks.push_back([=] (ECClassCR ecClass, Utf8StringR outWhereClause, BindArgsCallback& outBindArgs)
+        {
+        outWhereClause = whereClause;
+
+        outBindArgs = bindArgsCallback;
+
+        return SUCCESS;
+        });
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceKeyFilter::AddWhereClauseFilter(const WhereClauseCallback& whereClauseCallback)
+    {
+    m_whereClauseCallbacks.push_back(whereClauseCallback);
     }
