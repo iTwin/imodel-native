@@ -171,8 +171,11 @@ public:
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
 
     //! Ctor for Root.
-    //! @param [in] db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()'
-    //! @param [in] location. The transform from tile coordinates to BIM world coordinates.
+    //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()'
+    //! @param location The transform from tile coordinates to BIM world coordinates.
+    //! @param realityCacheName
+    //! @param rootUrl
+    //! @param system
     DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system);
 
     //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
