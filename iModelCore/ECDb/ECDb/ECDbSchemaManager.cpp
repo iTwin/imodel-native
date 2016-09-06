@@ -293,7 +293,7 @@ BentleyStatus ECDbSchemaManager::BatchImportECSchemas(SchemaImportContext& conte
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != ECDbSchemaWriter::RepopulateClassHierarchyTable(m_ecdb))
+    if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(m_ecdb))
         return ERROR;
 
     return SUCCESS;
