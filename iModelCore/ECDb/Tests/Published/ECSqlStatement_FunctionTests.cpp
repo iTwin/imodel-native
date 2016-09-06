@@ -265,6 +265,4 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
     }
 
-    }
-
 END_ECDBUNITTESTS_NAMESPACE
