@@ -214,6 +214,7 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, Data
     
     assert(buffer.size <= size);
     readSize = buffer.size;
+    (void)size;
     }
     catch (...)
     {
