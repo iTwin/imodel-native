@@ -162,16 +162,16 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSource &dataSource, 
 
     dataSource.getURL(url);
 
-    // indicate that we want to download the data (instead of just information about the data)
-    url += L"/$file";
-
     return downloadBlobSync(url, dest, readSize, destSize);
 }
 
-DataSourceStatus DataSourceAccountWSG::downloadBlobSync(const DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
     try
     {
+    // indicate that we want to download the data (instead of just information about the data)
+    url += L"/$file";
+
     CURL *curl_handle;
 
     struct CURLDataMemoryBuffer buffer;
@@ -462,8 +462,9 @@ size_t DataSourceAccountWSG::CURLWriteDataCallback(void * contents, size_t size,
     
     //    mem->memory->assign((Byte*)contents, (Byte*)contents + realsize);
     //mem->memory->insert(mem->memory->end(), (uint8_t*)contents, (uint8_t*)contents + realsize);
-    memcpy(mem->data, (uint8_t*)contents, realsize);
-    mem->size = realsize;
+    memcpy(&mem->data[0], (uint8_t*)contents, realsize);
+    mem->data += realsize;
+    mem->size += realsize;
     
     return realsize;
     }

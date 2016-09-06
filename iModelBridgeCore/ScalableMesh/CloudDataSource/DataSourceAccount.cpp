@@ -189,7 +189,7 @@ DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, Dat
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
 
-DataSourceStatus DataSourceAccount::downloadBlobSync(const DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
     {
     (void)segmentName;
     (void)dest;

@@ -878,11 +878,9 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::GetNodeHeaderBinary(const
     std::unique_ptr<DataSource::Buffer[]>          dest;
     DataSource                                *    dataSource;
     DataSource::DataSize                           readSize;
-    wchar_t                                        buffer[10000];
 
-    swprintf(buffer, L"%sn_%llu.bin", m_pathToHeaders.c_str(), blockID.m_integerID);
-
-    DataSourceURL    dataSourceURL(buffer);
+    DataSourceURL    dataSourceURL(m_pathToHeaders);
+    dataSourceURL.append(L"n_" + std::to_wstring(blockID.m_integerID) + L".bin");
 
     DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
@@ -1255,15 +1253,13 @@ void StreamingDataBlock::Load(DataSourceAccount *dataSourceAccount, uint64_t dat
                 LockAndWait();
             }
         else
-            {
-                wchar_t buffer[10000];
-                swprintf(buffer, L"%sp_%llu.bin", m_pDataSource.c_str(), m_pID);
-            
+            {           
                 std::unique_ptr<DataSource::Buffer[]>        dest;
                 DataSource                                *  dataSource;
                 DataSource::DataSize                         readSize;
 
-                DataSourceURL    dataSourceURL(buffer);
+                DataSourceURL    dataSourceURL(m_pDataSource);
+                dataSourceURL.append(L"p_" + std::to_wstring(m_pID) + L".bin");
 
                 DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 

@@ -265,10 +265,9 @@ struct Texture : public bvector<uint8_t>
             DataSource::DataSize                        readSize;
 
             assert(m_ID != -1);
-            wchar_t buffer[10000];
-            swprintf(buffer, L"%st_%llu.bin", m_url.c_str(), m_ID);
 
-            DataSourceURL   dataSourceURL(buffer);
+            DataSourceURL   dataSourceURL(m_url);
+            dataSourceURL.append(L"t_" + std::to_wstring(m_ID) + L".bin");
 
             DataSourceBuffer::BufferSize    destSize = 5 * 1024 * 1024;
 
