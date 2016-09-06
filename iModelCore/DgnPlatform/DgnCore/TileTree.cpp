@@ -21,7 +21,7 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct TileCache : RealityData::Cache
 {
-    uint64_t m_allowedSize;// = (1024*1024*1024); // 1 Gb
+    uint64_t m_allowedSize;
     virtual BentleyStatus _Prepare() const override;
     virtual BentleyStatus _Cleanup() const override;
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
@@ -91,7 +91,7 @@ BentleyStatus TileData::ReadFromFile() const
         return SUCCESS;
         }
 
-    if (SUCCESS != m_tile->_Read(m_tileBytes, m_root))
+    if (SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
         {
         m_tile->SetNotFound();
         return ERROR;
@@ -133,7 +133,7 @@ BentleyStatus TileData::LoadFromDb() const
         }
 
     BeAssert(m_tile->IsQueued());
-    return m_tile->_Read(m_tileBytes, m_root);
+    return m_tile->_LoadTile(m_tileBytes, m_root);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -167,7 +167,7 @@ BentleyStatus TileData::LoadFromHttp() const
     m_tileBytes = std::move(responseBody->GetByteStream());
 
     BeAssert(m_tile->IsQueued());
-    if (SUCCESS != m_tile->_Read(m_tileBytes, m_root))
+    if (SUCCESS != m_tile->_LoadTile(m_tileBytes, m_root))
         return ERROR;
 
     SaveToDb();
@@ -212,6 +212,7 @@ BentleyStatus TileData::SaveToDb() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Create the table to hold entries in this TileCache
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Prepare() const 
@@ -386,6 +387,7 @@ void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* ensure that this Tile's range includes its child's range.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::ExtendRange(DRange3dCR childRange) const
@@ -427,7 +429,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
         DPoint3d center = args.GetTileCenter(*this);
         double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
-        tooCoarse = pixelSize > GetMaximumSize();
+        tooCoarse = pixelSize > _GetMaximumSize();
         }
 
     auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid

@@ -126,12 +126,12 @@ bool MapTile::_HasChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::ChildTiles const* MapTile::_GetChildren(bool load) const 
+Tile::ChildTiles const* MapTile::_GetChildren(bool create) const 
     {
     if (!_HasChildren()) // is this is the highest resolution tile?
         return nullptr;
 
-    if (load && m_children.empty())
+    if (create && m_children.empty())
         {
         // this Tile has children, but we haven't created them yet. Do so now
         uint8_t level = m_id.m_zoomLevel+1;
@@ -213,7 +213,7 @@ void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus MapTile::_Read(StreamBuffer& data, RootR root) 
+BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root) 
     {
     MapRootR mapRoot = (MapRootR) root;
 
@@ -291,8 +291,6 @@ MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_m
 
     if (parent)
         parent->ExtendRange(m_range);
-
-    m_maxSize = root.GetMaxPixelSize();
     }
 
 /*---------------------------------------------------------------------------------**//**
