@@ -206,13 +206,6 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE I<>? AND InVirtualSet(?, ECInstanceId)"));
-
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step without binding a virtual set";
-    ASSERT_EQ(0, statement.GetValueInt(0)) << "Step without binding a virtual set";
-
-    statement.Reset();
-    statement.ClearBindings();
-
     ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
 
@@ -237,13 +230,6 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     //now same statement but with InVirtualSet in parentheses
     statement.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE (InVirtualSet(?, ECInstanceId))"));
-
-    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step without binding a virtual set in parentheses";
-    ASSERT_EQ(0, statement.GetValueInt(0)) << "Step without binding a virtual set in parentheses";
-
-    statement.Reset();
-    statement.ClearBindings();
-
     ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
@@ -258,8 +244,7 @@ TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
     ASSERT_TRUE(3 < perClassRowCount);
     idSet.insert(allIds[3]);
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
-    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
 
     ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
     ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
