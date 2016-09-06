@@ -409,7 +409,7 @@ virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double to
                 
                 if (found == builderMap.end())
                     {
-                    TileTextureImagePtr     tileTexture = new TileTextureImage (publishTexture->m_source, false);
+                    TileTextureImagePtr     tileTexture = new TileTextureImage (publishTexture->m_source);
                     TileDisplayParamsPtr    displayParams = new TileDisplayParams (0xffffff, tileTexture, s_ignoreLighting);
                     builder = TileMeshBuilder::Create(displayParams, NULL, 0.0);
 
