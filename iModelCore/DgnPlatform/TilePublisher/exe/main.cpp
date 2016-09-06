@@ -356,7 +356,13 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform)
     std::fwrite(html.data(), 1, html.size(), htmlFile);
     std::fclose(htmlFile);
 
-    // ###TODO: Symlink Cesium scripts, if not present
+    // Symlink the Cesium dir, if not already present
+    BeFileName cesiumSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    cesiumSrcDir.AppendToPath(L"scripts");
+    cesiumSrcDir.AppendToPath(L"Cesium");
+    BeFileName cesiumDstDir(m_outputDir);
+    cesiumDstDir.AppendToPath(L"Cesium");
+    BeFileName::CloneDirectory(cesiumSrcDir.c_str(), cesiumDstDir.c_str());
 
     return Status::Success;
     }
