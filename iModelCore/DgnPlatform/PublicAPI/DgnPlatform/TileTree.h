@@ -138,7 +138,7 @@ public:
     virtual void _OnChildrenUnloaded() const {}
     DGNPLATFORM_EXPORT virtual void _UnloadChildren(TimePoint olderThan) const;
 
-    //! Load this tile from data supplied. This method is called regardless of the source of the data.
+    //! Load this tile from data supplied. This method is called when the tile data becomes available, regardless of the source of the data.
     virtual BentleyStatus _LoadTile(StreamBuffer&, RootR) = 0;
 
     //! Determine whether this tile has any child tiles. Return true even if the children are not yet created.
