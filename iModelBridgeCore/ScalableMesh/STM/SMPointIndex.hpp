@@ -7346,6 +7346,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::NeedsF
 
     bool needsFiltering = false;
 
+
     if (m_nodeHeader.m_IsLeaf)
         needsFiltering = !m_nodeHeader.m_filtered;
     else

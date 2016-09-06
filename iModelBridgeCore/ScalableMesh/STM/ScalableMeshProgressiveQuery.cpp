@@ -1002,7 +1002,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
     //NEEDS_WORK_MST : Root node could be loaded at load time instead. 
     if (parentNodePtr == nullptr)
         {        
-        assert(!"Should not occurs");               
+        //assert(!"Should not occurs");               
         return;
         }
          

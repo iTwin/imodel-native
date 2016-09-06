@@ -1195,9 +1195,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords(m_meshNode->GetUVCoordsPtr());
             if (faceIndexes->size() > 0)
                 {
-                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() ? uvCoords->size() : 0,
-                                             flags->ShouldLoadTexture() ? &(*uvCoords)[0] : 0,
-                                             flags->ShouldLoadTexture() ? &(*uvIndexes)[0] : 0);
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() && uvCoords.IsValid()? uvCoords->size() : 0,
+                                             flags->ShouldLoadTexture() && uvCoords.IsValid() && uvCoords->size() > 0 ? &(*uvCoords)[0] : 0,
+                                             flags->ShouldLoadTexture() && uvIndexes.IsValid() && uvIndexes->size() > 0 ? &(*uvIndexes)[0] : 0);
                 }
             
             if (meshPtr->GetNbFaces() == 0)
@@ -2081,6 +2081,8 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IntersectRay(DPoint3d& pt,
     ((SMMeshIndexNode<POINT,Extent3dType>*)m_node.GetPtr())->GetMeshParts(meshParts, metadata, tex);
     volatile bool dbg = false;
 
+    double minParam = DBL_MAX;
+
     for (auto& part : meshParts)
         {
         if (part.IsValid())
@@ -2092,17 +2094,22 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IntersectRay(DPoint3d& pt,
                 }
             if (part->IntersectRay(pt, ray))
                 {
-                size_t id = &part - &meshParts[0];
-                Json::Value val;
-                Json::Reader reader;
-                bool parsingSuccessful = reader.parse(metadata[id], val);
-                if (!parsingSuccessful) continue;
-                retrievedMetadata = val;
-                return true;
+                double param;
+                DPoint3d pPt;
+                if(ray.ProjectPointUnbounded(pPt, param, pt) && param < minParam)
+                    {
+                    minParam = param;
+                    size_t id = &part - &meshParts[0];
+                    Json::Value val;
+                    Json::Reader reader;
+                    bool parsingSuccessful = reader.parse(metadata[id], val);
+                    if (!parsingSuccessful) continue;
+                    retrievedMetadata = val;
+                    }
                 }
             }
         }
-    return false;
+    return minParam != DBL_MAX;
     }
 #endif
 

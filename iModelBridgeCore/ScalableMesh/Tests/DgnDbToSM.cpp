@@ -112,6 +112,8 @@ class AppHost : public DgnPlatformLib::Host
             }
     };
 
+AppHost libHost;
+
 void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBufferPtr>& textures, JsonValueR resInfo, DgnElementCP sourceElem, JsonValueCR config, DRange3d nodeExt, DRange3d elemRange, size_t totalNElements)
     {
     RoadSegmentCP roadSegment = (RoadSegmentCP)sourceElem;
@@ -123,9 +125,11 @@ void BuildSubResolutionRoad(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
 
     RoadSegmentInfoPtr info = RoadSegmentInfo::Create(*roadSegment);
 
+    if (!info.IsValid()) return;
 
     if (fraction < 0.05 || totalNElements > 50)
         {
+        if (info->GetPartialHorizontalAlignmentCP() != nullptr && info->GetPartialVerticalAlignmentCP() != nullptr)
         DrawPolyline(result, textures, sourceElem, info->GetPartialHorizontalAlignmentCP(), info->GetPartialVerticalAlignmentCP());
         return;
         }
@@ -234,6 +238,7 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
 
     if (fraction < 0.05 || totalNElements > 50)
         {
+        if (info->GetPartialHorizontalAlignmentCP() != nullptr && info->GetPartialVerticalAlignmentCP() != nullptr)
         DrawPolyline(result, textures, sourceElem, info->GetPartialHorizontalAlignmentCP(), info->GetPartialVerticalAlignmentCP());
         return;
         }
@@ -288,7 +293,7 @@ void BuildSubResolutionBridge(bvector<PolyfaceHeaderPtr>& result, bvector<ImageB
             }
         }
 
-
+    if (startAbutment == nullptr || endAbutment == nullptr) return;
     BeFileName sectionLibPath =BeFileName( L".\\");
     sectionLibPath.AppendUtf8("SectionLibs/default.cs1"); 
     ConceptualDrapePtr draperPtr = ConceptualDrape::Create(bridgeSegment->GetDgnDb());
@@ -334,7 +339,7 @@ void BuildSubResolutionPier(bvector<PolyfaceHeaderPtr>& result, bvector<ImageBuf
 void OpenProject()
     {
     DbResult openStatus;
-    BeFileName fileName = BeFileName(L"E:\\HRGreen_Demo.dgndb");
+    BeFileName fileName = BeFileName(L"E:\\Colorado.dgndb");
     mainProject = DgnDb::OpenDgnDb(&openStatus, fileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     DPoint3d scale = DPoint3d::From(1, 1, 1);
     mainProject->Units().GetDgnGCS()->UorsFromCartesian(scale, scale);
@@ -465,6 +470,7 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
         else processedElems.insert(val["elementId"].asInt64());
        auto elementCP = model->FindElementById(DgnElementId((uint64_t)(val["elementId"].asInt64())));
         if (elementCP == nullptr) continue;
+        DgnPlatformLib::AdoptHost(libHost);
         dgndbMutex.lock();
         if (RoadSegment::QueryClassId(*mainProject) == DgnClassId(elementCP->GetElementClass()->GetId()))
             {
@@ -602,9 +608,8 @@ bool FilterElement(bool& shouldCreateGraph, bvector<bvector<DPoint3d>>& newMeshP
             newUvs.push_back(bvector<DPoint2d>());
             newTex.push_back(bvector<uint8_t>());
             }
-
+        DgnPlatformLib::ForgetHost();
         }
-
     shouldCreateGraph = false;
     return true;
     }
@@ -659,7 +664,6 @@ void ExportRoadsToFile(const char* fileName)
     }
 
 
-AppHost libHost;
 int wmain(int argc, wchar_t* argv[])
 {
 _set_error_mode(_OUT_TO_MSGBOX);
@@ -681,15 +685,19 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
     //create a scalable mesh
     StatusInt createStatus;
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\test_dgndb_lod_hr_tex.stm", createStatus));
+    //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::SetUserFilterCallback(&FilterElement);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreatorPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceCreator::GetFor(L"e:\\output\\test_dgndb_colorado.stm", createStatus));
+
+    //BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr creatorPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(L"e:\\output\\coloradoDesign.stm", true, true, createStatus));
     if (!mainProject.IsValid()) OpenProject();
     if (creatorPtr == 0)
         {
         printf("ERROR : cannot create STM file\r\n");
         }
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"E:\\HRGreen_Demo.dgndb");
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_MESH, L"E:\\Colorado.dgndb");
     creatorPtr->EditSources().Add(srcPtr);
     creatorPtr->SetUserFilterCallback(&FilterElement);
+    //creatorPtr->ReFilter();
     creatorPtr->Create(true);
     creatorPtr->SaveToFile();
     creatorPtr = nullptr;
