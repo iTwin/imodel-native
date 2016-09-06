@@ -8569,9 +8569,6 @@
                 <Name>Switzerland</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2056</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>CH1903Plus_1.LV95</KeyName>
                   </Member>
                   <Member>
@@ -8581,10 +8578,16 @@
                     <KeyName>CH1903/GSB.LV03</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21781</KeyName>
+                    <KeyName>CH1903/GSB.LV03C-G</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:21782</KeyName>
+                    <KeyName>CH1903/2.LV03C</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CH1903/2.LV03</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CH1903/2.LV03C-G</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -13169,7 +13172,7 @@
                           </Group>
                           <Group>
                             <Name>Indiana</Name>
-                            <Members>
+                            <Members>                            
                               <Member>
                                 <KeyName>IN-E</KeyName>
                               </Member>
@@ -13224,7 +13227,6 @@
                               <Member>
                                 <KeyName>EPSG:2890</KeyName>
                               </Member>
-
                               <Member>
                                 <KeyName>EPSG:2967</KeyName>
                               </Member>
@@ -13268,6 +13270,289 @@
                                 <KeyName>EPSG:2968</KeyName>
                               </Member>
                             </Members>
+                            <Groups>
+                              <Group>
+                                <Name>InGCS County System</Name>
+                                <Members>
+                                  <Member>
+                                    <KeyName>InGCS-Adams</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Allen</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Bartholomew</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Benton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Blackford</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Boone</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Brown</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Carroll</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Cass</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Clark</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Clay</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Clinton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Crawford</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Daviess</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Dearborn</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Decatur</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-DeKalb</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Delaware</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Dubois</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Elkhart</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Fayette</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Floyd</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Fountain</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Franklin</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Fulton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Gibson</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Grant</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Greene</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Hamilton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Hancock</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Harrison</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Hendricks</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Henry</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Howard</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Huntington</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Jackson</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Jasper</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Jay</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Jefferson</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Jennings</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Johnson</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Knox</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Kosciusko</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-LaGrange</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Lake</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-LaPorte</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Lawrence</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Madison</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Marion</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Marshall</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Martin</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Miami</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Monroe</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Montgomery</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Morgan</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Newton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Noble</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Ohio</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Orange</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Owen</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Parke</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Perry</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Pike</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Porter</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Posey</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Pulaski</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Putnam</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Randolph</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Ripley</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Rush</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-St-Joseph</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Scott</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Shelby</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Spencer</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Starke</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Steuben</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Sullivan</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Switzerland</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Tippecanoe</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Tipton</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Union</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Vanderburgh</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Vermillion</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Vigo</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Wabash</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Warren</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Warrick</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Washington</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Wayne</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Wells</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-White</KeyName>
+                                  </Member>
+                                  <Member>
+                                    <KeyName>InGCS-Whitley</KeyName>
+                                  </Member>
+                                </Members>
+                              </Group>
+                            </Groups>                            
                           </Group>
                           <Group>
                             <Name>Iowa</Name>
@@ -27972,6 +28257,15 @@
                   <Member>
                     <KeyName>CH1903.LV03</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>EPSG:2056</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:21781</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:21782</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -31319,25 +31613,16 @@
                 <Name>Switzerland</Name>
                 <Members>
                   <Member>
-                    <KeyName>LLCH1903</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>LLCH1903/GSB</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4149</KeyName>
+                    <KeyName>CH1903/2.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4150</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>CH1903Plus.LL</KeyName>
+                    <KeyName>CH1903Plus_1.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>CHTRF95.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4151</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4306</KeyName>
@@ -33268,6 +33553,21 @@
               </Member>
               <Member>
                 <KeyName>LL-Observatorio65</KeyName>
+              </Member>
+              <Member>
+                <KeyName>LLCH1903</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4149</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4150</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4151</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CH1903Plus.LL</KeyName>
               </Member>
             </Members>
           </Group>
