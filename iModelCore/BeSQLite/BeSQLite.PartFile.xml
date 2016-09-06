@@ -152,7 +152,7 @@
         <SubProduct ProductName="BeSQLite-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/BeSQLite/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/BeSQLiteUwpTest"/>
         </Bindings>
     </Part>
 
