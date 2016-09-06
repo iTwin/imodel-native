@@ -215,6 +215,9 @@ void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* This map tile just became available from some source (file, cache, http). Load its data and create
+* a Render::Graphic to draw it. Only when finished, set the "ready" flag.
+* @note this method can be called on many threads, simultaneously.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
@@ -229,19 +232,24 @@ BentleyStatus MapTile::_LoadTile(StreamBuffer& data, RootR root)
     auto texture = root.GetRenderSystem()->_CreateTexture(source, Image::Format::Rgb, Image::BottomUp::No, textureParams);
     data = std::move(source.GetByteStreamR()); // move the data back into this object. This is necessary since we need to keep to save it in the tile cache.
 
-    graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0);
-    graphic->AddTile(*texture, m_corners);
+    graphic->SetSymbology(mapRoot.m_tileColor, mapRoot.m_tileColor, 0); // this is to set transparency
+    graphic->AddTile(*texture, m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-    auto stat = graphic->Close();
+    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
     UNUSED_VARIABLE(stat);
 
     m_graphic = graphic;
-    SetIsReady();
+
+    SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Attempt to reproject the corners of this tile through the non-linear GCS of the BIM file. For LatLong points far
+* away from the center of the BIM, this reprojection may fail. In that case, mark this tile as "not reprojected". Its
+* coordinates will be calculated through the approximate linear transform for purposes of volume testing, but we will
+* never display this tile.
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
@@ -257,13 +265,16 @@ StatusInt MapTile::ReprojectCorners(GeoPoint* llPts)
             return ERROR; // only use re-projection if all 4 corners re-project properly
         }
 
+    // All points were successfully reprojected. Save reprojected corners and mark tile as displayble.
     m_reprojected = true;
     m_corners = corners;
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Construct a new MapTile by TileId.
+* Construct a new MapTile by TileId. First convert tileid -> LatLong, and then LatLong -> BIM world.
+* If the projection fails, the tile will not be displayable (but we still need an approximate range for
+* frustum testing).
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapTile::MapTile(MapRootR root, TileId id, MapTileCP parent) : Tile(parent), m_mapRoot(root), m_id(id)
@@ -311,6 +322,7 @@ DPoint3d MapRoot::ToWorldPoint(GeoPoint geoPt)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Combine the three parts of the full tile URL: rootUrl + tileName + urlSuffix.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String MapRoot::_ConstructTileName(TileCR tile)
@@ -378,14 +390,17 @@ void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
 
     args.DrawGraphics(context);
 
+    // Do we still have missing tiles?
     if (!args.m_missing.empty())
         {
+        // yes, request them and schedule a progressive task to draw them as they arrive.
         args.RequestMissingTiles(*m_root);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new WebMercatorProgressive(*m_root, args.m_missing));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Called periodically (on a timer) on the main thread to check for arrival of missing tiles.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion WebMercatorProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
@@ -562,6 +577,6 @@ void WebMercatorModel::Load(SystemP renderSys) const
     Transform biasTrans;
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_properties.m_groundBias));
 
-    uint32_t maxSize = 362; // the maxium pixel size for a tile. Approximately sqrt(256^2 + 256^2).
+    uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
     m_root = new MapRoot(m_dgndb, biasTrans, GetName().c_str(), _GetRootUrl(), _GetUrlSuffix(), renderSys, ImageSource::Format::Jpeg, m_properties.m_transparency, 19, maxSize);
     }
