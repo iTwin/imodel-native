@@ -117,9 +117,8 @@ TEST_F(SchemaValidationTests, TestAliases)
     status = schemaA->SetAlias("invalid&/(!$&(/§!$");
     EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the alias contains invalid characters";
 
-    //status = schemaA->SetAlias("");
-    //EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the alias is empty";
-
+    status = schemaA->SetAlias("");
+    EXPECT_TRUE(status == ECObjectsStatus::InvalidName) << "Expected InvalidName because the alias is empty";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

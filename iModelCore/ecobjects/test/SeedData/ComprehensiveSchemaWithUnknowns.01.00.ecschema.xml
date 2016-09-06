@@ -63,10 +63,10 @@
     <ECRelationshipClass unknownAttribute="foo" typeName="RelationshipClass" modifier="None" strength="referencing" strengthDirection="forward">
         <UnknownElement />
         <ECProperty propertyName="RelationshipProperty" typeName="string" readOnly="false"/>
-        <Source unknownAttribute="foo"  cardinality="(0,1)" polymorphic="true">
+        <Source unknownAttribute="foo"  multiplicity="(0..1)" polymorphic="true">
             <Class unknownAttribute="foo"  class="Entity"/>
         </Source>
-        <Target unknownAttribute="foo"  cardinality="(0,1)" polymorphic="true">
+        <Target unknownAttribute="foo"  multiplicity="(0..1)" polymorphic="true">
             <Class class="Entity"/>
         </Target>
     </ECRelationshipClass>

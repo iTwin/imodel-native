@@ -584,11 +584,11 @@ TEST_F (ECRelationshipTests, TestRelationshipMultiplicityConstraint)
     relationClass->SetStrength(StrengthType::Referencing);
     relationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany()));
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany()));
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::OneOne()));
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne()));
+    ASSERT_EQ(ECObjectsStatus::Success, relationClass->AddBaseClass(*relationClassBase));
+    ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany()));
+    ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany()));
+    ASSERT_EQ(ECObjectsStatus::Success, relationClass->GetSource().SetMultiplicity(RelationshipMultiplicity::OneOne()));
+    ASSERT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne()));
 
     ECRelationshipClassP relationClass2;
     ecSchema->CreateRelationshipClass(relationClass2, "RelClass2");
@@ -597,10 +597,10 @@ TEST_F (ECRelationshipTests, TestRelationshipMultiplicityConstraint)
     relationClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
 
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass2->AddBaseClass(*relationClassBase));
+    ASSERT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass2->AddBaseClass(*relationClassBase));
 
     relationClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::OneMany());
     relationClass2->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClassBase));
+    ASSERT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClassBase));
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
