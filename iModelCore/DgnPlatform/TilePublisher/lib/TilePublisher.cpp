@@ -44,13 +44,41 @@ uint16_t BatchIdMap::GetBatchId(DgnElementId elemId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchIdMap::ToJson(Json::Value& value) const
+void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
     {
+    // ###TODO: Assumes 3d-only...
+    // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
+    static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g "
+                                "WHERE e.Id=? AND g.ElementId=e.Id";
+
+    BeSQLite::Statement stmt;
+    stmt.Prepare(db, s_sql);
+
     Json::Value elementIds(Json::arrayValue);
+    Json::Value modelIds(Json::arrayValue);
+    Json::Value categoryIds(Json::arrayValue);
+
     for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
+        {
         elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
+        DgnModelId modelId;
+        DgnCategoryId categoryId;
+
+        stmt.BindId(1, *elemIter);
+        if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
+            {
+            modelId = stmt.GetValueId<DgnModelId>(0);
+            categoryId = stmt.GetValueId<DgnCategoryId>(1);
+            }
+
+        modelIds.append(modelId.ToString());
+        categoryIds.append(categoryId.ToString());
+        stmt.Reset();
+        }
 
     value["element"] = elementIds;
+    value["model"] = modelIds;
+    value["category"] = categoryIds;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -252,7 +280,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
     Json::Value batchTableJson(Json::objectValue);
-    m_batchIds.ToJson(batchTableJson);
+    m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb());
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 

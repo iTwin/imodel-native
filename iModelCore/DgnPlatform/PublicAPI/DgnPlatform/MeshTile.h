@@ -49,15 +49,13 @@ struct TileTextureImage : RefCountedBase
     {
     private:
         ImageSource       m_imageSource;
-        bool              m_hasAlpha;
 
         static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
     public:
-        TileTextureImage(ImageSource&& imageSource, bool hasAlpha = false) : m_imageSource(std::move(imageSource)), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
-        TileTextureImage(ImageSource& imageSource, bool hasAlpha = false) : m_imageSource (imageSource), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
         ImageSourceCR GetImageSource() const { return m_imageSource; }
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
-        bool HasAlpha() const { return m_hasAlpha; }
     };
 
 //=======================================================================================

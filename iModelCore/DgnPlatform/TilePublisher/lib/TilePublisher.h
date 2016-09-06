@@ -38,7 +38,7 @@ public:
     BatchIdMap();
 
     uint16_t GetBatchId(DgnElementId elemId);
-    void ToJson(Json::Value& value) const;
+    void ToJson(Json::Value& value, DgnDbR db) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
 
