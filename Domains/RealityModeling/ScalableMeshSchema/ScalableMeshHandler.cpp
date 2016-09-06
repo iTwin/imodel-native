@@ -731,9 +731,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                                                   viewDependentQueryParams, 
                                                   m_currentDrawingInfoPtr->m_meshNodes, 
                                                   true, //No wireframe mode, so always load the texture.
-                                                  clips,
-                                                  &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
-                                                  &nextDrawingInfoPtr->GetLocalToViewTransform()); 
+                                                  clips); 
 
     assert(status == SUCCESS);
 
