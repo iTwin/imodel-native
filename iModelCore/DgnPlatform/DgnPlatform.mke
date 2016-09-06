@@ -389,6 +389,7 @@ $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.
 
 $(o)DgnChangeIterator$(oext) :                      $(DgnCoreDir)DgnChangeIterator.cpp $(DgnCoreDir)DgnChangeIterator.h ${MultiCompileDepends}
 
+$(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnBRep
