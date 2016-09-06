@@ -2,11 +2,11 @@
 |
 |     $Source: STM/ImportPlugins/DGNModelUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include "DGNModelUtilities.h"
 
 #pragma warning( disable : 4273 )
@@ -85,7 +85,7 @@ void            DgnFileOpenParams::Init (WCharCP name, bool readonly)
 * This function exists only because you cannot use SEH in any function that has an object with a destructor.
 * @bsimethod                                    Keith.Bentley                   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnFileStatus loadFromEmbeddedFileSafe (DgnFileR dgnFile, DgnFileR containerDgn, Int32 embedId, DgnFileLoadContextP loadContext)
+static DgnFileStatus loadFromEmbeddedFileSafe (DgnFileR dgnFile, DgnFileR containerDgn, int32_t embedId, DgnFileLoadContextP loadContext)
     {
     __try
         {

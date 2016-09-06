@@ -6,43 +6,30 @@
 |       $Date: 2012/02/16 22:19:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-   
+#include "ImagePPHeaders.h"
 #include "ScalableMeshSourcePersistance.h"
 
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
+#include <ScalableMesh/Import/DataSQLite.h>
 
 #include "ScalableMeshSources.h"
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 /*
  * Driver current version
  */ 
-const UInt SourceSerializer::FORMAT_VERSION = 0;
+const uint32_t SourceSerializer::FORMAT_VERSION = 0;
 
 namespace {
-enum DTMSourceId
-    {        
-    DTM_SOURCE_ID_BASE_V0, 
-    DTM_SOURCE_ID_LOCAL_FILE_V0, 
-    DTM_SOURCE_ID_IN_MEMORY_BASE_V0, 
-    DTM_SOURCE_ID_DGN_V0, 
-    DTM_SOURCE_ID_DGN_LEVEL_V0, 
-    DTM_SOURCE_ID_IN_MEMORY_DGN_LEVEL_V0,
-    DTM_SOURCE_ID_BC_OBJ_V0,
-    DTM_SOURCE_ID_GROUP_V0,   
-    DTM_SOURCE_ID_DGN_V1, 
-    DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V0, 
-    DTM_SOURCE_ID_DGN_LEVEL_V1,
-    DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1,
 
-    DTM_SOURCE_ID_QTY
-    };
 
 }
 
@@ -55,9 +42,10 @@ struct IDTMSourceSerializer
 private:
     friend struct               SourceSerializer;
 
-    virtual bool                _Serialize                 (const IDTMSource&   source,
-                                                            const DocumentEnv&      env,
-                                                            BinaryOStream&          stream) const = 0;
+    virtual bool                _Serialize(const IDTMSource&   source,
+        const DocumentEnv&      env,
+        SourceDataSQLite&          sourceData) const = 0;
+
 
 public:
     virtual                     ~IDTMSourceSerializer  () = 0 {}
@@ -72,17 +60,17 @@ template <typename SourceT>
 struct IDTMSourceSerializerBase : public IDTMSourceSerializer
     {
 private:
-    virtual bool                _Serialize                 (const IDTMSource&   source,
-                                                            const DocumentEnv&      env,
-                                                            BinaryOStream&          stream) const override
-        {
+
+    virtual bool                _Serialize(const IDTMSource&   source,
+        const DocumentEnv&      env,
+        SourceDataSQLite&          sourceData) const override
+    {
         assert(0 != dynamic_cast<const SourceT*>(&source));
-        return _Serialize(static_cast<const SourceT&>(source), env, stream);
-        }
-    virtual bool                _Serialize                 (const SourceT&          source,
-                                                            const DocumentEnv&      env,
-                                                            BinaryOStream&          stream) const = 0;
-    
+        return _Serialize(static_cast<const SourceT&>(source), env, sourceData);
+    }
+    virtual bool                _Serialize(const SourceT&          source,
+        const DocumentEnv&      env,
+        SourceDataSQLite&          sourceData) const = 0;
 
     };
 
@@ -96,8 +84,9 @@ struct IDTMSourceCreator
 private:
     friend struct               IDTMSourceFactory;
     
-    virtual IDTMSource*         _Create                    (BinaryIStream&      stream,
-                                                            const DocumentEnv&    env) const = 0;
+    virtual IDTMSource*         _Create(SourceDataSQLite&      sourceData,
+        const DocumentEnv&    env) const = 0;
+
 protected:
 
 
@@ -117,104 +106,93 @@ struct IDTMSourceFactory
     static const CreatorItem*   GetCreatorIndex            ();
 
 public:
-    IDTMSource*                 Create                     (BinaryIStream&      stream,
-                                                            const DocumentEnv&    env) const;
+
+    IDTMSource*                 Create(SourceDataSQLite&      sourceData,
+        const DocumentEnv&    env) const;
+
     };
 
 
 
 
 namespace { // BEGIN unnamed namespace
-
-bool                            OutputID                       (BinaryOStream&                          stream,
-                                                                DTMSourceId                             id)
+    bool                            OutputID(SourceDataSQLite&                          sourceData,
+        DTMSourceId                             id)
     {
-    const byte sourceIdField = static_cast<byte>(id);
-    return stream.put(sourceIdField).good();
+        const byte sourceIdField = static_cast<byte>(id);
+        sourceData.SetDTMSourceID(sourceIdField);
+        return true;
     }
 
-
-bool                            OutputSource                   (BinaryOStream&                          stream,
-                                                                const IDTMSource&                       source,
-                                                                const DocumentEnv&                      env)
-    {
+bool                            OutputSource(SourceDataSQLite&                          sourceData,
+    const IDTMSource&                       source,
+    const DocumentEnv&                      env)
+{
     HSTATICASSERT(DTM_SOURCE_ID_QTY < 256);
     HSTATICASSERT(DTM_SOURCE_DATA_QTY < 256);
 
     const byte sourceTypeField = static_cast<byte>(source.GetSourceType());
-    return stream.put(sourceTypeField).good() &&
-           BSISUCCESS == source.GetMoniker().Serialize(stream, env);
-    }
+    sourceData.SetSourceType(sourceTypeField);
+    sourceData.SetMonikerString(source.GetPath());
+    return true;
+    //return BSISUCCESS == source.GetMoniker().Serialize(sourceData, env);
+}
 
 
 
 
-bool                            OutputLocalFile                (BinaryOStream&                          stream,
-                                                                const IDTMLocalFileSource&              source,
-                                                                const DocumentEnv&                      env)
-    {
-    return OutputSource(stream, source, env);
-    }
+bool                            OutputLocalFile(SourceDataSQLite&                          sourceData,
+    const IDTMLocalFileSource&              source,
+    const DocumentEnv&                      env)
+{
+    return OutputSource(sourceData, source, env);
+}
 
-bool                            OutputDGNFileModel             (BinaryOStream&                          stream,
-                                                                const IDTMDgnModelSource&               source,
-                                                                const DocumentEnv&                      env)
-    {
-    if (!WriteValue<uint32_t>(stream, source.GetModelID()))
-        return false;
+bool                            OutputDGNFileModel(SourceDataSQLite&                          sourceData,
+    const IDTMDgnModelSource&               source,
+    const DocumentEnv&                      env)
+{
+    sourceData.SetModelID(source.GetModelID());
+    sourceData.SetModelName(source.GetModelName());
 
-    if (!WriteStringW(stream, source.GetModelName()))
-        return false;
+    return OutputSource(sourceData, source, env);
+}
 
-    return OutputSource(stream, source, env);
-    }
+bool                            OutputDGNFileLevel(SourceDataSQLite&                          sourceData,
+    const IDTMDgnLevelSource&               source,
+    const DocumentEnv&                      env)
+{
+    sourceData.SetLevelID(source.GetLevelID());
+    sourceData.SetLevelName(source.GetLevelName());
 
-bool                            OutputDGNFileLevel             (BinaryOStream&                          stream,
-                                                                const IDTMDgnLevelSource&               source,
-                                                                const DocumentEnv&                      env)
-    {
-    if (!WriteValue<uint32_t>(stream, source.GetLevelID()))
-        return false;
-
-    if (!WriteStringW(stream, source.GetLevelName()))
-        return false;
-
-    return OutputDGNFileModel(stream, source, env);
-    }
+    return OutputDGNFileModel(sourceData, source, env);
+}
 
 
 
-bool                            OutputDGNFileReference         (BinaryOStream&                          stream,
-                                                                const IDTMDgnReferenceSource&           source,
-                                                                const DocumentEnv&                      env)
-    {
+bool                            OutputDGNFileReference(SourceDataSQLite&                          sourceData,
+    const IDTMDgnReferenceSource&           source,
+    const DocumentEnv&                      env)
+{
     // Why we persist in ASCII format???
-    AString rootToRefPersistentPathA(source.GetRootToRefPersistentPath());
-    if (!WriteStringA(stream, rootToRefPersistentPathA))
-        return false;
+    //AString rootToRefPersistentPathA(source.GetRootToRefPersistentPath());
 
-    if (!WriteStringW(stream, source.GetReferenceName()))
-        return false;
+    sourceData.SetRootToRefPersistentPath(source.GetRootToRefPersistentPath());
+    sourceData.SetReferenceName(source.GetReferenceName());
+    sourceData.SetReferenceModelName(source.GetReferenceModelName());
 
-    if (!WriteStringW(stream, source.GetReferenceModelName()))
-        return false;
+    return OutputDGNFileModel(sourceData, source, env);
+}
 
-    return OutputDGNFileModel(stream, source, env);
-    }
+bool                            OutputDGNFileReferenceLevel(SourceDataSQLite&                          sourceData,
+    const IDTMDgnReferenceLevelSource&      source,
+    const DocumentEnv&                      env)
+{
+    sourceData.SetLevelID(source.GetLevelID());
+    sourceData.SetLevelName(source.GetLevelName());
 
-bool                            OutputDGNFileReferenceLevel    (BinaryOStream&                          stream,
-                                                                const IDTMDgnReferenceLevelSource&      source,
-                                                                const DocumentEnv&                      env)
-    {
-    if (!WriteValue<uint32_t>(stream, source.GetLevelID()))
-        return false;
-
-    if (!WriteStringW(stream, source.GetLevelName()))
-        return false;
-
-    return OutputDGNFileReference(stream, source, env);
-    }
-
+    return OutputDGNFileReference(sourceData, source, env);
+}
 } // END unnamed namespace
 
 
@@ -224,13 +202,13 @@ struct IDTMLocalFileSourceSerializer : public IDTMSourceSerializerBase<IDTMLocal
     {
 private:
 
-    virtual bool                _Serialize                 (const IDTMLocalFileSource&          source,
-                                                            const DocumentEnv&                      env,
-                                                            BinaryOStream&                          stream) const
-        {
-        return OutputID(stream, DTM_SOURCE_ID_LOCAL_FILE_V0) &&
-               OutputLocalFile(stream, source, env);
-        }
+    virtual bool                _Serialize(const IDTMLocalFileSource&          source,
+        const DocumentEnv&                      env,
+        SourceDataSQLite&                          sourceData) const
+    {
+        return OutputID(sourceData, DTM_SOURCE_ID_LOCAL_FILE_V0) &&
+            OutputLocalFile(sourceData, source, env);
+    }
     } s_localFileSourceSerializer;
 
 
@@ -238,13 +216,14 @@ struct IDTMDgnLevelSourceSerializer : public IDTMSourceSerializerBase<IDTMDgnLev
     {
 private:
 
-    virtual bool                _Serialize                 (const IDTMDgnLevelSource&               source,
-                                                            const DocumentEnv&                      env,
-                                                            BinaryOStream&                          stream) const
-        {
-        return OutputID(stream, DTM_SOURCE_ID_DGN_LEVEL_V1) && 
-               OutputDGNFileLevel(stream, source, env);
-        }
+    virtual bool                _Serialize(const IDTMDgnLevelSource&               source,
+        const DocumentEnv&                      env,
+        SourceDataSQLite&                          sourceData) const
+    {
+        return OutputID(sourceData, DTM_SOURCE_ID_DGN_LEVEL_V1) &&
+            OutputDGNFileLevel(sourceData, source, env);
+    }
+
     } s_dgnLevelSourceSerializer;
 
 
@@ -253,13 +232,14 @@ struct IDTMDgnReferenceLevelSourceSerializer : public IDTMSourceSerializerBase<I
     {
 private:
 
-    virtual bool                _Serialize                 (const IDTMDgnReferenceLevelSource&      source,
-                                                            const DocumentEnv&                      env,
-                                                            BinaryOStream&                          stream) const
-        {
-        return OutputID(stream, DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1) &&
-               OutputDGNFileReferenceLevel(stream, source, env);
-        }
+    virtual bool                _Serialize(const IDTMDgnReferenceLevelSource&      source,
+        const DocumentEnv&                      env,
+        SourceDataSQLite&                          sourceData) const
+    {
+        return OutputID(sourceData, DTM_SOURCE_ID_DGN_REFERENCE_LEVEL_V1) &&
+            OutputDGNFileReferenceLevel(sourceData, source, env);
+    }
+
     } s_dgnReferenceLevelSourceSerializer;
 
 
@@ -310,189 +290,170 @@ private:
         }
 
 public:
-    explicit                        SourceVisitor                  (BinaryOStream&                          stream)
-        :   m_serializerP(0)
-        {
-        
-        }
+
+    explicit                        SourceVisitor(SourceDataSQLite&                          sourceData)
+        : m_serializerP(0)
+    {
+
+    }
+
 
     const IDTMSourceSerializer* GetFoundSerializer             () const { return m_serializerP; }
 
     };
 
-
-
-bool                            LoadSourcePart             (BinaryIStream&      stream,
-                                                            const DocumentEnv&    env,
-                                                            DTMSourceDataType&  sourceType,
-                                                            IMonikerPtr&        monikerPtr)
-    {
-    const UInt sourceTypeField = stream.get();
+bool                            LoadSourcePart(SourceDataSQLite&      sourceData,
+    const DocumentEnv&    env,
+    DTMSourceDataType&  sourceType,
+    IMonikerPtr&        monikerPtr)
+{
+    //const uint32_t sourceTypeField = stream.get();
+    uint32_t sourceTypeField = sourceData.GetSourceType();
     if (sourceTypeField >= DTM_SOURCE_DATA_QTY)
         return false;
 
     sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
-    monikerPtr = IMonikerFactory::GetInstance().Create(stream, env);
+    monikerPtr = IMonikerFactory::GetInstance().Create(sourceData, env);
     if (0 == monikerPtr.get())
         return false;
 
     return true;
-    }
+}
 
 
-bool                            LoadDGNV0ModelPart         (BinaryIStream&      stream,
-                                                            WString&            modelName)
-    {
-    WString modelNameField;
-    if (!ReadStringW(stream, modelNameField))
-        return false;
+bool                            LoadDGNV0ModelPart(SourceDataSQLite&      sourceData,
+    WString&            modelName)
+{
+    WString modelNameField = sourceData.GetModelName();
+    //if (!ReadStringW(stream, modelNameField))
+    //    return false;
 
     modelName = modelNameField;
     return true;
-    }
+}
 
-bool                            LoadDGNV0LevelPart         (BinaryIStream&      stream,
-                                                            WString&            levelName)
-    {
-    WString levelNameField;
-    if (!ReadStringW(stream, levelNameField))
-        return false;
+bool                            LoadDGNV0LevelPart(SourceDataSQLite&      sourceData,
+    WString&            levelName)
+{
+    WString levelNameField = sourceData.GetLevelName();
 
     levelName = levelNameField;
     return true;
-    }
+}
 
 
 
-bool                            LoadDGNV1ModelPart         (BinaryIStream&      stream,
-                                                            uint32_t&             modelID,
-                                                            WString&            modelName)
-    {
-    uint32_t modelIDField = 0;
-    if (!ReadValue(stream, modelIDField))
-        return false;
+bool                            LoadDGNV1ModelPart(SourceDataSQLite&      sourceData,
+    uint32_t&             modelID,
+    WString&            modelName)
+{
+    uint32_t modelIDField = sourceData.GetModelID();
 
-    WString modelNameField;
-    if (!ReadStringW(stream, modelNameField))
-        return false;
-
+    WString modelNameField = sourceData.GetModelName();
 
     modelID = modelIDField;
     modelName = modelNameField;
     return true;
-    }
+}
 
 
 // TDORAY: Deprecated. Remove.
-bool                            LoadDGNV0ReferencePart     (BinaryIStream&      stream,
-                                                            WString&             referencePersistantPath,
-                                                            WString&            referenceName)
-    {
-    AString referencePersistantPathField;
-    if (!ReadStringA(stream, referencePersistantPathField))
-        return false;
+bool                            LoadDGNV0ReferencePart(SourceDataSQLite&      sourceData,
+    WString&             referencePersistantPath,
+    WString&            referenceName)
+{
+    WString referencePersistantPathField = sourceData.GetRootToRefPersistentPath();
 
-    WString referenceNameField;
-    if (!ReadStringW(stream, referenceNameField))
-        return false;
+    WString referenceNameField = sourceData.GetReferenceName();
 
-    referencePersistantPath.AssignA(referencePersistantPathField.c_str());
+    referencePersistantPath = referencePersistantPathField;
     referenceName = referenceNameField;
     return true;
-    }
+}
 
 
-bool                            LoadDGNV1ReferencePart     (BinaryIStream&      stream,
-                                                            WString&             referencePersistantPath,
-                                                            WString&            referenceName,
-                                                            WString&            referenceModelName)
-    {
-    AString referencePersistantPathField;
-    if (!ReadStringA(stream, referencePersistantPathField))
-        return false;
+bool                            LoadDGNV1ReferencePart(SourceDataSQLite&      sourceData,
+    WString&             referencePersistantPath,
+    WString&            referenceName,
+    WString&            referenceModelName)
+{
+    WString referencePersistantPathField = sourceData.GetRootToRefPersistentPath();
 
-    WString referenceNameField;
-    if (!ReadStringW(stream, referenceNameField))
-        return false;
+    WString referenceNameField = sourceData.GetReferenceName();
 
-    WString referenceModelNameField;
-    if (!ReadStringW(stream, referenceModelNameField))
-        return false;
+    WString referenceModelNameField = sourceData.GetReferenceModelName();
 
-    referencePersistantPath.AssignA(referencePersistantPathField.c_str());
+    referencePersistantPath = referencePersistantPathField;
     referenceName = referenceNameField;
     referenceModelName = referenceModelNameField;
     return true;
-    }
+}
 
 
-bool                            LoadDGNV1LevelPart         (BinaryIStream&      stream,
-                                                            uint32_t&             levelID,
-                                                            WString&            levelName)
-    {
-    uint32_t levelIDField = 0;
-    if (!ReadValue(stream, levelIDField))
-        return false;
+bool                            LoadDGNV1LevelPart(SourceDataSQLite&      sourceData,
+    uint32_t&             levelID,
+    WString&            levelName)
+{
+    uint32_t levelIDField = sourceData.GetLevelID();
 
-    WString levelNameField;
-    if (!ReadStringW(stream, levelNameField))
-        return false;
+    WString levelNameField = sourceData.GetLevelName();
 
     levelID = levelIDField;
     levelName = levelNameField;
     return true;
-    }
-
-
-
+}
 
 
 } // END unnamed namespace
 
 
 
-
-
 struct IDTMLocalFileSourceCreator : public IDTMSourceCreator
     {
-    virtual IDTMSource*     _Create                    (BinaryIStream&      stream,
-                                                            const DocumentEnv&    env) const
+        virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
+            const DocumentEnv&    env) const
         {
-        DTMSourceDataType   sourceType;
-        IMonikerPtr         monikerPtr;
+            DTMSourceDataType   sourceType;
+            //IMonikerPtr         monikerPtr;
 
-        if (LoadSourcePart(stream, env, sourceType, monikerPtr))
-            return new IDTMLocalFileSource(new IDTMLocalFileSource::Impl(sourceType, monikerPtr.get()));
+            uint32_t sourceTypeField = sourceData.GetSourceType();
+            sourceType = static_cast<DTMSourceDataType>(sourceTypeField);
+            WString fullPath = sourceData.GetMonikerString();
 
-        return 0;
+            //IDTMSourcePtr srcPtr = IDTMLocalFileSource::Create(sourceType, fullPath.c_str());
+            //return srcPtr.get();
+            //if (LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+            return new IDTMLocalFileSource(new IDTMLocalFileSource::Impl(sourceType, fullPath.c_str()));
+
+            //return 0;
         }
 
     } s_localFileSourceCreator;
 
 struct IDTMDgnLevelSourceCreator : public IDTMSourceCreator
     {
-    virtual IDTMSource*     _Create                    (BinaryIStream&      stream,
-                                                            const DocumentEnv&    env) const
+        virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
+            const DocumentEnv&    env) const
         {
-        DTMSourceDataType   sourceType;
-        IMonikerPtr         monikerPtr;
-        uint32_t              modelID;
-        WString             modelName;
-        uint32_t              levelID;
-        WString             levelName;
+            DTMSourceDataType   sourceType;
+            IMonikerPtr         monikerPtr;
+            uint32_t              modelID;
+            WString             modelName;
+            uint32_t              levelID;
+            WString             levelName;
 
 
-        if (LoadDGNV1LevelPart(stream, levelID, levelName) &&
-            LoadDGNV1ModelPart(stream, modelID, modelName) &&
-            LoadSourcePart(stream, env, sourceType, monikerPtr))
-            return new IDTMDgnLevelSource(new IDTMDgnLevelSource::Impl(sourceType, 
-                                                                       monikerPtr.get(), 
-                                                                       modelID, 
-                                                                       modelName.c_str(),
-                                                                       levelID,
-                                                                       levelName.c_str()));
+            if (LoadDGNV1LevelPart(sourceData, levelID, levelName) &&
+                LoadDGNV1ModelPart(sourceData, modelID, modelName) &&
+                LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+                return new IDTMDgnLevelSource(new IDTMDgnLevelSource::Impl(sourceType,
+                    monikerPtr.get(),
+                    modelID,
+                    modelName.c_str(),
+                    levelID,
+                    levelName.c_str()));
 
-        return 0;
+            return 0;
         }
     } s_dgnLevelSourceCreator;
 
@@ -500,70 +461,73 @@ struct IDTMDgnLevelSourceCreator : public IDTMSourceCreator
 // TDORAY: Deprecated. Remove
 struct IDTMDgnReferenceLevelSourceCreatorV0 : public IDTMSourceCreator
     {
-    virtual IDTMSource*     _Create                    (BinaryIStream&      stream,
-                                                            const DocumentEnv&  env) const
+
+        virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
+            const DocumentEnv&  env) const
         {
-        DTMSourceDataType   sourceType;
-        IMonikerPtr         monikerPtr;
-        uint32_t              modelID;
-        WString             modelName;
-        WString             referencePersistantPath;
-        WString             referenceName;
-        uint32_t              levelID;
-        WString             levelName;
+            DTMSourceDataType   sourceType;
+            IMonikerPtr         monikerPtr;
+            uint32_t              modelID;
+            WString             modelName;
+            WString             referencePersistantPath;
+            WString             referenceName;
+            uint32_t              levelID;
+            WString             levelName;
 
 
-        if (LoadDGNV1LevelPart(stream, levelID, levelName) &&
-            LoadDGNV0ReferencePart(stream, referencePersistantPath, referenceName) &&
-            LoadDGNV1ModelPart(stream, modelID, modelName) &&
-            LoadSourcePart(stream, env, sourceType, monikerPtr))
-            return new IDTMDgnReferenceLevelSource(new IDTMDgnReferenceLevelSource::Impl(sourceType, 
-                                                                                         monikerPtr.get(), 
-                                                                                         modelID, 
-                                                                                         modelName.c_str(),
-                                                                                         referencePersistantPath.c_str(), 
-                                                                                         referenceName.c_str(),
-                                                                                         L"",
-                                                                                         levelID,
-                                                                                         levelName.c_str()));
+            if (LoadDGNV1LevelPart(sourceData, levelID, levelName) &&
+                LoadDGNV0ReferencePart(sourceData, referencePersistantPath, referenceName) &&
+                LoadDGNV1ModelPart(sourceData, modelID, modelName) &&
+                LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+                return new IDTMDgnReferenceLevelSource(new IDTMDgnReferenceLevelSource::Impl(sourceType,
+                    monikerPtr.get(),
+                    modelID,
+                    modelName.c_str(),
+                    referencePersistantPath.c_str(),
+                    referenceName.c_str(),
+                    L"",
+                    levelID,
+                    levelName.c_str()));
 
-        return 0;
+            return 0;
         }
     } s_dgnReferenceLevelSourceCreatorV0;
 
 
 struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
     {
-    virtual IDTMSource*     _Create                    (BinaryIStream&      stream,
-                                                            const DocumentEnv&  env) const
+
+        virtual IDTMSource*     _Create(SourceDataSQLite&      sourceData,
+            const DocumentEnv&  env) const
         {
-        DTMSourceDataType   sourceType;
-        IMonikerPtr         monikerPtr;
-        uint32_t              modelID;
-        WString             modelName;
-        WString             referencePersistantPath;
-        WString             referenceName;
-        WString             referenceModelName;
-        uint32_t              levelID;
-        WString             levelName;
+            DTMSourceDataType   sourceType;
+            IMonikerPtr         monikerPtr;
+            uint32_t              modelID;
+            WString             modelName;
+            WString             referencePersistantPath;
+            WString             referenceName;
+            WString             referenceModelName;
+            uint32_t              levelID;
+            WString             levelName;
 
 
-        if (LoadDGNV1LevelPart(stream, levelID, levelName) &&
-            LoadDGNV1ReferencePart(stream, referencePersistantPath, referenceName, referenceModelName) &&
-            LoadDGNV1ModelPart(stream, modelID, modelName) &&
-            LoadSourcePart(stream, env, sourceType, monikerPtr))
-            return new IDTMDgnReferenceLevelSource(new IDTMDgnReferenceLevelSource::Impl(sourceType, 
-                                                                                         monikerPtr.get(), 
-                                                                                         modelID, 
-                                                                                         modelName.c_str(),
-                                                                                         referencePersistantPath.c_str(), 
-                                                                                         referenceName.c_str(),
-                                                                                         referenceModelName.c_str(),
-                                                                                         levelID,
-                                                                                         levelName.c_str()));
+            if (LoadDGNV1LevelPart(sourceData, levelID, levelName) &&
+                LoadDGNV1ReferencePart(sourceData, referencePersistantPath, referenceName, referenceModelName) &&
+                LoadDGNV1ModelPart(sourceData, modelID, modelName) &&
+                LoadSourcePart(sourceData, env, sourceType, monikerPtr))
+                return new IDTMDgnReferenceLevelSource(new IDTMDgnReferenceLevelSource::Impl(sourceType,
+                    monikerPtr.get(),
+                    modelID,
+                    modelName.c_str(),
+                    referencePersistantPath.c_str(),
+                    referenceName.c_str(),
+                    referenceModelName.c_str(),
+                    levelID,
+                    levelName.c_str()));
 
-        return 0;
+            return 0;
         }
+
     } s_dgnReferenceLevelSourceCreator;
 
 
@@ -599,10 +563,11 @@ const IDTMSourceFactory::CreatorItem* IDTMSourceFactory::GetCreatorIndex ()
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMSource* IDTMSourceFactory::Create  (BinaryIStream&          stream,
-                                                const DocumentEnv&        env) const
-    {
-    const UInt sourceIDField = stream.get();
+
+IDTMSource* IDTMSourceFactory::Create(SourceDataSQLite&          sourceData,
+    const DocumentEnv&        env) const
+{
+    const uint32_t sourceIDField = sourceData.GetDTMSourceID();
 
     if (DTM_SOURCE_ID_QTY <= sourceIDField)
         return 0;
@@ -612,50 +577,48 @@ IDTMSource* IDTMSourceFactory::Create  (BinaryIStream&          stream,
     CreatorItem creatorP = GetCreatorIndex()[sourceID];
     if (0 == creatorP)
         return 0;
-    
-    return creatorP->_Create(stream, env);
-    }
+
+    return creatorP->_Create(sourceData, env);
+}
 
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SourceSerializer::Serialize   (const IDTMSource&   source,
-                                    const DocumentEnv&      env,
-                                    BinaryOStream&          stream) const
-    {
-    SourceVisitor visitor (stream);
+bool SourceSerializer::Serialize(const IDTMSource&   source,
+    const DocumentEnv&      env,
+    SourceDataSQLite&          sourceData) const
+{
+    SourceVisitor visitor(sourceData);
 
     source.Accept(visitor);
 
     const IDTMSourceSerializer* serializerP = visitor.GetFoundSerializer();
-    
+
     if (0 == serializerP)
         return false;
 
-    return serializerP->_Serialize(source, env, stream);
-    }
+    return serializerP->_Serialize(source, env, sourceData);
+}
 
 /*---------------------------------------------------------------------------------**//**
-* @description  
+* @description
 * @bsimethod                                                 Raymond.Gauthier   06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMSourcePtr SourceSerializer::Deserialize    (BinaryIStream&          stream,
-                                                const DocumentEnv&      env,
-                                                UInt                    formatVersion) const
-    {
+IDTMSourcePtr SourceSerializer::Deserialize(SourceDataSQLite&          sourceData,
+    const DocumentEnv&      env,
+    uint32_t                    formatVersion) const
+{
     if (SourceSerializer::FORMAT_VERSION != formatVersion)
-        {
+    {
         assert(!"Invalid version! Need to handle backward compatibility!");
         return 0;
-        }
+    }
 
     static const IDTMSourceFactory SOURCE_FACTORY;
 
-    return SOURCE_FACTORY.Create(stream, env);
-    }
-
-
+    return SOURCE_FACTORY.Create(sourceData, env);
+}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

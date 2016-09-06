@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh\Import\Plugin\TypeConversionFilterV0.h>
@@ -149,7 +149,7 @@ private:
                  *              ourselves.
                  */
                 const TransfoModel localToGlobal(GetUnitRectificationTransfoModel(Unit::GetMeter(), gcs.GetUnit(), ANGULAR_TO_LINEAR_RATIO));
-                if (GCS::S_SUCCESS != gcs.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
+                if (SMStatus::S_SUCCESS != gcs.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
                     {
                     gcsError = true;
                     }
@@ -158,12 +158,7 @@ private:
 
         if (gcsError == true)
             {
-/*NEEDS_WORK_SM_IMPORTER : Message in app
-            WChar messageStr [1024]=L"";
-            LoadStringFromGEODTM(messageStr, MSGLISTIDS_GeoDTMErrors, MSGError_CannotCreateGCSFromSource);
-            mdlOutput_messageCenter(OutputMessagePriority::Warning, messageStr, m_fileQueryPtr->GetFileName(), OutputMessageAlert::None);
-*/
-
+            //assert(!"GCS error");
             gcs = GetGCSFactory().Create(Unit::GetMeter());
             }
 
@@ -226,11 +221,11 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
-                            storedType,
-                            gcs,
-                            (hasRange) ? &range : 0,
-                            data),
+            ILayerDescriptor::CreateLayerDescriptor(L"",
+                                                    storedType,
+                                                    gcs,
+                                                    (hasRange) ? &range : 0,
+                                                    data),
             true
             );
 
@@ -368,12 +363,12 @@ class PODFileSourceCreator : public LocalFileSourceCreatorBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class PODElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                    () const override
+    virtual uint32_t                    _GetElementType                    () const override
         {
         return EXTENDED_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID               () const override
+    virtual uint32_t                    _GetElementHandlerID               () const override
         {
         return ElementHandlerId(XATTRIBUTEID_PointCloudHandler, PointCloudMinorId_Handler).GetId();
         }
@@ -413,15 +408,15 @@ class PODPointExtractor : public InputExtractorBase
 private:
     friend class                    PODPointExtractorCreator;
 
-    static const UInt               MAX_PT_QTY = 100000;
+    static const uint32_t               MAX_PT_QTY = 100000;
 
     IPointCloudDataQueryPtr          m_dataQueryPtr;
 
     
     PODPacketProxy<DPoint3d>        m_packetXYZ;
     PODPacketProxy<RgbColorDef>     m_packetRGB;
-    PODPacketProxy<Short>           m_packetIntensity;
-
+    PODPacketProxy<short>           m_packetIntensity;
+    
     bool                            m_reachedEof;
     IPointCloudQueryBuffersPtr      m_pointCloudQueryBufferPtr;
     bool                            m_isClip;
@@ -462,7 +457,7 @@ private:
         {        
         const UInt pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);                        
 
-        UChar* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
+        unsigned char* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
 
         size_t packetInd = 0;
 
@@ -515,7 +510,7 @@ class PODPointExtractorWithInternalClassif : public InputExtractorBase
 private:
     friend class                    PODPointExtractorCreator;
 
-    static const UInt               MAX_PT_QTY = 100000;
+    static const uint32_t               MAX_PT_QTY = 100000;
 
 
 
@@ -526,14 +521,14 @@ private:
 
     PODPacketProxy<DPoint3d>        m_packetXYZ;
     PODPacketProxy<RgbColorDef>     m_packetRGB;
-    PODPacketProxy<Short>           m_packetIntensity;
-    PODPacketProxy<UChar>           m_classification;
+    PODPacketProxy<short>           m_packetIntensity;
+    PODPacketProxy<unsigned char>   m_classification;
 
     bool                            m_reachedEof;
     bool                            m_isClip;
     bool                            m_isGroundDetection;
-
-
+    bvector<uint32_t>               m_classesToImport;
+    
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   10/2010
@@ -542,12 +537,15 @@ private:
                                                                    (const IPointCloudDataQueryPtr& dataQueryPtr,
                                                                     ElementHandle& elHandle,
                                                                     bool isClip,
-                                                                    bool isGroundDetection)
+                                                                    bool isGroundDetection,
+                                                                    const bvector<uint32_t>& classesToImport)
         :   m_dataQueryPtr(dataQueryPtr),
             m_elHandle(elHandle, true),
             m_reachedEof(false), 
             m_isClip(isClip),
-            m_isGroundDetection(isGroundDetection)
+            m_isGroundDetection(isGroundDetection),
+            m_classesToImport(classesToImport)
+
         {
         m_elHandle.AddToModel();
 
@@ -594,13 +592,16 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual void                    _Read                          () override
         {
-        const UInt pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);
+        const uint32_t pointsReadQty = m_dataQueryPtr->GetPoints (*m_pointCloudQueryBufferPtr);
                 
         size_t packetInd = 0;
 
-        if (m_isClip || m_isGroundDetection)
+        if (m_isClip || m_isGroundDetection || (m_classesToImport.size() > 0))
             { 
-            UChar* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
+            assert(!m_isGroundDetection && m_classesToImport.size() > 0 ||
+                    m_isGroundDetection && m_classesToImport.size() == 0);
+
+            unsigned char* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
 
             for (size_t pointInd = 0; pointInd < pointsReadQty; pointInd++)
                 {
@@ -608,7 +609,9 @@ private:
                     {
                     if(m_isGroundDetection)
                         {
-                        UChar* classificationBuffer = (UChar*)m_pointCloudQueryBufferPtr->GetChannelBuffer(m_queryChannels[0]);
+                        assert(m_classesToImport.size() == 0);
+
+                        unsigned char* classificationBuffer = (unsigned char*)m_pointCloudQueryBufferPtr->GetChannelBuffer(m_queryChannels[0]);
                         if(classificationBuffer[pointInd] == GROUND_CHANNEL_NUMBER) // if ground
                             {
                             m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
@@ -619,7 +622,24 @@ private:
                             }
                         }
                     else
-                        {
+                        {                        
+                        if (m_classesToImport.size() > 0)
+                            {
+                            bool isSelectedClass = false;
+
+                            for (auto classToImport : m_classesToImport)
+                                {
+                                if (m_pointCloudQueryBufferPtr->GetClassificationBuffer()[pointInd] == classToImport)
+                                    {
+                                    isSelectedClass = true;
+                                    break;
+                                    }
+                                }
+
+                            if (!isSelectedClass)
+                                continue;
+                            }
+
                         m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
                         m_packetRGB.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetRgbBuffer()[pointInd];
                         m_packetIntensity.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetIntensityBuffer()[pointInd];
@@ -681,7 +701,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (PODSource&                              sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&   source,
                                                                                     const ExtractionQuery&                  selection) const override
         {
         SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
@@ -689,18 +709,18 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
         if(data.IsGroundDetection())
             return RawCapacities (PODPointExtractor::MAX_PT_QTY * sizeof(DPoint3d),
             PODPointExtractor::MAX_PT_QTY * sizeof(RgbColorDef),
-            PODPointExtractor::MAX_PT_QTY * sizeof(Short),
-            PODPointExtractor::MAX_PT_QTY * sizeof(UChar));
+            PODPointExtractor::MAX_PT_QTY * sizeof(short),
+            PODPointExtractor::MAX_PT_QTY * sizeof(unsigned char));
         else
             return (sourceBase.HasClassification()) ?
                         RawCapacities (PODPointExtractor::MAX_PT_QTY * sizeof(DPoint3d),
                                        PODPointExtractor::MAX_PT_QTY * sizeof(RgbColorDef),
-                                       PODPointExtractor::MAX_PT_QTY * sizeof(Short),
-                                       PODPointExtractor::MAX_PT_QTY * sizeof(UChar))
+                                       PODPointExtractor::MAX_PT_QTY * sizeof(short),
+                                       PODPointExtractor::MAX_PT_QTY * sizeof(unsigned char))
                         :
                         RawCapacities (PODPointExtractor::MAX_PT_QTY * sizeof(DPoint3d),
                                        PODPointExtractor::MAX_PT_QTY * sizeof(RgbColorDef),
-                                       PODPointExtractor::MAX_PT_QTY * sizeof(Short));
+                                       PODPointExtractor::MAX_PT_QTY * sizeof(short));
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -710,11 +730,12 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     static InputExtractorBase*                  CreateExtractor                    (PODSource&                     sourceBase,
                                                                                     const IPointCloudDataQueryPtr& dataQueryPtr, 
                                                                                     bool                           isClipped,
-                                                                                    bool                           isGroundDetection)
+                                                                                    bool                           isGroundDetection,
+                                                                                    const bvector<uint32_t>&       classesToImport)
         {
         // NEEDS_WORK_SM : internal classification => classification ?
         if (sourceBase.HasInternalClassification() || isGroundDetection)
-            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection);
+            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection, classesToImport);
 
         return new PODPointExtractor(dataQueryPtr, isClipped);
         }
@@ -724,7 +745,7 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (PODSource&                              sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&  source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&  source,
                                                                                     const ExtractionQuery&                  selection,
                                                                                     const ExtractionConfig&                 config,
                                                                                     Log&                                    log) const override
@@ -755,11 +776,14 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
         pDataQuery->SetDensity (IPointCloudDataQuery::QUERY_DENSITY_FULL, 1);
 
         const bool isClipped = sourceBase.IsClipped();
-
+        
         SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
         ScalableMeshData data = sourceImportConf->GetReplacementSMData();
 
-        return CreateExtractor(sourceBase, pDataQuery, isClipped, data.IsGroundDetection());
+        bvector<uint32_t> classesToImport;
+        data.GetClassificationToImport(classesToImport);
+
+        return CreateExtractor(sourceBase, pDataQuery, isClipped, data.IsGroundDetection(), classesToImport);
         }
     };
 
@@ -785,7 +809,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
 
 
     ConstPacketProxy<DPoint3d>                  m_srcPtPacket;
-    ConstPacketProxy<UChar>                     m_srcPtClassifPacket;
+    ConstPacketProxy<unsigned char>                     m_srcPtClassifPacket;
 
     PODPacketProxy<DPoint3d>                    m_dstPtPacket;
 
@@ -806,7 +830,7 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
     +---------------+---------------+---------------+---------------+---------------+------*/
     template <typename Predicate>
     static size_t                               RemovePointsIf         (const DPoint3d*                 srcPtP,
-                                                                        const UChar*                    srcPtClassP,
+                                                                        const unsigned char*                    srcPtClassP,
                                                                         size_t                          srcPtQty,
                                                                         DPoint3d*                       dstPtP,
                                                                         Predicate                       shouldPtBeRemoved)
@@ -844,8 +868,10 @@ class Point3d64f_R16G16B16_I16_C8ToPoint3d64fConverter : public TypeConversionFi
         //static const UChar GROUND_CLASS_ID = 2;
         static const struct
             {
-            bool operator () (const DPoint3d& pi_rPt, UChar pi_rPtClass) const
+            bool operator () (const DPoint3d& pi_rPt, unsigned char pi_rPtClass) const
                 {
+                //NEEDS_WORK_SM : Currenlty done in PODPointExtractorWithInternalClassif::_Read because it is to 
+                //complicate to get classes information here.
                 return false;//GROUND_CLASS_ID != pi_rPtClass;
                 }
             } SHOULD_POINT_BE_REMOVED_PREDICATE;
@@ -909,7 +935,7 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 
 void RegisterPODImportPlugin()
-    {           
+    {
     if (!ScalableMeshLib::GetHost().GetScalableMeshAdmin()._CanImportPODfile())
         return;
     else

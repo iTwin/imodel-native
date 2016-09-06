@@ -1,5 +1,5 @@
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include "ScalableMeshClipContainer.h"
 #include "ScalableMeshQuery.h"
 

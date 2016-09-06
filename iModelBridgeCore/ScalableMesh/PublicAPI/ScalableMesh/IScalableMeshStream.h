@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:51:10 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,7 @@ protected:
     explicit                            BinaryIOS                              (bios&                   stream);
     virtual                             ~BinaryIOS                             ();
 public:
-    BENTLEYSTM_EXPORT bool                    good                                   () const;
+    BENTLEY_SM_EXPORT bool                    good                                   () const;
     };
 
 
@@ -57,10 +57,10 @@ public:
     explicit                            BinaryOStream                          (bostream&               stream);
     virtual                             ~BinaryOStream                         ();
 
-    BENTLEYSTM_EXPORT BinaryOStream&          write                                  (const byte*             elements,
+    BENTLEY_SM_EXPORT BinaryOStream&          write                                  (const byte*             elements,
                                                                                 streamsize              count);
 
-    BENTLEYSTM_EXPORT BinaryOStream&          put                                    (byte                    element);
+    BENTLEY_SM_EXPORT BinaryOStream&          put                                    (byte                    element);
 
     };
 
@@ -82,11 +82,11 @@ public:
     explicit                            BinaryIStream                          (bistream&               stream);
     virtual                             ~BinaryIStream                         ();
 
-    BENTLEYSTM_EXPORT BinaryIStream&          read                                   (byte*                   elements,
+    BENTLEY_SM_EXPORT BinaryIStream&          read                                   (byte*                   elements,
                                                                                 streamsize              count);
 
-    BENTLEYSTM_EXPORT int_type                get                                    ();
-    BENTLEYSTM_EXPORT int_type                peek                                   ();
+    BENTLEY_SM_EXPORT int_type                get                                    ();
+    BENTLEY_SM_EXPORT int_type                peek                                   ();
 
     };
 

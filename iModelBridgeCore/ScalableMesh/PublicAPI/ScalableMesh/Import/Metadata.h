@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -245,12 +245,12 @@ public:
     IMPORT_DLLE explicit                FieldComposed                          ();
     IMPORT_DLLE virtual                 ~FieldComposed                         ();
     
-    IMPORT_DLLE UInt                    GetSize                                () const;
+    IMPORT_DLLE uint32_t                    GetSize                                () const;
 
     IMPORT_DLLE const_iterator          begin                                  () const;
     IMPORT_DLLE const_iterator          end                                    () const;
 
-    IMPORT_DLLE const Field&            operator []                            (UInt                        index) const;
+    IMPORT_DLLE const Field&            operator []                            (uint32_t                        index) const;
 
     IMPORT_DLLE void                    push_back                              (const Field&                rhs);
     };
@@ -324,12 +324,12 @@ public:
 
     IMPORT_DLLE virtual                 ~FieldDoubleArray                      ();
     
-    IMPORT_DLLE UInt                    GetSize                                () const;
+    IMPORT_DLLE uint32_t                    GetSize                                () const;
 
     IMPORT_DLLE const_iterator          begin                                  () const;
     IMPORT_DLLE const_iterator          end                                    () const;
 
-    IMPORT_DLLE const double&           operator []                            (UInt                        index) const;
+    IMPORT_DLLE const double&           operator []                            (uint32_t                        index) const;
 
     IMPORT_DLLE void                    push_back                              (double                      rhs);
     };

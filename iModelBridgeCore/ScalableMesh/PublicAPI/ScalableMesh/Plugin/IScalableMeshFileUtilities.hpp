@@ -6,7 +6,7 @@
 |       $Date: 2012/02/22 14:21:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ struct FileAnalysisStreamTrait<int>
     typedef int64_t                       SizeType;
     typedef int64_t                       OffsetType;
     typedef int64_t                       PositionType;
-    typedef UInt                        ReadCountType;
+    typedef uint32_t                        ReadCountType;
     typedef int                         ReadSizeType;
 
     static bool                         GetFileSize                                (int fileHandle, SizeType& size)
@@ -146,7 +146,7 @@ struct FileAnalysisStreamTrait<iostream> : public FileAnalysisStreamTrait<istrea
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
                                                                                     AccumulateFnT       accumulateFn,
@@ -162,7 +162,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
                                                                                     AccumulateFnT       accumulateFn,
@@ -179,7 +179,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
                                                                                     InitAccumulateFnT   initAccumulateFn,
@@ -225,7 +225,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (const WChar*      filePath, 
                                                                                     InitAccumulateFnT   initAccumulateFn,
@@ -243,7 +243,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename StreamT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream,
                                                                                     AccumulateFnT       accumulateFn,
@@ -259,7 +259,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename StreamT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream,
                                                                                     AccumulateFnT       accumulateFn,
@@ -273,7 +273,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename StreamT, typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream, 
                                                                                     InitAccumulateFnT   initAccumulateFn,
@@ -320,7 +320,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES> 
 template <typename StreamT, typename InitAccumulateFnT, typename AccumulateFnT, typename StatT>
 StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run       (StreamT&            fileStream, 
                                                                                     InitAccumulateFnT   initAccumulateFn,
@@ -337,7 +337,7 @@ StatT FileAnalysisTool<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES>::Run    
 * @description  
 * @bsiclass                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES, typename StatT, typename StreamT>
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES, typename StatT, typename StreamT>
 struct FileAnalysisStrategyBase
     {
 protected:
@@ -374,7 +374,7 @@ protected:
 * TDORAY: It may become interesting to generate random offsets instead of linearly spaced ones
 * @bsiclass                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES, 
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY, const bool RANDOM_SAMPLES, 
           typename InitAccumulateFnT, typename AccumulateFnT, typename StatT, typename StreamT>
 struct FileAnalysisStrategy : private FileAnalysisStrategyBase<MAX_SAMPLE_SIZE, MAX_SAMPLE_QTY, RANDOM_SAMPLES, StatT, StreamT>
     {
@@ -397,7 +397,7 @@ private:
             return cummuledStats;
         assert(success);
     
-        const UInt remainingSampleQty = max<UInt>(1, static_cast<UInt>(min<uint64_t>(MAX_SAMPLE_QTY, fileStatistics.size / MAX_SAMPLE_SIZE))) - 1;
+        const uint32_t remainingSampleQty = max<uint32_t>(1, static_cast<uint32_t>(min<uint64_t>(MAX_SAMPLE_QTY, fileStatistics.size / MAX_SAMPLE_SIZE))) - 1;
         if (0 == remainingSampleQty) 
             return cummuledStats; // First sample was representative enough
     
@@ -413,7 +413,7 @@ private:
         assert(samplesOffsets[remainingSampleQty - 1] < static_cast<OffsetType>(fileStatistics.size));
 
         // We assume ASCII file until proven otherwise
-        UInt sampleIdx = 0;
+        uint32_t sampleIdx = 0;
         for (; (sampleIdx < remainingSampleQty) && !StreamTraitType::Eof(fileStream); ++sampleIdx)
             {
             if (!StreamTraitType::SeekByOffset(fileStream, samplesOffsets[sampleIdx]))
@@ -436,7 +436,7 @@ private:
 * @description  
 * @bsiclass                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const bool RANDOM_SAMPLES, 
+template <const uint32_t MAX_SAMPLE_SIZE, const bool RANDOM_SAMPLES, 
           typename InitAccumulateFnT, typename AccumulateFnT, typename StatT, typename StreamT>
 struct FileAnalysisStrategy<MAX_SAMPLE_SIZE, 1, RANDOM_SAMPLES, InitAccumulateFnT, AccumulateFnT, StatT, StreamT> 
     : private FileAnalysisStrategyBase<MAX_SAMPLE_SIZE, 1, RANDOM_SAMPLES, StatT, StreamT>

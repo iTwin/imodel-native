@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,12 +49,7 @@ private:
     std::auto_ptr<Impl>                 m_implP;
 
 public:
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        S_QTY,
-        };
+
 
 
     explicit                            SourcesImporter                    (const Import::LocalFileSourceRef&       sinkSourceRef,
@@ -66,14 +61,20 @@ public:
 
     void                                AddSource                          (const Import::SourceRef&                sourceRef,
                                                                             const Import::ContentConfig&            contentConfig,
-                                                                            const Import::ImportConfig&             config,
+                                                                            const Import::ImportConfig*             config,
                                                                             const Import::ImportSequence&           sequence,
                                                                             SourceImportConfig&                     sourceImportConf);
+
+    void                                AddSDKSource(const Import::SourceRef&                sourceRef,
+                                                  const Import::ContentConfig&            contentConfig,
+                                                  const Import::ImportConfig*             config,
+                                                  const Import::ImportSequence&           sequence,
+                                                  SourceImportConfig&                     sourceImportConf);
 
     bool                                IsEmpty                            () const;
 
 
-    Status                              Import                             () const;
+    SMStatus                              Import() const;
 
     };
 

@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,23 +22,8 @@
 
 #include <ScalableMesh/Import/DataTypeDescription.h>
 
-#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Native MS 3D point class.
-* @bsiclass                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <> struct IDTMFile::PointTrait<DPoint3d> : public IDTMFile::Point3dTraitMixin<DPoint3d> 
-    {
-    static point_type                       Create                 (coordinate_type         x,
-                                                                    coordinate_type         y,
-                                                                    coordinate_type         z) 
-        {
-        point_type pt = {x, y, z}; 
-        return pt;
-        }    
-    };
-
+//#include <ImagePP/all/h/IDTMFileDirectories/PointTypes.h>
+//#include "..\PointTypeDPoint3d.h"
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 

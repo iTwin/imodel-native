@@ -6,14 +6,15 @@
 |       $Date: 2011/09/07 14:21:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
+#include "../STM/ImagePPHeaders.h"
 
 #include <ScalableMesh/Import/Importer.h>
+#include <ScalableMesh/Import/Command/Base.h>
 #include "ImporterImpl.h"
-#include "ImporterCommandVisitor.h"
 
 #include <ScalableMesh/Import/Source.h>
 #include <ScalableMesh/Import/ContentDescriptor.h>
@@ -28,6 +29,8 @@
 
 #include "InputExtractor.h"
 #include "Sink.h"
+#include "../STM/Stores/SMStoreUtils.h"
+
 
 
 #include <ScalableMesh/GeoCoords/GCS.h>
@@ -115,13 +118,17 @@ ImporterImpl::~ImporterImpl  ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportSequence&   sequence,
+SMStatus Importer::Import(const ImportSequence&   sequence,
                                     const ImportConfig&     config)
     {
     try
         {
+        //Config importConfig;
+        //config.Accept(importConfig);
         Config importConfig;
-        config.Accept(importConfig);
+        //config.Accept(importConfig);
+        const Config* cfgImpl = dynamic_cast<const Config*>(&config);
+        if (cfgImpl != nullptr) importConfig = *cfgImpl;
 
         m_pImpl->Import(sequence, importConfig);
         return S_SUCCESS;
@@ -136,7 +143,7 @@ Importer::Status Importer::Import  (const ImportSequence&   sequence,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportSequence&   sequence)
+SMStatus Importer::Import(const ImportSequence&   sequence)
     {
     try
         {
@@ -153,13 +160,15 @@ Importer::Status Importer::Import  (const ImportSequence&   sequence)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportCommand&    command,
+SMStatus Importer::Import(const ImportCommand&    command,
                                     const ImportConfig&     config)
     {
     try
         {
         Config importConfig;
-        config.Accept(importConfig);
+        //config.Accept(importConfig);
+        const Config* cfgImpl = dynamic_cast<const Config*>(&config);
+        if (cfgImpl != nullptr) importConfig = *cfgImpl;
 
         m_pImpl->Import(command, importConfig);
         return S_SUCCESS;
@@ -174,7 +183,7 @@ Importer::Status Importer::Import  (const ImportCommand&    command,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Importer::Status Importer::Import  (const ImportCommand&    command)
+SMStatus Importer::Import(const ImportCommand&    command)
     {
     try
         {
@@ -194,8 +203,7 @@ Importer::Status Importer::Import  (const ImportCommand&    command)
 void ImporterImpl::Import      (const ImportSequence&   sequence,
                                 const Config&           config)
     {
-    CommandVisitor sequenceVisitor(*this, config);
-    sequence.Accept(sequenceVisitor);
+    std::for_each(sequence.GetCommands().begin(), sequence.GetCommands().end(), [&config, this] (const ImportCommand& command) { /*command.m_basePtr.get()->_Execute(*this, config);*/ this->Import(command, config); });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,8 +213,24 @@ void ImporterImpl::Import      (const ImportSequence&   sequence,
 void ImporterImpl::Import      (const ImportCommand&    command,
                                 const Config&           config)
     {
-    CommandVisitor commandVisitor(*this, config);
-    command.Accept(commandVisitor);
+
+    for (Internal::ContentDesc::LayerCIter layerIt = m_sourceDesc.LayersBegin(), layersEnd = m_sourceDesc.LayersEnd();
+         layerIt != layersEnd;
+         ++layerIt)
+        {
+        if (command.IsSourceLayerSet() && command.GetSourceLayer() != layerIt->GetID()) continue;
+        uint32_t sourceLayer = layerIt->GetID();
+        const uint32_t targetLayer = command.IsTargetLayerSet() ? command.GetTargetLayer() : (config.HasDefaultTargetLayer() ? config.GetDefaultTargetLayer() : sourceLayer);
+        const LayerDesc& layerDesc = m_sourceDesc.GetLayer(sourceLayer);
+
+        for (LayerDesc::TypeCIterator typeIt = layerDesc.TypesBegin(), typesEnd = layerDesc.TypesEnd(); typeIt != typesEnd; ++typeIt)
+            {
+            if (command.IsSourceTypeSet() && !(command.GetSourceType() == typeIt->GetFamily())) continue;
+            const DataTypeFamily& sourceType = typeIt->GetFamily();
+            const DataTypeFamily& targetType = command.IsTargetTypeSet() ? command.GetTargetType() : (config.HasDefaultTargetType() ? config.GetDefaultTargetType() : sourceType);
+            Import(sourceLayer, sourceType, targetLayer, targetType, config);
+            }
+        }
     }
 
 
@@ -215,9 +239,9 @@ void ImporterImpl::Import      (const ImportCommand&    command,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImporterImpl::Import  (UInt                    sourceLayerID,
+void ImporterImpl::Import  (uint32_t                    sourceLayerID,
                             const DataTypeFamily&   sourceTypeFamily,
-                            UInt                    targetLayerID,
+                            uint32_t                    targetLayerID,
                             const DataTypeFamily&   targetTypeFamily,
                             const Config&           config)
     {
@@ -249,9 +273,9 @@ void ImporterImpl::Import  (UInt                    sourceLayerID,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImporterImpl::Import  (UInt                                sourceLayerID,
+void ImporterImpl::Import  (uint32_t                                sourceLayerID,
                             const DataType&                     sourceType,
-                            UInt                                targetLayerID,
+                            uint32_t                                targetLayerID,
                             const DataTypeFamily&               targetTypeFamily,
                             const Config&                       config)
     {
@@ -272,9 +296,9 @@ void ImporterImpl::Import  (UInt                                sourceLayerID,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImporterImpl::Import  (UInt                        sourceLayerID,   
+void ImporterImpl::Import  (uint32_t                        sourceLayerID,   
                             const DataType&             sourceType,
-                            UInt                        targetLayerID,   
+                            uint32_t                        targetLayerID,   
                             const DataType&             targetType,
                             const Config&               config)
     {
@@ -286,7 +310,7 @@ void ImporterImpl::Import  (UInt                        sourceLayerID,
     layerIt = descriptor.FindLayerFor(targetLayerID);
 
     SourceImportConfig* sourceImportConf = source.GetSourceImportConfig();
-    ScalableMeshData data = sourceImportConf->GetReplacementSMData();
+    ScalableMeshData data = sourceImportConf != nullptr? sourceImportConf->GetReplacementSMData(): ScalableMeshData::GetNull();
 
     const InputExtractorCreator* factoryP = GetPluginCreatorFor(sourceType/*, data.IsGroundDetection()*/);
     if (0 == factoryP)
@@ -354,18 +378,16 @@ void ImporterImpl::Import  (UInt                        sourceLayerID,
 
     //sinkInserterPtr->SetIs3dData(data.IsRepresenting3dData());
     sinkInserterPtr->SetIs3dData(is3D);
+    sinkInserterPtr->SetIsGridData(data.IsGridData());
 
     for (bool HasData = true; HasData; HasData = sourceExtractorPtr->Next())
         {
-        // NEEDS_WORK_SM entry point to calculate some stuff like extent
         sourceExtractorPtr->Read();
         filter->Run();
         // Filter points
-        // NEEDS_WORK_SM : need to add this !!!!
         if(data.GetUpToDateState() == UpToDateState::PARTIAL_ADD)
             {
             range = data.GetExtentByLayer(targetLayerID);
-            // NEEDS_WORK_SM : move to filter
             Filter(data.GetVectorRangeAdd(), dstPackets);
             }
         else
@@ -373,14 +395,14 @@ void ImporterImpl::Import  (UInt                        sourceLayerID,
 
         sinkInserterPtr->Write();
         }
-
+    sinkInserterPtr->NotifySourceImported();
     data.SetExtent(targetLayerID, range);
-    sourceImportConf->SetReplacementSMData(data);
+    if (sourceImportConf != nullptr)sourceImportConf->SetReplacementSMData(data);
     }
 
 void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dstSource)
     {
-    Memory::ClassPacketProxy<IDTMFile::Point3d64f>        pointPacket;
+    Memory::ClassPacketProxy<DPoint3d>        pointPacket;
 
     HPRECONDITION(1 <= dstSource.GetSize());
     
@@ -390,7 +412,7 @@ void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dst
         {
         for (; pointPacketInd < dstSource.GetSize(); pointPacketInd++)
             {                            
-            if (dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(IDTMFile::Point3d64f)))
+            if (dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(DPoint3d)))
                 {
                 break;
                 }
@@ -401,16 +423,16 @@ void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dst
 #ifndef NDEBUG
     else
         {
-        assert(dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(IDTMFile::Point3d64f)));
+        assert(dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(DPoint3d)));
         }
 #endif
 
     dstSource[pointPacketInd].SetReadOnly(false);
     pointPacket.AssignTo(dstSource[pointPacketInd]);
-    std::vector<IDTMFile::Point3d64f> pts;
+    std::vector<DPoint3d> pts;
 
-    Memory::ClassPacketProxy<IDTMFile::Point3d64f>::iterator ptIt;
-    Memory::ClassPacketProxy<IDTMFile::Point3d64f>::iterator ptIt2;
+    Memory::ClassPacketProxy<DPoint3d>::iterator ptIt;
+    Memory::ClassPacketProxy<DPoint3d>::iterator ptIt2;
     size_t size = 0;
 
     ptIt = pointPacket.begin();
@@ -418,9 +440,9 @@ void ImporterImpl::Filter(std::vector<DRange3d> vecRangeFilter, PacketGroup& dst
     while(ptIt != pointPacket.end() && ptIt2 != pointPacket.end())
         {
         bool isContained = false;
-        double x = PointOp<IDTMFile::Point3d64f>::GetX(*ptIt2);
-        double y = PointOp<IDTMFile::Point3d64f>::GetY(*ptIt2);
-        double z = PointOp<IDTMFile::Point3d64f>::GetZ(*ptIt2);
+        double x = PointOp<DPoint3d>::GetX(*ptIt2);
+        double y = PointOp<DPoint3d>::GetY(*ptIt2);
+        double z = PointOp<DPoint3d>::GetZ(*ptIt2);
 
         for(std::vector<DRange3d>::iterator it = vecRangeFilter.begin(); it != vecRangeFilter.end(); it++)
             {
@@ -449,7 +471,7 @@ void ImporterImpl::CreateExtent(DRange3d& range, PacketGroup& dstSource)
     {
     size_t pointIndex = 0;
 
-    Memory::ConstPacketProxy<IDTMFile::Point3d64f>        pointPacket;
+    Memory::ConstPacketProxy<DPoint3d>        pointPacket;
 
 
     HPRECONDITION(1 <= dstSource.GetSize());
@@ -460,7 +482,7 @@ void ImporterImpl::CreateExtent(DRange3d& range, PacketGroup& dstSource)
         {
         for (; pointPacketInd < dstSource.GetSize(); pointPacketInd++)
             {                            
-            if (dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(IDTMFile::Point3d64f)))
+            if (dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(DPoint3d)))
                 {
                 break;
                 }
@@ -471,7 +493,7 @@ void ImporterImpl::CreateExtent(DRange3d& range, PacketGroup& dstSource)
 #ifndef NDEBUG
     else
         {
-        assert(dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(IDTMFile::Point3d64f)));
+        assert(dstSource[pointPacketInd].GetRawPacket().IsPODLifeCycleCompatibleWith(sizeof(DPoint3d)));
         }
 #endif
 
@@ -480,9 +502,9 @@ void ImporterImpl::CreateExtent(DRange3d& range, PacketGroup& dstSource)
 
     while (pointIndex < countOfPoints)
         {
-        double x = PointOp<IDTMFile::Point3d64f>::GetX(pointPacket.Get()[pointIndex]);
-        double y = PointOp<IDTMFile::Point3d64f>::GetY(pointPacket.Get()[pointIndex]);
-        double z = PointOp<IDTMFile::Point3d64f>::GetZ(pointPacket.Get()[pointIndex]);
+        double x = PointOp<DPoint3d>::GetX(pointPacket.Get()[pointIndex]);
+        double y = PointOp<DPoint3d>::GetY(pointPacket.Get()[pointIndex]);
+        double z = PointOp<DPoint3d>::GetZ(pointPacket.Get()[pointIndex]);
 
         if (range.high.x < x)
             range.high.x = x;
@@ -531,9 +553,9 @@ const InputExtractorCreator* ImporterImpl::GetPluginCreatorFor (const DataType& 
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-FilterCreatorCPtr ImporterImpl::GetFilterCreatorFor    (UInt                    sourceLayerID,
+FilterCreatorCPtr ImporterImpl::GetFilterCreatorFor    (uint32_t                    sourceLayerID,
                                                         const DataType&         sourceType,
-                                                        UInt                    targetLayerID,
+                                                        uint32_t                    targetLayerID,
                                                         const DataType&         targetType,
                                                         const Config&           config)
     {

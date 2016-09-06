@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
 #include <ScalableMesh\GeoCoords\Reprojection.h>
 #include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
@@ -166,7 +166,7 @@ GCS                                 GetDEMFileGCS                          (cons
     if (0 == geoCodingP)
         return GCS::GetNull();
     
-    const BaseGCSPtr coordSysPtr(Bentley::GeoCoordinates::BaseGCS::CreateGCS (*geoCodingP->GetBaseGCS()));
+    const BaseGCSCPtr coordSysPtr(Bentley::GeoCoordinates::BaseGCS::CreateGCS (*geoCodingP->GetBaseGCS()));
     Unit gcsUnit((0 == coordSysPtr.get()) ? Unit::GetMeter() : GetUnitFor(*coordSysPtr));
 
     if (0 == coordSysPtr.get() && !ExtractUnitFromGeoTiffKeys(gcsUnit, *geoCodingP))
@@ -260,12 +260,13 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         const GCS gcs(GetDEMFileGCS(extractor));
         DRange3d range(GetDEMFileRange(extractor, gcs));
         ScalableMeshData data = ScalableMeshData::GetNull();
+        data.SetIsGridData(true);
         data.AddExtent(range);
 
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             PointType3d64fCreator().Create(),
                             gcs,
                             &range,
@@ -283,12 +284,12 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                    () const override
+    virtual uint32_t                    _GetElementType                    () const override
         {
         return RASTER_FRAME_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID               () const override
+    virtual uint32_t                    _GetElementHandlerID               () const override
         {
         return 0;
         }
@@ -518,7 +519,7 @@ class DEMRasterElementSourceCreator : public DGNElementSourceCreatorBase
         return  ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             PointType3d64fCreator().Create(),
                             gcs,
                             0,
@@ -606,7 +607,7 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DEMRasterSource&                      sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source& source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection) const override
         {
         return RawCapacities (sourceBase.GetPointExtractor().GetMaxPointQtyForXYZPointsIterator()*sizeof(DPoint3d));
@@ -617,7 +618,7 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DEMRasterSource&                      sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source& source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection,
                                                                                     const ExtractionConfig&               config,
                                                                                     Log&                                  log) const override
@@ -629,7 +630,7 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
         __int64 maximumNumberOfPoints = data.GetMaximumNbPoints();
 
         double scaleFactor; 
-        UInt64 demNumberPoints;
+        uint64_t demNumberPoints;
 
         sourceBase.GetPointExtractor().GetNumberOfPoints(&demNumberPoints);
 

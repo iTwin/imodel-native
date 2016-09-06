@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,16 +35,16 @@
 
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
-    #define BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE namespace Bentley { namespace ScalableMesh { namespace Foundations {
+#define BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE namespace BENTLEY_NAMESPACE_NAME { namespace ScalableMesh { namespace Foundations {
     #define END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE   }}}
-    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS using namespace Bentley::ScalableMesh::Foundations;
+    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Foundations;
 #endif //!BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE
     #define BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE namespace Iterator {
     #define END_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE   END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE }
-    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR using namespace Bentley::ScalableMesh::Foundations::Iterator;
+    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Foundations::Iterator;
 #endif //!BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_ITERATOR_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,7 +68,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 
 // Make this namespace synonymous to Bentley. This has the same effect as if this namespace was part of Bentley.
-using namespace Bentley; 
+using namespace BENTLEY_NAMESPACE_NAME;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -77,7 +77,7 @@ using namespace Bentley;
 template <typename T>
 struct ShareableObjectTypeTrait 
     {
-    class RefCountedBase : public Bentley::IRefCounted
+    class RefCountedBase : public BENTLEY_NAMESPACE_NAME::IRefCounted
         {
     private:
         mutable uint32_t  m_refCount;
@@ -110,9 +110,9 @@ struct ShareableObjectTypeTrait
     };
 
 template <typename T>
-struct SharedPtrTypeTrait {typedef Bentley::RefCountedPtr<T> type;};
+struct SharedPtrTypeTrait {typedef RefCountedPtr<T> type;};
 template <typename T>
-struct SharedPtrTypeTrait<const T> {typedef Bentley::RefCountedPtr<T> type;};
+struct SharedPtrTypeTrait<const T> {typedef RefCountedPtr<T> type;};
 
 
 
@@ -205,87 +205,6 @@ template <> struct is_pod<long> {enum {value = 1};};
 template <> struct is_pod<unsigned long> {enum {value = 1};};
 template <> struct is_pod<float> {enum {value = 1};};
 template <> struct is_pod<double> {enum {value = 1};};
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  This is a trait class that permits to validate whether a specified
-*               type is const or not.
-*
-* TDORAY: Replace with std::is_const or std::tr1::is_const when available.
-* @bsiclass                                                  Raymond.Gauthier   4/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-struct is_const 
-    { 
-    enum {value = 0}; 
-    };
-template <typename T> struct is_const<const T> { enum {value = 1}; };
-
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  This is a trait class that permits to validate whether a specified
-*               type is an integral type.
-*
-* TDORAY: Incomplete, does not exclude cases with user defined types that behave like
-*         integral types...
-*
-* TDORAY: Replace with std::is_integral or std::tr1::is_integral when available.
-* @bsiclass                                                  Raymond.Gauthier   12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-struct is_integral
-    {
-    enum {value = (0 == (T(1) / T(2)) ? 1 : 0)};
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C++ array's end
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, size_t N>
-const T*                            carray_end                         (const T (&array)[N])        { return array + N; }
-template <typename T, size_t N> 
-T*                                  carray_end                         (T (&array)[N])              { return array + N; }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C++ array's end
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, size_t N>
-std::pair<const T*, const T*>       carray_range                       (const T (&array)[N])        { return std::make_pair(array, array + N); }
-template <typename T, size_t N> 
-std::pair<T*, T*>                   carray_range                       (T (&array)[N])              { return std::make_pair(array, array + N); }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C++ array's size
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, size_t N>
-size_t                              carray_size                        (const T (&array)[N])        { return N; }
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C AString's size
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CharT, size_t N>
-size_t                              cstring_len                        (const CharT (&str)[N])    { return N - 1; }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Return a C AString's size
-* TDORAY: Optimize with C++0x const_exp when available
-* @bsimethod                                                Raymond.Gauthier   5/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename CharT, size_t N>
-const CharT*                        cstring_end                        (const CharT (&str)[N])    { return str + (N - 1); }
-template <typename CharT, size_t N> 
-CharT*                              cstring_end                        (CharT (&str)[N])          { return str + (N - 1); }
-
 
 
 /*---------------------------------------------------------------------------------**//**

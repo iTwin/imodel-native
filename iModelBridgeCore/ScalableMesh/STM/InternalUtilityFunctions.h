@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:06:54 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,51 +30,56 @@ HFCPtr<HVEShape> CreateShapeFromClips (const DRange3d&               spatialInde
 HFCPtr<HVEShape> CreateShapeFromClips (const HFCPtr<HVEShape>        areaShape,
                                        const IScalableMeshClipContainerPtr& clips);
 
+#if 0
 int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, 
                list<HFCPtr<HVEDTMLinearFeature>>& cutLinearList, 
                HFCPtr<HVE2DPolygonOfSegments> queryPolyLine);
 
-HFCPtr<HVE2DShape> GetGCSDomainsIntersection (Bentley::GeoCoordinates::BaseGCSPtr& firstGCSPtr, 
-                                              Bentley::GeoCoordinates::BaseGCSPtr& secondGCSPtr, 
+#endif
+HFCPtr<HVE2DShape> GetGCSDomainsIntersection (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& firstGCSPtr, 
+                                              BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& secondGCSPtr, 
                                               HFCPtr<HGF2DCoordSys> latitudeLongitudeCoordSys);
 
-void GetReprojectedBox (Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                        Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+void GetReprojectedBox (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                         DPoint3d                             boxPoints[],
                         DPoint3d                             reprojectedBoxPoints[]);
 
-StatusInt GetReprojectedBoxDomainLimited (Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
-                                          Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
+StatusInt GetReprojectedBoxDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
+                                          BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
                                           DPoint3d    boxPoints[],
                                           DPoint3d    reprojectedBoxPoints[],
                                           DRange3d    additionalSourceExtent,
                                           HFCPtr<HVE2DShape>    queryShape);
 
-StatusInt ReprojectPoint (Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                          Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+StatusInt ReprojectPoint (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                          BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                           const DPoint3d& inPoint,
                           DPoint3d& outPoint);
 
 StatusInt ReprojectRangeDomainLimited (DRange3d& reprojectedRange,
                                        const DRange3d& initialRange,
-                                       Bentley::GeoCoordinates::BaseGCSPtr& sourceGCS,
-                                       Bentley::GeoCoordinates::BaseGCSPtr& targetGCS);
+                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS,
+                                       BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS);
 
-HFCPtr<HVE2DShape> ReprojectShapeDomainLimited (Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                                                Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,  
+HFCPtr<HVE2DShape> ReprojectShapeDomainLimited (BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,  
                                                 const DPoint3d*   pi_pSourcePt,
                                                 size_t  pi_SourcePtQty);
 
-int SetClipToDTM (Bentley::TerrainModel::DTMPtr& dtmPtr,
+int SetClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr& dtmPtr,
                   const DRange3d&                spatialIndexRange,
                   const HVE2DShape&              shape);
 
-struct ToBcPtConverter
-    {
-    DPoint3d operator () (const IDTMFile::Point3d64fM64f& inputPt) const;
+int AddClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
+                 const HVE2DShape& shape);
 
-    DPoint3d operator () (const IDTMFile::Point3d64f& inputPt) const;    
+struct PtToPtConverter
+    {        
+    DPoint3d operator () (const DPoint3d& inputPt) const;
 
-    DPoint3d operator () (const HGF3DCoord<double>& inputPt) const;        
+    DPoint3d operator () (const HGF3DCoord<double>& inputPt) const;
+
+    static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
     };
 

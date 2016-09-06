@@ -6,7 +6,7 @@
 |       $Date: 2011/10/31 20:49:23 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,16 +40,16 @@ END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-BENTLEYSTM_EXPORT Foundations::Log&                       GetLog                                 ();
+BENTLEY_SM_EXPORT Foundations::Log&                       GetLog                                 ();
 
-BENTLEYSTM_EXPORT const Memory::MemoryAllocator&          GetMemoryAllocator                     ();
+BENTLEY_SM_EXPORT const Memory::MemoryAllocator&          GetMemoryAllocator                     ();
 
-BENTLEYSTM_EXPORT const GeoCoords::GCSFactory&            GetGCSFactory                          ();
+BENTLEY_SM_EXPORT const GeoCoords::GCSFactory&            GetGCSFactory                          ();
 
-BENTLEYSTM_EXPORT const GeoCoords::ReprojectionFactory&   GetReprojectionFactory                 ();
+BENTLEY_SM_EXPORT const GeoCoords::ReprojectionFactory&   GetReprojectionFactory                 ();
 
 
-BENTLEYSTM_EXPORT const Import::SourceFactory&            GetSourceFactory                       ();
+BENTLEY_SM_EXPORT const Import::SourceFactory&            GetSourceFactory                       ();
 
 const Import::ImporterFactory&                      GetImporterFactory                     ();
 

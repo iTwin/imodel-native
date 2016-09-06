@@ -22,7 +22,7 @@ size_t FastCountNodesAroundFace(MTGGraph* graphP, MTGNodeId id)
 bool IsOutsideEdge(MTGGraph* graphP, MTGNodeId id)
     {
     size_t countNodes = FastCountNodesAroundFace(graphP, id), countMates = FastCountNodesAroundFace(graphP,graphP->EdgeMate(id));
-    //size_t countNodes = graphP->CountNodesAroundFace(id), countMates = graphP->CountNodesAroundFace(graphP->EdgeMate(id));
+
     assert(countNodes == 3 || countMates == 3);
     if (countNodes == 3 && countMates > 3) return false;
     else if (countMates == 3 && countNodes > 3) return true;
@@ -41,50 +41,84 @@ bool IsOutsideEdge(MTGGraph* graphP, MTGNodeId id)
         }
     }
 
-void GetGraphExteriorBoundary(MTGGraph* graphP, bvector<bvector<DPoint3d>>& vecBound, const DPoint3d* points)
+void GetGraphExteriorBoundary(MTGGraph* graphP, bvector<bvector<DPoint3d>>& vecBound, const DPoint3d* points, bool pruneTriangleInnerLoops)
     {
     MTGMask visitedMask = graphP->GrabMask();
     std::map<int,int> pts;
     size_t numLoop = 0;
     MTGARRAY_SET_LOOP(edgeID, graphP)
         {
+        pts.clear();
         if (graphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK) && !graphP->GetMaskAt(edgeID, visitedMask))
             {
+
             bvector<DPoint3d> bound;
+            bvector<bvector<DPoint3d>> boundLoops;
+            std::vector<MTGNodeId> edges;
             MTGARRAY_FACE_LOOP(extID, graphP, edgeID)
                 {
                 int v = -1;
+                if (graphP->GetMaskAt(extID, visitedMask) || !graphP->IsValidNodeId(extID)) break;
                 graphP->SetMaskAt(extID, visitedMask);
                 graphP->TryGetLabel(extID, 0, v);
                 if (v <= 0 )continue;
-                if (pts.count(v) != 0) bound.resize(pts[v]);
+                if (pts.count(v) != 0 && pts[v] < bound.size()) //detected a loop
+                    {
+                    bvector<DPoint3d> innerLoop;
+                    innerLoop.insert(innerLoop.end(), bound.begin() + pts[v], bound.end());
+                    innerLoop.push_back(innerLoop.front()); //close loop
+                    int idx = pts[v];
+                    if (pruneTriangleInnerLoops && innerLoop.size() <= 4)
+                        {
+                        for (size_t i = idx; i < edges.size(); ++i)
+                            {
+                            graphP->DropEdge(edges[i]);
+                            }
+
+                        }
+                    else  boundLoops.push_back(innerLoop);
+                    for (auto it = pts.begin(); it != pts.end(); ++it)
+                        if (it->second > idx && it->second < bound.size())
+                            {
+                            pts.erase(it);
+                            it = pts.begin();
+                            }
+                    bound.resize(idx+1); //we keep the looping point
+                    edges.resize(idx + 1);
+                    }
                 else
                     {
                     pts[v] = (int) bound.size();
+                    edges.push_back(extID);
                     bound.push_back(points[v - 1]);
                     }
                 }
             MTGARRAY_END_FACE_LOOP(extID, graphP, edgeID)
-                int v = -1;
-            graphP->TryGetLabel(edgeID, 0, v);
-            if (v <= 0)continue;
-            bound.push_back(points[v - 1]);
-//            break;
+
+            if (pruneTriangleInnerLoops && bound.size() <= 3)
+                {
+                for (size_t i = 0; i < edges.size(); ++i)
+                    {
+                    graphP->DropEdge(edges[i]);
+                    }
+                bound.clear();
+                }
+
             vecBound.push_back(bound);
+            for (auto& b : boundLoops) vecBound.push_back(b);
             numLoop++;
             }
         }
     MTGARRAY_END_SET_LOOP(edgeID, graphP)
         graphP->ClearMask(visitedMask);
     graphP->DropMask(visitedMask);
-        /*volatile size_t size = bound.size();
-    size = size;*/
+
     }
 
 
 bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& componentLabels, const DPoint3d* points, std::vector<std::pair<long, MTGNodeId>>** edgeLabels)
     {
-    //std::ofstream log;
+
     MTGNodeId faceNodes[3] = { -1, -1, -1 }, existing[3] = { -1, -1, -1 };
     assert(vtx[0] != vtx[1] && vtx[1] != vtx[2] && vtx[0] != vtx[2]);
     bool edgeTest[3] = {
@@ -109,7 +143,7 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
             graphP->TryGetLabel(existing[edge], componentLabel, (int&)existingIDs[edge]);
             if (existingIDs[edge] != -1 && existingIDs[edge] >= (int)componentLabels.size()) componentLabels.resize(existingIDs[edge], -1);
             if (currentComponentID == -1 && existingIDs[edge] != -1) currentComponentID = existingIDs[edge];
-            else if (existingIDs[edge] != -1)
+            else if (existingIDs[edge] != -1 && points != nullptr)
                 {
                 int toReplace = componentLabels[currentComponentID];
                 if (points[componentLabels[existingIDs[edge]]].x > points[componentLabels[currentComponentID]].x)
@@ -119,10 +153,8 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
                     {
                     for (auto& pt : componentLabels)
                         {
-                        //                  int val = &pt - &componentLabels[0];
                         if (pt == toReplace)
                             {
-                            //                      log << "REPLACING " + std::to_string(toReplace) + " AT " + std::to_string(val) + " WITH " + std::to_string(componentLabels[currentComponentID]) << endl;
                             pt = componentLabels[currentComponentID];
                             }
                         }
@@ -130,13 +162,11 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
                 }
             if (!graphP->GetMaskAt(existing[edge], MTG_BOUNDARY_MASK))
                 {
-                //existing[edge] = -1;//invalid = true; //only add 2 faces per edge
-                //continue;
+
                 invalid = true;
                 }
             graphP->SetMaskAroundEdge(existing[edge], MTG_NULL_MASK); //interior edge
             int flipped = IsOutsideEdge(graphP, existing[edge]) ? 0 : 1; //make sure if several edges are shared, the interior triangle face can still be kept
-            // if (nExisting == 1 && flipped == 1) invalid = true;
             if (flipped == 1)isFlipped = flipped;
             nExisting++;
             }
@@ -156,7 +186,7 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
             {
             return false;
             }
-       // log.open("D:\\0test.txt", ios_base::app);
+
         if (graphP->FSucc(existing[2]) != existing[0])
             {
             graphP->VertexTwist(existing[0], graphP->FSucc(existing[2]));
@@ -180,20 +210,11 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
             assert(graphP->TryGetLabel(graphP->EdgeMate(existing[m]), vertexLabel, v) && v != -1);
             assert(graphP->TryGetLabel(graphP->FSucc(graphP->EdgeMate(existing[m])), vertexLabel, vn) && vn != -1 && vn != v);
             }
-       /* log << "CLEARBOUNDARY2 EDGE " + std::to_string(vtx[0]) + "/" + std::to_string(vtx[1]) + "EDGE ID IS " + std::to_string(existing[0]) + " MATE ID IS " + std::to_string(graphP->EdgeMate(existing[0])) + " MASK IS " +
-            std::string(graphP->GetMaskAt(existing[0], MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") << endl;
-        log << "CLEARBOUNDARY2 EDGE " + std::to_string(vtx[1]) + "/" + std::to_string(vtx[2]) + "EDGE ID IS " + std::to_string(existing[1]) + " MATE ID IS " + std::to_string(graphP->EdgeMate(existing[1])) + " MASK IS " +
-            std::string(graphP->GetMaskAt(existing[1], MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") << endl;
-        log << "CLEARBOUNDARY2 EDGE " + std::to_string(vtx[2]) + "/" + std::to_string(vtx[0]) + "EDGE ID IS " + std::to_string(existing[2]) + " MATE ID IS " + std::to_string(graphP->EdgeMate(existing[2])) + " MASK IS " +
-            std::string(graphP->GetMaskAt(existing[2], MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") << endl;
-        log.close();*/
+
 
         return true; //remove duplicated faces
         }
-  /*  log.open("D:\\0test.txt", ios_base::app);
-           log << " KEPT FACE IS " + std::to_string(vtx[0]) + "/" + std::to_string(vtx[1]) + "/" + std::to_string(vtx[2]) + " HAS CURRENT ID " + std::to_string(currentComponentID) +
-    " HAS EXISTING EDGES: " + std::to_string(nExisting) << endl;
-           log.close();*/
+
 
     if (currentComponentID == -1)
         {
@@ -209,14 +230,18 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
     //at this point faceNodes[0]->faceNodes[1]->faceNodes[2] is a face loop.
     assert(graphP->FSucc(faceNodes[0]) == faceNodes[1] && graphP->FSucc(faceNodes[1]) == faceNodes[2] && graphP->FSucc(faceNodes[2]) == faceNodes[0]);
     assert(graphP->CountNodesAroundFace(faceNodes[0]) == 3 && graphP->CountNodesAroundFace(tmp) == 3);
+
     int oldId = componentLabels[currentComponentID];
-    if (componentLabels[currentComponentID] == -1 || points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[0] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[0] - 1/*]*/;
-    assert(currentComponentID < componentLabels.size() && currentComponentID >= 0);
-    if (componentLabels[currentComponentID]  >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[1] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[1] - 1/*]*/;
-    if (componentLabels[currentComponentID]  >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[2] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[2] - 1/*]*/;
-    for (int id = 0; id < 3; id++)
+    if (points != nullptr)
         {
-        if (existingIDs[id] != -1 && (int)componentLabels.size() > existingIDs[id] && points[componentLabels[currentComponentID]].x > points[componentLabels[existingIDs[id]]].x) componentLabels[currentComponentID] = componentLabels[existingIDs[id]];
+        if (componentLabels[currentComponentID] == -1 || points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[0] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[0] - 1/*]*/;
+        assert(currentComponentID < componentLabels.size() && currentComponentID >= 0);
+        if (componentLabels[currentComponentID] >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[1] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[1] - 1/*]*/;
+        if (componentLabels[currentComponentID] >= 0 && points[componentLabels[currentComponentID]].x > points[/*pointComponents[*/vtx[2] - 1/*]*/].x) componentLabels[currentComponentID] = /*pointComponents[*/vtx[2] - 1/*]*/;
+        for (int id = 0; id < 3; id++)
+            {
+            if (existingIDs[id] != -1 && (int)componentLabels.size() > existingIDs[id] && points[componentLabels[currentComponentID]].x > points[componentLabels[existingIDs[id]]].x) componentLabels[currentComponentID] = componentLabels[existingIDs[id]];
+            }
         }
     int isTriangleLoopFlipped = 0;
     int flippedEdges[2][3] = { { 0, 1, 2 }, { 2, 1, 0 } };
@@ -230,8 +255,6 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
         if (edgeTest[edge])
             {
             //merge faceNodes[edge] (new edge) with existing[edge] (old edge). Annotate all vertices accordingly.
-            // assert(graphP->CountNodesAroundFace(graphP->EdgeMate(existing[edge])) == 3 || graphP->CountNodesAroundFace(existing[edge]) == 3);
-            //for (int edge2 = 0; edge2 < 3; edge2++) assert(graphP->FSucc(existing[edge]) != faceNodes[edge2] && graphP->FSucc(graphP->EdgeMate(existing[edge])) != faceNodes[edge2]);
             if (existingIDs[edge] != -1)
                 {
                 graphP->TrySetLabel(existing[edge], componentLabel, currentComponentID);
@@ -241,77 +264,20 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
             MTGNodeId triangleEdge = existingEdgeIsExterior ? graphP->EdgeMate(faceNodes[edge]) : faceNodes[edge];
             MTGNodeId newEdge = graphP->EdgeMate(triangleEdge);
             
-        /*    std::string tlog;
-            if (vtx[0] == 5491 && vtx[1] == 368 && vtx[2] == 3628)
-                {
-                tlog += std::string("EXTERIOR: ");
-                MTGARRAY_FACE_LOOP(nId, graphP, exteriorEdge)
-                    {
-                    int v;
-                    graphP->TryGetLabel(nId, 0, v);
-                    tlog += std::to_string(nId) + ":" + std::to_string((int)v) + " ";
-                    }
-                MTGARRAY_END_FACE_LOOP(nId, graphP, exteriorEdge)
-                    tlog += std::string("EXISTING: ");
-                    MTGARRAY_FACE_LOOP(nId, graphP, existing[edge])
-                    {
-                    int v;
-                    graphP->TryGetLabel(nId, 0, v);
-                    tlog += std::to_string(nId) + ":" + std::to_string((int)v) + " ";
-                    }
-                MTGARRAY_END_FACE_LOOP(nId, graphP, existing[edge])
-                }*/
+
 
             bool flipped = !existingEdgeIsExterior;
             if (flipped) isTriangleLoopFlipped = 1;
 
             graphP->VertexTwist(exteriorEdge, graphP->FSucc(triangleEdge));
-       /*     if (vtx[0] == 692 && vtx[1] == 953 && vtx[2] == 694)
-                {
-                tlog += std::string("TRIANGLE INTERMEDIATE: ");
-                    MTGARRAY_FACE_LOOP(nId, graphP, triangleEdge)
-                    {
-                    int v;
-                    graphP->TryGetLabel(nId, 0, v);
-                    tlog += std::to_string(nId) + ":" + std::to_string((int)v) + " ";
-                    }
-                    MTGARRAY_END_FACE_LOOP(nId, graphP, triangleEdge)
-                        tlog += std::string("NEW INTERMEDIATE: ");
-                    MTGARRAY_FACE_LOOP(nId, graphP, newEdge)
-                    {
-                    int v;
-                    graphP->TryGetLabel(nId, 0, v);
-                    tlog += std::to_string(nId) + ":" + std::to_string((int)v) + " ";
-                    }
-                MTGARRAY_END_FACE_LOOP(nId, graphP, newEdge)
-                }*/
+
             graphP->VertexTwist(triangleEdge, graphP->FSucc(exteriorEdge));
-           /* if (vtx[0] == 692 && vtx[1] == 953 && vtx[2] == 694)
-                {
-                tlog += std::string("TRIANGLE: ");
-                MTGARRAY_FACE_LOOP(nId, graphP, triangleEdge)
-                    {
-                    int v;
-                    graphP->TryGetLabel(nId, 0, v);
-                    tlog += std::to_string(nId) + ":" + std::to_string((int)v) + " ";
-                    }
-                MTGARRAY_END_FACE_LOOP(nId, graphP, triangleEdge)
-                    tlog += std::string("NEW EXISTING: ");
-                    MTGARRAY_FACE_LOOP(nId, graphP, existing[edge])
-                    {
-                    int v;
-                    graphP->TryGetLabel(nId, 0, v);
-                    tlog += std::to_string(nId) + ":" + std::to_string((int)v) + " ";
-                    }
-                    MTGARRAY_END_FACE_LOOP(nId, graphP, existing[edge])
-                }*/
+
             graphP->ExciseSliverFace(triangleEdge);
 
             assert(graphP->CountNodesAroundFace(newEdge) == 3);
             assert(graphP->CountNodesAroundFace(graphP->EdgeMate(newEdge)) == 3);
-           /* faceNodes[edge] = newEdge;
-            faceNodes[(edge + 1) % 3] = graphP->FSucc(faceNodes[edge]);
-            faceNodes[(edge + 2) % 3] = graphP->FSucc(faceNodes[(edge + 1) % 3]);*/
+
             int edgeMap[3] = { 1, 0, 2 };
             if (flipped)
                 {
@@ -331,14 +297,11 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
                 flippedFaceNodes[1] = graphP->EdgeMate(faceNodes[0]);
                 flippedFaceNodes[2] = graphP->EdgeMate(faceNodes[2]);
                 }
-            //assert(graphP->FSucc(faceNodes[0]) == faceNodes[1] && graphP->FSucc(faceNodes[1]) == faceNodes[2] && graphP->FSucc(faceNodes[2]) == faceNodes[0]);
+
             graphP->SetMaskAroundEdge(newEdge, MTG_NULL_MASK); //interior edge
             graphP->ClearMaskAroundEdge(newEdge, MTG_BOUNDARY_MASK);
             graphP->ClearMaskAroundEdge(newEdge, MTG_EXTERIOR_MASK);
-        /*    log.open("D:\\0test.txt", ios_base::app);
-            log << "CLEARBOUNDARY EDGE " + std::to_string(vtx[edge]) + "/" + std::to_string(vtx[((edge + 1) % 3)]) + "EDGE ID IS " + std::to_string(faceNodes[edge]) + " MATE ID IS " + std::to_string(graphP->EdgeMate(faceNodes[edge])) + " MASK IS " +
-                std::string(graphP->GetMaskAt(faceNodes[edge], MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") << endl;
-            log.close();*/
+
             assert(graphP->IsValidNodeId(faceNodes[edge]));
             assert(graphP->IsValidNodeId(faceNodes[(edge + 1) % 3]));
             assert(graphP->IsValidNodeId(faceNodes[(edge + 2) % 3]));
@@ -370,8 +333,7 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
             auto edge2Iterator = std::find_if(edgeLabels[vtx[edge] - 1]->begin(), edgeLabels[vtx[edge] - 1]->end(), [&vtx, &edge] (const std::pair<long, MTGNodeId>& a) { int t = (edge + 2) % 3; return a.first == vtx[t]; });
             if (edge2Iterator != edgeLabels[vtx[edge] - 1]->end()) edge2Iterator->second = graphP->EdgeMate(faceNodes[(edge + 2) % 3]);
             else edgeLabels[vtx[edge] - 1]->push_back(std::make_pair(vtx[((edge + 2) % 3)], graphP->EdgeMate(faceNodes[(edge + 2) % 3])));
-            //if (!edgeTest[(edge + 1) % 3]) graphP->SetMaskAroundEdge(faceNodes[(edge + 1) % 3], MTG_BOUNDARY_MASK);
-           // if (!edgeTest[(edge + 2) % 3]) graphP->SetMaskAroundEdge(faceNodes[(edge + 2) % 3], MTG_BOUNDARY_MASK);
+
             }
         else
             {
@@ -396,8 +358,7 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
     int pointsToUpdate[4] = { -99, -99, -99, -99 };
     bool toUpdate = false;
     MTGNodeId* innerLoopNodes = isTriangleLoopFlipped == 1? flippedFaceNodes : faceNodes;
-   // std::string test = "";
-  //  test += (innerLoopNodes == flippedFaceNodes) ? "FLIPPED" : "NOT";
+
     assert(graphP->FSucc(innerLoopNodes[0]) == innerLoopNodes[1] && graphP->FSucc(innerLoopNodes[1]) == innerLoopNodes[2] && graphP->FSucc(innerLoopNodes[2]) == innerLoopNodes[0]);
     for (int edgeT = 0; edgeT < 3; edgeT++)
         {
@@ -410,23 +371,7 @@ bool ProcessFaceToAdd(MTGGraph* graphP, const int* vtx, std::vector<int>& compon
         graphP->TrySetLabel(graphP->EdgeMate(innerLoopNodes[edgeT]), vertexLabel, vtx[flippedEdges[isTriangleLoopFlipped][(edgeT + 1) % 3]]);
         graphP->TrySetLabel(innerLoopNodes[edgeT], componentLabel, currentComponentID);
         graphP->TrySetLabel(graphP->EdgeMate(innerLoopNodes[edgeT]), componentLabel, currentComponentID);
-        /*log.open("D:\\0test.txt", ios_base::app);
-        log << " EDGE " + std::to_string(vtx[edge]) + "/" + std::to_string(vtx[((edge + 1) % 3)]) + "EDGE ID IS " + std::to_string(faceNodes[edge]) + " MATE ID IS " + std::to_string(graphP->EdgeMate(faceNodes[edge]))+" MASK IS " +
-        std::string(graphP->GetMaskAt(faceNodes[edge], MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") << endl;
-         log.close();*/
-       /* if (!graphP->IsValidNodeId(faceNodes[edgeT]))
-            {
-            log.open("D:\\0test.txt", ios_base::app);
-            log << "FACE EDGE " + std::to_string(vtx[edgeT]) + "/" + std::to_string(vtx[((edgeT + 1) % 3)]) + "EDGE ID IS " + std::to_string(faceNodes[edgeT]) + " EDGE IS INVALID!!" << endl;
-            log.close();
-            }
-        MTGNodeId foundEdge = std::find_if(edgeLabels[vtx[edgeT] - 1]->begin(), edgeLabels[vtx[edgeT] - 1]->end(), [&vtx, &edgeT] (const std::pair<long, MTGNodeId>& a) { return a.first == vtx[(edgeT + 1) % 3]; })->second;
-        if (!graphP->IsValidNodeId(foundEdge))
-            {
-            log.open("D:\\0test.txt", ios_base::app);
-            log << "LINKED VERTEX EDGE " + std::to_string(vtx[edge]) + "/" + std::to_string(vtx[((edge + 1) % 3)]) + "EDGE ID IS " + std::to_string(foundEdge) + " EDGE IS INVALID!!" << endl;
-            log.close();
-            }*/
+
         }
   
     if (componentLabels[currentComponentID] != oldId && oldId != -1)
@@ -549,6 +494,7 @@ void ExtractFaceIndexListFromGraph(std::vector<int>& faceIndexBuffer, MTGGraph* 
             int vIndex = -1;
             graphP->TryGetLabel(faceId, 0, vIndex);
             assert(vIndex != -1);
+            assert(vIndex > 0);
             faceIndexBuffer.push_back(vIndex);
             faceIndices.push_back(vIndex);
             graphP->SetMaskAt(faceId, visitedMask);
@@ -562,26 +508,22 @@ void ExtractFaceIndexListFromGraph(std::vector<int>& faceIndexBuffer, MTGGraph* 
     }
 
 
-#pragma optimize("",off)
 void AddFacesToGraph(MTGGraph* destGraphP, std::vector<int>& faces, std::vector<std::vector<std::pair<long, MTGNodeId>>*>& existingEdges, std::vector<int>& indexMapping, std::vector<DPoint3d>& pointsInGraph, std::vector<DPoint3d>& pointsInFaces, bvector<int>& componentContours)
     {
-   // std::ofstream log;
-   // log.open("D:\\dctest.txt", ios_base::app);
-   // log.open("d:\\0test.txt", ios_base::app);
+
     int nFrem = 0;
     std::vector<int> componentLabels(componentContours.size());
-  //  log << "PROCESSING TILE WITH " + std::to_string(faces.size()) + " FACE DEFINITIONS" << endl;
-    //int componentLabel = 1;
+
     for (int i = 0; i < (int)faces.size(); i += 3)
         {
         int j = i % 3 < 2 ? i + 1 : i / 3;
         int k = j + 1;
         assert(faces[i] != faces[j] && faces[j] != faces[k] && faces[i] != faces[k]);
-       // MTGNodeId faceNodes[3] = { -1, -1, -1 }, existing[3] = { -1, -1, -1 };
-        size_t vtx[3] = { faces[i], faces[j], faces[k] };
+
+        int vtx[3] = { faces[i], faces[j], faces[k] };
         for (int v = 0; v < 3; v++)
             {
-            if (vtx[v] < indexMapping.size() && indexMapping[vtx[v] - 1] != -1 /*&& indexMapping[vtx[v] - 1] < (int)pointsInGraph.size()*/) vtx[v] = indexMapping[vtx[v] - 1] + 1;
+            if (vtx[v] < indexMapping.size() && indexMapping[vtx[v] - 1] != -1 ) vtx[v] = indexMapping[vtx[v] - 1] + 1;
             else
                 {
                 pointsInGraph.push_back(pointsInFaces[vtx[v] - 1]);
@@ -612,43 +554,24 @@ void AddFacesToGraph(MTGGraph* destGraphP, std::vector<int>& faces, std::vector<
                 {
                 assert(destGraphP->GetMaskAt(destGraphP->EdgeMate(boundaryEdge), MTG_EXTERIOR_MASK) || destGraphP->GetMaskAt(destGraphP->EdgeMate(boundaryEdge), MTG_BOUNDARY_MASK));
                 exteriorEdge = boundaryEdge;
-               /* if (destGraphP->CountNodesAroundFace(boundaryEdge) != 3 && destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(boundaryEdge)) != 3)
-                    {
-                    log << " [EXAMPLE] edge " + std::to_string((int)boundaryEdge) + " has number of nodes " + std::to_string(destGraphP->CountNodesAroundFace(boundaryEdge)) +
-                        " masks are " + std::to_string((int)destGraphP->FPred(boundaryEdge)) + "(" + std::string(destGraphP->GetMaskAt(destGraphP->FPred(boundaryEdge), MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") + ")->"
-                        + std::to_string((int)boundaryEdge) + "(" + std::string(destGraphP->GetMaskAt(boundaryEdge, MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") + std::string(")->")
-                        + std::to_string((int)destGraphP->FSucc(boundaryEdge)) + std::string("(") + std::string(destGraphP->GetMaskAt(destGraphP->FSucc(boundaryEdge), MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") + ")";
-                    log << endl;
-                    log << std::to_string(boundaryEdge) + "=" + std::to_string(destGraphP->EdgeMate(boundaryEdge)) + "(" + std::to_string(destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(boundaryEdge))) + ")(" + std::string(destGraphP->GetMaskAt(destGraphP->EdgeMate(boundaryEdge), MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") + ")";
-                    log << " FACE " + std::to_string(destGraphP->FPred(destGraphP->EdgeMate(boundaryEdge))) + "-" + std::to_string(destGraphP->EdgeMate(boundaryEdge)) + "-" + std::to_string(destGraphP->FSucc(destGraphP->EdgeMate(boundaryEdge)));
-                    log << endl;
-                    log << std::to_string(destGraphP->FSucc(boundaryEdge)) + "=" + std::to_string(destGraphP->EdgeMate(destGraphP->FSucc(boundaryEdge))) + "(" + std::to_string(destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(destGraphP->FSucc(boundaryEdge)))) + ")(" + std::string(destGraphP->GetMaskAt(destGraphP->EdgeMate(destGraphP->FSucc(boundaryEdge)), MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") + ")";
-                    log << " FACE " + std::to_string(destGraphP->FPred(destGraphP->EdgeMate(destGraphP->FSucc(boundaryEdge)))) + "-" + std::to_string(destGraphP->EdgeMate(destGraphP->FSucc(boundaryEdge))) + "-" + std::to_string(destGraphP->FSucc(destGraphP->EdgeMate(destGraphP->FSucc(boundaryEdge))));
-                    log << endl;
-                    log << std::to_string(destGraphP->FPred(boundaryEdge)) + "=" + std::to_string(destGraphP->EdgeMate(destGraphP->FPred(boundaryEdge))) + "(" + std::to_string(destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(destGraphP->FPred(boundaryEdge)))) + ")(" + std::string(destGraphP->GetMaskAt(destGraphP->EdgeMate(destGraphP->FPred(boundaryEdge)), MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR") + ")";
-                    log << " FACE " + std::to_string(destGraphP->FPred(destGraphP->EdgeMate(destGraphP->FPred(boundaryEdge)))) + "-" + std::to_string(destGraphP->EdgeMate(destGraphP->FPred(boundaryEdge))) + "-" + std::to_string(destGraphP->FSucc(destGraphP->EdgeMate(destGraphP->FPred(boundaryEdge))));
-                    log << endl << endl;
-                    }*/
+
                 assert(destGraphP->CountNodesAroundFace(boundaryEdge) == 3 || destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(boundaryEdge)) == 3);
                 if (destGraphP->CountNodesAroundFace(boundaryEdge) == 3) exteriorEdge = destGraphP->EdgeMate(boundaryEdge);
                 if (!destGraphP->GetMaskAt(exteriorEdge, MTG_BOUNDARY_MASK)) continue;
                 if (destGraphP->GetMaskAt(destGraphP->EdgeMate(exteriorEdge), MTG_EXTERIOR_MASK)) continue;
                 MTGARRAY_FACE_LOOP(currentEdge, destGraphP, exteriorEdge)
                     {
-                    // assert(!graphP->GetMaskAt(graphP->EdgeMate(currentEdge), MTG_EXTERIOR_MASK));
                     if (!destGraphP->GetMaskAt(currentEdge, MTG_BOUNDARY_MASK)) break;
                     destGraphP->SetMaskAt(currentEdge, MTG_EXTERIOR_MASK);
                     destGraphP->ClearMaskAt(currentEdge, MTG_BOUNDARY_MASK);
                     }
                 MTGARRAY_END_FACE_LOOP(currentEdge, destGraphP, exteriorEdge)
-                    //break;
                 }
             }
         MTGARRAY_END_SET_LOOP(boundaryEdge, destGraphP)
-    //        log << " DONE ADDING FACES TO GRAPH. FACES REMOVED: " + std::to_string(nFrem) + " OF WHICH IGNORED " + std::to_string(nFi) + " for a total of " + std::to_string(faces.size()) << endl;
-    //       log.close();
+
     }
-#pragma optimize("",on)
+
 
 void CreateGraphFromIndexBuffer(MTGGraph* graphP, const long* meshFaces, int count, int pointCount, bvector<int>& componentContours, const DPoint3d* points)
     {
@@ -662,14 +585,14 @@ void CreateGraphFromIndexBuffer(MTGGraph* graphP, const long* meshFaces, int cou
     int componentLabel = graphP->DefineLabel(1, MTG_LabelMask_FaceProperty, -1);
     int* pointComponents = new int[pointCount];
     std::vector<int> extraFaces;
-   // log.open("D:\\0test.txt", ios_base::app);
-  //  log << "PROCESSING TILE WITH " + std::to_string(count) + " FACE DEFINITIONS" << endl;
-  //  log.close();
+
     for (int i = 0; i < pointCount; i++) pointComponents[i] = i;
     for (int i = 0; i < count; i += 3)
         {
         int j = i % 3 < 2 ? i + 1 : i / 3;
         int k = j + 1;
+        bool distinctFace = meshFaces[i] != meshFaces[j] && meshFaces[j] != meshFaces[k] && meshFaces[k] != meshFaces[i];
+        if (!distinctFace) continue;
         assert(meshFaces[i] != meshFaces[j] && meshFaces[j] != meshFaces[k] && meshFaces[k] != meshFaces[i]);
         assert(meshFaces[i] <= pointCount && meshFaces[j] <= pointCount  && meshFaces[k] <= pointCount);
         /*      log << " FACE IS " + std::to_string(meshFaces[i]) + "/" + std::to_string(meshFaces[j]) + "/" + std::to_string(meshFaces[k]) << endl;
@@ -788,6 +711,7 @@ void CreateGraphFromIndexBuffer(MTGGraph* graphP, const long* meshFaces, int cou
 #endif
         for (int i = 0; i < pointCount; i++) if (edgeLabels[i] != nullptr) delete edgeLabels[i];
     delete[] edgeLabels;
+    delete[] pointComponents;
     }
 
 void RemovePolygonInteriorFromGraph(MTGGraph* graphP, bvector<DPoint3d>& polygon, const DPoint3d* points, DPoint3d& minCorner, DPoint3d& maxCorner)
@@ -898,13 +822,14 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
         DSegment3d right = DSegment3d::From(DPoint3d::From(maxCorner.x, minCorner.y, 0), DPoint3d::From(maxCorner.x, maxCorner.y, 0));
 
         double param1, param2;
+        DPoint3d pt1, pt2;
 
-        if ((bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge1, &right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
-            || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge2, &right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (bsiGeom_intersectXYDSegment3dDSegment3d(NULL, &param1, NULL, &param2, &edge3, &right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1))
+        if ((DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, top) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, bottom) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, left) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge1, right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1)
+            || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge2, right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1) || (DSegment3d::IntersectXY(param1, param2, pt1, pt2, edge3, right) && param1 >= 0 && param1 <= 1 && param2 >= 0 && param2 <= 1))
            for(size_t i =0; i < 3; i++) graphP->SetMaskAt(faceEdges[i], toDeleteMask);
         }
     MTGARRAY_END_SET_LOOP(edgeID, graphP)
@@ -923,55 +848,108 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
 
     }
 
-    void MergeGraphs(MTGGraph * destGraphP, std::vector<DPoint3d>& destPoints, MTGGraph * srcGraphP, std::vector<DPoint3d>& inPoints, DPoint3d minCorner, DPoint3d maxCorner, std::vector<int>& pointToDestPointsMap, bvector<int>& componentContours)
+
+void ReadFeatureEndTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<TaggedEdge>& featureEdges)
     {
-    bvector<bvector<DPoint3d>> contours;
-    std::set<MTGNodeId>* exterior = new std::set<MTGNodeId>();
-    int i = 0;
-#ifndef NDEBUG
-   /* MTGARRAY_SET_LOOP(edgeID, destGraphP)
+    MTGARRAY_SET_LOOP(edgeID, graphP)
         {
-        assert(destGraphP->CountNodesAroundFace(edgeID) == 3 || destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(edgeID)) == 3);      
-        }
-    MTGARRAY_END_SET_LOOP(edgeID, destGraphP)*/
-#endif
-    //get contours 
-    MTGARRAY_SET_LOOP(boundaryEdgeID, srcGraphP)
-        {
-        if (srcGraphP->GetMaskAt(boundaryEdgeID, MTG_EXTERIOR_MASK) && exterior->count(boundaryEdgeID) == 0)
+        int tag = -1;
+        graphP->TryGetLabel(edgeID, 3, tag);
+        if (tag != -1)
             {
-            contours.resize(i + 1);
-            MTGARRAY_FACE_LOOP(currentID, srcGraphP, boundaryEdgeID)
-                {
-                if (!srcGraphP->GetMaskAt(currentID, MTG_EXTERIOR_MASK))
-                    {
-                    srcGraphP->SetMaskAt(currentID, MTG_EXTERIOR_MASK);
-                        srcGraphP->ClearMaskAt(currentID, MTG_BOUNDARY_MASK);
-                    }
-                exterior->insert(currentID);
-                int vIndex = -1;
-                srcGraphP->TryGetLabel(currentID, 0, vIndex);
-                assert(vIndex > 0);
-                DPoint3d pt = inPoints[vIndex - 1];
-                contours[i].push_back(pt);
-                }
-            MTGARRAY_END_FACE_LOOP(currentID, srcGraphP, boundaryEdgeID)
-                i++;
+            TaggedEdge feature;
+            feature.tag = tag;
+            graphP->TryGetLabel(edgeID, 0, feature.vtx1);
+            graphP->TryGetLabel(graphP->EdgeMate(edgeID), 0, feature.vtx2);
+            if (feature.vtx1 < pointToDestPointsMap.size() && pointToDestPointsMap[feature.vtx1 - 1] != -1) feature.vtx1 = pointToDestPointsMap[feature.vtx1 - 1];
+            else feature.vtx1--;
+            if (feature.vtx2 < pointToDestPointsMap.size() && pointToDestPointsMap[feature.vtx2 - 1] != -1) feature.vtx2 = pointToDestPointsMap[feature.vtx2 - 1];
+            else feature.vtx2--;
+
+            featureEdges.push_back(feature);
             }
         }
-    MTGARRAY_END_SET_LOOP(boundaryEdgeID, srcGraphP)
-        delete exterior;
+    MTGARRAY_END_SET_LOOP(edgeID, graphP)
+    }
+
+void ReadFeatureTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<bvector<int32_t>>& features, std::map<int, int>& componentForPoints)
+    {
+    MTGARRAY_SET_LOOP(edgeID, graphP)
+        {
+        int tag = -1;
+        graphP->TryGetLabel(edgeID, 2, tag);
+        if (tag != -1)
+            {
+            bvector<int32_t> feature(3);
+            feature[0] = tag;
+            graphP->TryGetLabel(edgeID, 0, feature[1]);
+            graphP->TryGetLabel(graphP->EdgeMate(edgeID), 0, feature[2]);
+            if (feature[1] < pointToDestPointsMap.size() && pointToDestPointsMap[feature[1] - 1] != -1) feature[1] = pointToDestPointsMap[feature[1] - 1];
+            else feature[1]--;
+            if (feature[2] < pointToDestPointsMap.size() && pointToDestPointsMap[feature[2] - 1] != -1) feature[2] = pointToDestPointsMap[feature[2] - 1];
+            else feature[2]--;
+
+            int component = -1;
+            graphP->TryGetLabel(edgeID, 3, component);
+            if (component != -1)
+                {
+                componentForPoints[feature[1]] = component;
+                componentForPoints[feature[2]] = component;
+                }
+
+            features.push_back(feature);
+            }
+        }
+    MTGARRAY_END_SET_LOOP(edgeID, graphP)
+    }
+
+void ReadFeatureTags(MTGGraph * graphP, std::vector<int>& pointToDestPointsMap, bvector<bvector<int32_t>>& features)
+    {
+    std::map<int, int> pts;
+    ReadFeatureTags(graphP, pointToDestPointsMap, features, pts);
+    }
+
+void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
+    {
+    MTGARRAY_SET_LOOP(edgeID, graphP)
+        {
+        int v = -1;
+        graphP->TryGetLabel(edgeID, 0, v);
+        bool tagSet = false;
+        for (auto& edge : featureEdges)
+            {
+            if ((v == edge.vtx1 || v == edge.vtx2))
+                {
+                MTGARRAY_VERTEX_LOOP(edgeId2, graphP, edgeID)
+                    {
+                    int v1 = -1;
+                    graphP->TryGetLabel(graphP->FSucc(edgeId2), 0, v1);
+                    if (v1 == edge.vtx1 || v1 == edge.vtx2)
+                        {
+                        graphP->TrySetLabel(edgeId2, 3, edge.tag);
+                        tagSet = true;
+                        break;
+                        }
+                    }
+                MTGARRAY_END_VERTEX_LOOP(edgeId2, graphP, edgeID)
+                    if (tagSet) break;
+                }
+            }
+        }
+    MTGARRAY_END_SET_LOOP(edgeID, graphP)
+    }
+
+    void MergeGraphs(MTGGraph * destGraphP, std::vector<DPoint3d>& destPoints, MTGGraph * srcGraphP, std::vector<DPoint3d>& inPoints, DPoint3d minCorner, DPoint3d maxCorner, std::vector<int>& pointToDestPointsMap, bvector<int>& componentContours)
+    {
+
+
     MTGMask toDeleteMask = destGraphP->GrabMask();
 
         std::vector<std::vector<std::pair<long,MTGNodeId>>*> remainingEdgesForStitchContour(destPoints.size());
     std::fill_n(remainingEdgesForStitchContour.begin(), remainingEdgesForStitchContour.size(), nullptr);
     MTGMask stitchedEdgeMask = destGraphP->GrabMask();
     //drop all edges where both mates were marked for deletion
-    //destGraphP->ClearMask(MTG_EXTERIOR_MASK);
-    //destGraphP->ClearMask(MTG_BOUNDARY_MASK);
-    //std::ofstream log;
-    //log.open("D:\\dctest2.txt", ios_base::app);
-    //log << "-~-~-~-~-~~-~-~-~-~-~-~" << endl;
+
     MTGARRAY_SET_LOOP(edgeID, destGraphP)
         {
         if (destGraphP->GetMaskAt(edgeID, toDeleteMask))
@@ -990,9 +968,6 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                 remainingEdgesForStitchContour[index2 - 1]->push_back(std::make_pair(vIndex, edgeID));
                 destGraphP->SetMaskAt(edgeID, stitchedEdgeMask);
                 destGraphP->SetMaskAroundEdge(edgeID, MTG_BOUNDARY_MASK);
-              /*  log << "REMAINING CONTOUR EDGE " + std::to_string(edgeID) + " AS " + std::to_string(destGraphP->FPred(edgeID)) + "->";
-                 log << std::to_string(edgeID) + "->" + std::to_string(destGraphP->FSucc(edgeID)) + " COUNT IS "+ std::to_string(destGraphP->CountNodesAroundFace(edgeID));
-                log << endl;*/
                 }
             }
         if (destGraphP->GetMaskAt(edgeID, MTG_BOUNDARY_MASK))destGraphP->SetMaskAroundEdge(edgeID, MTG_BOUNDARY_MASK);
@@ -1001,165 +976,25 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
     //--------------------------
     destGraphP->ClearMask(toDeleteMask);
     destGraphP->ClearMask(MTG_EXTERIOR_MASK);
-    //destGraphP->ClearMask(MTG_BOUNDARY_MASK);
+
     destGraphP->DropMask(toDeleteMask);
- //   int n = 0;
- //   int total = 0;
-   // MTGARRAY_SET_LOOP(edgeID, destGraphP)
-   //     {
-   //     total++;
-    //    if (destGraphP->CountNodesAroundFace(edgeID) != 3 && destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(edgeID)) != 3)
-    //        {
-    //        n++;
-           /* log << "[EXAMPLE] EDGE " + std::to_string(edgeID) + " /MATE IS: " + std::to_string(destGraphP->EdgeMate(edgeID)) + " has "
-                + std::to_string(destGraphP->CountNodesAroundFace(edgeID)) + "/" + std::to_string(destGraphP->CountNodesAroundFace(destGraphP->EdgeMate(edgeID)));
-            log << endl;
-            log << "EDGE IS IN " + std::to_string(destGraphP->FPred(edgeID)) + "-" + std::to_string(edgeID) + "-" + std::to_string(destGraphP->FSucc(edgeID));
-            log << endl;*/
-   //         } 
-   //     }
-   // MTGARRAY_END_SET_LOOP(edgeID, destGraphP)
-       // log << "FOUND ANOMALIES " + std::to_string(n) + " OUT OF " + std::to_string(total) << endl;
-      /*  MTGARRAY_SET_LOOP(edgeID, destGraphP)
-            {
-            if (destGraphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK) && exterior2->count(edgeID) == 0)
-                {
-                log << "MERGED LOOP:" << endl;
-                MTGARRAY_FACE_LOOP(currentID, destGraphP, edgeID)
-                    {
-                    exterior2->insert(currentID);
-                    log << std::to_string(currentID) + "[" + std::string(destGraphP->GetMaskAt(currentID, MTG_EXTERIOR_MASK) ? "EXTERIOR" : (destGraphP->GetMaskAt(currentID, MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR"))
-                        + "]->";
-                    }
-                MTGARRAY_END_FACE_LOOP(currentID, destGraphP, edgeID)
-                    log << endl << endl;
-                }
-            }
-        MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
-            log << "-~-~-~-~-~~-~-~-~-~-~-~" << endl;
-        log.close();*/
-        //----------------------------
+
 
     //for triangles from original mesh, add triangle to stitched mesh and points to destination points
 
         std::vector<int> faces;
         ExtractFaceIndexListFromGraph(faces, srcGraphP);
+        //get tagged edges
         AddFacesToGraph(destGraphP, faces, remainingEdgesForStitchContour, pointToDestPointsMap, destPoints, inPoints, componentContours);
+        bvector<bvector<int32_t>> features;
+        ReadFeatureTags(srcGraphP, pointToDestPointsMap, features);
+
+        for (auto& feature : features)
+            TagFeatureEdges(destGraphP, (DTMFeatureType)feature[0], feature.size() - 1, &feature[1], false);
+
+       
         for (size_t i = 0; i < destPoints.size(); i++) if (remainingEdgesForStitchContour[i] != nullptr) delete remainingEdgesForStitchContour[i];
-   /* MTGARRAY_SET_LOOP(srcEdgeID, srcGraphP)
-        {
-        if (srcEdgeID < srcGraphP->EdgeMate(srcEdgeID)) continue; //make sure each pair of half-edges is treated exactly once
-        MTGNodeId newEdge, mateEdge;
-        destGraphP->CreateEdge(newEdge, mateEdge);
-        int index1 = -1, index2 = -1;
-        srcGraphP->TryGetLabel(srcEdgeID, 0, index1);
-        srcGraphP->TryGetLabel(srcGraphP->EdgeMate(srcEdgeID), 0, index2);
-        assert(index1 > 0 && index2 > 0);
-        log << "Merging edge between " + std::to_string(index1) + " and " + std::to_string(index2);
-        log << endl;
-        log << "Created edges " + std::to_string(newEdge) + " <==> " + std::to_string(mateEdge);
-        log << endl;
 
-        bool switchedMate = false;
-        bool exists2 = (pointToDestPointsMap[index2 - 1] != -1 && remainingEdgesForStitchContour[pointToDestPointsMap[index2 - 1]] != -1);
-        bool exists1 = (pointToDestPointsMap[index1 - 1] != -1 && remainingEdgesForStitchContour[pointToDestPointsMap[index1 - 1]] != -1);
-        if (pointToDestPointsMap[index1 - 1] != -1 && remainingEdgesForStitchContour[pointToDestPointsMap[index1 - 1]] != -1)
-            {
-            MTGNodeId oldEdgeId = remainingEdgesForStitchContour[pointToDestPointsMap[index1 - 1]];
-            log << "[MERGE] New edge " + std::to_string(newEdge) + " <WITH> " + std::to_string(remainingEdgesForStitchContour[pointToDestPointsMap[index1 - 1]]);
-            destGraphP->VertexTwist(newEdge, remainingEdgesForStitchContour[pointToDestPointsMap[index1 - 1]]);
-            log << " merged to vertex index " + std::to_string(pointToDestPointsMap[index1 - 1] + 1);
-            log << endl;
-            if (!switchedMate)
-                {
-                int vIndexOld = -1,vIndexOld2 = -1;
-                destGraphP->TryGetLabel(destGraphP->EdgeMate(oldEdgeId), 0, vIndexOld);
-                destGraphP->TryGetLabel(destGraphP->FSucc(oldEdgeId), 0, vIndexOld2);
-                if (remainingEdgesForStitchContour[vIndexOld - 1] == destGraphP->EdgeMate(oldEdgeId) || 
-                    (destGraphP->FSucc(destGraphP->EdgeMate(newEdge)) == oldEdgeId && remainingEdgesForStitchContour[vIndexOld2 - 1] == destGraphP->FSucc(oldEdgeId)
-                    && exists2))
-                    {
-                    log << " [REROUTE] New exterior edge " + std::to_string(newEdge) + " replacing " + std::to_string(oldEdgeId);
-                    log << endl;
-                    remainingEdgesForStitchContour[pointToDestPointsMap[index1 - 1]] = newEdge;
-                    switchedMate = true;
-                    }
-                }
-            index1 = pointToDestPointsMap[index1 - 1] + 1;
-            }
-        else
-            {
-            destPoints.push_back(inPoints[index1 - 1]);
-            log << "[ADDED] New edge " + std::to_string(newEdge) + " index is " + std::to_string(index1) + " at vertex index " + std::to_string(destPoints.size());
-            log << endl;
-            if (index1 > pointToDestPointsMap.size() || pointToDestPointsMap[index1 - 1] == -1)
-                {
-                if (index1 > pointToDestPointsMap.size()) pointToDestPointsMap.resize(index1, -1);
-                pointToDestPointsMap[index1 - 1] = (int)destPoints.size() - 1;
-                }
-            index1 = (int)destPoints.size();
-
-            if (index1 > remainingEdgesForStitchContour.size()) remainingEdgesForStitchContour.resize(index1, -1);
-            remainingEdgesForStitchContour[index1 - 1] = newEdge;
-            }
-
-        if (pointToDestPointsMap[index2 - 1] != -1 && remainingEdgesForStitchContour[pointToDestPointsMap[index2 - 1]] != -1)
-            {
-            MTGNodeId oldEdgeId = remainingEdgesForStitchContour[pointToDestPointsMap[index2 - 1]];
-            log << "[MERGE] New edge " + std::to_string(mateEdge) + " <WITH> " + std::to_string(remainingEdgesForStitchContour[pointToDestPointsMap[index2 - 1]]);
-            destGraphP->VertexTwist(mateEdge, remainingEdgesForStitchContour[pointToDestPointsMap[index2 - 1]]);
-            log << " merged to vertex index " + std::to_string(pointToDestPointsMap[index2 - 1] + 1);
-            log << endl;
-            if (!switchedMate)
-                {
-                int vIndexOld = -1,vIndexOld2=-1;
-                destGraphP->TryGetLabel(destGraphP->EdgeMate(oldEdgeId), 0, vIndexOld);
-                destGraphP->TryGetLabel(destGraphP->FSucc(oldEdgeId), 0, vIndexOld2);
-                if (remainingEdgesForStitchContour[vIndexOld - 1] == destGraphP->EdgeMate(oldEdgeId) ||
-                    (destGraphP->FSucc(destGraphP->EdgeMate(mateEdge)) == oldEdgeId && remainingEdgesForStitchContour[vIndexOld2 - 1] == destGraphP->FSucc(oldEdgeId)
-                    && exists1))
-                    {
-                    log << " [REROUTE] New exterior edge " + std::to_string(mateEdge) + " replacing " + std::to_string(oldEdgeId);
-                    log << endl;
-                    remainingEdgesForStitchContour[pointToDestPointsMap[index2 - 1]] = mateEdge;
-                    switchedMate = true;
-                    }
-                }
-            index2 = pointToDestPointsMap[index2 - 1] + 1;
-            }
-        else
-            {
-            destPoints.push_back(inPoints[index2 - 1]);
-            log << "[ADDED] New edge " + std::to_string(mateEdge) + " index is " + std::to_string(index2) + " at vertex index " + std::to_string(destPoints.size());
-            log << endl;
-            if (index2 > pointToDestPointsMap.size() || pointToDestPointsMap[index2 - 1] == -1)
-                {
-                if (index2 > pointToDestPointsMap.size()) pointToDestPointsMap.resize(index2, -1);
-                pointToDestPointsMap[index2 - 1] = (int)destPoints.size() - 1;
-                }
-            index2 = (int)destPoints.size();
-            if (index2 > remainingEdgesForStitchContour.size()) remainingEdgesForStitchContour.resize(index2, -1);
-            remainingEdgesForStitchContour[index2 - 1] = mateEdge;
-            }
-
-        destGraphP->TrySetLabel(newEdge, 0, index1);
-        destGraphP->TrySetLabel(mateEdge, 0, index2);
-        log << "[FACE] for new edge " << endl;
-        MTGARRAY_FACE_LOOP(currId, destGraphP, newEdge)
-            {
-            log << std::to_string(currId) + "-";
-            }
-        MTGARRAY_END_FACE_LOOP(currId, destGraphP, newEdge)
-            log << endl << "--------------" << endl;
-            log << "[FACE] for mate edge " << endl;
-        MTGARRAY_FACE_LOOP(currId, destGraphP, mateEdge)
-            {
-            log << std::to_string(currId) + "-";
-            }
-        MTGARRAY_END_FACE_LOOP(currId, destGraphP, mateEdge)
-            log << endl << "--------------" << endl << endl;
-        }
-    MTGARRAY_END_SET_LOOP(srcEdgeID, srcGraphP)*/
     MTGMask visitedMask = destGraphP->GrabMask();
     MTGARRAY_SET_LOOP(edgeID, destGraphP)
         {
@@ -1175,14 +1010,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
             ++n;
             }
         MTGARRAY_END_FACE_LOOP(faceEdgeID, destGraphP, edgeID)
-        /*if (n <= 3)
-            {
-            MTGARRAY_FACE_LOOP(faceEdgeID, destGraphP, edgeID)
-                {
-                if (!destGraphP->GetMaskAt(faceEdgeID, MTG_BOUNDARY_MASK)) destGraphP->SetMaskAt(faceEdgeID, MTG_NULL_MASK);
-                destGraphP->SetMaskAt(faceEdgeID, visitedMask);
-            MTGARRAY_END_FACE_LOOP(faceEdgeID, destGraphP, edgeID)
-            }*/
+
         if (n > 3)
             {
             MTGARRAY_FACE_LOOP(faceEdgeID, destGraphP, edgeID)
@@ -1191,9 +1019,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                 destGraphP->SetMaskAt(faceEdgeID, visitedMask);
                 if (destGraphP->GetMaskAt(destGraphP->EdgeMate(faceEdgeID), MTG_EXTERIOR_MASK))
                     {
-                   /* log << "[ASSERT] Exterior edge " + std::to_string(faceEdgeID);
-                    log << " prev " + std::to_string(destGraphP->FPred(faceEdgeID)) + " succ " + std::to_string(destGraphP->FSucc(faceEdgeID));
-                    log << endl;*/
+
                     }
                 destGraphP->SetMaskAt(destGraphP->EdgeMate(faceEdgeID), MTG_BOUNDARY_MASK);
                 }
@@ -1206,34 +1032,6 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
     destGraphP->ClearMask(visitedMask);
     destGraphP->DropMask(visitedMask);
 
-    //-----------------------------
-    //log << "-~-~-~-~-~~-~-~-~-~-~-~" << endl;
-   // log.close();
-    //----------------------------
-    /*std::set<MTGNodeId>* exterior2 = new std::set<MTGNodeId>();
-    std::ofstream log;
-    log.open("D:\\dctest.txt", ios_base::app);
-    log << "-~-~-~-~-~~-~-~-~-~-~-~" << endl;
-    MTGARRAY_SET_LOOP(edgeID, destGraphP)
-        {
-        if (destGraphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK) && exterior2->count(edgeID) == 0)
-            {
-            log << "MERGED LOOP:" << endl;
-            MTGARRAY_FACE_LOOP(currentID, destGraphP, edgeID)
-                {
-                exterior2->insert(currentID);
-                log << std::to_string(currentID) + "[" + std::string(destGraphP->GetMaskAt(currentID, MTG_EXTERIOR_MASK) ? "EXTERIOR" : (destGraphP->GetMaskAt(currentID, MTG_BOUNDARY_MASK) ? "BOUNDARY" : "INTERIOR"))
-                    + "]->";
-                }
-            MTGARRAY_END_FACE_LOOP(currentID, destGraphP, edgeID)
-                log << endl << endl;
-            }
-        }
-    MTGARRAY_END_SET_LOOP(edgeID, meshGraph)
-        log << "-~-~-~-~-~~-~-~-~-~-~-~" << endl;
-        log.close();
-    delete exterior2;*/
-    //-------------------------------
     }
 
     void GetFaceDefinition(MTGGraph* graphP, int* outTriangle, MTGNodeId& edge)
@@ -1252,20 +1050,28 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
 
     MTGNodeId FindFaceInGraph(MTGGraph* graphP, int vertex1, int vertex2, int vertex3)
         {
+
         MTGARRAY_SET_LOOP(edgeId, graphP)
             {
-            int v = -1, v1 = -1;
-            graphP->TryGetLabel(edgeId, 0,v);
-            if (!(v == vertex1 || v == vertex2 || v == vertex3)) continue;
-            graphP->TryGetLabel(graphP->FSucc(edgeId), 0, v1);
-            if ((v1 == vertex1 || v1 == vertex2 || v1 == vertex3))
+            int v = -1;
+            graphP->TryGetLabel(edgeId, 0, v);
+            if ((v == vertex1 || v == vertex2 || v == vertex3))
                 {
-                int v2 =-1;
-                graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(edgeId)), 0, v2);
-                if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return edgeId;
-                graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(edgeId))), 0, v2);
-                if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return graphP->EdgeMate(edgeId);
-                //return -1;
+                MTGARRAY_VERTEX_LOOP(edgeId2, graphP, edgeId)
+                    {
+                    int v1 = -1;
+                    graphP->TryGetLabel(graphP->FSucc(edgeId2), 0, v1);
+                    if ((v1 == vertex1 || v1 == vertex2 || v1 == vertex3))
+                        {
+                        int v2 = -1;
+                        graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(edgeId2)), 0, v2);
+                        if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return edgeId2;
+                        graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(edgeId2))), 0, v2);
+                        if (v2 == vertex1 || v2 == vertex2 || v2 == vertex3) return graphP->EdgeMate(edgeId2);
+                       
+                        }
+                    }
+                MTGARRAY_END_VERTEX_LOOP(edgeId2, graphP, edgeId)
                 }
             }
         MTGARRAY_END_SET_LOOP(edgeId, graphP)
@@ -1315,10 +1121,6 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                 {
                  if (is3d) graphP->SetMaskAt(edgeID, visitedMask);
              
-                //if (!graphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK)) continue;
-                /* if (edgeID == edge || graphP->EdgeMate(edgeID) == edge || graphP->FSucc(edgeID) == edge || graphP->FSucc(graphP->FSucc(edgeID)) == edge
-                     || edgeID == graphP->EdgeMate(edge) || graphP->FSucc(edgeID) == graphP->EdgeMate(edge) || graphP->FSucc(graphP->FSucc(edgeID)) == graphP->EdgeMate(edge)
-                     || graphP->EdgeMate(edgeID) == edge || graphP->FSucc(graphP->EdgeMate(edgeID)) == edge || graphP->FSucc(graphP->FSucc(graphP->EdgeMate(edgeID))) == edge) continue;*/
                 int triangle[3] = { 0 };
                 graphP->TryGetLabel(graphP->EdgeMate(edgeID), 0, (int&)triangle[0]);
                 graphP->TryGetLabel(graphP->FSucc(graphP->EdgeMate(edgeID)), 0, (int&)triangle[1]);
@@ -1333,7 +1135,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                 triExt = DRange3d::From(pts[0], pts[1], pts[2]);
 
                 triExt.low.z = -DBL_MAX; //Don't consider z.
-                triExt.high.z = DBL_MAX; //NEEDS_WORK_SM: this is probably dependent on the specific drape direction (clip should be negated along the ray direction not just in z). Not sure how to modify that for the general case.
+                triExt.high.z = DBL_MAX; 
                 if (!toEdgeRay.ClipToRange(triExt, segmentRay, fraction))
                     {
                     edgeID = graphP->FSucc(edgeID);
@@ -1357,7 +1159,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                     DRay3d triEdgeRay = DRay3d::From(DSegment3d::From(pts[i], pts[(i + 1) % 3]));
                     triEdgeRay.direction.z = 0;
                     toEdgeRay.direction.z = 0;
-                    if (bsiDRay3d_closestApproach(&param, &param2, &pt, &pt2, &toEdgeRay, &triEdgeRay) && param > 0.000001 && param2 >= 0 && param2 <= 1)
+                    if (bsiDRay3d_closestApproach(&param, &param2, &pt, &pt2, &toEdgeRay, &triEdgeRay) && param > -1e-8 && param2 >= 0 && param2 <= 1)
                         {
                         DRay3d drapeRay = DRay3d::FromOriginAndVector(pt, DVec3d::From(0, 0, -1));
                         DPoint3d pt1;
@@ -1373,11 +1175,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                                 {
                                 bestEdge = graphP->EdgeMate(edgeID);
                                 for (size_t j = 0; j < i; ++j) bestEdge = graphP->FSucc(bestEdge);
-                                /*if (bestEdge == edge || bestEdge == graphP->EdgeMate(edge))
-                                    {
-                                    bestEdge = lastEdge;
-                                    break;
-                                    }*/
+
                                 lastIntersect = pt2;
                                 closestFraction = lastParam;
                                 }
@@ -1423,7 +1221,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
         bool stopProgression = false;
         MTGNodeId currentTriangle = triangleStartEdge;
         int triangle[3];
-        DVec3d drapeDirection = DVec3d::From(0, 0, -1);//NEEDS_WORK_SM: We may want to support different directions
+        DVec3d drapeDirection = DVec3d::From(0, 0, -1);
         graphP->TryGetLabel(currentTriangle, 0, triangle[0]);
         graphP->TryGetLabel(graphP->FSucc(currentTriangle), 0, triangle[1]);
         graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(currentTriangle)), 0, triangle[2]);
@@ -1439,9 +1237,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
         DVec3d currentLineSegmentDirection = DVec3d::FromStartEnd(linePoints[*segment], linePoints[*segment + 1]);
         currentLineSegmentDirection.Normalize();
         ray = DRay3d::FromOriginAndVector(linePoints[*segment + 1], drapeDirection);
-        /*DPlane3d plane = DPlane3d::From3Points(pts[0], pts[1], pts[2]);
-        ray.intersect(&projectedPt, &param, &plane);
-        DPoint3d currentSegmentEnd = projectedPt;*/
+
         while (!stopProgression && *segment < nLinePts-1)
             {
             double p;
@@ -1450,13 +1246,13 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
             DRay3d toTriPlane = DRay3d::FromOriginAndVector(pt2, drapeDirection);
             bsiDRay3d_intersectTriangle(&toTriPlane, &pt2, &bary, &p, pts);
             DVec3d projDirection = DVec3d::FromStartEnd(currentVertex, pt2);
-            //projectedPoints[*segment].push_back(pt2);
+
             DRay3d toNextPoint = DRay3d::FromOriginAndVector(currentVertex, projDirection);
             bool intersectFound = false;
             DPoint3d intersectPt = {0,0,0};
             size_t i = 0;
             bool backwards = false;
-            DPoint3d lastPt;
+            DPoint3d lastPt = DPoint3d::From(0,0,0);
             double lastParam = -1;
             int intersectedEdge = -1;
             for (; i < 3 && !intersectFound; i++)
@@ -1539,16 +1335,14 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                     }
                 }
             backwards = param <0;
-            //assert(intersectFound);
+
             DRay3d toEdgeRay;
             if (!intersectFound)
                 {
-                //DSegment3d toTriEdge = DSegment3d::From(currentVertex, intersectPt);
-                //toEdgeRay = DRay3d::From(toTriEdge);
-                toEdgeRay.origin = currentVertex;//intersectPt;
+
+                toEdgeRay.origin = currentVertex;
                 toEdgeRay.direction = currentLineSegmentDirection;
-                //currentVertex = intersectPt;
-               // projectedPoints[*segment].push_back(currentVertex);
+
                 lastVtx1 = -1;
                 lastVtx2 = -1;
                 int inter = 0;
@@ -1576,12 +1370,12 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                 toEdgeRay = DRay3d::From(toTriEdge);
                 double paramray;
                 DPoint3d projectedEnd, projectedEnd2;
-                //toTriEdge.PointToFractionParameter(param, linePoints[*segment + 1]);
+          
                 if (bsiDRay3d_closestApproach(&param, &paramray, &projectedEnd, &projectedEnd2, &toEdgeRay, &ray) && param >= 1.0e-8 && param <= 1+1.0e-8 /*&& paramray > 0*/) //segment ends before triangle edge is reached
                     {
-                    //currentVertex.Interpolate(currentVertex, param, intersectPt);
+
                     currentVertex = projectedEnd;
-                    //currentVertex.z = intersectPt.z;
+
                     projectedPoints[*segment].push_back(currentVertex);
                     ++(*segment);
                     if (*segment == nLinePts - 1)
@@ -1627,29 +1421,7 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
                 //next triangle
             lastVtx1 = triangle[(i - 1) % 3];
             lastVtx2 = triangle[i % 3];
-#ifndef NDEBUG
-            std::string triDebug = "";
-            triDebug += "CURRENT TRIANGLE EDGE: " + std::to_string(currentTriangle)+"\r\n";
-            triDebug += ""+ std::to_string(currentTriangle) + "|" + std::to_string(graphP->EdgeMate(currentTriangle)) + "->" + std::to_string(graphP->FSucc(currentTriangle))
-                + "|" + std::to_string(graphP->EdgeMate(graphP->FSucc(currentTriangle))) + "->" + std::to_string(graphP->FSucc(graphP->FSucc(currentTriangle))) + "|"
-                + std::to_string(graphP->EdgeMate(graphP->FSucc(graphP->FSucc(currentTriangle)))) + "\r\n";
-            int tmp[3] = { -1, -1, -1 };
-            graphP->TryGetLabel(graphP->EdgeMate(currentTriangle), 0, tmp[0]);
-            graphP->TryGetLabel(graphP->FSucc(graphP->EdgeMate(currentTriangle)), 0, tmp[1]);
-            graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(currentTriangle))), 0, tmp[2]);
-            triDebug += "TRILABELS:" + std::to_string(triangle[0]) + "->" + std::to_string(triangle[1]) + "->" + std::to_string(triangle[2]) + "|" +
-                std::to_string(tmp[0]) + "->" + std::to_string(tmp[1]) + "->" + std::to_string(tmp[2]) + "\r\n";
-            graphP->TryGetLabel(graphP->EdgeMate(graphP->FSucc(currentTriangle)), 0, tmp[0]);
-            graphP->TryGetLabel(graphP->FSucc(graphP->EdgeMate(graphP->FSucc(currentTriangle))), 0, tmp[1]);
-            graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(graphP->FSucc(currentTriangle)))), 0, tmp[2]);
-            triDebug += "TRILABELS:" + std::to_string(triangle[1]) + "->" + std::to_string(triangle[2]) + "->" + std::to_string(triangle[0]) + "|" +
-                std::to_string(tmp[0]) + "->" + std::to_string(tmp[1]) + "->" + std::to_string(tmp[2]) + "\r\n";
-            graphP->TryGetLabel(graphP->EdgeMate(graphP->FSucc(graphP->FSucc(currentTriangle))), 0, tmp[0]);
-            graphP->TryGetLabel(graphP->FSucc(graphP->EdgeMate(graphP->FSucc(graphP->FSucc(currentTriangle)))), 0, tmp[1]);
-            graphP->TryGetLabel(graphP->FSucc(graphP->FSucc(graphP->EdgeMate(graphP->FSucc(graphP->FSucc(currentTriangle))))), 0, tmp[2]);
-            triDebug += "TRILABELS:" + std::to_string(triangle[2]) + "->" + std::to_string(triangle[0]) + "->" + std::to_string(triangle[1]) + "|" +
-                std::to_string(tmp[0]) + "->" + std::to_string(tmp[1]) + "->" + std::to_string(tmp[2]) + "\r\n";
-#endif
+
                 if (i == 1) currentTriangle = graphP->EdgeMate(currentTriangle);
                 else if (i == 2) currentTriangle = graphP->EdgeMate(graphP->FSucc(currentTriangle));
                 else currentTriangle = graphP->EdgeMate(graphP->FSucc(graphP->FSucc(currentTriangle)));
@@ -1718,7 +1490,493 @@ void RemoveTrianglesWithinExtent(MTGGraph* graphP, const DPoint3d* points, DPoin
         return true;
         }
 
+    void ExtractMeshIndicesFromGraph(std::vector<int32_t>& indices, MTGGraph* graphP)
+        {
+        MTGMask visitedMask = graphP->GrabMask();
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            if (!graphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK) && !graphP->GetMaskAt(edgeID, visitedMask))
+                {
+                std::vector<MTGNodeId> faceNodes;
+                if (FastCountNodesAroundFace(graphP,edgeID) != 3) continue;
+                MTGARRAY_FACE_LOOP(faceID, graphP, edgeID)
+                    {
+                    int vIndex = -1;
+                    graphP->TryGetLabel(faceID, 0, vIndex);
+                    assert(vIndex > 0);
+                    indices.push_back(vIndex);
+                    graphP->SetMaskAt(faceID, visitedMask);
+                    }
+                MTGARRAY_END_FACE_LOOP(faceID, graphP, edgeID)
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            graphP->ClearMask(visitedMask);
+        graphP->DropMask(visitedMask);
+        }
 
-//#define DEBUG
-//#undef NDEBUG
+    size_t CountExteriorFaces(MTGGraph* graphP)
+        {
+        MTGMask visitedMask = graphP->GrabMask();
+        size_t nFaces = 0;
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            if (!graphP->GetMaskAt(edgeID, visitedMask))
+                {
+                if (graphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK))
+                    {
+                    nFaces++;
+                    MTGARRAY_FACE_LOOP(faceID, graphP, edgeID)
+                        {
+                        graphP->SetMaskAt(faceID, visitedMask);
+                        }
+                    MTGARRAY_END_FACE_LOOP(faceID, graphP, edgeID)
+                    }
+                else graphP->SetMaskAt(edgeID, visitedMask);
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            graphP->ClearMask(visitedMask);
+        graphP->DropMask(visitedMask);
+        return nFaces;
+        }
+
+    void PrintGraph(Utf8String path, Utf8String name, MTGGraph* graphP)
+        {
+        Utf8String fileName = path + name + "_graph.log";
+        std::ofstream f;
+        f.open(fileName.c_str(), std::ios_base::trunc);
+        f << " GRAPH HAS " + std::to_string(graphP->GetActiveNodeCount()) + " NODES" << std::endl;
+        f << " WALKING GRAPH " << std::endl;
+        MTGMask visitedMask = graphP->GrabMask();
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            if (!graphP->GetMaskAt(edgeID, visitedMask))
+                {
+                f << " NEW FACE " << std::endl;
+                size_t nNodes = 0;
+                MTGARRAY_FACE_LOOP(faceID, graphP, edgeID)
+                    {
+                    nNodes++;
+                    int vIndex = -1, vIndex2 = -1;
+                    graphP->TryGetLabel(faceID, 0, vIndex);
+                    graphP->TryGetLabel(graphP->EdgeMate(faceID), 0, vIndex2);
+                    f << " EDGE " + std::to_string(faceID) + " MATE " + std::to_string(graphP->EdgeMate(faceID)) + " SOURCE " + std::to_string(vIndex) + " TARGET " + std::to_string(vIndex2);
+                    int featureTag = -1;
+                    graphP->TryGetLabel(faceID, 2, featureTag);
+                    if (featureTag != -1) f << " FEATURE! ";
+                    f<< std::endl;
+                    graphP->SetMaskAt(faceID, visitedMask);
+                    }
+                MTGARRAY_END_FACE_LOOP(faceID, graphP, edgeID)
+                    f << " END FACE  SIZE WAS " + std::to_string(nNodes);
+                if (nNodes != 3) f << " NOT A TRIANGLE ";
+                    f<< std::endl << std::endl;
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            graphP->ClearMask(visitedMask);
+        graphP->DropMask(visitedMask);
+        f.close();
+        }
+
+    void PrintGraphWithPointInfo(Utf8String path, Utf8String name, MTGGraph* graphP, const DPoint3d* pts, const size_t npts)
+        {
+        Utf8String fileName = path + name + "_graph.log";
+        std::ofstream f;
+        f.open(fileName.c_str(), std::ios_base::trunc);
+        f << " POINT DATA IS " << std::endl;
+        for (size_t i = 0; i < npts; ++i)
+            {
+            f << " POINT AT " + std::to_string(i + 1) + ": (";
+            f << std::to_string(pts[i].x) + ",";
+            f << std::to_string(pts[i].y) + ",";
+            f << std::to_string(pts[i].z) + ")";
+            f << std::endl;
+            }
+        f << " GRAPH HAS " + std::to_string(graphP->GetActiveNodeCount()) + " NODES" << std::endl;
+        f << " WALKING GRAPH " << std::endl;
+        MTGMask visitedMask = graphP->GrabMask();
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            if (!graphP->GetMaskAt(edgeID, visitedMask))
+                {
+                f << " NEW FACE " << std::endl;
+                size_t nNodes = 0;
+                MTGARRAY_FACE_LOOP(faceID, graphP, edgeID)
+                    {
+                    nNodes++;
+                    int vIndex = -1, vIndex2 = -1;
+                    graphP->TryGetLabel(faceID, 0, vIndex);
+                    graphP->TryGetLabel(graphP->EdgeMate(faceID), 0, vIndex2);
+                    f << " EDGE " + std::to_string(faceID) + " MATE " + std::to_string(graphP->EdgeMate(faceID)) + " SOURCE " + std::to_string(vIndex) + " TARGET " + std::to_string(vIndex2) << std::endl;
+                    graphP->SetMaskAt(faceID, visitedMask);
+                    }
+                MTGARRAY_END_FACE_LOOP(faceID, graphP, edgeID)
+                    f << " END FACE  SIZE WAS " + std::to_string(nNodes);
+                if (nNodes != 3) f << " NOT A TRIANGLE ";
+                f << std::endl << std::endl;
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            graphP->ClearMask(visitedMask);
+        graphP->DropMask(visitedMask);
+        f.close();
+        }
+
+    void UntieLoopsFromPolygon(bvector<DPoint3d>& polygon)
+        {
+        std::map<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> pts(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+        bvector<DPoint3d> bound;
+        bvector<bvector<DPoint3d>> boundLoops;
+        for (auto v : polygon)
+            {
+            if (pts.count(v) != 0 && pts[v] < bound.size()) //detected a loop
+                {
+                bvector<DPoint3d> innerLoop;
+                innerLoop.insert(innerLoop.end(), bound.begin() + pts[v], bound.end());
+                innerLoop.push_back(innerLoop.front()); //close loop
+                boundLoops.push_back(innerLoop);
+                int idx = pts[v];
+                for (auto it = pts.begin(); it != pts.end(); ++it)
+                    if (it->second > idx && it->second < bound.size())
+                        {
+                        pts.erase(it);
+                        it = pts.begin();
+                        }
+                bound.resize(idx + 1); //we keep the looping point
+                }
+            else
+                {
+                pts[v] = (int)bound.size();
+                bound.push_back(v);
+                }
+            }
+        if (DVec3d::FromStartEnd(bound.back(),bound.front()).Magnitude() > 10e-3) bound.clear(); //not closed
+        for (auto& b : boundLoops) if (b.size() > bound.size()) bound = b;
+        polygon = bound;
+        }
+
+    bool RemoveKnotsFromGraph(MTGGraph* graphP, std::vector<DPoint3d>& ptsToModify)
+        {
+        bool anyKnotsRemoved = false;
+        MTGMask visitedMask = graphP->GrabMask();
+        std::map<int, int> pts;
+
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            pts.clear();
+            if (FastCountNodesAroundFace(graphP, edgeID) > 3 && !graphP->GetMaskAt(edgeID, visitedMask))
+                {
+                size_t n = 0;
+                MTGARRAY_FACE_LOOP(extID, graphP, edgeID)
+                    {
+                    int v = -1;
+                    graphP->SetMaskAt(extID, visitedMask);
+                    graphP->TryGetLabel(extID, 0, v);
+                    if (pts.count(v) != 0 && pts[v] < n) //detected a loop
+                        {
+                        anyKnotsRemoved = true;
+
+                        //we split the vertex causing the pinch
+                        DPoint3d ptVal = ptsToModify[v - 1];
+                        ptsToModify.push_back(ptVal);
+
+                        MTGNodeId initID = extID;
+                        MTGNodeId endID = graphP->VPred(extID);
+
+                        for (auto it = initID; it != endID; it = graphP->VSucc(it))
+                            {
+                            graphP->TrySetLabel(it, 0, (int)ptsToModify.size());
+
+                            }
+                        graphP->TrySetLabel(endID, 0, (int)ptsToModify.size());
+
+                        pts.erase(v);
+                        n++;
+
+                        }
+                    else
+                        {
+                        pts[v] = (int)n;
+                        n++;
+                        }
+                    }
+                MTGARRAY_END_FACE_LOOP(extID, graphP, edgeID)
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            graphP->ClearMask(visitedMask);
+        graphP->DropMask(visitedMask);
+
+        return anyKnotsRemoved;
+        }
+
+
+void ResolveUnmergedBoundaries(MTGGraph * graphP)
+    {
+    MTGMask visitedMask = graphP->GrabMask();
+    std::map<std::pair<int,int>, MTGNodeId> map;
+    MTGARRAY_SET_LOOP(edgeID, graphP)
+        {
+        if (graphP->GetMaskAt(edgeID, MTG_EXTERIOR_MASK) && !graphP->GetMaskAt(edgeID, visitedMask))
+            {
+            MTGARRAY_FACE_LOOP(extID, graphP, edgeID)
+                {
+                if (graphP->GetMaskAt(extID, visitedMask)) break;
+                graphP->SetMaskAt(extID, visitedMask);
+                MTGNodeId edgeMate = graphP->EdgeMate(extID);
+                int v = -1, v1 = -1;
+                graphP->TryGetLabel(edgeMate, 0, v);
+                graphP->TryGetLabel(extID, 0, v1);
+                if (v == -1 || v1 == -1) break;
+                if (map.count(std::make_pair(v,v1)) > 0) 
+                    {
+                    MTGNodeId newMateId = map[std::make_pair(v, v1)];
+                    MTGNodeId newExtID = graphP->FSucc(extID);
+                    graphP->VertexTwist(extID, graphP->FSucc(newMateId));
+                    graphP->VertexTwist(newMateId, graphP->FSucc(extID));
+                    extID = newExtID;
+                    graphP->ExciseSliverFace(newMateId);
+                    graphP->ClearMaskAroundEdge(edgeMate, MTG_EXTERIOR_MASK);
+                    graphP->ClearMaskAroundEdge(edgeMate, MTG_BOUNDARY_MASK);
+                    map.erase(std::make_pair(v, v1));
+                    continue;
+                    }
+                else map.insert(std::make_pair(std::make_pair(v1,v), extID));
+                }
+            MTGARRAY_END_FACE_LOOP(extID, graphP, edgeID)
+            }
+        }
+    MTGARRAY_END_SET_LOOP(edgeID, graphP)
+    graphP->ClearMask(visitedMask);
+    graphP->DropMask(visitedMask);
+    RecomputeExterior(graphP);
+    }
+
+
+void RecomputeExterior(MTGGraph * graphP)
+    {
+    MTGMask visitedMask = graphP->GrabMask();
+    MTGARRAY_SET_LOOP(edgeID, graphP)
+        {
+        if (graphP->GetMaskAt(edgeID, visitedMask)) continue;
+        int n = 0;
+        MTGARRAY_FACE_LOOP(faceEdgeID, graphP, edgeID)
+            {
+            if (n > 2)
+                {
+                ++n;
+                break;
+                }
+            ++n;
+            }
+        MTGARRAY_END_FACE_LOOP(faceEdgeID, graphP, edgeID)
+            if (n > 3)
+                {
+                MTGARRAY_FACE_LOOP(faceEdgeID, graphP, edgeID)
+                    {
+                    graphP->SetMaskAt(faceEdgeID, MTG_EXTERIOR_MASK);
+                    graphP->SetMaskAt(faceEdgeID, visitedMask);
+                    if (graphP->GetMaskAt(graphP->EdgeMate(faceEdgeID), MTG_EXTERIOR_MASK))
+                        {
+
+                        }
+                    graphP->SetMaskAt(graphP->EdgeMate(faceEdgeID), MTG_BOUNDARY_MASK);
+                    graphP->SetMaskAt(graphP->EdgeMate(faceEdgeID), visitedMask);
+                    }
+                MTGARRAY_END_FACE_LOOP(faceEdgeID, graphP, edgeID)
+                }
+        }
+    MTGARRAY_END_SET_LOOP(edgeID, graphP)
+        graphP->ClearMask(visitedMask);
+    graphP->DropMask(visitedMask);
+    }
+
+bool HasOverlapWithNeighborsXY(MTGGraph* graphP, MTGNodeId boundaryId, const DPoint3d* pts)
+    {
+    size_t edgeAroundFace = 0;
+    DPoint3d facePoints[3];
+    MTGNodeId nodes[3];
+    MTGARRAY_FACE_LOOP(aroundFaceIndex, graphP, boundaryId)
+        {
+        if (edgeAroundFace < 3)
+            {
+            int vIndex = -1;
+            graphP->TryGetLabel(aroundFaceIndex, 0, vIndex);
+            assert(vIndex > 0);
+            if (vIndex <= 0)break;
+            facePoints[edgeAroundFace] = pts[vIndex - 1];
+            nodes[edgeAroundFace] = aroundFaceIndex;
+            }
+        edgeAroundFace++;
+        if (edgeAroundFace > 3) break;
+        }
+    MTGARRAY_END_FACE_LOOP(aroundFaceIndex, graphP, boundaryId)
+        DSegment3d triangle[3] = { DSegment3d::From(facePoints[0], facePoints[1]),
+        DSegment3d::From(facePoints[1], facePoints[2]),
+        DSegment3d::From(facePoints[2], facePoints[0]) };
+    std::vector<DSegment3d> neighbors[3];
+    neighbors[0].reserve(20);
+    neighbors[1].reserve(20);
+    neighbors[2].reserve(20);
+    for (size_t i = 0; i < 3; ++i)
+        {
+        if (FastCountNodesAroundFace(graphP, graphP->EdgeMate(nodes[i])) > 3) continue;
+        MTGARRAY_FACE_LOOP(aroundFaceIndex, graphP, graphP->EdgeMate(nodes[i]))
+            {
+            if (aroundFaceIndex != graphP->EdgeMate(nodes[i]))
+                {
+                int vIndex1, vIndex2;
+                graphP->TryGetLabel(aroundFaceIndex, 0, vIndex1);
+                graphP->TryGetLabel(graphP->EdgeMate(aroundFaceIndex), 0, vIndex2);
+                neighbors[i].push_back(DSegment3d::From(pts[vIndex1 - 1], pts[vIndex2 - 1]));
+                }
+            }
+        MTGARRAY_END_FACE_LOOP(aroundFaceIndex, graphP, graphP->EdgeMate(nodes[i]))
+        }
+    for (size_t i = 0; i < 3; ++i)
+        {
+        for (auto& seg : neighbors[i])
+            {
+            double fracA, fracB;
+            DPoint3d ptA, ptB;
+            if (DSegment3d::IntersectXY(fracA, fracB, ptA, ptB, seg, triangle[(i + 1) % 3]) && fracA > 1e-8 && fracB > 1e-8 && fracA < (1 - 1e-8) && fracB < (1 - 1e-8)) return true;
+            if (DSegment3d::IntersectXY(fracA, fracB, ptA, ptB, seg, triangle[(i + 2) % 3]) && fracA > 1e-8 && fracB > 1e-8 && fracA < (1 - 1e-8) && fracB < (1 - 1e-8)) return true;
+            }
+        }
+    return false;
+    }
+
+void LookForFirstTaggedEdge(MTGGraph* graphP, MTGNodeId& start, int& currentLastId, size_t featureSize, const int32_t* featureData)
+    {
+    int vertex1 = featureData[currentLastId - 1] == INT_MAX ? INT_MAX : featureData[currentLastId - 1] + 1;
+    int vertex2 = featureData[currentLastId] == INT_MAX ? INT_MAX : featureData[currentLastId] + 1;
+    while (start == MTG_NULL_NODEID && currentLastId < featureSize)
+        {
+        MTGARRAY_SET_LOOP(edgeID, graphP)
+            {
+            int v = -1;
+            graphP->TryGetLabel(edgeID, 0, v);
+            if ((v == vertex1 || v == vertex2))
+                {
+                MTGARRAY_VERTEX_LOOP(edgeId2, graphP, edgeID)
+                    {
+                    int v1 = -1;
+                    graphP->TryGetLabel(graphP->FSucc(edgeId2), 0, v1);
+                    if (v1 == vertex1 || v1 == vertex2)
+                        {
+                        start = edgeId2;
+                        if (v1 == vertex1) start = graphP->EdgeMate(start);
+                        break;
+                        }
+                    }
+                MTGARRAY_END_VERTEX_LOOP(edgeId2, graphP, edgeID)
+                    if (start != MTG_NULL_NODEID) break;
+                }
+            }
+        MTGARRAY_END_SET_LOOP(edgeID, graphP)
+            if (start == MTG_NULL_NODEID)
+                {
+                do
+                    {
+                    if (currentLastId + 1 < featureSize)
+                        {
+                        vertex1 = featureData[currentLastId] == INT_MAX ? INT_MAX : featureData[currentLastId] + 1;
+                        vertex2 = featureData[currentLastId + 1] == INT_MAX ? INT_MAX : featureData[currentLastId + 1] + 1;
+                        }
+                    ++currentLastId;
+                    }
+                while (currentLastId < featureSize && (vertex1 == INT_MAX || vertex2 == INT_MAX));
+                }
+        }
+    }
+
+void TagFeatureEdges(MTGGraph* graphP, DTMFeatureType tagValue, size_t featureSize, const int32_t* featureData, bool tagEnds)
+    {
+    if (featureSize < 2) return;
+
+    int vertex1 = featureData[0] == INT_MAX? INT_MAX : featureData[0] + 1;
+    int vertex2 = featureData[1] == INT_MAX ? INT_MAX : featureData[1] + 1;
+    int currentLastId = 1;
+    while ((vertex1 == INT_MAX || vertex2 == INT_MAX) && currentLastId + 1 < featureSize)
+        {
+        vertex1 = featureData[currentLastId] == INT_MAX? INT_MAX: featureData[currentLastId] + 1;
+        vertex2 = featureData[currentLastId+1] == INT_MAX ? INT_MAX : featureData[currentLastId + 1] + 1;
+        currentLastId++;
+        }
+    if (vertex1 == INT_MAX || vertex2 == INT_MAX) return;
+
+    MTGNodeId start = MTG_NULL_NODEID; 
+    LookForFirstTaggedEdge(graphP, start, currentLastId, featureSize, featureData);
+
+
+        int featureIdLabel = -1;
+    if (!graphP->TrySearchLabelTag(2, featureIdLabel))featureIdLabel = graphP->DefineLabel(2, MTG_LabelMask_EdgeProperty, -1);
+    int nextInFeatureLabel = -1;
+    if (!graphP->TrySearchLabelTag(3, nextInFeatureLabel))nextInFeatureLabel = graphP->DefineLabel(3, MTG_LabelMask_EdgeProperty, -1);
+    graphP->TrySetLabel(start, featureIdLabel, (int)tagValue);
+    graphP->TrySetLabel(graphP->EdgeMate(start), featureIdLabel, (int)tagValue);
+    MTGNodeId currentEdge = start;
+    int componentId = 0;
+
+    if (tagEnds)
+        {
+        graphP->TrySetLabel(start, nextInFeatureLabel, (int)componentId);
+        graphP->TrySetLabel(graphP->EdgeMate(start), nextInFeatureLabel, (int)componentId);
+        }
+    for (size_t i = currentLastId; i + 1 < featureSize; ++i)
+        {
+        currentEdge = graphP->FSucc(currentEdge);
+        int v = -1;
+        bool found = false;
+        graphP->TryGetLabel(graphP->EdgeMate(currentEdge), 0, v);
+        if (featureData[i + 1] + 1 == v)
+            {
+            graphP->TrySetLabel(currentEdge, featureIdLabel, (int)tagValue);
+            graphP->TrySetLabel(graphP->EdgeMate(currentEdge), featureIdLabel, (int)tagValue);
+            found = true;
+            }
+        else
+            {
+            MTGARRAY_VERTEX_LOOP(featureEdge, graphP, currentEdge)
+                {
+                graphP->TryGetLabel(graphP->EdgeMate(featureEdge), 0, v);
+                if (featureData[i + 1] + 1 == v)
+                    {
+                    graphP->TrySetLabel(featureEdge, featureIdLabel, (int)tagValue);
+                    graphP->TrySetLabel(graphP->EdgeMate(featureEdge), featureIdLabel, (int)tagValue);
+                    currentEdge = featureEdge;
+                    found = true;
+                    break;
+                    }
+                }
+            MTGARRAY_END_VERTEX_LOOP(featureEdge, graphP, currentEdge)
+
+                if (!found)
+                    {
+                    MTGNodeId lastEdge = currentEdge;
+                    currentLastId = (int)i+1;//can't find next vertex, will try the one after it
+                    while (currentLastId+1 < featureSize && lastEdge == currentEdge)
+                        {
+                        currentLastId++;
+                        LookForFirstTaggedEdge(graphP, currentEdge, currentLastId, featureSize, featureData);
+                        }
+                    if (currentEdge == lastEdge) break;
+                    i = currentLastId - 1;
+
+                    componentId++;
+                    if (tagEnds)
+                        {
+                        graphP->TrySetLabel(lastEdge, nextInFeatureLabel, (int)componentId);
+                        graphP->TrySetLabel(graphP->EdgeMate(lastEdge), nextInFeatureLabel, (int)componentId);
+                        graphP->TrySetLabel(currentEdge, nextInFeatureLabel, (int)componentId);
+                        graphP->TrySetLabel(graphP->EdgeMate(currentEdge), nextInFeatureLabel, (int)componentId);
+                        }
+                    }
+            }
+        }
+
+    }
+
 END_BENTLEY_SCALABLEMESH_NAMESPACE

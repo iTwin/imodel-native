@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,7 +30,7 @@ public:
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
           
             //! Supply the ScalableTerrainModelAdmin for this session. This method is guaranteed to be called once from ScalableTerrainModelAdmin::Host::Initialize and never again.
-            BENTLEYSTM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
+            BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
 
         public:
             Host()
@@ -48,17 +48,17 @@ public:
         //! Terminate this Host. After this method is called, no further ScalableTerrainModel methods can ever be called on this thread again (including Initialize).
         //! This method should be called on thread termination.
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
-        BENTLEYSTM_EXPORT void Terminate(bool onProgramExit);
+        BENTLEY_SM_EXPORT void Terminate(bool onProgramExit);
         };
 
     //! Must be called once per Host before calling any method in ScalableTerrainModel. Applications can have more than one Host. 
-    BENTLEYSTM_EXPORT static void Initialize (Host& host);
+    BENTLEY_SM_EXPORT static void Initialize (Host& host);
 
     //! Query if the ScalableTerrainModel library has been initialized on this thread.
-    BENTLEYSTM_EXPORT static bool IsInitialized ();
+    BENTLEY_SM_EXPORT static bool IsInitialized ();
 
     //! Get the ScalableTerrainModel library host for this thread. 
-    BENTLEYSTM_EXPORT static Host& GetHost(); 
+    BENTLEY_SM_EXPORT static Host& GetHost(); 
 };
 
 

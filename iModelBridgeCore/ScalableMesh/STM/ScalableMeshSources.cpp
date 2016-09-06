@@ -6,15 +6,15 @@
 |       $Date: 2012/02/23 01:54:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include "ScalableMeshSources.h"
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+
 
 #include "ScalableMeshTime.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
@@ -23,7 +23,7 @@
 #include "ScalableMeshEditListener.h"
 
 #include <ScalableMesh/Import/ImportSequence.h>
-#include <ScalableMesh/Import/Command/All.h>
+#include <ScalableMesh/Import/Command/Base.h>
 
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
@@ -147,7 +147,7 @@ bool IDTMSource::IsReachable () const
     {
     return m_implP->_IsReachable();
     }
-
+#if 0
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetMoniker
 +----------------------------------------------------------------------------*/ 
@@ -156,7 +156,15 @@ const IMoniker& IDTMSource::GetMoniker () const
     assert(0 != m_implP->m_monikerPtr.get());
     return *m_implP->m_monikerPtr;
     }
+#endif
 
+/*----------------------------------------------------------------------------+
+|IDTMSource::GetPath
++----------------------------------------------------------------------------*/
+WString IDTMSource::GetPath() const
+    {
+    return m_implP->GetPath();
+    }
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetSourceDataType
 +----------------------------------------------------------------------------*/
@@ -164,6 +172,9 @@ DTMSourceDataType IDTMSource::GetSourceType () const
     {
     return m_implP->m_sourceDataType;
     }
+
+
+
 
 /*----------------------------------------------------------------------------+
 |IDTMSource::GetLastModified
@@ -265,36 +276,55 @@ bool DoImportSourceLinear (DTMSourceDataType type)
     return DTM_SOURCE_DATA_DTM == type || 
            DTM_SOURCE_DATA_BREAKLINE == type ||
            DTM_SOURCE_DATA_CLIP == type ||
-           DTM_SOURCE_DATA_MASK == type;
+           DTM_SOURCE_DATA_MASK == type ||
+           DTM_SOURCE_DATA_HARD_MASK == type;
     }
 
 
 ImportSequence CreateImportDTMSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(PointTypeFamilyCreator().Create()));
-    sequence.push_back(ImportTypeCommand(LinearTypeFamilyCreator().Create()));
+    ImportCommandBase importPoints, importLinears;
+    importPoints.SetSourceType(PointTypeFamilyCreator().Create()); 
+    importLinears.SetSourceType(LinearTypeFamilyCreator().Create());
+    sequence.push_back(importPoints);
+    sequence.push_back(importLinears);
     return sequence;
     }
 
 ImportSequence CreateImportPointsSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(PointTypeFamilyCreator().Create()));
+    ImportCommandBase importPoints;
+    importPoints.SetSourceType(PointTypeFamilyCreator().Create());
+    sequence.push_back(importPoints);
     return sequence;
     }
 
 ImportSequence CreateImportLinearsSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(LinearTypeFamilyCreator().Create()));
+    ImportCommandBase importLinears;
+    importLinears.SetSourceType(LinearTypeFamilyCreator().Create());
+    sequence.push_back(importLinears);
     return sequence;
     }
 
 ImportSequence CreateImportClipMasksSequence ()
     {
     ImportSequence sequence;
-    sequence.push_back(ImportTypeCommand(LinearTypeFamilyCreator().Create()));
+    ImportCommandBase importLinears;
+    importLinears.SetSourceType(LinearTypeFamilyCreator().Create());
+    sequence.push_back(importLinears);
+    return sequence;
+    }
+
+ImportSequence CreateImportMeshSequence()
+    {
+    ImportSequence sequence;
+    ImportCommandBase importMesh;
+    importMesh.SetSourceType(MeshTypeFamilyCreator().Create());
+    sequence.push_back(importMesh);
     return sequence;
     }
 
@@ -306,6 +336,7 @@ const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     static const ImportSequence IMPORT_POINTS_SEQUENCE(CreateImportPointsSequence());
     static const ImportSequence IMPORT_LINEARS_SEQUENCE(CreateImportLinearsSequence());
     static const ImportSequence IMPORT_CLIPMASKS_SEQUENCE(CreateImportClipMasksSequence());
+    static const ImportSequence IMPORT_MESH_SEQUENCE(CreateImportMeshSequence());
     static const ImportSequence IMPORT_NOTHING_SEQUENCE;
 
     switch (type)
@@ -315,10 +346,13 @@ const ImportSequence& GetImportSequenceFor (DTMSourceDataType type)
     case DTM_SOURCE_DATA_POINT:
         return IMPORT_POINTS_SEQUENCE;
     case DTM_SOURCE_DATA_BREAKLINE:
+    case DTM_SOURCE_DATA_HARD_MASK:
         return IMPORT_LINEARS_SEQUENCE;
     case DTM_SOURCE_DATA_CLIP:
     case DTM_SOURCE_DATA_MASK:
         return IMPORT_CLIPMASKS_SEQUENCE;
+    case DTM_SOURCE_DATA_MESH:
+        return IMPORT_MESH_SEQUENCE;
     default:
         return IMPORT_NOTHING_SEQUENCE;
         }
@@ -338,7 +372,23 @@ IDTMSource::Impl::Impl (DTMSourceDataType       sourceDataType,
         m_lastModified(CreateUnknownModificationTime()),
         m_config(GetImportSequenceFor(sourceDataType))
     {
-    m_monikerPtr = const_cast<IMoniker*>(monikerP);    
+    m_path = dynamic_cast<const ILocalFileMoniker*>(monikerP)->GetURL().GetPath();
+    m_sourceDataType = sourceDataType;
+
+    m_config.RegisterEditListener(*this);
+
+    }
+
+/*----------------------------------------------------------------------------+
+|DTMSource class
++----------------------------------------------------------------------------*/
+IDTMSource::Impl::Impl(DTMSourceDataType       sourceDataType,
+                       WCharCP fullPath)
+                       : m_editListenerP(0),
+                       m_lastModified(CreateUnknownModificationTime()),
+                       m_config(GetImportSequenceFor(sourceDataType))
+    {
+    m_path = WString(fullPath);
     m_sourceDataType = sourceDataType;
 
     m_config.RegisterEditListener(*this);
@@ -350,7 +400,7 @@ IDTMSource::Impl::Impl (const Impl& rhs)
         m_sourceDataType(rhs.m_sourceDataType),      
         m_lastModified(rhs.m_lastModified),
         m_config(rhs.m_config),
-        m_monikerPtr(rhs.m_monikerPtr)
+        m_path(rhs.m_path)
     {
     m_config.RegisterEditListener(*this);
     }
@@ -403,8 +453,7 @@ void IDTMSource::Impl::_NotifyOfLastEditUpdate (Time updatedLastEditTime)
 +----------------------------------------------------------------------------*/ 
 bool IDTMSource::Impl::_IsReachable () const
     {
-    assert(0 != m_monikerPtr.get());
-    return m_monikerPtr->IsTargetReachable();
+    return std::ifstream(m_path.c_str()).good();
     }
 
 
@@ -492,7 +541,14 @@ IDTMLocalFileSourcePtr IDTMLocalFileSource::Create (DTMSourceDataType           
     return new IDTMLocalFileSource(new Impl(sourceDataType, localFileMonikerPtr.get())); 
     }
 
-
+/*----------------------------------------------------------------------------+
+|static IDTMLocalFileSource::Create
++----------------------------------------------------------------------------*/
+IDTMLocalFileSourcePtr IDTMLocalFileSource::Create(DTMSourceDataType           sourceDataType,
+                                                   const WCharCP fullPath)
+    {
+    return new IDTMLocalFileSource(new Impl(sourceDataType, fullPath));
+    }
 
 /*----------------------------------------------------------------------------+
 |DTMLocalFileSource class
@@ -503,6 +559,15 @@ IDTMLocalFileSource::Impl::Impl(DTMSourceDataType   sourceDataType,
         m_fileFound(false)
     {    
     }
+
+/*----------------------------------------------------------------------------+
+|DTMLocalFileSource class
++----------------------------------------------------------------------------*/
+IDTMLocalFileSource::Impl::Impl(DTMSourceDataType   sourceDataType,
+                                const WCharCP fullPath)
+                                : IDTMSource::Impl(sourceDataType, fullPath),
+                                m_fileFound(false)
+    {}
 
 IDTMLocalFileSource::Impl::~Impl()
     {
@@ -515,8 +580,10 @@ IDTMLocalFileSource::Impl::~Impl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
     {
-    assert(HasMoniker() && (dynamic_cast<const ILocalFileMoniker*>(&GetMoniker()) != 0));
-    return static_cast<const ILocalFileMoniker&>(GetMoniker()).GetURL(status);
+    status = BSISUCCESS;
+    return LocalFileURL(m_path.c_str());
+    //assert(HasMoniker() && (dynamic_cast<const ILocalFileMoniker*>(&GetMoniker()) != 0));
+    //return static_cast<const ILocalFileMoniker&>(GetMoniker()).GetURL(status);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -526,19 +593,7 @@ LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
 const WString& IDTMLocalFileSource::Impl::GetPath (StatusInt& status) const
     {
     status = BSISUCCESS;
-
-    if (!m_fileFound)
-        {
-        const LocalFileURL url(GetURL(status));
-
-        m_localURL.assign(url.GetPath());
-        if (BSISUCCESS == status)
-            {
-            m_fileFound = true;
-            }
-        }
-
-    return m_localURL;
+    return m_path;
     }
 
 
@@ -610,6 +665,15 @@ IDTMDgnModelSource::Impl::Impl (DTMSourceDataType               sourceDataType,
         m_modelName(modelName)
     {    
     }
+
+IDTMDgnModelSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+                               const wchar_t*                 filePath,
+                               uint32_t                          modelID,
+                               const WChar*                  modelName)
+                               : IDTMLocalFileSource::Impl(sourceDataType, filePath),
+                               m_modelID(modelID),
+                               m_modelName(modelName)
+    {}
 
 IDTMDgnModelSource::Impl::~Impl()
     {
@@ -708,6 +772,21 @@ IDTMDgnLevelSourcePtr IDTMDgnLevelSource::Create   (DTMSourceDataType           
                                            levelName));
     }
 
+IDTMDgnLevelSourcePtr IDTMDgnLevelSource::Create(DTMSourceDataType           sourceDataType,
+                                                 const wchar_t* dgnFilePath,
+                                                 uint32_t                      modelID,
+                                                 const WChar*              modelName,
+                                                 uint32_t                      levelID,
+                                                 const WChar*              levelName)
+    {
+    return new IDTMDgnLevelSource(new Impl(sourceDataType,
+        dgnFilePath,
+        modelID,
+        modelName,
+        levelID,
+        levelName));
+    }
+
 
 IDTMDgnLevelSource::IDTMDgnLevelSource (Impl* implP)
     :   IDTMDgnModelSource(implP),
@@ -763,6 +842,17 @@ IDTMDgnLevelSource::Impl::Impl         (DTMSourceDataType               sourceDa
         m_levelName(levelName)
     {    
     }
+
+IDTMDgnLevelSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+                               const wchar_t*                 filePath,
+                               uint32_t                          modelID,
+                               const WChar*                  modelName,
+                               uint32_t                          levelID,
+                               const WChar*                  levelName)
+                               : IDTMDgnModelSource::Impl(sourceDataType, filePath, modelID, modelName),
+                               m_levelID(levelID),
+                               m_levelName(levelName)
+    {}
 
 IDTMDgnLevelSource::Impl::~Impl()
     {
@@ -911,7 +1001,7 @@ IDTMSourceCollection& IDTMSourceGroup::EditSources ()
 |DTMSourceGroup class
 +----------------------------------------------------------------------------*/                        
 IDTMSourceGroup::Impl::Impl() 
-    :   IDTMSource::Impl(DTM_SOURCE_DATA_MIX, 0)
+    :   IDTMSource::Impl(DTM_SOURCE_DATA_MIX, (WCharCP)nullptr)
     {
     m_sources.RegisterEditListener(*this);
     }

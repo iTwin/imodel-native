@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -475,9 +475,9 @@ FieldComposed::~FieldComposed ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt FieldComposed::GetSize () const
+uint32_t FieldComposed::GetSize () const
     {
-    return (UInt) m_implP->m_fields.size();
+    return (uint32_t) m_implP->m_fields.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -511,7 +511,7 @@ void FieldComposed::push_back (const Field& rhs)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const Field& FieldComposed::operator [] (UInt index) const
+const Field& FieldComposed::operator [] (uint32_t index) const
     {
     assert(index < m_implP->m_fields.size());
     return m_implP->m_fields[index];
@@ -666,9 +666,9 @@ FieldDoubleArray::~FieldDoubleArray ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt FieldDoubleArray::GetSize () const
+uint32_t FieldDoubleArray::GetSize () const
     {
-    return (UInt) m_implP->m_values.size();
+    return (uint32_t) m_implP->m_values.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -693,7 +693,7 @@ FieldDoubleArray::const_iterator FieldDoubleArray::end () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const double& FieldDoubleArray::operator [] (UInt index) const
+const double& FieldDoubleArray::operator [] (uint32_t index) const
     {
     assert(index < m_implP->m_values.size());
     return m_implP->m_values[index];

@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,14 +30,14 @@ private:
 
 public:
     FOUNDATIONS_DLLE explicit           Message                                    (const WChar*              msg, 
-                                                                                    UInt                        id = 0);
+                                                                                    uint32_t                        id = 0);
 
     FOUNDATIONS_DLLE                    ~Message                                   ();
 
     FOUNDATIONS_DLLE                    Message                                    (const Message&              rhs);
     FOUNDATIONS_DLLE Message&           operator=                                  (const Message&              rhs);
 
-    FOUNDATIONS_DLLE UInt               GetID                                      () const;
+    FOUNDATIONS_DLLE uint32_t               GetID                                      () const;
     FOUNDATIONS_DLLE const WChar*     what                                       () const;
     };
 

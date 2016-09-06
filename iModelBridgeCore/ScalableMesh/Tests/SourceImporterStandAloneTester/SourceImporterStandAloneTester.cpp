@@ -46,8 +46,8 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT
 
-using namespace Bentley::DgnPlatform;
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::DgnPlatform;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 /***EXAMPLE CALLBACK CODE********/
 static FILE*  s_pPointResultFile = 0;

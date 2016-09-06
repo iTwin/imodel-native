@@ -2,7 +2,7 @@
 |
 |     $Source: GeoCoords/DGNModelGeoref.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -20,8 +20,8 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using Bentley::GeoCoordinates::DgnGCS;
-using Bentley::GeoCoordinates::DgnGCSPtr;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::DgnGCS;
+using BENTLEY_NAMESPACE_NAME::GeoCoordinates::DgnGCSPtr;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
@@ -293,59 +293,6 @@ Unit GetModelGlobalUnit (DgnModelRefP modelRef)
     return GetUnitFor(*modelGCSPtr);
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                Raymond.Gauthier    10/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GetModelDesignToMasterUnitScaleFactor (DgnModelRefP modelRef)
-    {
-    return 1.0/ModelInfo::GetUorPerMaster (modelRef->GetModelInfoCP());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GetModelDesignToGlobalUnitScaleFactor   (DgnModelRefP    modelRefP,
-                                                const Unit&     globalFrameUnit)
-    {
-    return GetUnitRectificationScaleFactor(GetModelUOR(modelRefP), globalFrameUnit, ANGULAR_TO_LINEAR_RATIO);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GetModelGlobalToDesignUnitScaleFactor   (DgnModelRefP    modelRefP,
-                                                const Unit&     globalFrameUnit)
-    {
-    return GetUnitRectificationScaleFactor(globalFrameUnit, GetModelUOR(modelRefP), ANGULAR_TO_LINEAR_RATIO);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   01/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GetModelDesignToGlobalUnitScaleFactor (DgnModelRefP modelRefP)
-    {
-    return GetModelDesignToGlobalUnitScaleFactor(modelRefP, GetModelGlobalUnit(modelRefP));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   01/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GetModelGlobalToDesignUnitScaleFactor (DgnModelRefP modelRefP)
-    {
-    return GetModelGlobalToDesignUnitScaleFactor(modelRefP, GetModelGlobalUnit(modelRefP));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   01/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-double GetSourceToTargetUnitScaleFactor(const Unit& source,
-                                        const Unit& target)
-    {
-    return GetUnitRectificationScaleFactor(source, target, ANGULAR_TO_LINEAR_RATIO);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                Raymond.Gauthier   11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -397,66 +344,6 @@ TransfoModel GetModelLocalToGlobalTransfoModel (DgnModelRefP    modelRefP,
     return TransfoModel::CreateScalingTranslatingFrom(lobalToGlobalScale, translation.x, translation.y, translation.z);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetModelGlobalToLocalTransfoModel     (DgnModelRefP    modelRefP,
-                                                    const Unit&     globalFrameUnit,
-                                                    const Unit&     localFrameUnit)
-    {
-    const Unit modelUor(GetModelUOR(modelRefP));
-
-    DPoint3d translation;
-    if (BSISUCCESS != ModelInfo::GetGlobalOrigin(modelRefP->GetModelInfoCP(), &translation))
-        throw CustomException(L"Could not access global origin!");
-
-    const double uorToLocalScale = GetUnitRectificationScaleFactor(modelUor, localFrameUnit, ANGULAR_TO_LINEAR_RATIO);
-    const double globalToLocalScale = GetUnitRectificationScaleFactor(globalFrameUnit, localFrameUnit, ANGULAR_TO_LINEAR_RATIO);
-
-    translation.x *= uorToLocalScale;
-    translation.y *= uorToLocalScale;
-    translation.z *= uorToLocalScale;
-
-    return TransfoModel::CreateScalingTranslatingFrom(globalToLocalScale, translation.x, translation.y, translation.z);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetModelDesignToGlobalTransfoModel    (DgnModelRefP    modelRefP,
-                                                    const Unit&     globalFrameUnit)
-    {
-    const Unit modelUor(GetModelUOR(modelRefP));
-
-    DPoint3d translation;
-    if (BSISUCCESS != ModelInfo::GetGlobalOrigin(modelRefP->GetModelInfoCP(), &translation))
-        throw CustomException(L"Could not access global origin!");
-
-    const double uorToGlobalScale = GetUnitRectificationScaleFactor(modelUor, globalFrameUnit, ANGULAR_TO_LINEAR_RATIO);
-
-    translation.x *= -uorToGlobalScale;
-    translation.y *= -uorToGlobalScale;
-    translation.z *= -uorToGlobalScale;
-
-    return TransfoModel::CreateScalingTranslatingFrom(uorToGlobalScale, translation.x, translation.y, translation.z);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetModelGlobalToDesignTransfoModel    (DgnModelRefP    modelRefP,
-                                                    const Unit&     globalFrameUnit)
-    {
-    const Unit modelUor(GetModelUOR(modelRefP));
-
-    DPoint3d translation;
-    if (BSISUCCESS != ModelInfo::GetGlobalOrigin(modelRefP->GetModelInfoCP(), &translation))
-        throw CustomException(L"Could not access global origin!");
-
-    const double globalToUorScale = GetUnitRectificationScaleFactor(globalFrameUnit, modelUor, ANGULAR_TO_LINEAR_RATIO);
-
-    return TransfoModel::CreateScalingTranslatingFrom(globalToUorScale, translation.x, translation.y, translation.z);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raymond.Gauthier   11/2011
@@ -481,57 +368,6 @@ TransfoMatrix GetModelDesignToGlobalTransfoMatrix  (DgnModelRefP    modelRefP,
                             0.0,                0.0,                uorToGlobalScale,   translation.z);  ;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoMatrix GetModelGlobalToDesignTransfoMatrix  (DgnModelRefP    modelRefP,
-                                                    const Unit&     globalFrameUnit)
-    {
-    const Unit modelUor(GetModelUOR(modelRefP));
-
-    DPoint3d translation;
-    if (BSISUCCESS != ModelInfo::GetGlobalOrigin(modelRefP->GetModelInfoCP(), &translation))
-        throw CustomException(L"Could not access global origin!");
-
-    const double globalToUorScale = GetUnitRectificationScaleFactor(globalFrameUnit, modelUor, ANGULAR_TO_LINEAR_RATIO);
-
-    return TransfoMatrix   (globalToUorScale,   0.0,                0.0,                translation.x,
-                            0.0,                globalToUorScale,   0.0,                translation.y,
-                            0.0,                0.0,                globalToUorScale,   translation.z);
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetModelDesignToGlobalTransfoModel    (DgnModelRefP modelRefP)
-    {
-    return GetModelDesignToGlobalTransfoModel(modelRefP, GetModelGlobalUnit(modelRefP));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetModelGlobalToDesignTransfoModel    (DgnModelRefP modelRefP)
-    {
-    return GetModelGlobalToDesignTransfoModel(modelRefP, GetModelGlobalUnit(modelRefP));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoMatrix GetModelDesignToGlobalTransfoMatrix  (DgnModelRefP modelRefP)
-    {
-    return GetModelDesignToGlobalTransfoMatrix(modelRefP, GetModelGlobalUnit(modelRefP));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Raymond.Gauthier   11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoMatrix GetModelGlobalToDesignTransfoMatrix  (DgnModelRefP modelRefP)
-    {
-    return GetModelGlobalToDesignTransfoMatrix(modelRefP, GetModelGlobalUnit(modelRefP));
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -550,44 +386,6 @@ GCS GetBSIElementGCSFromRootPerspective (DgnModelRefP elementModelRef)
     gcs.SetLocalTransform(LocalTransform::CreateFromToGlobal(uorToGCSUnits));
     return gcs;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @description
-* TDORAY:   Find a nicer way of setting this one apart from
-*           GetModelGlobalToRootGlobalTransfoModel which does not support re-projection.
-* @bsimethod                                                Raymond.Gauthier   01/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-TransfoModel GetModelGlobalToRootGlobalTransfoModelWReprojSupport (DgnModelRefP      modelRefP)
-    {
-    if (!modelRefP->IsDgnAttachment())
-        return TransfoModel::GetIdentity();
-
-    if (IsModelAttachedReprojected(modelRefP))
-        {
-        const GCS modelGlobalGCS(GetModelMasterGCS(modelRefP));
-        const GCS rootModelGCS(GetModelMasterGCS(modelRefP->GetRoot()));
-
-        Reprojection elementToRootReprojection(GetReprojectionFactory().Create(modelGlobalGCS, rootModelGCS, 0));
-        return AsTransfoModel(elementToRootReprojection);
-        }
-
-
-    TransfoModel elementToRoot(GetUnitRectificationTransfoModel(GetModelGlobalUnit(modelRefP),
-                                                                GetModelMasterUnit(modelRefP),
-                                                                ANGULAR_TO_LINEAR_RATIO));
-
-    elementToRoot.Append(GetModelMasterToRootMasterTransfoModel(modelRefP));
-
-
-    const GCS rootModelGCS(GetModelMasterGCS(modelRefP->GetRoot()));
-    elementToRoot.Append(GetUnitRectificationTransfoModel(GetModelMasterUnit(modelRefP->GetRoot()),
-                                                          rootModelGCS.GetUnit(),
-                                                          ANGULAR_TO_LINEAR_RATIO));
-
-    return elementToRoot;
-    }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                Raymond.Gauthier   11/2011

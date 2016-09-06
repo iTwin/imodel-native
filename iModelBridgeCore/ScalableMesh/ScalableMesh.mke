@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
      
@@ -10,7 +10,21 @@ baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
 
+
+
 %include  mdl.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshLibName.mki
+
+#this means we can use CGAL with the modules that were licensed to us
+%include $(BuildContext)SubParts/Files/LicensedComponents.mki
+
+DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
+
+dirToSearch=$(BuildContext)VendorAPI/CGAL
+%include cincapnd.mki
+
+dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
+%include cincapnd.mki
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -24,7 +38,14 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-CCompOpts + -openmp
+CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED
+
+%if defined(VANCOUVER)
+CCompOpts + -DVANCOUVER_API
+%endif
+
+#Uncomment this to allow generating design meshes
+#CCompOpts + -DWIP_MESH_IMPORT
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -32,7 +53,7 @@ CCompOpts + -DNO_3D_MESH
 %endif
 
 %if !defined (GarlandFilter)
-CCompOpts + -DNO_GARLAND_FILTER
+CCompOpts + -DNO_GARLAND_FILTER 
 %endif
 #----------------------------------------------------------------------
 #       Inform user of compile options
@@ -46,11 +67,11 @@ always:
 #----------------------------------------------------------------------
 PchCompiland = $(stmDir)ScalableMeshPCH.cpp
 PchOutputDir = $(o)
-PchExtraOptions    = -Zm180 -openmp
+PchExtraOptions    = -Zm180 -openmp  $(PublicApiIncludes) -I${BuildContext}PublicAPI -DVANCOUVER_API
 %include $(SharedMki)PreCompileHeader.mki
 
 # UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
-CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION  -DVANCOUVER_API
 
 %if !defined (3DMesh)
 CCPchOpts + -DNO_3D_MESH
@@ -65,7 +86,6 @@ MultiCompileDepends=$(_MakeFileSpec)
 #----------------------------------------------------------------------
 #   Build Fondations
 #----------------------------------------------------------------------
-#$(o)MeshingFunctions$(oext) : D:\BSI\DescartesScalableMeshMoveUp\src\TerrainModel\ScalableMesh\STM\MeshingFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)Errors$(oext) : $(foundationsDir)Errors.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -105,6 +125,8 @@ $(o)DataTypeFamily$(oext) : $(importDir)DataTypeFamily.cpp $(PCHHeaderDepends)  
 
 $(o)ScalableMeshData$(oext) : $(importDir)ScalableMeshData.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)DataSQLite$(oext) : $(importDir)DataSQLite.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 $(o)ContentDescriptor$(oext) : $(importDir)ContentDescriptor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)Metadata$(oext) : $(importDir)Metadata.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -135,8 +157,6 @@ $(o)Importer$(oext) : $(importDir)Importer.cpp $(importDir)ImporterImpl.h $(PCHH
 
 $(o)ImportPolicy$(oext) : $(importDir)ImportPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ImporterCommandVisitor$(oext) : $(importDir)ImporterCommandVisitor.cpp $(importDir)ImporterImpl.h $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)InternalContentDescriptor$(oext) : $(importDir)InternalContentDescriptor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)InternalImporterConfig$(oext) : $(importDir)InternalImporterConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -153,16 +173,13 @@ $(o)ContentConfig$(oext) : $(importDir)ContentConfig.cpp $(PCHHeaderDepends)  ${
 
 $(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ImportConfigs$(oext) : $(importDir)ImportConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ContentConfigs$(oext) : $(importDir)ContentConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
-$(o)ImportCommands$(oext) : $(importDir)ImportCommands.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #-----------------------------------------------------------------------
 #   Build STM
 #-----------------------------------------------------------------------
+
+$(o)SMPointIndex$(oext) : $(stmDir)SMPointIndex.cpp $(stmDir)SMPointIndex.hpp $(stmDir)SMPointIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)IScalableMeshATP$(oext) : $(stmDir)IScalableMeshATP.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -172,8 +189,15 @@ $(o)ScalableMesh$(oext) : $(stmDir)ScalableMesh.cpp $(PCHHeaderDepends)  ${Multi
 
 $(o)ScalableMeshClipContainer$(oext) : $(stmDir)ScalableMeshClipContainer.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp  $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ScalableMeshQuery$(oext) : $(stmDir)ScalableMeshQuery.cpp $(stmDir)ScalableMeshQuery.hpp $(stmDir)ScalableMeshQuery.h $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)ScalableMeshMesher$(oext) : $(stmDir)ScalableMeshMesher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMMeshIndex$(oext) : $(stmDir)SMMeshIndex.cpp $(stmDir)SMMeshIndex.hpp $(stmDir)SMMeshIndex.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMMemoryPool$(oext) : $(stmDir)SMMemoryPool.cpp $(stmDir)SMMemoryPool.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -189,13 +213,13 @@ $(o)ScalableMeshSourceCollection$(oext) : $(stmDir)ScalableMeshSourceCollection.
 
 $(o)ScalableMeshCoreFns$(oext) : $(stmDir)ScalableMeshCoreFns.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshFilteringOptions$(oext) : $(stmDir)ScalableMeshFilteringOptions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshMoniker$(oext) : $(stmDir)ScalableMeshMoniker.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshTilingOptions$(oext) : $(stmDir)ScalableMeshTilingOptions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIBFilters.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+$(o)ScalableMeshQuadTreeBCLIBFilters$(oext) : $(stmDir)ScalableMeshQuadTreeBCLIBFilters.cpp $(stmDir)ScalableMeshQuadTreeBCLIBFilters.hpp $(stmDir)ScalableMeshQuadTreeBCLIBFilters.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshQuadTreeQueries$(oext) : $(stmDir)ScalableMeshQuadTreeQueries.cpp $(stmDir)ScalableMeshQuadTreeQueries.hpp $(stmDir)ScalableMeshQuadTreeQueries.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshRelevanceDistribution$(oext) : $(stmDir)ScalableMeshRelevanceDistribution.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -219,17 +243,19 @@ $(o)ScalableMeshSourceDescription$(oext) : $(stmDir)ScalableMeshSourceDescriptio
 
 $(o)ScalableMeshSourceImportConfig$(oext) : $(stmDir)ScalableMeshSourceImportConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshStream$(oext) : $(stmDir)ScalableMeshStream.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
-
 $(o)ScalableMeshURL$(oext) : $(stmDir)ScalableMeshURL.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshPolicy$(oext) : $(stmDir)ScalableMeshPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)MeshingFunctions$(oext) : $(stmDir)MeshingFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)MeshingFunctions$(oext) : $(stmDir)MeshingFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshGraph$(oext) : $(stmDir)ScalableMesh/ScalableMeshGraph.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshDraping$(oext) : $(stmDir)ScalableMeshDraping.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)DrapeOnGraph$(oext) : $(stmDir)DrapeOnGraph.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ScalableMeshProgressiveQuery$(oext) : $(stmDir)ScalableMeshProgressiveQuery.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)ScalableMeshVolume$(oext) : $(stmDir)ScalableMeshVolume.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
@@ -237,6 +263,35 @@ $(o)ScalableMeshSourceImporter$(oext) : $(stmDir)ScalableMeshSourceImporter.cpp 
 
 $(o)ScalableMeshLib$(oext) : $(stmDir)ScalableMeshLib.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)DifferenceSet$(oext) : $(stmDir)Edits/DifferenceSet.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ClipRegistry$(oext) : $(stmDir)Edits/ClipRegistry.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ClipUtilities$(oext) : $(stmDir)Edits/ClipUtilities.cpp $(stmDir)Edits/ClipUtilities.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshScheduler$(oext) : $(stmDir)Threading/ScalableMeshScheduler.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)LightThreadPool$(oext) : $(stmDir)Threading/LightThreadPool.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ScalableMeshDb$(oext) : $(stmDir)ScalableMeshDb.cpp $(stmDir)ScalableMeshDb.h ${MultiCompileDepends}
+
+$(o)SMSQLiteFile$(oext) : $(stmDir)SMSQLiteFile.cpp $(stmDir)ScalableMeshDb.h $(stmDir)SMSQLiteFile.h ${MultiCompileDepends}
+
+$(o)SMNodeGroup$(oext) : $(stmDir)SMNodeGroup.cpp $(stmDir)SMNodeGroup.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)HPUPacket$(oext) : $(stmDir)HPUPacket.cpp $(stmDir)HPUPacket.h ${MultiCompileDepends}
+
+$(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCompileDepends}
+
+
+#-----------------------------------------------------------------------
+#   Build Stores
+#-----------------------------------------------------------------------
+$(o)SMSQLiteStore$(oext) : $(stmDir)Stores/SMSQLiteStore.cpp $(stmDir)Stores/SMSQLiteStore.h $(stmDir)Stores/SMSQLiteStore.hpp ${MultiCompileDepends}
+
+$(o)SMStreamingDataStore$(oext) : $(stmDir)Stores/SMStreamingDataStore.cpp $(stmDir)Stores/SMStreamingDataStore.h $(stmDir)Stores/SMStreamingDataStore.hpp ${MultiCompileDepends}
+
+$(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMStoreUtils.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Automatic Ground Detection 
@@ -270,6 +325,8 @@ $(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHea
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+#$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 
 #   Importer from DcStmCore
 $(o)DEMRasterImporter$(oext) : $(importerPluginsDir)DEMRasterImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -298,7 +355,7 @@ $(o)CivilElemSource$(oext) : $(importerPluginsDir)CivilElemSource.cpp $(PCHHeade
 #-----------------------------------------------------------------------
 $(o)ScalableMeshClipMaskFilterFactory$(oext) : $(pluginsDir)ScalableMeshClipMaskFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshTypeConversionFilterPlugins$(oext) : $(pluginsDir)ScalableMeshTypeConversionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)ScalableMeshTypeConversionFilterPlugins$(oext) : $(pluginsDir)ScalableMeshTypeConversionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshReprojectionFilterPlugins$(oext) : $(pluginsDir)ScalableMeshReprojectionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
@@ -331,74 +388,60 @@ $(o)tetgen$(oext) : $(delaunayDir)tetgen/tetgen.cpp $(delaunayDir)tetgen/tetgen.
 
 $(o)tetgenpredicates$(oext) : $(delaunayDir)tetgen/tetgenpredicates.cpp $(delaunayDir)tetgen/tetgen.h $(delaunayIncludes) ${MultiCompileDepends}
 %endif
-#-----------------------------------------------------------------------
-#   Build Garland Mesh Filter
-#-----------------------------------------------------------------------
-%if defined (GarlandFilter)
-
-garlandDir=$(stmDir)ScalableMesh/Garland/
-
-garlandIncludes = \
-$(garlandDir)Array.h \
-$(garlandDir)Array3.h \
-$(garlandDir)Buffer.h \
-$(garlandDir)GarlandMeshFilter.h \
-$(garlandDir)Geometry.h \
-$(garlandDir)Heap.h \
-$(garlandDir)Mat4.h \
-$(garlandDir)Model.h \
-$(garlandDir)ProximityGrid.h \
-$(garlandDir)Quadrics.h \
-$(garlandDir)TypesAndDefinitions.h \
-$(garlandDir)Vec2.h \
-$(garlandDir)Vec3.h \
-$(garlandDir)Vec4.h 
-
-$(o)GarlandMeshFilter$(oext) : $(garlandDir)GarlandMeshFilter.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-$(o)Geometry$(oext) : $(garlandDir)Geometry.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-$(o)Heap$(oext) : $(garlandDir)Heap.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-$(o)Mat4$(oext) : $(garlandDir)Mat4.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-$(o)Model$(oext) : $(garlandDir)Model.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-$(o)ProximityGrid$(oext) : $(garlandDir)ProximityGrid.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-$(o)Quadrics$(oext) : $(garlandDir)Quadrics.cpp $(garlandIncludes) ${MultiCompileDepends}
-
-%endif   
 
 
 %include MultiCppCompileGo.mki
+
+certDir             = $(bsiCerts)
+
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
 #----------------------------------------------------------------------
 DLM_OBJECT_PCH      = $(o)ScalableMeshPCH$(oext)
 DLM_OBJECT_FILES    = $(MultiCompileObjectList) 
+DLM_DEST = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
 
 #SCALABLE_MESH_DGN=1
 
 LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)cpprest120_2_6.lib \
+    $(ContextSubpartsLibs)BeCurl.lib \
+    $(ContextSubpartsLibs)BeSQLite.lib \
     $(ContextSubpartsLibs)$(BaseGeocoordLib) \
-    ws2_32.lib 
-	
+    ws2_32.lib \
+    $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
+    $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
+    $(ContextSubpartsLibs)PCLWrapper.lib
+    
 LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)$(IppGraLibsLib) \
     $(ContextSubpartsLibs)$(IppUtlLibsLib) \
+    $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)DgnPlatform.lib \
-    $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
-    $(ContextSubpartsLibs)$(TerrainModelFormatsLib) \
-    $(ContextSubpartsLibs)PCLWrapper.lib \
     $(ContextSubpartsLibs)IppZlib.lib \
     $(ContextSubpartsLibs)PointCloud.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
     $(ContextSubpartsLibs)DgnView.lib \
     $(ContextSubpartsLibs)TerrainModelElementHandler.lib \
-    $(ContextSubpartsLibs)RasterCore.lib
+    $(ContextSubpartsLibs)RasterCore.lib \
+    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)CloudDataSource.lib \
+    $(ContextSubpartsLibs)CGAL.lib
     
 
 %include $(sharedMki)LinkLibrary.mki

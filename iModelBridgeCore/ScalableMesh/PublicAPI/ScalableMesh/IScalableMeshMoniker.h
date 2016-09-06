@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:50 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,8 +21,12 @@
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 #include <ScalableMesh/IScalableMeshURL.h>
 #include <Bentley/RefCounted.h>
+#include <ScalableMesh/Import/DataSQLite.h>
 
-namespace Bentley { namespace DgnPlatform {
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace DgnPlatform
+        {
 
 struct                                  DgnDocumentMoniker;
 typedef RefCountedPtr<DgnDocumentMoniker>
@@ -70,14 +74,14 @@ private:
 
     virtual bool                        _IsTargetReachable             () const = 0;
 
+    virtual StatusInt                   _Serialize(Import::SourceDataSQLite&                      sourceData,
+        const DocumentEnv&                  env) const = 0;
 
-    virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
-                                                                        const DocumentEnv&                  env) const = 0;
-        
+       
 protected:
-    BENTLEYSTM_EXPORT explicit                IMoniker                       ();
+    BENTLEY_SM_EXPORT explicit                IMoniker                       ();
 public: 
-    BENTLEYSTM_EXPORT virtual                 ~IMoniker                      () = 0;
+    BENTLEY_SM_EXPORT virtual                 ~IMoniker                      () = 0;
     
     void                                Accept                         (IMonikerVisitor&                    visitor) const;
 
@@ -85,8 +89,10 @@ public:
 
     bool                                IsTargetReachable              () const;
 
-    StatusInt                           Serialize                      (BinaryOStream&                      stream,
-                                                                        const DocumentEnv&                  env) const;  
+
+    StatusInt                           Serialize(Import::SourceDataSQLite&                      sourceData,
+        const DocumentEnv&                  env) const;
+
 
     };
 
@@ -98,15 +104,15 @@ struct ILocalFileMoniker : public IMoniker
 private:
     const void*                         m_implP; // Reserved some space for further use
 
-    BENTLEYSTM_EXPORT virtual void            _Accept                        (IMonikerVisitor&                    visitor) const;
+    BENTLEY_SM_EXPORT virtual void            _Accept                        (IMonikerVisitor&                    visitor) const;
 
     virtual LocalFileURL                _GetURL                        (StatusInt&                          status) const = 0;
 
 protected:
-    BENTLEYSTM_EXPORT explicit                ILocalFileMoniker              ();
+    BENTLEY_SM_EXPORT explicit                ILocalFileMoniker              ();
 
 public: 
-    BENTLEYSTM_EXPORT virtual                 ~ILocalFileMoniker             () = 0;
+    BENTLEY_SM_EXPORT virtual                 ~ILocalFileMoniker             () = 0;
 
     LocalFileURL                        GetURL                         (StatusInt&                          status) const;
     LocalFileURL                        GetURL                         () const;
@@ -128,7 +134,7 @@ private:
                                         ILocalFileMonikerCreator       (const ILocalFileMonikerCreator&);
     ILocalFileMonikerCreator&           operator=                      (const ILocalFileMonikerCreator&);
 
-    virtual ILocalFileMonikerPtr        _Create                        (const Bentley::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
+    virtual ILocalFileMonikerPtr        _Create                        (const BENTLEY_NAMESPACE_NAME::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
                                                                                                             msMoniker,
                                                                         StatusInt&                          status) const = 0;
 
@@ -136,9 +142,9 @@ private:
                                                                         StatusInt&                          status) const = 0;
 
 protected:
-    BENTLEYSTM_EXPORT explicit                ILocalFileMonikerCreator       ();
+    BENTLEY_SM_EXPORT explicit                ILocalFileMonikerCreator       ();
 public:
-    BENTLEYSTM_EXPORT virtual                 ~ILocalFileMonikerCreator      () = 0;
+    BENTLEY_SM_EXPORT virtual                 ~ILocalFileMonikerCreator      () = 0;
 
     };
 
@@ -163,17 +169,17 @@ public:
     typedef const ILocalFileMonikerCreator*
                                         CreatorID;
 
-    BENTLEYSTM_EXPORT static ILocalFileMonikerFactory&
+    BENTLEY_SM_EXPORT static ILocalFileMonikerFactory&
                                         GetInstance                    ();
 
-    BENTLEYSTM_EXPORT CreatorID               Register                       (const ILocalFileMonikerCreator&     creator);
-    BENTLEYSTM_EXPORT void                    Unregister                     (CreatorID                           id);
+    BENTLEY_SM_EXPORT CreatorID               Register                       (const ILocalFileMonikerCreator&     creator);
+    BENTLEY_SM_EXPORT void                    Unregister                     (CreatorID                           id);
 
 
-    BENTLEYSTM_EXPORT ILocalFileMonikerPtr    Create                         (const Bentley::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
+    BENTLEY_SM_EXPORT ILocalFileMonikerPtr    Create                         (const BENTLEY_NAMESPACE_NAME::DgnPlatform::MrDtmDgnDocumentMonikerPtr&         
                                                                                                             msMoniker) const;
 
-    BENTLEYSTM_EXPORT ILocalFileMonikerPtr    Create                         (const WChar*                      fullPath) const;
+    BENTLEY_SM_EXPORT ILocalFileMonikerPtr    Create                         (const WChar*                      fullPath) const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -193,16 +199,18 @@ private :
 
     virtual DTMSourceMonikerType        _GetSupportedType              () const = 0;
 
-    virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
-                                                                        const DocumentEnv&                  env,
-                                                                        StatusInt&                          status) const = 0;
+
+    virtual IMonikerPtr                 _Create(Import::SourceDataSQLite&                      sourceData,
+        const DocumentEnv&                  env,
+        StatusInt&                          status) const = 0;
+
     
 protected:
     typedef IMoniker                    IMoniker; // Avoid name ambiguities
 
-    BENTLEYSTM_EXPORT explicit                IMonikerBinStreamCreator       ();
+    BENTLEY_SM_EXPORT explicit                IMonikerBinStreamCreator       ();
 public :         
-    BENTLEYSTM_EXPORT virtual                 ~IMonikerBinStreamCreator      () = 0;
+    BENTLEY_SM_EXPORT virtual                 ~IMonikerBinStreamCreator      () = 0;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,14 +234,15 @@ public:
     typedef const IMonikerBinStreamCreator*      
                                         BinStreamCreatorID;
 
-    BENTLEYSTM_EXPORT static IMonikerFactory& GetInstance                    ();
+    BENTLEY_SM_EXPORT static IMonikerFactory& GetInstance                    ();
 
-    BENTLEYSTM_EXPORT BinStreamCreatorID      Register                       (const IMonikerBinStreamCreator&     creator);
-    BENTLEYSTM_EXPORT void                    Unregister                     (BinStreamCreatorID                  id);
+    BENTLEY_SM_EXPORT BinStreamCreatorID      Register                       (const IMonikerBinStreamCreator&     creator);
+    BENTLEY_SM_EXPORT void                    Unregister                     (BinStreamCreatorID                  id);
 
 
-    BENTLEYSTM_EXPORT IMonikerPtr             Create                         (BinaryIStream&                      stream,
-                                                                        const DocumentEnv&                  env);   
+    BENTLEY_SM_EXPORT IMonikerPtr             Create(Import::SourceDataSQLite&                      sourceData,
+        const DocumentEnv&                  env);
+
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

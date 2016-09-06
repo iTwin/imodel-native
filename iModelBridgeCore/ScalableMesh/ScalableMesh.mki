@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableMesh.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -12,7 +12,12 @@
 # PreCompiledHeader.mki uses CCompPDBName
 appName     = ScalableMesh
 DLM_NAME    = $(appName)
+LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
+
+#This is because GMP and MPFR don't use vendor prefixes in the CGAL files
+dirToSearch=$(OutputRootDir)BuildContexts/CGAL/VendorAPI/GMP
+%include cincapnd.mki
 
 #----------------------------------------------------------
 # Preprocessor definition.
@@ -35,14 +40,13 @@ nameToDefine = NOMINMAX
 nameToDefine=SCALABLE_MESH_ATP
 %include cdefapnd.mki
 
-#NEEDS_WORK_SM : TEMP_SM_DGN For DGNDB purpose
-#nameToDefine=SCALABLE_MESH_DGN
-#%include cdefapnd.mki
-
 %ifndef NDEBUG
 nameToDefine=INDEX_DUMPING_ACTIVATED
 %include cdefapnd.mki
 %endif
+
+#nameToDefine=ACTIVATE_TEXTURE_DUMP
+#%include cdefapnd.mki
 
 %ifdef DHDEBUG
 nameToDefine = DHDEBUG

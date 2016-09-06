@@ -2,10 +2,12 @@
 |
 |     $Source: PCLWrapper/PublicAPI/IDefines.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+//__BENTLEY_INTERNAL_ONLY__
 
 #ifndef DLLEXPORT
 #define DLLEXPORT __declspec( dllexport )
@@ -23,4 +25,4 @@
 
 #define BEGIN_PCLWRAPPER_NAMESPACE                BEGIN_BENTLEY_NAMESPACE namespace PCLUtility {
 #define END_PCLWRAPPER_NAMESPACE                  END_BENTLEY_NAMESPACE}
-#define USING_NAMESPACE_PCLWRAPPER                using namespace Bentley::PCLUtility;
+#define USING_NAMESPACE_PCLWRAPPER                using namespace BENTLEY_NAMESPACE_NAME::PCLUtility;

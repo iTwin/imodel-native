@@ -6,12 +6,12 @@
 //:>       $Date: 2010/11/29 13:15:52 $
 //:>     $Author: Daryl.Holmwood $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 /*----------------------------------------------------------------------+
 | Include MicroStation SDK header files
 +----------------------------------------------------------------------*/
@@ -45,7 +45,7 @@ template<class DATATYPE> DATATYPE ScalableMeshRelevanceDistribution<DATATYPE>::G
         uint64_t nbValuesForGivenPercentile = static_cast<uint64_t>(m_nbRelevanceValues * pi_percentage / 100);
         uint64_t nbValuesTaken = 0;            
 
-        for (ULong32 binInd = 0; (binInd < m_nbBins); binInd++)
+        for (uint32_t binInd = 0; (binInd < m_nbBins); binInd++)
             {                
             if (nbValuesTaken + m_pBins[binInd] > nbValuesForGivenPercentile)
                 {
@@ -78,12 +78,12 @@ template<class DATATYPE> double ScalableMeshRelevanceDistribution<DATATYPE>::Get
     double   percentile;        
 
     double   binIndDecimal = fabs((pi_relevanceValue - m_minRelevance) / m_step);
-    ULong32   binIndForRelevance = static_cast<ULong32>(floor(binIndDecimal));
+    uint32_t   binIndForRelevance = static_cast<uint32_t>(floor(binIndDecimal));
     uint64_t  nbValuesTaken = 0;     
 
     assert(binIndDecimal <= m_nbBins);
     
-    ULong32 binInd;        
+    uint32_t binInd;
 
     for (binInd = 0; (binInd < binIndForRelevance); binInd++)
         {                
@@ -116,7 +116,7 @@ template<class DATATYPE> DATATYPE ScalableMeshRelevanceDistribution<DATATYPE>::G
     DATATYPE mean = 0;
     DATATYPE binValue = m_minRelevance + m_step / 2;
 
-    for (ULong32 binInd = 0; (binInd < m_nbBins); binInd++)
+    for (uint32_t binInd = 0; (binInd < m_nbBins); binInd++)
         {    
         mean += m_pBins[binInd] * binValue;
 
@@ -132,7 +132,7 @@ template<class DATATYPE> DATATYPE ScalableMeshRelevanceDistribution<DATATYPE>::G
     DATATYPE stdDev = 0;
     DATATYPE binValue = m_minRelevance + m_step / 2;
 
-    for (ULong32 binInd = 0; (binInd < m_nbBins); binInd++)
+    for (uint32_t binInd = 0; (binInd < m_nbBins); binInd++)
         {     
         stdDev += m_pBins[binInd] * pow(binValue - mean, 2);        
 

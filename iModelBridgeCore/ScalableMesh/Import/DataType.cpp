@@ -6,11 +6,11 @@
 |       $Date: 2011/10/20 18:47:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Import/DataType.h>
 #include <ScalableMesh/Import/Plugin/DataTypeV0.h>
 #include <ScalableMesh/Import/Plugin/DataTypeRegistry.h>
@@ -300,12 +300,12 @@ const DataType& StaticDataTypeCreator::Create () const
 
 namespace {
 
-bool RoleRangeIsValid (const DimensionOrgGroup& orgGroup, UInt roleQty)
+bool RoleRangeIsValid (const DimensionOrgGroup& orgGroup, uint32_t roleQty)
     {
     struct IsRoleValid : std::unary_function<DimensionDef, bool>
         {
-        UInt        m_roleQty;
-        explicit IsRoleValid (UInt roleQty) : m_roleQty(roleQty) {}
+        uint32_t        m_roleQty;
+        explicit IsRoleValid (uint32_t roleQty) : m_roleQty(roleQty) {}
 
         bool operator () (const DimensionDef& rhs) const
             {
@@ -315,8 +315,8 @@ bool RoleRangeIsValid (const DimensionOrgGroup& orgGroup, UInt roleQty)
 
     struct IsOrgRoleValid : std::unary_function<DimensionOrg, bool>
         {
-        UInt        m_roleQty;
-        explicit IsOrgRoleValid (UInt roleQty) : m_roleQty(roleQty) {}
+        uint32_t        m_roleQty;
+        explicit IsOrgRoleValid (uint32_t roleQty) : m_roleQty(roleQty) {}
 
         bool operator () (const DimensionOrg& rhs) const
             {
@@ -391,9 +391,12 @@ size_t DataType::GetDimensionOrgCount () const
 size_t DataType::GetDimensionCount () const
     {
     size_t count = 0;
-    std::transform(GetOrgGroup().begin(), GetOrgGroup().end(), ImagePP::AccumulateIter(count), 
-                   mem_fun_ref(&DimensionOrg::GetSize));
 
+    for (auto& orgGroup : GetOrgGroup())
+        {
+        count += orgGroup.GetSize();
+        }
+    
     return count;
     }
 

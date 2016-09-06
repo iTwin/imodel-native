@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,7 +45,7 @@ private:
 
     virtual ContentDescriptor               _CreateDescriptor      () const = 0;
 
-    virtual BackInserter*                   _CreateBackInserterFor (UInt                        layerID,
+    virtual BackInserter*                   _CreateBackInserterFor (uint32_t                        layerID,
                                                                     const DataType&             type,
                                                                     Log&                 log) const = 0;
 
@@ -60,7 +60,7 @@ public:
     // TDORAY: Add insertion config replace layerID and type for insertion query.
 
      BackInserterPtr             CreateBackInserterFor  (const PacketGroup&          packets,
-                                                                    UInt                        layerID,
+                                                                    uint32_t                        layerID,
                                                                     const DataType&             type,
                                                                     Log&                        log) const;
     };
@@ -80,9 +80,12 @@ private:
         
     virtual void                            _Write                 () = 0;
 
+    virtual void                            _NotifySourceImported() {};
+
 protected:
 
      bool m_is3dData;
+     bool m_isGridData;
 
      explicit                    BackInserter           ();
 public:
@@ -90,7 +93,11 @@ public:
 
      void                        SetIs3dData(bool is3dData);
 
+     void                        SetIsGridData(bool isGridData);
+
      void                        Write                  () { _Write(); }     
+
+     void                        NotifySourceImported() { _NotifySourceImported(); }
     };
 
 

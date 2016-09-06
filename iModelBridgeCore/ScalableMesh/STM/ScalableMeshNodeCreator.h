@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 22:03:24 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -44,7 +44,7 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
         void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
                                     StatusInt&                  status);
 
-        virtual StatusInt                           CreateScalableMesh() override;
+        virtual StatusInt                           CreateScalableMesh(bool isSingleFile = true) override;
 
     };
 

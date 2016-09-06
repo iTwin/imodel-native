@@ -2,11 +2,15 @@
 |
 |     $Source: STM/ImportPlugins/ElementType.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+#ifdef VANCOUVER_API
+#include <ImagePP/all/h/IDTMFeatureArray.h>
+#include <ImagePP/all/h/IDTMTypes.h>
+#include <ImagePP/all/h/IDTMFile.h>
+#endif
         
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -118,7 +122,8 @@ public:
                                                                         ElementLinearStats&            stats) const = 0;
 
     virtual StatusInt                       Scan                       (MSElementDescrCP            elmDescP,
-                                                                        IDTMFeatureArray<DPoint3d>& linerarArray) const = 0;
+                                                                        IDTMFeatureArray<DPoint3d>& linerarArray,
+                                                                        DTMFeatureType featureType = DTMFeatureType::Breakline) const = 0;
     };
 
 

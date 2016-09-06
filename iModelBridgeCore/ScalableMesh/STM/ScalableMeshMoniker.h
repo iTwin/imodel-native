@@ -6,7 +6,7 @@
 |       $Date: 2011/06/08 20:42:33 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -45,7 +45,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 /*__PUBLISH_SECTION_START__*/
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

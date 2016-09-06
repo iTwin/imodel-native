@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:10 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -98,7 +98,7 @@ public:
 // TDORAY: We should consider creating a class for dimension role so that custom roles can be registered 
 //         by the user and that these roles be comparable via a String. See DimensionType for
 //         an example of how it can be achieved.
-typedef UInt                                    DimensionRole;
+typedef uint32_t                                    DimensionRole;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  

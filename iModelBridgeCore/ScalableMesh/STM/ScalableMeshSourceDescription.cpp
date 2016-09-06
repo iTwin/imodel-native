@@ -6,11 +6,11 @@
 |       $Date: 2012/01/06 16:30:11 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-  
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/IScalableMeshSourceDescription.h>
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 
@@ -20,9 +20,8 @@
 #include <ScalableMesh/Import/Exceptions.h>
 
 #include <ScalableMesh/Import/Error/Source.h>
-#include <ScalableMesh/Import/ImportSequenceVisitor.h>
 #include <ScalableMesh/Import/ImportSequence.h>
-#include <ScalableMesh/Import/Command/All.h>
+#include <ScalableMesh/Import/Command/Base.h>
 
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/IScalableMeshPolicy.h>
@@ -49,8 +48,8 @@ struct SourceLayerDescriptorHolder
     SourceLayerDescriptorHolder&    operator=                          (const SourceLayerDescriptor&    rhs) 
         { m_held = rhs; return *this; }
 
-    explicit                        SourceLayerDescriptorHolder        (UInt                            layer,
-                                                                        const Import::LayerDescriptor&  descriptor)
+    explicit                        SourceLayerDescriptorHolder        (uint32_t                            layer,
+                                                                        const Import::ILayerDescriptor&  descriptor)
         :   m_held(layer, descriptor)
         {}
 
@@ -65,10 +64,10 @@ static_assert(sizeof(SourceLayerDescriptorHolder) == sizeof(SourceLayerDescripto
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceLayerDescriptor::SourceLayerDescriptor   (UInt                    layer,
-                                                const LayerDescriptor&  descriptor)
+SourceLayerDescriptor::SourceLayerDescriptor   (uint32_t                    layer,
+                                                const ILayerDescriptor&  descriptor)
     :   m_id(layer),
-        m_descriptorP(&descriptor),
+    m_descriptorP(const_cast<ILayerDescriptor*>(&descriptor)),
         m_implP(0)
     {
     }
@@ -79,7 +78,7 @@ SourceLayerDescriptor::SourceLayerDescriptor   (UInt                    layer,
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceLayerDescriptor::SourceLayerDescriptor (const SourceLayerDescriptor& rhs)
     :   m_id(rhs.m_id),
-        m_descriptorP(rhs.m_descriptorP),
+        m_descriptorP(rhs.m_descriptorP.get()),
         m_implP(0)
     {
     }
@@ -92,7 +91,7 @@ SourceLayerDescriptor& SourceLayerDescriptor::operator= (const SourceLayerDescri
 
     {
     m_id = rhs.m_id;
-    m_descriptorP = rhs.m_descriptorP;
+    m_descriptorP = rhs.m_descriptorP.get();
 
     return *this;
     }
@@ -101,7 +100,7 @@ SourceLayerDescriptor& SourceLayerDescriptor::operator= (const SourceLayerDescri
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceLayerDescriptor::GetID () const
+uint32_t SourceLayerDescriptor::GetID () const
     {
     return m_id;
     }
@@ -112,14 +111,14 @@ UInt SourceLayerDescriptor::GetID () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const WChar* SourceLayerDescriptor::GetName () const
     {
-    return m_descriptorP->GetNameCStr();
+    return m_descriptorP->GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const LayerDescriptor& SourceLayerDescriptor::GetDescriptor () const
+const ILayerDescriptor& SourceLayerDescriptor::GetDescriptor () const
     {
     return *m_descriptorP;
     }
@@ -150,7 +149,7 @@ struct SourceDescriptor::Impl
 
     void                            InitLayerSelection                         (const ImportSequence&           importSequence)
         {
-        const UInt layerCount = m_descriptor.GetLayerCount();
+        const uint32_t layerCount = m_descriptor.GetLayerCount();
         
         if (1 == layerCount)
             return InitSingleLayerSelection(importSequence);
@@ -177,84 +176,19 @@ struct SourceDescriptor::Impl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourceDescriptor::Impl::InitSingleLayerSelection (const ImportSequence&  importSequence)
     {
-    class SingleLayerSelectionVisitor : public IImportSequenceVisitor
+    for (auto& command : importSequence.GetCommands())
         {
-        const LayerDescriptor&          m_layerDesc;
-        bool                            m_selected;
-        
-
-        void                            SelectAll                  ()
-            { m_selected = true; }
-
-        void                            Select                     (const UInt                                  layerID)
-            { m_selected = m_selected || 0 == layerID; }
-
-        void                            SelectIfHasType            (const UInt                                  layerID,
-                                                                    const DataTypeFamily&                       type)
+        if (m_layerSelection.size() > 0) break;
+        if (command.IsSourceLayerSet())
             {
-            m_selected = m_selected || 
-                         (0 == layerID && m_layerDesc.TypesEnd() != m_layerDesc.FindTypeFor(type));
+            if (command.GetSourceLayer() != 0) continue;
             }
-
-        void                            SelectAllWithType          (const DataTypeFamily&                       type)
-            { m_selected = m_selected || m_layerDesc.TypesEnd() != m_layerDesc.FindTypeFor(type); }
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            { SelectAll(); }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            { Select(command.GetSourceLayer()); }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            { SelectAllWithType(command.GetSourceType()); }
-
-    public:
-        void                            CopyTo                     (vector<SourceLayerDescriptorHolder>&        selection) const
+        if (command.IsSourceTypeSet())
             {
-            if (m_selected)
-                selection.push_back(SourceLayerDescriptorHolder(0, m_layerDesc));
+            if ((*m_descriptor.LayersBegin())->GetTypes().end() == std::find((*m_descriptor.LayersBegin())->GetTypes().begin(),(* m_descriptor.LayersBegin())->GetTypes().end(),(command.GetSourceType()))) continue;
             }
-
-        explicit                        SingleLayerSelectionVisitor      (ContentDescriptor&                          descriptor)
-            :   m_layerDesc(*descriptor.LayersBegin()),
-                m_selected(false)
-            {
-            assert(1 == descriptor.GetLayerCount());
-            }
-        };
-
-    SingleLayerSelectionVisitor visitor(m_descriptor);
-    importSequence.Accept(visitor);
-
-
-    visitor.CopyTo(m_layerSelection);
+            m_layerSelection.push_back(SourceLayerDescriptorHolder(0, **(m_descriptor.LayersBegin())));
+        }
     }
 
 
@@ -264,125 +198,25 @@ void SourceDescriptor::Impl::InitSingleLayerSelection (const ImportSequence&  im
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SourceDescriptor::Impl::InitMultipleLayerSelection (const ImportSequence&  importSequence)
     {
-    class MultipleLayerSelectionVisitor : public IImportSequenceVisitor
+    uint32_t layerID = 0;
+    for (ContentDescriptor::const_iterator layerIt = m_descriptor.LayersBegin();
+         m_descriptor.LayersEnd() != layerIt;
+         ++layerIt,  ++layerID)
         {
-        typedef vector<bool>         SelectedList;
-
-        typedef ContentDescriptor::const_iterator
-                                        LayerDescCIter;
-
-        const LayerDescCIter            m_layersBegin;
-        const LayerDescCIter            m_layersEnd;
-        SelectedList                    m_selected;
-        
-
-        void                            SelectAll                  ()
+        for (auto& command : importSequence.GetCommands())
             {
-            fill(m_selected.begin(), m_selected.end(), true);
-            }
-
-        void                            Select                     (const UInt                                  layerID)
-            {
-            if (layerID >= m_selected.size())
-                return;
-
-            m_selected[layerID] = true;
-            }
-
-        void                            SelectIfHasType            (const UInt                                  layerID,
-                                                                    const DataTypeFamily&                       type)
-            {
-            const LayerDescCIter layerIt(m_layersBegin + layerID);
-            if (m_layersEnd <= layerIt)
-                return;
-
-            if (layerIt->TypesEnd() == layerIt->FindTypeFor(type))
-                return;
-
-            m_selected[layerID] = true;
-            }
-
-        void                            SelectAllWithType          (const DataTypeFamily&                       type)
-            {
-            struct SelectLayer
+            if (command.IsSourceLayerSet())
                 {
-                const DataTypeFamily& m_type;
-                explicit SelectLayer (const DataTypeFamily& type) : m_type(type) {}
-
-                bool operator () (bool alreadySelected, const LayerDescriptor& layer) const 
-                    { return alreadySelected || layer.TypesEnd() != layer.FindTypeFor(m_type); } 
-                };
-
-            std::transform(m_selected.begin(), m_selected.end(), 
-                           m_layersBegin, 
-                           m_selected.begin(), 
-                           SelectLayer(type));
-            }
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            { SelectAll(); }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            { SelectAll(); }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            { Select(command.GetSourceLayer()); }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            { Select(command.GetSourceLayer()); }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            { SelectIfHasType(command.GetSourceLayer(), command.GetSourceType()); }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            { SelectAllWithType(command.GetSourceType()); }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            { SelectAllWithType(command.GetSourceType()); }
-
-    public:
-        void                            CopyTo                     (vector<SourceLayerDescriptorHolder>&        selection) const
-            {
-            SelectedList::const_iterator selectedIt = m_selected.begin();
-            UInt layerID = 0;
-
-            for (ContentDescriptor::const_iterator layerIt = m_layersBegin;
-                 m_layersEnd != layerIt;
-                 ++layerIt, ++selectedIt, ++layerID)
-                {
-                if (*selectedIt)
-                    selection.push_back(SourceLayerDescriptorHolder(layerID, *layerIt));
+                if (command.GetSourceLayer() != layerID) continue;
                 }
+            if (command.IsSourceTypeSet())
+                {
+                if ((*m_descriptor.LayersBegin())->GetTypes().end() == std::find((*m_descriptor.LayersBegin())->GetTypes().begin(),(* m_descriptor.LayersBegin())->GetTypes().end(), (command.GetSourceType()))) continue;
+                }
+            m_layerSelection.push_back(SourceLayerDescriptorHolder(layerID, **layerIt));
+            break;
             }
-
-        explicit                        MultipleLayerSelectionVisitor      (ContentDescriptor&                          descriptor)
-            :   m_layersBegin(descriptor.LayersBegin()),
-                m_layersEnd(descriptor.LayersEnd()),
-                m_selected(std::distance(m_layersBegin, m_layersEnd), false)
-            {
-            }
-        };
-
-    MultipleLayerSelectionVisitor visitor(m_descriptor);
-    importSequence.Accept(visitor);
-
-
-    visitor.CopyTo(m_layerSelection);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -395,13 +229,14 @@ void SourceDescriptor::Impl::InitLayersWithIncompleteTypes              ()
          layerIt != layerEnd;
          ++layerIt)
         {
-        if (layerIt->HoldsIncompleteTypes())
+        if ((*layerIt)->HoldsIncompleteTypes())
             {
-            for (LayerDescriptor::const_iterator typeIter = layerIt->TypesBegin(), typeEnd = layerIt->TypesEnd();
+            for (/*LayerDescriptor::const_iterator typeIter = layerIt->TypesBegin(), typeEnd = layerIt->TypesEnd();
                  typeIter != typeEnd;
-                 ++typeIter)
+                 ++typeIter*/
+                 auto& typeIter : (*layerIt)->GetTypes())
                 {
-                m_incompleteTypes.push_back(IncompleteType(m_descriptor.GetLayerIDFor(layerIt), typeIter->GetType()));
+                m_incompleteTypes.push_back(IncompleteType(m_descriptor.GetLayerIDFor(layerIt), typeIter.GetType()));
                 }
             }
         }
@@ -411,7 +246,7 @@ void SourceDescriptor::Impl::InitLayersWithIncompleteTypes              ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceDescriptor::IncompleteType::IncompleteType   (UInt                layer,
+SourceDescriptor::IncompleteType::IncompleteType   (uint32_t                layer,
                                                     const DataType&     type)
     :   m_layerID(layer),
         m_type(type)
@@ -423,7 +258,7 @@ SourceDescriptor::IncompleteType::IncompleteType   (UInt                layer,
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceDescriptor::IncompleteType::GetLayerID () const
+uint32_t SourceDescriptor::IncompleteType::GetLayerID () const
     {
     return m_layerID;
     }
@@ -460,23 +295,11 @@ SourceDescriptor::~SourceDescriptor ()
 namespace {
 const SourceFactory         SOURCE_FACTORY (GetSourceFactory());
 
-inline SourceDescriptor::Status MapStatus(const SourceFactory::Status factoryStatus)
+inline SourceDescriptor::Status MapStatus(const SMStatus factoryStatus)
     {
     assert(SourceDescriptor::S_QTY > factoryStatus);
 
-    switch(factoryStatus)
-        {
-        case SourceFactory::S_SUCCESS:
-            return SourceDescriptor::S_SUCCESS;
-        case SourceFactory::S_ERROR:
-            return SourceDescriptor::S_ERROR;
-        case SourceFactory::S_ERROR_NOT_SUPPORTED:
-            return SourceDescriptor::S_ERROR_NOT_SUPPORTED;
-        case SourceFactory::S_ERROR_NOT_FOUND:
-            return SourceDescriptor::S_ERROR_NOT_FOUND;
-        default:
-            return SourceDescriptor::S_ERROR;
-        }
+    return (SourceDescriptor::Status)factoryStatus;
     }
 }
 
@@ -522,7 +345,7 @@ SourceDescriptorCPtr SourceDescriptor::CreateOriginalFor (const IDTMSource&     
     {
     try
         {
-        SourceFactory::Status factoryStatus(SourceFactory::S_SUCCESS);
+        SMStatus factoryStatus(SMStatus::S_SUCCESS);
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx));
@@ -577,7 +400,7 @@ SourceDescriptorCPtr SourceDescriptor::CreateFor (const IDTMSource& source,
     {
     try
         {
-        SourceFactory::Status factoryStatus(SourceFactory::S_SUCCESS);
+        SMStatus factoryStatus(SMStatus::S_SUCCESS);
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(Configure(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx), 
@@ -635,7 +458,7 @@ SourcePtr SourceDescriptor::CreateOriginalSourceFor (const IDTMSource&      sour
     {
     try
         {
-        SourceFactory::Status factoryStatus(SourceFactory::S_SUCCESS);
+        SMStatus factoryStatus(SMStatus::S_SUCCESS);
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(source, L""));
         const SourcePtr sourcePtr(SOURCE_FACTORY.Create(sourceRef, factoryStatus, statusEx));
@@ -701,9 +524,9 @@ SourceDescriptor::IncompleteTypeCIter SourceDescriptor::IncompleteTypesEnd () co
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceDescriptor::GetLayerSelectionSize () const
+uint32_t SourceDescriptor::GetLayerSelectionSize () const
     {
-    return static_cast<UInt>(m_implP->m_layerSelection.size());
+    return static_cast<uint32_t>(m_implP->m_layerSelection.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -728,7 +551,7 @@ SourceDescriptor::LayerCIter SourceDescriptor::LayerSelectionEnd () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier  01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt SourceDescriptor::GetLayerCount () const
+uint32_t SourceDescriptor::GetLayerCount () const
     {
     return m_implP->m_descriptor.GetLayerCount();
     }

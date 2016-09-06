@@ -1,6 +1,6 @@
 //#include "PointCloudEditPCH.h" //always first
 #include "ScalableMeshPCH.h"
-
+#include "../STM/ImagePPHeaders.h"
 #include "AMPKernels.h"
 using namespace concurrency;
 #include "PointCloudClassification.h"

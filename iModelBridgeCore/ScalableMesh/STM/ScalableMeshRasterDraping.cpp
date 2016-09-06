@@ -6,13 +6,13 @@
 |       $Date: 2010/11/29 13:15:51 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
 
-
+#include <ImagePP/all/h/HCDCodecIdentity.h>
 #include "ScalableMeshRasterDraping.h"
 
 /*------------------------------------------------------------------+
@@ -1635,7 +1635,7 @@ void CreateRawFileFromImageData(HFCPtr<HFCURL>&       pi_rpFileName,
     Byte*                       pImageLine = pi_ImageData;
     UShort                       BytesPerPixel = (UShort)(pi_rpImageDataPixelType->CountPixelRawDataBits() / 8);   
 
-    for (ULong32 pi_LineInd = 0; pi_LineInd < pi_ImageDataHeight; pi_LineInd++)
+    for (uint32_t pi_LineInd = 0; pi_LineInd < pi_ImageDataHeight; pi_LineInd++)
     {
         pResolutionEditor->WriteBlock(0, pi_LineInd, pImageLine);
         

@@ -6,7 +6,7 @@
 |       $Date: 2011/08/05 00:12:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,7 +23,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 
 struct ContentDescriptor;
-struct LayerDescriptor;
+struct ILayerDescriptor;
 struct ExtractionConfig;
 
 namespace Internal {
@@ -37,24 +37,24 @@ class LayerDesc
     {
     friend class                    ContentDesc;
 
-    UInt                            m_id;
+    uint32_t                            m_id;
     GCS                             m_gcs;
     const DRange3d*                 m_extentP;
 
     typedef bvector<DataType>       TypeList;
     bvector<DataType>               m_types;
 
-    void                            SetID                      (UInt                        id) { m_id = id; }
+    void                            SetID                      (uint32_t                        id) { m_id = id; }
 
 public:
     typedef const DataType*         TypeCIterator;
 
-                                    LayerDesc                  (const LayerDescriptor&      layerDesc);
+                                    LayerDesc                  (const ILayerDescriptor&      layerDesc);
 
-    explicit                        LayerDesc                  (const LayerDescriptor&      layerDesc,
-                                                                UInt                        layerID);
+    explicit                        LayerDesc                  (const ILayerDescriptor&      layerDesc,
+                                                                uint32_t                        layerID);
 
-    UInt                            GetID                      () const { return m_id; }
+    uint32_t                            GetID                      () const { return m_id; }
 
     TypeCIterator                   TypesBegin                 () const { return &*m_types.begin(); }
     TypeCIterator                   TypesEnd                   () const { return &*m_types.end(); }
@@ -78,12 +78,12 @@ public:
     explicit                        ContentDesc                (const ContentDescriptor&    contentDesc);
 
 
-    bool                            IsValidLayer               (UInt                        layerId) const;
+    bool                            IsValidLayer               (uint32_t                        layerId) const;
 
-    UInt                            GetLayerCount              () { return (UInt) m_layers.size(); }
+    uint32_t                            GetLayerCount              () { return (uint32_t) m_layers.size(); }
 
-    const LayerDesc&                GetLayer                   (UInt                        layerId) const;
-    LayerDesc&                      GetLayer                   (UInt                        layerId);
+    const LayerDesc&                GetLayer                   (uint32_t                        layerId) const;
+    LayerDesc&                      GetLayer                   (uint32_t                        layerId);
 
 
     LayerCIter                      LayersBegin                () const { return m_layers.begin(); }
@@ -97,7 +97,7 @@ public:
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline bool ContentDesc::IsValidLayer (UInt layerId) const
+inline bool ContentDesc::IsValidLayer (uint32_t layerId) const
     {
     return layerId < m_layers.size();
     }
@@ -106,7 +106,7 @@ inline bool ContentDesc::IsValidLayer (UInt layerId) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline const LayerDesc& ContentDesc::GetLayer (UInt layerId) const
+inline const LayerDesc& ContentDesc::GetLayer (uint32_t layerId) const
     {
     assert(layerId < m_layers.size());
     return m_layers[layerId];
@@ -116,7 +116,7 @@ inline const LayerDesc& ContentDesc::GetLayer (UInt layerId) const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline LayerDesc& ContentDesc::GetLayer (UInt layerId)
+inline LayerDesc& ContentDesc::GetLayer (uint32_t layerId)
     {
     assert(layerId < m_layers.size());
     return m_layers[layerId];

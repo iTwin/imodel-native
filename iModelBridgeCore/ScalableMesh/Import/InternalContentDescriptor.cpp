@@ -6,11 +6,11 @@
 |       $Date: 2011/08/05 00:12:41 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include "InternalContentDescriptor.h"
 
 #include <ScalableMesh/Import/Config/Content/All.h>
@@ -25,27 +25,27 @@ namespace Internal {
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-LayerDesc::LayerDesc (const LayerDescriptor&      layerDesc)
+LayerDesc::LayerDesc (const ILayerDescriptor&      layerDesc)
     :   m_id(0),
         m_gcs(layerDesc.GetGCS()),
-        m_extentP(layerDesc.HasExtent() ? &layerDesc.GetExtent() : 0),
-        m_types(layerDesc.TypesBegin(), layerDesc.TypesEnd())
+        m_extentP(!layerDesc.GetExtent().IsNull() ? &layerDesc.GetExtent() : 0),
+        m_types()
     {
-    
+    m_types.insert(m_types.end(), layerDesc.GetTypes().begin(), layerDesc.GetTypes().end());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-LayerDesc::LayerDesc (const LayerDescriptor&      layerDesc,
-                      UInt                        layerID)
+LayerDesc::LayerDesc (const ILayerDescriptor&      layerDesc,
+                      uint32_t                        layerID)
     :   m_id(layerID),
         m_gcs(layerDesc.GetGCS()),
-        m_extentP(layerDesc.HasExtent() ? &layerDesc.GetExtent() : 0),
-        m_types(layerDesc.TypesBegin(), layerDesc.TypesEnd())
+        m_extentP(!layerDesc.GetExtent().IsNull() ? &layerDesc.GetExtent() : 0),
+        m_types()
     {
-    
+    m_types.insert(m_types.end(), layerDesc.GetTypes().begin(), layerDesc.GetTypes().end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,9 +53,11 @@ LayerDesc::LayerDesc (const LayerDescriptor&      layerDesc,
 * @bsimethod                                                  Raymond.Gauthier   05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDesc::ContentDesc (const ContentDescriptor&  contentDesc)    
-    :   m_layers(contentDesc.LayersBegin(), contentDesc.LayersEnd())
+    :   m_layers()
     {
-    for (UInt layerID = 0; layerID < m_layers.size(); ++layerID)
+    for (auto it = contentDesc.LayersBegin(); it != contentDesc.LayersEnd(); it++)
+        m_layers.push_back(LayerDesc(**it));
+    for (uint32_t layerID = 0; layerID < m_layers.size(); ++layerID)
         m_layers[layerID].SetID(layerID);
     }
 

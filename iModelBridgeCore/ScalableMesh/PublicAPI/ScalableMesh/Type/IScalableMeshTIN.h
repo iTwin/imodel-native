@@ -6,7 +6,7 @@
 |       $Date: 2011/08/10 15:21:35 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,7 +39,7 @@ class TINTypeFamilyCreator : public Import::Plugin::V0::StaticDataTypeFamilyCrea
     {
     virtual const Import::DataTypeFamily&           _Create                                        () const override;
 public:
-    BENTLEYSTM_EXPORT explicit                    TINTypeFamilyCreator                           ();
+    BENTLEY_SM_EXPORT explicit                    TINTypeFamilyCreator                           ();
     };
 
 
@@ -51,7 +51,7 @@ class TINType3d64fCreator : public Import::Plugin::V0::StaticDataTypeCreatorBase
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public: 
-    BENTLEYSTM_EXPORT explicit                    TINType3d64fCreator                            ();
+    BENTLEY_SM_EXPORT explicit                    TINType3d64fCreator                            ();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,7 +62,7 @@ class TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator : public Import::Plugin::V0::
     {
     virtual const Import::DataType&                 _Create                                        () const override;
 public: 
-    BENTLEYSTM_EXPORT explicit                    TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator   ();
+    BENTLEY_SM_EXPORT explicit                    TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator   ();
     };
 
 

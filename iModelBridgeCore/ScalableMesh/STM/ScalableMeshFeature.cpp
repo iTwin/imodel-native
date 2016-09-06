@@ -6,12 +6,12 @@
 |       $Date: 2013/10/04 17:16:07 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include "ScalableMeshFeature.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

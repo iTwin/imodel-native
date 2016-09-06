@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:24:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,11 +32,7 @@ struct WKTSection;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WKTParameter
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        };
+
 
 private:
     const WKTSection*                   m_sectionP;
@@ -69,7 +65,7 @@ public:
         }
 
 
-    Status                              Parse                                  (WKTRoot&                root,
+    SMStatus                              Parse(WKTRoot&                root,
                                                                                 const WChar*             parameterEnd);
 
     bool                                IsSection                              () const { return 0 != m_sectionP; }
@@ -82,11 +78,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WKTSection
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        };
+
 
 private:
     typedef bvector<WKTParameter>        ParameterList;
@@ -126,7 +118,7 @@ public:
         }
 
 
-    Status                              Parse                                  (WKTRoot&                root,
+    SMStatus                              Parse(WKTRoot&                root,
                                                                                 const WChar*             sectionEnd);
     };
 
@@ -137,11 +129,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WKTRoot
     {
-    enum Status
-        {
-        S_SUCCESS,
-        S_ERROR,
-        };
+
 
 private:
     // Choice of deque as a container is not random here. Indeed, deque's push
@@ -171,7 +159,7 @@ public:
     bool                                IsEmpty                                () const { return 0 == m_rootSectionP; }
     const WKTSection&                   GetSection                             () const { assert(!IsEmpty()); return *m_rootSectionP; }
 
-    Status                              Parse                                  ();
+    SMStatus                              Parse();
     };
 
 END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE

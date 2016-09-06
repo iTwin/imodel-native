@@ -2,11 +2,11 @@
 |
 |     $Source: STM/ImportPlugins/XYZAsciiSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\Import\DataType.h>
 #include <ScalableMesh\Import\DataTypeDescription.h>
 #include <ScalableMesh\Import\Metadata.h>
@@ -36,7 +36,7 @@ using std::pair;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace Bentley::ScalableMesh::Plugin;
+using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin;
 using namespace std;
 
 namespace { //BEGIN_UNAMED_NAMESPACE
@@ -163,10 +163,10 @@ struct LineStats
         EF_INVALID_FORMAT = 0x01,
         };
 
-    UInt            errorFlags;
-    UInt            validCount;
-    UInt            commentedCount;
-    UInt            fieldCount;
+    uint32_t            errorFlags;
+    uint32_t            validCount;
+    uint32_t            commentedCount;
+    uint32_t            fieldCount;
     WChar            fieldDelimiter;
 
 
@@ -209,7 +209,7 @@ LineStats ComputeFileProfile(XYZAsciiStream file, StatusInt& status)
                     continue;
                     }
 
-                const UInt fieldCount = SplitLine(fieldsRanges, lineRange);
+                const uint32_t fieldCount = SplitLine(fieldsRanges, lineRange);
                 const WChar delimiter = GetDelimiterFor(fieldsRanges, fieldCount);
 
                 if (fieldCount != stats.fieldCount ||
@@ -243,7 +243,7 @@ LineStats ComputeFileProfile(XYZAsciiStream file, StatusInt& status)
                 insideRange = GetNextLineRange(lineRange, lineRange.end, range.end);
                 }
 
-            UInt fieldCount;
+            uint32_t fieldCount;
             WChar delimiter;
 
             if (!insideRange ||
@@ -304,7 +304,7 @@ public:
 private:
     friend class XYZAsciiSourceFileCreator;
 
-    static const UInt       MAX_PREVIEW_LINE_COUNT = 5;
+    static const uint32_t       MAX_PREVIEW_LINE_COUNT = 5;
     static const int        READ_BUFFER_SIZE = 1048576; // Default was 4096 (-1). Try optimize using greater values
     static const int        PBACK_BUFFER_SIZE = -1; // Default was 4 (-1). No need to change this as we don't write.
     
@@ -328,13 +328,13 @@ private:
             m_previewLineCount(0)
         {        
         // Null terminate all our preview lines
-        for (UInt previewLineIdx = 0; previewLineIdx < MAX_PREVIEW_LINE_COUNT; ++previewLineIdx)
+        for (uint32_t previewLineIdx = 0; previewLineIdx < MAX_PREVIEW_LINE_COUNT; ++previewLineIdx)
             m_preview[previewLineIdx][XYZFormat::MAX_FORMATED_LINE_SIZE] = L'\0';
 
         m_inFile = _wfopen(filePath.c_str(), L"r");
             
         if (m_inFile == 0)
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
 
         // Compute column count and get data preview
         StatusInt status;
@@ -368,10 +368,10 @@ private:
 
         DimensionOrg org;
         for(size_t i = 0; i < m_fieldCount; ++i)
-            org.push_back(DimensionDef(Bentley::ScalableMesh::Import::DimensionType::GetFloat64()));
+            org.push_back(DimensionDef(BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::GetFloat64()));
         ScalableMeshData data = ScalableMeshData::GetNull();
 
-        LayerDescriptor desc(L"",
+        RefCountedPtr<ILayerDescriptor> desc = ILayerDescriptor::CreateLayerDescriptor(L"",
                              DataTypeFactory().Create(PointTypeFamilyCreator().Create(), org),
                              GCS::GetNull(),
                              0,
@@ -385,7 +385,9 @@ private:
             lines.push_back(fieldString);            
             }
 
-        desc.EditMetadataRecord().push_back(MetadataEntry(L"CONTENT_PREVIEW", lines));
+        MetadataRecord record;
+        record.push_back(MetadataEntry(L"CONTENT_PREVIEW", lines));
+        desc->SetMetadataRecord(record);
 
         return ContentDescriptor(L"",
                                  desc, 
@@ -421,7 +423,7 @@ private:
             WChar* const readLineBufferEnd = readLineBegin + XYZFormat::MAX_FORMATED_LINE_SIZE;
 
             WChar* readLineEnd = readLineBegin;
-            const UInt fieldCount = XYZFormat::ReadLine(m_inFile,
+            const uint32_t fieldCount = XYZFormat::ReadLine(m_inFile,
                                                         readLineEnd, readLineBufferEnd,
                                                         isWhitespacePred, L' ');
 
@@ -488,10 +490,10 @@ class XYZAsciiSourceFileCreator : public LocalFileSourceCreatorBase
             // Rethrow as "could not open" (this kind of exception
             // is expected to be thrown by device/streambuf constructors
             // when used directly.
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
             }
 
-        return 0;
+        //return 0;
         }
 
     };
@@ -616,7 +618,7 @@ private:
         PODPacketProxy<DPoint3d>::iterator const ptsBegin = m_pointPacket.begin();
         PODPacketProxy<DPoint3d>::iterator ptIt = ptsBegin;
 
-        UInt readLineCount = 0;
+        uint32_t readLineCount = 0;
         bool success = true;
 
         WChar* const lineBegin = m_lineBuffer;
@@ -628,7 +630,7 @@ private:
         for (; readLineCount < MAX_POINT_QTY && feof(m_source.GetFile()) == 0; ++readLineCount)
             {
             WChar* lineEndIt = lineBegin;
-            const UInt fieldCount = XYZFormat::ReadLine(m_source.GetFile(),
+            const uint32_t fieldCount = XYZFormat::ReadLine(m_source.GetFile(),
                                                         lineEndIt, lineBufferEnd,
                                                         m_isWhitespacePred, L'\0');
 
@@ -721,7 +723,7 @@ class XYZAsciiPointExtractorCreator : public InputExtractorCreatorMixinBase<XYZA
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (XYZAsciiSource&                       sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source& source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection) const override
         {
         return RawCapacities (XYZAsciiPointExtractor::POINT_TYPE_SIZE*XYZAsciiPointExtractor::MAX_POINT_QTY);
@@ -732,7 +734,7 @@ class XYZAsciiPointExtractorCreator : public InputExtractorCreatorMixinBase<XYZA
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (XYZAsciiSource&                       sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source& source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source& source,
                                                                                     const ExtractionQuery&                selection,
                                                                                     const ExtractionConfig&               config,
                                                                                     Log&                                  log) const override

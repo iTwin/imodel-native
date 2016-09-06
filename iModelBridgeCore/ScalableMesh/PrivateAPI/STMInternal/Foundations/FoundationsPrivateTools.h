@@ -6,14 +6,14 @@
 |       $Date: 2012/02/23 18:20:14 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #include <ImagePP/h/HNumeric.h>
-
+USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 template <typename T, size_t N>  
 char (&CARRAY_SIZE_HELPER(T (&array)[N]))[N]; 

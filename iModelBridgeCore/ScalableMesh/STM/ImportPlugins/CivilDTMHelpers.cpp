@@ -6,13 +6,13 @@
 |       $Date: 2012/02/23 00:32:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include "CivilDTMHelpers.h"
-
+#include "..\Stores\SMStoreUtils.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
@@ -139,13 +139,13 @@ static int CopyFeaturesCallback(DTMFeatureType pi_FeatureType, DTMUserTag pi_Fea
     {
     IDTMFeatureArray<DPoint3d>& rFeatureList = *((IDTMFeatureArray<DPoint3d>*)pi_pUserArg);
 
-    HPRECONDITION(pi_FeatureTag <= numeric_limits<IDTMFile::FeatureHeader::group_id_type>::max());
+    HPRECONDITION(pi_FeatureTag <= numeric_limits<ISMStore::FeatureHeader::group_id_type>::max());
     //Very bad converting int64 to uint32_t.... but require to changes the STM file format to fix....
     //Was already like that in V8i, probably not quite important since tag doesn`t seem to be used at all??
-    rFeatureList.Append((IDTMFile::FeatureType)pi_FeatureType,
+    rFeatureList.Append((ISMStore::FeatureType)pi_FeatureType,
                         pi_pPoints,
                         pi_pPoints + pi_PointQty,
-                        (IDTMFile::FeatureHeader::group_id_type)(pi_FeatureTag & 0xFFFFFFFF));
+                        (ISMStore::FeatureHeader::group_id_type)(pi_FeatureTag & 0xFFFFFFFF));
 
     return DTM_SUCCESS;
     }

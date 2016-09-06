@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:58:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@ public:
     bool                                operator<                              (const DataTypeFamily&           rhs) const 
                                         {return m_classID < rhs.m_classID;}
 
-    IMPORT_DLLE UInt                    GetRoleQty                             () const;
+    IMPORT_DLLE uint32_t                    GetRoleQty                             () const;
     };
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:27:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,20 +53,20 @@ private:
         return m_transFn.m;
         }
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d&                 sourcePt,
+    virtual SMStatus        _Transform(const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt) const override
         {
         targetPt = m_transFn(sourcePt);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d*                 sourcePtP,
+    virtual SMStatus        _Transform(const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP) const override
         {
         std::transform(sourcePtP, sourcePtP + sourcePtQty, targetPtP, m_transFn);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
     virtual TransfoModelBase*           _CreateInverse                 () const override
@@ -74,7 +74,7 @@ private:
 
         Transform transform(ToTransform3d(m_transFn.m));
 
-        if (!bsiTransform_invert(&transform, &transform))
+        if (!transform.InverseOf(transform))
             return 0;
 
         return new TransfoModelAffine(FromTransform3d(transform));

@@ -3,7 +3,7 @@
 /*__PUBLISH_SECTION_START__*/
 
 #include <ScalableMesh/Import/Definitions.h>
-#include <ScalableMesh/IScalableMeshStream.h>
+//#include <ScalableMesh/IScalableMeshStream.h>
 #include <ScalableMesh/IScalableMeshTime.h>
 
 
@@ -39,13 +39,13 @@ public:
     IMPORT_DLLE                                 ~ScalableMeshData               ();
 
     IMPORT_DLLE static const ScalableMeshData&  GetNull                         ();
-    IMPORT_DLLE                                 ScalableMeshData                (BinaryIStream& stream);
+
     IMPORT_DLLE                                 ScalableMeshData                (const ScalableMeshData&    rhs);
     IMPORT_DLLE ScalableMeshData&               operator=                       (const ScalableMeshData&    rhs);
 
-    IMPORT_DLLE vector<DRange3d>&               GetExtent                       ();
+    IMPORT_DLLE std::vector<DRange3d>&               GetExtent                       ();
     IMPORT_DLLE DRange3d&                       GetExtentByLayer                (int id);
-    IMPORT_DLLE void                            SetExtents                      (vector<DRange3d>& extent);
+    IMPORT_DLLE void                            SetExtents                      (std::vector<DRange3d>& extent);
     IMPORT_DLLE void                            SetExtent                       (int id, DRange3d& extent);
     IMPORT_DLLE void                            AddExtent                       (DRange3d& extent);
     IMPORT_DLLE size_t                          GetLayerCount                   ();
@@ -63,8 +63,7 @@ public:
 
     IMPORT_DLLE __int64                         GetMaximumNbPoints() const;
     IMPORT_DLLE void                            SetMaximumNbPoints(__int64 maximumNbPoints);
-   
-    IMPORT_DLLE void                            Serialize                       (BinaryOStream& stream) const;
+
 
     IMPORT_DLLE std::vector<DRange3d>           GetVectorRangeAdd();
     IMPORT_DLLE void                            ClearVectorRangeAdd();
@@ -73,11 +72,23 @@ public:
     IMPORT_DLLE bool                            IsGroundDetection() const;
     IMPORT_DLLE void                            SetIsGroundDetection(bool isGroundDetection);
 
+    IMPORT_DLLE void                            GetClassificationToImport(bvector<uint32_t>& classesToImport);
+    IMPORT_DLLE void                            SetClassificationToImport(const bvector<uint32_t>& classesToImport);
+
     IMPORT_DLLE bool                            IsGISDataType() const;
     IMPORT_DLLE void                            SetIsGISDataType(bool isGISData);
 
     IMPORT_DLLE WString                         ElevationPropertyName() const;
     IMPORT_DLLE void                            SetElevationPropertyName(WString& name);
+
+    IMPORT_DLLE DTMFeatureType                  GetLinearFeatureType() const;
+    IMPORT_DLLE void                            SetLinearFeatureType(DTMFeatureType type);
+
+    IMPORT_DLLE DTMFeatureType                  GetPolygonFeatureType() const;
+    IMPORT_DLLE void                            SetPolygonFeatureType(DTMFeatureType type);
+
+    IMPORT_DLLE bool                            IsGridData() const;
+    IMPORT_DLLE void                            SetIsGridData(bool isGridData);
 
 };
 

@@ -6,29 +6,27 @@
 |       $Date: 2012/01/30 17:24:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 
 #include <ScalableMesh/Import/ImportConfig.h>
 #include <ScalableMesh/Import/ContentConfig.h>
 #include <ScalableMesh/Import/ImportSequence.h>
 
-#include <ScalableMesh/Import/Command/All.h>
-#include <ScalableMesh/Import/ImportSequenceVisitor.h>
+#include <ScalableMesh/Import/Command/Base.h>
 
 #include <ScalableMesh/Import/Config/Content/All.h>
 
-#include <ScalableMesh/Import/ContentConfigVisitor.h>
 
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshTIN.h>
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
-
+#include "..\Import\InternalImporterConfig.h"
 #include "ScalableMeshEditListener.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -42,9 +40,10 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct SourceImportConfig::Impl
     {
+    friend class Internal::Config;
     EditListener*                   m_editListenerP;
     ImportSequence                  m_sequence;
-    ImportConfig                    m_config;
+    RefCountedPtr<ImportConfig>                    m_config;
     ContentConfig                   m_contentConfig;
     
 
@@ -54,6 +53,7 @@ struct SourceImportConfig::Impl
     explicit                        Impl                   (const ImportSequence&       defaultSequence)
         :   m_editListenerP(0),
             m_sequence(defaultSequence),
+            m_config(new Internal::Config()),
             m_defaultSequence(defaultSequence),
             m_userSpecifiedSequence(false)
         {
@@ -62,7 +62,7 @@ struct SourceImportConfig::Impl
     explicit                        Impl                   (const Impl&                 rhs)
         :   m_editListenerP(0),
             m_sequence(rhs.m_sequence),
-            m_config(rhs.m_config),
+            m_config(rhs.m_config.get()),
             m_contentConfig(rhs.m_contentConfig),
             m_defaultSequence(rhs.m_defaultSequence),
             m_userSpecifiedSequence(rhs.m_userSpecifiedSequence)
@@ -142,105 +142,15 @@ namespace {
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 void                        AppendImportLayerCommandsToExistingSequence    (const ImportSequence&           templateCommands,
-                                                                            UInt                            importedLayer,
+                                                                            uint32_t                            importedLayer,
                                                                             ImportSequence&                 sequence)
     {
-    class CommandVisitor : public IImportSequenceVisitor
+    for (auto& command : templateCommands.GetCommands())
         {
-        const UInt                      m_importedLayer;
-        ImportSequence&                 m_sequence;
-
-        virtual void                    _Visit                     (const ImportAllCommand&                     command) override
-            {
-            m_sequence.push_back(ImportLayerCommand(m_importedLayer));
-            }
-        virtual void                    _Visit                     (const ImportAllToLayerCommand&              command) override
-            {
-            m_sequence.push_back(ImportLayerToLayerCommand(m_importedLayer, command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportAllToLayerTypeCommand&          command) override
-            {
-            m_sequence.push_back(ImportLayerToLayerTypeCommand(m_importedLayer, command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportAllToTypeCommand&               command) override
-            {
-            m_sequence.push_back(ImportLayerToTypeCommand(m_importedLayer, command.GetTargetType()));
-            }
-
-        virtual void                    _Visit                     (const ImportLayerCommand&                   command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerCommand&            command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerToLayerTypeCommand&        command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerToTypeCommand&             command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-
-        virtual void                    _Visit                     (const ImportLayerTypeCommand&               command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerCommand&        command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToLayerTypeCommand&    command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-        virtual void                    _Visit                     (const ImportLayerTypeToTypeCommand&         command) override
-            {
-            if (m_importedLayer == command.GetSourceLayer())
-                m_sequence.push_back(command);
-            }
-
-        virtual void                    _Visit                     (const ImportTypeCommand&                    command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeCommand(m_importedLayer, command.GetSourceType()));
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerCommand&             command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeToLayerCommand(m_importedLayer, command.GetSourceType(), 
-                                                                      command.GetTargetLayer()));
-            }
-        virtual void                    _Visit                     (const ImportTypeToLayerTypeCommand&         command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeToLayerTypeCommand(m_importedLayer, command.GetSourceType(), 
-                                                                          command.GetTargetLayer(), command.GetTargetType()));
-            }
-        virtual void                    _Visit                     (const ImportTypeToTypeCommand&              command) override
-            {
-            return m_sequence.push_back(ImportLayerTypeToTypeCommand(m_importedLayer, command.GetSourceType(), 
-                                                                     command.GetTargetType()));
-            }
-
-    public:
-        explicit                        CommandVisitor             (UInt                                        importedLayer,
-                                                                    ImportSequence&                             sequence)
-            :   m_importedLayer(importedLayer),
-                m_sequence(sequence)
-            {
-            }
-
-        };
-
-    CommandVisitor visitor(importedLayer, sequence);
-    templateCommands.Accept(visitor);
+        ImportCommandBase commandWithLayer = command;
+        if (!command.IsSourceLayerSet()) commandWithLayer.SetSourceLayer(importedLayer);
+        if (!command.IsSourceLayerSet() || command.GetSourceLayer() == importedLayer) sequence.push_back(commandWithLayer);
+        }
 
     }
 }
@@ -250,7 +160,7 @@ void                        AppendImportLayerCommandsToExistingSequence    (cons
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceImportConfig::AddImportedLayer (UInt layerID)
+void SourceImportConfig::AddImportedLayer (uint32_t layerID)
     {
     m_implP->OnPublicEdit();
     m_implP->OnSequenceAddition();
@@ -264,36 +174,22 @@ void SourceImportConfig::AddImportedLayer (UInt layerID)
 void SourceImportConfig::SetReplacementType (const Import::DataType& type)
     {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(TypeConfig::s_GetClassID());
-    m_implP->m_contentConfig.push_back(TypeConfig(type));
+
+    m_implP->m_contentConfig.SetTypeConfig(TypeConfig(type));
     }
 
 void SourceImportConfig::SetReplacementSMData(const Import::ScalableMeshData& data)
 {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(ScalableMeshConfig::s_GetClassID());
-    m_implP->m_contentConfig.push_back(ScalableMeshConfig(data));
+
+    m_implP->m_contentConfig.SetScalableMeshConfig(ScalableMeshConfig(data));
+
 }
 
 const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
 {
-    struct SMDataVisitor : ContentConfigVisitor
-    {
-        const ScalableMeshData*      m_foundSMData;
-        explicit        SMDataVisitor() : m_foundSMData(&ScalableMeshData::GetNull()) {}
 
-        virtual void    _Visit(const ScalableMeshConfig& config) override
-        {
-            m_foundSMData = &config.GetScalableMeshData();
-        }
-
-    };
-
-    SMDataVisitor visitor;
-    m_implP->m_contentConfig.Accept(visitor);
-
-    assert(0 != visitor.m_foundSMData);
-    return *visitor.m_foundSMData;
+    return m_implP->m_contentConfig.GetScalableMeshConfig().GetScalableMeshData();
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,10 +199,9 @@ const ScalableMeshData& SourceImportConfig::GetReplacementSMData() const
 void SourceImportConfig::SetReplacementGCS (const GCS& gcs)
     {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(GCSConfig::s_GetClassID());
-    m_implP->m_contentConfig.RemoveAllOfType(GCSExtendedConfig::s_GetClassID());
 
-    m_implP->m_contentConfig.push_back(GCSConfig(gcs));
+    GCSConfig config(gcs);
+    m_implP->m_contentConfig.SetGCSConfig(config);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -319,16 +214,12 @@ void SourceImportConfig::SetReplacementGCS (const GeoCoords::GCS&   gcs,
                                             bool                    preserveExistingIfLocalCS)
     {
     m_implP->OnPublicEdit();
-    m_implP->m_contentConfig.RemoveAllOfType(GCSConfig::s_GetClassID());
-    m_implP->m_contentConfig.RemoveAllOfType(GCSExtendedConfig::s_GetClassID());
 
-    //Always want to use the extented config for wktFlavor
-    m_implP->m_contentConfig.push_back
-        (
-        GCSExtendedConfig(gcs).PrependToExistingLocalTransform(prependToExistingLocalTransform).
-                               PreserveExistingIfGeoreferenced(preserveExistingIfGeoreferenced).
-                               PreserveExistingIfLocalCS(preserveExistingIfLocalCS)
-        );
+    GCSConfig config(gcs);
+    config.PrependToExistingLocalTransform(prependToExistingLocalTransform).
+        PreserveExistingIfGeoreferenced(preserveExistingIfGeoreferenced).
+        PreserveExistingIfLocalCS(preserveExistingIfLocalCS);
+    m_implP->m_contentConfig.SetGCSConfig(config);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -337,27 +228,8 @@ void SourceImportConfig::SetReplacementGCS (const GeoCoords::GCS&   gcs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 const GCS& SourceImportConfig::GetReplacementGCS ()
     {
-    struct GCSVisitor : ContentConfigVisitor
-        {
-        const GCS*      m_foundGCSP;
-        explicit        GCSVisitor             ()   :   m_foundGCSP(&GCS::GetNull()) {}
 
-        virtual void    _Visit                  (const GCSConfig& config) override
-            {
-            m_foundGCSP = &config.GetGCS();
-            }
-        virtual void    _Visit                  (const GCSExtendedConfig& config) override
-            {
-            m_foundGCSP = &config.GetGCS();
-            }
-
-        };
-
-    GCSVisitor visitor;
-    m_implP->m_contentConfig.Accept(visitor);
-
-    assert(0 != visitor.m_foundGCSP);
-    return *visitor.m_foundGCSP;
+    return  m_implP->m_contentConfig.GetGCSConfig().GetGCS();
     }
 
 
@@ -365,9 +237,9 @@ const GCS& SourceImportConfig::GetReplacementGCS ()
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ImportConfig& SourceImportConfig::GetConfig () const
+ImportConfig* SourceImportConfig::GetConfig () const
     {
-    return m_implP->m_config;
+    return m_implP->m_config.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -416,11 +288,11 @@ void SourceImportConfig::SetSequence (const ImportSequence& sequence)
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceImportConfig::SetConfig (const ImportConfig& config)
+void SourceImportConfig::SetConfig (const ImportConfig* config)
     {
     m_implP->OnPublicEdit();
 
-    m_implP->m_config = config;
+    m_implP->m_config = const_cast<ImportConfig*>(config);
     }
 
 
@@ -448,9 +320,9 @@ void SourceImportConfig::SetInternalSequence (const Import::ImportSequence& sequ
 * @description  
 * @bsimethod                                                    Raymond.Gauthier  06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceImportConfig::SetInternalConfig (const Import::ImportConfig& config)
+void SourceImportConfig::SetInternalConfig (const Import::ImportConfig* config)
     {
-    m_implP->m_config = config;
+    m_implP->m_config = const_cast<Import::ImportConfig*>(config);
     }
 
 

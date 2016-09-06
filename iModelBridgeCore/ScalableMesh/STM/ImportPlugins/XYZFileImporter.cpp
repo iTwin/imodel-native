@@ -6,12 +6,12 @@
 |       $Date: 2012/01/17 16:06:21 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
 #include <ScalableMesh/Import/Plugin/SourceV0.h>
 
@@ -26,7 +26,7 @@
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace Bentley::ScalableMesh::Plugin;
+using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -126,7 +126,7 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             PointType3d64fCreator().Create(), 
                             GCS::GetNull(), 
                             0,

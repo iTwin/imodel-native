@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/DGNLevelImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-                            
+#include "../ImagePPHeaders.h"                         
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
@@ -24,7 +24,7 @@
 #include <ScalableMesh\Type\IScalableMeshLinear.h>
 #include <ScalableMesh\Type\IScalableMeshPoint.h>
 #include <ScalableMesh\Type\IScalableMeshMesh.h>
-
+#include "..\Stores\SMStoreUtils.h"
 
 
 
@@ -45,6 +45,19 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 namespace { //BEGIN UNAMED NAMESPACE
 
+
+
+
+struct DTMFeaturesStruct
+{
+    DTMFeatureType m_featureType;
+    IDTMFeatureArray<DPoint3d>& m_featureArray;
+
+    explicit DTMFeaturesStruct(DTMFeatureType& featureType, IDTMFeatureArray<DPoint3d>& featureArray)
+        : m_featureArray(featureArray),
+        m_featureType(featureType)
+    {}
+};
 
 struct ElementStats
     {
@@ -206,13 +219,14 @@ int ScanPointsCallback(ElementRefP elmRef, void* userArgP, ScanCriteria* scanCri
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ScanFeaturesCallback(ElementRefP elmRef, void* userArgP, ScanCriteria* scanCritP)
     {
-    IDTMFeatureArray<DPoint3d>& featureArray = *((IDTMFeatureArray<DPoint3d>*)userArgP);
+        DTMFeaturesStruct featuresStruct = *(DTMFeaturesStruct*)userArgP;
 
     EditElementHandle handle(elmRef, scanCritP->GetModelRef());
     MSElementDescrP edP = handle.GetElementDescrP();
 
-    // Extract element type and import features
-    return ElementLinearExtractor::GetFor(edP).Scan(edP, featureArray);
+
+
+    return ElementLinearExtractor::GetFor(edP).Scan(edP, featuresStruct.m_featureArray, featuresStruct.m_featureType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -345,7 +359,7 @@ private:
             dataTypes.push_back(MeshTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator().Create());
         ScalableMeshData data = ScalableMeshData::GetNull();
 
-        LayerDescriptor layerDesc(L"",
+        auto layerDesc = ILayerDescriptor::CreateLayerDescriptor(L"",
                                   dataTypes,
                                   GetBSIElementGCSFromRootPerspective(m_refHolder.m_modelRef.GetP()),
                                   0,
@@ -354,7 +368,9 @@ private:
         list<SourceRef>::const_iterator srcRefIter = m_srcRefList.begin();
         for(; srcRefIter != m_srcRefList.end(); srcRefIter++)
             {
-            layerDesc.EditAttachmentRecord().push_back(AttachmentEntry(*srcRefIter));
+            auto record = layerDesc->GetAttachmentRecord();
+            record.push_back(AttachmentEntry(*srcRefIter));
+            layerDesc->SetAttachmentRecord(record);
             }
         contentDesc.Add(layerDesc);
 
@@ -376,7 +392,7 @@ private:
 * @description
 * @bsiclass                                                  Raymond.Gauthier   01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGNSourceRefVisitor : SourceRefVisitor
+struct DGNSourceRefVisitor// : SourceRefVisitor
     {
     DGNModelRefHolder                   m_modelRef;
     LevelId                             m_levelID;
@@ -510,7 +526,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         }
 
 
-    virtual void                        _Visit                 (const DGNLevelByIDSourceRef&            sourceRef) override
+     void                        Visit                 (const DGNLevelByIDSourceRef&            sourceRef) 
         {
         const DGNModelRefHolder modelRef(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetModelID()));
         LevelId levelID = FindLevel(modelRef, sourceRef.GetLevelID());
@@ -519,7 +535,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         m_levelID = levelID;
         }
 
-    virtual void                        _Visit                 (const DGNReferenceLevelByIDSourceRef&   sourceRef) override
+     void                        Visit                 (const DGNReferenceLevelByIDSourceRef&   sourceRef) 
         {
         const DGNModelRefHolder rootModel(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetRootModelID()));
         const DGNModelRefHolder referenceModel(OpenReferenceFromRoot(rootModel, sourceRef.GetRootToRefPersistentPathCStr()));
@@ -530,7 +546,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         }
 
 
-    virtual void                        _Visit                 (const DGNLevelByNameSourceRef&          sourceRef) override
+     void                        Visit                 (const DGNLevelByNameSourceRef&          sourceRef) 
         {
         const DGNModelRefHolder modelRef(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetModelNameCStr()));
         LevelId levelID = FindLevel(modelRef, sourceRef.GetLevelNameCStr());
@@ -539,7 +555,7 @@ struct DGNSourceRefVisitor : SourceRefVisitor
         m_levelID = levelID;
         }
 
-    virtual void                        _Visit                 (const DGNReferenceLevelByNameSourceRef& sourceRef) override
+     void                        Visit                 (const DGNReferenceLevelByNameSourceRef& sourceRef) 
         {
         const DGNModelRefHolder rootModel(OpenRootModel(sourceRef.GetDGNPathCStr(), sourceRef.GetRootModelNameCStr()));
         const DGNModelRefHolder referenceModel(OpenReferenceFromRoot(rootModel, sourceRef.GetRootToRefPersistentPathCStr()));
@@ -547,6 +563,18 @@ struct DGNSourceRefVisitor : SourceRefVisitor
 
         m_modelRef = referenceModel;
         m_levelID = levelID;
+        }
+        
+        void Visit(const SourceRefBase& sourceRef)
+        {
+        if(dynamic_cast<const DGNReferenceLevelByNameSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNReferenceLevelByNameSourceRef*>(&sourceRef));
+        else if(dynamic_cast<const DGNLevelByNameSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNLevelByNameSourceRef*>(&sourceRef));
+        else if(dynamic_cast<const DGNReferenceLevelByIDSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNReferenceLevelByIDSourceRef*>(&sourceRef));
+        else if(dynamic_cast<const DGNLevelByIDSourceRef*>(&sourceRef) != nullptr)
+           Visit(*dynamic_cast<const DGNLevelByIDSourceRef*>(&sourceRef));
         }
 
     };
@@ -579,7 +607,8 @@ class DGNLevelSourceCreator : public SourceCreatorBase
                                                                             Log&                            log) const override
         {
         DGNSourceRefVisitor visitor;
-        sourceRef.Accept(visitor);
+        visitor.Visit(*sourceRef.m_basePtr);
+        //sourceRef.Accept(visitor);
 
         assert(0 != visitor.m_modelRef.GetP()); // Should already have thrown on errors
 
@@ -679,7 +708,7 @@ class DGNLevelPointExtractorFactory : public InputExtractorCreatorMixinBase<DGNL
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
         return RawCapacities(sourceBase.GetStats().m_point.GetPointCapacity() * sizeof(DPoint3d));
@@ -690,7 +719,7 @@ class DGNLevelPointExtractorFactory : public InputExtractorCreatorMixinBase<DGNL
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
@@ -722,16 +751,17 @@ private:
     bool                                    m_hasNext;
     ElementIterator                         m_elementIt;
 
-    PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
+    DTMFeatureType                          m_linearFeatureType;
 
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   03/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit                        DGNLevelLinearExtractor        (DGNLevelSource& dgnLevel)
+    explicit                        DGNLevelLinearExtractor        (DGNLevelSource& dgnLevel, const DTMFeatureType linearType = DTMFeatureType::Breakline)
         :   m_dgnLevel(dgnLevel),
             m_hasNext(dgnLevel.GetStats().m_linear.HasAny()),
             m_elementIt(dgnLevel.GetDGNModelRefP(), dgnLevel.GetLevelID())
@@ -741,6 +771,8 @@ private:
         m_elementIt.AddSingleElementTypeTest(CMPLX_STRING_ELM);
         m_elementIt.AddSingleElementTypeTest(SHAPE_ELM);
         m_elementIt.AddSingleElementTypeTest(CMPLX_SHAPE_ELM);
+
+        m_linearFeatureType = linearType;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -751,7 +783,7 @@ private:
         {
         m_headerPacket.AssignTo(rawEntities[DG_Header]);
         m_pointPacket.AssignTo(rawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader*)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
@@ -769,7 +801,9 @@ private:
 
         m_featureArray.Clear();
 
-        m_hasNext = (BUFF_FULL == m_elementIt.Scan(ScanFeaturesCallback, &m_featureArray));
+        DTMFeaturesStruct featureStruct(m_linearFeatureType, m_featureArray);
+
+        m_hasNext = (BUFF_FULL == m_elementIt.Scan(ScanFeaturesCallback, &featureStruct));
 
         m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());
         m_pointPacket.SetSize(m_featureArray.GetPoints().GetSize());
@@ -803,10 +837,10 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities(sourceBase.GetStats().m_linear.m_featureCount * sizeof(ISMStore::FeatureHeader),
                              sourceBase.GetStats().m_linear.GetPointCapacity() * sizeof(DPoint3d));
         }
 
@@ -815,12 +849,14 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
     * @bsimethod                                                  Raymond.Gauthier   07/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
         {
-        return new DGNLevelLinearExtractor(sourceBase);
+            SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+            ScalableMeshData data = sourceImportConf->GetReplacementSMData();
+        return new DGNLevelLinearExtractor(sourceBase, data.GetLinearFeatureType());
         }
     };
 
@@ -846,7 +882,7 @@ private:
     bool                                    m_hasNext;
     ElementIterator                         m_elementIt;
 
-    PODPacketProxy<IDTMFile::FeatureHeader> m_headerPacket;
+    PODPacketProxy<ISMStore::FeatureHeader> m_headerPacket;
     PODPacketProxy<DPoint3d>                m_pointPacket;
     IDTMFeatureArray<DPoint3d>              m_featureArray;
 
@@ -870,7 +906,7 @@ private:
         {
         m_headerPacket.AssignTo(rawEntities[DG_Header]);
         m_pointPacket.AssignTo(rawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader*)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
@@ -922,10 +958,10 @@ class DGNLevelMeshExtractorCreator : public InputExtractorCreatorMixinBase<DGNLe
     * @bsimethod                                                Jean-Francois.Cote   08/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual RawCapacities                       _GetOutputCapacities               (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection) const override
         {
-        return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities(sourceBase.GetStats().m_mesh.m_featureCount * sizeof(ISMStore::FeatureHeader),
                              sourceBase.GetStats().m_mesh.GetPointCapacity() * sizeof(DPoint3d));
         }
 
@@ -934,7 +970,7 @@ class DGNLevelMeshExtractorCreator : public InputExtractorCreatorMixinBase<DGNLe
     * @bsimethod                                                Jean-Francois.Cote   08/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual InputExtractorBase*                 _Create                            (DGNLevelSource&                 sourceBase,
-                                                                                    const Bentley::ScalableMesh::Import::Source&                   source,
+                                                                                    const BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Source&                   source,
                                                                                     const ExtractionQuery&          selection,
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override

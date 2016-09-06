@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:50 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__PUBLISH_SECTION_START__*/
@@ -84,13 +84,13 @@ inline IDTMSourceCollection::iterator IDTMSourceCollection::EditIterFor (const I
     }
 
 
-inline IDTMSourceCollection::const_iterator IDTMSourceCollection::GetIterAt (UInt index) const
+inline IDTMSourceCollection::const_iterator IDTMSourceCollection::GetIterAt (uint32_t index) const
     {
     return const_iterator(_GetIterAt(index));
     }
 
 
-inline IDTMSourceCollection::iterator IDTMSourceCollection::EditIterAt (UInt index)
+inline IDTMSourceCollection::iterator IDTMSourceCollection::EditIterAt (uint32_t index)
     {
     return iterator(_EditIterAt(index));
     }
@@ -101,7 +101,7 @@ inline IDTMSourceCollection::iterator IDTMSourceCollection::Remove (const const_
     return iterator(_Remove(sourceIt.GetBase()));
     }
 
-inline Bentley::ScalableMesh::Import::UpToDateState   IDTMSourceCollection::GetUpToDateState(const const_iterator& sourceIt)
+inline BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::UpToDateState   IDTMSourceCollection::GetUpToDateState(const const_iterator& sourceIt)
     {
     return _GetUpToDateState(sourceIt.GetBase());
     }

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -15,9 +15,9 @@ BEGIN_PCLWRAPPER_NAMESPACE
 
 struct IRansacUtility;
 
-typedef Bentley::RefCountedPtr<IRansacUtility> IRansacUtilityPtr;
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<IRansacUtility> IRansacUtilityPtr;
 
-struct IRansacUtility : public Bentley::RefCountedBase
+struct IRansacUtility : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     private:
 

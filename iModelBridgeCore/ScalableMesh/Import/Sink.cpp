@@ -6,11 +6,11 @@
 |       $Date: 2011/08/26 18:46:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include "Sink.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
@@ -76,7 +76,7 @@ const ContentDescriptor& Sink::GetDescriptor () const
 * @bsimethod                                                  Raymond.Gauthier   03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BackInserterPtr Sink::CreateBackInserterFor(const PacketGroup&      src,
-                                            UInt                    layerID,
+                                            uint32_t                    layerID,
                                             const DataType&         type,
                                             Log&             log) const
     {
@@ -116,6 +116,16 @@ BackInserter::~BackInserter ()
 void BackInserter::SetIs3dData(bool is3dData)
     {
     m_is3dData = is3dData;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @description  
+*
+* @bsimethod                                                  Elenie.Godzaridis  11/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void BackInserter::SetIsGridData(bool isGridData)
+    {
+    m_isGridData = isGridData;
     }
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

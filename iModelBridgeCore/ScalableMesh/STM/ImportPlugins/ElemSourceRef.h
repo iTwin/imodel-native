@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/ElemSourceRef.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,7 +18,7 @@ struct DGNModelRefHolder;
 * @description
 * @bsiclass                                                Raymond.Gauthier     07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGNElemSourceRefBase : public Bentley::ScalableMesh::Import::Plugin::V0::DGNElementSourceRefBase
+struct DGNElemSourceRefBase : public BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::Plugin::V0::DGNElementSourceRefBase
     {
 private:
     struct Impl;
@@ -29,8 +29,8 @@ private:
     virtual DGNElemSourceRefBase*       _Clone                                 () const override;
 
 
-    virtual UInt                        _GetElementType                        () const override;
-    virtual UInt                        _GetElementHandlerID                   () const override;
+    virtual uint32_t                        _GetElementType                        () const override;
+    virtual uint32_t                        _GetElementHandlerID                   () const override;
 
     virtual ElementRefP                  _GetElementRef                         () const override;
 
@@ -42,11 +42,11 @@ private:
     explicit                            DGNElemSourceRefBase                   (Impl*                       implP);
 
 protected:
-    typedef Bentley::ScalableMesh::Import::SourceRef
+    typedef BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::SourceRef
                                         SourceRef;
 
-    static SourceRef                    CreateFromImpl                         (UInt                        elemType,
-                                                                                UInt                        elemHandlerID,
+    static SourceRef                    CreateFromImpl                         (uint32_t                        elemType,
+                                                                                uint32_t                        elemHandlerID,
                                                                                 ElementRefP                  elemRef,
                                                                                 const DGNModelRefHolder&    modelRef,
                                                                                 LocalFileSourceRef*         localFileRefP);

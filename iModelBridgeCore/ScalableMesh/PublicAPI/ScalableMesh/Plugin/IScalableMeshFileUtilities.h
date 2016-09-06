@@ -6,7 +6,7 @@
 |       $Date: 2012/01/17 16:06:28 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -135,7 +135,7 @@ struct FileRange
 *
 * @bsimethod                                               Raymond.Gauthier    12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template <const UInt MAX_SAMPLE_SIZE, const UInt MAX_SAMPLE_QTY = 1, const bool RANDOM_SAMPLES = false>
+template <const uint32_t MAX_SAMPLE_SIZE, const uint32_t MAX_SAMPLE_QTY = 1, const bool RANDOM_SAMPLES = false>
 struct FileAnalysisTool
     {
 public:

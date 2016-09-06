@@ -6,14 +6,14 @@
 //:>       $Date: 2012/11/29 17:30:30 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 
 #include "SMPointIndex.h"
 
-#include <ImagePP/all/h/IDTMTypes.h>
+//#include <ImagePP/all/h/IDTMTypes.h>
 
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 
@@ -36,25 +36,20 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
 {
 
     protected: 
-         
-        HAutoPtr<HGFLevelPointIndexQuery<POINT, EXTENT>> m_pQueryByLevel;
-
+                 
         //Parameters controlling the tile selection 
-        double m_meanScreenPixelsPerPoint;                
-        bool   m_useSameResolutionWhenCameraIsOff;         //Determine if the same or different resolution method is used when the camera is off        
-        bool   m_useSplitThresholdForLevelSelection;        
-        bool   m_useSplitThresholdForTileSelection;             
-
+        double m_meanScreenPixelsPerPoint;                        
+        
         // The viewbox to query in. This viewbox is expressed in the coordinate system and units
         // of the STM to be queiried upon.
         // If reprojection is used (when both m_sourceGCSPtr and m_targetGCSPtr are set) then
         // this member will contain the viewbox as reprojected in the STM GCS.
         DPoint3d                                         m_viewBox[8];
         // The GCS of the STM
-        BaseGCSPtr                                       m_sourceGCSPtr;
+        BaseGCSCPtr                                       m_sourceGCSPtr;
 
         // The GCS of the target
-        BaseGCSPtr                                       m_targetGCSPtr;
+        BaseGCSCPtr                                       m_targetGCSPtr;
 
     protected: 
 
@@ -79,6 +74,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                                        shapeExtent.GetXMax(),
                                                        shapeExtent.GetYMax());
                 }
+            else
+                {
+                myExtent = ExtentOp<EXTENT>::Create(0, 0, 0, 0);
+                }
+
             return myExtent;
             }
                                             
@@ -92,11 +92,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                                              bool               gatherTileBreaklines)
                             : HGFViewDependentPointIndexQuery(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
                             {  
-                            m_meanScreenPixelsPerPoint = MEAN_SCREEN_PIXELS_PER_POINT;
-
-                            m_useSameResolutionWhenCameraIsOff = false;                
-                            m_useSplitThresholdForLevelSelection = true;        
-                            m_useSplitThresholdForTileSelection = false;    
+                            m_meanScreenPixelsPerPoint = MEAN_SCREEN_PIXELS_PER_POINT;                            
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
                             m_pTracingXMLFileName = "";
@@ -135,33 +131,23 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                             }
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentPointQuery() {};
-       
-        virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                            list<POINT>& points);        
+               
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             HPMMemoryManagedVector<POINT>& points);        
 
-        // Specific Query implementation
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                   size_t numSubNodes,
-                                   list<POINT>& resultPoints); 
+        // Specific Query implementation        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
                                    HPMMemoryManagedVector<POINT>& resultPoints); 
 
         virtual bool        IsCorrectForCurrentView(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                                                    const EXTENT& pi_visibleExtent,
-                                                    int           pi_NearestPredefinedCameraOri,
+                                                    const EXTENT& pi_visibleExtent,                                                    
                                                     double        pi_RootToViewMatrix[][4]) const;
 
         virtual void        SetMeanScreenPixelsPerPoint (double meanScreenPixelsPerPoint) {m_meanScreenPixelsPerPoint = meanScreenPixelsPerPoint;}
         virtual double      GetMeanScreenPixelsPerPoint () {return m_meanScreenPixelsPerPoint;}        
-
-        void                SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) {m_useSameResolutionWhenCameraIsOff = useSameResolution;}                    
-        void                SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) {m_useSplitThresholdForLevelSelection = useSplitThreshold;}                        
-        void                SetUseSplitThresholdForTileSelection(bool useSplitThreshold) {m_useSplitThresholdForTileSelection = useSplitThreshold;}        
+        
                         
 #ifdef ACTIVATE_NODE_QUERY_TRACING
         void                SetTracingXMLFileName(AString& pi_rTracingXMLFileName);
@@ -182,8 +168,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
          * will be converted to the units of the targerGCS then reprojected to the source GCS
          * fully ready for querying. 
          +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetReprojectionInfo(BaseGCSPtr& pi_sourceGCSPtr,
-                                 BaseGCSPtr& pi_targetGCSPtr)
+        void SetReprojectionInfo(BaseGCSCPtr& pi_sourceGCSPtr,
+                                 BaseGCSCPtr& pi_targetGCSPtr)
             {            
             m_sourceGCSPtr = pi_sourceGCSPtr;
             m_targetGCSPtr = pi_targetGCSPtr;
@@ -239,11 +225,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelPointIndexQue
                             virtual ~ScalableMeshQuadTreeLevelPointIndexQuery() {}
 
         
-        // The Query process gathers points up to level depth
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                   size_t numSubNodes,
-                                   list<POINT>& resultPoints);
+        // The Query process gathers points up to level depth        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -281,11 +263,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
                             virtual ~ScalableMeshQuadTreeLevelMeshIndexQuery() {}
 
         
-        // The Query process gathers points up to level depth
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                   size_t numSubNodes,
-                                   list<POINT>& resultPoints);
+        // The Query process gathers points up to level depth        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -293,7 +271,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   Bentley::ScalableMesh::ScalableMeshMesh* mesh);           
+                                   BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);           
         virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                   size_t numSubNodes,
@@ -304,6 +282,11 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
 /*
 *   Query for retrieving nodes that intersect a given ray. Will only return nodes at chosen level that have points in them.
 *   The optional parameter intersectType decides if using first or last node hit in direction of ray.
+*
+*   There are 2 kinds of intersect queries. The 2D queries return nodes if, when projected on the XY plane, their extent intersects the
+*   ray also projected on the XY plane. The 3D queries are a full ray intersect against the node's box. Both kinds of queries can be constrained using 
+*   a depth parameter corresponding to maximum length along the ray (allowing bounded queries, default is unbounded) and both can return the first, last or 
+*   all intersects along the ray. "ALL_INTERSECT" queries will return nodes sorted along the ray direction.
 */
 template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelIntersectIndexQuery : public  HGFLevelPointIndexQuery<POINT, EXTENT>
 {
@@ -311,7 +294,8 @@ public:
     enum RaycastOptions
         {
         FIRST_INTERSECT,
-        LAST_INTERSECT
+        LAST_INTERSECT,
+        ALL_INTERSECT
         };
 
     private:
@@ -321,27 +305,26 @@ public:
         double m_bestHitScore;
         double m_depth;
         bool m_is2d;
+        bool m_useUnboundedRay;
+        bvector<double> m_fractions;
    
     public:
 
-                            ScalableMeshQuadTreeLevelIntersectIndexQuery(const EXTENT   extent, 
-                                                              size_t         level,                                                    
-                                                               DRay3d ray,
-                                                               bool is2d = false,
-                                                               double depth = -1,
+        ScalableMeshQuadTreeLevelIntersectIndexQuery(const EXTENT   extent,
+                                                     size_t         level,
+                                                     DRay3d ray,
+                                                     bool is2d = false,
+                                                     double depth = -1,
+                                                     bool useUnboundedRay = true,
                                                                RaycastOptions intersectType = RaycastOptions::LAST_INTERSECT)
-                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth)
+                                                               : HGFLevelPointIndexQuery(extent, level), m_intersect(intersectType), m_target(ray), m_bestHitScore(numeric_limits<double>::quiet_NaN()), m_is2d(is2d), m_depth(depth), m_useUnboundedRay(useUnboundedRay)
                                 {                                                             
                                 }                            
 
                             virtual ~ScalableMeshQuadTreeLevelIntersectIndexQuery() {}
 
         
-        // The Query process gathers points up to level depth
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                   size_t numSubNodes,
-                                   list<POINT>& resultPoints);
+        // The Query process gathers points up to level depth        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -350,6 +333,10 @@ public:
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> >& hitNode);
+        virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                                   size_t numSubNodes,
+                                   vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
 };    
 
@@ -380,11 +367,7 @@ public:
                             virtual ~ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery() {}
 
         
-        // The Query process gathers points up to level depth
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                   size_t numSubNodes,
-                                   list<POINT>& resultPoints);
+        // The Query process gathers points up to level depth        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -413,10 +396,9 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
     private: 
 
         size_t        m_maxNumberOfPoints;
-        ClipVectorPtr m_viewClipVector;
                  
     protected: 
-
+        ClipVectorPtr m_viewClipVector;
     public:
 
         // Primary methods
@@ -427,7 +409,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                             bool                 gatherTileBreaklines, 
                                             const ClipVectorPtr& viewClipVector,
                                             size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
-        : ScalableMeshQuadTreeViewDependentMeshQuery(extent, 
+        : ScalableMeshQuadTreeViewDependentPointQuery(extent,
                                               rootToViewMatrix,
                                               viewportRotMatrix,                                                                 
                                               gatherTileBreaklines)
@@ -468,21 +450,15 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                             }
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentMeshQuery() {};
-       
-        virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                            list<POINT>& points);        
+               
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             HPMMemoryManagedVector<POINT>& points);        
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                            Bentley::ScalableMesh::ScalableMeshMesh* mesh);
+                                            BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
         virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                             vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
-        // Specific Query implementation
-        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                   size_t numSubNodes,
-                                   list<POINT>& resultPoints); 
+        // Specific Query implementation        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
@@ -490,11 +466,15 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   Bentley::ScalableMesh::ScalableMeshMesh* mesh);
+                                   BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
                                    vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
+        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                                   size_t numSubNodes,
+                                   ProducedNodeContainer<POINT, EXTENT>& foundNodes);
 
         virtual void        GetQueryNodeOrder(vector<size_t>&                           queryNodeOrder, 
                                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
@@ -502,15 +482,41 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                               size_t                                    numSubNodes) override; 
 
         virtual bool        IsCorrectForCurrentView(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                                                    const EXTENT& pi_visibleExtent,
-                                                    int           pi_NearestPredefinedCameraOri,
+                                                    const EXTENT& pi_visibleExtent,                                                    
                                                     double        pi_RootToViewMatrix[][4]) const;
 
         virtual bool        IsCorrectForCurrentViewSphere(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
-                                                          const EXTENT&                           i_visibleExtent,
-                                                          int                                     i_NearestPredefinedCameraOri,
+                                                          const EXTENT&                           i_visibleExtent,                                                          
                                                           double                                  i_RootToViewMatrix[][4]) const;
         
 };
 
-#include "ScalableMeshQuadTreeQueries.hpp"
+
+template<class POINT, class EXTENT> class ScalableMeshQuadTreeContextMeshQuery : public ScalableMeshQuadTreeViewDependentMeshQuery<POINT,EXTENT>
+{
+public:
+    ScalableMeshQuadTreeContextMeshQuery(const EXTENT& extent,
+                                         const double         rootToViewMatrix[][4],
+                                         const double         viewportRotMatrix[][3],
+                                         const ClipVectorPtr& viewClipVector)
+                                         :ScalableMeshQuadTreeViewDependentMeshQuery(extent, rootToViewMatrix, viewportRotMatrix, false, viewClipVector)
+        {
+        }
+
+    virtual             ~ScalableMeshQuadTreeContextMeshQuery() {};
+
+    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                              size_t numSubNodes,
+                              BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
+    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                              size_t numSubNodes,
+                              vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
+    virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                              size_t numSubNodes,
+                              ProducedNodeContainer<POINT, EXTENT>& foundNodes);
+};
+
+//#include "ScalableMeshQuadTreeQueries.hpp"

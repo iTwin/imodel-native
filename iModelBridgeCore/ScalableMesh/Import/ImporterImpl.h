@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:46:50 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -78,28 +78,28 @@ struct ImporterImpl
                                                         const Internal::Config&             config);
 
 
-    void                        Import                 (UInt                                sourceLayerID,
+    void                        Import                 (uint32_t                                sourceLayerID,
                                                         const DataTypeFamily&               sourceTypeFamily,
-                                                        UInt                                targetLayerID,
+                                                        uint32_t                                targetLayerID,
                                                         const DataTypeFamily&               targetTypeFamily,
                                                         const Internal::Config&             config);
 
-    void                        Import                 (UInt                                sourceLayerID,
+    void                        Import                 (uint32_t                                sourceLayerID,
                                                         const DataType&                     sourceType,
-                                                        UInt                                targetLayerID,
+                                                        uint32_t                                targetLayerID,
                                                         const DataTypeFamily&               targetTypeFamily,
                                                         const Internal::Config&             config);
 
-    void                        Import                 (UInt                                sourceLayerID,   
+    void                        Import                 (uint32_t                                sourceLayerID,   
                                                         const DataType&                     sourceType,
-                                                        UInt                                targetLayerID,   
+                                                        uint32_t                                targetLayerID,   
                                                         const DataType&                     targetType,
                                                         const Internal::Config&             config);
 
 
-    FilterCreatorCPtr           GetFilterCreatorFor    (UInt                                sourceLayerID,
+    FilterCreatorCPtr           GetFilterCreatorFor    (uint32_t                                sourceLayerID,
                                                         const DataType&                     sourceType,
-                                                        UInt                                targetLayerID,
+                                                        uint32_t                                targetLayerID,
                                                         const DataType&                     targetType,
                                                         const Internal::Config&             config);
 

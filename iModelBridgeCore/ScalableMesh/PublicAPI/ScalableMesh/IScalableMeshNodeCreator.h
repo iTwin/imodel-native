@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:30:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,21 +35,21 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
         /*__PUBLISH_SECTION_START__*/
 
     public:
-        BENTLEYSTM_EXPORT virtual                 ~IScalableMeshNodeCreator();
+        BENTLEY_SM_EXPORT virtual                 ~IScalableMeshNodeCreator();
 
-        BENTLEYSTM_EXPORT static IScalableMeshNodeCreatorPtr GetFor(const WChar*              filePath,
+        BENTLEY_SM_EXPORT static IScalableMeshNodeCreatorPtr GetFor(const WChar*              filePath,
                                                                 StatusInt&                status);
 
-        BENTLEYSTM_EXPORT static IScalableMeshNodeCreatorPtr GetFor(const IScalableMeshPtr&     scmPtr,
+        BENTLEY_SM_EXPORT static IScalableMeshNodeCreatorPtr GetFor(const IScalableMeshPtr&     scmPtr,
                                                                 StatusInt&                  status);
 
-        BENTLEYSTM_EXPORT IScalableMeshNodeEditPtr AddNode(const IScalableMeshNodePtr& parentNode,
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr AddNode(const IScalableMeshNodePtr& parentNode,
                                                        DRange3d& extent,
                                                             StatusInt&                  status);
 
-        BENTLEYSTM_EXPORT IScalableMeshNodeEditPtr AddNode(StatusInt&                  status);
+        BENTLEY_SM_EXPORT IScalableMeshNodeEditPtr AddNode(StatusInt&                  status);
 
-        BENTLEYSTM_EXPORT void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
+        BENTLEY_SM_EXPORT void NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
                                                                           StatusInt&                  status);
 
 

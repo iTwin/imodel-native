@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:59:53 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -35,13 +35,13 @@ struct IScalableMeshClipInfo : public RefCountedBase
 
     public : 
 
-        BENTLEYSTM_EXPORT DPoint3d* GetClipPoints();
+        BENTLEY_SM_EXPORT DPoint3d* GetClipPoints();
 
-        BENTLEYSTM_EXPORT size_t GetNbClipPoints() const;
+        BENTLEY_SM_EXPORT size_t GetNbClipPoints() const;
 
-        BENTLEYSTM_EXPORT bool IsClipMask() const;
+        BENTLEY_SM_EXPORT bool IsClipMask() const;
             
-        BENTLEYSTM_EXPORT static IScalableMeshClipInfoPtr Create(DPoint3d* clipPointsP, size_t numberOfPoints, bool isClipMask);
+        BENTLEY_SM_EXPORT static IScalableMeshClipInfoPtr Create(DPoint3d* clipPointsP, size_t numberOfPoints, bool isClipMask);
     };
 
 struct IScalableMeshClipContainer;
@@ -66,13 +66,13 @@ struct IScalableMeshClipContainer : public RefCountedBase
 
     public : 
             
-        BENTLEYSTM_EXPORT int AddClip(IScalableMeshClipInfoPtr& clipInfo);
+        BENTLEY_SM_EXPORT int AddClip(IScalableMeshClipInfoPtr& clipInfo);
         
-        BENTLEYSTM_EXPORT size_t GetNbClips() const;
+        BENTLEY_SM_EXPORT size_t GetNbClips() const;
 
-        BENTLEYSTM_EXPORT int GetClip(IScalableMeshClipInfoPtr& clipInfo, size_t clipInd) const;
+        BENTLEY_SM_EXPORT int GetClip(IScalableMeshClipInfoPtr& clipInfo, size_t clipInd) const;
 
-        BENTLEYSTM_EXPORT int RemoveClip(size_t toRemoveClipInd);
+        BENTLEY_SM_EXPORT int RemoveClip(size_t toRemoveClipInd);
 
-        BENTLEYSTM_EXPORT static IScalableMeshClipContainerPtr Create();
+        BENTLEY_SM_EXPORT static IScalableMeshClipContainerPtr Create();
     };

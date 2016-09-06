@@ -12,21 +12,24 @@
 
 /*__PUBLISH_SECTION_START__*/       
 #pragma once
+#ifndef BENTLEY_NAMESPACE_NAME
+#define BENTLEY_NAMESPACE_NAME Bentley
+#endif
 
 #define BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh {
 #define END_BENTLEY_SCALABLEMESH_NAMESPACE     }}
-#define USING_NAMESPACE_BENTLEY_SCALABLEMESH    using namespace Bentley::ScalableMesh;
+#define USING_NAMESPACE_BENTLEY_SCALABLEMESH    using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh;
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 #define BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE namespace Import {
 #define END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE  END_BENTLEY_SCALABLEMESH_NAMESPACE}
-#define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace Bentley::ScalableMesh::Import;
+#define USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
 #ifdef __BENTLEYSTM_BUILD__ 
-    #define BENTLEYSTM_EXPORT __declspec(dllexport)
+    #define BENTLEY_SM_EXPORT __declspec(dllexport)
 #else
-    #define BENTLEYSTM_EXPORT __declspec(dllimport)
+    #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
     
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -40,21 +43,16 @@ enum ScalableMeshCompressionType
 
 enum ScalableMeshFilterType
     {
-    SCM_FILTER_DUMB = 0,
-    SCM_FILTER_TILE,
-    SCM_FILTER_TIN,
-    SCM_FILTER_PROGRESSIVE_DUMB,
-    SCM_FILTER_PROGRESSIVE_TILE,
-    SCM_FILTER_PROGRESSIVE_TIN,
-    SCM_FILTER_DUMB_MESH = 6,    
-    SCM_FILTER_GARLAND_SIMPLIFIER = 7, 
+    SCM_FILTER_DUMB = 0,    
+    SCM_FILTER_PROGRESSIVE_DUMB = 1,    
+    SCM_FILTER_DUMB_MESH = 2,        
+    SCM_FILTER_CGAL_SIMPLIFIER = 3,
     SCM_FILTER_QTY,
     };
 
 enum ScalableMeshMesherType
     {
-    SCM_MESHER_2D_DELAUNAY = 0, //Suitable only for 2.5D data   
-    SCM_MESHER_LMS_MARCHING_CUBE = 1,
+    SCM_MESHER_2D_DELAUNAY = 0, //Suitable only for 2.5D data       
     SCM_MESHER_3D_DELAUNAY = 2,
     SCM_MESHER_TETGEN = 3,
     SCM_MESHER_QTY,
@@ -68,23 +66,16 @@ enum ScalableMeshSaveType
     SCM_SAVE_QTY,
     };
 
-enum DTMQueryType
+//NEEDS_WORK_MST : Must be renamed SCMQueryType
+enum ScalableMeshQueryType
     {
-    DTM_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
-    DTM_QUERY_VIEW_DEPENDENT,                                           
-    DTM_QUERY_FIX_RESOLUTION_VIEW,  //Return query which can be used to obtain view of a particular ScalableMesh's resolution. 
-    DTM_QUERY_EXTENTS_BY_PARTS, // For tiled triangulation
-    DTM_QUERY_ALL_POINTS_IN_EXTENT,
-    DTM_QUERY_ALL_LINEARS_IN_EXTENT,
-    DTM_QUERY_QTY
-    };
-
-//MST : Maybe query and data type should be combined eventually
-enum DTMQueryDataType
-    {
-    DTM_QUERY_DATA_POINT = 0, 
-    DTM_QUERY_DATA_LINEAR, 
-    DTM_QUERY_DATA_QTY
+    SCM_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
+    SCM_QUERY_VIEW_DEPENDENT,                                           
+    SCM_QUERY_FIX_RESOLUTION_VIEW,  //Return query which can be used to obtain view of a particular ScalableMesh's resolution. 
+    SCM_QUERY_EXTENTS_BY_PARTS, // For tiled triangulation
+    SCM_QUERY_ALL_POINTS_IN_EXTENT,
+    SCM_QUERY_ALL_LINEARS_IN_EXTENT,
+    SCM_QUERY_QTY
     };
 
 enum MeshQueryType
@@ -92,6 +83,7 @@ enum MeshQueryType
     MESH_QUERY_FULL_RESOLUTION = 0,      //Query the highest resolution data.
     MESH_QUERY_VIEW_DEPENDENT,
     MESH_QUERY_PLANE_INTERSECT,
+    MESH_QUERY_CONTEXT,
     MESH_QUERY_QTY
     };
 
@@ -103,6 +95,9 @@ enum DTMSourceDataType
     DTM_SOURCE_DATA_BREAKLINE,
     DTM_SOURCE_DATA_CLIP,
     DTM_SOURCE_DATA_MASK,    
+    DTM_SOURCE_DATA_HARD_MASK,
+    DTM_SOURCE_DATA_IMAGE,
+    DTM_SOURCE_DATA_MESH,
     DTM_SOURCE_DATA_QTY
     };
 
@@ -136,20 +131,20 @@ enum DTMStatus
     DTMSTATUS_UNSUPPORTED_VERSION,
     DTMSTATUS_QTY                
     };
+
+enum SMStatus
+    {
+    S_SUCCESS = 0,
+    S_ERROR,
+    S_ERROR_COULD_NOT_OPEN,
+    S_ERROR_NOT_SUPPORTED,
+    S_ERROR_NOT_FOUND,
+    S_ERROR_DOES_NOT_FIT_MATHEMATICAL_DOMAIN,
+    S_QTY,
+    };
     
 #define MEAN_SCREEN_PIXELS_PER_POINT 100
 
-
-struct IDTMVolume_ abstract
-{
-protected:
-virtual DTMStatusInt _ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector) = 0;
-virtual DTMStatusInt _ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector) = 0;
-
-public:
-BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(double& cut, double& fill, double& area, PolyfaceHeader& intersectingMeshSurface, DRange3d& meshRange, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-BENTLEYSTM_EXPORT DTMStatusInt ComputeVolumeCutAndFill(PolyfaceHeaderPtr& terrainMesh, double& cut, double& fill, PolyfaceHeader& mesh, bool is2d, bvector<PolyfaceHeaderPtr>& volumeMeshVector);
-};
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 /*__PUBLISH_SECTION_END__*/

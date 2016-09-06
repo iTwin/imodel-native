@@ -2,12 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/ElemSourceRef.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\Import\SourceReference.h>
 #include <ScalableMesh\Import\Plugin\SourceReferenceV0.h>
 #include <ScalableMesh\ScalableMeshLib.h>
@@ -34,14 +34,14 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DGNElemSourceRefBase::Impl
     {
-    UInt                            m_elemType;
-    UInt                            m_elemHandlerID;
+    uint32_t                            m_elemType;
+    uint32_t                            m_elemHandlerID;
     ElementRefP                      m_elemRef;
     DGNModelRefHolder                  m_modelRef;
     auto_ptr<LocalFileSourceRef>    m_localFileRefP;
 
-    explicit                        Impl                           (UInt                        elemType,
-                                                                    UInt                        elemHandlerID,
+    explicit                        Impl                           (uint32_t                        elemType,
+                                                                    uint32_t                        elemHandlerID,
                                                                     ElementRefP                  elemRef,
                                                                     const DGNModelRefHolder&    modelRef,
                                                                     LocalFileSourceRef*         localFileRefP)
@@ -68,8 +68,8 @@ struct DGNElemSourceRefBase::Impl
 * @description
 * @bsimethod                                                 Raymond.Gauthier    07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SourceRef DGNElemSourceRefBase::CreateFromImpl (UInt                                elemType,
-                                                UInt                                elemHandlerID,
+SourceRef DGNElemSourceRefBase::CreateFromImpl (uint32_t                                elemType,
+                                                uint32_t                                elemHandlerID,
                                                 ElementRefP                          elemRef,
                                                 const DGNModelRefHolder&            modelRef,
                                                 LocalFileSourceRef*                 localFileRefP)
@@ -119,7 +119,7 @@ DGNElemSourceRefBase* DGNElemSourceRefBase::_Clone () const
 * @description
 * @bsimethod                                                 Raymond.Gauthier    07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElemSourceRefBase::_GetElementType () const
+uint32_t DGNElemSourceRefBase::_GetElementType () const
     {
     return m_implP->m_elemType;
     }
@@ -128,7 +128,7 @@ UInt DGNElemSourceRefBase::_GetElementType () const
 * @description
 * @bsimethod                                                 Raymond.Gauthier    07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElemSourceRefBase::_GetElementHandlerID () const
+uint32_t DGNElemSourceRefBase::_GetElementHandlerID () const
     {
     return m_implP->m_elemHandlerID;
     }

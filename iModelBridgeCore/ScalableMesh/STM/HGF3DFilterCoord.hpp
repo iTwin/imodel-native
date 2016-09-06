@@ -6,7 +6,7 @@
 //:>       $Date: 2010/05/18 17:25:48 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Inline methods for class HGF3DCoord
@@ -31,20 +31,6 @@ template<class DataType> inline HGF3DCoord<DataType>::HGF3DCoord(DataType pi_X,
 : m_XValue(pi_X), m_YValue(pi_Y), m_ZValue(pi_Z)
 {
 }
-
-#if (0)
-//-----------------------------------------------------------------------------
-// Full Constructor from HGF2DCoord
-//-----------------------------------------------------------------------------
-template<class DataType> inline HGF3DCoord<DataType>::HGF3DCoord(const HGF2DCoord<DataType> pi_2DPoint,
-                                                                 DataType pi_Elevation)
-: m_XValue(pi_2DPoint.GetX()), m_YValue(pi_2DPoint.GetY()), m_ZValue(pi_Elevation)
-{
-}
-
-#endif
-
-
 
 //-----------------------------------------------------------------------------
 // Destructor

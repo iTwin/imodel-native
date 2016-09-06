@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -100,9 +100,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 template <typename T>
 class NonConstPacketProxyBase : public ConstPacketProxyBase<T>
-    {
-    static_assert(!is_const<T>::value, "T should not be const!");
-
+    {    
     template <typename T>
     friend class                        ClassPacketProxy;
     template <typename T>

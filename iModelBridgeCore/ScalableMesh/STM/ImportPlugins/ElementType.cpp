@@ -2,11 +2,12 @@
 |
 |     $Source: STM/ImportPlugins/ElementType.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
+#include "../ImagePPHeaders.h"
 #include "ElementType.h"
 #include <DgnPlatform\ElementGeometry.h>
 #include <DgnPlatform\MeshHeaderHandler.h>
@@ -61,7 +62,7 @@ struct LineElemUtils
     static bool IsSinglePoint(const Line_3d& line);
     static bool IsSinglePoint(MSElementDescrCP elmDesc);
 
-    static UInt CountPoints (MSElementDescrCP elmDesc);
+    static uint32_t CountPoints (MSElementDescrCP elmDesc);
 
     static DPoint3d* Copy (const Line_2d& line, DPoint3d* outIt);
     static DPoint3d* Copy (const Line_3d& line, DPoint3d* outIt);
@@ -74,7 +75,7 @@ struct LineElemUtils
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct LineStringElemUtils
     {
-    static UInt CountPoints (MSElementDescrCP elmDesc);
+    static uint32_t CountPoints (MSElementDescrCP elmDesc);
 
     static DPoint3d* Copy (MSElementDescrCP elmDescP, DPoint3d* outIt);
     static DPoint3d* Copy (const Line_String_2d& lineString, DPoint3d* outIt);
@@ -118,7 +119,7 @@ inline bool LineElemUtils::IsSinglePoint(MSElementDescrCP elmDescP)
 * @description
 * @bsimethod                                                Raymond.Gauthier   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt LineElemUtils::CountPoints (MSElementDescrCP elmDesc)
+inline uint32_t LineElemUtils::CountPoints (MSElementDescrCP elmDesc)
     {
     return IsSinglePoint(elmDesc) ? 1 : 2;
     }
@@ -165,7 +166,7 @@ DPoint3d* LineElemUtils::Copy (const Line_2d& line, DPoint3d* outIt)
 * @description
 * @bsimethod                                                Raymond.Gauthier   02/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline UInt LineStringElemUtils::CountPoints (MSElementDescrCP elmDescP)
+inline uint32_t LineStringElemUtils::CountPoints (MSElementDescrCP elmDescP)
     {
     return elmDescP->el.line_string_3d.numverts;
     }
@@ -223,7 +224,7 @@ class UnsupportedElemPtExtractor : public ElementPointExtractor
 class UnsupportedElemLinExtractor : public ElementLinearExtractor
     {
     virtual void ComputeStats(MSElementDescrCP elmDesc, ElementLinearStats& stats) const override { /* Do nothing */ }
-    virtual StatusInt Scan(MSElementDescrCP elmDesc, IDTMFeatureArray<DPoint3d>& featureArray) const override { return SUCCESS; }
+    virtual StatusInt Scan(MSElementDescrCP elmDesc, IDTMFeatureArray<DPoint3d>& featureArray, DTMFeatureType featureType) const override { return SUCCESS; }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -320,7 +321,7 @@ class LineElemLinExtractor : public ElementLinearExtractor
 +---------------+---------------+---------------+---------------+---------------+------*/
 class LineElem3dLinExtractor : public LineElemLinExtractor
     {
-    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray) const override
+    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray, DTMFeatureType featureType) const override
         {
         if(LineElemUtils::IsSinglePoint(elmDescP->el.line_3d))
             return SUCCESS;
@@ -334,7 +335,7 @@ class LineElem3dLinExtractor : public LineElemLinExtractor
             return ERROR;
 
         const DPoint3d points[] = {elmDescP->el.line_3d.start, elmDescP->el.line_3d.end};
-        featureArray.Append((unsigned int)DTMFeatureType::Breakline, points, points + 2);
+        featureArray.Append((unsigned int)featureType, points, points + 2);
 
         return SUCCESS;
         }
@@ -346,7 +347,7 @@ class LineElem3dLinExtractor : public LineElemLinExtractor
 +---------------+---------------+---------------+---------------+---------------+------*/
 class LineElem2dLinExtractor : public LineElemLinExtractor
     {
-    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray) const override
+    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray, DTMFeatureType featureType) const override
         {
         if(LineElemUtils::IsSinglePoint(elmDescP->el.line_2d))
             return SUCCESS;
@@ -361,7 +362,7 @@ class LineElem2dLinExtractor : public LineElemLinExtractor
 
         const DPoint3d points[] = {Transform2DTo3DPointFn::Do(elmDescP->el.line_2d.start),
                                    Transform2DTo3DPointFn::Do(elmDescP->el.line_2d.end)};
-        featureArray.Append((unsigned int)DTMFeatureType::Breakline, points, points + 2);
+        featureArray.Append((unsigned int)featureType, points, points + 2);
 
         return SUCCESS;
         }
@@ -375,7 +376,7 @@ class LineStringElemLinExtractor : public ElementLinearExtractor
     {
     virtual void ComputeStats(MSElementDescrCP elmDescP, ElementLinearStats& stats) const override
         {
-        UInt nbPts = LineStringElemUtils::CountPoints(elmDescP);
+        uint32_t nbPts = LineStringElemUtils::CountPoints(elmDescP);
 
         stats.SetMaxPointQty(nbPts);
         stats.m_pointCount += nbPts;
@@ -389,7 +390,7 @@ class LineStringElemLinExtractor : public ElementLinearExtractor
 +---------------+---------------+---------------+---------------+---------------+------*/
 class LineStringElem3dLinExtractor : public LineStringElemLinExtractor
     {
-    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray) const override
+    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray, DTMFeatureType featureType) const override
         {
         // Make sure that we will not exceed the allocated packet capacity for headers.
         if(featureArray.GetSize() >= featureArray.GetCapacity())
@@ -400,9 +401,9 @@ class LineStringElem3dLinExtractor : public LineStringElemLinExtractor
         if(featureArray.GetTotalPointQty() + nbPts > featureArray.GetTotalPointCapacity())
             return ERROR;
 
-        featureArray.Append((unsigned int)DTMFeatureType::Breakline, elmDescP->el.line_string_3d.vertice,
+        featureArray.Append((unsigned int)featureType, elmDescP->el.line_string_3d.vertice,
                                              elmDescP->el.line_string_3d.vertice + elmDescP->el.line_string_3d.numverts);
-
+        
         return SUCCESS;
         }
     };
@@ -413,7 +414,7 @@ class LineStringElem3dLinExtractor : public LineStringElemLinExtractor
 +---------------+---------------+---------------+---------------+---------------+------*/
 class LineStringElem2dLinExtractor : public LineStringElemLinExtractor
     {
-    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray) const override
+    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray, DTMFeatureType featureType) const override
         {
         // Make sure that we will not exceed the allocated packet capacity for headers.
         if(featureArray.GetSize() >= featureArray.GetCapacity())
@@ -427,7 +428,7 @@ class LineStringElem2dLinExtractor : public LineStringElemLinExtractor
         vector<DPoint3d> points(LineStringElemUtils::CountPoints(elmDescP));
         LineStringElemUtils::Copy(elmDescP->el.line_string_2d, &points[0]);
 
-        featureArray.Append((unsigned int)DTMFeatureType::Breakline, points.begin(), points.end());
+        featureArray.Append((unsigned int)featureType, points.begin(), points.end());
 
         return SUCCESS;
         }
@@ -440,9 +441,9 @@ class LineStringElem2dLinExtractor : public LineStringElemLinExtractor
 +---------------+---------------+---------------+---------------+---------------+------*/
 class ComplexElemLinExtractor : public ElementLinearExtractor
     {
-    static UInt CountPoints (MSElementDescrCP elmDescP)
+    static uint32_t CountPoints (MSElementDescrCP elmDescP)
         {
-        UInt pointCount = 0;
+        uint32_t pointCount = 0;
 
         for(MSElementDescrCP childCP = elmDescP->h.firstElem; NULL != childCP; childCP = childCP->h.next)
             {
@@ -475,14 +476,14 @@ class ComplexElemLinExtractor : public ElementLinearExtractor
         if(!IsSupported(elmDescP))
             return;
 
-        UInt nbPts = CountPoints(elmDescP);
+        uint32_t nbPts = CountPoints(elmDescP);
 
         stats.SetMaxPointQty(nbPts);
         stats.m_pointCount += nbPts;
         ++stats.m_featureCount;
         }
 
-    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray) const override
+    virtual StatusInt Scan(MSElementDescrCP elmDescP, IDTMFeatureArray<DPoint3d>& featureArray, DTMFeatureType featureType) const override
         {
         // Verify if the complex shape contain only linear elements
         if(!IsSupported(elmDescP))
@@ -510,7 +511,7 @@ class ComplexElemLinExtractor : public ElementLinearExtractor
                 ptOutIt = LineStringElemUtils::Copy(childCP, ptOutIt);
             }
 
-        featureArray.Append((unsigned int)DTMFeatureType::Breakline, points.begin(), points.end());
+        featureArray.Append((unsigned int)featureType, points.begin(), points.end());
 
         return SUCCESS;
         }

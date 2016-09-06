@@ -6,14 +6,14 @@
 |       $Date: 2011/10/20 18:47:32 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include "GCSWktParsing.h"
 #include "WktUtils.h"
-
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/GeoCoords/Transformation.h>
 #include <ScalableMesh/GeoCoords/LocalTransform.h>

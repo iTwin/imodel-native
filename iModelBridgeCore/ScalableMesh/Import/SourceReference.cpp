@@ -6,11 +6,11 @@
 |       $Date: 2011/10/21 17:32:16 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Import/SourceReference.h>
 #include <ScalableMesh/Import/SourceReferenceVisitor.h>
 
@@ -70,11 +70,7 @@ typename SourceRefMixinBase<BaseT>::ClassID SourceRefMixinBase<BaseT>::_GetClass
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename BaseT>
-void SourceRefMixinBase<BaseT>::_Accept (ISourceRefVisitor& visitor) const
-    {
-    visitor._Visit(static_cast<const BaseT&>(*this));
-    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -143,10 +139,7 @@ SourceRef& SourceRef::operator= (const SourceRef& rhs)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SourceRef::Accept (ISourceRefVisitor& pi_rVisitor) const
-    {
-    m_basePtr->_Accept(pi_rVisitor);
-    }
+
 
 void SourceRef::SetDtmSource(const IDTMSourcePtr&        dtmSourcePtr)
     {
@@ -812,7 +805,7 @@ DGNElementSourceRef::~DGNElementSourceRef()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElementSourceRef::GetElementType () const
+uint32_t DGNElementSourceRef::GetElementType () const
     {
     return m_baseP->_GetElementType();
     }
@@ -821,7 +814,7 @@ UInt DGNElementSourceRef::GetElementType () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt DGNElementSourceRef::GetElementHandlerID () const
+uint32_t DGNElementSourceRef::GetElementHandlerID () const
     {
     return m_baseP->_GetElementHandlerID();
     }

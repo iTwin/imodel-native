@@ -6,19 +6,19 @@
 |       $Date: 2011/09/01 14:07:04 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include "ScalableMeshClipMaskFilterFactory.h"
 #include <ScalableMesh/Import/Plugin/FilterV0.h>
-
+#include "../IDTMFeatureArray.h"
 #include <ScalableMesh/Type/IScalableMeshPoint.h>
 #include <ScalableMesh/Type/IScalableMeshLinear.h>
-
+#include "..\Stores\SMStoreUtils.h"
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
-using namespace IDTMFile;
+using namespace ISMStore;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -27,14 +27,14 @@ template <typename PointT>
 struct IsPointClippedPred
     {
     const HVEClipShape& m_rShape;
-    mutable HGF2DLocation& m_rTmpPt; // NTERAY: this is bad if a threaded remove_copy_if algorithm is used
+    HGF2DLocation& m_rTmpPt; // NTERAY: this is bad if a threaded remove_copy_if algorithm is used
     explicit IsPointClippedPred (const HVEClipShape& pi_rShape, 
                             HGF2DLocation& po_rTmpPt) : m_rShape(pi_rShape), m_rTmpPt(po_rTmpPt) {}
 
     bool operator () (const PointT& rhs) const
         {
-        m_rTmpPt.SetX(PointTrait<PointT>::GetX(rhs));
-        m_rTmpPt.SetY(PointTrait<PointT>::GetY(rhs));
+        m_rTmpPt.SetX(rhs.x);
+        m_rTmpPt.SetY(rhs.y);
         return m_rShape.IsPointClipped(m_rTmpPt);
         }
     };
@@ -329,11 +329,11 @@ const FilterCreatorBase* ClipMaskFilterFactory::_FindCreatorFor    (const DataTy
     {
     if (pi_rSourceType == PointType3d64fCreator().Create())
         {
-        return new PointClipMaskFilterCreator<Point3d64f>(pi_rSourceType, m_pImpl->m_pShape);
+        return new PointClipMaskFilterCreator<DPoint3d>(pi_rSourceType, m_pImpl->m_pShape);
         }
     else if (pi_rSourceType == LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create())
         {
-        return new LinearFeatureClipMaskFilterCreator<Point3d64f>(pi_rSourceType, m_pImpl->m_pShape);
+        return new LinearFeatureClipMaskFilterCreator<DPoint3d>(pi_rSourceType, m_pImpl->m_pShape);
         }
     else
         {

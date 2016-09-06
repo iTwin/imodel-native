@@ -6,11 +6,12 @@
 |       $Date: 2011/08/10 15:10:23 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
+#include "../Stores/SMStoreUtils.h"
 #include <ScalableMesh/Type/IScalableMeshMesh.h>
 #include <ScalableMesh/Import/Plugin/DataTypeRegistry.h>
 
@@ -55,6 +56,23 @@ MeshTypeFamilyCreator::MeshTypeFamilyCreator ()
     }
 
 
+namespace {
+const WChar MESH_PTS_NAME[] = L"MeshPoints";
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshHeaderType(MESH_PTS_NAME, sizeof(DPoint3d));
+
+const WChar MESH_INDEX_NAME[] = L"MeshIndex";
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshPointType(MESH_INDEX_NAME, sizeof(int32_t));
+
+const WChar MESH_METADATA_NAME[] = L"MeshMetadata";
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshMetadataType(MESH_METADATA_NAME, sizeof(uint8_t));
+
+const WChar MESH_TEX_NAME[] = L"MeshTex";
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshTexType(MESH_TEX_NAME, sizeof(uint8_t));
+
+const WChar MESH_UV_NAME[] = L"MeshUv";
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshUvType(MESH_UV_NAME, sizeof(DPoint2d));
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
@@ -74,7 +92,11 @@ const DataType& MeshType3d64fCreator::_Create () const
             {
             using namespace MeshDimensionDef;
 
-            AddOrg(DimOrg(DimDef(DimType::GetUnknown(), ROLE_UNKNOWN)));
+            AddOrg(DimOrg(DimDef(DimType::GetFor(MESH_PTS_NAME), ROLE_CUSTOM)));
+            AddOrg(DimOrg(DimDef(DimType::GetFor(MESH_INDEX_NAME), ROLE_CUSTOM)));
+            AddOrg(DimOrg(DimDef(DimType::GetFor(MESH_METADATA_NAME), ROLE_CUSTOM)));
+            AddOrg(DimOrg(DimDef(DimType::GetFor(MESH_TEX_NAME), ROLE_CUSTOM)));
+            AddOrg(DimOrg(DimDef(DimType::GetFor(MESH_UV_NAME), ROLE_CUSTOM)));
             }
         };
 
@@ -92,10 +114,10 @@ MeshType3d64fCreator::MeshType3d64fCreator ()
 
 namespace {
 const WChar MESH_AS_LINEAR_HEADER_TYPE_NAME[] = L"MeshAsLinearHeader";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearHeaderType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(IDTMFile::FeatureHeader));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMesAsLinearPointType(MESH_AS_LINEAR_HEADER_TYPE_NAME, sizeof(ISMStore::FeatureHeader));
 
 const WChar MESH_AS_LINEAR_POINT_TYPE_NAME[] = L"MeshAsLinearPoint";
-Bentley::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(IDTMFile::Point3d64f));
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::DimensionType::Register s_RegisterMeshAsLinearPointIdxType(MESH_AS_LINEAR_POINT_TYPE_NAME, sizeof(DPoint3d));
 
 }
 

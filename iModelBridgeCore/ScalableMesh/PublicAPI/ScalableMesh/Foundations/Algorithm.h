@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:40 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,117 +21,6 @@
 BEGIN_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE
 
 
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Integral linear numbers generator. 
-*               
-*               e.g: std::generate(range.begin(), range.end(), 
-*                                  LinearIntegerGenerator<int>(1000, -12));
-*
-* @bsiclass                                                  Raymond.Gauthier   12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, const int INCREMENT = 1>
-struct LinearIntegerGenerator
-    {
-private:
-    T                               m_current;
-    T                               m_increment;
-
-public:
-    explicit                        LinearIntegerGenerator                         (T           start,
-                                                                                    T           increment) 
-        :   m_current(start - increment),
-            m_increment(increment) {}
-    T                               operator()                                     ()                          
-        { return m_current += m_increment; }
-
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Integral linear numbers generator. Use only when increment is known
-*               at compile time.
-*               
-*               e.g: std::generate(range.begin(), range.end(), 
-*                                  StaticLinearIntegerGenerator<int, -12>(1000));
-*
-* NOTE: Specialized version for -1/1 increments
-*
-* @bsiclass                                                  Raymond.Gauthier   12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, const int INCREMENT = 1>
-struct StaticLinearIntegerGenerator
-    {
-private:
-    T                               m_current;
-
-public:
-    explicit                        StaticLinearIntegerGenerator                   (T           start) 
-        :   m_current(start - INCREMENT) {}
-    T                               operator()                                     ()                          
-        { return m_current += INCREMENT; }
-
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Random integral number generator which compensate for standard random 
-*               number generator limitations in precision (RAND_MAX).
-*               
-*               This generator expect that user has appropriately initialized his standard
-*               random seed (via srand).
-*
-*               e.g: std::generate(range.begin(), range.end(), 
-*                                  RandomIntegerGenerator<int>(-1000, 100000));
-*
-* TDORAY: See if a replacement exist in C++0x standard.
-*
-* @bsiclass                                                  Raymond.Gauthier   12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T>
-struct RandomIntegerGenerator
-    {
-private:
-    static_assert(is_integral<T>::value, "") // Only works with integral types
-
-    T                               m_min;
-    T                               m_range;
-
-public:
-    explicit                        RandomIntegerGenerator                     (const T&            min,
-                                                                                const T&            max);
-
-    T                               operator()                                 () const;
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @description  Optimized random integral number generator which compensate for standard
-*               random number generator limitations in precision (RAND_MAX). Use only
-*               when range is known at compile time.
-*               
-*               This generator expect that user has appropriately initialized his standard
-*               random seed (via srand).
-*
-*               e.g: std::generate(range.begin(), range.end(), 
-*                                  StaticRandomIntegerGenerator<int, -1000, 100000>());
-*
-* TDORAY: See if a replacement exist in C++0x standard.
-*
-* @bsiclass                                                  Raymond.Gauthier   12/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-template <typename T, T T_MIN, T T_MAX>
-struct StaticRandomIntegerGenerator
-{
-private:
-
-    static_assert(T_MAX > T_MIN, "") // Validate that T_MAX is greater than T_MIN
-    static_assert(is_integral<T>::value, "") // Only works with integral types
-
-    static const T                  RANGE = T_MAX - T_MIN + 1;
-
-public:
-    T                               operator()                                 () const;
-};
 
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,19 +2,18 @@
 |
 |     $Source: STM/ImportPlugins/STMSource.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-        
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh\IScalableMeshPolicy.h>
 #include <ScalableMesh\GeoCoords\DGNModelGeoref.h>
 #include <ScalableMesh\GeoCoords\GCS.h>
 #include <ScalableMesh\GeoCoords\Reprojection.h>
 #include <ScalableMesh\Import\ContentConfig.h>
 #include <ScalableMesh\Import\Config\Content\GCS.h>
-#include <ScalableMesh\Import\Config\Content\Layer.h>
 #include <ScalableMesh\Import\Plugin\InputExtractorV0.h>
 #include <ScalableMesh\Import\Plugin\SourceV0.h>
 #include <ScalableMesh\Plugin\IScalableMeshSTMSource.h>
@@ -69,11 +68,13 @@ class STMElementSourceDecorator : public SourceBase
              layerIt != layersEnd;
              ++layerIt)
             {
-            LayerConfig layerConfig(DecorateLayer(descriptor.GetLayerIDFor(layerIt), *layerIt, m_elHandle));
-            contentConfig.push_back(layerConfig);
+            //LayerConfig layerConfig(DecorateLayer(descriptor.GetLayerIDFor(layerIt), *layerIt, m_elHandle));
+            //contentConfig.push_back(layerConfig);
+             GCSConfig gcsConfig(AdaptGCS((*layerIt)->GetGCS(), m_elHandle));
+             contentConfig.SetGCSConfig(gcsConfig);
             }
 
-        if (ContentDescriptor::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
+        if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
             throw CustomError(L"Error configuring descriptor!");
 
         return descriptor;
@@ -87,8 +88,8 @@ class STMElementSourceDecorator : public SourceBase
 
 
 
-    static LayerConfig              DecorateLayer                          (UInt                        layerID,
-                                                                            const LayerDescriptor&      descriptor,
+/*    static LayerConfig              DecorateLayer                          (uint32_t                        layerID,
+                                                                            const ILayerDescriptor&      descriptor,
                                                                             const ElementHandle&           elHandle)
         {
         GCSConfig gcsConfig(AdaptGCS(descriptor.GetGCS(), elHandle));
@@ -98,7 +99,7 @@ class STMElementSourceDecorator : public SourceBase
 
 
         return layerConfig;
-        }
+        }*/
 
     static GCSConfig                AdaptGCS                               (const GCS&                  storageGCS,
                                                                             const ElementHandle&           elHandle)
@@ -113,14 +114,14 @@ class STMElementSourceDecorator : public SourceBase
                                                GetModelLocalToGlobalTransfoModel(elHandle.GetModelRef(), stmInModelGCS.GetUnit(), stmInModelGCS.GetUnit())));
 
 
-            if (GCS::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
+            if (SMStatus::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
                 throw CustomError(L"Error appending tranform");
             }
         else
             {
             const TransfoModel localToGlobal(GetModelLocalToGlobalTransfoModel(elHandle.GetModelRef(), storageGCS.GetUnit(), stmInModelGCS.GetUnit()));
 
-            if (GCS::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
+            if (SMStatus::S_SUCCESS != stmInModelGCS.AppendLocalTransform(LocalTransform::CreateFromToGlobal(localToGlobal)))
                 throw CustomError(L"Error appending tranform");
             }
 
@@ -136,12 +137,12 @@ class STMElementSourceDecorator : public SourceBase
 +---------------+---------------+---------------+---------------+---------------+------*/
 class STMElementSourceCreator : public DGNElementSourceCreatorBase
     {
-    virtual UInt                    _GetElementType                    () const override
+    virtual uint32_t                    _GetElementType                    () const override
         {
         return EXTENDED_ELM;
         }
 
-    virtual UInt                    _GetElementHandlerID               () const override
+    virtual uint32_t                    _GetElementHandlerID               () const override
         {        
         return MrDTMDefaultElementHandler::GetElemHandlerId().GetId();
         }
@@ -162,7 +163,7 @@ class STMElementSourceCreator : public DGNElementSourceCreatorBase
     virtual SourceBase*             _Create                                (const DGNElementSourceRef&  sourceRef,
                                                                             Log&                        log) const override
         {
-        using namespace Bentley::ScalableMesh::Plugin::V0;
+        using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin::V0;
         SourceBase* decoratedP = CreateSTMSource(sourceRef.GetLocalFileP()->GetPathCStr(), log);
         if (0 == decoratedP)
             return 0;

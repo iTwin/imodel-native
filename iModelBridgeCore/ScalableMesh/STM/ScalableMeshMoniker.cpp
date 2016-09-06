@@ -6,13 +6,13 @@
 |       $Date: 2012/02/16 22:19:26 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
+#include "ImagePPHeaders.h"
 
-#include <ScalableMesh/IScalableMeshStream.h>
 
 
 #include <ScalableMesh/IScalableMeshMoniker.h>
@@ -56,15 +56,19 @@ bool IMoniker::IsTargetReachable () const
 /*----------------------------------------------------------------------------+
 |IMoniker::Serialize
 +----------------------------------------------------------------------------*/
-StatusInt IMoniker::Serialize(BinaryOStream&        stream,
-                              const DocumentEnv&    env) const
-    {
-    const byte monikerTypeField = static_cast<byte>(GetType());   
-    if (!stream.put(monikerTypeField).good())
-        return BSIERROR;
+StatusInt IMoniker::Serialize(Import::SourceDataSQLite&        sourceData,
+    const DocumentEnv&    env) const
+{
+    const byte monikerTypeField = static_cast<byte>(GetType());
+    sourceData.SetMonikerType(monikerTypeField);
+    /*if (!stream.put(monikerTypeField).good())
+        return BSIERROR;*/
 
-    return _Serialize(stream, env);
-    }
+    // SM_NEEDS_WORK : just ignore it for now
+    return _Serialize(sourceData, env);
+    //return BSISUCCESS;
+}
+
 
 /*----------------------------------------------------------------------------+
 |IMoniker::Accept
@@ -205,7 +209,7 @@ void ILocalFileMonikerFactory::Unregister (CreatorID id)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ILocalFileMonikerPtr ILocalFileMonikerFactory::Create  (const Bentley::DgnPlatform::MrDtmDgnDocumentMonikerPtr&  msMoniker) const
+ILocalFileMonikerPtr ILocalFileMonikerFactory::Create  (const BENTLEY_NAMESPACE_NAME::DgnPlatform::MrDtmDgnDocumentMonikerPtr&  msMoniker) const
     {
     if (0 == m_implP->m_creatorP)
         return 0;
@@ -340,10 +344,10 @@ void IMonikerFactory::Unregister (BinStreamCreatorID id)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IMonikerPtr IMonikerFactory::Create    (BinaryIStream&      stream,
-                                        const DocumentEnv&  env)
-    {
-    const UInt typeField = stream.peek();
+IMonikerPtr IMonikerFactory::Create(Import::SourceDataSQLite&      sourceData,
+    const DocumentEnv&  env)
+{
+    const uint32_t typeField = sourceData.GetMonikerType();
     if (typeField >= DTM_SOURCE_MONIKER_QTY)
         return 0;
 
@@ -353,11 +357,11 @@ IMonikerPtr IMonikerFactory::Create    (BinaryIStream&      stream,
     if (0 == creatorP)
         return 0;
 
-    stream.get(); // Skip moniker type
+    //stream.get(); // Skip moniker type
 
     StatusInt dummyStatus;
-    return creatorP->_Create(stream, env, dummyStatus);
-    }
+    return creatorP->_Create(sourceData, env, dummyStatus);
+}
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

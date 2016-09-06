@@ -2,11 +2,11 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudClassification.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h" //always first
-
+#include "../STM/ImagePPHeaders.h"
 #include "PointCloudClassification.h"
 //#include "PointCloudEditChannelUndoRedoManager.h"
 //#include "PointCloudEditRasterColoringTool.h"
@@ -77,8 +77,6 @@ class ChannelAppData :  public ElementRefAppData
 ClassificationChannelManager::ClassificationChannelManager()
     {
     SisterFileManager::GetInstance().Register(&this->Get());
-    //NEEDS_WORK_SM_IMPORTER : Deactivated
-    //ChannelUndoRedoManager::GetInstance().Register(&this->Get());
     }
 
 ClassificationChannelManager::~ClassificationChannelManager()
@@ -116,8 +114,6 @@ void ClassificationChannelManager::_OnSave(ElementHandleR eh, IPointCloudChannel
     else
         {
         ClassificationChannelHandlerPtr ptr = ClassificationChannelHandler::GetChannelHandler(eh);
-        //NEEDS_WORK_SM_IMPORTER : Deactivated
-        //ChannelUndoRedoManager::GetInstance().SaveRedo(ptr->GetFullPath(), _GetExtension());
         }
     }
 
@@ -376,9 +372,9 @@ void ClassificationChannelHandler::SwapChannelValues (IPointCloudChannelP pPoint
     if (!classificationBuffer || !channelBuffer)
         return;
 
-    UInt const bufferSize = pPointCloudBuffers.GetNumPoints();
+    uint32_t const bufferSize = pPointCloudBuffers.GetNumPoints();
 
-    for (UInt j = 0; j < bufferSize; j++)
+    for (uint32_t j = 0; j < bufferSize; j++)
         {
         if (channelBuffer[j] != _DEFAULTCHANNELVALUE)
             {

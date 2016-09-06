@@ -16,6 +16,7 @@ using namespace std;
 #include <PointCloud\PointCloudDisplayHandler.h>
 #include <RasterCore\RasterCoreLib.h>
 #include <RmgrTools\Tools\RscFileManager.h>
+#undef LAT
 #include <TerrainModel\TerrainModel.h>
 #include <ScalableMesh\ScalableMeshDefs.h>
 #include <ScalableMesh\IScalableMeshMoniker.h>
@@ -34,34 +35,32 @@ using namespace std;
 
 //USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_MRDTM
-using namespace Bentley::DgnPlatform;
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::DgnPlatform;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 namespace ScalableMeshSDKexe
     {
-    struct AppViewManager : Bentley::DgnPlatform::IViewManager
+    struct AppViewManager : BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager
         {
         private:
-            Bentley::DgnPlatform::IndexedViewSet* m_activeViewSet;
+            BENTLEY_NAMESPACE_NAME::DgnPlatform::IndexedViewSet* m_activeViewSet;
             HWND                                  m_topWindow;
     
-            virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return (Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP)m_topWindow;}
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override {return (BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnDisplayCoreTypes::WindowP)m_topWindow;}
             virtual bool                                               _DoesHostHaveFocus() {return false;}
-            virtual Bentley::DgnPlatform::IndexedViewSet&              _GetActiveViewSet() override {assert(!"Not expect to be call in offline mode"); return *m_activeViewSet;}
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::IndexedViewSet&              _GetActiveViewSet() override {assert(!"Not expect to be call in offline mode"); return *m_activeViewSet;}
             virtual int             _GetCurrentViewNumber() override {return 0;}
             virtual HUDManagerP     _GetHUDManager () {return NULL;}
 
         public:
-    
-            //void SetActiveDgn (AppViewSet* newDgn) {m_activeViewSet = newDgn;}
-            //void SetActiveDgn (DemoViewSet* newDgn) {m_activeViewSet = newDgn;}
+
             AppViewManager() {m_activeViewSet = NULL; m_topWindow = NULL;}
         };
 
         //=======================================================================================
         // @bsiclass                                                    Keith.Bentley   01/10
         //=======================================================================================
-        class AppHost : public Bentley::DgnPlatform::DgnViewLib::Host
+        class AppHost : public BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnViewLib::Host
         {
             AppViewManager m_viewManager;
             BeFileName     m_systemDtyPath;
@@ -69,37 +68,28 @@ namespace ScalableMeshSDKexe
 
         protected:
 
-            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
-            virtual void                                                            _SupplyProductName(WStringR name) override;     
-            virtual Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;     
-            //virtual GraphicsAdmin&                                                 _SupplyGraphicsAdmin() override;            
-            //virtual ViewStateAdmin&                                                _SupplyViewStateAdmin() override;           
-            //virtual ToolAdmin&                                                     _SupplyToolAdmin() override;                
-            virtual Bentley::DgnPlatform::IViewManager&                             _SupplyViewManager() override;              
-            //virtual SolidsKernelAdmin&                                             _SupplySolidsKernelAdmin() override;        
-            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;    
-            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;          
-            //virtual FontAdmin&                                                     _SupplyFontAdmin() override;                
-            //virtual MaterialAdmin&                                                 _SupplyMaterialAdmin();                     
-            //virtual ProgressiveDisplayManager&                                     _SupplyProgressiveDisplayManager() override;
-            virtual Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;
+            virtual void                                                            _SupplyProductName(WStringR name) override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager& _SupplyDigitalRightsManager() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                             _SupplyViewManager() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&      _SupplyRasterAttachmentAdmin() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&            _SupplyPointCloudAdmin() override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
 
         public:
             void Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath);
         
             void Terminate ();
-
-            //DemoViewManager& GetDemoViewManager(){return m_viewManager;}
         };
 
         //=======================================================================================
         // @bsiclass                                                    Keith.Bentley   01/10
         //=======================================================================================
-        struct AppNotificationAdmin : Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin
+        struct AppNotificationAdmin : BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin
         {
-            virtual StatusInt _OutputMessage (Bentley::DgnPlatform::NotifyMessageDetails const& msg) override;
+            virtual StatusInt _OutputMessage (BENTLEY_NAMESPACE_NAME::DgnPlatform::NotifyMessageDetails const& msg) override;
             virtual void      _OutputPrompt (WCharCP) override;
-            virtual Bentley::DgnPlatform::NotificationManager::MessageBoxValue _OpenMessageBox (Bentley::DgnPlatform::NotificationManager::MessageBoxType, WCharCP, Bentley::DgnPlatform::NotificationManager::MessageBoxIconType) override;
+            virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::NotificationManager::MessageBoxValue _OpenMessageBox (BENTLEY_NAMESPACE_NAME::DgnPlatform::NotificationManager::MessageBoxType, WCharCP, BENTLEY_NAMESPACE_NAME::DgnPlatform::NotificationManager::MessageBoxIconType) override;
         };
 
         /*=================================================================================**//**
@@ -107,9 +97,9 @@ namespace ScalableMeshSDKexe
         * engineering data. Therefore, it is safe for DgnViewDemo to open rights-restricted DGN files.
         * @bsiclass                                     Sam.Wilson                      06/2010
         +===============+===============+===============+===============+===============+======*/
-        struct ReadOnlyDigitalRightsManager : Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager
+        struct ReadOnlyDigitalRightsManager : BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager
         {
-        //    virtual StatusInt _OnEnterRestrictedMode (bool assertKeys, Bentley::DgnFileProtection::KeyMaterialWithDescription* keylist, uint32_t nkeys, Bentley::DgnPlatform::DgnFileP file, uint32_t rights) override {return SUCCESS;}
+        //    virtual StatusInt _OnEnterRestrictedMode (bool assertKeys, BENTLEY_NAMESPACE_NAME::DgnFileProtection::KeyMaterialWithDescription* keylist, uint32_t nkeys, BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileP file, uint32_t rights) override {return SUCCESS;}
         };
 
 
@@ -117,7 +107,7 @@ namespace ScalableMeshSDKexe
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct AppRasterCoreAdmin : Bentley::DgnPlatform::Raster::RasterCoreAdmin
+struct AppRasterCoreAdmin : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin
 {
 virtual bool                    _IsProgressiveDisplayEnabled() const    {return true;}
 };
@@ -125,9 +115,9 @@ virtual bool                    _IsProgressiveDisplayEnabled() const    {return 
 /*=================================================================================**//**
 * @bsiclass                                     		Marc.Bedard     02/2011
 +===============+===============+===============+===============+===============+======*/
-struct AppRasterCoreLibHost : Bentley::DgnPlatform::Raster::RasterCoreLib::Host 
+struct AppRasterCoreLibHost : BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Host 
 {
-virtual Bentley::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
+virtual BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreAdmin& _SupplyRasterCoreAdmin() override {return *new AppRasterCoreAdmin();}
 }; // RasterCoreLib::Host
 
 void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
@@ -143,8 +133,8 @@ void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
         
     DgnViewLib::Initialize (*this, true);
     
-    Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
-    BeAssert (Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
+    BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize (*new AppRasterCoreLibHost());
+    BeAssert (BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized());
 
     //Ensure basegeocoord is initialized.
     _SupplyGeoCoordinationAdmin()._GetServices();
@@ -166,26 +156,16 @@ void AppHost::Startup (BeFileName& systemDtyPath, BeFileName& customDtyPath)
 void AppHost::Terminate ()
     {
     //call rasterCore cleanup code
-    Bentley::DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
-
-    //call PdfLibInitializer dll cleanup code.
-    //Bentley::PdfLibInitializer::GetHost().Terminate(true);
+    BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetHost().Terminate(true);
     }
 
 void                                                                   AppHost::_SupplyProductName(WStringR name)   {name.assign(L"DgnView Demo");}
-Bentley::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin()          {return *new AppNotificationAdmin();}
-Bentley::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager&        AppHost::_SupplyDigitalRightsManager()       {return *new ReadOnlyDigitalRightsManager;}
-//GraphicsAdmin&             AppHost::_SupplyGraphicsAdmin()              {return *new DgnViewGraphicsAdmin();}
-//ViewStateAdmin&            AppHost::_SupplyViewStateAdmin()             {return *new DemoViewStateAdmin();}
-//ToolAdmin&                 AppHost::_SupplyToolAdmin()                  {return *new DemoToolAdmin();}
-Bentley::DgnPlatform::IViewManager&                                    AppHost::_SupplyViewManager()                {return m_viewManager; }
-//SolidsKernelAdmin&         AppHost::_SupplySolidsKernelAdmin()          {return *new AppSolidKernelAdmin();}
-Bentley::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return Bentley::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
-Bentley::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new Bentley::DgnPlatform::PointCloudDisplayAdmin();}
-//FontAdmin&                 AppHost::_SupplyFontAdmin()                  {return *new DemoFontAdmin();}
-//MaterialAdmin&             AppHost::_SupplyMaterialAdmin()              {return *new DemoMaterialAdmin(); }
-//ProgressiveDisplayManager& AppHost::_SupplyProgressiveDisplayManager()  {return *new DemoProgressiveDisplayManager(); }
-Bentley::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()       
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin()          {return *new AppNotificationAdmin();}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnFileIOLib::Host::DigitalRightsManager&        AppHost::_SupplyDigitalRightsManager()       {return *new ReadOnlyDigitalRightsManager;}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::IViewManager&                                    AppHost::_SupplyViewManager()                {return m_viewManager; }
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::RasterAttachmentAdmin&     AppHost::_SupplyRasterAttachmentAdmin()      {return BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin();}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::PointCloudAdmin&           AppHost::_SupplyPointCloudAdmin()            {return *new BENTLEY_NAMESPACE_NAME::DgnPlatform::PointCloudDisplayAdmin();}
+BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()
     {            
     WString geocoordinateDataPath;
 
@@ -227,7 +207,7 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 
 
 
-  struct ExeAdmin : Bentley::ScalableMesh::ScalableMeshAdmin
+  struct ExeAdmin : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin
         {
         DgnModelRef* s_activeDgnModelRefP;
         ExeAdmin() :s_activeDgnModelRefP(0){};
@@ -251,14 +231,14 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 
         };
 
-    struct ExeHost : Bentley::ScalableMesh::ScalableMeshLib::Host
+    struct ExeHost : BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host
         {
 
         ExeHost()
             {
-            Bentley::ScalableMesh::ScalableMeshLib::Initialize(*this);
+            BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Initialize(*this);
             }
-    Bentley::ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
         {
         return *new ExeAdmin();
         };
@@ -271,28 +251,28 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox (Noti
 * @description
 * @bsiclass                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-class MyMSDocumentMoniker : public Bentley::ScalableMesh::ILocalFileMoniker
+class MyMSDocumentMoniker : public BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMoniker
     {
 private:    
 
-    Bentley::RefCountedPtr<DgnDocumentMoniker> m_mrdtmMonikerPtr;
+    BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocumentMoniker> m_mrdtmMonikerPtr;
 
-    virtual Bentley::ScalableMesh::LocalFileURL                _GetURL                        (StatusInt&                          status) const override
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::LocalFileURL                _GetURL                        (StatusInt&                          status) const override
         {
         WString fileName(m_mrdtmMonikerPtr->ResolveFileName(&status));
         
         if (BSISUCCESS != status)
             fileName = m_mrdtmMonikerPtr->GetPortableName(); // File not found. Return s_dgnFile name with configuration variable.
 
-        return Bentley::ScalableMesh::LocalFileURL(fileName.c_str());
+        return BENTLEY_NAMESPACE_NAME::ScalableMesh::LocalFileURL(fileName.c_str());
         }
 
 
 
 
-    virtual Bentley::ScalableMesh::DTMSourceMonikerType        _GetType                       () const override
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceMonikerType        _GetType                       () const override
         {
-        return Bentley::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
+        return BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
         }
 
 
@@ -303,15 +283,15 @@ private:
         return BSISUCCESS == status;
         }
 
-    virtual StatusInt                   _Serialize                     (Bentley::ScalableMesh::BinaryOStream&                      stream,
-                                                                        const Bentley::ScalableMesh::DocumentEnv&                  env) const override
+    virtual StatusInt                   _Serialize                     (BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::SourceDataSQLite&                      sourceData,
+                                                                        const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env) const override
         {
         // TDORAY: Recreate the moniker using new env prior to serializing it in order so
         // that relative path is correct on s_dgnFile moves...
 
-        const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
-            return BSIERROR;
+        //const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
+        //if (!WriteStringW(stream, monikerString.c_str()))
+        //    return BSIERROR;
 
         return BSISUCCESS;
         }
@@ -324,7 +304,7 @@ private:
 
 public:
     
-    static Bentley::ScalableMesh::ILocalFileMonikerPtr Create(const DgnDocumentMonikerPtr&         monikerPtr)
+    static BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerPtr Create(const DgnDocumentMonikerPtr&         monikerPtr)
         {
         return new MyMSDocumentMoniker(monikerPtr);
         }
@@ -334,22 +314,22 @@ public:
 * @description
 * @bsiclass                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct LocalFileMonikerCreator : public Bentley::ScalableMesh::ILocalFileMonikerCreator
+struct LocalFileMonikerCreator : public BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerCreator
     {
 private:
      
-    virtual Bentley::ScalableMesh::ILocalFileMonikerPtr         _Create                        (const DgnDocumentMonikerPtr&         msMoniker,
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerPtr         _Create                        (const DgnDocumentMonikerPtr&         msMoniker,
                                                                                                 StatusInt&                          status) const override
         {
         status = BSISUCCESS;        
         return MyMSDocumentMoniker::Create(msMoniker);
         }
 
-    virtual Bentley::ScalableMesh::ILocalFileMonikerPtr        _Create                        (const WChar*                      fullPath,
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerPtr        _Create                        (const WChar*                      fullPath,
                                                                                                StatusInt&                          status) const override
         {        
         DgnFileStatus openStatus = DGNFILE_STATUS_Success;
-        Bentley::RefCountedPtr<DgnDocument> docPtr = DgnDocument::CreateFromFileName(openStatus, fullPath, 0, 0, DgnDocument::FetchMode::InfoOnly);
+        BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocument> docPtr = DgnDocument::CreateFromFileName(openStatus, fullPath, 0, 0, DgnDocument::FetchMode::InfoOnly);
 
         if (DGNFILE_STATUS_Success != openStatus || 0 == docPtr.get())
             {
@@ -367,29 +347,29 @@ private:
 * @description
 * @bsiclass                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MonikerBinStreamCreator : public Bentley::ScalableMesh::IMonikerBinStreamCreator
+struct MonikerBinStreamCreator : public BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerBinStreamCreator
     {
 private :
-    virtual Bentley::ScalableMesh::DTMSourceMonikerType        _GetSupportedType              () const override
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceMonikerType        _GetSupportedType              () const override
         {
-        return Bentley::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
+        return BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_MONIKER_MSDOCUMENT;
         }
 
 
-    virtual Bentley::ScalableMesh::IMonikerPtr                 _Create                        (Bentley::ScalableMesh::BinaryIStream&                      stream,
-                                                                                               const Bentley::ScalableMesh::DocumentEnv&                  env,
+    virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerPtr                 _Create                        (BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::SourceDataSQLite&                      sourceData,
+                                                                                               const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env,
                                                                                                StatusInt&                          status) const override
         {
-        WString monikerString;
-        if (!ReadStringW(stream, monikerString))
+        WString monikerString = sourceData.GetMonikerString();
+        /*if (!ReadStringW(stream, monikerString))
             {
             status = BSIERROR;
             return 0;
-            }
+            }*/
 
         const WChar* basePath = env.GetCurrentDirCStr();
 
-        Bentley::RefCountedPtr<DgnDocumentMoniker> documentMonikerPtr
+        BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocumentMoniker> documentMonikerPtr
             (            
             DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
                                        basePath,                                                                  
@@ -406,6 +386,37 @@ private :
         
         return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
         }
+        
+    /*        virtual BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
+                                                                                               const BENTLEY_NAMESPACE_NAME::ScalableMesh::DocumentEnv&                  env,
+                                                                                               StatusInt&                          status) const override
+        {
+        WString monikerString;
+        if (!ReadStringW(stream, monikerString))
+            {
+            status = BSIERROR;
+            return 0;
+            }
+
+        const WChar* basePath = env.GetCurrentDirCStr();
+
+        BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocumentMoniker> documentMonikerPtr
+            (            
+            DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
+                                       basePath,                                                                  
+                                       false)
+            );
+
+        if (documentMonikerPtr == 0)
+            {
+            status = BSIERROR;
+            return 0;
+            }
+
+        status = BSISUCCESS;
+        
+        return MyMSDocumentMoniker::Create(documentMonikerPtr.get());
+        }*/
     };
 
 
@@ -413,12 +424,12 @@ void InitScalableMeshMonikerFactories()
     {   
     static const struct MonikerBinStreamCreator s_MonikerBinStreamCreator;
     static const struct LocalFileMonikerCreator s_LocalFileMonikerCreator;
-    const Bentley::ScalableMesh::ILocalFileMonikerFactory::CreatorID localFileCreatorID
-        = Bentley::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Register(s_LocalFileMonikerCreator);
+    const BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerFactory::CreatorID localFileCreatorID
+        = BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Register(s_LocalFileMonikerCreator);
     assert(localFileCreatorID == &s_LocalFileMonikerCreator);
 
-    const Bentley::ScalableMesh::IMonikerFactory::BinStreamCreatorID binStreamCreator
-        = Bentley::ScalableMesh::IMonikerFactory::GetInstance().Register(s_MonikerBinStreamCreator);
+    const BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerFactory::BinStreamCreatorID binStreamCreator
+        = BENTLEY_NAMESPACE_NAME::ScalableMesh::IMonikerFactory::GetInstance().Register(s_MonikerBinStreamCreator);
     assert(binStreamCreator == &s_MonikerBinStreamCreator);
     }
 
@@ -461,14 +472,27 @@ private:
         return BSISUCCESS == status;
         }
 
-    virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
+  /*  virtual StatusInt                   _Serialize                     (ScalableMesh::Import::SourceDataSQLite&                      sourceData,//BinaryOStream&                      stream,
+                                                                        const DocumentEnv&                  env) const override
+        {
+        // TDORAY: Recreate the moniker using new env prior to serializing it in order so
+        // that relative path is correct on file moves...
+
+       // const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
+       // if (!WriteStringW(stream, monikerString.c_str()))
+       //     return BSIERROR;
+
+        return BSISUCCESS;
+        }*/
+        
+            virtual StatusInt                   _Serialize                     (BinaryOStream&                      stream,
                                                                         const DocumentEnv&                  env) const override
         {
         // TDORAY: Recreate the moniker using new env prior to serializing it in order so
         // that relative path is correct on file moves...
 
         const WString& monikerString(m_mrdtmMonikerPtr->Externalize());
-        if (!WriteStringW(stream, monikerString.c_str()))
+       if (!WriteStringW(stream, monikerString.c_str()))
             return BSIERROR;
 
         return BSISUCCESS;
@@ -534,12 +558,39 @@ private :
         }
 
 
-    virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
+  /*  virtual IMonikerPtr                 _Create                        (ScalableMesh::Import::SourceDataSQLite&                      sourceData,
                                                                         const DocumentEnv&                  env,
                                                                         StatusInt&                          status) const override
         {
-        WString monikerString;
-        if (!ReadStringW(stream, monikerString))
+       WString monikerString = sourceData.GetMonikerString();
+
+        const WChar* basePath = env.GetCurrentDirCStr();
+
+        DgnDocumentMonikerPtr documentMonikerPtr
+            (            
+            DgnDocumentMoniker::Create(monikerString.GetWCharCP(),
+                                       basePath,                                                                  
+                                       false)
+            );
+
+        if (documentMonikerPtr == 0)
+            {
+            status = BSIERROR;
+            return 0;
+            }
+
+        status = BSISUCCESS;
+        
+        return GeoDtmMSDocumentMoniker::Create(documentMonikerPtr.get());
+        }*/
+        
+        
+   virtual IMonikerPtr                 _Create                        (BinaryIStream&                      stream,
+                                                                        const DocumentEnv&                  env,
+                                                                        StatusInt&                          status) const override
+        {
+       WString monikerString;
+       if (!ReadStringW(stream, monikerString))
             {
             status = BSIERROR;
             return 0;
@@ -580,8 +631,8 @@ void InitMonikerFactories()
 }
 
 
-Bentley::RefCountedPtr<DgnDocument> docPtr = nullptr;
-Bentley::RefCountedPtr<DgnFile> file = nullptr;
+BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnDocument> docPtr = nullptr;
+BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnFile> file = nullptr;
 
 void InitializeSDK(BeFileName& systemDtyPath, BeFileName& customDtyPath)
         {
@@ -608,8 +659,8 @@ void InitializeSDK(BeFileName& systemDtyPath, BeFileName& customDtyPath)
         
         InitMonikerFactories();
         InitScalableMeshMonikerFactories();
-        Bentley::DgnPlatform::Raster::RasterCoreLib::Initialize(*new AppRasterCoreLibHost());
-        BeAssert(Bentley::DgnPlatform::Raster::RasterCoreLib::IsInitialized()); 
+        BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::Initialize(*new AppRasterCoreLibHost());
+        BeAssert(BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::IsInitialized()); 
         }
 
 void CloseSDK()

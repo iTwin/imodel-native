@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 18:20:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,15 +24,15 @@ struct ElementRefBase;
 }
 END_BENTLEY_NAMESPACE
     
-typedef struct Bentley::DgnPlatform::ElementRefBase* ElementReferenceP;
-typedef struct Bentley::DgnPlatform::DgnModelRef*  DgnModelReferenceP;
+typedef struct BENTLEY_NAMESPACE_NAME::DgnPlatform::ElementRefBase* ElementReferenceP;
+typedef struct BENTLEY_NAMESPACE_NAME::DgnPlatform::DgnModelRef*  DgnModelReferenceP;
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE(0)
 struct DGNElementSourceRefBase;
 END_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VXX_NAMESPACE
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
-struct ISourceRefVisitor;
+
 struct SourceRefBase;
 struct ContentDescriptor;
 
@@ -50,12 +50,13 @@ private:
     typedef SharedPtrTypeTrait<SourceRefBase>::type
                                             BasePtr;   
 
-    BasePtr                                 m_basePtr;
     ClassID                                 m_classID;
     
     // Source reference should always be created via the Create method of a specialized SourceRef.
     explicit                                SourceRef                              (const SourceRefBase*        sourceRefP);
 public:
+    BasePtr                                 m_basePtr;
+
     // Implicitly constructed from a base
     IMPORT_DLLE                             SourceRef                              (const SourceRefBase&        sourceRef);
 
@@ -66,7 +67,6 @@ public:
 
     ClassID                                 GetClassID                             () const { return m_classID; } 
 
-    IMPORT_DLLE void                        Accept                                 (ISourceRefVisitor&          visitor) const;
 
     IMPORT_DLLE void                        SetDtmSource(const IDTMSourcePtr&        dtmSourcePtr);
 
@@ -91,7 +91,6 @@ private:
     std::auto_ptr<Impl>                     m_pImpl;
 
     virtual ClassID                         _GetClassID                            () const = 0;
-    virtual void                            _Accept                                (ISourceRefVisitor&      visitor) const = 0;
 
     virtual SourceRefBase*                  _Clone                                 () const = 0;
 
@@ -121,7 +120,7 @@ private:
     struct UniqueTokenType {};
 
     virtual ClassID                         _GetClassID                            () const override;
-    virtual void                            _Accept                                (ISourceRefVisitor&      visitor) const override;
+
     virtual SourceRefBase*                  _Clone                                 () const override;
 protected:
     typedef SourceRefMixinBase<BaseT>       super_class;
@@ -352,8 +351,8 @@ public:
 
     IMPORT_DLLE virtual                     ~DGNElementSourceRef                   ();
 
-    IMPORT_DLLE UInt                        GetElementType                         () const;
-    IMPORT_DLLE UInt                        GetElementHandlerID                    () const;
+    IMPORT_DLLE uint32_t                        GetElementType                         () const;
+    IMPORT_DLLE uint32_t                        GetElementHandlerID                    () const;
     
     IMPORT_DLLE ElementReferenceP           GetElementRef                          () const;
     IMPORT_DLLE DgnModelReferenceP          GetModelRef                            () const;    

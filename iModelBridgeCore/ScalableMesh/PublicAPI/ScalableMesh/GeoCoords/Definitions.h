@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:42 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,7 @@
 #include <Geom/GeomApi.h>
 
 #ifdef GEOCOORDS_DLLE
-    #error "Export name conflict with another definition of the same name"
+//    #error "Export name conflict with another definition of the same name"
 #endif
 
 #ifdef __BENTLEYSTM_BUILD__ //BENTLEY_SCALABLEMESH_GEOCOODINATES_EXPORTS
@@ -31,9 +31,9 @@
 
 
 #ifndef BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
-    #define BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE namespace Bentley { namespace ScalableMesh { namespace GeoCoords {
+#define BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE namespace BENTLEY_NAMESPACE_NAME { namespace ScalableMesh { namespace GeoCoords {
     #define END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE   }}}
-    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES using namespace Bentley::ScalableMesh::GeoCoords;
+    #define USING_NAMESPACE_BENTLEY_SCALABLEMESH_GEOCOORDINATES using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::GeoCoords;
 #endif //!BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
 
 

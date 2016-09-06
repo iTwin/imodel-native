@@ -2,7 +2,7 @@
 #
 #     $Source: mki/ScalableMeshPolicy.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ScalableMeshPolicy_mki__)
@@ -14,8 +14,12 @@
 %endif
 __ScalableTerrainModelPolicy_mki__=1
 
+BUILD_USING_VS2013=1
+VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
-
+appName     = ScalableMesh
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
 # ------------------------------------
 # Source directories
 # ------------------------------------
@@ -36,7 +40,7 @@ pluginsDir                  = $(stmDir)Plugins/
 # ------------------------------------
 # Output directories
 # ------------------------------------
-OutBuildSTM         = $(OutBuildDir)ScalableMesh/
+OutBuildSTM         = $(OutputRootDir)build/ScalableMesh/
 
 #o = !Must be defined by individual mke files!
 o = $(OutBuildSTM)$(appName)/
@@ -51,7 +55,7 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 #----------------------------------------------------------
 %include $(SharedMki)CommonCompileLinkPolicy.mki
 
-PublicApiIncludes + -I$(STMPrivateApiSrc)
+PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/ -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
 
 # dlmlink.mki common options.
 DLM_DEST                    = $(o)
@@ -72,6 +76,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
 IppGraLibsLib           = $(libprefix)IppGraLibs$(libext)
 IppUtlLibsLib           = $(libprefix)IppUtlLibs$(libext)
 BaseGeocoordLib         = $(libprefix)basegeocoord$(libext)
+BeJsonCppLib            = $(libprefix)BeJsonCpp$(libext)
 BentleyGeomLib          = $(libprefix)BentleyGeom$(libext)
 TerrainModelCoreLib     = $(libprefix)TerrainModelCore$(libext)
 TerrainModelFormatsLib  = $(libprefix)TerrainModelFormats$(libext)

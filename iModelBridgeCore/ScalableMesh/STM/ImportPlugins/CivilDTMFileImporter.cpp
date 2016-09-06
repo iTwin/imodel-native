@@ -6,12 +6,12 @@
 |       $Date: 2011/11/09 18:11:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 
 #include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
 #include <ScalableMesh/Import/Plugin/SourceV0.h>
@@ -27,13 +27,13 @@
 
 
 #include "CivilDTMHelpers.h"
-
+#include "..\Stores\SMStoreUtils.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
-using namespace Bentley::ScalableMesh::Plugin;
+using namespace BENTLEY_NAMESPACE_NAME::ScalableMesh::Plugin;
 
 namespace { //BEGIN UNAMED NAMESPACE
 
@@ -97,7 +97,7 @@ private:
         return ContentDescriptor
             (
             L"",
-            LayerDescriptor(L"",
+            ILayerDescriptor::CreateLayerDescriptor(L"",
                             storedTypes,
                             m_gcs, 
                             &range,
@@ -259,7 +259,7 @@ class CivilDTMFileCreator : public LocalFileSourceCreatorBase
         {
         BcDTMPtr pDTM = CreateDTMFromFilePath(pi_rSourceRef);
         if (pDTM.IsNull())
-            throw FileIOException(LocalFileError::S_ERROR_COULD_NOT_OPEN);
+            throw FileIOException(SMStatus::S_ERROR_COULD_NOT_OPEN);
 
         //CivilDTMSource will take ownership of pDTM
         return new CivilDTMSource(*pDTM, GCS::GetNull());
@@ -414,7 +414,7 @@ private:
     LinearHandler::TypeInfoCIter    m_typeInfoIter;
     LinearHandler::TypeInfoCIter    m_typeInfoEnd;
 
-    PODPacketProxy<IDTMFile::FeatureHeader>
+    PODPacketProxy<ISMStore::FeatureHeader>
                                     m_headerPacket;
     PODPacketProxy<DPoint3d>        m_pointPacket;
 
@@ -428,7 +428,7 @@ private:
         {
         m_headerPacket.AssignTo(pi_rRawEntities[DG_Header]);
         m_pointPacket.AssignTo(pi_rRawEntities[DG_XYZ]);
-        m_featureArray.EditHeaders().WrapEditable(m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
+        m_featureArray.EditHeaders().WrapEditable((IDTMFile::FeatureHeader *)m_headerPacket.Edit(), 0, m_headerPacket.GetCapacity());
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
@@ -502,7 +502,7 @@ class CivilDTMLinearExtractorCreator : public InputExtractorCreatorMixinBase<Civ
         if (!sourceBase.GetLinearHandler().ComputeCounts())
             return RawCapacities(0, 0);
 
-        return RawCapacities (sourceBase.GetLinearHandler().GetMaxLinearCount()*sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (sourceBase.GetLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
                               sourceBase.GetLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
         }
 
@@ -549,7 +549,7 @@ class CivilDTMTINLinearExtractorCreator : public InputExtractorCreatorMixinBase<
         if (!sourceBase.GetTINLinearHandler().ComputeCounts())
             return RawCapacities(0, 0);
 
-        return RawCapacities (sourceBase.GetTINLinearHandler().GetMaxLinearCount()*sizeof(IDTMFile::FeatureHeader),
+        return RawCapacities (sourceBase.GetTINLinearHandler().GetMaxLinearCount()*sizeof(ISMStore::FeatureHeader),
                               sourceBase.GetTINLinearHandler().GetMaxPointCount()*sizeof(DPoint3d));
         }
 

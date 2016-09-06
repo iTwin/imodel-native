@@ -6,18 +6,19 @@
 |       $Date: 2012/08/20 16:31:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
+#include "ImagePPHeaders.h"
 #include "SMPointIndex.h"
 #include "InternalUtilityFunctions.h"
+#include "Stores/SMStoreUtils.h"
 #include <ScalableMesh/IScalableMeshClipContainer.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 
-//NEEDS_WORK_SM : Remove if normal not computed at generation time
 //#define GPU
 #undef static_assert
 #include <ppl.h>
@@ -39,32 +40,28 @@ static int s_faceToBoxPoint[6][4] =
     {2,6,7,3},
     };
 
-
-DPoint3d ToBcPtConverter::operator () (const IDTMFile::Point3d64fM64f& inputPt) const
-    {
-    DPoint3d outPt = {inputPt.x, inputPt.y, inputPt.z};
+DPoint3d PtToPtConverter::operator () (const DPoint3d& inputPt) const
+{
+    DPoint3d outPt(inputPt);
     // DPoint3d outPt = {inputPt.x, inputPt.y, 0};
     return outPt;
-    }
+}
 
-DPoint3d ToBcPtConverter::operator () (const IDTMFile::Point3d64f& inputPt) const
-    {
-    DPoint3d outPt = {inputPt.x, inputPt.y, inputPt.z};
-    // DPoint3d outPt = {inputPt.x, inputPt.y, 0};
-    return outPt;
-    }
-
-DPoint3d ToBcPtConverter::operator () (const HGF3DCoord<double>& inputPt) const
+DPoint3d PtToPtConverter::operator () (const HGF3DCoord<double>& inputPt) const
     {   
     DPoint3d outPt = {inputPt.GetX(), inputPt.GetY(), inputPt.GetZ()};
     //  DPoint3d outPt = {inputPt.GetX(), inputPt.GetY(), 0};
     return outPt;
     }
+
+void PtToPtConverter::Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts)
+    {
+    memcpy(ptsOut, ptsIn, nbPts * sizeof(DPoint3d));
+    }
     
 /*---------------------------------------------------------------------------------**//**
 * Calculate normals for points of a mesh
 +---------------+---------------+---------------+---------------+---------------+------*/
-//NEEDS_WORK_SM : Remove if normal not computed at generation time
 double checkNormal (DVec3dCR viewNormal, DVec3dCR normal) restrict (amp,cpu)
     {
     return (viewNormal.x*normal.x + viewNormal.y*normal.y + viewNormal.z*normal.z);
@@ -248,100 +245,6 @@ StatusInt FillBBoxFromIppExtent(DPoint3d    boxPoints[],
     return SUCCESS;
     }
 
-extern CheckStopCallbackFP              g_checkIndexingStopCallbackFP;
-
-int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTMLinearFeature>>& cutLinearList, HFCPtr<HVE2DPolygonOfSegments> queryPolyLine)
-    {   
-    int status = SUCCESS;
-
-    if (linearList.size() > 0)
-        {        
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIter    = linearList.begin();
-        list<HFCPtr<HVEDTMLinearFeature> >::iterator linearIterEnd = linearList.end();
-
-        while (linearIter != linearIterEnd) 
-            {                   
-            if ((g_checkIndexingStopCallbackFP != 0) && (g_checkIndexingStopCallbackFP(0) != 0))
-                {
-                status = ERROR;
-                break;                
-                }
-
-            HGF3DPoint firstPt = (*linearIter)->GetPoint(0);
-            HGF3DPoint secondPt;
-            bool       addAllPts = false;
-            unsigned __int64 lastIndexPtAdd = UINT64_MAX;
-
-            HFCPtr<HVEDTMLinearFeature> cutFeatureP = new HVEDTMLinearFeature((*linearIter)->GetFeatureType(), 0);
-            IDTMFile::FeatureType type = (*linearIter)->GetFeatureType();
-            
-            switch (type)
-                {
-                case DTMFeatureType::Void:
-                case DTMFeatureType::BreakVoid:
-                case DTMFeatureType::DrapeVoid:
-                case DTMFeatureType::Hole:
-                case DTMFeatureType::Island:
-                case DTMFeatureType::Hull:
-                case DTMFeatureType::DrapeHull:
-                case DTMFeatureType::Polygon:
-                case DTMFeatureType::Region:                
-                    addAllPts = true;
-                    break;
-                default :
-                    addAllPts = false;
-                    break;
-                }
-
-            //TR 353473 - Once in the queryPolyline don't cut any segment even if there are outside to ensure 
-            //            that there is no connecting segment inserted between two segments that are not continuous 
-            //            that is overlapping the query polyline.
-            bool canSkipLine = true;
-
-            for (size_t indexPoints = 1 ; indexPoints < (*linearIter)->GetSize(); indexPoints++)
-                {                
-                secondPt = (*linearIter)->GetPoint(indexPoints);
-
-                HVE2DSegment line(HGF2DLocation(firstPt.GetX(), firstPt.GetY(), queryPolyLine->GetCoordSys()), HGF2DLocation(secondPt.GetX(), secondPt.GetY(), queryPolyLine->GetCoordSys()));
-
-                HGF2DLocationCollection CrossPoints;
-
-                // If the segment is not NULL and if the segment intersects the query polyline or if the segment is inside the query polyline, add the extremity points               
-                if (!line.IsNull() && 
-                    (queryPolyLine->Intersect(line, &CrossPoints) > 0 || queryPolyLine->IsPointIn(HGF2DLocation(firstPt.GetX(), firstPt.GetY(), queryPolyLine->GetCoordSys())) || (canSkipLine == false)))
-                    {
-                    if (addAllPts)
-                        {
-                        for (size_t indexPoints2 = 0 ; indexPoints2 < (*linearIter)->GetSize(); indexPoints2++)
-                            {  
-                            cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints2));
-                            }
-                        break;
-                        }
-
-                    if (lastIndexPtAdd != (indexPoints-1))
-                        {  
-                        cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints-1));   
-                        }      
-
-                    cutFeatureP->AppendPoint((*linearIter)->GetPoint(indexPoints));   
-                    lastIndexPtAdd = indexPoints;
-                    canSkipLine = false;
-                    }
-
-                firstPt = secondPt;
-                }
-
-            if (cutFeatureP->GetSize() > 0)
-                cutLinearList.push_back(cutFeatureP);
-
-            linearIter++;
-            }           
-        }
-
-    return status;
-    }
-
 
 
 
@@ -356,8 +259,8 @@ int CutLinears(list<HFCPtr<HVEDTMLinearFeature>>& linearList, list<HFCPtr<HVEDTM
 * coordinate system. Negative values denote other errors.
 * @bsimethod                                                    AlainRobert  2/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ReprojectPoint(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
-                         Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,
+StatusInt ReprojectPoint(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,
+                         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,
                          const DPoint3d& inPoint,
                          DPoint3d& outPoint)
     {
@@ -592,11 +495,11 @@ inline double GetUTMZoneCenterMeridian(int zoneNumber)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt GetGeoDomainShape
 (
-const Bentley::GeoCoordinates::BaseGCS& gcs,
+const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS& gcs,
 GeoDomainShape&                         shape
 ) 
     {
-    using namespace Bentley::GeoCoordinates;
+    using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
     // Some explanation about the values specified below and their intent.
     // First it must be inderstood that the current implementation is in progress.
@@ -885,7 +788,7 @@ BEGIN_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt GetGeoDomain
 (
- Bentley::GeoCoordinates::BaseGCSPtr& GCSPtr,
+ BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& GCSPtr,
  double* minLongitude,
  double* maxLongitude,
  double* minLatitude,
@@ -925,7 +828,7 @@ StatusInt GetGeoDomain
 * 
 * @bsimethod                                                    AlainRobert  2/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetGeoMathematicalDomain(Bentley::GeoCoordinates::BaseGCSPtr& GCSPtr, GeoDomainShape& shape) 
+StatusInt GetGeoMathematicalDomain(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& GCSPtr, GeoDomainShape& shape) 
     {
     StatusInt status = SUCCESS;
     double longMin;
@@ -952,7 +855,7 @@ StatusInt GetGeoMathematicalDomain(Bentley::GeoCoordinates::BaseGCSPtr& GCSPtr, 
 * Returns the domain of application for GCS. 
 * @bsimethod                                                    AlainRobert  2/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetMathematicalDomain(Bentley::GeoCoordinates::BaseGCSPtr& GCSPtr, GeoDomainShape& shape)
+StatusInt GetMathematicalDomain(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& GCSPtr, GeoDomainShape& shape)
     {
     if(HRFGeoCoordinateProvider::GetServices() == NULL)
         return ERROR;
@@ -997,8 +900,8 @@ END_UNNAMED_NAMESPACE
 * given GCS 
 AlainRobert  2/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-HFCPtr<HVE2DShape> GetGCSDomainsIntersection(Bentley::GeoCoordinates::BaseGCSPtr& firstGCSPtr, 
-                                             Bentley::GeoCoordinates::BaseGCSPtr& secondGCSPtr, 
+HFCPtr<HVE2DShape> GetGCSDomainsIntersection(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& firstGCSPtr, 
+                                             BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& secondGCSPtr, 
                                              HFCPtr<HGF2DCoordSys> latitudeLongitudeCoordSys)
     {
     GeoDomainShape sourceGeoDomain;
@@ -1039,8 +942,8 @@ void MergeExtentsInPlace (DRange2d &destRange, const DRange2d& sourceRange)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ReprojectRangeDomainLimited(DRange3d& reprojectedRange, 
                                       const DRange3d& initialRange, 
-                                      Bentley::GeoCoordinates::BaseGCSPtr& sourceGCS,
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCS)
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCS,
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS)
     {
     if(HRFGeoCoordinateProvider::GetServices() == NULL)
         return ERROR;
@@ -1107,8 +1010,8 @@ StatusInt ReprojectRangeDomainLimited(DRange3d& reprojectedRange,
 | The additionalSourceExtent must be expressed in the coordinates of the source. If
 | this extent is not defined (empty) then it will be disregarded.
 +----------------------------------------------------------------------------*/ 
-StatusInt GetReprojectedBoxDomainLimited(Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr, 
-                                         Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,  
+StatusInt GetReprojectedBoxDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr, 
+                                         BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr,  
                                          DPoint3d                             boxPoints[], 
                                          DPoint3d                             reprojectedBoxPoints[], 
                                          DRange3d                             additionalSourceExtent,
@@ -1262,8 +1165,8 @@ StatusInt GetReprojectedBoxDomainLimited(Bentley::GeoCoordinates::BaseGCSPtr& ta
 |GetReprojectedBox
 | Reprojects the 3D box from source to target GCS.
 +----------------------------------------------------------------------------*/ 
-HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
-                                      Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr,  
+HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& sourceGCSPtr, 
+                                      BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCSPtr,  
                                       const DPoint3d*   pi_pSourcePt,
                                       size_t  pi_SourcePtQty)
             
@@ -1314,7 +1217,7 @@ HFCPtr<HVE2DShape> ReprojectShapeDomainLimited(Bentley::GeoCoordinates::BaseGCSP
 | single simple shape. If a void shape (HVE2DVoidShape) is provided it will work but
 | of course add nothing.
 +----------------------------------------------------------------------------*/ 
-int AddIslandToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr, 
+int AddIslandToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&              dtmPtr, 
                    const HVE2DShape&    island)
     {
     assert((dtmPtr != 0) && (dtmPtr->GetBcDTM() != 0) && (dtmPtr->GetBcDTM()->GetTinHandle()));
@@ -1402,12 +1305,12 @@ int AddIslandToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr,
 | The AddHoles is usually called by the utility method AddShapeToDTM() to add a 
 | list of holes. 
 +----------------------------------------------------------------------------*/ 
-int AddHolesToDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr, 
+int AddHolesToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&                     dtmPtr, 
                   const HVE2DShape::HoleList& holeList)
     {
     assert((dtmPtr != 0) && (dtmPtr->GetBcDTM() != 0) && (dtmPtr->GetBcDTM()->GetTinHandle()));
         
-    int status;
+    int status = 0;
     HVE2DShape::HoleList::const_iterator holeIter(holeList.begin());
     HVE2DShape::HoleList::const_iterator holeIterEnd(holeList.end());
 
@@ -1494,7 +1397,7 @@ int AddHolesToDTM(Bentley::TerrainModel::DTMPtr&                     dtmPtr,
 | which cannot be supported (and needs not be supported as it represents no
 | shape clipping at all).
 +----------------------------------------------------------------------------*/ 
-int AddClipToDTM (Bentley::TerrainModel::DTMPtr&           dtmPtr,
+int AddClipToDTM (BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&           dtmPtr,
                   const HVE2DShape& shape)
     {
     StatusInt status = SUCCESS;
@@ -1538,7 +1441,7 @@ int AddClipToDTM (Bentley::TerrainModel::DTMPtr&           dtmPtr,
     }
 
 /*----------------------------------------------------------------------------+
-|ScalableMeshQuery::SetClipToDTM
+|ScalableMeshPointQuery::SetClipToDTM
 | Protected... Utility method used to set the shape of a DTM object.
 | Usually called internaly after the ClipShape has been properly computed and
 | DTM been generated with the result of a query.
@@ -1547,7 +1450,7 @@ int AddClipToDTM (Bentley::TerrainModel::DTMPtr&           dtmPtr,
     static bool s_intersectWithConvexHull = true;
 #endif
 
-int SetClipToDTM(Bentley::TerrainModel::DTMPtr&              dtmPtr,
+int SetClipToDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&              dtmPtr,
                  const DRange3d&      spatialIndexRange,
                  const HVE2DShape&    shape)
     {

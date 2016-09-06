@@ -2,7 +2,7 @@
 |
 |     $Source: PCLWrapper/PublicAPI/IStatus.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,13 +13,13 @@ BEGIN_PCLWRAPPER_NAMESPACE
 
 struct IStatus;
 
-typedef Bentley::RefCountedPtr<IStatus>             IStatusPtr;
+typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<IStatus>             IStatusPtr;
 
 /*=================================================================================**//**
 * Interface feature line.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IStatus : public Bentley::RefCountedBase
+struct IStatus : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     public :
 

@@ -6,12 +6,12 @@
 |       $Date: 2011/10/26 17:55:30 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include "ScalableMeshSources.h"
@@ -153,7 +153,7 @@ struct IDTMSourceCollection::Impl : public EditListener
     virtual void                        _NotifyOfPublicEdit                () override;
     virtual void                        _NotifyOfLastEditUpdate            (Time                        updatedLastEditTime) override;
 
-    UInt                                GetCount                           () const;
+    uint32_t                                GetCount                           () const;
 
     void                                Add                                (const IDTMSourcePtr&    sourcePtr);
 
@@ -178,7 +178,7 @@ struct IDTMSourceCollection::Impl : public EditListener
     IteratorBase                        MoveUp                             (const IteratorBase&         sourceIt);
 
     IteratorBase                        GetIterFor                         (const IDTMSource&       source);
-    IteratorBase                        GetIterAt                          (UInt                        index);
+    IteratorBase                        GetIterAt                          (uint32_t                        index);
 
     static Container::iterator          GetIter                            (const IteratorBase&         iter);
 
@@ -285,7 +285,7 @@ IDTMSourceCollection::IteratorBase IDTMSourceCollection::Impl::GetIterFor (const
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMSourceCollection::IteratorBase IDTMSourceCollection::Impl::GetIterAt (UInt index)
+IDTMSourceCollection::IteratorBase IDTMSourceCollection::Impl::GetIterAt (uint32_t index)
     {
     assert(index < m_sources.size());
 
@@ -357,9 +357,9 @@ IDTMSourceCollection::IteratorBase IDTMSourceCollection::Impl::End ()
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt IDTMSourceCollection::Impl::GetCount() const
+uint32_t IDTMSourceCollection::Impl::GetCount() const
     {       
-    return (UInt)m_sources.size();
+    return (uint32_t)m_sources.size();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -680,7 +680,7 @@ IDTMSourceCollection::IteratorBase IDTMSourceCollection::_EditIterFor (const IDT
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMSourceCollection::IteratorBase IDTMSourceCollection::_GetIterAt (UInt index) const
+IDTMSourceCollection::IteratorBase IDTMSourceCollection::_GetIterAt (uint32_t index) const
     {
     return m_implP->GetIterAt(index);
     }
@@ -689,7 +689,7 @@ IDTMSourceCollection::IteratorBase IDTMSourceCollection::_GetIterAt (UInt index)
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMSourceCollection::IteratorBase IDTMSourceCollection::_EditIterAt (UInt index)
+IDTMSourceCollection::IteratorBase IDTMSourceCollection::_EditIterAt (uint32_t index)
     {
     return m_implP->GetIterAt(index);
     }
@@ -704,11 +704,11 @@ IDTMSourceCollection::IteratorBase IDTMSourceCollection::_Remove (const Iterator
     return m_implP->Remove(sourceIt);
     }
 
-Bentley::ScalableMesh::Import::UpToDateState IDTMSourceCollection::_GetUpToDateState(const IteratorBase& sourceIt)
+BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::UpToDateState IDTMSourceCollection::_GetUpToDateState(const IteratorBase& sourceIt)
     {
     list<IDTMSourcePtr>::iterator sourceIter(sourceIt.m_implP->GetInternal());
     SourceImportConfig& conf = (**sourceIter).EditConfig();
-    Bentley::ScalableMesh::Import::ScalableMeshData scalableMeshData = conf.GetReplacementSMData();
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ScalableMeshData scalableMeshData = conf.GetReplacementSMData();
     return scalableMeshData.GetUpToDateState();
     }
 
@@ -717,8 +717,8 @@ IDTMSourceCollection::IteratorBase IDTMSourceCollection::_SetRemoveState(const I
     _OnPublicEdit();
     list<IDTMSourcePtr>::iterator sourceIter(sourceIt.m_implP->GetInternal());
     SourceImportConfig& conf = (**sourceIter).EditConfig();
-    Bentley::ScalableMesh::Import::ScalableMeshData scalableMeshData = conf.GetReplacementSMData();
-    scalableMeshData.SetUpToDateState(Bentley::ScalableMesh::Import::UpToDateState::REMOVE);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ScalableMeshData scalableMeshData = conf.GetReplacementSMData();
+    scalableMeshData.SetUpToDateState(BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::UpToDateState::REMOVE);
     conf.SetReplacementSMData(scalableMeshData);
     return sourceIt;
     }
@@ -790,7 +790,7 @@ void IDTMSourceCollection::_Clear()
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt IDTMSourceCollection::GetCount () const
+uint32_t IDTMSourceCollection::GetCount () const
     {
     return m_implP->GetCount();
     }
@@ -799,7 +799,7 @@ UInt IDTMSourceCollection::GetCount () const
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-const IDTMSource& IDTMSourceCollection::GetAt (UInt index) const
+const IDTMSource& IDTMSourceCollection::GetAt (uint32_t index) const
     {
     const_iterator foundIt = GetIterAt(index);
     assert(End() != foundIt);
@@ -811,7 +811,7 @@ const IDTMSource& IDTMSourceCollection::GetAt (UInt index) const
 * @description  
 * @bsimethod                                                 Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IDTMSource& IDTMSourceCollection::EditAt (UInt index)
+IDTMSource& IDTMSourceCollection::EditAt (uint32_t index)
     {
     iterator foundIt = EditIterAt(index);
     assert(EndEdit() != foundIt);
@@ -849,8 +849,8 @@ StatusInt IDTMSourceCollection::Add (const IDTMSourcePtr& sourcePtr)
 
     _OnPublicEdit();
     SourceImportConfig& conf = sourcePtr->EditConfig();
-    Bentley::ScalableMesh::Import::ScalableMeshData scalableMeshData = conf.GetReplacementSMData();
-    scalableMeshData.SetUpToDateState(Bentley::ScalableMesh::Import::UpToDateState::ADD);
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::ScalableMeshData scalableMeshData = conf.GetReplacementSMData();
+    scalableMeshData.SetUpToDateState(BENTLEY_NAMESPACE_NAME::ScalableMesh::Import::UpToDateState::ADD);
     conf.SetReplacementSMData(scalableMeshData);
     m_implP->Add(sourcePtr);
     return BSISUCCESS;

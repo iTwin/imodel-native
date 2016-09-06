@@ -6,18 +6,19 @@
 |       $Date: 2011/11/18 15:50:30 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh/Import/ContentConfig.h>
+#include "ScalableMeshSourcesPersistance.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
-struct BinaryOStream;
-struct BinaryIStream;
+//struct BinaryOStream;
+//struct BinaryIStream;
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -25,14 +26,13 @@ struct BinaryIStream;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ContentConfigSerializer
     {
-    static const UInt           FORMAT_VERSION;
+    static const uint32_t           FORMAT_VERSION;
+    bool                        Serialize(const Import::ContentConfig&    config,
+        SourceDataSQLite&                  sourceData) const;
 
-    bool                        Serialize                              (const Import::ContentConfig&    config,
-                                                                        BinaryOStream&                  stream) const;
-
-    bool                        Deserialize                            (BinaryIStream&                  stream,
-                                                                        Import::ContentConfig&          config,
-                                                                        UInt                            formatVersion) const;
+    bool                        Deserialize(SourceDataSQLite&                  sourceData,
+        Import::ContentConfig&          config,
+        uint32_t                            formatVersion) const;
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

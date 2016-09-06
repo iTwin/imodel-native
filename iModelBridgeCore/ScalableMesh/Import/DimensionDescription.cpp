@@ -6,10 +6,11 @@
 |       $Date: 2011/08/26 18:47:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
+#include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/Import/DataTypeDescription.h>
 #include <ScalableMesh/Import/Exceptions.h>
 
@@ -48,7 +49,7 @@ namespace {
 DimensionType::Info                 s_typeInfoVoid                 (L"Void",            0);
 DimensionType::Info                 s_typeInfoUInt8                (L"UInt8",           1);
 DimensionType::Info                 s_typeInfoUInt16               (L"UInt16",          2);
-DimensionType::Info                 s_typeInfoUInt32               (L"UInt32",          4);
+DimensionType::Info                 s_typeInfoUInt32               (L"uint32_t",          4);
 DimensionType::Info                 s_typeInfoFloat32              (L"Float32",         4);
 DimensionType::Info                 s_typeInfoFloat64              (L"Float64",         8);
 
@@ -579,8 +580,12 @@ void DimensionOrg::push_back (const DimensionDef& pi_rDimension)
 size_t DimensionOrg::Impl::ComputeTypeSize () const
     {
     size_t TotalSize = 0;
-    std::transform(m_dimensions.begin(), m_dimensions.end(), ImagePP::AccumulateIter(TotalSize), 
-                   std::mem_fun_ref(&DimensionDef::GetTypeSize));
+
+    for (auto& dimension : m_dimensions)
+        {
+        TotalSize += dimension.GetTypeSize();
+        }
+
     return TotalSize;
     }
 
@@ -674,8 +679,12 @@ const size_t DimensionOrgGroup::Impl::UNDEFINED_TYPE_SIZE = (std::numeric_limits
 size_t DimensionOrgGroup::Impl::ComputeTypeSize () const                     
     {
     size_t TotalSize = 0;
-    std::transform(m_separateOrgs.begin(), m_separateOrgs.end(), ImagePP::AccumulateIter(TotalSize), 
-                   std::mem_fun_ref(&DimensionOrg::GetTypeSize));
+
+    for (auto& org : m_separateOrgs)
+        {
+        TotalSize += org.GetTypeSize();
+        }
+    
     return TotalSize;
     }
 

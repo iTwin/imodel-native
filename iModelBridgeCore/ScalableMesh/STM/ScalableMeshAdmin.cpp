@@ -2,14 +2,14 @@
 |
 |     $Source: STM/ScalableMeshAdmin.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <HIEStdcpp.h>
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_RASTER
 USING_NAMESPACE_DGNPLATFORM_DGNHISTORY
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 #define ALMOST_WHITE(colorRGB) (colorRGB.red >= 250 && colorRGB.green >= 250 && colorRGB.blue >= 250)
 

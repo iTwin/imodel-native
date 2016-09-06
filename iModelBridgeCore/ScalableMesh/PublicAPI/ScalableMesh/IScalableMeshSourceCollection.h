@@ -6,7 +6,7 @@
 |       $Date: 2011/10/26 17:55:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,55 +51,55 @@ struct IDTMSourceCollection
             explicit                            IteratorBase           (Impl*                       implP);
 
         public:
-            BENTLEYSTM_EXPORT explicit                IteratorBase           ();
-            BENTLEYSTM_EXPORT                         ~IteratorBase          ();
+            BENTLEY_SM_EXPORT explicit                IteratorBase           ();
+            BENTLEY_SM_EXPORT                         ~IteratorBase          ();
 
-            BENTLEYSTM_EXPORT                         IteratorBase           (const IteratorBase&         rhs);
-            BENTLEYSTM_EXPORT IteratorBase&           operator=              (const IteratorBase&         rhs);
+            BENTLEY_SM_EXPORT                         IteratorBase           (const IteratorBase&         rhs);
+            BENTLEY_SM_EXPORT IteratorBase&           operator=              (const IteratorBase&         rhs);
 
-            BENTLEYSTM_EXPORT const_reference         Dereference            () const;            
-            BENTLEYSTM_EXPORT reference               Dereference            ();
+            BENTLEY_SM_EXPORT const_reference         Dereference            () const;            
+            BENTLEY_SM_EXPORT reference               Dereference            ();
 
-            BENTLEYSTM_EXPORT void                    Increment              ();
-            BENTLEYSTM_EXPORT void                    Decrement              ();
-            BENTLEYSTM_EXPORT bool                    EqualTo                (const IteratorBase&         rhs) const;
+            BENTLEY_SM_EXPORT void                    Increment              ();
+            BENTLEY_SM_EXPORT void                    Decrement              ();
+            BENTLEY_SM_EXPORT bool                    EqualTo                (const IteratorBase&         rhs) const;
             };
 
 
-        BENTLEYSTM_EXPORT IteratorBase                _Begin                 () const;
-        BENTLEYSTM_EXPORT IteratorBase                _End                   () const;
+        BENTLEY_SM_EXPORT IteratorBase                _Begin                 () const;
+        BENTLEY_SM_EXPORT IteratorBase                _End                   () const;
 
-        BENTLEYSTM_EXPORT IteratorBase                _BeginEdit             ();
-        BENTLEYSTM_EXPORT IteratorBase                _EndEdit               ();
+        BENTLEY_SM_EXPORT IteratorBase                _BeginEdit             ();
+        BENTLEY_SM_EXPORT IteratorBase                _EndEdit               ();
 
-        BENTLEYSTM_EXPORT IteratorBase                _Release               (const IteratorBase&         sourceIt,
+        BENTLEY_SM_EXPORT IteratorBase                _Release               (const IteratorBase&         sourceIt,
                                                                         IDTMSourcePtr&          sourcePtr);
 
 
-        BENTLEYSTM_EXPORT IteratorBase                _GetIterFor            (const IDTMSource&       source) const;
-        BENTLEYSTM_EXPORT IteratorBase                _EditIterFor           (const IDTMSource&       source);
+        BENTLEY_SM_EXPORT IteratorBase                _GetIterFor            (const IDTMSource&       source) const;
+        BENTLEY_SM_EXPORT IteratorBase                _EditIterFor           (const IDTMSource&       source);
 
-        BENTLEYSTM_EXPORT IteratorBase                _GetIterAt             (UInt                        index) const;
-        BENTLEYSTM_EXPORT IteratorBase                _EditIterAt            (UInt                        index);
+        BENTLEY_SM_EXPORT IteratorBase                _GetIterAt             (uint32_t                        index) const;
+        BENTLEY_SM_EXPORT IteratorBase                _EditIterAt            (uint32_t                        index);
 
-        BENTLEYSTM_EXPORT IteratorBase                _Remove                (const IteratorBase&         sourceIt);  
+        BENTLEY_SM_EXPORT IteratorBase                _Remove                (const IteratorBase&         sourceIt);  
 
-        BENTLEYSTM_EXPORT Import::UpToDateState     _GetUpToDateState(const IteratorBase& sourceIt);
+        BENTLEY_SM_EXPORT Import::UpToDateState     _GetUpToDateState(const IteratorBase& sourceIt);
         // NEEDS_WORK_SM : move this in IScalableMeshSource.
-        BENTLEYSTM_EXPORT Import::ScalableMeshData&    _GetScalableMeshData(const IteratorBase& sourceIt);
-        BENTLEYSTM_EXPORT void                        _SetScalableMeshData(IteratorBase& sourceIt, Import::ScalableMeshData data);
+        BENTLEY_SM_EXPORT Import::ScalableMeshData&    _GetScalableMeshData(const IteratorBase& sourceIt);
+        BENTLEY_SM_EXPORT void                        _SetScalableMeshData(IteratorBase& sourceIt, Import::ScalableMeshData data);
 
-        BENTLEYSTM_EXPORT IteratorBase              _SetRemoveState(const IteratorBase& sourceIt);
+        BENTLEY_SM_EXPORT IteratorBase              _SetRemoveState(const IteratorBase& sourceIt);
 
-        BENTLEYSTM_EXPORT IteratorBase                _UnGroup               (const IteratorBase&         groupSourceIt);
+        BENTLEY_SM_EXPORT IteratorBase                _UnGroup               (const IteratorBase&         groupSourceIt);
 
-        BENTLEYSTM_EXPORT IteratorBase                _MoveDown              (const IteratorBase&         sourceIt);
-        BENTLEYSTM_EXPORT IteratorBase                _MoveToBottom          (const IteratorBase&         sourceIt);                
-        BENTLEYSTM_EXPORT IteratorBase                _MoveToPos             (const IteratorBase&         sourceIt, 
+        BENTLEY_SM_EXPORT IteratorBase                _MoveDown              (const IteratorBase&         sourceIt);
+        BENTLEY_SM_EXPORT IteratorBase                _MoveToBottom          (const IteratorBase&         sourceIt);                
+        BENTLEY_SM_EXPORT IteratorBase                _MoveToPos             (const IteratorBase&         sourceIt, 
                                                                         const IteratorBase&         destinationIt);        
-        BENTLEYSTM_EXPORT IteratorBase                _MoveToTop             (const IteratorBase&         sourceIt);
-        BENTLEYSTM_EXPORT IteratorBase                _MoveUp                (const IteratorBase&         sourceIt);    
-        BENTLEYSTM_EXPORT void                        _Clear                 ();
+        BENTLEY_SM_EXPORT IteratorBase                _MoveToTop             (const IteratorBase&         sourceIt);
+        BENTLEY_SM_EXPORT IteratorBase                _MoveUp                (const IteratorBase&         sourceIt);    
+        BENTLEY_SM_EXPORT void                        _Clear                 ();
 
 
     public:
@@ -138,17 +138,17 @@ struct IDTMSourceCollection
 
     public : 
         // Not meant to be used polymorphically
-        BENTLEYSTM_EXPORT                             ~IDTMSourceCollection  ();
+        BENTLEY_SM_EXPORT                             ~IDTMSourceCollection  ();
 
-        BENTLEYSTM_EXPORT                             IDTMSourceCollection   (const IDTMSourceCollection& rhs);
-        BENTLEYSTM_EXPORT IDTMSourceCollection&       operator=              (const IDTMSourceCollection& rhs);
+        BENTLEY_SM_EXPORT                             IDTMSourceCollection   (const IDTMSourceCollection& rhs);
+        BENTLEY_SM_EXPORT IDTMSourceCollection&       operator=              (const IDTMSourceCollection& rhs);
 
 
 
-        BENTLEYSTM_EXPORT const IDTMSource&           GetAt                  (UInt                        index) const;
-        BENTLEYSTM_EXPORT IDTMSource&                 EditAt                 (UInt                        index);
+        BENTLEY_SM_EXPORT const IDTMSource&           GetAt                  (uint32_t                        index) const;
+        BENTLEY_SM_EXPORT IDTMSource&                 EditAt                 (uint32_t                        index);
 
-        BENTLEYSTM_EXPORT UInt                        GetCount               () const;
+        BENTLEY_SM_EXPORT uint32_t                        GetCount               () const;
 
         const_iterator                          Begin                  () const;
         const_iterator                          End                    () const;
@@ -168,11 +168,11 @@ struct IDTMSourceCollection
         const_iterator                          GetIterFor             (const IDTMSource&       source) const;
         iterator                                EditIterFor            (const IDTMSource&       source);
 
-        const_iterator                          GetIterAt              (UInt                        index) const;
-        iterator                                EditIterAt             (UInt                        index);
+        const_iterator                          GetIterAt              (uint32_t                        index) const;
+        iterator                                EditIterAt             (uint32_t                        index);
 
 
-        BENTLEYSTM_EXPORT StatusInt                   Add                    (const IDTMSourcePtr&    sourcePtr); 
+        BENTLEY_SM_EXPORT StatusInt                   Add                    (const IDTMSourcePtr&    sourcePtr); 
         iterator                                Remove                 (const const_iterator&       sourceIt);  
         Import::UpToDateState                   GetUpToDateState       (const const_iterator&       sourceIt);        
         iterator                                SetRemoveState          (const const_iterator&      sourceIt);

@@ -1,0 +1,3 @@
+appName     = ScalableMeshATPexe
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)

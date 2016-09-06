@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/GroundDetectionManager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h"
@@ -126,13 +126,13 @@ void ProgressReport::_OnSignalError()
     m_pProgressListener->_OnSignalError();
     }
 
-
+#ifndef DISABLELOGGER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Bentley::NativeLogging::ILogger* GroundDetectionLogger::Get()
+BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger* GroundDetectionLogger::Get()
     {
-    return Bentley::NativeLogging::LoggingManager::GetLogger(L"ScalableMesh.GroundDetection");
+    return BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger(L"ScalableMesh.GroundDetection");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,7 +147,7 @@ void GroundDetectionLogger::OutputTimerToLogger(StopWatch& timer)
     GROUNDDLOG->tracev(L"%.2lf seconds (%ld days %ld h %ld min %ld s)", timer.GetElapsedSeconds(), days, hours, minutes, seconds);
     }
 
-
+#endif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -235,7 +235,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
         if (NULL != pPCFile.get())
             {
             WString name(pPCFile->GetFileName());
-            UInt32 num_clouds(pPCFile->GetNumberOfClouds());
+            uint32_t num_clouds(pPCFile->GetNumberOfClouds());
             UInt64 num_points(pPCFile->GetNumberOfPoints());
 
             GROUNDDLOG->tracev(L"%ls", name.c_str());
@@ -311,7 +311,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
     std::vector<std::vector<bool>> invalidSeedIndexes;
 
     invalidSeedIndexes.resize(seeds.size());
-    vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
+    std::vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
     for (size_t k = 0; k < seeds.size(); k++, pSeedItr++)
         invalidSeedIndexes[k].resize((*pSeedItr)->seedPoints.size());
 
@@ -349,7 +349,7 @@ StatusInt GroundDetectionManager::DoGroundDetection(EditElementHandleR elHandle,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                       06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(Bentley::DgnPlatform::EditElementHandle& elHandle, DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener)
+StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle, DTMPtr& terrainModel, GroundDetectionParametersCR params, IGroundDetectionProgressListenerP pProgressListener)
     {
     StatusInt status(ERROR);
     PointCloudQuadTreePtr quadTree;
@@ -361,7 +361,7 @@ StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(Bentley::DgnPlatform:
         if (NULL != pPCFile.get())
             {
             WString name(pPCFile->GetFileName());
-            UInt32 num_clouds(pPCFile->GetNumberOfClouds());
+            uint32_t num_clouds(pPCFile->GetNumberOfClouds());
             UInt64 num_points(pPCFile->GetNumberOfPoints());
 
             GROUNDDLOG->tracev(L"%ls", name.c_str());
@@ -438,7 +438,7 @@ StatusInt GroundDetectionManager::DoGroundDetectionFromDTM(Bentley::DgnPlatform:
     std::vector<std::vector<bool>> invalidSeedIndexes;
 
     invalidSeedIndexes.resize(seeds.size());
-    vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
+    std::vector<QuadSeedPtr>::iterator pSeedItr = seeds.begin();
     for (size_t k = 0; k < seeds.size(); k++, pSeedItr++)
         invalidSeedIndexes[k].resize((*pSeedItr)->seedPoints.size());
 

@@ -6,7 +6,7 @@
 |       $Date: 2011/10/25 18:53:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -205,7 +205,7 @@ struct Message::Impl
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 Message::Message   (const WChar* msg,
-                    UInt        id)
+                    uint32_t        id)
     :   m_implP(new Impl(msg, id))
     {
 
@@ -243,7 +243,7 @@ Message& Message::operator= (const Message& rhs)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-UInt Message::GetID () const 
+uint32_t Message::GetID () const 
     { 
     return m_implP->m_msgID; 
     }

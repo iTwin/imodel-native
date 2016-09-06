@@ -6,11 +6,11 @@
 |       $Date: 2011/11/18 15:50:41 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 #include <ScalableMesh/IScalableMeshPolicy.h>
 
 #include <ScalableMesh/Foundations/Log.h>
@@ -92,9 +92,9 @@ public:  // OPERATOR_NEW_KLUDGE
 private:
     static HPMMemoryMgr&            GetMemoryMgrInstance           ();
 
-    static UInt                     s_InstanceCount;
+    static uint32_t                     s_InstanceCount;
     HPMMemoryMgr&                   m_memMgr;
-    mutable UInt                    m_allocatedBlockCount;    
+    mutable uint32_t                    m_allocatedBlockCount;    
 
 public:
     static size_t                   GetMemoryMgrKeptBlockCount     ();
@@ -127,7 +127,7 @@ public:
 
     };
 
-UInt ImportMemoryAllocator::Impl::s_InstanceCount = 0;
+uint32_t ImportMemoryAllocator::Impl::s_InstanceCount = 0;
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -488,7 +488,7 @@ GCSFactory CreateGCSFactory ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT const Memory::MemoryAllocator& GetMemoryAllocator ()
+BENTLEY_SM_EXPORT const Memory::MemoryAllocator& GetMemoryAllocator ()
     {
     static const ImportMemoryAllocator MEMORY_ALLOCATOR_INSTANCE;
     return MEMORY_ALLOCATOR_INSTANCE;
@@ -498,7 +498,7 @@ BENTLEYSTM_EXPORT const Memory::MemoryAllocator& GetMemoryAllocator ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT Foundations::Log& GetLog ()
+BENTLEY_SM_EXPORT Foundations::Log& GetLog ()
     {
     static ImportWarningLog WARNING_LOG;
     return WARNING_LOG;
@@ -508,7 +508,7 @@ BENTLEYSTM_EXPORT Foundations::Log& GetLog ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT const GeoCoords::GCSFactory& GetGCSFactory ()
+BENTLEY_SM_EXPORT const GeoCoords::GCSFactory& GetGCSFactory ()
     {
     static const GCSFactory INSTANCE (CreateGCSFactory());
     return INSTANCE;
@@ -528,7 +528,7 @@ const GeoCoords::ReprojectionFactory& GetReprojectionFactory ()
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BENTLEYSTM_EXPORT const Import::SourceFactory& GetSourceFactory ()
+BENTLEY_SM_EXPORT const Import::SourceFactory& GetSourceFactory ()
     {
     static const SourceFactory INSTANCE(CreateSourceFactory());
     return INSTANCE;

@@ -11,9 +11,13 @@
 #include <ScalableTerrainModel\IMrDTMQuery.h>
 
 
+
+#include <ImagePP\all\h\HFCPtr.h>
+#include <ImagePP\all\h\HVEShape.h>
+
 USING_NAMESPACE_BENTLEY_MRDTM
 USING_NAMESPACE_BENTLEY_TERRAINMODEL    
-
+using namespace Bentley::GeoCoordinates;
 
 extern DataPipe s_dataPipe;
 
@@ -214,6 +218,25 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         }
     
     static DRange3d s_importRange;
+    HFCPtr<HGF2DCoordSys>      s_dumpCoordSys(new HGF2DCoordSys()); 
+    HFCPtr<HVEShape>           s_importClipShape2D;
+
+    
+    inline bool IsPointInClipShape(const DPoint3d& point)
+        {
+        if (s_importClipShape2D == 0)
+            {
+            return true;            
+            }                
+
+        HGF2DLocation location(point.x, point.y, s_dumpCoordSys);                                                                                            
+
+        if (s_importClipShape2D->IsPointIn(location) || 
+            s_importClipShape2D->IsPointOn(location))
+            return true;
+        
+        return false;
+        }
 
     bool DirectPointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoints3d)
         {
@@ -341,8 +364,8 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
             bvector<DPoint3d> pointsInRange; 
 
             for (size_t ptInd = 0; ptInd < nbOfPoints; ptInd++)
-                {
-                if (s_importRange.IsContainedXY(points[ptInd]))
+                {                                                                         
+                if (IsPointInClipShape(points[ptInd]))
                     {
                     pointsInRange.push_back(points[ptInd]);
                     }
@@ -371,9 +394,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         if (nbOfFeaturesPoints > 0)
             {
             bvector<DPoint3d> pointsInRange; 
-            bool wasContained; 
-
-            wasContained = s_importRange.IsContainedXY(featurePoints[0]);
+            bool wasContained = IsPointInClipShape(featurePoints[0]);            
             pointsInRange.push_back(featurePoints[0]);
 
             for (size_t ptInd = 0; ptInd < nbOfFeaturesPoints; ptInd++)
@@ -395,7 +416,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
                         isContained = true;
                         break;
                     default: 
-                        isContained = s_importRange.IsContainedXY(featurePoints[ptInd]);
+                        isContained = IsPointInClipShape(featurePoints[ptInd]);
                         break;
                     }
                 
@@ -425,7 +446,7 @@ bool WritePointsCallback(const DPoint3d* points, size_t nbOfPoints, bool arePoin
         return true;
         }
     
-    void ImportThread(DgnPlatformLib::Host* hostToAdopt, Bentley::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
+    void ImportThread(DgnPlatformLib::Host* hostToAdopt, BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshSourceImporterPtr& importerPtr)
         {    
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 
@@ -455,7 +476,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
     //Query the linears 
     
     //Get the query interfaces
-    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
+    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_LINEAR);
     
     if (fullResLinearQueryPtr != 0)
         {              
@@ -474,20 +495,20 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
                           
     dtmPtr = 0;                    
     
-    IMrDTMQueryPtr fixResPointQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                  
+    IMrDTMQueryPtr fixResPointQueryPtr = mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);                  
 
     assert(fixResPointQueryPtr != 0 || mrDTMPtr->GetPointCount() == 0);
 
     if (fixResPointQueryPtr != 0)
         {        
         // Find the last res that have the less than 200000 points
-        Bentley::MrDTM::IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(Bentley::MrDTM::IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
+        BENTLEY_NAMESPACE_NAME::MrDTM::IMrDTMFixResolutionIndexQueryParamsPtr mrDtmFixResqueryParamsPtr(BENTLEY_NAMESPACE_NAME::MrDTM::IMrDTMFixResolutionIndexQueryParams::CreateParams());                                                           
     
         int  res = 0;
         bool found = false;
         DTMPtr singleResolutionViewDtmPtr = 0;                         
         
-        for (res=0; res<mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT); res++) 
+        for (res=0; res<mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT); res++) 
             {                
             mrDtmFixResqueryParamsPtr->SetResolutionIndex(res);  
             mrDtmFixResqueryParamsPtr->SetTriangulationState(false);                
@@ -511,7 +532,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         IMrDTMPtr      singleResMrDTMViewPtr = IMrDTMPtr((IMrDTM*)singleResolutionViewDtmPtr.get());
         IMrDTMQueryPtr fullResQueryPtr;
        
-        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                
+        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);                
         
         assert(fullResQueryPtr != 0);
 
@@ -524,7 +545,7 @@ StatusInt GetApproximationNbPtsNeedToExtract(IMrDTMPtr                    mrDTMP
         if (fullResQueryPtr->Query(dtmPtr, &regionPointsInStorageCS[0], (int)regionPointsInStorageCS.size(), mrdtmQueryParamPtr) != IMrDTMQuery::S_SUCCESS)     
             return ERROR;
                      
-        *nbPointsForPointFeatures = (unsigned int)dtmPtr->GetPointCount() * (int)pow(4.0, mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT) - res - 1);
+        *nbPointsForPointFeatures = (unsigned int)dtmPtr->GetPointCount() * (int)pow(4.0, mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT) - res - 1);
         }
                                                    
     return SUCCESS;
@@ -546,9 +567,9 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
     IMrDTMQueryParametersPtr queryParameterPtr;
      
     //Query the linears     
-    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_LINEAR);
+    fullResLinearQueryPtr = mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_LINEAR);
 
-    IMrDTMQueryPtr fixResPointQueryPtr(mrDTMPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, Bentley::MrDTM::DTM_QUERY_DATA_POINT));    
+    IMrDTMQueryPtr fixResPointQueryPtr(mrDTMPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FIX_RESOLUTION_VIEW, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT));    
 
     if (fullResLinearQueryPtr != 0)
         {                                    
@@ -608,11 +629,11 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
 
         if (decimationFactorForPointFeatures == 1.0)
             {
-            mrDtmFixResqueryParamsPtr->SetResolutionIndex(mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT)-1);                      
+            mrDtmFixResqueryParamsPtr->SetResolutionIndex(mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT)-1);                      
             }
         else
             {
-            int nbResolutions = mrDTMPtr->GetNbResolutions(Bentley::MrDTM::DTM_QUERY_DATA_POINT);
+            int nbResolutions = mrDTMPtr->GetNbResolutions(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);
             assert(nbResolutions >= 1);
             assert(decimationFactorForPointFeatures <= 1.0);
                         
@@ -634,7 +655,7 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
         IMrDTMPtr      singleResMrDTMViewPtr = IMrDTMPtr((IMrDTM*)singleResolutionViewDtmPtr.get());
         IMrDTMQueryPtr fullResQueryPtr;
                 
-        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(Bentley::MrDTM::DTM_QUERY_FULL_RESOLUTION, Bentley::MrDTM::DTM_QUERY_DATA_POINT);                                
+        fullResQueryPtr = singleResMrDTMViewPtr->GetQueryInterface(BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_FULL_RESOLUTION, BENTLEY_NAMESPACE_NAME::MrDTM::DTM_QUERY_DATA_POINT);                                
         assert(fullResQueryPtr != 0);
 
         IMrDTMFullResolutionQueryParamsPtr mrDtmFullResQueryParam(IMrDTMFullResolutionQueryParams::CreateParams());
@@ -675,61 +696,6 @@ StatusInt QuerySubResolutionData(DTMPtr&         dtmPtr,
         }
             
     return SUCCESS;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mathieu.St-Pierre 11/2015
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
-    {    
-    double value;
-    BeXmlStatus status = pRootNode->GetAttributeDoubleValue(value, "xmax");
-
-    if (status != BEXML_Success)
-        {
-        importRange.high.x = numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.high.x = value;
-        }
-
-    status = pRootNode->GetAttributeDoubleValue(value, "xmin");
-
-    if (status != BEXML_Success)
-        {
-        importRange.low.x = -numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.low.x = value;
-        }
-
-    status = pRootNode->GetAttributeDoubleValue(value, "ymax");
-
-    if (status != BEXML_Success)
-        {
-        importRange.high.y = numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.high.y = value;
-        }
-
-    status = pRootNode->GetAttributeDoubleValue(value, "ymin");
-
-    if (status != BEXML_Success)
-        {
-        importRange.low.y = -numeric_limits<double>::max();
-        }
-    else
-        {
-        importRange.low.y = value;
-        }
-
-    importRange.low.z = 0;
-    importRange.high.z = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -937,6 +903,61 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                     
         return SUCCESS;
         }
+        
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 11/2015
+-+---------------+---------------+---------------+---------------+---------------+------*/    
+void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
+    {    
+    double value;
+    BeXmlStatus status = pRootNode->GetAttributeDoubleValue(value, "xmax");
+
+    if (status != BEXML_Success)
+        {
+        importRange.high.x = numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.high.x = value;
+        }
+
+    status = pRootNode->GetAttributeDoubleValue(value, "xmin");
+
+    if (status != BEXML_Success)
+        {
+        importRange.low.x = -numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.low.x = value;
+        }
+
+    status = pRootNode->GetAttributeDoubleValue(value, "ymax");
+
+    if (status != BEXML_Success)
+        {
+        importRange.high.y = numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.high.y = value;
+        }
+
+    status = pRootNode->GetAttributeDoubleValue(value, "ymin");
+
+    if (status != BEXML_Success)
+        {
+        importRange.low.y = -numeric_limits<double>::max();
+        }
+    else
+        {
+        importRange.low.y = value;
+        }
+
+    importRange.low.z = 0;
+    importRange.high.z = 0;
+    }        
+        
     BentleyStatus ScalableMeshSDKexe::ParseImportDefinition(BeXmlNodeP pTestNode, ImportParameters& params)
         {
         BeXmlStatus status;
@@ -1002,8 +1023,8 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 assert(status == SUCCESS);
                 }
 
-
-            if (ParseSourceSubNodes(importerPtr->EditSources(), params.pRootNode) == true)
+            bvector<DPoint3d> importClipShape;  
+            if (ParseSourceSubNodes(importerPtr->EditSources(), importClipShape, s_importRange, params.pRootNode) == true)
                 {
                 importerPtr->Import();
                 }
@@ -1036,9 +1057,23 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 assert(status == SUCCESS);
                 }
          
-                    
-            if (ParseSourceSubNodes(importerPtr->EditSources(), params.pRootNode) == true)
+            bvector<DPoint3d> importClipShape;        
+            if (ParseSourceSubNodes(importerPtr->EditSources(),importClipShape, s_importRange, params.pRootNode) == true)
                 {
+                
+                if (importClipShape.size() > 0)
+                    {
+                    bvector<double> coord;
+                    for (auto pt : importClipShape)
+                        {
+                        coord.push_back(pt.x);
+                        coord.push_back(pt.y);
+                        }
+                    
+                    size_t nbCoord = coord.size();
+
+                    s_importClipShape2D = new HVEShape(&nbCoord, &coord[0], s_dumpCoordSys);                        
+                    }
                 std::thread workingThread;
 
                 workingThread = std::thread(&ImportThread, DgnPlatformLib::QueryHost(), importerPtr);         
@@ -1054,8 +1089,8 @@ int QueryStmFromBestResolution(RefCountedPtr<BcDTM>&        singleResolutionDtm,
                 FILE* tempStmstreamFile = _wfopen(tempStmstream.c_str(), L"w+");
                 assert(tempStmstreamFile != 0);
 
-                Bentley::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(tempStmstream.c_str(),
-                                                                           Bentley::MrDTM::DTM_SOURCE_DATA_DTM));
+                BENTLEY_NAMESPACE_NAME::MrDTM::IDTMSourcePtr stmSourcePtr(CreateSourceFor(tempStmstream.c_str(),
+                                                                           BENTLEY_NAMESPACE_NAME::MrDTM::DTM_SOURCE_DATA_DTM));
 
                 mrdtmCreatorPtr->EditSources().Add(stmSourcePtr);
 

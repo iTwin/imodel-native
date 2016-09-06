@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:36:46 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -100,11 +100,11 @@ public:
 struct DGNElementID
     {
 private:
-    UInt                                    m_type;
-    UInt                                    m_handlerID;
+    uint32_t                                    m_type;
+    uint32_t                                    m_handlerID;
 public:
-    explicit                                DGNElementID                       (UInt                                type,
-                                                                                UInt                                handlerID);
+    explicit                                DGNElementID                       (uint32_t                                type,
+                                                                                uint32_t                                handlerID);
 
     friend bool                             operator<                          (const DGNElementID&                 lhs,
                                                                                 const DGNElementID&                 rhs);
@@ -140,8 +140,8 @@ public:
 
     ID                                          GetID                              () const { return m_baseP; }
 
-    UInt                                        GetElementType                     () const;
-    UInt                                        GetElementHandlerID                () const;
+    uint32_t                                        GetElementType                     () const;
+    uint32_t                                        GetElementHandlerID                () const;
 
     DGNElementID                                GetElementID                       () const { return m_elementID; }
 

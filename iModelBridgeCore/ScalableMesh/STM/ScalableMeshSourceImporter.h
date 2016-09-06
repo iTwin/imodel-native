@@ -6,15 +6,15 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------+
-|																		|
-|	ScalableMeshNewFileCreator.h    		  	    		(C) Copyright 2001.		|
-|												BCIVIL Corporation.		|
-|												All Rights Reserved.	|
+|                                                                       |
+|   ScalableMeshNewFileCreator.h                (C) Copyright 2001.     |
+|                                               BCIVIL Corporation.     |
+|                                               All Rights Reserved.    |
 |                                                                       |
 +----------------------------------------------------------------------*/
 
@@ -48,7 +48,7 @@
 #include "ScalableMeshCoreFns.h"
 
 #include <ScalableMesh/GeoCoords/Reprojection.h>
-//#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 
 #include "ScalableMeshEditListener.h"
@@ -62,7 +62,7 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 /*__PUBLISH_SECTION_START__*/
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
@@ -123,7 +123,7 @@ struct IScalableMeshSourceImporter::Impl : public EditListener
 
         /*
         template <typename PointIndex>
-		StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const;
+        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<ISMStore::Extent3d64f> listRemoveExtent) const;
         */
 /*        
         template <typename PointType, typename PointIndex, typename LinearIndex>
@@ -136,7 +136,7 @@ struct IScalableMeshSourceImporter::Impl : public EditListener
                                                                             int                                     levelToFilter = -1);        
         /*        
         StatusInt                           SaveSources                    ();  
-        StatusInt                           SaveSources                    (IDTMFile::File&                         file);
+        StatusInt                           SaveSources                    (ISMStore::File&                         file);
         */
 
         StatusInt                           SaveSources                    (IScalableMeshSourceImporterStoragePtr&                sourceImporterStoragePtr);

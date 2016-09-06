@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/SourceImporterStandAloneTester/FeatureAspects.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -26,7 +26,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 static bool         s_dllsLoaded;
 static int          s_dllsCount;
 
-namespace Bentley
+namespace BENTLEY_NAMESPACE_NAME
     {
     struct StringList{};
 

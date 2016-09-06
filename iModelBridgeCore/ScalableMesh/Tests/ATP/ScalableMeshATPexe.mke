@@ -1,0 +1,96 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Tests/ATP/ScalableMeshATPexe.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+
+%include  mdl.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki
+%include $(SrcRoot)ScalableMesh/mki/ScalableMeshATPName.mki
+%include $(SrcRoot)ScalableMesh/ScalableMesh.mki
+
+consoleAppUnicode = 1
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+appName = ScalableMeshATPexe
+o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
+always:
+    ~mkdir $(o)
+
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+
+
+ScalableMeshDir = $(SrcRoot)ScalableMesh/
+
+CCompOpts + -DUNICODE
+
+
+
+
+
+
+#NEEDS_WORK_SM : TEMP_SM_ATP For ATP purpose
+nameToDefine=SCALABLE_MESH_ATP
+%include cdefapnd.mki
+
+
+$(o)ATPFileFinder$(oext): $(baseDir)Common/ATPFileFinder.cpp ${MultiCompileDepends}
+
+#$(o)DrapeLineTool$(oext): $(baseDir)Tool/DrapeLineTool.cpp $(baseDir)Tool/DrapeLineTool.h ${MultiCompileDepends}
+
+$(o)VolumeCalculationTool$(oext): $(baseDir)Tool/VolumeCalculationTool.cpp $(baseDir)Tool/VolumeCalculationTool.h ${MultiCompileDepends}
+
+$(o)ATPUtils$(oext): $(baseDir)Common/ATPUtils.cpp ${MultiCompileDepends}
+
+$(o)ATPDefinitions$(oext): $(baseDir)Common/ATPDefinitions.cpp ${MultiCompileDepends}
+
+$(o)ATPGeneration$(oext): $(baseDir)Common/ATPGeneration.cpp ${MultiCompileDepends}
+
+$(o)Initialize$(oext): $(baseDir)Initialize.cpp ${MultiCompileDepends}
+
+$(o)ScalableMeshATPexe$(oext): $(baseDir)ScalableMeshATPexe.cpp ${MultiCompileDepends}
+
+
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+EXE_DEST     = $(o)
+EXE_NAME     = $(appname)
+EXE_OBJS     = $(MultiCompileObjectList)
+EXE_LOPT1 = -ENTRY:wmainCRTStartup
+LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Imagepp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppImaging.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BePointCloud.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeLibJpegTurbo.lib
+
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)DgnView.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
+
+EXE_TMP_DIR  = $(o)
+
+%include $(sharedMki)linktool.mki
+
+always:
+    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+

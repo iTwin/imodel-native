@@ -6,12 +6,12 @@
 |       $Date: 2012/01/27 16:45:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 
 #include <ScalableMesh/Import/Plugin/InputExtractorV0.h>
 #include <ScalableMesh/Import/Plugin/SourceV0.h>
@@ -25,6 +25,7 @@
 #include <ScalableMesh/Plugin/IScalableMeshCivilDTMSource.h>
 #include <ScalableMesh/Plugin/IScalableMeshSTMSource.h>
 #include <STMInternal/GeoCoords/WKTUtils.h>
+#include "..\Stores\SMStoreUtils.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
@@ -258,12 +259,12 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
 
             if (layerDirP->HasWkt())
                 {
-                HCPWKT wkt(layerDirP->GetWkt());
-                success &= !wkt.IsEmpty();
+                //HCPWKT wkt(layerDirP->GetWkt());
+                success &= !layerDirP->GetWkt().IsEmpty();
                 
-                WString wktStr(wkt.GetCStr());
+                WString wktStr(layerDirP->GetWkt().GetCStr());
 
-                IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);                
+                ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);                
 
                 BaseGCS::WktFlavor baseGcsWktFlavor;
     
@@ -271,10 +272,10 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
 
                 assert(result);    
 
-                GCSFactory::Status gcsCreateStatus = GCSFactory::S_SUCCESS;
+                SMStatus gcsCreateStatus = SMStatus::S_SUCCESS;
                 gcs = GetGCSFactory().Create(wktStr.c_str(), baseGcsWktFlavor, gcsCreateStatus);
 
-                success &= (GCSFactory::S_SUCCESS == gcsCreateStatus);
+                success &= (SMStatus::S_SUCCESS == gcsCreateStatus);
                 }
 
             // TDORAY: Fetch units
@@ -289,7 +290,7 @@ class IDTMFileCreator : public LocalFileSourceCreatorBase
             ScalableMeshData data = ScalableMeshData::GetNull();
             data.AddExtent(layerRange);
 
-            contentDesc.Add(LayerDescriptor(L"",
+            contentDesc.Add(ILayerDescriptor::CreateLayerDescriptor(L"",
                             dataTypes,
                             gcs, 
                             &layerRange,

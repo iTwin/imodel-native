@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -50,12 +50,12 @@
 #include "ScalableMeshCoreFns.h"
 
 #include <ScalableMesh/GeoCoords/Reprojection.h>
-#include <ImagePP/all/h/IDTMFile.h>
+//#include <ImagePP/all/h/ISMStore.h>
 #include <ScalableMesh/IScalableMeshDocumentEnv.h>
 
 #include "ScalableMeshEditListener.h"
 #include "ScalableMeshStorage.h"
-#include "SMPointTileStore.h"
+#include "Stores\SMSQLiteStore.h"
 
 //#include <HGF3DExtent.h>
 
@@ -65,8 +65,9 @@
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 /*__PUBLISH_SECTION_START__*/
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
+extern ISMPointIndexFilter<DPoint3d, Extent3dType>* s_filter;
 
 BEGIN_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE
 struct Sink;
@@ -81,9 +82,10 @@ typedef RefCountedPtr<SourceImportConfig>   SourceImportConfigCPtr;
 typedef RefCountedPtr<IStorage>             IStoragePtr;
 typedef RefCountedPtr<ClipShapeStorage>     ClipShapeStoragePtr;
 
-typedef IDTMFile::Point3d64f                          PointType;
-typedef IDTMFile::Extent3d64f                         PointIndexExtentType;
-typedef SMMeshIndex <PointType, PointIndexExtentType> IndexType;
+typedef DPoint3d                          PointType;
+//typedef ISMStore::Extent3d64f                         PointIndexExtentType;
+typedef DRange3d PointIndexExtentType;
+typedef SMMeshIndex <PointType, PointIndexExtentType> MeshIndexType;
 
 void RegisterDelayedImporters();
 inline bool fileExist(const WChar* fileName)
@@ -91,6 +93,10 @@ inline bool fileExist(const WChar* fileName)
     ifstream file(fileName, ios::in | ios::binary);
     return file.good() && (char_traits<char>::eof() != file.peek());
     }
+
+
+
+bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -109,56 +115,27 @@ struct IScalableMeshCreator::Impl
         ScalableMeshCompressionType         m_compressionType;
         WString                             m_scmFileName;    
         IScalableMeshPtr                    m_scmPtr;  
-#ifdef SCALABLE_MESH_DGN
-        IDgnDbScalableMeshPtr               m_dgnScalableMeshPtr;
+        //SMSQLiteFile                        m_smSQLite;
+
+        SMSQLiteFilePtr                     m_smSQLitePtr;
         bool                                m_isDgnDb;
-#endif
+
         Time                                m_lastSyncTime;
-#if 0
-        Time                                m_lastSourcesModificationTime;
-        Time                                m_lastSourcesModificationCheckTime;
-        bool                                m_sourcesDirty;
-#endif
+
         bool                                m_gcsDirty;
        // DocumentEnv                         m_sourceEnv;
         const size_t                        m_workingLayer;
 
         //CREATOR2
 
-#if 0
-        virtual void                        _NotifyOfPublicEdit            () override;
-        virtual void                        _NotifyOfLastEditUpdate        (Time                                    updatedLastEditTime) override;
 
-        static DocumentEnv                  CreateSourceEnvFrom            (const WChar*                          filePath);
 
-        int                                 ImportClipMaskSource           (const IDTMSource&                   dataSource,
-                                                                            const ClipShapeStoragePtr&              clipShapeStoragePtr) const;
+        StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
+                                                            HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
+                                                            bool needBalancing = false);
 
-        int                                 TraverseSource                 (SourcesImporter&                        importer,
-                                                                            IDTMSource&                             dataSource,
-                                                                            const HFCPtr<HVEClipShape>&             clipShapePtr,
-                                                                            const GeoCoords::GCS&                   targetGCS,
-                                                                            const Import::ScalableMeshData&         targetScalableMeshData) const;
-        
-        int                                 TraverseSourceCollection       (SourcesImporter&                        importer,
-                                                                            IDTMSourceCollection&                   sources,                                              
-                                                                            const HFCPtr<HVEClipShape>&             totalClipShapePtr,
-                                                                            const GeoCoords::GCS&                   targetGCS,
-                                                                            const Import::ScalableMeshData&         targetScalableMeshData);     
-#endif
 
-        StatusInt                           CreateDataIndex (HFCPtr<IndexType>&                                    pDataIndex, 
-                                                             const IDTMFile::File::Ptr&                            filePtr, 
-                                                             HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr);
 
-#if 0
-        StatusInt                           SyncWithSources                     (const IDTMFile::File::Ptr&              filePtr);
-
-        StatusInt                           ImportSourcesTo                (Import::Sink*                           sinkP);
-
-        template <typename PointIndex>
-        StatusInt                           RemoveSourcesFrom(PointIndex& pointIndex, list<IDTMFile::Extent3d64f> listRemoveExtent) const;
-#endif
         
         template <typename PointType, typename PointIndex, typename LinearIndex>
         static StatusInt                    AddPointOverviewOfLinears      (PointIndex&                             pointIndex,
@@ -166,19 +143,16 @@ struct IScalableMeshCreator::Impl
 
         bool                                FileExist                      () const;
 
-        IDTMFile::File::Ptr                 GetFile                        (const IDTMFile::AccessMode&             accessMode);
+
+        //ISMStore::File::Ptr                 GetFile(const ISMStore::AccessMode&             accessMode);
+        virtual StatusInt                           Save();
+        virtual StatusInt                           Load();
+        void                                        SetupFileForCreation();
+        SMSQLiteFilePtr                             GetFile(bool fileExists);
+
 
         virtual bool                                IsFileDirty();
 
-        virtual StatusInt                           Save(IDTMFile::File::Ptr& filePtr);
-        virtual StatusInt                           Load(IDTMFile::File::Ptr& filePtr);
-
-        virtual IDTMFile::File::Ptr                 SetupFileForCreation           ();
-#if 0
-
-        StatusInt                           SaveSources                    ();  
-        StatusInt                           SaveSources                    (IDTMFile::File&                         file);
-#endif
     protected:
         template <typename PointIndex>
           StatusInt                    Filter(PointIndex&                             pointIndex,
@@ -196,7 +170,8 @@ struct IScalableMeshCreator::Impl
                                                                    int                                     levelToStitch = -1,
                                                                    bool                                    do2_5dStitchFirst = false);
 
-          HFCPtr<IndexType>                   m_pDataIndex;
+
+          HFCPtr<MeshIndexType>                   m_pDataIndex;
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
         explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
@@ -204,20 +179,18 @@ struct IScalableMeshCreator::Impl
                                             ~Impl                          ();
 
         const GeoCoords::GCS&               GetGCS                         () const;
-        StatusInt                           SaveGCS                        (IDTMFile::File&                         file);
 
 
-#if 0                     
-        StatusInt                           UpdateLastModified             ();
-        void                                ResetLastModified              ();
-#endif
-        StatusInt                           LoadGCS                        (const IDTMFile::File&                   file);
-        //StatusInt                           LoadSources                    (const IDTMFile::File&                   file);
+        StatusInt                           LoadGCS();
+        StatusInt                           SaveGCS();
 
         StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 
-        virtual StatusInt                           CreateScalableMesh                    ();  
+        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile);  
+
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
+
         StatusInt                           Filter                         ();
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
@@ -271,7 +244,7 @@ StatusInt IScalableMeshCreator::Impl::Stitch  (PointIndex& pointIndex,
                                         int         levelToStitch, 
                                         bool        do2_5dStitchFirst)
     {
-    //pointIndex.Stitch(levelToStitch, do2_5dStitchFirst);
+    pointIndex.Stitch(levelToStitch, do2_5dStitchFirst);
     return BSISUCCESS;
     }
 

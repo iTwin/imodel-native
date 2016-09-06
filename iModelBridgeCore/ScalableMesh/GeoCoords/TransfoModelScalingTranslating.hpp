@@ -6,7 +6,7 @@
 |       $Date: 2011/11/07 14:26:53 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 #ifndef INCLUDED_FROM_TRANSFORMATION_CPP 
     #error "See note" 
 #endif
-
+#include <STMInternal/Foundations/FoundationsPrivateTools.h>
 // NOTE: This header is expected to be included only inside specific compilation units and 
 // so has access to all this compilation unit included headers (as long as they are included
 // prior to inclusion of this one.
@@ -64,20 +64,20 @@ private:
                              0.0,                     0.0,                     m_scaleTransFn.m_zScale, m_scaleTransFn.m_zTrans);
         }
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d&                 sourcePt,
+    virtual SMStatus        _Transform(const DPoint3d&                 sourcePt,
                                                                         DPoint3d&                       targetPt) const override
         {
         targetPt = m_scaleTransFn(sourcePt);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
 
-    virtual TransfoModel::Status        _Transform                     (const DPoint3d*                 sourcePtP,
+    virtual SMStatus        _Transform(const DPoint3d*                 sourcePtP,
                                                                         size_t                          sourcePtQty,
                                                                         DPoint3d*                       targetPtP) const override
         {
         std::transform(sourcePtP, sourcePtP + sourcePtQty, targetPtP, m_scaleTransFn);
-        return TransfoModel::S_SUCCESS;
+        return SMStatus::S_SUCCESS;
         }
 
     virtual TransfoModelBase*           _CreateInverse                 () const override

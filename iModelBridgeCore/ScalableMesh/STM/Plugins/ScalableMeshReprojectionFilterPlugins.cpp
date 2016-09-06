@@ -6,22 +6,24 @@
 |       $Date: 2011/09/01 14:07:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
-
+#include "../ImagePPHeaders.h"
 #include <ScalableMesh/Import/Plugin/ReprojectionFilterV0.h>
 
 #include "ScalableMeshDimensionTypeConversionFilter.h"
 #include "ScalableMeshIDTMFileTraits.h"
 
 #include <ScalableMesh/Import/Exceptions.h>
+#include "../Stores/SMStoreUtils.h"
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 
-using namespace IDTMFile;
+using namespace ISMStore;
 
 namespace { // BEGIN UNAMED NAMESPACE
 
@@ -79,17 +81,13 @@ public:
 
     SrcT operator () (const SrcT& pi_pt) const
         { 
-        DPoint3d pt(PointTrait<DPoint3d>::Create(PointTrait<SrcT>::GetX(pi_pt), 
-                                                 PointTrait<SrcT>::GetY(pi_pt), 
-                                                 PointTrait<SrcT>::GetZ(pi_pt)));
+        DPoint3d pt(pi_pt.x, pi_pt.y, pi_pt.z);
 
-        const Reprojection::Status status = m_rReprojection.Reproject(pt, pt);
-        if (Reprojection::S_SUCCESS != status)
+        const SMStatus status = m_rReprojection.Reproject(pt, pt);
+        if (SMStatus::S_SUCCESS != status)
                 throw ReprojectionException(status);
 
-        return PointTrait<SrcT>::Create(PointTrait<DPoint3d>::GetX(pt), 
-                                        PointTrait<DPoint3d>::GetY(pt), 
-                                        PointTrait<DPoint3d>::GetZ(pt)); 
+        return SrcT(pt);
         }
 
 
@@ -160,6 +158,64 @@ public:
 
 
 
+
+class IDTMDPoint3dDimReprojector : public DimensionFilter
+{
+    Reprojection                                m_reprojection;
+
+    ConstPacketProxy<DPoint3d>                  m_srcPacket;
+    PODPacketProxy<DPoint3d>                    m_dstPacket;
+
+    virtual void                                _Assign(const Packet&               pi_Src,
+        Packet&                     po_Dst) override
+    {
+        m_srcPacket.AssignTo(pi_Src);
+        m_dstPacket.AssignTo(po_Dst);
+    }
+
+    virtual void                                _Run() override
+    {
+        m_dstPacket.Reserve(m_srcPacket.GetCapacity());
+        assert(m_dstPacket.GetCapacity() >= m_srcPacket.GetSize());
+
+
+        const DPoint3d* const pSourcePts = m_srcPacket.Get();
+        const size_t sourcePtCount = m_srcPacket.GetSize();
+
+        DPoint3d* const pTargetPts = m_dstPacket.Edit();
+
+
+        SMStatus status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
+        if (SMStatus::S_SUCCESS != status)
+            throw ReprojectionException(status);
+
+        m_dstPacket.SetSize(sourcePtCount);
+    }
+public:
+    explicit                                    IDTMDPoint3dDimReprojector
+        (const Reprojection&         pi_rReprojection,
+            const DimensionOrg&,
+            const FilteringConfig&,
+            Log&)
+        : m_reprojection(pi_rReprojection)
+    {
+    }
+
+    class Binder : public PacketBinder
+    {
+        virtual void                            _Bind(const Packet&               pi_Src,
+            Packet&                     po_Dst) const override
+        {
+            po_Dst.BindUseSameAs(pi_Src);
+        }
+
+    };
+};
+
+
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   10/2010
@@ -190,8 +246,8 @@ class IDTMPoint3d64fDimReprojector : public DimensionFilter
         DPoint3d* const pTargetPts = m_dstPacket.Edit();
 
 
-        Reprojection::Status status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
-        if (Reprojection::S_SUCCESS != status)
+        SMStatus status = m_reprojection.Reproject(pSourcePts, sourcePtCount, pTargetPts);
+        if (SMStatus::S_SUCCESS != status)
             throw ReprojectionException(status);
 
         m_dstPacket.SetSize(sourcePtCount);
@@ -223,8 +279,7 @@ public:
 template <typename SrcT>
 struct IDTMPointDimReprojectorTrait                                         { typedef IDTMPointDimReprojector<SrcT> type; };
 
-template <> struct IDTMPointDimReprojectorTrait<DPoint3d>                   { typedef IDTMPoint3d64fDimReprojector  type; };
-template <> struct IDTMPointDimReprojectorTrait<IDTMFile::Point3d64f>       { typedef IDTMPoint3d64fDimReprojector  type; };
+template <> struct IDTMPointDimReprojectorTrait<DPoint3d>                   { typedef IDTMDPoint3dDimReprojector  type; };
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -390,15 +445,10 @@ class RegisterMeshAsIDTMLinearReprojector
 
 
 // Register point converters:
-const RegisterIDTMPointReprojector<Point3d64f> s_ptReproj0; 
-const RegisterIDTMPointReprojector<Point3d64fM64f> s_ptReproj1; 
-const RegisterIDTMPointReprojector<Point3d64fG32> s_ptReproj2;
-const RegisterIDTMPointReprojector<Point3d64fM64fG32> s_ptReproj3;
-
+const RegisterIDTMPointReprojector<DPoint3d> s_ptReproj0; 
 
 // Register linear feature converters
-const RegisterIDTMLinearReprojector<Point3d64f> s_ftReproj0; 
-const RegisterIDTMLinearReprojector<Point3d64fM64f> s_ftReproj1; 
+const RegisterIDTMLinearReprojector<DPoint3d> s_ftReproj0; 
 
 
 

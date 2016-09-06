@@ -6,7 +6,7 @@
 |       $Date: 2012/11/14 18:20:56 $
 |     $Author: Daryl.Holmwood $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -28,7 +28,7 @@
 +----------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
- 
+#include "ImagePPHeaders.h"
 /*----------------------------------------------------------------------+
 | Include BCivil general header files                                   |
 +----------------------------------------------------------------------*/

@@ -6,12 +6,12 @@
 |       $Date: 2015/07/15 21:55:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
-
+#include "ImagePPHeaders.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include "ScalableMesh.h"
@@ -26,11 +26,6 @@ IScalableMeshNodeCreatorPtr IScalableMeshNodeCreator::GetFor(const WChar*  fileP
 StatusInt&      status)
     {
 
-    if (!fileExist(filePath))
-        {
-        status = BSISUCCESS;
-        return new IScalableMeshNodeCreator(new Impl(filePath)); // Return early. File does not exist.
-        }
 
     IScalableMeshNodeCreatorPtr pCreator = new IScalableMeshNodeCreator(new Impl(filePath));
 
@@ -77,6 +72,8 @@ IScalableMeshNodeCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
 
 IScalableMeshNodeCreator::Impl::~Impl()
     {
+    m_pDataIndex = 0;
+    m_scmPtr = 0;
     }
 
 
@@ -102,7 +99,7 @@ void IScalableMeshNodeCreator::NotifyAllChildrenAdded(const IScalableMeshNodePtr
     return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->NotifyAllChildrenAdded(parentNode, status);
     }
 
-int IScalableMeshNodeCreator::Impl::CreateScalableMesh()
+int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile)
     {
     int status = BSISUCCESS;
 
@@ -117,25 +114,18 @@ int IScalableMeshNodeCreator::Impl::CreateScalableMesh()
             // NOTE: Need to be able to recreate : Or the file offers some functions for deleting all its data directory or the file name can be obtained
             }
 
-        IDTMFile::File::Ptr filePtr = SetupFileForCreation();
-        if (0 == filePtr)
-            return BSIERROR;
 
-#ifdef SCALABLE_MESH_DGN
-        if (m_isDgnDb)
-            {
-            IDTMFile::AccessMode accessMode = filePtr->GetAccessMode();
-            Bentley::WString filename = m_scmFileName;
-            DgnDbFilename(filename);
-            assert(accessMode.m_HasCreateAccess);
-            m_dgnScalableMeshPtr->Create(filename.GetWCharCP());
-            }
-#endif
+        SetupFileForCreation();
+
+        m_smSQLitePtr->SetSingleFile(isSingleFile);
+
         //NEEDS_WORK_SM : Try put it in CreateDataIndex as sharedptr
         HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
-        StatusInt status = CreateDataIndex(m_pDataIndex, filePtr, myMemMgr);
+        StatusInt status = CreateDataIndex(m_pDataIndex, myMemMgr);
+
         assert(status == SUCCESS && m_pDataIndex != 0);
+
         }
     catch (...)
         {
@@ -169,13 +159,13 @@ void IScalableMeshNodeCreator::Impl::NotifyAllChildrenAdded(const IScalableMeshN
     }
 
 IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddChildNode(const IScalableMeshNodePtr& parentNode,
-                                                                  DRange3d& childExtent,
-                                  StatusInt&   status)
+                                                                      DRange3d&                   childExtent,
+                                                                      StatusInt&                  status)
     {
 
     if (m_pDataIndex == 0)
         {
-        if (CreateScalableMesh() != BSISUCCESS)
+        if (CreateScalableMesh(true) != BSISUCCESS)
             {
             status = BSIERROR;
             return IScalableMeshNodeEditPtr();
@@ -210,7 +200,7 @@ IScalableMeshNodeEditPtr IScalableMeshNodeCreator::Impl::AddNode(StatusInt&   st
     {
     if (m_pDataIndex == 0)
         {
-        if (CreateScalableMesh() != BSISUCCESS)
+        if (CreateScalableMesh(true) != BSISUCCESS)
             {
             status = BSIERROR;
             return IScalableMeshNodeEditPtr();

@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:04 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -191,8 +191,8 @@ private:
 
     const void*                                 m_implP; // Reserve some space for further use
 
-    virtual UInt                                _GetElementType                    () const = 0;
-    virtual UInt                                _GetElementHandlerID               () const = 0;
+    virtual uint32_t                                _GetElementType                    () const = 0;
+    virtual uint32_t                                _GetElementHandlerID               () const = 0;
 
     virtual bool                                _Supports                          (const DGNElementSourceRef&          sourceRef) const = 0;
     virtual SourceBase*                         _Create                            (const DGNElementSourceRef&          sourceRef,

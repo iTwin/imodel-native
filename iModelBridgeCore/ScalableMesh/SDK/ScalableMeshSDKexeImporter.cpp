@@ -2,7 +2,8 @@
 
 #include <ScalableTerrainModel\IMrDTMSources.h>
 
-#include <windows.h>
+
+#include <windows.h>   
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 namespace ScalableMeshSDKexe
@@ -135,19 +136,19 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
         }
 
 
-    Bentley::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
-                                                  Bentley::MrDTM::DTMSourceDataType importedType)
+    BENTLEY_NAMESPACE_NAME::MrDTM::IDTMSourcePtr CreateSourceFor(const WString&                    sourcePath,
+                                                  BENTLEY_NAMESPACE_NAME::MrDTM::DTMSourceDataType importedType)
         {
-        Bentley::MrDTM::ILocalFileMonikerPtr monikerPtr(Bentley::MrDTM::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
+        BENTLEY_NAMESPACE_NAME::MrDTM::ILocalFileMonikerPtr monikerPtr(BENTLEY_NAMESPACE_NAME::MrDTM::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
        
-        return Bentley::MrDTM::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
+        return BENTLEY_NAMESPACE_NAME::MrDTM::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
         }
 
-     Bentley::ScalableMesh::IDTMSourcePtr CreateSourceFor(const WString&                          sourcePath,
-                                                          Bentley::ScalableMesh::DTMSourceDataType importedType,
+     BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr CreateSourceFor(const WString&                          sourcePath,
+                                                          BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceDataType importedType,
                                                           BeXmlNodeP                               pTestChildNode)
         {
-        Bentley::ScalableMesh::ILocalFileMonikerPtr monikerPtr(Bentley::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
+        BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerPtr monikerPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::ILocalFileMonikerFactory::GetInstance().Create(sourcePath.c_str()));
 
         if (0 == _wcsicmp(L"dgn", BeFileName::GetExtension(sourcePath.c_str()).c_str()))
             {
@@ -158,10 +159,10 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
             DgnFileOpenParams fileOpenParams(sourcePath.c_str(), true, DgnFilePurpose::MasterFile);
 
-            Bentley::RefCountedPtr<DgnFile> dgnFilePtr(fileOpenParams.CreateFileAndLoad());
+            BENTLEY_NAMESPACE_NAME::RefCountedPtr<DgnFile> dgnFilePtr(fileOpenParams.CreateFileAndLoad());
 
             if (dgnFilePtr == 0)
-                return Bentley::ScalableMesh::IDTMSourcePtr();
+                return BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr();
                                     
             StatusInt status = pTestChildNode->GetAttributeStringValue(model, "model");
 
@@ -174,7 +175,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
             DgnModel* modelRef = dgnFilePtr->LoadRootModelById(&errorDetails, modelID);
 
             if (modelRef == 0)
-                return Bentley::ScalableMesh::IDTMSourcePtr();
+                return BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr();
             
             status = pTestChildNode->GetAttributeStringValue(level, "level");
 
@@ -190,13 +191,13 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
             assert(status == SUCCESS);
 
-            return Bentley::ScalableMesh::IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
+            return BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMDgnLevelSource::Create(importedType, monikerPtr, modelID, model.c_str(), levelId, level.c_str()).get();
             }
 
-        return Bentley::ScalableMesh::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
+        return BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMLocalFileSource::Create(importedType, monikerPtr).get();
         }
     
-     bool AddOptionToSource(Bentley::ScalableMesh::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
+     bool AddOptionToSource(BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr, BeXmlNodeP pTestChildNode)
         {
         WString datasetIs3D;
         WString datasetIsGround;
@@ -238,10 +239,49 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                 */
             }       
 
+        //NEEDS_WORK_SM
+        WString classesToImportAttr;
+
+        status = pTestChildNode->GetAttributeStringValue(classesToImportAttr, "classesToImport");
+
+        if (status == BEXML_Success)
+            {           
+            bvector<uint32_t> classesToImport;
+
+            size_t startInd = 0;
+            size_t endInd = 0;
+
+            for (; endInd < classesToImportAttr.size(); endInd++)
+                {
+                if ((classesToImportAttr.c_str()[endInd] == ',') && (startInd < endInd - 1))
+                    {                    
+                    WString classIdStr(classesToImportAttr.substr(startInd, endInd - startInd - 1));
+                    int classId = _wtoi(classIdStr.c_str());                                        
+                    classesToImport.push_back(classId);
+                    startInd = endInd + 1;
+                    }
+                }
+
+            if (startInd < endInd)
+                {
+                WString classIdStr(classesToImportAttr.substr(startInd, endInd - startInd));
+                int classId = _wtoi(classIdStr.c_str());
+                classesToImport.push_back(classId);
+                }
+
+            if (classesToImport.size() > 0)
+                {
+                SourceImportConfig& sourceImportConfig = srcPtr->EditConfig();
+                ScalableMeshData data = sourceImportConfig.GetReplacementSMData();            
+                data.SetClassificationToImport(classesToImport);
+                sourceImportConfig.SetReplacementSMData(data);
+                }
+            }
+
         return true;
         }
   
-    void GetSourceDataType(Bentley::ScalableMesh::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
+    void GetSourceDataType(BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceDataType& dataType, BeXmlNodeP pSourceNode)
         {
         WString dataTypeStr;
 
@@ -251,29 +291,39 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
             {
             if (dataTypeStr.CompareTo(L"POINT") == 0)
                 {
-                dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_POINT;
+                dataType = BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_POINT;
                 }
             else
                 if (dataTypeStr.CompareTo(L"DTM") == 0)
                     {
-                    dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_DTM;
+                    dataType = BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_DTM;
                     }
                 else
                     if (dataTypeStr.CompareTo(L"BREAKLINE") == 0)
                         {
-                        dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_BREAKLINE;
+                        dataType = BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_BREAKLINE;
                         }
                     else
                         {
                         printf("Unsupporter/unknown data type");
                         }
             }
-        }
-    
-    bool ParseSourceSubNodes(Bentley::ScalableMesh::IDTMSourceCollection& sourceCollection, BeXmlNodeP pTestNode)
+        }            
+
+    bool ParseSourceSubNodes(BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourceCollection& sourceCollection,    
+                             bvector<DPoint3d>&                           importClipShape,                                                          
+                             DRange3d&                                    importRange, 
+                             BeXmlNodeP                                   pTestNode)
         {
         bool isSuccess = true;
 
+        importRange.low.x = -numeric_limits<double>::max();
+        importRange.high.x = numeric_limits<double>::max();
+        importRange.low.y = -numeric_limits<double>::max();
+        importRange.high.y = numeric_limits<double>::max();
+        importRange.low.z = -numeric_limits<double>::max();
+        importRange.high.z = numeric_limits<double>::max();
+        
         BeXmlNodeP pTestChildNode = pTestNode->GetFirstChild();
 
         while ((0 != pTestChildNode) && (isSuccess == true))
@@ -288,14 +338,14 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
 
                 if (status == BEXML_Success)
                     {
-                    Bentley::ScalableMesh::DTMSourceDataType dataType = Bentley::ScalableMesh::DTM_SOURCE_DATA_POINT;
+                    BENTLEY_NAMESPACE_NAME::ScalableMesh::DTMSourceDataType dataType = BENTLEY_NAMESPACE_NAME::ScalableMesh::DTM_SOURCE_DATA_POINT;
 
                     GetSourceDataType(dataType, pTestChildNode);
 
                     if ((datasetPath.c_str()[datasetPath.size() - 1] != L'\\') &&
                         (datasetPath.c_str()[datasetPath.size() - 1] != L'/'))
                         {
-                        Bentley::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
+                        BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(datasetPath, dataType, pTestChildNode);
 
                         if (srcPtr == 0)
                             return false;
@@ -324,7 +374,7 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                             WString extension;
                             name.ParseName(NULL, NULL, NULL, &extension);
                             if (0 == BeStringUtilities::Wcsicmp(extension.c_str(), L"classif")) continue;
-                            Bentley::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
+                            BENTLEY_NAMESPACE_NAME::ScalableMesh::IDTMSourcePtr srcPtr = CreateSourceFor(firstPath, dataType, pTestChildNode);
                             AddOptionToSource(srcPtr, pTestChildNode);
                             if (BSISUCCESS != sourceCollection.Add(srcPtr))
                                 {
@@ -341,7 +391,54 @@ inline void AddWildCardToFolderPath(WString* pio_pFolderPath)
                     }
                 }
             else
-                {
+            if (0 == BeStringUtilities::Stricmp(pTestChildNode->GetName(), "clipshape"))
+                {      
+                WString clipShapeStr;
+                BeXmlStatus status = pTestChildNode->GetContent(clipShapeStr);
+                assert(status == BEXML_Success);
+                
+                size_t startInd = 0;
+                size_t endInd = 0;                
+                //DPoint3d pt; 
+                bvector<double> clipShape2d;                
+                DPoint3d pt; 
+                pt.z = 0;
+                bool isX = true;
+
+                for (; endInd < clipShapeStr.size(); endInd++)
+                    {
+                    if (((clipShapeStr.c_str()[endInd] == L',') || (clipShapeStr.c_str()[endInd] == L';')) && (startInd < endInd - 1))
+                        {                    
+                        WString coordStr(clipShapeStr.substr(startInd, endInd - startInd - 1));
+                        if (isX)
+                            {
+                            assert((clipShapeStr.c_str()[endInd] == L','));
+                            pt.x = _wtof(coordStr.c_str());                                        
+                            isX = false;
+                            }
+                        else
+                            {
+                            assert((clipShapeStr.c_str()[endInd] == L';'));
+                            pt.y = _wtof(coordStr.c_str());                                        
+                            isX = true;
+                            importClipShape.push_back(pt);
+                            }
+                        
+                        startInd = endInd + 1;
+                        }
+                    }
+
+                if (startInd < endInd)
+                    {
+                    assert(isX == false);
+                    WString coordStr(clipShapeStr.substr(startInd, endInd - startInd));
+                    pt.y = _wtof(coordStr.c_str());
+                    importClipShape.push_back(pt);
+                    }
+
+                importClipShape.push_back(importClipShape[0]);
+                                                                                                                          
+                importRange = DRange3d::From(&importClipShape[0], (int)importClipShape.size());                
                 }
 
             pTestChildNode = pTestChildNode->GetNextSibling();

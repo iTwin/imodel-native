@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:24:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,7 +15,23 @@
 #include <ScalableMesh/GeoCoords/Definitions.h>
 #include <deque>
 
+//NEEDS_WORK_SM : Might be better if put in D:\BSI\DgnDb06SM\src\ScalableMesh\PrivateAPI
+#include "../../../STM/Stores/SMStoreUtils.h"
+
+namespace ISMStore
+    {
+
+
+    enum WktFlavor
+        {
+        WktFlavor_Oracle9 = 1,
+        WktFlavor_Autodesk,
+        WktFlavor_End,
+        };
+    }
+
 BEGIN_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE
+
 
 /*---------------------------------------------------------------------------------**//**
 * @description  
@@ -57,11 +73,11 @@ const WKTKeyword&                       GetWKTKeyword                           
 const WKTKeyword&                       GetWKTKeyword                              (WKTKeyword::Type    type);
 
 
-IDTMFile::WktFlavor                     GetWKTFlavor                       (WString* wktWithoutFlavorStr, const WString& wktStr);
+ISMStore::WktFlavor                     GetWKTFlavor                       (WString* wktWithoutFlavorStr, const WString& wktStr);
 
 WKTKeyword::Type                        GetWktType                         (WString wkt);
 
-bool MapWktFlavorEnum(Bentley::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, IDTMFile::WktFlavor fileWktFlavor);
+bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, ISMStore::WktFlavor fileWktFlavor);
 
 
 END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE

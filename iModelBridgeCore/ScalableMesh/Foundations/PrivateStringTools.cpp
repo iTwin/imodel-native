@@ -6,7 +6,7 @@
 |       $Date: 2011/06/01 14:05:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -57,7 +57,7 @@ AString CreateAStrFrom (const WChar* cstr)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString CreateWStrFromACStr (const char* cstr)
     {
-    return WString(cstr);
+    return WString(cstr, BentleyCharEncoding::Utf8);
     }
     
 END_BENTLEY_SCALABLEMESH_FOUNDATIONS_NAMESPACE

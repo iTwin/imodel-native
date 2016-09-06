@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshAdmin.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,16 +25,17 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
         {
         return false;
         }
-
+#ifdef VANCOUVER_API
     virtual DgnModelRefP _GetActiveModelRef() const
         {
         return 0;
         }
 
-    virtual StatusInt _ResolveMrDtmFileName(Bentley::WString& fileName, const Bentley::DgnPlatform::EditElementHandle& elHandle) const
+    virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
         {
         return ERROR;
-        }          
+        }       
+#endif
 };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

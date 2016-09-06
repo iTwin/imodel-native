@@ -6,7 +6,7 @@
 //:>       $Date: 2010/08/19 13:45:40 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ template<class DATATYPE = double> class ScalableMeshRelevanceDistribution
     public:
         
         // Primary methods
-        ScalableMeshRelevanceDistribution(ULong32   pi_nbBins, 
+        ScalableMeshRelevanceDistribution(uint32_t   pi_nbBins,
                                    DataType_T pi_minRelevance, 
                                    DataType_T pi_maxRelevance) 
             {  
@@ -39,7 +39,7 @@ template<class DATATYPE = double> class ScalableMeshRelevanceDistribution
 
         void    AddRelevance(DATATYPE pi_relevance) 
             {
-            ULong32 ind = static_cast<ULong32>(floor((pi_relevance - m_minRelevance) / m_step));                                                                                               
+            uint32_t ind = static_cast<uint32_t>(floor((pi_relevance - m_minRelevance) / m_step));
             if (ind >= m_nbBins)
                 {
                 ind = m_nbBins - 1;
@@ -49,9 +49,9 @@ template<class DATATYPE = double> class ScalableMeshRelevanceDistribution
             m_nbRelevanceValues++;
             }
 
-        BENTLEYSTM_EXPORT DataType_T   GetRelevanceMean() const;
+        BENTLEY_SM_EXPORT DataType_T   GetRelevanceMean() const;
 
-        BENTLEYSTM_EXPORT DataType_T   GetRelevanceStdDev() const;
+        BENTLEY_SM_EXPORT DataType_T   GetRelevanceStdDev() const;
 
 
         DataType_T   GetRelevancePercentileValue(double pi_percentage);
@@ -66,7 +66,7 @@ template<class DATATYPE = double> class ScalableMeshRelevanceDistribution
     private:      
 
         HArrayAutoPtr<uint64_t> m_pBins;
-        ULong32               m_nbBins;
+        uint32_t               m_nbBins;
         DataType_T            m_minRelevance;        
         DataType_T            m_step;
         uint64_t                m_nbRelevanceValues;

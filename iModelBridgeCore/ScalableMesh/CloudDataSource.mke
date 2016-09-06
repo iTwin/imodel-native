@@ -1,0 +1,113 @@
+#----------------------------------------------------------------------
+#
+#     $Source: CloudDataSource.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
+
+%include  mdl.mki
+%include $(baseDir)CloudDataSource/CloudDataSourcePolicy.mki
+
+CCompOpts + $(PublicApiIncludes)
+CCompOpts + $(VendorApiIncludes)
+
+#consoleAppUnicode = 1
+
+includeDir=$(SrcRoot)ScalableMesh/CloudDataSource/include/
+dirToSearch=$(includeDir)
+%include cincapnd.mki
+
+dirToSearch=$(BuildContext)VendorAPI/wastorage/
+%include cincapnd.mki
+
+dirToSearch=$(BuildContext)VendorAPI/cpprestsdk/
+%include cincapnd.mki
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+appName = CloudDataSource
+o = $(OutputRootDir)Build/ScalableMesh/$(appName)/
+always:
+    ~mkdir $(o)
+
+SrcDir=$(SrcRoot)ScalableMesh/CloudDataSource/
+
+always:
+	@CreateSymLinks.py -d"$(BuildContext)VendorAPI/CloudDataSource=$(includeDir)"
+
+CCompOpts + -DUNICODE -D__CLOUD_DATA_SOURCE_BUILD__
+
+#warnLevel = -W3
+
+MultiCompileDepends=$(_MakeFileSpec) 
+%include MultiCppCompileRule.mki
+
+$(o)ActivitySemaphore$(oext) : $(SrcDir)ActivitySemaphore.cpp ${MultiCompileDepends}
+
+$(o)DataSource$(oext) : $(SrcDir)DataSource.cpp ${MultiCompileDepends}
+
+$(o)DataSourceAccount$(oext) : $(SrcDir)DataSourceAccount.cpp ${MultiCompileDepends}
+
+$(o)DataSourceAccountAzure$(oext) : $(SrcDir)DataSourceAccountAzure.cpp ${MultiCompileDepends}
+
+$(o)DataSourceAccountCached$(oext) : $(SrcDir)DataSourceAccountCached.cpp ${MultiCompileDepends}
+
+$(o)DataSourceAccountFile$(oext) : $(SrcDir)DataSourceAccountFile.cpp ${MultiCompileDepends}
+
+$(o)DataSourceAzure$(oext) : $(SrcDir)DataSourceAzure.cpp ${MultiCompileDepends}
+
+$(o)DataSourceBuffer$(oext) : $(SrcDir)DataSourceBuffer.cpp ${MultiCompileDepends}
+
+$(o)DataSourceBuffered$(oext) : $(SrcDir)DataSourceBuffered.cpp ${MultiCompileDepends}
+
+$(o)DataSourceCached$(oext) : $(SrcDir)DataSourceCached.cpp ${MultiCompileDepends}
+
+$(o)DataSourceCloud$(oext) : $(SrcDir)DataSourceCloud.cpp ${MultiCompileDepends}
+
+$(o)DataSourceFile$(oext) : $(SrcDir)DataSourceFile.cpp ${MultiCompileDepends}
+
+$(o)DataSourceLocator$(oext) : $(SrcDir)DataSourceLocator.cpp ${MultiCompileDepends}
+
+$(o)DataSourceManager$(oext) : $(SrcDir)DataSourceManager.cpp ${MultiCompileDepends}
+
+$(o)DataSourceManagerTest$(oext) : $(SrcDir)DataSourceManagerTest.cpp ${MultiCompileDepends}
+
+$(o)DataSourceService$(oext) : $(SrcDir)DataSourceService.cpp ${MultiCompileDepends}
+
+$(o)DataSourceServiceAzure$(oext) : $(SrcDir)DataSourceServiceAzure.cpp ${MultiCompileDepends}
+
+$(o)DataSourceServiceFile$(oext) : $(SrcDir)DataSourceServiceFile.cpp ${MultiCompileDepends}
+
+$(o)DataSourceServiceManager$(oext) : $(SrcDir)DataSourceServiceManager.cpp ${MultiCompileDepends}
+
+$(o)DataSourceTransferScheduler$(oext) : $(SrcDir)DataSourceTransferScheduler.cpp ${MultiCompileDepends}
+
+$(o)DataSourceURL$(oext) : $(SrcDir)DataSourceURL.cpp ${MultiCompileDepends}
+
+$(o)PerformanceTimer$(oext) : $(SrcDir)PerformanceTimer.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+#   Link the executable
+#----------------------------------------------------------------------
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+	$(ContextSubpartsLibs)cpprest120_2_6.lib \
+    $(ContextSubpartsLibs)wastorage.lib
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+%include $(sharedMki)linkLibrary.mki
+

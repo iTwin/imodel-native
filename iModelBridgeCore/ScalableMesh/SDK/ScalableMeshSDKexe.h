@@ -53,10 +53,10 @@ namespace ScalableMeshSDKexe
         protected:
             enum class ParseStatus { Success, Error, NotRecognized };
 
-        virtual void _SupplyProductName(Bentley::WStringR name) override { name.assign(L"ScalableMeshSDKexe"); }
+        virtual void _SupplyProductName(BENTLEY_NAMESPACE_NAME::WStringR name) override { name.assign(L"ScalableMeshSDKexe"); }
         virtual IViewManager& _SupplyViewManager() override { return *new ExeViewManager(); }
-        virtual DgnPlatformLib::Host::RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() { return Bentley::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
-        virtual DgnPlatformLib::Host::PointCloudAdmin&    _SupplyPointCloudAdmin() { return *new Bentley::DgnPlatform::PointCloudDisplayAdmin(); }
+        virtual DgnPlatformLib::Host::RasterAttachmentAdmin&  _SupplyRasterAttachmentAdmin() { return BENTLEY_NAMESPACE_NAME::DgnPlatform::Raster::RasterCoreLib::GetDefaultRasterAttachmentAdmin(); }
+        virtual DgnPlatformLib::Host::PointCloudAdmin&    _SupplyPointCloudAdmin() { return *new BENTLEY_NAMESPACE_NAME::DgnPlatform::PointCloudDisplayAdmin(); }
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() { return *GeoCoordinates::DgnGeoCoordinationAdmin::Create(NULL, *m_acsManager); }
 
             BeFileName          m_inputFileName;
