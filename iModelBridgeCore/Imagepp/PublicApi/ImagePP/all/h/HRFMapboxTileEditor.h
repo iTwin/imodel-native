@@ -15,33 +15,6 @@
 BEGIN_IMAGEPP_NAMESPACE
 
 
-//-----------------------------------------------------------------------------//
-//                         Extern - MapBoxTileSystem API                 //
-// This is an extern API that has been put here instead of in the extern       //
-// library because it was more practical.                                      //
-//-----------------------------------------------------------------------------//
-class MapBoxTileSystem
-        {
-    private :
-        static const double EarthRadius;
-        static const double MinLatitude;
-        static const double MaxLatitude;
-        static const double MinLongitude;
-        static const double MaxLongitude;
-
-    public :
-        static double  Clip(double n, double minValue, double maxValue);
-        static unsigned int MapSize(int levelOfDetail);
-        static double  GroundResolution(double latitude, int levelOfDetail);
-        static double  MapScale(double latitude, int levelOfDetail, int screenDpi);
-        static void    LatLongToPixelXY(double latitude, double longitude, int levelOfDetail, int* pixelX, int* pixelY);
-        static void    PixelXYToLatLong(int pixelX, int pixelY, int levelOfDetail, double* latitude, double* longitude);
-        static void    PixelXYToTileXY(int pixelX, int pixelY, int* tileX, int* tileY);
-        static void    TileXYToPixelXY(int tileX, int tileY, int* pixelX, int* pixelY);
-        static string  TileXYToQuadKey(int tileX, int tileY, int levelOfDetail);
-        static string  PixelXYToQuadKey(int pi_PixelX, int pi_PixelY, int pi_LevelOfDetail);
-        static void    QuadKeyToTileXY(string quadKey, int* tileX, int* tileY, int* levelOfDetail);
-        };
 
 
 struct MapBoxTileQuery 

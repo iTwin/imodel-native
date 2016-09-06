@@ -18,7 +18,7 @@
 #include <Imagepp/all/h/HRFMapBoxTileEditor.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 
-//#include <Imagepp/all/h/HCDCodecIdentity.h>
+
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDCodecJpeg.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
@@ -32,9 +32,48 @@
 #include <Imagepp/all/h/ImagePPMessages.xliff.h>
 #include <Imagepp/all/h/HFCURLHTTP.h>
 
-#define VE_MAP_RESOLUTION       19
-#define VE_MAP_WIDTH            (256 * (1 << VE_MAP_RESOLUTION))
-#define VE_MAP_HEIGHT           (256 * (1 << VE_MAP_RESOLUTION))
+#define MB_MAP_RESOLUTION       19
+#define MB_MAP_WIDTH            (256 * (1 << MB_MAP_RESOLUTION))
+#define MB_MAP_HEIGHT           (256 * (1 << MB_MAP_RESOLUTION))
+
+//-----------------------------------------------------------------------------//
+//                         Extern - MapBoxTileSystem API                 //
+// This is an extern API that has been put here instead of in the extern       //
+// library because it was more practical.                                      //
+//-----------------------------------------------------------------------------//
+class MapBoxTileSystem
+        {
+    private :
+        static const double EarthRadius;
+        static const double MinLatitude;
+        static const double MaxLatitude;        
+
+    public :
+        static double  Clip(double n, double minValue, double maxValue);
+        static unsigned int MapSize(int levelOfDetail);
+        static double  GroundResolution(double latitude, int levelOfDetail);       
+        };
+
+const double MapBoxTileSystem::EarthRadius = 6378137;
+const double MapBoxTileSystem::MinLatitude = -85.05112878;
+const double MapBoxTileSystem::MaxLatitude = 85.05112878;
+
+double MapBoxTileSystem::Clip(double n, double minValue, double maxValue)
+    {
+    return MIN(MAX(n, minValue), maxValue);
+    }
+
+unsigned int MapBoxTileSystem::MapSize(int levelOfDetail)
+    {
+    return (unsigned int) 256 << levelOfDetail;
+    }
+
+double MapBoxTileSystem::GroundResolution(double latitude, int levelOfDetail)
+    {
+    latitude = Clip(latitude, MinLatitude, MaxLatitude);
+    return cos(latitude * PI / 180) * 2 * PI * EarthRadius /
+           MapSize(levelOfDetail);
+    }
 
 //-----------------------------------------------------------------------------
 // HRFMapBoxBlockCapabilities
@@ -94,15 +133,7 @@ HRFMapBoxCapabilities::HRFMapBoxCapabilities()
     Add(new HRFPixelTypeCapability(HFC_READ_WRITE_CREATE,
                                    HRPPixelTypeV24R8G8B8::CLASS_ID,
                                    new HRFMapBoxBlockCodecTrueColorCapabilities()));
-
-    // PixelTypeV32B8G8R8X8
-    // Read/Write/Create capabilities
-    /*
-    Add(new HRFPixelTypeCapability(HFC_READ_WRITE_CREATE,
-                                   HRPPixelTypeV32B8G8R8X8::CLASS_ID,
-                                   new HRFMapBoxCodecIdentityCapabilities()));
-                                   */
-
+    
     // Scanline orientation capability
     Add(new HRFScanlineOrientationCapability(HFC_READ_ONLY, HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL));
 
@@ -202,9 +233,8 @@ HRFMapBoxCreator::HRFMapBoxCreator()
 // Identification information
 //-----------------------------------------------------------------------------
 Utf8String HRFMapBoxCreator::GetLabel() const
-    {
-    //NEEDS_WORK_MST : Put in transkit
-    return Utf8String(L"MapBox"); //ImagePPMessages::GetStringW(L"MapBox"); // MapBox File Format
+    {    
+    return ImagePPMessages::GetString(ImagePPMessages::FILEFORMAT_MapBox());  // Tagged Image File Format (TIFF)
     }
 
 //-----------------------------------------------------------------------------
@@ -255,16 +285,7 @@ bool IsMapBoxURL(HFCURL const& mapBoxURL)
         mapBoxURL.GetSchemeType() != HFCURLHTTP::s_SchemeName())
         return false;
 
-    return true;
-    /*
-    HFCURLHTTPBase const& HttpURL = static_cast<HFCURLHTTPBase const&>(mapBoxURL);
-
-    // Avoid the default port(:80) added by HFCURLCommonInternet::GetURL()
-    Utf8String cleanedUurl = HttpURL.GetHost() + L"/" + HttpURL.GetURLPath();
-
-    Utf8String::size_type partialPos = CaseInsensitiveStringTools().Find(cleanedUurl, L"api.mapbox.com/v4");
-
-    return Utf8String::npos != partialPos;*/
+    return true;    
     }
 
 //-----------------------------------------------------------------------------
@@ -398,64 +419,24 @@ void HRFMapBoxFile::CreateDescriptors ()
     HFCPtr<HRPPixelType> PixelType = new HRPPixelTypeV24R8G8B8();
 
     // Transfo model
-    double Scale = MapBoxTileSystem::GroundResolution(0.0, VE_MAP_RESOLUTION);
-    double offsetLatitude;
-    double offsetLongitude;
-    MapBoxTileSystem::PixelXYToLatLong(0, 0, VE_MAP_RESOLUTION, &offsetLatitude, &offsetLongitude);
-    if (offsetLongitude < -179.9999999999)
-        offsetLongitude = -179.9999999999;
-    if (offsetLongitude > 179.9999999999)
-        offsetLongitude = 179.9999999999;
-
+    double Scale = MapBoxTileSystem::GroundResolution(0.0, MB_MAP_RESOLUTION);
+    
     // Geocoding and Reference
     HFCPtr<HGF2DTransfoModel> pTransfoModel;
 
     GeoCoordinates::BaseGCSPtr pBaseGCS;
-
-
-     Utf8String WKTString = "PROJCS[\"EPSG:900913\", \
-                                       GEOGCS[\"GCS_Sphere_WGS84\", \
-                                DATUM[\"SphereWGS84\", \
-                                SPHEROID[\"SphereWGS84\",6378137.0,0.0], \
-                                TOWGS84[0, 0, 0, 0, 0, 0, 0] \
-                                ], \
-                                    PRIMEM[\"Greenwich\",0.0], \
-                                    UNIT[\"Degree\",0.0174532925199433 ], \
-                                ], \
-                                PROJECTION[\"Mercator\"], \
-                                PARAMETER[\"False_Easting\",0.0], \
-                                PARAMETER[\"False_Northing\",0.0], \
-                                PARAMETER[\"Central_Meridian\",0.0], \
-                                PARAMETER[\"Standard_Parallel_1\",0.0], \
-                                UNIT[\"Meter\", 1.0] \
-                                ]";
-         
+             
      // Obtain the GCS
      pBaseGCS = GeoCoordinates::BaseGCS::CreateGCS();
-
-    //if(SUCCESS == pBaseGCS->InitFromWellKnownText (NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, WKTString.c_str()))
-     
+         
     if (SUCCESS == pBaseGCS->InitFromEPSGCode (NULL, NULL, 900913))
          {                
-         GeoPoint geoPoint = {-179.999999999, 85.05112878, 0.0};
-         //GeoPoint geoPoint = {-179.999999999, 85.0511, 0.0};
+         GeoPoint geoPoint = {-179.999999999, 85.05112878, 0.0};         
          DPoint3d cartesianPoint;
          pBaseGCS->CartesianFromLatLong (cartesianPoint, geoPoint);
-         pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), Scale, Scale);
-         
-         //pTransfoModel = new HGF2DStretch(HGF2DDisplacement(-180, 85.0511), 360 / VE_MAP_WIDTH, 170.1022 / VE_MAP_HEIGHT);
+         pTransfoModel = new HGF2DStretch(HGF2DDisplacement(cartesianPoint.x, cartesianPoint.y), Scale, Scale);                  
          }
-	
-         
-     /*
-     if (SUCCESS == pBaseGCS->InitFromEPSGCode (NULL, NULL, 4269))
-         {                                           
-         pTransfoModel = new HGF2DStretch(HGF2DDisplacement(-180, 85.0511), 360.0 / VE_MAP_WIDTH, 170.1022 / VE_MAP_HEIGHT);
-         
-         //pTransfoModel = new HGF2DStretch(HGF2DDisplacement(-180, 85.0511), 360 / VE_MAP_WIDTH, 170.1022 / VE_MAP_HEIGHT);
-         }
-         */
-
+	             
     if(pTransfoModel == nullptr)
         pTransfoModel = new HGF2DStretch(HGF2DDisplacement(0.0, 0.0), Scale, Scale);
         
@@ -467,15 +448,12 @@ void HRFMapBoxFile::CreateDescriptors ()
     // Instantiation of Resolution descriptor
     HRFPageDescriptor::ListOfResolutionDescriptor  ListOfResolutionDescriptor;
 
-    // We used to had problems when going larger than INT_MAX. Need to test that if VE_MAP_WIDTH exceed that.
-    HASSERT(VE_MAP_WIDTH <= INT_MAX && VE_MAP_HEIGHT <= INT_MAX);
+    // We used to had problems when going larger than INT_MAX. Need to test that if MB_MAP_WIDTH exceed that.
+    HASSERT(MB_MAP_WIDTH <= INT_MAX && MB_MAP_HEIGHT <= INT_MAX);
 
-    uint32_t Width = VE_MAP_WIDTH;
-    uint32_t Height= VE_MAP_HEIGHT;
-    /*
-    double ratioX = 360.0 / VE_MAP_WIDTH;
-    double ratioY = -170.1022 / VE_MAP_HEIGHT;
-    */
+    uint32_t Width = MB_MAP_WIDTH;
+    uint32_t Height= MB_MAP_HEIGHT;
+    
     HFCPtr<HRFResolutionDescriptor> pResolution =  new HRFResolutionDescriptor(
         HFC_READ_ONLY,                                      // AccessMode,
         GetCapabilities(),                                  // Capabilities,
@@ -497,12 +475,12 @@ void HRFMapBoxFile::CreateDescriptors ()
 
     ListOfResolutionDescriptor.push_back(pResolution);
 
-    for (unsigned short Resolution = 1; Resolution < VE_MAP_RESOLUTION; ++Resolution)
+    for (unsigned short Resolution = 1; Resolution < MB_MAP_RESOLUTION; ++Resolution)
         {
         Width /= 2;
         Height /= 2;               
 
-        double Ratio = HRFResolutionDescriptor::RoundResolutionRatio(VE_MAP_WIDTH, Width);
+        double Ratio = HRFResolutionDescriptor::RoundResolutionRatio(MB_MAP_WIDTH, Width);
 
         HFCPtr<HRFResolutionDescriptor> pResolution =  new HRFResolutionDescriptor(
             HFC_READ_ONLY,                                      // AccessMode,

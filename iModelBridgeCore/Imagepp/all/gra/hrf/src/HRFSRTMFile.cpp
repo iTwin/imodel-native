@@ -482,12 +482,6 @@ void HRFSRTMFile::ExtractLatLong(double* latitude, double* longitude) const
     char latHemi = fileName[0];
     char lonHemi = fileName[3];
 
-    HASSERT(fileName[1] >= '0' && (fileName[1] <= '9'));
-    HASSERT(fileName[2] >= '0' && (fileName[2] <= '9'));
-    HASSERT(fileName[4] >= '0' && (fileName[4] <= '9'));
-    HASSERT(fileName[5] >= '0' && (fileName[5] <= '9'));
-    HASSERT(fileName[6] >= '0' && (fileName[6] <= '9'));
-
     *latitude = (double) atof(fileName.substr(1, 2).c_str());
     *longitude = (double) atof(fileName.substr(4, 3).c_str());
     if (latHemi == 'S')

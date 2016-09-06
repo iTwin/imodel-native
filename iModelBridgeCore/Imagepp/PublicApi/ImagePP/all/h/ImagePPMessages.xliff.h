@@ -138,6 +138,7 @@ BENTLEY_TRANSLATABLE_STRINGS_START(ImagePPMessages,ImagePPMessages)
     L10N_STRING(FILEFORMAT_WCS)                          // =="Web Coverage Service"==
     L10N_STRING(FILEFORMAT_WirelessBitmap)               // =="Wireless BitMap"==
     L10N_STRING(FILEFORMAT_WMS)                          // =="Web Map Server"==
+    L10N_STRING(FILEFORMAT_MapBox)                       // =="Mapbox Server"==
 
     // Transfo models
     L10N_STRING(TRANSFO_Identity)                        // =="Identity"==
