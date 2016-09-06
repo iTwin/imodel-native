@@ -453,8 +453,8 @@ struct Publish3mxScene : Scene
 +---------------+---------------+---------------+---------------+---------------+------*/
 static RefCountedPtr<PublishTileNode> tileFromNode(NodeR node, SceneR scene, TransformCR toTile, size_t depth, size_t siblingIndex, TileNodeP parent)
     { 
-    double                  tolerance = (0.0 == node.GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node.GetMaximumSize());
-    DRange3d                range = node.GetRange();;
+    double   tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
+    DRange3d range = node.GetRange();;
 
     if (node._HasChildren() && node.IsNotLoaded())
         scene.LoadNodeSynchronous(node);
