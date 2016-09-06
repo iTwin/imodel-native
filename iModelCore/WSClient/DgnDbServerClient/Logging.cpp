@@ -33,7 +33,7 @@ void DgnDbServerLogHelper::LogInternal(SEVERITY severity, const Utf8String metho
     else
         timeFormatted.Sprintf("%.2f ms.", timeSpent);
 
-    logItem.Sprintf("%-*s %-*s %-*s %s", DATETIME_COLUMN_WIDTH, DateTime::GetCurrentTimeUtc().ToUtf8String(), METHOD_NAME_COLUMN_WIDTH, methodName, TIME_COLUMN_WIDTH, timeFormatted, message);
+    logItem.Sprintf("%-*s %-*s %-*s %s", DATETIME_COLUMN_WIDTH, DateTime::GetCurrentTimeUtc().ToUtf8String().c_str(), METHOD_NAME_COLUMN_WIDTH, methodName.c_str(), TIME_COLUMN_WIDTH, timeFormatted.c_str(), message.c_str());
 
     switch (severity)
         {
