@@ -255,7 +255,7 @@ private:
     virtual TileGeometryCacheP _GetGeometryCache() override { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
 
-    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames, WCharCP suffix);
+    Status WriteWebApp(TransformCR transform);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -316,7 +316,7 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& tileSetNames, WCharCP suffix)
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -344,16 +344,13 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
     Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
     Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
 
-    Utf8String       tileSetHtml;
-
-    for (auto& tileSetName : tileSetNames)
-        tileSetHtml = tileSetHtml + Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), (tileSetName + suffix).c_str());
+    Utf8String       tileSetHtml = Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), m_rootName.c_str());
 
     // Produce the html file contents
     Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
 
     BeFileName htmlFileName = m_outputDir;
-    htmlFileName.AppendString((m_rootName + suffix).c_str()).AppendExtension(L"html");
+    htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
 
     std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
     std::fwrite(html.data(), 1, html.size(), htmlFile);
@@ -429,55 +426,9 @@ PublisherContext::Status TilesetPublisher::Publish()
     TileGenerator generator (m_dbToTile, &progressMeter);
 
     static double       s_toleranceInMeters = 0.01;
-    bvector<WString>    viewedTileSetNames;
-
-    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
 
     m_generator = &generator;
-    if (Status::Success == status)
-        {
-        static const size_t     s_maxPointsPerTile = 20000;
-        TileNodePtr             rootNode = new TileNode();
-
-        status = ConvertStatus(generator.GenerateTiles (*rootNode, s_toleranceInMeters, s_maxPointsPerTile));
-        if (Status::Success == status)
-            {
-            if (0 != GetMaxTilesPerDirectory())
-                rootNode->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
-
-            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(*rootNode, *this))))
-                viewedTileSetNames.push_back (m_rootName);
-            }
-        }
-    if (status != Status::Success &&
-        status != Status::NoGeometry)      // If no root geometry there still may be viewed models.
-        return status;
-
-    for (auto& modelId : m_viewController.GetViewedModels())
-        {
-        if (modelId == m_viewController.GetBaseModelId())
-            continue;
-
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
-
-
-        if (viewedModel.IsValid())
-            {
-            WString tileSetName;
-            
-            progressMeter._SetModel (viewedModel.get());
-            progressMeter._SetTaskName (TileGenerator::TaskName::CollectingGeometry);       // Needs work -- meter progress in model publisher.
-            progressMeter._IndicateProgress (0, 1);
-            tileSetName.AssignA (viewedModel->GetName().c_str());
-
-            if (Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
-                {
-                viewedTileSetNames.push_back (tileSetName);
-                status = Status::Success;       // Override NoGeometry (empty model with reality attachment).
-                }
-            }
-        }
-
+    PublishViewModels (generator, *this, s_toleranceInMeters, progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -485,12 +436,7 @@ PublisherContext::Status TilesetPublisher::Publish()
 
     OutputStatistics(generator.GetStatistics());
 
-#ifdef TILESET_STRUCTURE_TESTING
-    // Temporary...
-    WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames, L"Single");
-    WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames, L"Unified");
-#endif
-    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames, L"");
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
     }
 
 /*---------------------------------------------------------------------------------**//**
