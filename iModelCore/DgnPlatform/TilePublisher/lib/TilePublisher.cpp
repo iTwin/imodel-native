@@ -780,17 +780,23 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
             }
         }
 
-    bvector<uint16_t> batchIds;
-    batchIds.reserve(mesh.ElementIds().size());
-    for (auto const& elemId : mesh.ElementIds())
-        batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
-    Json::Value     attr = Json::objectValue;
+    bvector<uint16_t>   batchIds;
+    Json::Value         attr = Json::objectValue;
+
+    if (mesh.ValidIdsPresent())
+        {
+        batchIds.reserve(mesh.ElementIds().size());
+        for (auto const& elemId : mesh.ElementIds())
+            batchIds.push_back(m_batchIds.GetBatchId(elemId));
+
+        attr["attributes"]["BATCHID"] = accBatchId;
+        }
+
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     static bool     s_doQuantize = true;
     bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize;
 
-    attr["attributes"]["BATCHID"] = accBatchId;
     attr["indices"] = accIndexId;
     attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh.Triangles().empty(), idStr.c_str());
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
@@ -831,14 +837,23 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     AddBinaryData (indices.data(),  indices.size() *sizeof(unsigned int));
 
-    auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-    rootNode["bufferViews"][bvBatchId] = Json::objectValue;
-    rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
-    rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
+    if (mesh.ValidIdsPresent())
+        {
+        auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
+        rootNode["bufferViews"][bvBatchId] = Json::objectValue;
+        rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
+        rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
+        rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
 
-    AddBinaryData (batchIds.data(), nBatchIdBytes);
+        AddBinaryData (batchIds.data(), nBatchIdBytes);
+        rootNode["accessors"][accBatchId] = Json::objectValue;
+        rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
+        rootNode["accessors"][accBatchId]["byteOffset"] = 0;
+        rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
+        rootNode["accessors"][accBatchId]["count"] = batchIds.size();
+        rootNode["accessors"][accBatchId]["type"] = "SCALAR";
+        }
     
     rootNode["accessors"][accPositionId]["min"] = Json::arrayValue;
     rootNode["accessors"][accPositionId]["min"].append(pointRange.low.x);
@@ -856,12 +871,6 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accIndexId]["count"] = indices.size();
     rootNode["accessors"][accIndexId]["type"] = "SCALAR";
 
-    rootNode["accessors"][accBatchId] = Json::objectValue;
-    rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
-    rootNode["accessors"][accBatchId]["byteOffset"] = 0;
-    rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-    rootNode["accessors"][accBatchId]["count"] = batchIds.size();
-    rootNode["accessors"][accBatchId]["type"] = "SCALAR";
 
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }

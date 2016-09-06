@@ -33,7 +33,7 @@ struct BatchIdMap
 {
 private:
     bmap<DgnElementId, uint16_t> m_map;
-    bvector<DgnElementId>       m_list;
+    bvector<DgnElementId>        m_list;
 public:
     BatchIdMap();
 
