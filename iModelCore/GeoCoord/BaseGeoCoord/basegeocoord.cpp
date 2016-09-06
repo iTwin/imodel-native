@@ -12316,6 +12316,7 @@ double      inRadians
     return inRadians /  s_radiansPerDegree;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Alain.Robert   2016/08
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -14688,6 +14689,7 @@ int             CSMap::CScalcLlFromMgrs (CSMilitaryGrid* mg, GeoPoint2dP ll, con
 void            CSMap::CSdeleteMgrs (CSMilitaryGrid* mg) {::CSdeleteMgrs (mg);}
 void            CSMap::CS_llhToXyz (DPoint3dP xyz,const GeoPointCP llh, double e_rad, double e_sq) {::CS_llhToXyz((double*)xyz, (const double*)llh, e_rad, e_sq);}
 int             CSMap::CS_xyzToLlh (GeoPointP llh,const DPoint3dCP xyz, double e_rad, double e_sq) {return ::CS_xyzToLlh((double*)llh, (const double*)xyz, e_rad, e_sq);}
+
 
 
 #include "GCSLibrary.cpp"

@@ -2431,6 +2431,7 @@ BASEGEOCOORD_EXPORTED static int              CS_xyzToLlh (GeoPointP llh , DPoin
 };
 
 
+
 typedef int (*DatumConvert3dFunc) (CSDatumConvert*, GeoPointCP in, GeoPointP out);
 
 class   Datum;
