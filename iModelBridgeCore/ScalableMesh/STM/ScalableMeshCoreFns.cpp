@@ -177,8 +177,7 @@ int bcdtmMultiResolution_getMaxFaceAreaInCurrentView(double rootToViewMatrix[][4
         pointBuffer2D[facePtInd * 2] /= div;
         pointBuffer2D[facePtInd * 2 + 1] /= div;       
         }                            
-
-    //NEEDS_WORK_SM : Could be more generic (no magic number)    
+    
     *rootToViewScaleP = 0;
 
     HArrayAutoPtr<double> facePointBuffer2D(new double[4 * 2]);
@@ -266,18 +265,14 @@ int bcdtmMultiResolution_getMaxFaceAreaInCurrentView(double rootToViewMatrix[][4
 
 
 int bcdtmMultiResolution_getMaxFaceAreaInCurrentViewCamOn(double& rootToViewScaleP, double& vanishingLineCutCorrectionFactor, double rootToViewMatrix[][4], DPoint3d* facePts, int nbFacePts)
-    {   
-    //NEEDS_WORK_SM : Query by level currently deactivated
-    //assert((rootToViewMatrix[3][0] != 0.0) || (rootToViewMatrix[3][1] != 0.0) || (rootToViewMatrix[3][2] != 0.0));
-
+    {       
     //Rectangular prism
     assert(nbFacePts == 8);
         
     rootToViewScaleP = 0;
 
     HArrayAutoPtr<double> facePointBuffer2D(new double[4 * 2]);
-
-    //NEEDS_WORK_SM : Could be more generic (no magic 6 number)    
+    
     for (size_t faceInd = 0; faceInd < 1; faceInd++)
         {        
         vector<DPoint3d> currentFacePts; 

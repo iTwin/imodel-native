@@ -203,15 +203,12 @@ public:
     -----------------------------------------------------------------------------*/
     virtual void SetParentNode(const HFCPtr<SMPointIndexNode<POINT, EXTENT> >& pi_rpParentNode);
 
-#ifdef SCALABLE_MESH_ATP
     /**----------------------------------------------------------------------------
     Returns the next available node ID
 
     @return next available node ID
     -----------------------------------------------------------------------------*/
     uint64_t GetNextID() const;
-#endif
-
 
     virtual RefCountedPtr<SMMemoryPoolVectorItem<POINT>> GetPointsPtr(bool loadPts = true);
             
@@ -1205,6 +1202,11 @@ public:
     ISMDataStoreTypePtr<EXTENT> GetDataStore();
 
     /**----------------------------------------------------------------------------
+     Returns the next node id available
+    -----------------------------------------------------------------------------*/
+    uint64_t GetNextNodeId();
+
+    /**----------------------------------------------------------------------------
      Forces an immmediate store (to minimize the chances of corruption
     -----------------------------------------------------------------------------*/
     virtual bool        Store();
@@ -1303,10 +1305,11 @@ public:
 
 #ifdef SCALABLE_MESH_ATP
     unsigned __int64    m_nbInputPoints;
+#endif    
 
     void SetNextID(const uint64_t& id);
     uint64_t GetNextID() const;
-#endif    
+
 
     /**----------------------------------------------------------------------------
     Indicates if the data is propagated toward the leaves immediately or if it is
@@ -1468,7 +1471,8 @@ protected:
 #endif
         };
        
-    ISMDataStoreTypePtr<EXTENT>              m_dataStore;
+    ISMDataStoreTypePtr<EXTENT> m_dataStore;
+    std::atomic<uint64_t>       m_nextNodeID;
 
     ISMPointIndexFilter<POINT, EXTENT>* m_filter;    
     typename SMPointIndexNode<POINT, EXTENT>::CreatedNodeMap m_createdNodeMap;

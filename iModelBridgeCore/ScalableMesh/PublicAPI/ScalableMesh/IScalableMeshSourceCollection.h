@@ -19,6 +19,7 @@
 #include <ScalableMesh\Import\ScalableMeshData.h>
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+//NEEDS_WORK_SM_RENAMING : Rename IDTM so ISM
 struct IDTMSource;
 struct IDTMSourceGroup;
 struct EditListener;

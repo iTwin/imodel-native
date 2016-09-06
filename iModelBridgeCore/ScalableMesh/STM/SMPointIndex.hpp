@@ -80,7 +80,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = false;
 
 
-    m_nodeId = ++s_nextNodeID;    
+    m_nodeId = m_SMIndex->GetNextNodeId();    
 
     m_isDirty = false;
 
@@ -154,7 +154,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
 
-    m_nodeId = ++s_nextNodeID;
+    m_nodeId = m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
     m_isDirty = false;
@@ -232,7 +232,7 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_isGrid = pi_rpParentNode->m_isGrid;
     
    
-    m_nodeId = ++s_nextNodeID;
+    m_nodeId = m_SMIndex->GetNextNodeId();
     m_nodeHeader.m_parentNodeID = pi_rpParentNode->GetBlockID();
 
 
@@ -421,8 +421,8 @@ extern std::mutex s_createdNodeMutex;
 
 template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load() const
     {
-    HPRECONDITION (!IsLoaded());
-    
+    HPRECONDITION (!IsLoaded());        
+
     if (0 == (((SMPointIndexNode<POINT, EXTENT>*)this)->GetDataStore())->LoadNodeHeader (&m_nodeHeader, GetBlockID()))
         {
         // Something went wrong
@@ -6670,7 +6670,6 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
         }
     }
 
-#ifdef SCALABLE_MESH_ATP
 //=======================================================================================
 // @bsimethod                                                   Richard.Bois 04/16
 //=======================================================================================
@@ -6696,7 +6695,6 @@ uint64_t SMPointIndexNode<POINT, EXTENT>::GetNextID() const
 
     return childID;
     }
-#endif
 
 #ifdef INDEX_DUMPING_ACTIVATED
 
@@ -7430,7 +7428,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
   : m_dataStore(dataStore),
     m_filter (filter)
     {
-
+    m_nextNodeID = 0;
     m_propagatesDataDown = propagatesDataDown;
     m_indexHeader.m_numberOfSubNodesOnSplit = 8;
 
@@ -7629,18 +7627,16 @@ template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::DumpOctTre
     }
 #endif
 
-#ifdef SCALABLE_MESH_ATP
 template<class POINT, class EXTENT> void SMPointIndex<POINT, EXTENT>::SetNextID(const uint64_t& id)
     {
     assert(id != uint64_t(-1) && id > 0);
-    s_nextNodeID = id;
+    m_nextNodeID = id;
     }
 
 template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNextID() const
     {
     return GetRootNode()->GetNextID();
     }
-#endif
 
 #ifdef __HMR_DEBUG
 /**----------------------------------------------------------------------------
@@ -7889,6 +7885,14 @@ template<class POINT, class EXTENT> ISMDataStoreTypePtr<EXTENT> SMPointIndex<POI
     return m_dataStore;
     }
 
+/**----------------------------------------------------------------------------
+ This method returns the next node ID available 
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> uint64_t SMPointIndex<POINT, EXTENT>::GetNextNodeId()
+    {    
+    HINVARIANTS;
+    return ++m_nextNodeID;
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 12/2010

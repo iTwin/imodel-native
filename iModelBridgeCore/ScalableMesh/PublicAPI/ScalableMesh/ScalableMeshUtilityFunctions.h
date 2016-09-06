@@ -136,7 +136,6 @@ BENTLEY_SM_EXPORT bool SetLinearsForPresentationModeCallback(addLinearsForPresen
 
 #ifdef SCALABLE_MESH_ATP
 
-//NEEDS_WORK_SM_IMPORTER : Duplicated from DcStmCore\ScalableMeshUtil.h, removed DcStmCore version.
 BENTLEY_SM_EXPORT double GetGroundDetectionDuration();
 BENTLEY_SM_EXPORT void   SetGroundDetectionDuration(double t);
 BENTLEY_SM_EXPORT void   AddGroundDetectionDuration(double t);

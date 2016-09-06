@@ -258,8 +258,7 @@ struct IScalableMeshPointQuery abstract: RefCountedBase
     private:  
 
     protected: 
-                
-        //NEEDS_WORK_SM: remove clip shape from query interface??
+                        
         virtual int _Query(bvector<DPoint3d>&               points, 
                            const DPoint3d*                  pClipShapePts, 
                            int                              nbClipShapePts, 
@@ -343,9 +342,7 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
-
-        //NEEDS_WORK_SM: maybe move all geometry-related functions to util interface
-        
+                
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
 
