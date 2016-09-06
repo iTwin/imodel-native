@@ -224,30 +224,31 @@ DbResult DgnDb::CreateRepositoryModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnElement(DgnDbR db, DgnElementId elementId, DgnClassId classId, DgnModelId modelId, DgnCodeCR elementCode, Utf8CP label)
-    {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Element) " (Id,ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?,?)");
-    stmt.BindId(1, elementId);
-    stmt.BindId(2, classId);
-    stmt.BindId(3, modelId);
-    stmt.BindId(4, elementCode.GetAuthority());
-    stmt.BindText(5, elementCode.GetNamespace().c_str(), Statement::MakeCopy::No);
-    stmt.BindText(6, elementCode.GetValueCP(), Statement::MakeCopy::No);
-    stmt.BindText(7, label, Statement::MakeCopy::No);
-    DbResult result = stmt.Step();
-    BeAssert(BE_SQLITE_DONE == result);
-    return result;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     {
     DgnElementId elementId = Elements().GetRootSubjectId();
-    DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    return insertIntoDgnElement(*this, elementId, classId, modelId, DgnCode::CreateEmpty(), params.m_name.c_str());
+    DgnCode elementCode = DgnCode::CreateEmpty();
+
+    // element handlers are not initialized yet, so insert root Subject directly
+    ECSqlStatement statement;
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Descr) VALUES(?,?,?,?,?,?,?)"))
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    statement.BindId(1, elementId);
+    statement.BindId(2, modelId);
+    statement.BindId(3, elementCode.GetAuthority());
+    statement.BindText(4, elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(6, params.m_rootSubjectLabel.c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(7, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
+
+    DbResult result = statement.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -256,9 +257,28 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 DbResult DgnDb::CreateRepositoryLink(CreateDgnDbParams const& params)
     {
     DgnElementId elementId = Elements().GetRepositoryLinkId();
-    DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    return insertIntoDgnElement(*this, elementId, classId, modelId, DgnCode::CreateEmpty(), params.m_name.c_str());
+    DgnCode elementCode = DgnCode::CreateEmpty();
+    Utf8String repositoryName(GetFileName().GetFileNameAndExtension());
+
+    // element handlers are not initialized yet, so insert RepositoryLink directly
+    ECSqlStatement statement;
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_RepositoryLink) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?)"))
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    statement.BindId(1, elementId);
+    statement.BindId(2, modelId);
+    statement.BindId(3, elementCode.GetAuthority());
+    statement.BindText(4, elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(6, repositoryName.c_str(), IECSqlBinder::MakeCopy::No);
+
+    DbResult result = statement.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -361,8 +381,6 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
     Domains().OnDbOpened();
 
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
-    SavePropertyString(DgnProjectProperty::Name(), params.m_name);
-    SavePropertyString(DgnProjectProperty::Description(), params.m_description);
     SavePropertyString(DgnProjectProperty::Client(), params.m_client);
 
     m_units.Save();

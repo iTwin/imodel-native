@@ -113,7 +113,6 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("DbGuid",            "be_Db"         )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("BeSQLiteBuild",     "be_Db"         )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("CreationDate",      "be_Db"         )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("Description",       "dgn_Proj"      )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("Units",             "dgn_Proj"      )) );
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("LastEditor",        "dgn_Proj"      )) );
     
@@ -167,9 +166,7 @@ static DgnSubCategoryId facetId1, facetId2;
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, ProjectWithDuplicateName)
     {
-    CreateDgnDbParams params;
-    params.SetProjectName("DgnDbTest.ProjectWithDuplicateName");
-    params.SetOverwriteExisting(false);
+    CreateDgnDbParams params(TEST_NAME);
     DbResult status, status2;
     DgnDbPtr project, project2;
     
@@ -239,8 +236,7 @@ TEST_F(DgnDbTest, CreateDgnDb)
         BeFileName::BeDeleteFile(dgndbFileName);
 
     DbResult status;
-    CreateDgnDbParams params;
-    params.SetProjectName("DgnDbTest.CreateDgnDb");
+    CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ(BE_SQLITE_OK, status) << status;
     ASSERT_TRUE( dgnProj != NULL);
@@ -260,8 +256,7 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
         BeFileName::BeDeleteFile(dgndbFileName);
 
     DbResult status;
-    CreateDgnDbParams params;
-    params.SetProjectName("DgnDbTest.CreateWithInvalidName");
+    CreateDgnDbParams params(TEST_NAME);
     dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ (BE_SQLITE_OK, status) << status;
     ASSERT_TRUE( dgnProj != NULL);

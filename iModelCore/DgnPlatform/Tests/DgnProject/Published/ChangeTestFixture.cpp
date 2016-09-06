@@ -29,12 +29,12 @@ void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
     if (seedPathname.DoesPathExist())
         return;
 
-    CreateDgnDbParams createProjectParams;
-    createProjectParams.SetProjectName("ChangeTestFixture");
-    createProjectParams.SetOverwriteExisting(true);
+    CreateDgnDbParams createDgnDbParams;
+    createDgnDbParams.SetRootSubjectLabel("ChangeTestFixture");
+    createDgnDbParams.SetOverwriteExisting(true);
 
     DbResult createStatus;
-    DgnDbPtr seedDgnDb = DgnDb::CreateDgnDb(&createStatus, seedPathname, createProjectParams);
+    DgnDbPtr seedDgnDb = DgnDb::CreateDgnDb(&createStatus, seedPathname, createDgnDbParams);
     ASSERT_TRUE(seedDgnDb.IsValid()) << "Could not create seed project";
 
     seedDgnDb->CloseDb();

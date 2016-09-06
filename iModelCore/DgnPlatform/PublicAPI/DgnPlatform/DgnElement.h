@@ -2182,6 +2182,9 @@ public:
     //! Creates a new child Subject of the specified parent Subject
     //! @see DgnElements::GetRootSubject
     DGNPLATFORM_EXPORT static SubjectCPtr CreateAndInsert(SubjectCR parentSubject, Utf8CP label, Utf8CP description=nullptr);
+
+    Utf8String GetDescription() const {return GetPropertyValueString("Descr");}
+    void SetDescription(Utf8CP description) {SetPropertyValue("Descr", description);}
 };
 
 //=======================================================================================

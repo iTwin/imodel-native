@@ -287,9 +287,9 @@ DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDb
     {
     DbResult ALLOW_NULL_OUTPUT(stat, result);
 
-    if (params.m_name.empty())
+    if (params.m_rootSubjectLabel.empty())
         {
-        BeAssert(false); // name is required to create the Subject in the RepositoryModel
+        BeAssert(false); // required to create the root Subject in the RepositoryModel
         return nullptr;
         }
 
