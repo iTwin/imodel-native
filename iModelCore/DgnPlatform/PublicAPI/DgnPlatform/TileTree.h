@@ -46,7 +46,7 @@ Display algorithm:
  less than the Tile's "maximum pixel size", or if it has no child Tiles, it is displayed. Otherwise, recursively display each of
  its child Tiles.
 
-Tile Loading and Missing Tiles:  Tiles cannot be displayed until they are loaded. The root Tile is loaded synchronously,
+Tile Loading and Missing Tiles: Tiles cannot be displayed until they are loaded. The root Tile is loaded synchronously,
  so it is always present. Otherwise,  tiles are loaded as they are needed, asynchronously (in another thread.) The status
  of the load process is communicated between threads via the atomic member variable "m_loadState". When a tile is needed
  for a display request but is not loaded,  it is marked as "missing" and is placed in the download queue. Optionally,
@@ -195,15 +195,15 @@ public:
     Dgn::Render::SystemP GetRenderSystem() {return m_renderSystem;}
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
 
-    //! Get the full name of a Tile in this TileTree. By default is concatenates the tile name to the rootDir
+    //! Get the full name of a Tile in this TileTree. By default it concatenates the tile name to the rootDir
     virtual Utf8String _ConstructTileName(TileCR tile) {return m_rootDir + tile._GetTileName();}
 
     //! Ctor for Root.
     //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()'
     //! @param location The transform from tile coordinates to BIM world coordinates.
-    //! @param realityCacheName
-    //! @param rootUrl
-    //! @param system
+    //! @param realityCacheName The name of the reality cache database file, relative to the temporary directory.
+    //! @param rootUrl The root url for loading tiles. This name will be prepended to tile names.
+    //! @param system The Rendering system used to create Render::Graphic used to draw this TileTree.
     DGNPLATFORM_EXPORT Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Dgn::Render::SystemP system);
 
     //! Set expiration time for unused Tiles. During calls to Draw, unused tiles that haven't been used for this number of seconds will be purged.
