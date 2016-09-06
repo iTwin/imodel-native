@@ -3,6 +3,28 @@
 #  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 
+# Running of UWP tests is currently opt-in.
+# (a) In order to use Microsoft's command line test runner, the tests must be signed, and that signature must be trusted by the computer.
+#       In order for everyone to do this, the private key would have to be committed (to sign), and trusted by every developer/firebug/PRG machine.
+#       This is an unacceptable security hole in the general case.
+# (b) The build output of the unit test app contains unacceptably long file paths, which easily end up exceeding MAX_PATH in LKGs.
+#       This means that firebug/PRG could never build (nor run) them because it must save LKGs.
+#
+# If you, as a developer/tester, want to run them, you must:
+# (a) Once, double-click %SrcRoot%BeGTest\uwp\VisualStudioProject\BeTestTest1\BeTestTest1_TemporaryKey.pfx to import and trust the certificate.
+#       In the dialog that opens:
+#           (page 1) Set 'Store Location' to 'Local Machine'
+#           (page 2) Keep settings (path should be pre-filled from what you double-clicked)
+#           (page 3) Keep settings (no password required; do NOT mark key as exportable; DO include all extended properties)
+#           (page 4) Select 'Place all certificates in the following store' and select 'Trusted Root Certification Authorities'
+#           (page 5) Finish
+#       Reference: http://stackoverflow.com/questions/33771590/running-universal-windows-unit-tests-from-the-command-line
+# (b) Define RUN_UWP_TESTS in your environment before you build.
+
+%if !defined (RUN_UWP_TESTS)
+    %return
+%endif
+
 # Don't attempt to run anything on clean...
 %if defined (BMAKE_DELETE_ALL_TARGETS)
     %return
@@ -38,4 +60,3 @@ TestBundle = $(OutputRootDir)Product/$(UWPTEST_PRODUCT)/AppPackages/BeTestTest1/
 
 always:
     vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle)
-    #start \/WAIT \/MIN vstest.console.exe \/InIsolation \/Platform:$(ArchOpt) $(TestBundle)
