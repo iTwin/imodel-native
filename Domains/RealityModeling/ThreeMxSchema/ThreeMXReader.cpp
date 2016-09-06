@@ -96,9 +96,6 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
     dPoint3dFromJson(m_range.low, bbMin);
     dPoint3dFromJson(m_range.high, bbMax);
 
-    m_center.Interpolate(m_range.low, .5, m_range.high);
-    m_radius = 0.5 * m_range.low.Distance(m_range.high);
-
     JsonValueCR val = pt["maxScreenDiameter"];
     if (val.empty())
         {
@@ -121,6 +118,9 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 
     if (1 == children.size())
         m_childPath = children[0];
+
+    if (m_parent)
+        m_parent->ExtendRange(m_range);
 
     return true;
     }
