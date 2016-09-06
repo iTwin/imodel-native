@@ -33,7 +33,7 @@ struct BatchIdMap
 {
 private:
     bmap<DgnElementId, uint16_t> m_map;
-    bvector<DgnElementId>       m_list;
+    bvector<DgnElementId>        m_list;
 public:
     BatchIdMap();
 
@@ -66,6 +66,7 @@ protected:
     WString             m_rootName;
     Transform           m_dbToTile;
     Transform           m_tileToEcef;
+    Transform           m_tilesetTransform;
     size_t              m_maxTilesetDepth;
     size_t              m_maxTilesPerDirectory;
 
@@ -86,6 +87,7 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
+    TransformCR  GetTilesetTransform () const { return m_tilesetTransform; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }

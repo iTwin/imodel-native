@@ -195,6 +195,7 @@ uint32_t TileMesh::AddVertex(DPoint3dCR point, DVec3dCP normal, DPoint2dCP param
     if (nullptr != param)
         m_uvParams.push_back(*param);
 
+    m_validIdsPresent |= (elemId.IsValid());
     return index;
     }
 

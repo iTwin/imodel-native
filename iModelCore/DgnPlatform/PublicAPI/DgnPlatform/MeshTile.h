@@ -158,8 +158,9 @@ private:
     bvector<DVec3d>         m_normals;
     bvector<DPoint2d>       m_uvParams;
     bvector<DgnElementId>   m_elementIds;   // invalid IDs for clutter geometry
+    bool                    m_validIdsPresent;
 
-    explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params) { }
+    explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params), m_validIdsPresent (false) { }
 
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 public:
@@ -184,6 +185,7 @@ public:
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     DgnElementId GetElementId(uint32_t index) const { auto pId = GetMember(m_elementIds, index); return nullptr != pId ? *pId : DgnElementId(); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+    bool ValidIdsPresent() const { return m_validIdsPresent; }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }

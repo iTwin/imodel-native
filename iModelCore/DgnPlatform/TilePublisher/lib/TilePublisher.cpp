@@ -221,9 +221,9 @@ void TilePublisher::WriteTileset (BeFileNameCR metadataFileName, size_t maxDepth
 
     val["asset"]["version"] = "0.0";
 
-    if (false && !m_context.GetTileToEcef().IsIdentity())
+    if (!m_context.GetTilesetTransform().IsIdentity())
         {
-        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTileToEcef());
+        DMatrix4d   matrix  = DMatrix4d::From (m_context.GetTilesetTransform());
         auto&       transformValue = val[JSON_Root][JSON_Transform];
 
         for (size_t i=0;i<4; i++)
@@ -780,17 +780,23 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
             }
         }
 
-    bvector<uint16_t> batchIds;
-    batchIds.reserve(mesh.ElementIds().size());
-    for (auto const& elemId : mesh.ElementIds())
-        batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
-    Json::Value     attr = Json::objectValue;
+    bvector<uint16_t>   batchIds;
+    Json::Value         attr = Json::objectValue;
+
+    if (mesh.ValidIdsPresent())
+        {
+        batchIds.reserve(mesh.ElementIds().size());
+        for (auto const& elemId : mesh.ElementIds())
+            batchIds.push_back(m_batchIds.GetBatchId(elemId));
+
+        attr["attributes"]["BATCHID"] = accBatchId;
+        }
+
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     static bool     s_doQuantize = true;
     bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize;
 
-    attr["attributes"]["BATCHID"] = accBatchId;
     attr["indices"] = accIndexId;
     attr["material"] = AddMaterial (rootNode, mesh.GetDisplayParams(), mesh.Triangles().empty(), idStr.c_str());
     attr["mode"] = mesh.Triangles().empty() ? GLTF_LINES : GLTF_TRIANGLES;
@@ -831,14 +837,23 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     AddBinaryData (indices.data(),  indices.size() *sizeof(unsigned int));
 
-    auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-    rootNode["bufferViews"][bvBatchId] = Json::objectValue;
-    rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-    rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
-    rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
-    rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
+    if (mesh.ValidIdsPresent())
+        {
+        auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
+        rootNode["bufferViews"][bvBatchId] = Json::objectValue;
+        rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
+        rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
+        rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
+        rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
 
-    AddBinaryData (batchIds.data(), nBatchIdBytes);
+        AddBinaryData (batchIds.data(), nBatchIdBytes);
+        rootNode["accessors"][accBatchId] = Json::objectValue;
+        rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
+        rootNode["accessors"][accBatchId]["byteOffset"] = 0;
+        rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
+        rootNode["accessors"][accBatchId]["count"] = batchIds.size();
+        rootNode["accessors"][accBatchId]["type"] = "SCALAR";
+        }
     
     rootNode["accessors"][accPositionId]["min"] = Json::arrayValue;
     rootNode["accessors"][accPositionId]["min"].append(pointRange.low.x);
@@ -856,12 +871,6 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     rootNode["accessors"][accIndexId]["count"] = indices.size();
     rootNode["accessors"][accIndexId]["type"] = "SCALAR";
 
-    rootNode["accessors"][accBatchId] = Json::objectValue;
-    rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
-    rootNode["accessors"][accBatchId]["byteOffset"] = 0;
-    rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-    rootNode["accessors"][accBatchId]["count"] = batchIds.size();
-    rootNode["accessors"][accBatchId]["type"] = "SCALAR";
 
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }
@@ -881,6 +890,7 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
     DPoint3d        origin = m_viewController.GetCenter ();
 
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
+    m_tilesetTransform = Transform::FromIdentity();
 
     DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
 
@@ -1051,17 +1061,14 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
                 realityModelTilesets.append (tileValue);
             }
         }
-    
-    Transform       saveTileToEcef = GetTileToEcef();
 
-    if (!realityModelTilesets.empty())
-        m_tileToEcef = Transform::FromIdentity();       // We're going to create root below - avoid putting it on the element tileset as well.
+    if (realityModelTilesets.empty())
+        m_tilesetTransform = m_tileToEcef;       // If we are not creating a seperate root tile - apply the ECEF transform directly to the element tileset.
 
     WString     elementTileSetName = realityModelTilesets.empty() ? GetRootName() : L"Elements";
     Status      elementPublishStatus = PublishElements (elementTileSet, rootRange, elementTileSetName, generator, collector, toleranceInMeters);
 
-    m_tileToEcef = saveTileToEcef;
-        
+    m_tilesetTransform = Transform::FromIdentity();
     if (realityModelTilesets.empty())
         return elementPublishStatus;
 
