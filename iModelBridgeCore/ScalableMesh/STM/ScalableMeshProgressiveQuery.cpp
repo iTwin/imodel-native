@@ -117,11 +117,9 @@ BentleyStatus IScalableMeshProgressiveQueryEngine::StartQuery(int               
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
-                                                              const bvector<bool>&                                                     clipVisibilities,
-                                                              const DMatrix4d*                                                         prevLocalToView,
-                                                              const DMatrix4d*                                                         newLocalToView)
+                                                              const bvector<bool>&                                                     clipVisibilities)
     {
-    return _StartQuery(queryId, queryParam, startingNodes, loadTexture, clipVisibilities, prevLocalToView, newLocalToView);
+    return _StartQuery(queryId, queryParam, startingNodes, loadTexture, clipVisibilities);
     }
 
 BentleyStatus IScalableMeshProgressiveQueryEngine::StopQuery(int queryId)
@@ -1319,9 +1317,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_StartQuery(int               
                                                               IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam,
                                                               const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,
                                                               bool                                                                     loadTexture,
-                                                              const bvector<bool>&                                                     clipVisibilities,
-                                                              const DMatrix4d*                                                         prevLocalToView, 
-                                                              const DMatrix4d*                                                         newLocalToView)
+                                                              const bvector<bool>&                                                     clipVisibilities)
     {
     assert(_IsQueryComplete(queryId) == true);
 

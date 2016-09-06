@@ -109,9 +109,7 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,                                           
                                           bool                                                                     loadTexture,
-                                          const bvector<bool>&                                                     clipVisibilities,
-                                          const DMatrix4d*                                                         prevLocalToView,
-                                          const DMatrix4d*                                                         newLocalToView) override; 
+                                          const bvector<bool>&                                                     clipVisibilities) override; 
 
         virtual BentleyStatus _GetOverviewNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes, 
                                                 int                                                                queryId) const override;        

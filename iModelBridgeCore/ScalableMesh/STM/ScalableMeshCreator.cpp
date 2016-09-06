@@ -123,11 +123,6 @@ inline const GCS& GetDefaultGCS ()
 }
 
 
-//NEEDS_WORK_SM : Should be part of the index instead to avoid having very big odd values.
-std::atomic<uint64_t> s_nextNodeID = 0;
-
-
-
 /*==================================================================*/
 /*        MRDTM CREATOR SECTION - BEGIN                             */
 /*==================================================================*/
@@ -511,8 +506,6 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile)
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-
-
 StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
 
                                                        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,

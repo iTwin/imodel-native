@@ -2005,9 +2005,8 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-        //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
-        return false;
-
+    //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
+    return false;
     }
 
 /*----------------------------------------------------------------------------+

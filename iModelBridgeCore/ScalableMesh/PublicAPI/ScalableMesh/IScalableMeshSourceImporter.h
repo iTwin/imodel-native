@@ -24,7 +24,6 @@
 #include <ScalableMesh\IScalableMeshSourceImporter.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 
-//NEEDS_WORK_SM_IMPORTER : Not sure want dependency on this.
 #ifndef VANCOUVER_API
 #include "HPUPacket.h"
 #else
