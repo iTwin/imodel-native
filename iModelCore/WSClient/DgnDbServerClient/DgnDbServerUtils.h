@@ -50,12 +50,16 @@ namespace ServerSchema
         static Utf8CP MultiCode = "MultiCode";
         static Utf8CP EventSAS = "EventSAS";
         static Utf8CP EventSubscription = "EventSubscription";
+        static Utf8CP UserDefinition = "UserDefinition";
         }
     namespace Property
         {
         static Utf8CP Id = "Id";
         static Utf8CP RepositoryName = "RepositoryName";
         static Utf8CP FileName = "FileName";
+        static Utf8CP Name = "Name";
+        static Utf8CP Password = "Password";
+        static Utf8CP IsAdmin = "IsAdmin";
         static Utf8CP FileId = "FileId";
         static Utf8CP Index = "Index";
         static Utf8CP Description = "Description";
