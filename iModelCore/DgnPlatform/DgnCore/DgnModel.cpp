@@ -895,7 +895,6 @@ struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 void DgnModel::_OnDeleted()
     {
     CallAppData(DeletedCaller());
-    GetDgnDb().Models().DropLoadedModel(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1021,13 +1020,35 @@ DgnDbStatus DgnModel::Delete()
     if (!m_persistent)
         return DgnDbStatus::WrongModel;
 
+    if (m_modeledElementId.IsValid())
+        {
+        // give the element being modeled a chance to reject the delete
+        DgnDbStatus status;
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnModelDelete(*this))))
+            return status;
+        }
+
     DgnDbStatus stat = _OnDelete();
     if (DgnDbStatus::Success != stat)
         return stat;
 
     Statement stmt(m_dgndb, "DELETE FROM " BIS_TABLE(BIS_CLASS_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    if (BE_SQLITE_DONE != stmt.Step())
+        return DgnDbStatus::WriteError;
+
+    _OnDeleted();
+
+    if (m_modeledElementId.IsValid())
+        {
+        // notify the element being modeled that the DgnModel has been deleted
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid())
+            modeledElement->_OnModelDeleted(*this);
+        }
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1043,6 +1064,14 @@ DgnDbStatus DgnModel::Insert()
         return DgnDbStatus::DuplicateCode;
 
     m_modelId = DgnModelId(m_dgndb, BIS_TABLE(BIS_CLASS_Model), "Id");
+
+    if (m_modeledElementId.IsValid())
+        {
+        // give the element being modeled a chance to reject the insert
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnModelInsert(*this))))
+            return status;
+        }
 
     CachedECSqlStatementPtr stmt = GetDgnDb().Models().GetInsertStmt(*this);
     if (stmt.IsNull())
@@ -1072,6 +1101,15 @@ DgnDbStatus DgnModel::Insert()
     BeAssert(status == DgnDbStatus::Success);
 
     _OnInserted();
+
+    if (m_modeledElementId.IsValid())
+        {
+        // notify the element being modeled about the new DgnModel
+        DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(m_modeledElementId);
+        if (modeledElement.IsValid())
+            modeledElement->_OnModelInserted(*this);
+        }
+
     return DgnDbStatus::Success;
     }
 

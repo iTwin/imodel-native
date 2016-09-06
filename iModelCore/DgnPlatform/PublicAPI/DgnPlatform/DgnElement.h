@@ -1046,6 +1046,27 @@ protected:
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     virtual void _OnChildImported(DgnElementCR original, DgnElementCR imported, DgnImportContext& importer) const {}
 
+    //! Called when this element is being <i>modeled</i> by a new DgnModel.
+    //! Subclasses may override this method to control which DgnModel types are valid to model this element.
+    //! @param[in] model the new DgnModel
+    //! @return DgnDbStatus::Success to allow the DgnModel insert, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnModelInsert, forwarding its status.
+    virtual DgnDbStatus _OnModelInsert(DgnModelCR model) const {return DgnDbStatus::Success;}
+
+    //! Called after this element has been <i>modeled</i> by a new DgnModel.
+    //! @note If you override this method, you @em must call T_Super::_OnModelInserted.
+    virtual void _OnModelInserted(DgnModelCR model) const {}
+
+    //! Called when a delete of a DgnModel modeling this element is in progress. Subclasses may override this method to block the deletion.
+    //! @param[in] model the DgnModel being deleted
+    //! @return DgnDbStatus::Success to allow the DgnModel deletion, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnModelDelete, forwarding its status.
+    virtual DgnDbStatus _OnModelDelete(DgnModelCR model) const {return DgnDbStatus::Success;}
+
+    //! Called after a delete of a DgnModel modeling this element has completed.
+    //! @note If you override this method, you @em must call T_Super::_OnModelDeleted.
+    virtual void _OnModelDeleted(DgnModelCR model) const {}
+
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
     //! each element, so it is not necessary for the value to be 100% accurate.
     //! @note Subclasses of DgnElement that add any member variables should override this method using this template:
