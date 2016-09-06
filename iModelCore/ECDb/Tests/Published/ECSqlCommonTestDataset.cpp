@@ -503,6 +503,16 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
         ecsql.Sprintf("%s WHERE GetX(P2D) >= GetX(P3D) AND GetY(P2D) >= GetY(P3D)", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
 
+        //with parentheses around function calls
+        ecsql.Sprintf("%s WHERE (GetX(P2D)) >= (GetX(P3D)) AND (GetY(P2D)) >= (GetY(P3D))", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (GetX(P2D) >= GetX(P3D)) AND (GetY(P2D) >= GetY(P3D))", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (GetX(P2D) >= GetX(P3D) AND GetY(P2D) >= GetY(P3D))", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
         ecsql.Sprintf("%s WHERE GetX(?) >= -11.111", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 

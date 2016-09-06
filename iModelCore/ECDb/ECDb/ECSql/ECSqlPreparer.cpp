@@ -1389,7 +1389,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     else
         nativeSql.Append(functionName);
 
-    nativeSql.AppendParenLeft().Append(exp.GetSetQuantifier()).AppendSpace();
+    nativeSql.AppendParenLeft();
+
+    if (exp.GetSetQuantifier() != SqlSetQuantifier::NotSpecified)
+        nativeSql.Append(exp.GetSetQuantifier()).AppendSpace();
 
     ECSqlStatus stat = PrepareFunctionArgExpList(nativeSql, ctx, exp);
     if (!stat.IsSuccess())
@@ -1401,7 +1404,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     nativeSql.AppendParenRight(); //function arg list parent
 
     if (exp.HasParentheses())
-        nativeSql.AppendParenLeft();
+        nativeSql.AppendParenRight();
 
     nativeSqlSnippets.push_back(move(nativeSql));
     return ECSqlStatus::Success;
