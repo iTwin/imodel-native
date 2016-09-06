@@ -2,12 +2,13 @@
 |
 |     $Source: PublicApi/ECUnits/ECUnitsClassLocater.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-/*__BENTLEY_INTERNAL_ONLY__*/
+/*__PUBLISH_SECTION_START__*/
+/** @cond BENTLEY_SDK_Internal */
 
 // Note: This is a barebones implementation targeting Graphite requirements.
 // It supports applying UnitSpecifications and DisplayUnitSpecifications to ECProperties.
@@ -41,7 +42,7 @@ struct ECUnitsClassLocater : RefCounted<IECClassLocater>
         ~ECUnitsClassLocater() {}
 
     public:
-        static ECUnitsClassLocaterPtr Create();
+        ECOBJECTS_EXPORT static ECUnitsClassLocaterPtr Create();
         ECOBJECTS_EXPORT static bool LoadUnitsSchemas (ECSchemaReadContextR context);
     };
 
