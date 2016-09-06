@@ -150,7 +150,7 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
     client->SetCredentials(m_credentials);
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repositories from project %s.", project);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting repositories from project %s.", project.c_str());
     return client->SendGetObjectRequest(repositoriesObject, nullptr, cancellationToken)->Then<DgnDbServerRepositoriesResult>
         ([=] (const WSObjectsResult& response)
         {
@@ -200,7 +200,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
     Json::Value repositoryCreationJson = RepositoryCreationJson(repositoryName, description);
     client->SetCredentials(m_credentials);
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create repository request for project %s.", project);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending create repository request for project %s.", project.c_str());
     return client->SendCreateObjectRequest(repositoryCreationJson, BeFileName(), nullptr, cancellationToken)
         ->Then([=] (const WSCreateObjectResult& createRepositoryResult)
         {
@@ -342,7 +342,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     tempdb->CloseDb();
 
     std::shared_ptr<DgnDbServerRepositoryResult> finalResult = std::make_shared<DgnDbServerRepositoryResult>();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating repository instance. Name: %s.", repositoryName);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Creating repository instance. Name: %s.", repositoryName.c_str());
     return CreateRepositoryInstance(repositoryName, description, cancellationToken)
         ->Then([=] (DgnDbServerRepositoryResultCR createRepositoryResult)
         {
@@ -356,7 +356,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
         auto repositoryInfo = createRepositoryResult.GetValue();
         finalResult->SetSuccess(repositoryInfo);
 
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Successfully created repository instance. Instance ID: %s.", repositoryInfo->GetId());
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Successfully created repository instance. Instance ID: %s.", repositoryInfo->GetId().c_str());
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to created repository.");
         ConnectToRepository(repositoryInfo->GetId(), cancellationToken)->Then([=] (DgnDbRepositoryConnectionResultCR connectionResult)
             {
@@ -436,7 +436,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseResult>(DgnDbServerBriefcaseResult::Error(DgnDbServerError::Id::FileIsNotBriefcase));
         }
     std::shared_ptr<DgnDbServerBriefcaseResult> finalResult = std::make_shared<DgnDbServerBriefcaseResult>();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName());
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
     return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
         {
         if (connectionResult.IsSuccess())
@@ -506,7 +506,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
             return DgnDbServerStatusResult::Error(pullTask->GetResult().GetError());
             }
 
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId());
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId().c_str());
 
         BeSQLite::DbResult status;
         std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
@@ -578,7 +578,7 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
     std::shared_ptr<DgnDbServerBriefcaseInfoResult> finalResult = std::make_shared<DgnDbServerBriefcaseInfoResult>();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName());
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
     return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
         {
         if (!connectionResult.IsSuccess())
@@ -677,7 +677,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR reposito
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);
     client->SetCredentials(m_credentials);
     ObjectId repositoryId = ObjectId("BIMCSProject", "BIMRepository", repositoryInfo.GetId());
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete repository request. Repository ID: %s.", repositoryInfo.GetId());
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending delete repository request. Repository ID: %s.", repositoryInfo.GetId().c_str());
     return client->SendDeleteObjectRequest(repositoryId, cancellationToken)->Then<DgnDbServerStatusResult>([=] (WSDeleteObjectResult const& result)
         {
         if (!result.IsSuccess())

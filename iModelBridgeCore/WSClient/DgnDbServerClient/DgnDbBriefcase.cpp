@@ -66,7 +66,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
         return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult> (DgnDbServerRevisionMergeResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
     Utf8String lastRevisionId = GetLastRevisionPulled();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastRevisionId.c_str()) ? "No revisions pulled yet" : "Downloading revisions after revision ", lastRevisionId);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastRevisionId.c_str()) ? "No revisions pulled yet" : "Downloading revisions after revision ", lastRevisionId.c_str());
     return m_repositoryConnection->DownloadRevisionsAfterId(lastRevisionId, callback, cancellationToken)->Then<DgnDbServerRevisionsResult>([=] (DgnDbServerRevisionsResultCR result)
         {
         if (!result.IsSuccess())
@@ -232,7 +232,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
 
         revision->SetSummary(description);
 
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Created revision with ID %s.", revision->GetId());
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Created revision with ID %s.", revision->GetId().c_str());
         Utf8String revisionId = revision->GetId();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting push.");
         m_repositoryConnection->Push(revision, m_db->GetBriefcaseId(), uploadCallback, cancellationToken)->Then
@@ -294,7 +294,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
 
     //Needswork: think how to optimize this so that we would not need to download all revisions
     auto lastPulledRevision = GetLastRevisionPulled();
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting revisions after revision %s.", lastPulledRevision);
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting revisions after revision %s.", lastPulledRevision.c_str());
     return m_repositoryConnection->GetRevisionsAfterId(lastPulledRevision, cancellationToken)->Then<DgnDbServerBoolResult> ([=](DgnDbServerRevisionsResultCR result)
         {
         if (result.IsSuccess())
