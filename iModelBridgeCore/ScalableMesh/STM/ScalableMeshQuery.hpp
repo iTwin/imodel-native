@@ -1195,9 +1195,9 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMesh(IS
             RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoords(m_meshNode->GetUVCoordsPtr());
             if (faceIndexes->size() > 0)
                 {
-                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() ? uvCoords->size() : 0,
-                                             flags->ShouldLoadTexture() ? &(*uvCoords)[0] : 0,
-                                             flags->ShouldLoadTexture() ? &(*uvIndexes)[0] : 0);
+                status = meshPtr->AppendMesh(0, 0, faceIndexes->size(), &(*faceIndexes)[0], 0, 0, 0, flags->ShouldLoadTexture() && uvCoords.IsValid()? uvCoords->size() : 0,
+                                             flags->ShouldLoadTexture() && uvCoords.IsValid() && uvCoords->size() > 0 ? &(*uvCoords)[0] : 0,
+                                             flags->ShouldLoadTexture() && uvIndexes.IsValid() && uvIndexes->size() > 0 ? &(*uvIndexes)[0] : 0);
                 }
             
             if (meshPtr->GetNbFaces() == 0)

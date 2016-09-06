@@ -97,14 +97,20 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 #endif
         
         vector<DPoint3d> points;
+
+
         
         for (size_t i = 0; i < pointsPtr->size(); ++i)
             {
             if ((*pointsPtr)[i].x < 1e15 && (*pointsPtr)[i].y < 1e15 && !_isnan((*pointsPtr)[i].y) && !_isnan((*pointsPtr)[i].x))
+                {
                 points.push_back((*pointsPtr)[i]);
-            if (fabs(points.back().x) < 1e-8) points.back().x = 1e-8;
-            if (fabs(points.back().y) < 1e-8) points.back().y = 1e-8;
+                if (fabs(points.back().x) < 1e-8) points.back().x =0;
+                if (fabs(points.back().y) < 1e-8) points.back().y = 0;
+                }
             }
+
+
 
         BC_DTM_OBJ* dtmObjP(dtmPtr->GetBcDTM()->GetTinHandle());
         RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();

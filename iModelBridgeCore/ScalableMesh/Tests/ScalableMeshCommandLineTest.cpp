@@ -456,29 +456,35 @@ void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
 void RunDTMTriangulateTest()
     {
     //while (true)
-        {
-        WString pathMeshes = L"E:\\makeTM\\submesh";
-        bvector<DPoint3d> allPts;
-        for (size_t i = 0; i < 4; ++i)
-            {
-            WString path = pathMeshes + WString(std::to_wstring(i).c_str()) + WString(L".pts");
+      //  {
+        WString pathMeshes = L"E:\\makeTM\\mesh";
+       // bvector<DPoint3d> allPts;
+       // for (size_t i = 0; i < 4; ++i)
+       //     {
+            WString path = pathMeshes +  WString(L".pts");
             FILE* mesh = _wfopen(path.c_str(), L"rb");
             size_t nVerts = 0;
             fread(&nVerts, sizeof(size_t), 1, mesh);
             bvector<DPoint3d> allVerts(nVerts);
             fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh);
             fclose(mesh);
-            size_t offset = allPts.size();
-            allPts.resize(allPts.size() + nVerts);
-
+            
+          //  size_t offset = allPts.size();
+            //allPts.resize(allPts.size() + nVerts);
+//
             for (auto&pt : allVerts) pt.z = 0;
+            bvector<double> distances;
+            for (size_t i = 1; i < allVerts.size(); ++i)
+                distances.push_back(allVerts[i].Distance(allVerts[i - 1]));
 
-            std::random_shuffle(allVerts.begin(), allVerts.end());
+            std::sort(allVerts.begin(), allVerts.end(), [] (const DPoint3d& a, const DPoint3d&b) { return a.x < b.x; });
+
+      /*      std::random_shuffle(allVerts.begin(), allVerts.end());
 
             size_t count = (allVerts.size() / 4) + 1;
 
             memcpy(&allPts[offset], &allVerts[0], sizeof(DPoint3d)*std::min(count, allVerts.size()));
-            }
+            }*/
         TerrainModel::DTMPtr dtmPtr;
         BC_DTM_OBJ* bcDtmP = 0;
         int dtmCreateStatus = bcdtmObject_createDtmObject(&bcDtmP);
@@ -488,7 +494,7 @@ void RunDTMTriangulateTest()
             bcDtmObjPtr = TerrainModel::BcDTM::CreateFromDtmHandle(bcDtmP);
             dtmPtr = bcDtmObjPtr.get();
             }
-        bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allPts[0], (long)allPts.size());
+        bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, &allVerts[0], (long)allVerts.size());
         int status = bcdtmObject_triangulateDtmObject(bcDtmP);
         if (status != SUCCESS)
             {
@@ -497,7 +503,7 @@ void RunDTMTriangulateTest()
             str.append(L".dtm");
             bcdtmWrite_toFileDtmObject(bcDtmP, str.c_str());
             }
-        }
+       // }
     }
 
 void RunDTMSTMTriangulateTest()
@@ -816,6 +822,38 @@ void RunIntersectRayMetadata(WString& stmFileName)
 
     }
 
+void RunClipPlaneTest()
+    {
+    DPoint3d testPt = DPoint3d::From(401357.37026739196, 3978759.3097642004, 971.63836336049553);
+
+    DPoint3d myPolygon[15] =
+        {
+        DPoint3d::From(401352.08799481287, 3978777.1878598798, /*976.16990622549156*/0),
+        DPoint3d::From(401367.07224009151, 3978776.4430046352, /*970.72344083023313*/0),
+        DPoint3d::From(401382.04878398468, 3978775.4459871412, /*963.48191443208316*/0),
+        DPoint3d::From(401397.09393071051, 3978776.6951946248, /*961.80136028673155*/0),
+        DPoint3d::From(401412.08347109711, 3978776.1237141979, /*957.90659148364830*/0),
+        DPoint3d::From(401425.65381660056, 3978779.9811449745, /*959.84740683554378*/0),
+        DPoint3d::From(401439.13497333368, 3978780.9183166870, /*959.64631968194533*/0),
+        DPoint3d::From(401438.26734308718, 3978752.5099747493, /*943.79473151595050*/0),
+        DPoint3d::From(401424.82198353310, 3978752.7448904603, /*945.16845261366780*/0),
+        DPoint3d::From(401411.36129374051, 3978752.4778565667, /*946.81970827335090*/0),
+        DPoint3d::From(401396.45092918904, 3978755.6417479948, /*953.30809686616419*/0),
+        DPoint3d::From(401381.52978812746, 3978758.4527900596, /*960.59357494588266*/0),
+        DPoint3d::From(401366.60116284026, 3978761.0187802203, /*967.86202441546243*/0),
+        DPoint3d::From(401351.61073459924, 3978761.5611901158, /*973.10595006502376*/0),
+        DPoint3d::From(401352.08799481287, 3978777.1878598798, /*976.16990622549156*/0)
+        };
+    bvector<DPoint3d> clip;
+    clip.insert(clip.end(), myPolygon, myPolygon + 15);
+    ClipVectorPtr cp;
+
+    CurveVectorPtr curvePtr = CurveVector::CreateLinear(clip, CurveVector::BOUNDARY_TYPE_Outer);
+    cp = ClipVector::CreateFromCurveVector(*curvePtr, 1e-8, 1e-8);
+
+    std::cout << "POINT INSIDE " << std::string(cp->PointInside(testPt, 1e-8) ? "TRUE" : "FALSE") << std::endl;
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
@@ -991,7 +1029,7 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
 
 
     //RunDTMClipTest();
-    RunDTMTriangulateTest();
+    //RunDTMTriangulateTest();
     //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
     //RunIntersectRay();
@@ -1000,6 +1038,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
    // RunIntersectRayMetadata(stmFileName);
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
+
+    RunClipPlaneTest();
     std::cout << "THE END" << std::endl;
     return 0;
 }

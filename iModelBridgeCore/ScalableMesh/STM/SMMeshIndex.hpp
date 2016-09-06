@@ -261,8 +261,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         ISDiffSetDataStorePtr nodeDiffsetStore;
-        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                        
-        assert(result == true && nodeDiffsetStore.IsValid());         
+        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                                
         if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
 
@@ -3520,6 +3519,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         const int32_t* uvIndices = uvIndexes.IsValid() ? &(*uvIndexes)[0] : 0;
         const DPoint2d* uvBuffer= uvCoords.IsValid() ? &(*uvCoords)[0] : 0;        
     
+
         Clipper clipNode(&points[0], points.size(), (int32_t*)&(*ptIndices)[0], ptIndices->size(), nodeRange, uvBuffer, uvIndices);
         bvector<bvector<PolyfaceHeaderPtr>> polyfaces;
         auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(const_cast<SMMeshIndexNode<POINT, EXTENT>*>(this)));
@@ -3530,22 +3530,32 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             ScalableMeshNode<POINT>::CreateItem(nodePtr)
 #endif
             );
-        BcDTMPtr dtm = nodeP->GetBcDTM().get();
+
         bool hasClip = false;
-        if (dtm.get() != nullptr)
+        if (!m_nodeHeader.m_arePoints3d)
             {
-            BcDTMPtr toClipBcDTM = dtm->Clone();
-            DTMPtr toClipDTM = toClipBcDTM.get(); 
-            if (IsLeaf()) //always clip leaves regardless of width/area criteria
+            BcDTMPtr dtm = nodeP->GetBcDTM().get();
+            if (dtm.get() != nullptr)
                 {
-                for (auto& mdata : metadata)
-                    mdata.second = 0;
+                BcDTMPtr toClipBcDTM = dtm->Clone();
+                DTMPtr toClipDTM = toClipBcDTM.get();
+                if (IsLeaf()) //always clip leaves regardless of width/area criteria
+                    {
+                    for (auto& mdata : metadata)
+                        mdata.second = 0;
+                    }
+                if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
                 }
-            if (toClipBcDTM->GetTinHandle() != nullptr) hasClip = clipNode.GetRegionsFromClipPolys(polyfaces, polys, metadata, toClipDTM);
             }
-        // m_differenceSets.clear();
-        // m_nbClips = 0;
-    
+        else
+            {
+            IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+            flags->SetLoadTexture(true);
+            IScalableMeshMeshPtr meshP = nodeP->GetMesh(flags);
+            if (meshP.get() != nullptr)
+                hasClip = GetRegionsFromClipPolys3D(polyfaces, polys, meshP->GetPolyfaceQuery());
+            }
+
         if (hasClip) 
             {
             bvector<bvector<PolyfaceHeaderPtr>> skirts;
