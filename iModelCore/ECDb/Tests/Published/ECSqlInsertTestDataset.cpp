@@ -343,10 +343,10 @@ ECSqlTestDataset ECSqlInsertTestDataset::IntoTests ()
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
-    // Missing schema prefix / not existing ECClasses / not existing ECProperties
+    // Missing schema alias / not existing ECClasses / not existing ECProperties
     //*******************************************************
     ecsql = "INSERT INTO PSA (I, L, Dt) VALUES (123, 1000000, DATE '2013-10-10')";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema prefix.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema alias.");
 
     ecsql = "INSERT INTO ecsql.BlaBla VALUES (123)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);

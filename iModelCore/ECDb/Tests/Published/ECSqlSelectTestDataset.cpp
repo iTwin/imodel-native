@@ -1135,10 +1135,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
-    // Missing schema prefix / not existing ECClasses / not existing ECProperties
+    // Missing schema alias / not existing ECClasses / not existing ECProperties
     //*******************************************************
     ecsql = "SELECT I, L FROM PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema prefix.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema alias.");
 
     ecsql = "SELECT I, L FROM ecsql.BlaBla";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
@@ -2919,10 +2919,10 @@ ECSqlTestDataset ECSqlSelectTestDataset::SubqueryTests( int rowCountPerClass )
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT ECInstanceId FROM (SELECT * FROM P)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Schema prefix not mentioned before class name.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Schema alias not mentioned before class name.");
 
     ecsql = "SELECT ECInstanceId FROM (SELECT * FROM sql.P)";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Invalid Schema prefix.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Invalid Schema alias.");
 
     ecsql = "SELECT * FROM (SELECT A FROM ecsql.P)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Property 'A' does not match with any of the class properties.");

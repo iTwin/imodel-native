@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlDeleteTestDataset.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlDeleteTestDataset.h"
@@ -75,10 +75,10 @@ ECSqlTestDataset ECSqlDeleteTestDataset::FromTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
-    // Missing schema prefix / not existing ECClasses / not existing ECProperties
+    // Missing schema alias / not existing ECClasses / not existing ECProperties
     //*******************************************************
     ecsql = "DELETE FROM ONLY P SET I=123, L=100000";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema prefix.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema alias.");
 
     ecsql = "DELETE FROM ONLY ecsql.BlaBla SET I=123";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
