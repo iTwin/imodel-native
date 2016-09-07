@@ -231,3 +231,68 @@ DgnTextureId JsonRenderMaterial::TextureMap::Relocate(DgnImportContext& context)
     DgnTextureId thisId = GetTextureId();
     return thisId.IsValid() ? DgnTexture::ImportTexture(context, thisId) : thisId;
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     08/2016
+//---------------------------------------------------------------------------------------
+static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, JsonRenderMaterial::TextureMap::Units units)
+    {
+    for (size_t i=0; i < visitor.NumEdgesThisFace(); i++)
+        {
+        DPoint2d        param = DPoint2d::From (0.0, 0.0);
+
+        if (JsonRenderMaterial::TextureMap::Units::Relative != units || !visitor.TryGetDistanceParameter (i, param))
+            visitor.TryGetNormalizedParameter (i, param);
+
+        uvTransform.Multiply (params[i], param);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     08/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus JsonRenderMaterial::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor) const
+    {
+    Transform           uvTransform = GetTransform().GetTransform();
+
+    params.resize (visitor.NumEdgesThisFace());
+    switch (GetMode())
+        {
+        case Render::Material::MapMode::Parametric:
+            computeParametricUVParams (&params[0], visitor, uvTransform, GetUnits());
+            return SUCCESS;
+
+#ifdef WIP
+        case Render::Material::MapMode::Planar:
+            {
+            Int32 const*        normalIndices =visitor.GetClientNormalIndexCP();
+
+            calculateUVTransformFromLayer (patternFaceScale, uvTransform, *this, layer, ignoreLayerTransform);
+
+            // We ignore planar mode unless master or sub units for scaleMode (TR# 162118) and facet is planar.
+            if (MapUnits::Relative == layer.GetUnits () || (NULL != visitor.GetNormalCP () && (normalIndices[0] != normalIndices[1] || normalIndices[0] != normalIndices[2])))
+                computeParametricUVParams (&params[0], visitor, patternFaceScale, uvTransform, pTransformToRoot, layer);
+            else
+                computePlanarUVParams (&params[0], visitor, pTransformToRoot, patternFaceScale, uvTransform);
+
+            return SUCCESS;
+            }
+
+        case Render::Material::MapMode::ElevationDrape:
+            calculateUVTransformFromLayer (patternFaceScale, uvTransform, *this, layer, ignoreLayerTransform);
+            computeElevationDrapeUVParams (&params[0], visitor, pTransformToRoot, *this, patternFaceScale, uvTransform);
+            return SUCCESS;
+
+        default:
+            if (!projectionFromElement)
+                { BeAssert (false); return ERROR; }
+
+            computeProjectionUVParams (&params[0], visitor, pTransformToRoot, *this, layer, projInfo, ignoreLayerTransform);
+            return SUCCESS;
+#endif
+        }
+       
+    return ERROR;
+    }
+

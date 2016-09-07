@@ -10,7 +10,7 @@
 
 #include <DgnPlatform/DgnViewport.h>
 #include <DgnPlatform/DgnDbTables.h>
-#include <DgnPlatform/RealityDataCache.h>
+#include <DgnPlatform/TileTree.h>
 #include <algorithm>
 
 #ifdef min
@@ -24,55 +24,69 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace WebMercator
 {
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MapTile)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MapRoot)
+DEFINE_REF_COUNTED_PTR(MapTile)
+DEFINE_REF_COUNTED_PTR(MapRoot)
 
 //=======================================================================================
 //! Identifies a tile in the fixed WebMercator tiling system.
-// @bsiclass                                                    Sam.Wilson      10/2014
+// @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
 struct TileId
 {
     uint8_t  m_zoomLevel;
-    uint32_t m_column;
     uint32_t m_row;
+    uint32_t m_column;
     TileId() {}
     TileId(uint8_t zoomLevel, uint32_t col, uint32_t row){m_zoomLevel=zoomLevel; m_column=col; m_row=row;}
-    bool operator<(TileId const& rhs) const;
 };
 
 //=======================================================================================
-//! A cached tile. May or may not be loaded.
+//! A web mercator map tile. May or may not have its graphics downloaded.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
-struct Tile : RefCountedBase, NonCopyableClass
+struct MapTile : TileTree::Tile
 {
-    struct Corners
-    {
-        DPoint3d m_pts[4];
-    };
+    TileId m_id;                                        //! tile id 
+    Render::IGraphicBuilder::TileCorners m_corners;     //! 4 corners of tile, in world coordinates
+    MapRootR m_mapRoot;                                 //! the MapRoot that loaded this tile.
+    bool m_reprojected = false;                         //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
+    Render::GraphicPtr m_graphic;                       //! the texture for this tile.
 
-    static uint64_t Next();
-    enum LoadStatus {NotLoaded=0, Queued=1, Loading=2, Ready=3, NotFound=4, Abandoned=5};
-
-    mutable uint64_t m_lastAccessed;
-    BeAtomic<int> m_loadStatus;
-    TileId m_id;
-    Corners m_corners;
-    Render::GraphicPtr m_graphic;
-
-    void Accessed() const {m_lastAccessed = Next();}
-    bool IsLoaded() const {return LoadStatus::Ready == m_loadStatus.load();}
-    bool IsAbandoned() const {return LoadStatus::Abandoned== m_loadStatus.load();}
-    void SetQueued() {m_loadStatus.store(LoadStatus::Queued);}
-    void SetLoaded() {m_loadStatus.store(LoadStatus::Ready);}
-    void SetAbandoned() {m_loadStatus.store(LoadStatus::Abandoned);}
-    void SetNotFound() {m_loadStatus.store(LoadStatus::NotFound);}
-    bool IsQueued() const {return m_loadStatus.load() == LoadStatus::Queued;}
+    StatusInt ReprojectCorners(GeoPoint*);
     TileId GetTileId() const {return m_id;}
-    Tile(TileId id, Corners const& corners) : m_id(id), m_corners(corners){Accessed();}
+    MapTile(MapRootR mapRoot, TileId id, MapTileCP parent);
+
+    BentleyStatus _Read(TileTree::StreamBuffer&, TileTree::RootR) override;
+    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
+    void TryHigherRes(TileTree::DrawArgsR args) const;
+    bool _HasChildren() const override;
+    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
+    ChildTiles const* _GetChildren(bool load) const override;
+    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    Utf8String _GetTileName() const override;
 };
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
-DEFINE_REF_COUNTED_PTR(Tile)
+//=======================================================================================
+//! The root of a multi-resolution web mercator map.
+// @bsiclass                                                    Keith.Bentley   08/16
+//=======================================================================================
+struct MapRoot : TileTree::Root
+{
+    ColorDef m_tileColor;                   //! for setting transparency
+    uint8_t m_maxZoom;                      //! the maximum zoom level for this map
+    uint32_t m_maxPixelSize;                //! the maximum size, in pixels, that a tile should stretched to. If the tile's size on screen is larger than this, use its children.
+    Render::ImageSource::Format m_format;   //! the format of the tile image source
+    Utf8String m_urlSuffix;                 //! any suffix to append to tile names. Usually includes key
+    Transform m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
+
+    DPoint3d ToWorldPoint(GeoPoint);
+    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) override;
+    uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
+    MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
+            uint8_t maxZoom, uint32_t maxSize);
+};
 
 //=======================================================================================
 //! Obtains and displays multi-resolution tiled raster organized according to the WebMercator tiling system.
@@ -100,7 +114,6 @@ public:
 
         MapService m_mapService=MapService::MapBox;  //! Identifies the source of the tiled map data.
         MapType m_mapType=MapType::Map;              //! Identifies the type of tiles to request and display.
-        bool m_finerResolution=false;   //! true => download and display more and smaller tiles, if necessary, in order to get the best resolution.
         double m_groundBias=-1.0;       //! An offset from the ground plane to draw map. By default, draw map 1 meter below sea level (negative values are below sea level)
         double m_transparency=0.0;      //! 0=fully opaque, 1.0=fully transparent
 
@@ -115,26 +128,11 @@ public:
         };
 
 protected:
-    struct TileCache
-    {
-    private:
-        int m_maxSize = 200;
-        bmap<TileId, TilePtr> m_map;
-        void Trim();
-
-    public:
-        int GetMaxSize() const {return m_maxSize;}
-        void SetMaxSize(int val) {m_maxSize=val;}
-        void Clear() {m_map.clear();}
-        void Add(TileId id, Tile* tile){Trim(); m_map.Insert(id,tile);}
-        TilePtr Get(TileId id) {auto ifound = m_map.find(id); return (ifound == m_map.end()) ? nullptr : ifound->second;}
-    };
-
     Properties m_properties;
-    mutable bool m_cacheInitialized = false;
-    mutable Dgn::RealityData::CachePtr m_cache;
-    mutable TileCache m_tileCache;
-    void CreateCache() const;
+    mutable MapRootPtr m_root;
+    void Load(Dgn::Render::SystemP) const;
+    virtual Utf8String _GetRootUrl() const {return "";}
+    virtual Utf8String _GetUrlSuffix() const {return "";}
 
 public:
     struct CreateParams : T_Super::CreateParams
@@ -146,38 +144,19 @@ public:
         CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
     };
 
-    void RequestTile(TileId, TileR, Render::SystemR) const;
-    TilePtr CreateTile(TileId id, Tile::Corners const&, Render::SystemR) const;
-    TileCache& GetTileCache() const {return m_tileCache;}
-
-    //! Create a new WebMercatorModel object, in preparation for loading it from the DgnDb.
+    //! Create a new WebMercatorModel object
     WebMercatorModel(CreateParams const& params) : T_Super(params), m_properties(params.m_properties) {}
-    ~WebMercatorModel() 
-        {
-        m_cache = nullptr;
-        }
 
     void _AddTerrainGraphics(TerrainContextR) const override;
     void _WriteJsonProperties(Json::Value&) const override;
     void _ReadJsonProperties(Json::Value const&) override;
     double GetGroundBias() const {return m_properties.m_groundBias;}
 
-    //! Create the URL to request the specified tile from a map service.
-    //! @param[out] url The returned URL
-    //! @param[in] tileid  The location of the tile, according to the WebMercator tiling system
-    //! @return SUCCESS if URL was computed and is valid
-    virtual BentleyStatus _CreateUrl(Utf8StringR url, TileId tileid) const {return ERROR;}
-
-    virtual bool _ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStream const& data) const {return false;}
-
     //! Call this after creating a new model, to set up properties.
     void SetProperties(Properties const& props) {m_properties=props;}
 
     Properties const& GetProperties() const {return m_properties;}
     Properties& GetPropertiesR() {return m_properties;}
-
-    void ClearTileCache() {m_tileCache.Clear();}
-    DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile(); //! delete the local SQLite file holding the cache of downloaded tiles.
 };
 
 //=======================================================================================
@@ -189,11 +168,9 @@ struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
     DGNMODEL_DECLARE_MEMBERS("StreetMapModel", WebMercatorModel);
 
     Utf8CP _GetCopyrightMessage() const override;
-    BentleyStatus _CreateUrl(Utf8StringR url, TileId) const override;
-    bool _ShouldRejectTile(TileId tileid, Utf8StringCR url, ByteStream const& realityData) const override;
+    Utf8String _GetRootUrl() const override;
+    Utf8String _GetUrlSuffix() const override;
 
-    Utf8String CreateOsmUrl(TileId) const;
-    Utf8String CreateMapBoxUrl(TileId) const;
 public:
     StreetMapModel(CreateParams const& params) : T_Super(params) {}
 };

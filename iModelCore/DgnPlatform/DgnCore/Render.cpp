@@ -405,7 +405,7 @@ void FrustumPlanes::Init(FrustumCR frustum)
 FrustumPlanes::Contained FrustumPlanes::Contains(DPoint3dCP points, int nPts, double tolerance) const
     {
     BeAssert(IsValid());
-
+		
     bool allInside = true;
     for (ClipPlaneCR plane : m_planes)
         {
@@ -596,3 +596,18 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
     return frameRateGoal;
     }
 
+
+
+/*-----------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform   Render::Material::Trans2x3::GetTransform() const
+    {
+    Transform   transform = Transform::FromIdentity ();
+
+    for (size_t i=0; i<2; i++)
+        for (size_t j=0; j<3; j++)
+            transform.form3d[i][j] = m_val[i][j];
+
+    return transform;
+    }

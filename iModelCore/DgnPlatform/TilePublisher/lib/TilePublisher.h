@@ -33,7 +33,7 @@ struct BatchIdMap
 {
 private:
     bmap<DgnElementId, uint16_t> m_map;
-    bvector<DgnElementId>       m_list;
+    bvector<DgnElementId>        m_list;
 public:
     BatchIdMap();
 
@@ -66,6 +66,7 @@ protected:
     WString             m_rootName;
     Transform           m_dbToTile;
     Transform           m_tileToEcef;
+    Transform           m_tilesetTransform;
     size_t              m_maxTilesetDepth;
     size_t              m_maxTilesPerDirectory;
 
@@ -76,12 +77,17 @@ protected:
 
     TILEPUBLISHER_EXPORT Status Setup();
 
-    TILEPUBLISHER_EXPORT Status PublishViewedModel (WStringCR tileSetName, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
+    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
+    Status PublishElements (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters);
+    Status DirectPublishModel (Json::Value& rootJson, DRange3dR rootRange, WStringCR name, DgnModelR model, TileGeneratorR generator, TileGenerator::ITileCollector& collector, double toleranceInMeters, TileGenerator::IProgressMeter& progressMeter);
+    Status CollectOutputTiles (Json::Value& rootJson, DRange3dR rootRange, TileNodePtr& rootTile, WStringCR name, TileGeneratorR generator, TileGenerator::ITileCollector& collector);
+
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR  GetTileToEcef() const { return m_tileToEcef; }
+    TransformCR  GetTilesetTransform () const { return m_tilesetTransform; }
     DgnDbR GetDgnDb() { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesPerDirectory () const { return m_maxTilesPerDirectory; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
@@ -112,7 +118,6 @@ private:
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
     static void AppendPoint(Json::Value& val, DPoint3dCR pt) { val.append(pt.x); val.append(pt.y); val.append(pt.z); }
-    static void WriteBoundingVolume(Json::Value&, TileNodeCR);
     static void AddTechniqueParameter(Json::Value&, Utf8CP name, int type, Utf8CP semantic);
     static void AppendProgramAttribute(Json::Value&, Utf8CP);
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
@@ -121,6 +126,9 @@ private:
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
+    void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
+    void AddBinaryData (void const* data, size_t size);
+
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
 
@@ -134,6 +142,7 @@ private:
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 public:
+
     TILEPUBLISHER_EXPORT TilePublisher(TileNodeCR tile, PublisherContext& context);
 
     TILEPUBLISHER_EXPORT PublisherContext::Status Publish();
@@ -141,6 +150,8 @@ public:
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
     TileGeometryCacheR GetGeometryCache() { BeAssert(nullptr != m_context.GetGeometryCache()); return *m_context.GetGeometryCache(); }
+    static void WriteBoundingVolume(Json::Value&, DRange3dCR);
+    static void WriteJsonToFile (WCharCP fileName, Json::Value& value);
 };
 
 

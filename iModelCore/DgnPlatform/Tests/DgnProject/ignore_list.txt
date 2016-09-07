@@ -105,3 +105,7 @@ RealityDataThreadPool.QueueWork_Many_Items
 RealityDataThreadPool.Queueing
     # DgnDb61-16Q2, NDEBUG, WinX86
     # <Crash, no output or stack printed>
+
+CsvFileTests.FindSection #Defect 557952 :FindSection method in Csvfile.h in dgnplatform does not work properly
+CsvFileTests.GetColumnContentsFromSection #Defect 557952:FindSection method in Csvfile.h in dgnplatform does not work properly
+CsvFileTests.GetSections  #Defect 557952:FindSection method in Csvfile.h in dgnplatform does not work properly

@@ -701,7 +701,14 @@
         </Bindings>
     </Part>
 
+    <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/TilePublisher/Cesium" ProductDirectoryName="Assets" ProductSubDirectory="scripts/Cesium" />
+        </Bindings>
+    </Part>
+
     <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+        <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPrewire" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>

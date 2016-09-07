@@ -407,6 +407,7 @@ struct Material : RefCounted<NonCopyableClass>
         double m_val[2][3];
         Trans2x3() {}
         Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+        DGNPLATFORM_EXPORT Transform GetTransform() const;
     };
     struct TextureMapParams
     {
@@ -1133,6 +1134,11 @@ struct IGraphicBuilder
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
 
+    struct TileCorners
+    {
+        DPoint3d m_pts[4];
+    };
+
 protected:
     friend struct GraphicBuilder;
 
@@ -1162,7 +1168,7 @@ protected:
     virtual void _AddBody(ISolidKernelEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
-    virtual void _AddTile(TextureCR tile, DPoint3dCP corners) = 0;
+    virtual void _AddTile(TextureCR tile, TileCorners const& corners) = 0;
     virtual void _AddDgnOle(DgnOleDraw*) = 0;
     virtual void _AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) = 0;
     virtual void _AddSubGraphic(GraphicR, TransformCR, GraphicParamsCR) = 0;
@@ -1176,6 +1182,7 @@ protected:
 struct GraphicBuilder
 {
     typedef IGraphicBuilder::TriMeshArgs TriMeshArgs;
+    typedef IGraphicBuilder::TileCorners TileCorners;
 private:
     friend struct GraphicBuilderPtr;
 
@@ -1322,7 +1329,7 @@ public:
     void AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth) {m_builder->_AddTriStrip2d(numPoints, points, usageFlags, zDepth);}
 
     //! @private
-    void AddTile(TextureCR tile, DPoint3dCP corners) {m_builder->_AddTile(tile, corners);}
+    void AddTile(TextureCR tile, TileCorners const& corners) {m_builder->_AddTile(tile, corners);}
 
     //! Helper Methods to draw simple SolidPrimitives.
     void AddTorus(DPoint3dCR center, DVec3dCR vectorX, DVec3dCR vectorY, double majorRadius, double minorRadius, double sweepAngle, bool capped) {AddSolidPrimitive(*ISolidPrimitive::CreateDgnTorusPipe(DgnTorusPipeDetail(center, vectorX, vectorY, majorRadius, minorRadius, sweepAngle, capped)));}

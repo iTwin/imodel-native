@@ -21,9 +21,10 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct TileCache : RealityData::Cache
 {
-    uint64_t m_allowedSize = (1024*1024*1024); // 1 Gb
+    uint64_t m_allowedSize;// = (1024*1024*1024); // 1 Gb
     virtual BentleyStatus _Prepare() const override;
     virtual BentleyStatus _Cleanup() const override;
+    TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}
 };
 
 //=======================================================================================
@@ -182,7 +183,6 @@ BentleyStatus TileData::SaveToDb() const
     auto cache = m_root.GetCache();
     if (!cache.IsValid())
         {
-        BeAssert(false);
         return ERROR;
         }
 
@@ -284,12 +284,12 @@ BentleyStatus Root::DeleteCacheFile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::CreateCache()
+void Root::CreateCache(uint64_t maxSize)
     {
     if (!IsHttp()) 
         return;
 
-    m_cache = new TileCache();
+    m_cache = new TileCache(maxSize);
     if (SUCCESS != m_cache->OpenAndPrepare(m_localCacheName))
         m_cache = nullptr;
     }
@@ -326,7 +326,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl) : m_db(db), m_rootUrl(rootUrl), m_location(location)
+Root::Root(DgnDbR db, TransformCR location, Utf8CP realityCacheName, Utf8CP rootUrl, Render::SystemP system) : m_db(db), m_rootUrl(rootUrl), m_location(location), m_renderSystem(system)
     {
     m_isHttp = (0 == strncmp("http:", rootUrl, 5) || 0 == strncmp("https:", rootUrl, 6));
 
@@ -366,7 +366,7 @@ void Tile::SetAbandoned() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
     {
-    if (!IsReady())
+    if (m_children.empty())
         return;
 
     if (m_childrenLastUsed > olderThan) // have we used this node's children recently?
@@ -381,27 +381,47 @@ void Tile::_UnloadChildren(std::chrono::steady_clock::time_point olderThan) cons
     for (auto const& child : m_children)
         child->SetAbandoned();
 
-    m_loadState.store(LoadState::NotLoaded);
+    _OnChildrenUnloaded();
     m_children.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::ExtendRange(DRange3dCR childRange) const
+    {
+    if (childRange.IsContained(m_range))
+        return;
+
+    m_range.Extend(childRange);
+
+    if (nullptr != m_parent)
+        m_parent->ExtendRange(childRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
+void Tile::Draw(DrawArgsR args, int depth) const
     {
+    DgnDb::VerifyClientThread();
+
     bool tooCoarse = true;
+
+    BeAssert(m_parent==nullptr || !m_parent->m_range.IsValid() || m_range.IsContained(m_parent->m_range));
 
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        box.TransformBy(args.m_location);
+        box = box.TransformBy(args.m_location);
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
-            _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
-            return VisitComplete::Yes;
+            if (_HasChildren())
+                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
+
+            return;
             }
 
         double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
@@ -410,42 +430,35 @@ Tile::VisitComplete Tile::Visit(DrawArgsR args, int depth) const
         tooCoarse = pixelSize > GetMaximumSize();
         }
 
-    VisitComplete completed = VisitComplete::Yes;
-    auto children = _GetChildren(); // returns nullptr if this node's children are not yet valid
+    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
         // this node is too coarse for current view, don't draw it and instead draw its children
         m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
 
         for (auto const& child : *children)
-            {
-            if (VisitComplete::Yes != child->Visit(args, depth+1))
-                completed = VisitComplete::No;
-            }
+            child->Draw(args, depth+1);
 
-        if (VisitComplete::Yes == completed)
-            return VisitComplete::Yes;
+        return;
         }
     
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
-    completed = _Draw(args, depth);
+    _DrawGraphics(args, depth);
 
     if (!_HasChildren()) // this is a leaf node - we're done
-        return completed;
+        return;
 
-    if (!tooCoarse && completed==VisitComplete::Yes)
+    if (!tooCoarse)
         {
         // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
         _UnloadChildren(args.m_purgeOlderThan);
-        return VisitComplete::Yes;
+        return;
         }
 
     // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
     // NOTE: add all missing tiles, even if they're already queued.
     if (!IsNotFound())
         args.m_missing.Insert(depth, this); 
-
-    return completed;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,7 +469,7 @@ ElementAlignedBox3d Tile::ComputeRange() const
     if (m_range.IsValid())
         return m_range;
 
-    auto const* children = _GetChildren(); // only returns fully loaded children
+    auto const* children = _GetChildren(true); // only returns fully loaded children
     if (nullptr != children)
         {
         for (auto const& child : *children)
@@ -474,7 +487,7 @@ int Tile::CountTiles() const
     {
     int count = 1;
 
-    auto const* children = _GetChildren(); // only returns fully loaded children
+    auto const* children = _GetChildren(false); // only returns fully loaded children
     if (nullptr != children)
         {
         for (auto const& child : *children)
@@ -489,10 +502,8 @@ int Tile::CountTiles() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)
     {
-    if (m_graphics.m_entries.empty())
+    if (m_graphics.m_entries.empty() && m_substitutes.m_entries.empty())
         return;
-
-    DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
 
     ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
@@ -500,12 +511,28 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_visibleEdges = false;
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
-    m_graphics.SetViewFlags(flags);
 
-    auto branch = m_context.CreateBranch(m_graphics, &m_location);
-    
-    BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
-    m_context.OutputGraphic(*branch, nullptr);
+    if (!m_graphics.m_entries.empty())
+        {
+        DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
+        m_graphics.SetViewFlags(flags);
+        auto branch = m_context.CreateBranch(m_graphics, &m_location);
+        BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
+        m_context.OutputGraphic(*branch, nullptr);
+        }
+
+    if (!m_substitutes.m_entries.empty())
+        {
+        DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
+        DPoint3d offset = {0.0, 0.0, -1};
+        Transform moveBack = Transform::From(offset);
+        Transform location = Transform::FromProduct(m_location, moveBack);
+
+        m_substitutes.SetViewFlags(flags);
+        auto branch = m_context.CreateBranch(m_substitutes, &location);
+        BeAssert(m_substitutes.m_entries.empty()); // CreateBranch should have moved them
+        m_context.OutputGraphic(*branch, nullptr);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1,0 +1,15 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: TilePublisher/lib/CesiumJs.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+%include mdl.mki
+
+baseDir = $(_MakeFilePath)
+
+$(BuildContext)Delivery/TilePublisher/Cesium : $(baseDir)Cesium
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
