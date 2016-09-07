@@ -181,7 +181,7 @@
         <SubProduct ProductName="Bentley-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/Bentley/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/BentleyUwpTest"/>
         </Bindings>
     </Part>
 

@@ -578,6 +578,12 @@ public:
     BENTLEYDLL_EXPORT static void ParseArguments (bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters = NULL);
 
     //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
+    //! @param[out]     subStrings   The resulting sub strings will be added to this collection
+    //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
+    //! @param[in]      auxDelimiters (optional) Each character in the string Will be used as a delimiter in addition to whitespace.
+    BENTLEYDLL_EXPORT static void ParseArguments (bvector<Utf8String>& subStrings, Utf8CP inString, Utf8CP auxDelimiters = NULL);
+
+    //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[in]      inString        The string to tokenize; cannot be NULL or empty
     //! @param[in]      numSubStrings   Number of substrings provided in subsequent args
     //! @param[out]     ...             A variable list of WString* used to hold the resulting sub strings
