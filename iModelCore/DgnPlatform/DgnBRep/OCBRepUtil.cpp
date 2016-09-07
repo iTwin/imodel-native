@@ -1046,7 +1046,7 @@ MSBsplineSurfacePtr OCBRep::ToBsplineSurface(CurveVectorPtr& boundaries, TopoDS_
     if (0 != bSurface->IsVPeriodic())
         {
         // Append duplicate of first row of poles.
-        for (int j=0, nUPoles = bSurface->NbUPoles(); j < nUPoles; j++)
+        for (int j=0; j < nUPoles; j++)
             {
             poles.push_back (poles.at(j));
             if (isRational)
