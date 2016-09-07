@@ -1,20 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="StartupCompany" nameSpacePrefix="stco" version="1.0" description="Startup Company Sample ECSchema" displayLabel="Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="StartupCompany" alias="stco" version="1.0" description="Startup Company Sample ECSchema" displayLabel="Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
 
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca" />
-    <ECSchemaReference name="ECDbMap" version="02.00.00" prefix="ecdbmap" />
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
   
-    <ECEntityClass typeName="Company">
+    <ECEntityClass typeName="Company" modifier="Sealed">
         <ECProperty propertyName="Name" typeName="string" />
     </ECEntityClass>
      
-    <ECEntityClass typeName="Employee">
+    <ECEntityClass typeName="Employee" modifier="Sealed">
         <ECProperty propertyName="EmployeeID" typeName="int" displayLabel="Employee ID" />
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" />
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" />
         <ECProperty propertyName="Birthday" typeName="dateTime" displayLabel="Birthday">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -26,14 +26,14 @@
         <ECStructProperty propertyName="Address" typeName="Location" />
         <ECProperty propertyName="LastModified" typeName="dateTime" displayLabel="Last Modified">
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeKind>Utc</DateTimeKind>
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
 
-    <ECStructClass typeName="Certification" displayLabel="Employee Certification">
+    <ECStructClass typeName="Certification" displayLabel="Employee Certification" modifier="Sealed">
         <ECProperty propertyName="Name" typeName="string" displayLabel="Certification Name" />
         <ECProperty propertyName="StartDate" typeName="dateTime" displayLabel="Starts On" />
         <ECProperty propertyName="ExpiryDate" typeName="dateTime" displayLabel="Expires On" />
@@ -41,7 +41,7 @@
         <ECProperty propertyName="Level" typeName="int" />
     </ECStructClass>
 
-    <ECStructClass typeName="Location">
+    <ECStructClass typeName="Location" modifier="Sealed">
         <ECProperty propertyName="Street" typeName="string" />
         <ECProperty propertyName="City" typeName="string" />
         <ECProperty propertyName="State" typeName="string" />
@@ -64,27 +64,27 @@
         <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="Phone">
+    <ECEntityClass typeName="Phone" modifier="Sealed">
         <BaseClass>Asset</BaseClass>
         <ECProperty propertyName="Number" typeName="string" />
         <ECProperty propertyName="Owner" typeName="string" />
         <ECProperty propertyName="User" typeName="int" />
     </ECEntityClass>
   
-    <ECEntityClass typeName="Furniture">
+    <ECEntityClass typeName="Furniture" modifier="Abstract">
         <BaseClass>Asset</BaseClass>
         <ECProperty propertyName="Condition" typeName="int" />
         <ECProperty propertyName="Material" typeName="int" displayLabel="Furniture Made Of" />
         <ECProperty propertyName="Weight" typeName="double" />
     </ECEntityClass>
   
-    <ECEntityClass typeName="Chair" displayLabel="Office Chair">
+    <ECEntityClass typeName="Chair" displayLabel="Office Chair" modifier="Sealed">
         <BaseClass>Furniture</BaseClass>
         <ECProperty propertyName="Type" typeName="string" />
         <ECProperty propertyName="Color" typeName="string" />
     </ECEntityClass>
   
-    <ECEntityClass typeName="Desk">
+    <ECEntityClass typeName="Desk" modifier="Sealed">
         <BaseClass>Furniture</BaseClass>
         <ECProperty propertyName="DeskFootprint" typeName="string" />
         <ECProperty propertyName="NumberOfCabinets" typeName="int" displayLabel="Number Of Cabinets" />
@@ -94,12 +94,12 @@
         <ECProperty propertyName="Breadth" typeName="double" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="RoundTable">
+    <ECEntityClass typeName="RoundTable" modifier="Sealed">
         <BaseClass>Furniture</BaseClass>
         <ECProperty propertyName="Radius" typeName="double" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="Hardware">
+    <ECEntityClass typeName="Hardware" modifier="Abstract">
         <BaseClass>Asset</BaseClass>
         <ECProperty propertyName="HasTrackingDevice" typeName="boolean" displayLabel="Has Tracking Device" />
         <ECProperty propertyName="HasWarranty" typeName="boolean" displayLabel="Has Warranty" />
@@ -108,7 +108,7 @@
         <ECProperty propertyName="Model" typeName="string" />
         <ECProperty propertyName="WarrantyExpiryDate" typeName="dateTime" displayLabel="Warranty Expiry Date" >
             <ECCustomAttributes>
-                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.13">
+                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
                     <DateTimeComponent>Date</DateTimeComponent>
                 </DateTimeInfo>
             </ECCustomAttributes>
@@ -122,12 +122,12 @@
         <ECProperty propertyName="Type" typeName="int" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="Laptop">
+    <ECEntityClass typeName="Laptop" modifier="Sealed">
         <BaseClass>Computer</BaseClass>
         <ECProperty propertyName="HasDockingStation" typeName="boolean" />
     </ECEntityClass>
 
-    <ECEntityClass typeName="Monitor">
+    <ECEntityClass typeName="Monitor" modifier="Sealed">
         <BaseClass>Hardware</BaseClass>
         <ECProperty propertyName="Size" typeName="int" />
         <ECProperty propertyName="Type" typeName="string" />
@@ -135,29 +135,29 @@
         <ECProperty propertyName="Weight" typeName="double" />
     </ECEntityClass>
       
-    <ECRelationshipClass typeName="ManagerReports" strength="referencing" >
-        <Source cardinality="(0,1)" roleLabel="Manager" polymorphic="True">
+    <ECRelationshipClass typeName="ManagerReports" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="Manager" polymorphic="True">
             <Class class="Employee" />
         </Source>
-        <Target cardinality="(0,N)" roleLabel="Report" polymorphic="True">
+        <Target multiplicity="(0..N)" roleLabel="Report" polymorphic="True">
             <Class class="Employee" />
         </Target>
     </ECRelationshipClass>  
     
-    <ECRelationshipClass typeName="CompanyHasEmployees" strength="referencing" >
-        <Source cardinality="(1,1)" roleLabel="Employee of Company" polymorphic="True">
+    <ECRelationshipClass typeName="CompanyHasEmployees" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="Employee of Company" polymorphic="True">
             <Class class="Company" />
         </Source>
-        <Target cardinality="(1,N)" roleLabel="Employee working for the Company" polymorphic="True">
+        <Target multiplicity="(1..N)" roleLabel="Employee working for the Company" polymorphic="True">
             <Class class="Employee" />
         </Target>
     </ECRelationshipClass>
         
-    <ECRelationshipClass typeName="HardwareUsedByEmployee" strength="referencing" >
-        <Source cardinality="(0,N)" roleLabel="Employee using hardware" polymorphic="True">
+    <ECRelationshipClass typeName="HardwareUsedByEmployee" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..N)" roleLabel="Employee using hardware" polymorphic="True">
             <Class class="Employee" />
         </Source>
-        <Target cardinality="(0,N)" roleLabel="Hardware assigned to employee" polymorphic="True">
+        <Target multiplicity="(0..N)" roleLabel="Hardware assigned to employee" polymorphic="True">
             <Class class="Hardware" />
         </Target>
     </ECRelationshipClass>

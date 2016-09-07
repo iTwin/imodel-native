@@ -59,7 +59,7 @@ enum class ResolveSchema
     {
     BySchemaName, //!< ECClass is qualified by schema name
     BySchemaAlias, //!< ECClass is qualified by schema alias
-    AutoDetect//!< Detect automatically whether ECClass is qualiried by schema name or namespace prefix
+    AutoDetect//!< Detect automatically whether ECClass is qualified by schema name or alias
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
