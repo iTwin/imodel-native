@@ -142,7 +142,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @param[in] className Name of the class to be retrieved
         //! @param[in] resolveSchema indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-        ECN::ECClassId GetECClassId(Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
+        ECN::ECClassId GetECClassId(Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id; TryGetECClassId(id, schemaNameOrAlias, className, resolveSchema); return id; }
 
         //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
         //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure
