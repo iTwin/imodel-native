@@ -159,6 +159,7 @@
     <ClInclude Include="Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -331,6 +332,7 @@
     <ClCompile Include="Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CachedResponseKeyTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Persistence\CacheEnvironmentTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />

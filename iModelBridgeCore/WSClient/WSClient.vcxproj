@@ -168,6 +168,7 @@
     <ClCompile Include="Connect\IdentityTokenProvider.cpp" />
     <ClCompile Include="Connect\IdentityAuthenticationPersistence.cpp" />
     <ClCompile Include="Connect\SamlToken.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbBriefcaseInfo.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbBriefcase.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbClient.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryManager.cpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerUtils.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\EventServiceInfo.cpp" />
+    <ClCompile Include="DgnDbServerClient\Logging.cpp" />
     <ClCompile Include="DgnDbServerClient\RepositoryInfo.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
@@ -266,6 +268,7 @@
     <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcaseInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />
@@ -288,6 +291,7 @@
     <ClInclude Include="ConnectC\CWSCCPrivate.h" />
     <ClInclude Include="ConnectC\WSLocalState.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerUtils.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Logging.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerLockEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventConnection.h" />
