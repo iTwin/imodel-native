@@ -494,7 +494,7 @@ void ServerConnection::Save(FtpDataCR data, bool dualMode)
     ReleaseStmt();
 
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 0), ?, %d, %d)",
+    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [ResolutionInMeters], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', '%s', '%s', '%s', geometry::STPolyFromText(?, 4326), ?, %d, %d)",
         m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),
@@ -671,7 +671,7 @@ void ServerConnection::Update(FtpDataCR data)
 
     DateTimeCR date = data.GetDate();
     CHAR entityBaseQuery[3000];
-    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Footprint] = geometry::STPolyFromText(?, 0), [Date] = '%d-%d-%d' WHERE [Id] = %d",
+    sprintf(entityBaseQuery, "UPDATE [%s].[dbo].[SpatialEntityBases] SET [Name] = '%s', [ResolutionInMeters] = '%s', [DataProvider] = '%s', [DataProviderName] = '%s', [Footprint] = geometry::STPolyFromText(?, 4326), [Date] = '%d-%d-%d' WHERE [Id] = %d",
         m_dbName,
         data.GetName().c_str(),
         data.GetResolution().c_str(),

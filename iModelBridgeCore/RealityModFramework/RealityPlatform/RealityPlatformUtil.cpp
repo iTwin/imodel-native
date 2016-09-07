@@ -52,6 +52,7 @@ bool SessionManager::InitBaseGCS()
     WString geoCoordDir = exePath;
     size_t pos = geoCoordDir.find_last_of(L"/\\");
     geoCoordDir = geoCoordDir.substr(0, pos + 1);
+    geoCoordDir.append(L"Assets\\");
     geoCoordDir.append(L"DgnGeoCoord");
 
     // Make sure directory exist.

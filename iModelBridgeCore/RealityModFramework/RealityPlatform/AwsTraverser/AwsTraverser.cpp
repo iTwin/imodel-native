@@ -482,7 +482,7 @@ int main(int argc, char *argv[])
 
             if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
                 {
-                data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lat, min_lon, max_lat, max_lon), redSize, greenSize, blueSize, panSize, serverId, metadataId);
+                data = new AwsData(id, downloadUrl, cloudCover, DRange2d::From(min_lon, min_lat, max_lon, max_lat), redSize, greenSize, blueSize, panSize, serverId, metadataId);
 
                 serverConnection.Save(*data);
                 }
@@ -620,7 +620,7 @@ void ServerConnection::Save(AwsData awsdata)
     SQLINTEGER entityId;
 
     CHAR entityBaseQuery[2000];
-    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', geometry::STPolyFromText(?, 0), ?, %d, %d)",
+    sprintf(entityBaseQuery, "INSERT INTO [%s].[dbo].[SpatialEntityBases] ([Name], [DataProvider], [DataProviderName], [Footprint], [Date], [Metadata_Id], [Thumbnail_Id]) VALUES ('%s', 'Amazon Landsat 8', 'Amazon Web Services', geometry::STPolyFromText(?, 4326), ?, %d, %d)",
         m_dbName,
         awsdata.GetId().c_str(),
         awsdata.GetMetadataId(),

@@ -119,6 +119,17 @@ RealityDataDownloadPtr RealityDataDownload::Create(const UrlLink_UrlFile& pi_Lin
         return NULL;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Spencer.Mason      9/2015
+//----------------------------------------------------------------------------------------
+RealityDataDownloadPtr RealityDataDownload::Create(const Link_File_wMirrors& pi_Link_File_wMirrors)
+    {
+    if (pi_Link_File_wMirrors.size() > 0)
+        return new RealityDataDownload(pi_Link_File_wMirrors);
+    else
+        return NULL;
+    }
+
 RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName)
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -133,7 +144,8 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
     m_pEntries = new FileTransfer[m_nbEntry];
     for (size_t i=0; i<m_nbEntry; ++i)
         {
-        m_pEntries[i].url = pi_Link_FileName[i].first;
+        m_pEntries[i].urls = bvector<AString>();
+        m_pEntries[i].urls.push_back(pi_Link_FileName[i].first);
         m_pEntries[i].filename = pi_Link_FileName[i].second;
         m_pEntries[i].iAppend = 0;
         m_pEntries[i].nbRetry = 0;
@@ -142,6 +154,38 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
         m_pEntries[i].filesize = 0;
         m_pEntries[i].fromCache = true;                                 // from cache if possible by default
         m_pEntries[i].progressStep = 0.01;
+        }
+    }
+
+RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_wMirrors)
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    m_pProgressFunc = nullptr;
+    m_pStatusFunc = nullptr;
+    m_certPath = WString();
+
+    m_curEntry = 0;
+    m_nbEntry = pi_Link_File_wMirrors.size();
+    size_t mirrorCount;
+    m_pEntries = new FileTransfer[m_nbEntry];
+    for (size_t i = 0; i<m_nbEntry; ++i)
+        {
+        mirrorCount = pi_Link_File_wMirrors[i].first.size();
+
+        for(size_t j = 0; j < mirrorCount; ++j)
+            {
+            m_pEntries[i].urls = pi_Link_File_wMirrors[i].first;
+            m_pEntries[i].filename = pi_Link_File_wMirrors[i].second;
+            m_pEntries[i].iAppend = 0;
+            m_pEntries[i].nbRetry = 0;
+
+            m_pEntries[i].downloadedSizeStep = DEFAULT_STEP_PROGRESSCALL;   // default step if filesize is absent.
+            m_pEntries[i].filesize = 0;
+            m_pEntries[i].fromCache = true;                                 // from cache if possible by default
+            m_pEntries[i].progressStep = 0.01;
+            }
         }
     }
 
@@ -290,7 +334,7 @@ bool RealityDataDownload::Perform()
 // false --> Curl error or file already there, skip download.
 //
 bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
-{
+    {
     // If file already there, consider the download completed.
     if (m_pEntries[pi_index].fromCache && BeFileName::DoesPathExist(m_pEntries[pi_index].filename.c_str()))
         return true;
@@ -301,51 +345,58 @@ bool RealityDataDownload::SetupCurlandFile(size_t pi_index)
     CURL *pCurl = NULL;
 
     pCurl = curl_easy_init();
-    if (pCurl)
+    while (m_pEntries[pi_index].urls.size())
         {
-        curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].url);
-        if (!WString::IsNullOrEmpty(m_certPath.c_str()))
+        if (pCurl)
             {
-            curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
-            curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
-            }
-        curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
-        curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
-        curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
-        if (!m_proxyUrl.empty())
-            {
-            curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
-            curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-            if (!m_proxyCreds.empty())
+            curl_easy_setopt(pCurl, CURLOPT_URL, m_pEntries[pi_index].urls.front());
+            if (!WString::IsNullOrEmpty(m_certPath.c_str()))
                 {
-                curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+                curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
+                curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
                 }
+            curl_easy_setopt(pCurl, CURLOPT_HEADER, 0L);
+            curl_easy_setopt(pCurl, CURLOPT_FAILONERROR, 1L);
+            curl_easy_setopt(pCurl, CURLOPT_FOLLOWLOCATION, 1L);
+            if (!m_proxyUrl.empty())
+                {
+                curl_easy_setopt(pCurl, CURLOPT_PROXY, m_proxyUrl.c_str());
+                curl_easy_setopt(pCurl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+                if (!m_proxyCreds.empty())
+                    {
+                    curl_easy_setopt(pCurl, CURLOPT_PROXYUSERPWD, m_proxyCreds.c_str());
+                    }
+                }
+            curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
+            curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
+
+            /* Define our callback to get called when there's data to be written */
+            curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, callback_fwrite_func);
+            /* Set a pointer to our struct to pass to the callback */
+            curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
+            /* Switch on full protocol/debug output set 1L*/
+            curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
+
+            curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
+            curl_easy_setopt(pCurl, CURLOPT_PROGRESSFUNCTION, callback_progress_func);
+            curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, &(m_pEntries[pi_index]));
+
+            curl_easy_setopt(pCurl, CURLOPT_PRIVATE, &(m_pEntries[pi_index]));
+
+            m_pEntries[pi_index].index = pi_index;
+            m_pEntries[pi_index].pProgressFunc = m_pProgressFunc;
+            m_pEntries[pi_index].progressStep = m_progressStep;
+
+            curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
             }
-        curl_easy_setopt(pCurl, CURLOPT_TIMEOUT, 0L);
-        curl_easy_setopt(pCurl, CURLOPT_FTP_RESPONSE_TIMEOUT, 80L);
-
-        /* Define our callback to get called when there's data to be written */
-        curl_easy_setopt(pCurl, CURLOPT_WRITEFUNCTION, callback_fwrite_func);
-        /* Set a pointer to our struct to pass to the callback */
-        curl_easy_setopt(pCurl, CURLOPT_WRITEDATA, &(m_pEntries[pi_index]));
-        /* Switch on full protocol/debug output set 1L*/
-        curl_easy_setopt(pCurl, CURLOPT_VERBOSE, 0L);
-
-        curl_easy_setopt(pCurl, CURLOPT_NOPROGRESS, 0L);
-        curl_easy_setopt(pCurl, CURLOPT_PROGRESSFUNCTION, callback_progress_func);
-        curl_easy_setopt(pCurl, CURLOPT_PROGRESSDATA, &(m_pEntries[pi_index]));
-
-        curl_easy_setopt(pCurl, CURLOPT_PRIVATE, &(m_pEntries[pi_index]));
-
-        m_pEntries[pi_index].index = pi_index;
-        m_pEntries[pi_index].pProgressFunc = m_pProgressFunc;
-        m_pEntries[pi_index].progressStep = m_progressStep;
-
-        curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
+        if(pCurl != NULL)
+            break;
+        else
+            m_pEntries[pi_index].urls.erase(m_pEntries[pi_index].urls.begin());
         }
 
     return (pCurl != NULL);
-}
+    }
 
 bool RealityDataDownload::SetupNextEntry()
     {
