@@ -23,6 +23,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <random>
 #include <queue>
 #include "..\STM\ScalableMesh\ScalableMeshGraph.h"
+#include "..\STM\Edits\ClipUtilities.h"
 #include <json/json.h>
 
 void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
@@ -854,6 +855,55 @@ void RunClipPlaneTest()
     std::cout << "POINT INSIDE " << std::string(cp->PointInside(testPt, 1e-8) ? "TRUE" : "FALSE") << std::endl;
     }
 
+void RunClipMeshTest()
+    {
+    WString path = WString(L"E:\\output\\scmesh\\2016-09-07\\clippoly.p");
+    FILE* mesh = _wfopen(path.c_str(), L"rb");
+    size_t nVerts = 0;
+    fread(&nVerts, sizeof(size_t), 1, mesh);
+    bvector<DPoint3d> poly;
+    poly.resize(nVerts);
+    fread(&poly[0], sizeof(DPoint3d), nVerts, mesh);
+    fclose(mesh);
+    for (auto& pt : poly) pt.z = 0;
+
+    FILE* mesh2 = _wfopen(L"E:\\output\\scmesh\\2016-09-07\\clipmesh.m", L"rb");
+
+    size_t nIndices = 0;
+
+    fread(&nVerts, sizeof(size_t), 1, mesh2);
+    std::vector<DPoint3d> allVerts(nVerts);
+    fread(&allVerts[0], sizeof(DPoint3d), nVerts, mesh2);
+    fread(&nIndices, sizeof(size_t), 1, mesh);
+    std::vector<int32_t> allIndices(nIndices);
+    fread(&allIndices[0], sizeof(int32_t), nIndices, mesh2);
+    fclose(mesh);
+
+    bvector<bvector<PolyfaceHeaderPtr>> outMeshes;
+    bvector<bvector<DPoint3d>> inPolys;
+    inPolys.push_back(poly);
+
+    PolyfaceQueryCarrier* meshP = new PolyfaceQueryCarrier(3, false, nIndices, nVerts, &allVerts[0], &allIndices[0]);
+    ScalableMesh::GetRegionsFromClipPolys3D(outMeshes, inPolys, meshP);
+
+    for (auto& vec: outMeshes)
+    for (auto& meshPtr : vec)
+        {
+        if (meshPtr.IsValid())
+            {
+            WString name = WString(L"E:\\makeTM\\outmeshclip_") + WString(std::to_wstring(&vec - &outMeshes[0]).c_str()) + WString(L".m");
+            FILE* meshAfterClip = _wfopen(name.c_str(), L"wb");
+            size_t ptCount = meshPtr->GetPointCount();
+            size_t faceCount = meshPtr->GetPointIndexCount();
+            fwrite(&ptCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(meshPtr->GetPointCP(), sizeof(DPoint3d), ptCount, meshAfterClip);
+            fwrite(&faceCount, sizeof(size_t), 1, meshAfterClip);
+            fwrite(meshPtr->GetPointIndexCP(), sizeof(int32_t), faceCount, meshAfterClip);
+            fclose(meshAfterClip);
+            }
+        }
+    }
+
 int wmain(int argc, wchar_t* argv[])
 {
 struct  SMHost : ScalableMesh::ScalableMeshLib::Host
@@ -1039,7 +1089,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
 
-    RunClipPlaneTest();
+   // RunClipPlaneTest();
+    RunClipMeshTest();
     std::cout << "THE END" << std::endl;
     return 0;
 }

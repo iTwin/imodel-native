@@ -888,7 +888,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     }          
                 
             //NEW_SSTORE_RB : remove isSingleFile - make it works with streaming store
-            if (isSingleFile && m_scmIndexPtr->IsTerrain())
+            if (isSingleFile /*&& m_scmIndexPtr->IsTerrain()*/)
                 {
 
                 BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
@@ -1455,7 +1455,8 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     if (m_scmIndexPtr != 0)
         {
-        return m_scmIndexPtr->IsTerrain();
+        return true;
+        //return m_scmIndexPtr->IsTerrain();
         }
     return false;
 
