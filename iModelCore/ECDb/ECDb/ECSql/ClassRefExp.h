@@ -90,7 +90,7 @@ public:
 
 private:
     Utf8String m_className;
-    Utf8String m_schemaPrefix;
+    Utf8String m_schemaAlias;
     Utf8String m_catalogName;
     std::shared_ptr<Info> m_info;
 
@@ -102,8 +102,8 @@ private:
     virtual Utf8String _ToString () const override;
 
 public:
-    ClassNameExp(Utf8CP className, Utf8CP schemaPrefix, Utf8CP catalog, std::shared_ptr<Info> info, bool isPolymorphic = true)
-        : RangeClassRefExp(isPolymorphic), m_className(className), m_schemaPrefix(schemaPrefix), m_catalogName(catalog), m_info(info)
+    ClassNameExp(Utf8CP className, Utf8CP schemaAlias, Utf8CP catalog, std::shared_ptr<Info> info, bool isPolymorphic = true)
+        : RangeClassRefExp(isPolymorphic), m_className(className), m_schemaAlias(schemaAlias), m_catalogName(catalog), m_info(info)
         {}
 
     bool HasMetaInfo() const { return m_info != nullptr;}
@@ -115,8 +115,8 @@ public:
         if (!m_catalogName.empty ())
             fullName.append (m_catalogName).append (".");
 
-        if (!m_schemaPrefix.empty ())
-            fullName.append (m_schemaPrefix).append (".");
+        if (!m_schemaAlias.empty ())
+            fullName.append (m_schemaAlias).append (".");
 
         fullName.append (m_className);
 
@@ -124,7 +124,7 @@ public:
         }
 
     Utf8StringCR GetClassName() const { return m_className;}
-    Utf8StringCR GetSchemaName() const { return m_schemaPrefix;}
+    Utf8StringCR GetSchemaName() const { return m_schemaAlias;}
     Utf8StringCR GetCatalogName() const { return m_catalogName;}
     };
 

@@ -138,7 +138,7 @@ struct ECDbSchemaReader
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
-        bool TryGetECClassId(ECN::ECClassId&, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
+        bool TryGetECClassId(ECN::ECClassId&, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema) const;
         void ClearCache();
     };
 

@@ -2847,16 +2847,16 @@ void ECSqlParseContext::PopFinalizeParseArg()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP schemaNameOrPrefix, Utf8CP className)
+BentleyStatus ECSqlParseContext::TryResolveClass(shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP schemaNameOrAlias, Utf8CP className)
     {
-    ECClassCP resolvedClass = m_ecdb.Schemas().GetECClass(schemaNameOrPrefix, className, ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas().GetECClass(schemaNameOrAlias, className, ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {
-        if (Utf8String::IsNullOrEmpty(schemaNameOrPrefix))
+        if (Utf8String::IsNullOrEmpty(schemaNameOrAlias))
             Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s' does not exist. Try using fully qualified class name: <schema name>.<class name>.", className);
         else
-            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix, className);
+            Issues().Report(ECDbIssueSeverity::Error, "ECClass '%s.%s' does not exist.", schemaNameOrAlias, className);
 
         return ERROR;
         }

@@ -53,7 +53,7 @@ public:
     static ECN::ECSchemaId GetECSchemaId(ECDbCR, ECN::ECSchemaCR);
     static ECN::ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
     static ECN::ECClassId GetECClassId(ECDbCR, ECN::ECClassCR);
-    static ECN::ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
+    static ECN::ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrAlias, Utf8CP className, ResolveSchema);
     static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, ECN::ECEnumerationCR);
     static ECN::ECEnumerationId GetECEnumerationId(ECDbCR, Utf8CP schemaName, Utf8CP enumName);
     static ECN::KindOfQuantityId GetKindOfQuantityId(ECDbCR, ECN::KindOfQuantityCR);
