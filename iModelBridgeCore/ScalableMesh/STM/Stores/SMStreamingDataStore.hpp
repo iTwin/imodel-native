@@ -295,7 +295,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                                                                      group_numNodes, 
                                                                      group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"g\\g_").c_str());
+                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"\\g\\g_").c_str());
                     group->SetDistributor(*m_NodeHeaderFetchDistributor);
                     m_nodeHeaderGroups.push_back(group);
 

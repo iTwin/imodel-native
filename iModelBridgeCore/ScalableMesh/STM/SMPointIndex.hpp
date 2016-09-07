@@ -7542,8 +7542,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     rootNode->SaveAllOpenGroups();
 
     // Save group info file which contains info about all the generated groups (groupID and blockID)
-    auto position = pi_pOutputDirPath.find(L"_stream\\");
-    auto masterHeaderPath = pi_pOutputDirPath.substr(0, position + 8);
+    BeFileName masterHeaderPath(pi_pOutputDirPath);
+    masterHeaderPath.PopDir();
+    masterHeaderPath.PopDir();
 
     groupMasterHeader->SaveToFile(masterHeaderPath, pi_pGroupMode);
 
