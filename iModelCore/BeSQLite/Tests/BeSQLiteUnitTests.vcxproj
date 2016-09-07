@@ -14,6 +14,7 @@
     <ClCompile Include="NonPublished\BeSQLiteDb_Test.cpp" />
     <ClCompile Include="NonPublished\CompressionTests.cpp" />
     <ClCompile Include="Published\BeSQLiteDb_Test.cpp" />
+    <ClCompile Include="Published\BeSQLite_Test.cpp" />
     <ClCompile Include="Published\FullTextSearch_Test.cpp" />
     <ClCompile Include="Published\MultiFileCommit_Test.cpp" />
     <ClCompile Include="Published\Statement_Test.cpp" />
