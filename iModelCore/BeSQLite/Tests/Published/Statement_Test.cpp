@@ -362,12 +362,14 @@ TEST(StatementTests, InVirtualSet)
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "SELECT count(*) FROM testVirtualSet WHERE InVirtualSet(?,Id)")) << db.GetLastError().c_str();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "InVirtualSet without binding is expected to fail.";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "InVirtualSet without binding is expected to behave like binding an empty set.";
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << "InVirtualSet without binding is expected to behave like binding an empty set.";
     stmt.Reset();
     stmt.ClearBindings();
 
     ASSERT_EQ(BE_SQLITE_OK, stmt.BindNull(1)) << "InVirtualSet with binding NULL: " << db.GetLastError().c_str();
-    ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step()) << "InVirtualSet with binding NULL is expected to fail.";
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "InVirtualSet with binding NULL is expected to behave like binding an empty set.";
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << "InVirtualSet with binding NULL is expected to behave like binding an empty set.";
     stmt.Reset();
     stmt.ClearBindings();
 
