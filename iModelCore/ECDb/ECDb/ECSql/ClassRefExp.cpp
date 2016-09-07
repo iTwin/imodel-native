@@ -95,7 +95,7 @@ Utf8StringCR ClassNameExp::_GetId() const
 Utf8String ClassNameExp::_ToString() const
     {
     Utf8String str("ClassName [Catalog: ");
-    str.append(m_catalogName.c_str()).append(", Schema prefix: ").append(m_schemaPrefix.c_str());
+    str.append(m_catalogName).append(", Schema alias: ").append(m_schemaAlias);
     str.append(", Class: ").append(m_className).append(", Alias: ").append(GetAlias()).append("]");
     return str;
     }
