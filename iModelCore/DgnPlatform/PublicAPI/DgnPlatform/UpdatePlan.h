@@ -239,14 +239,14 @@ struct DgnQueryQueue
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Task : RefCounted<NonCopyableClass>
     {
-        DgnQueryViewCR m_view;
+        QueryViewControllerCR m_view;
         UpdatePlan::Query m_plan;
 
     public:
-        Task(DgnQueryViewCR view, UpdatePlan::Query const& plan) : m_view(view), m_plan(plan) {}
+        Task(QueryViewControllerCR view, UpdatePlan::Query const& plan) : m_view(view), m_plan(plan) {}
         virtual void _Go() = 0;
         uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
-        bool IsForView(DgnQueryViewCR view) const {return &m_view == &view;}
+        bool IsForView(QueryViewControllerCR view) const {return &m_view == &view;}
         void RequestAbort();
     };
 
@@ -261,7 +261,7 @@ private:
     TaskPtr             m_active;
     State               m_state;
     bool WaitForWork();
-    bool HasActiveOrPending(DgnQueryViewCR);
+    bool HasActiveOrPending(QueryViewControllerCR);
     void Process();
     THREAD_MAIN_DECL Main(void* arg);
 
@@ -275,10 +275,10 @@ public:
 
     //! Cancel any pending requests to process the specified QueryView.
     //! @param[in] view The view whose processing is to be canceled
-    DGNPLATFORM_EXPORT void RemovePending(DgnQueryViewCR view);
+    DGNPLATFORM_EXPORT void RemovePending(QueryViewControllerCR view);
 
     //! Suspends the calling thread until the specified model is in the idle state
-    DGNPLATFORM_EXPORT void WaitFor(DgnQueryViewCR);
+    DGNPLATFORM_EXPORT void WaitFor(QueryViewControllerCR);
 
     DGNPLATFORM_EXPORT bool IsIdle() const;
 };

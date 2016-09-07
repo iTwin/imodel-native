@@ -99,14 +99,13 @@ struct DgnElementExpressionContext : DgnDbExpressionContext
     {
     private:
         DgnElementCR m_element;
-
-        ECN::ECValue  GetClassName() const;
-        ECN::ECValue  GetFullClassName() const;
-        ECN::ECValue  HasGeometry() const;
-        ECN::ECValue  GetDisplayLabel() const;
-        ECN::ECValue  HasLabel() const;
-        ECN::ECValue  GetLabel() const;
-        ECN::ECValue  GetCodeValue() const;
+        ECN::ECValue GetClassName() const;
+        ECN::ECValue GetFullClassName() const;
+        ECN::ECValue HasGeometry() const;
+        ECN::ECValue GetDisplayLabel() const;
+        ECN::ECValue HasUserLabel() const;
+        ECN::ECValue GetUserLabel() const;
+        ECN::ECValue GetCodeValue() const;
 
     protected:
         // Create an ECExpression context that allows access to DgnDb.
@@ -119,6 +118,4 @@ struct DgnElementExpressionContext : DgnDbExpressionContext
         DGNPLATFORM_EXPORT static DgnElementExpressionContextPtr Create(DgnElementCR element);
     };
 
-
 END_BENTLEY_DGN_NAMESPACE
-

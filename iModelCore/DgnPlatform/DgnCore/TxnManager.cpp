@@ -1516,7 +1516,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         if (s_modelIdColIdx == -1)
             {
             bvector<Utf8String> columnNames;
-            m_txnMgr.GetDgnDb().GetColumns(columnNames, DGN_TABLE(DGN_CLASSNAME_Element));
+            m_txnMgr.GetDgnDb().GetColumns(columnNames, BIS_TABLE(BIS_CLASS_Element));
             auto i = std::find(columnNames.begin(), columnNames.end(), "ModelId");
             BeAssert(i != columnNames.end());
             s_modelIdColIdx = (int)std::distance(columnNames.begin(), i);
@@ -1550,7 +1550,7 @@ TxnTable::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() con
 void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, ChangeType changeType)
     {
     CachedECSqlStatementPtr stmt  = m_txnMgr.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT element.ModelId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " AS element, " DGN_SCHEMA(DGN_RELNAME_ElementDrivesElement) " AS DEP"
+        "SELECT element.ModelId FROM " BIS_SCHEMA(BIS_CLASS_Element) " AS element, " BIS_SCHEMA(BIS_REL_ElementDrivesElement) " AS DEP"
         " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
     stmt->BindId(1, relid);
     auto stat = stmt->Step();
@@ -1573,7 +1573,7 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, Chan
 //---------------------------------------------------------------------------------------
 void dgn_TxnTable::ModelDep::CheckDirection(ECInstanceId relid)
     {
-    CachedStatementPtr stmt = m_txnMgr.GetTxnStatement("SELECT RootModelId,DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
+    CachedStatementPtr stmt = m_txnMgr.GetTxnStatement("SELECT RootModelId,DependentModelId FROM " BIS_TABLE(BIS_REL_ModelDrivesModel) " WHERE(ECInstanceId=?)");
     stmt->BindId(1, relid);
     if (stmt->Step() != BE_SQLITE_ROW)
         {

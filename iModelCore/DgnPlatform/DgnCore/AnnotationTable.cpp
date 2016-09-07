@@ -261,18 +261,16 @@ static double   getNonWrappedLength (AnnotationTextBlockCR textBlock)
 //---------------------------------------------------------------------------------------
 static Utf8String buildECSqlInsertString (Utf8CP schemaName, Utf8CP className, bvector<Utf8String> const& propertyNames, bool isUniqueAspect)
     {
-    Utf8CP  idPropertyName = isUniqueAspect ? PARAM_ECInstanceId : PARAM_ElementId;
-
-    Utf8PrintfString ecSql("INSERT INTO %s.%s (%s, ", schemaName, className, idPropertyName);
-    Utf8PrintfString values(":%s, ", idPropertyName);
+    Utf8PrintfString ecSql("INSERT INTO %s.%s (" PARAM_ElementId ",", schemaName, className);
+    Utf8String values(":" PARAM_ElementId ",");
 
     bool addedOne = false;
     for (Utf8StringCR propertyName : propertyNames)
         {
         if (addedOne)
             {
-            ecSql.append(", ");
-            values.append(", ");
+            ecSql.append(",");
+            values.append(",");
             }
 
         ecSql.append("[").append(propertyName).append("]");
@@ -292,7 +290,7 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
     {
     Utf8PrintfString ecSql("UPDATE ONLY %s.%s SET ", schemaName, className);
 
-    bool    addedOne  = false;
+    bool addedOne = false;
     for (Utf8StringCR propertyName : propertyNames)
         {
         if (addedOne)
@@ -303,17 +301,10 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
         addedOne = true;
         }
 
-    Utf8CP  idPropertyName = isUniqueAspect ? PARAM_ECInstanceId : PARAM_ElementId;
-    ecSql.append(" WHERE ");
-    ecSql.append("[").append(idPropertyName).append("]");
-    ecSql.append("=:").append(idPropertyName);
+    ecSql.append(" WHERE [" PARAM_ElementId "]=:" PARAM_ElementId);
 
-    if ( ! isUniqueAspect)
-        {
-        ecSql.append(" AND ");
-        ecSql.append("[").append(PARAM_ECInstanceId).append("]");
-        ecSql.append("=:").append(PARAM_ECInstanceId);
-        }
+    if (!isUniqueAspect)
+        ecSql.append(" AND [" PARAM_ECInstanceId "]=:" PARAM_ECInstanceId);
 
     return ecSql;
     }
@@ -356,8 +347,7 @@ static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, b
     Utf8PrintfString from(" FROM %s.%s i", schemaName, className);
     ecSql.append (from);
 
-    Utf8CP  idPropertyName = isUniqueAspect ? PARAM_ECInstanceId : PARAM_ElementId;
-    Utf8PrintfString whereStr(" WHERE %s=?", idPropertyName);
+    Utf8String whereStr(" WHERE " PARAM_ElementId "=?");
     ecSql.append (whereStr);
 
     return ecSql;
@@ -434,13 +424,13 @@ AspectTypeData const&   AnnotationTableAspect::GetAspectTypeData(AnnotationTable
 
         s_typeData = 
             {
-            { AspectTypeData (AnnotationTableAspectType::Header,    headerNames,   true,  DGN_CLASSNAME_AnnotationTableHeader)     },
-            { AspectTypeData (AnnotationTableAspectType::Row,       rowNames,      false, DGN_CLASSNAME_AnnotationTableRow)        },
-            { AspectTypeData (AnnotationTableAspectType::Column,    colNames,      false, DGN_CLASSNAME_AnnotationTableColumn)     },
-            { AspectTypeData (AnnotationTableAspectType::Cell,      cellNames,     false, DGN_CLASSNAME_AnnotationTableCell)       },
-            { AspectTypeData (AnnotationTableAspectType::Merge,     mergeNames,    false, DGN_CLASSNAME_AnnotationTableMerge)      },
-            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, DGN_CLASSNAME_AnnotationTableSymbology)  },
-            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, DGN_CLASSNAME_AnnotationTableEdgeRun)    },
+            { AspectTypeData (AnnotationTableAspectType::Header,    headerNames,   true,  BIS_CLASS_AnnotationTableHeader)     },
+            { AspectTypeData (AnnotationTableAspectType::Row,       rowNames,      false, BIS_CLASS_AnnotationTableRow)        },
+            { AspectTypeData (AnnotationTableAspectType::Column,    colNames,      false, BIS_CLASS_AnnotationTableColumn)     },
+            { AspectTypeData (AnnotationTableAspectType::Cell,      cellNames,     false, BIS_CLASS_AnnotationTableCell)       },
+            { AspectTypeData (AnnotationTableAspectType::Merge,     mergeNames,    false, BIS_CLASS_AnnotationTableMerge)      },
+            { AspectTypeData (AnnotationTableAspectType::Symbology, symbNames,     false, BIS_CLASS_AnnotationTableSymbology)  },
+            { AspectTypeData (AnnotationTableAspectType::EdgeRun,   edgeRunNames,  false, BIS_CLASS_AnnotationTableEdgeRun)    },
             };
         }
 
@@ -545,7 +535,7 @@ bool AnnotationTableAspect::DbContainsDuplicateRows (AnnotationTableAspectType a
     Utf8StringR     sqlString = typeData.m_ecSqlSelectDupeString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlSelectDupeString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames[0].c_str());
+        sqlString = buildECSqlSelectDupeString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames[0].c_str());
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION (!statement.IsValid()))
@@ -566,7 +556,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
     Utf8StringR     sqlString = typeData.m_ecSqlSelectString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlSelectString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlSelectString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (!statement.IsValid())
@@ -582,9 +572,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
 //---------------------------------------------------------------------------------------
 void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool isUpdate)
     {
-    Utf8CP  elemIdProp = _IsUniqueAspect() ? PARAM_ECInstanceId : PARAM_ElementId;
-
-    statement.BindId (statement.GetParameterIndex(elemIdProp), GetTable().GetElementId());
+    statement.BindId (statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId());
 
     if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
         statement.BindInt64  (statement.GetParameterIndex(PARAM_ECInstanceId), m_aspectId.GetValue());
@@ -601,7 +589,7 @@ BentleyStatus AnnotationTableAspect::InsertInDb()
     Utf8StringR     sqlString = typeData.m_ecSqlUpdateString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlInsertString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlInsertString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
@@ -627,7 +615,7 @@ BentleyStatus AnnotationTableAspect::UpdateInDb()
     Utf8StringR     sqlString = typeData.m_ecSqlUpdateString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlUpdateString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlUpdateString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
@@ -656,7 +644,7 @@ BentleyStatus AnnotationTableAspect::DeleteAspectFromDb (AnnotationTableAspectTy
     Utf8StringR     sqlString = typeData.m_ecSqlDeleteString;
 
     if (sqlString.empty())
-        sqlString = buildECSqlDeleteString (DGN_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
+        sqlString = buildECSqlDeleteString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
 
     CachedECSqlStatementPtr statement = table.GetDgnDb().GetPreparedECSqlStatement(sqlString.c_str());
     if (!statement.IsValid())

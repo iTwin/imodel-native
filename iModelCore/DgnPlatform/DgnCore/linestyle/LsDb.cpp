@@ -665,7 +665,7 @@ DgnDbStatus LineStyleElement::_BindUpdateParams(BeSQLite::EC::ECSqlStatement&stm
 //---------------------------------------------------------------------------------------
 size_t LineStyleElement::QueryCount(DgnDbR db)
     {
-    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_LineStyle));
+    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_LineStyle));
     if (!select.IsValid())
         return 0;
     
@@ -681,7 +681,7 @@ size_t LineStyleElement::QueryCount(DgnDbR db)
 LineStyleElement::Iterator LineStyleElement::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr, Data FROM " DGN_SCHEMA(DGN_CLASSNAME_LineStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr, Data FROM " BIS_SCHEMA(BIS_CLASS_LineStyle), 0);
 
     return iter;
     }

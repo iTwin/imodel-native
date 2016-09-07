@@ -238,7 +238,7 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSchemaOptions options) const
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     {
     if (!schemaFile.DoesPathExist())
         {
@@ -271,9 +271,6 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile, ImportSc
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
         return DgnDbStatus::BadSchema;
-
-    if ((ImportSchemaOptions::CreateECClassViews == (options & ImportSchemaOptions::CreateECClassViews)) && (BentleyStatus::SUCCESS != db.Schemas().CreateECClassViewsInDb()))
-        return DgnDbStatus::WriteError;
 
     db.Domains().SyncWithSchemas();
     _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
@@ -391,7 +388,9 @@ DgnDomain::Handler* DgnDomains::FindHandler(DgnClassId handlerId, DgnClassId bas
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnDomains::GetClassId(DgnDomain::Handler& handler)
     {
-    return DgnClassId(m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str()));
+    DgnClassId classId = m_dgndb.Schemas().GetECClassId(handler.GetDomain().GetDomainName(), handler.GetClassName().c_str());
+    BeAssert(classId.IsValid() && "ECClass associated with handler not found. Was its schema imported?");
+    return classId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -691,7 +690,7 @@ template<> struct HandlerTraits<dgn_ModelHandler::Model>
     typedef DgnModel T_Instantiation;
 
     static DgnDomain::Handler* GetBaseHandler() { return &dgn_ModelHandler::Model::GetHandler(); }
-    static DgnModelPtr CreateInstance(dgn_ModelHandler::Model& handler, DgnDbR db) { return handler.Create(DgnModel::CreateParams(db, DgnClassId(), DgnCode())); }
+    static DgnModelPtr CreateInstance(dgn_ModelHandler::Model& handler, DgnDbR db) { return handler.Create(DgnModel::CreateParams(db, DgnClassId(), DgnElementId(), DgnCode())); }
     static Utf8CP GetECClassName(DgnModelCR model) { return model._GetHandlerECClassName(); }
     static Utf8CP GetSuperECClassName(DgnModelCR model) { return model._GetSuperHandlerECClassName(); }
     static Utf8CP GetCppClassName() { return "DgnModel"; }

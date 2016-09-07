@@ -35,6 +35,7 @@ namespace dgn_ElementHandler
     {
     HANDLER_DEFINE_MEMBERS(MarkupExternalLinkHandler)
     HANDLER_DEFINE_MEMBERS(MarkupExternalLinkGroupHandler)
+    HANDLER_DEFINE_MEMBERS(RedlineViewDef);
     }
 
 //---------------------------------------------------------------------------------------
@@ -166,12 +167,6 @@ MarkupDomain::MarkupDomain() : DgnDomain(MARKUP_SCHEMA_NAME, "Markup Domain", 1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MarkupDomain::_OnDgnDbOpened(DgnDbR db) const
     {
-    if (!CustomPropertyRegistry::HasOldDgnSchema(db))
-        return;
-
-    CustomPropertyRegistry prop;
-    prop.SetClass(db, "Markup", "MarkupExternalLink");
-    prop.Register("LinkedElementId");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,7 +226,9 @@ DgnViewId DgnMarkupProject::GetFirstViewOf(DgnModelId mid)
     {
     for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
-        if (view.GetBaseModelId() == mid)
+        auto viewObj = ViewDefinition::QueryView(view.GetId(), *this);
+        auto rdlView = dynamic_cast<RedlineViewDefinition const*>(viewObj.get());
+        if (rdlView != nullptr && rdlView->GetBaseModelId() == mid)
             return view.GetId();
         }
     return DgnViewId();
@@ -258,9 +255,9 @@ DgnViewId SpatialRedlineModel::GetFirstView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<SpatialRedlineModelP> const& otherRdlsToView) 
+SpatialRedlineViewController::SpatialRedlineViewController(SpatialRedlineModel& rdlModel, SpatialViewController& subjectView, OrthographicViewDefinition& redlineViewDef, bvector<SpatialRedlineModelP> const& otherRdlsToView)
     : 
-    SpatialViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
+    T_Super(redlineViewDef),
     m_subjectView(subjectView),
     m_otherRdlsInView(otherRdlsToView)
     {
@@ -409,9 +406,9 @@ void SpatialRedlineViewController::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SpatialRedlineViewController::_SaveToSettings() const 
+void SpatialRedlineViewController::_StoreToDefinition() const 
     {
-    m_subjectView._SaveToSettings();
+    m_subjectView._StoreToDefinition();
     }
 
 #ifdef WIP_RDL_QUERYVIEWS
@@ -450,9 +447,9 @@ AxisAlignedBox3d SpatialRedlineViewController::_GetViewedExtents(DgnViewportCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialRedlineViewController::_RestoreFromSettings()
+void SpatialRedlineViewController::_LoadFromDefinition()
     {
-    T_Super::_RestoreFromSettings();
+    T_Super::_LoadFromDefinition();
     SynchWithSubjectViewController();
     }
 
@@ -522,9 +519,9 @@ void DgnMarkupProject::SavePropertyFromJson(DgnMarkupProjectProperty::ProjectPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-RedlineViewController::RedlineViewController(RedlineModel& rdlModel, DgnViewId viewId) 
+RedlineViewController::RedlineViewController(RedlineModel& rdlModel, RedlineViewDefinition& rdlViewDef)
     : 
-    SheetViewController(*rdlModel.GetDgnMarkupProject(), viewId.IsValid()? viewId: rdlModel.GetFirstView()),
+    SheetViewController(rdlViewDef),
     m_enableViewManipulation(false),
     m_drawBorder(true)
     {;}
@@ -680,7 +677,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
         {
         Statement stmt;
         // *** NEEDS WORK: Missing WHERE Id=?   
-        stmt.Prepare(*this, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
+        stmt.Prepare(*this, "UPDATE " BIS_TABLE(BIS_CLASS_Model) " SET Visibility=1");  // ModelIterate::All (i.e., hide when looking for models to show in the GUI)
         stmt.Step();
         }
 
@@ -716,9 +713,12 @@ void RedlineModel::_WriteJsonProperties(Json::Value& val) const
     {
     T_Super::_WriteJsonProperties(val);
 
-    Json::Value json(Json::objectValue);
-    m_assoc.ToPropertiesJson(json);
-    val["RedlineModel_Assoc"] = json;
+    if (m_assoc.GetViewId().IsValid())
+        {
+        Json::Value json(Json::objectValue);
+        m_assoc.ToPropertiesJson(json);
+        val["RedlineModel_Assoc"] = json;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -727,7 +727,9 @@ void RedlineModel::_WriteJsonProperties(Json::Value& val) const
 void RedlineModel::_ReadJsonProperties(Json::Value const& val)
     {
     T_Super::_ReadJsonProperties(val);
-    m_assoc.FromPropertiesJson(val["RedlineModel_Assoc"]);
+
+    if (val.isMember("RedlineModel_Assoc"))
+        m_assoc.FromPropertiesJson(val["RedlineModel_Assoc"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1027,7 +1029,10 @@ void DgnViewAssociationData::FromDgnProject(DgnDbCR dgnProject, ViewControllerCR
 
     m_viewId = projectView.GetViewId();
 
-    projectView.SaveToSettings();
+#ifdef WIP_VIEW_DEFINITION // ***  Calling SaveToDefinition here doesn't make sense. What are we trying to accomplish?
+    BeAssert(false);
+    projectView.SaveToDefinition();
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -1114,7 +1119,11 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
     double closestDistance = DBL_MAX;
     for (auto const& view : ViewDefinition::MakeIterator(*this))
         {
-        RedlineModelPtr rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
+        auto viewObj = ViewDefinition::QueryView(view.GetId(), *this);
+        auto rdlView = dynamic_cast<RedlineViewDefinition const*>(viewObj.get());
+        if (nullptr == rdlView)
+            continue;
+        RedlineModelPtr rdlModel = Models().Get<RedlineModel>(rdlView->GetBaseModelId());
         if (rdlModel.IsValid())
             {
             DgnViewAssociationData assoc;
@@ -1150,7 +1159,7 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
         }
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, "RedlineModel"));
-    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name), DPoint2d::FromZero()));
+    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */, CreateModelCode(name), DPoint2d::FromZero()));
     if (!rdlModel.IsValid())
         return nullptr;
 
@@ -1180,7 +1189,7 @@ SpatialRedlineModelPtr SpatialRedlineModel::Create(DgnMarkupProjectR markupProje
 
     DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(MARKUP_SCHEMA_NAME, MARKUP_CLASSNAME_SpatialRedlineModel));
 
-    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, CreateModelCode(name)));
+    SpatialRedlineModelPtr rdlModel = new SpatialRedlineModel(SpatialRedlineModel::CreateParams(markupProject, rmodelClassId, DgnElementId() /* WIP: Which element? */, CreateModelCode(name)));
     if (!rdlModel.IsValid())
         {
         DGNCORELOG->error("SpatialRedlineModel::CreateModel failed");
@@ -1372,11 +1381,11 @@ void RedlineViewController::_DrawView(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR project, DgnViewId viewId)
+ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, RedlineViewDefinition& rdlViewDef)
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(openStatus, openStatusIn);
 
-    auto markupProject = dynamic_cast<DgnMarkupProject*>(&project);
+    auto markupProject = dynamic_cast<DgnMarkupProject*>(&rdlViewDef.GetDgnDb());
 
     if (markupProject == nullptr)
         {
@@ -1390,18 +1399,11 @@ ViewController* RedlineViewController::Create(DgnDbStatus* openStatusIn, DgnDbR 
         return nullptr;
         }
 
-    auto rdlView = ViewDefinition::QueryView(viewId, *markupProject);
-    if (!rdlView.IsValid())
-        {
-        openStatus = DgnDbStatus::ViewNotFound;
-        return nullptr;
-        }
-
-    auto rdlModel = markupProject->OpenRedlineModel(&openStatus, rdlView->GetBaseModelId());
+    auto rdlModel = markupProject->OpenRedlineModel(&openStatus, rdlViewDef.GetBaseModelId());
     if (rdlModel == nullptr)
         return nullptr;
 
-    return new RedlineViewController(*rdlModel, viewId);
+    return new RedlineViewController(*rdlModel, rdlViewDef);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1419,12 +1421,11 @@ RedlineViewControllerPtr RedlineViewController::InsertView(DgnDbStatus* insertSt
         return NULL;
         }
 
-    RedlineViewDefinition view(RedlineViewDefinition::CreateParams(*project, rdlModel.GetCode().GetValue().c_str(),
-                ViewDefinition::Data(rdlModel.GetModelId(), DgnViewSource::Generated)));
+    RedlineViewDefinition view(*project, rdlModel.GetCode().GetValue().c_str(), rdlModel.GetModelId());
     if (!view.Insert(&insertStatus).IsValid())
         return nullptr;
 
-    auto controller = new RedlineViewController(rdlModel, view.GetViewId());
+    auto controller = new RedlineViewController(rdlModel, view);
 
     controller->m_enableViewManipulation = true; // *** TRICKY: Normally, RedlineViewController::SetDelta, Origin, Rotation are disabled (to prevent user from changing camera on sheet.)
 
@@ -1660,7 +1661,7 @@ ViewControllerPtr SpatialRedlineViewController::Create(DgnViewType viewType, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, SpatialViewController& subjectView)
+SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(SpatialRedlineModel& model, OrthographicViewController& subjectView)
     {
     DgnViews::View view(DgnViewType::Physical, GetViewSubType(), model.GetModelId(),model.GetModelName(), NULL, DgnViewSource::Generated);
 
@@ -1681,8 +1682,8 @@ SpatialRedlineViewControllerPtr SpatialRedlineViewController::InsertView(Spatial
     //  Note: we route the view settings through Json to avoid problems in the case where dgnView is not exactly the same type as this view controller.
     //  We know it's a sub-class of SpatialViewController, and so it has all of the properties that we care about. 
     Json::Value json;
-    subjectView._SaveToSettings(json);
-    controller->_RestoreFromSettings(json);
+    subjectView._StoreToDefinition(json);
+    controller->_LoadFromDefinition(json);
     controller->Save();
 
     return controller;

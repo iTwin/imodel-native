@@ -450,8 +450,8 @@ public:
             m_el->SetParentId(parent->m_el->GetElementId());
             }
         }
-    JsECValueP GetProperty(Utf8StringCR);
-    int32_t SetProperty(Utf8StringCR, JsECValueP);
+    JsECValueP GetPropertyValue(Utf8StringCR);
+    int32_t SetPropertyValue(Utf8StringCR, JsECValueP);
 
     bool ContainsUserProperty(Utf8StringCR name) const;
     JsAdHocJsonPropertyValueP GetUserProperty(Utf8StringCR name) const;
@@ -1423,7 +1423,8 @@ struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
     ~DgnJsApi();
 
     void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
-};
+    DgnPlatformLib::Host::ScriptAdmin::INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) override;
+    };
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   06/16

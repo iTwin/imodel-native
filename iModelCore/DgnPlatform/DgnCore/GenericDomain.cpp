@@ -48,14 +48,14 @@ GenericDomain::~GenericDomain()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2016
 //---------------------------------------------------------------------------------------
-DgnDbStatus GenericDomain::ImportSchema(DgnDbR db, ImportSchemaOptions options)
+DgnDbStatus GenericDomain::ImportSchema(DgnDbR db)
     {
     BeFileName genericDomainSchemaFile = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     genericDomainSchemaFile.AppendToPath(GENERIC_DOMAIN_ECSCHEMA_PATH);
     BeAssert(genericDomainSchemaFile.DoesPathExist());
 
     DgnDomainR genericDomain = GenericDomain::GetDomain();
-    DgnDbStatus importSchemaStatus = genericDomain.ImportSchema(db, genericDomainSchemaFile, options);
+    DgnDbStatus importSchemaStatus = genericDomain.ImportSchema(db, genericDomainSchemaFile);
     BeAssert(DgnDbStatus::Success == importSchemaStatus);
     return importSchemaStatus;
     }
@@ -63,7 +63,7 @@ DgnDbStatus GenericDomain::ImportSchema(DgnDbR db, ImportSchemaOptions options)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2016
 //---------------------------------------------------------------------------------------
-GenericPhysicalObjectPtr GenericPhysicalObject::Create(SpatialModelR model, DgnCategoryId categoryId)
+GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, DgnCategoryId categoryId)
     {
     DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
 

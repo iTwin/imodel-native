@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Generic" nameSpacePrefix="generic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
 
-    <ECSchemaReference name="dgn" version="02.00" prefix="dgn"/>
-    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
 
     <ECEntityClass typeName="Graphic3d">
         <!-- A generic Graphic3d is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element is 3d but does not represent a SpatialLocation -->
-        <BaseClass>dgn:GraphicalElement3d</BaseClass>
+        <BaseClass>bis:GraphicalElement3d</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -18,9 +18,9 @@
         <!-- A generic PhysicalObject is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element represents a PhysicalObject -->
-        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -28,74 +28,34 @@
         <!-- A generic SpatialLocation is used by a conversion process when: -->
         <!-- * It did not have enough information to pick another domain -->
         <!-- * It determined the element represents a SpatialLocation -->
-        <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="SpatialGroup">
         <!-- A GroupInformationElement that groups SpatialElements using the ElementGroupsMembers relationship -->
-        <BaseClass>dgn:GroupInformationElement</BaseClass>
+        <BaseClass>bis:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="GraphicGroup2d">
         <!-- A GroupInformationElement that groups GraphicalElement2ds using the ElementGroupsMembers relationship -->
-        <BaseClass>dgn:GroupInformationElement</BaseClass>
+        <BaseClass>bis:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-
-    <!-- Base class for all relationships where the domain is unknown in order to avoid that they get persisted as foreign keys in the dgn_Element table-->
-    <ECRelationshipClass typeName="ElementRefersToElement" strength="referencing" modifier="Abstract">
-        <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.01">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <Options>SharedColumns</Options>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                </MapStrategy>
-            </ClassMap>
-        </ECCustomAttributes>
-        <Source cardinality="(0,N)" polymorphic="true">
-            <Class class="dgn:Element"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
-            <Class class="dgn:Element"/>
-        </Target>
-    </ECRelationshipClass>
 
     <!-- Generic class to group MultiAspects together in a single shared table.  Originally designed for the converted secondary instances from a v8 file-->
     <ECEntityClass typeName="MultiAspect">
-        <BaseClass>dgn:ElementMultiAspect</BaseClass>
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECCustomAttributes>
-            <ClassHasHandler xmlns="dgn.02.00"/>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>SharedTable</Strategy>
-                    <AppliesToSubclasses>True</AppliesToSubclasses>
-                    <Options>SharedColumnsForSubclasses</Options>
-                    <MinimumSharedColumnCount>8</MinimumSharedColumnCount>
-                </MapStrategy>
-            </ClassMap>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-
-    <ECRelationshipClass typeName="ElementOwnsMultiAspect" strength="embedding" modifier="Sealed">
-        <Source cardinality="(1,1)" polymorphic="true">
-            <Class class="dgn:Element"/>
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
-            <Class class="MultiAspect">
-                <Key>
-                    <Property name="ElementId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
 
 </ECSchema>

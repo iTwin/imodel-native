@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/VolumeElement.h>
-#include    <DgnPlatform/QueryView.h>
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -121,7 +120,7 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
     {
     DgnElementIdSet ids;
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement));
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_VolumeElement));
     if (stmt.IsValid())
         {
         while (BE_SQLITE_ROW == stmt->Step())
@@ -136,7 +135,7 @@ DgnElementIdSet VolumeElement::QueryVolumes(DgnDbCR db)
 //+---------------+---------------+---------------+---------------+---------------+-----
 DgnElementId VolumeElement::QueryVolumeByLabel(DgnDbCR db, Utf8CP label)
     {
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DGN_SCHEMA(DGN_CLASSNAME_VolumeElement) " WHERE Label=? LIMIT 1"); // find first if label not unique
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_VolumeElement) " WHERE UserLabel=? LIMIT 1"); // find first if label not unique
 
     if (label)
         stmt->BindText(1, label, IECSqlBinder::MakeCopy::No);
@@ -319,18 +318,16 @@ FenceParams VolumeElement::CreateFence(DgnViewportP viewport, bool allowPartialO
 DgnViewportPtr VolumeElement::CreateNonVisibleViewport (DgnDbR project) 
     {
     // TODO: Is there a way to avoid specifying a view??
-    // TODO: Is it cool to assume the first view found can be used to create a CameraViewController?
-    auto viewIter = ViewDefinition::MakeIterator(project);
-    BeAssert(viewIter.begin() != viewIter.end());
-    if (viewIter.begin() == viewIter.end())
+    SpatialViewDefinitionCPtr spatialView;
+    for (auto view : ViewDefinition::MakeIterator(project))
+        {
+        if ((spatialView = view.GetSpatialViewDefinition()).IsValid())
+            break;
+        }
+    if (!spatialView.IsValid())
         return nullptr;
 
-    DgnViewId viewId = (*viewIter.begin()).GetId(); 
-    DgnQueryViewP viewController = new DgnQueryView(project, viewId);
-    viewController->Load();
-    viewController->SetCameraOn (false); // Has to be done after Load()!!
-
-    return new NonVisibleViewport (nullptr, *viewController);
+    return new NonVisibleViewport (nullptr, *spatialView->LoadViewController());
     }
     
 //--------------------------------------------------------------------------------------
@@ -405,21 +402,28 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnDbR dgnDb, bool
 //+---------------+---------------+---------------+---------------+---------------+-----
 void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewport, bool allowPartialOverlaps /*=true*/) const
     {
-    DgnQueryViewP viewController = dynamic_cast<DgnQueryViewP> (&viewport.GetViewControllerR());
+    QueryViewController* viewController = viewport.GetViewControllerR().ToQueryViewP();
     BeAssert (viewController != nullptr);
     DgnDbR dgnDb = viewController->GetDgnDb();
     
+#ifdef WIP_VIEW_DEFINITION // *** Can't turn camera on/off
     // Turn camera off
     // TODO: Seems like turning the camera off and back on shouldn't be necessary, but the results seem to be affected - needs investigation .
     bool wasCameraOn = viewController->IsCameraOn();
     viewController->SetCameraOn (false); 
     viewport.SynchWithViewController (false); 
-    
+%else
+    if (viewController->IsCameraView())
+        {
+        BeAssert(false && "VolumeElement can't work with camera views?");
+        }
+#endif
+
     FenceParams fence = CreateFence (&viewport, allowPartialOverlaps);
     
     // Prepare element query by range, and by what's visible in the view
     Statement stmt;
-    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " DGN_TABLE(DGN_CLASSNAME_Element) " AS e, " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) " AS g " \
+    Utf8CP sql = "SELECT r.ElementId FROM " DGN_VTABLE_SpatialIndex " AS r, " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g " \
         " WHERE r.MaxX > ? AND r.MinX < ?  AND r.MaxY > ? AND r.MinY < ? AND r.MaxZ > ? AND r.MinZ < ?" \
         " AND e.Id=r.ElementId AND g.ElementId=r.ElementId AND e.Id != ?" \
         " AND InVirtualSet (?,e.ModelId,g.CategoryId)";
@@ -447,8 +451,10 @@ void VolumeElement::FindElements(DgnElementIdSet& elementIds, DgnViewportR viewp
     FindElements (elementIds, fence, stmt, dgnDb);
 
     // Turn camera back on
+#ifdef WIP_VIEW_DEFINITION // *** Can't turn camera on/off
     viewController->SetCameraOn (wasCameraOn);
     viewport.SynchWithViewController (false);
+#endif
     }
 
 //--------------------------------------------------------------------------------------

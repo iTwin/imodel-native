@@ -542,7 +542,7 @@ namespace dgn_TxnTable
     {
         BeSQLite::Statement m_stmt;
         bool m_changes;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
+        static Utf8CP MyTableName() {return BIS_TABLE(BIS_CLASS_Element);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
         Element(TxnManager& mgr) : TxnTable(mgr) {}
@@ -596,7 +596,7 @@ namespace dgn_TxnTable
         bool m_changes;
 
         Model(TxnManager& mgr) : TxnTable(mgr) {}
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
+        static Utf8CP MyTableName() {return BIS_TABLE(BIS_CLASS_Model);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
         void _Initialize() override;
@@ -652,7 +652,7 @@ namespace dgn_TxnTable
         DgnElementIdSet m_failedTargets;
         bvector<DepRelData> m_deletedRels;
         bool m_changes;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ElementDrivesElement);}
+        static Utf8CP MyTableName() {return BIS_TABLE(BIS_REL_ElementDrivesElement);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
         ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
@@ -674,7 +674,7 @@ namespace dgn_TxnTable
     struct ModelDep : TxnTable
     {
         bool m_changes;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ModelDrivesModel);}
+        static Utf8CP MyTableName() {return BIS_TABLE(BIS_REL_ModelDrivesModel);}
         Utf8CP _GetTableName() const {return MyTableName();}
         ModelDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
 

@@ -224,7 +224,7 @@ enum CodeColumn { AuthorityId=0, NameSpace, Value };
 #define STMT_UpdateUnavailableLockLevel "UPDATE " TABLE_UnavailableLocks " SET " LOCK_Level "=? WHERE rowid=?"
 #define STMT_SelectLocksInSet "SELECT " LOCK_Type "," LOCK_Id " FROM " TABLE_Locks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
 #define STMT_SelectUnavailableLocksInSet "SELECT " LOCK_Type "," LOCK_Id "," LOCK_Level " FROM " TABLE_UnavailableLocks " WHERE InVirtualSet(@vset," LOCK_Columns ")"
-#define STMT_SelectElementInModel " SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?"
+#define STMT_SelectElementInModel " SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?"
 #define STMT_InsertOrReplaceLock "INSERT OR REPLACE INTO " TABLE_Locks " " LOCK_Values " VALUES(?,?,?)"
 #define STMT_InsertOrReplaceUnavailableLock "INSERT OR REPLACE INTO " TABLE_UnavailableLocks " " LOCK_Values " VALUES(?,?,?)"
 #define STMT_SelectElemsInModels "SELECT " LOCK_Id " FROM " TABLE_Locks " WHERE " LOCK_Type "=2 AND InVirtualSet(@vset," LOCK_Id ")"
@@ -1494,7 +1494,7 @@ RepositoryStatus IRepositoryManager::QueryLockStates(DgnLockInfoSet& states, Loc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IBriefcaseManager::RemoveElements(LockRequestR request, DgnModelId modelId) const
     {
-    Statement stmt(m_db, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    Statement stmt(m_db, "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ModelId=?");
     stmt.BindId(1, modelId);
     while (BE_SQLITE_ROW == stmt.Step())
         request.Remove(LockableId(stmt.GetValueId<DgnElementId>(0)));

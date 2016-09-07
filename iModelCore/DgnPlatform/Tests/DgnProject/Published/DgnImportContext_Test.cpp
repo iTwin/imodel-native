@@ -93,7 +93,7 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
 //---------------------------------------------------------------------------------------
 static void checkGroupHasOneMemberInModel(DgnModelR model)
 {
-    BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ECClassId=? AND ModelId=?)");
+    BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE (ECClassId=? AND ModelId=?)");
     stmt.BindId(1, model.GetDgnDb().Domains().GetClassId(TestGroupHandler::GetHandler()));
     stmt.BindId(2, model.GetModelId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -115,7 +115,7 @@ static void checkGroupHasOneMemberInModel(DgnModelR model)
 //---------------------------------------------------------------------------------------
 static DgnElementCPtr getSingleElementInModel(DgnModelR model)
 {
-    BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ModelId=?)");
+    BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE (ModelId=?)");
     stmt.BindId(1, model.GetModelId());
     if (BE_SQLITE_ROW != stmt.Step())
         return nullptr;
@@ -137,14 +137,13 @@ static SpatialModelPtr copySpatialModelSameDb(SpatialModelCR model, Utf8CP newNa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static SpatialModelPtr createSpatialModel(DgnDbR db, Utf8CP newName)
+static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP name)
 {
-    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr model = new SpatialModel(SpatialModel::CreateParams(db, mclassId, DgnModel::CreateModelCode(newName)));
-    if (!model.IsValid())
-        return nullptr;
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
+    SubjectCPtr rootSubject = db.Elements().GetRootSubject();
+    SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, name); // create a placeholder Subject for the DgnModel to describe
+    BeAssert(modelSubject.IsValid());
+    PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode(name));
+    BeAssert(model.IsValid());
     return model;
 }
 
@@ -184,7 +183,7 @@ TEST_F(ImportTest, ImportGroups)
     // ******************************
     //  Create model1
 
-    SpatialModelPtr model1 = createSpatialModel(*m_db, "Model1");
+    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
@@ -253,7 +252,7 @@ static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSub
     if (is3d)
         gelem = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(GENERIC_DOMAIN_NAME, GENERIC_CLASSNAME_PhysicalObject)), cat, Placement3d()));
     else
-        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d)), cat, Placement2d()));
+        gelem = AnnotationElement2d::Create(AnnotationElement2d::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d)), cat, Placement2d()));
 
     GeometryBuilderPtr builder = GeometryBuilder::Create(*gelem->ToGeometrySource());
     builder->Append(subcat);
@@ -430,7 +429,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     DgnSubCategoryId sourceSubCategory2Id = sourceSubCategory2->GetSubCategoryId();
 
     //  Create the source model
-    SpatialModelPtr sourcemod = createSpatialModel(*sourceDb, "sourcemod");
+    PhysicalModelPtr sourcemod = createPhysicalModel(*sourceDb, "sourcemod");
     ASSERT_TRUE( sourcemod.IsValid() );
 
     // Put elements in this category into the source model
@@ -461,7 +460,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
             ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i).c_str(), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
             }
 
-        SpatialModelPtr destmod = createSpatialModel(*destDb, "destmod");
+        PhysicalModelPtr destmod = createPhysicalModel(*destDb, "destmod");
         ASSERT_TRUE( destmod.IsValid() );
 
         DgnImportContext importContext(*sourceDb, *destDb);
@@ -526,9 +525,8 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
-    ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
+    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
+    ASSERT_TRUE(model1.IsValid());
 
     // Put an element with an Item into moddel1
     {
@@ -586,9 +584,8 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
     // ******************************
     //  Create model1
 
-    DgnClassId mclassId = DgnClassId(m_db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel));
-    SpatialModelPtr model1 = new SpatialModel(SpatialModel::CreateParams(*m_db, mclassId, DgnModel::CreateModelCode("Model1")));
-    ASSERT_EQ(DgnDbStatus::Success, model1->Insert());
+    PhysicalModelPtr model1 = createPhysicalModel(*m_db, "Model1");
+    ASSERT_TRUE(model1.IsValid());
 
     // Create 2 elements and make the first depend on the second
     {

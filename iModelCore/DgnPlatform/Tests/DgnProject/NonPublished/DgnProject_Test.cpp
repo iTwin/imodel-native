@@ -168,6 +168,7 @@ static DgnSubCategoryId facetId1, facetId2;
 TEST_F(DgnDbTest, ProjectWithDuplicateName)
     {
     CreateDgnDbParams params;
+    params.SetProjectName("DgnDbTest.ProjectWithDuplicateName");
     params.SetOverwriteExisting(false);
     DbResult status, status2;
     DgnDbPtr project, project2;
@@ -229,19 +230,22 @@ TEST_F(DgnDbTest, InvalidFileFormat)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateDgnDb)
     {
-    DgnDbPtr      dgnProj;
+    DgnDbPtr dgnProj;
     BeFileName dgndbFileName;
     BeTest::GetHost().GetOutputRoot(dgndbFileName);
     dgndbFileName.AppendToPath(L"MyFile.ibim");
 
      if (BeFileName::DoesPathExist(dgndbFileName))
         BeFileName::BeDeleteFile(dgndbFileName);
+
     DbResult status;
-    CreateDgnDbParams Obj;
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()),Obj);
-    EXPECT_EQ (BE_SQLITE_OK, status) << status;
+    CreateDgnDbParams params;
+    params.SetProjectName("DgnDbTest.CreateDgnDb");
+    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
+    EXPECT_EQ(BE_SQLITE_OK, status) << status;
     ASSERT_TRUE( dgnProj != NULL);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adeel.Shoukat                      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -256,11 +260,12 @@ TEST_F(DgnDbTest, CreateWithInvalidName)
         BeFileName::BeDeleteFile(dgndbFileName);
 
     DbResult status;
-    CreateDgnDbParams Obj;
-    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()),Obj);
+    CreateDgnDbParams params;
+    params.SetProjectName("DgnDbTest.CreateWithInvalidName");
+    dgnProj = DgnDb::CreateDgnDb(&status, BeFileName(dgndbFileName.GetNameUtf8().c_str()), params);
     EXPECT_EQ (BE_SQLITE_OK, status) << status;
     ASSERT_TRUE( dgnProj != NULL);
-    /////////It creates a DgnDbfile with .txt extension haveing success status needs to figure out is this right behave
+    /////////It creates a DgnDbfile with .txt extension having success status needs to figure out is this right behavior
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -671,6 +676,7 @@ TEST(DgnProject, DuplicateElementId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnProjectPackageTest, VerifyViewsForDgndbFilesConvertedDuringBuild)
     {
+    // *** WIP_TEST_DEPENDs_ON_CONVERTER - move this to DgnV8ConverterTests
     std::vector<Utf8String> dgndbFiles;
     dgndbFiles.push_back("79_Main.i.ibim");
     dgndbFiles.push_back("04_Plant.i.ibim");
@@ -940,20 +946,20 @@ struct ImportTests : DgnDbTestFixture
 TEST_F(ImportTests, simpleSchemaImport)
     {
     Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
-        "  <ECSchemaReference name = 'ECDbMap' version = '01.01' prefix = 'ecdbmap' />"
+        "  <ECSchemaReference name = 'BisCore' version = '01.00' prefix = 'bis' />"
+        "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
         "  <ECClass typeName='Element1' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
-        "    <BaseClass>dgn:PhysicalElement</BaseClass>"
+        "    <BaseClass>bis:PhysicalElement</BaseClass>"
         "    <ECProperty propertyName='Prop1_1' typeName='string' />"
         "    <ECProperty propertyName='Prop1_2' typeName='long' />"
         "    <ECProperty propertyName='Prop1_3' typeName='double' />"
         "  </ECClass>"
         "  <ECClass typeName='Element2' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element1</BaseClass>"
         "    <ECProperty propertyName='Prop2_1' typeName='string' />"
@@ -962,7 +968,7 @@ TEST_F(ImportTests, simpleSchemaImport)
         "  </ECClass>"
         "  <ECClass typeName='Element3' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element2</BaseClass>"
         "    <ECProperty propertyName='Prop3_1' typeName='string' />"
@@ -971,7 +977,7 @@ TEST_F(ImportTests, simpleSchemaImport)
         "  </ECClass>"
         "  <ECClass typeName='Element4' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
         "    <ECProperty propertyName='Prop4_1' typeName='string' />"
@@ -980,7 +986,7 @@ TEST_F(ImportTests, simpleSchemaImport)
         "  </ECClass>"
         "  <ECClass typeName='Element4b' >"
         "    <ECCustomAttributes>"
-        "       <ClassHasHandler xmlns=\"dgn.02.00\" />"
+        "       <ClassHasHandler xmlns=\"BisCore.01.00\" />"
         "    </ECCustomAttributes>"
         "    <BaseClass>Element3</BaseClass>"
         "    <ECProperty propertyName='Prop4b_1' typeName='string' />"
@@ -1004,6 +1010,6 @@ TEST_F(ImportTests, simpleSchemaImport)
     ASSERT_TRUE(schema != nullptr);
 
     schemaContext->AddSchema(*schema);
-    ASSERT_EQ(DgnDbStatus::Success, DgnBaseDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
+    ASSERT_EQ(DgnDbStatus::Success, BisCoreDomain::GetDomain().ImportSchema(*m_db, schemaContext->GetCache()));
     ASSERT_TRUE(m_db->IsDbOpen());
     }

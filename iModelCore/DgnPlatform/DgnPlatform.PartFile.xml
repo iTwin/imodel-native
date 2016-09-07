@@ -22,9 +22,13 @@
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
-                ECSchemas/dgn.02.00.ecschema.xml
+                ECSchemas/BisCore.01.00.ecschema.xml
                 ECSchemas/Generic.01.00.ecschema.xml
                 ECSchemas/Markup.01.00.ecschema.xml
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Functional.01.00.ecschema.xml
+                ECSchemas/Script.01.00.ecschema.xml
             </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
@@ -137,7 +141,6 @@
     <!-- ********************************************************************************************** -->
 
     <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
-        <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
         <Bindings>
@@ -396,6 +399,7 @@
     <!-- Define a gtest program to run the tests -->
     <Product Name="DgnPlatform-Tests">
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart PartName="UnitTests-Documents-DgnDb" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="Tests"/>
         <SubPart PartName="DgnPlatformSqlang" />
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
@@ -464,6 +468,9 @@
 
     <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/DgnPlatform-iOSXCTest.log</Files>
+        </Bindings>
     </Part>
 
     <!-- *********************************************************** -->

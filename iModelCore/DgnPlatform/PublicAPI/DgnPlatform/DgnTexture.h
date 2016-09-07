@@ -22,7 +22,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnTexture : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_Texture, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Texture, DefinitionElement);
 
 public:
     //! Optional flags which can be applied to a texture
@@ -91,7 +91,7 @@ public:
     uint32_t GetHeight() const {return m_height;}
     Flags GetFlags() const {return m_flags;}
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Texture);} //!< Return the class ID used for textures
+    static ECN::ECClassId QueryECClassId(DgnDbR db) {return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_Texture);} //!< Return the class ID used for textures
     static DgnClassId QueryDgnClassId(DgnDbR db) {return DgnClassId(QueryECClassId(db));} //!< Return the class ID used for textures
 
     DgnTextureCPtr Insert(DgnDbStatus* status=nullptr) {return GetDgnDb().Elements().Insert<DgnTexture>(*this, status);} //!< Inserts the texture into the DgnDb and returns the persistent copy.
@@ -116,9 +116,9 @@ namespace dgn_ElementHandler
     //! The handler for named textures
     //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
-    struct Texture : Element
+    struct Texture : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Texture, DgnTexture, Texture, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_Texture, DgnTexture, Texture, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

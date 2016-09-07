@@ -73,6 +73,8 @@ public:
         EXPECT_EQ(attach.GetViewScale(), data.m_scale);
         }
 
+    DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
+
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
     void AddBoxToDrawing(DgnModelId drawingId, double width, double height, double viewRot=0.0);
     template<typename VC, typename EL> void SetupAndSaveViewController(VC& viewController, EL const& el, DgnModelId modelId, double rot=0.0);
@@ -86,8 +88,8 @@ void ViewAttachmentTest::SetUp()
     SetupSeedProject();
     // Set up a sheet to hold attachments
     auto& db = GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel));
-    SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
+    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
+    SheetModelPtr sheet = new SheetModel(SheetModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MySheet"), DPoint2d::From(10,10)));
     ASSERT_EQ(DgnDbStatus::Success, sheet->Insert());
     m_sheetId = sheet->GetModelId();
 
@@ -98,13 +100,13 @@ void ViewAttachmentTest::SetUp()
     ASSERT_TRUE(m_attachmentCatId.IsValid());
 
     // Set up a viewed model
-    classId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SectionDrawingModel));
-    RefCountedPtr<SectionDrawingModel> drawing = new SectionDrawingModel(SectionDrawingModel::CreateParams(db, classId, DgnModel::CreateModelCode("MyDrawing")));
+    classId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SectionDrawingModel));
+    RefCountedPtr<SectionDrawingModel> drawing = new SectionDrawingModel(SectionDrawingModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("MyDrawing")));
     ASSERT_EQ(DgnDbStatus::Success, drawing->Insert());
     m_drawingId = drawing->GetModelId();
 
     // Create a view of our (empty) model
-    DrawingViewDefinition view(DrawingViewDefinition::CreateParams(db, "MyDrawingView", DrawingViewDefinition::Data(m_drawingId)));
+    DrawingViewDefinition view(db, "MyDrawingView", m_drawingId);
     view.Insert();
     m_viewId = view.GetViewId();
     ASSERT_TRUE(m_viewId.IsValid());
@@ -134,8 +136,8 @@ void ViewAttachmentTest::AddTextToDrawing(DgnModelId drawingId, Utf8CP text, dou
     annoElem->SetAnnotation(&anno);
     EXPECT_TRUE(annoElem->Insert().IsValid());
 
-    DrawingViewController viewController(db, m_viewId);
-    SetupAndSaveViewController(viewController, *annoElem, drawingId, viewRot);
+    DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
+    SetupAndSaveViewController(*viewController, *annoElem, drawingId, viewRot);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,7 +156,7 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     ICurvePrimitivePtr curve = ICurvePrimitive::CreateLineString(pts);
 
     auto& db = GetDgnDb();
-    DgnClassId classId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_AnnotationElement2d));
+    DgnClassId classId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationElement2d));
     DgnElementPtr el = dgn_ElementHandler::Element::FindHandler(db, classId)->Create(DgnElement::CreateParams(db, drawingId, classId, DgnCode()));
     ASSERT_TRUE(el.IsValid());
 
@@ -167,8 +169,8 @@ void ViewAttachmentTest::AddBoxToDrawing(DgnModelId drawingId, double width, dou
     EXPECT_EQ(SUCCESS, builder->Finish(*geomEl));
     EXPECT_TRUE(el->Insert().IsValid());
 
-    DrawingViewController viewController(db, m_viewId);
-    SetupAndSaveViewController(viewController, *geomEl, drawingId, viewRot);
+    DrawingViewControllerPtr viewController = GetDrawingViewDef(db).LoadViewController();
+    SetupAndSaveViewController(*viewController, *geomEl, drawingId, viewRot);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -185,8 +187,7 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     viewController.ChangeCategoryDisplay(m_attachmentCatId, true);
     viewController.ChangeModelDisplay(modelId, true);
 
-    EXPECT_EQ(BE_SQLITE_OK, viewController.Save());
-    GetDgnDb().SaveSettings();
+    EXPECT_EQ(DgnDbStatus::Success, viewController.Save());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -257,11 +258,11 @@ TEST_F(ViewAttachmentTest, Geom)
     cpAttach = pAttach->Update();
     EXPECT_TRUE(cpAttach.IsValid());
 
-    SheetViewDefinition sheetView(SheetViewDefinition::CreateParams(db, "MySheetView", SheetViewDefinition::Data(m_sheetId)));
+    SheetViewDefinition sheetView(db, "MySheetView", m_sheetId);
     sheetView.Insert();
 
-    SheetViewController viewController(db, sheetView.GetViewId());
-    SetupAndSaveViewController(viewController, *cpAttach, m_sheetId);
+    SheetViewControllerPtr viewController = sheetView.LoadViewController();
+    SetupAndSaveViewController(*viewController, *cpAttach, m_sheetId);
 
     db.SaveChanges();
     }

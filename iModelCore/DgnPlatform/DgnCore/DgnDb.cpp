@@ -271,7 +271,7 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
 
     m_fileName = projectFile.GetNameUtf8();
 
-    rc = CreateDgnDbTables();
+    rc = CreateDgnDbTables(params);
     if (BE_SQLITE_OK != rc)
         return rc;
 
@@ -286,6 +286,12 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
 DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDbParams const& params)
     {
     DbResult ALLOW_NULL_OUTPUT(stat, result);
+
+    if (params.m_name.empty())
+        {
+        BeAssert(false); // name is required to create the Subject in the RepositoryModel
+        return nullptr;
+        }
 
     DgnDbPtr dgndb = new DgnDb();
     stat = dgndb->CreateNewDgnDb(fileName, params);

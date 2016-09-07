@@ -1616,13 +1616,13 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LineStyle, DefinitionElement);
     
 private:
     Utf8String m_description;
     Utf8String m_data;
 
-    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_LineStyle); }
+    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_LineStyle); }
     DgnDbStatus BindParams(BeSQLite::EC::ECSqlStatement& stmt);
 
 protected:
@@ -1636,7 +1636,7 @@ protected:
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
 
 public:
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LineStyle); }
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LineStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
     
     explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
@@ -1692,9 +1692,9 @@ namespace dgn_ElementHandler
     //! The handler for annotation text styles
     //! @bsistruct                                                  Paul.Connelly   10/15
     //=======================================================================================
-    struct LineStyleHandler : Element
+    struct LineStyleHandler : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LineStyle, LineStyleElement, LineStyleHandler, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LineStyle, LineStyleElement, LineStyleHandler, Definition, DGNPLATFORM_EXPORT);
     };
 }
 //__PUBLISH_SECTION_START__

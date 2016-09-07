@@ -315,7 +315,7 @@ AnnotationTextStylePtr AnnotationTextStyle::CreateEffectiveStyle(
 //---------------------------------------------------------------------------------------
 size_t AnnotationTextStyle::QueryCount(DgnDbR db)
     {
-    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle));
+    CachedECSqlStatementPtr select = db.GetPreparedECSqlStatement("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle));
     if (!select.IsValid())
         return 0;
     
@@ -331,7 +331,7 @@ size_t AnnotationTextStyle::QueryCount(DgnDbR db)
 AnnotationTextStyle::Iterator AnnotationTextStyle::MakeIterator(DgnDbR db)
     {
     Iterator iter;
-    iter.Prepare(db, "SELECT ECInstanceId, Code.[Value], Descr FROM " DGN_SCHEMA(DGN_CLASSNAME_AnnotationTextStyle), 0);
+    iter.Prepare(db, "SELECT ECInstanceId, [CodeValue], Descr FROM " BIS_SCHEMA(BIS_CLASS_AnnotationTextStyle), 0);
 
     return iter;
     }

@@ -34,7 +34,7 @@ TEST_F (DgnElementTests, ResetStatistics)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE (m1 != nullptr);
     m_db->SaveChanges("changeSet1");
@@ -111,7 +111,7 @@ TEST_F (DgnElementTests, UpdateElement)
 
     //Inserts a model
     DgnModelPtr m1 = seedModel->Clone(DgnModel::CreateModelCode("Model1"));
-    m1->SetLabel("Test Model 1");
+    m1->SetUserLabel("Test Model 1");
     m1->Insert();
     EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");
@@ -714,7 +714,7 @@ TEST_F(ElementGeomAndPlacementTests, ValidateOnInsert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int32_t countElementsOfClass(DgnClassId classId, DgnDbR db)
     {
-    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ECClassId=?");
+    CachedStatementPtr stmt = db.Elements().GetStatement("SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE ECClassId=?");
     stmt->BindUInt64(1, classId.GetValue());
     stmt->Step();
     return stmt->GetValueInt(0);
@@ -768,13 +768,13 @@ void DgnElementTests::TestAutoHandledPropertiesCA()
     for (int i=0; i<_countof(s_autoHandledPropNames); ++i)
         {
         ECN::ECValue checkValue;
-        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, s_autoHandledPropNames[i]));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, s_autoHandledPropNames[i]));
         EXPECT_TRUE(checkValue.IsNull());
         }
 
     // Check a few non-auto-handled props
     ECN::ECValue checkValue;
-    EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "TestIntegerProperty1"));
+    EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "TestIntegerProperty1"));
 #endif
     }
 
@@ -792,15 +792,15 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
         //  No unhandled properties yet
         ECN::ECValue checkValue;
-        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_TRUE(checkValue.IsNull());
 
         //  Set unhandled property (in memory)
-        ASSERT_EQ(DgnDbStatus::Success, el.SetProperty("StringProperty", ECN::ECValue("initial value")));
+        ASSERT_EQ(DgnDbStatus::Success, el.SetPropertyValue("StringProperty", ECN::ECValue("initial value")));
 
         //      ... check that we see the pending value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, el.GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Insert the element
@@ -811,7 +811,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
     // Check that we see the stored value
     ECN::ECValue checkValue;
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
     if (true)
@@ -821,20 +821,20 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
         //      ... initially we still see the initial/stored value
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Set a new value (in memory)
-        EXPECT_EQ(DgnDbStatus::Success, editEl->SetProperty("StringProperty", ECN::ECValue("changed value")));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->SetPropertyValue("StringProperty", ECN::ECValue("changed value")));
 
         //      ... check that we now see the pending value on the edited copy ...
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, editEl->GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, editEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
         //      ... but no change on the persistent element
         checkValue.Clear();
-        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+        EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
         EXPECT_STREQ("initial value", checkValue.ToString().c_str());
 
         //  Update the element
@@ -843,7 +843,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
 
     // Check that the stored value was changed
     checkValue.Clear();
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
 
     // REALLY check that the stored value was changed
@@ -857,7 +857,7 @@ void DgnElementTests::TestAutoHandledPropertiesGetSet()
     persistentEl = m_db->Elements().GetElement(elid);
     ASSERT_TRUE(persistentEl.IsValid());
     checkValue.Clear();
-    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetProperty(checkValue, "StringProperty"));
+    EXPECT_EQ(DgnDbStatus::Success, persistentEl->GetPropertyValue(checkValue, "StringProperty"));
     EXPECT_STREQ("changed value", checkValue.ToString().c_str());
     }
 
@@ -885,7 +885,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         // custom-handled properties
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Label", ECN::ECValue("my label")));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
@@ -900,18 +900,18 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
         ECN::ECValue v;
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
         ASSERT_STREQ("my label", v.ToString().c_str());
-        ASSERT_STREQ("my label", ele->GetLabel());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+        ASSERT_STREQ("my label", ele->GetUserLabel());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_TestElementProperty));
         ASSERT_STREQ("a string", v.ToString().c_str());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
         ASSERT_EQ(99, v.GetInteger());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
         ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
         ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
 
         // Now, make sure that we can actually insert the element
@@ -931,18 +931,18 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
     ECN::ECValue v;
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "ModelId"));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, "Label"));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
     ASSERT_STREQ("my label", v.ToString().c_str());
-    ASSERT_STREQ("my label", ele->GetLabel());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_TestElementProperty));
+    ASSERT_STREQ("my label", ele->GetUserLabel());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_TestElementProperty));
     ASSERT_STREQ("a string", v.ToString().c_str());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_IntegerProperty1));
     ASSERT_EQ(99, v.GetInteger());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_DoubleProperty1));
     ASSERT_DOUBLE_EQ(99.99, v.GetDouble());
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetProperty(v, DPTEST_TEST_ELEMENT_PointProperty1));
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, DPTEST_TEST_ELEMENT_PointProperty1));
     ASSERT_TRUE(DPoint3d::From(99, 99, 99).IsEqual(v.GetPoint3D()));
     }
 
@@ -1221,8 +1221,8 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
     EXPECT_TRUE(categoryId.IsValid());
 
-    SpatialModelPtr modelA = DgnDbTestUtils::InsertSpatialModel(*m_db, DgnModel::CreateModelCode("modelA"));
-    SpatialModelPtr modelB = DgnDbTestUtils::InsertSpatialModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
     EXPECT_TRUE(modelA.IsValid());
     EXPECT_TRUE(modelB.IsValid());
 
@@ -1297,4 +1297,239 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         EXPECT_TRUE(childC->Update(&updateStatusC).IsValid()) << "Expecting success because models of parent and child are the same";
         EXPECT_EQ(DgnDbStatus::Success, updateStatusC);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, FederationGuid)
+    {
+    SetupSeedProject();
+
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
+    EXPECT_TRUE(model.IsValid());
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+    EXPECT_TRUE(categoryId.IsValid());
+
+    DgnElementId elementId;
+    BeGuid federationGuid(true);
+    BeGuid updatedFederationGuid(true);
+
+    // Quick BeGuid tests
+    EXPECT_TRUE(BeGuid(true).IsValid());
+    EXPECT_FALSE(BeGuid().IsValid());
+    EXPECT_NE(federationGuid, updatedFederationGuid);
+    EXPECT_EQ(federationGuid, BeGuid(federationGuid.m_guid.u[0], federationGuid.m_guid.u[1]));
+    EXPECT_EQ(federationGuid, BeGuid(federationGuid.m_guid.i[0], federationGuid.m_guid.i[1], federationGuid.m_guid.i[2], federationGuid.m_guid.i[3]));
+    
+    // test that FederationGuid is initialized as invalid
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
+        EXPECT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        EXPECT_FALSE(element->GetFederationGuid().IsValid()) << "FederationGuid expected to be initialized as invalid";
+        }
+
+    // test error conditions for QueryElementByFederationGuid
+    EXPECT_FALSE(m_db->Elements().QueryElementByFederationGuid(BeGuid()).IsValid()) << "Should not find an element by an invalid FederationGuid";
+    EXPECT_FALSE(m_db->Elements().QueryElementByFederationGuid(BeGuid(true)).IsValid()) << "Should not find an element by an unused FederationGuid";
+
+    // flush cache and re-check element
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementCPtr element = m_db->Elements().GetElement(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_FALSE(element->GetFederationGuid().IsValid());
+        }
+
+    // test when FederationGuid is specified
+        {
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        EXPECT_TRUE(element.IsValid());
+        element->SetFederationGuid(federationGuid);
+        EXPECT_TRUE(element->GetFederationGuid().IsValid()) << "FederationGuid should be valid after SetFederationGuid";
+        EXPECT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        EXPECT_EQ(elementId.GetValue(), m_db->Elements().QueryElementByFederationGuid(federationGuid)->GetElementId().GetValue()) << "Should be able to query for an element by its FederationGuid";
+
+        GenericPhysicalObjectPtr element2 = GenericPhysicalObject::Create(*model, categoryId);
+        EXPECT_TRUE(element2.IsValid());
+        element2->SetFederationGuid(federationGuid);
+        EXPECT_FALSE(element->Insert().IsValid()) << "Cannot insert a second element with a duplicate FederationGuid";
+        m_db->SaveChanges();
+        }
+
+    // flush cache and re-check element
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_TRUE(element->GetFederationGuid().IsValid());
+        EXPECT_EQ(element->GetFederationGuid(), federationGuid);
+
+        element->SetFederationGuid(updatedFederationGuid);
+        EXPECT_TRUE(element->Update().IsValid());
+        m_db->SaveChanges();
+        }
+
+    // flush cache and verify set/update to updated value
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementPtr element = m_db->Elements().GetForEdit<DgnElement>(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_TRUE(element->GetFederationGuid().IsValid());
+        EXPECT_EQ(element->GetFederationGuid(), updatedFederationGuid);
+        EXPECT_TRUE(m_db->Elements().QueryElementByFederationGuid(updatedFederationGuid).IsValid());
+        EXPECT_FALSE(m_db->Elements().QueryElementByFederationGuid(federationGuid).IsValid());
+
+        element->SetFederationGuid(BeGuid()); // set FederationGuid to null
+        EXPECT_TRUE(element->Update().IsValid());
+        m_db->SaveChanges();
+        }
+
+    // flush cache and verify set/update to null value
+        {
+        m_db->Memory().PurgeUntil(0);
+        DgnElementCPtr element = m_db->Elements().GetElement(elementId);
+        EXPECT_TRUE(element.IsValid());
+        EXPECT_FALSE(element->GetFederationGuid().IsValid());
+        }
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, PhysicalTypeCRUD)
+    {
+    SetupSeedProject();
+
+    DgnElementId physicalTypeId[3];
+    DgnElementId elementId;
+
+    // insert some sample PhysicalTypes
+    for (int32_t i=0; i<_countof(physicalTypeId); i++)
+        {
+        TestPhysicalTypePtr physicalType = TestPhysicalType::Create(*m_db);
+        ASSERT_TRUE(physicalType.IsValid());
+        physicalType->SetUserLabel(Utf8PrintfString("PhysicalType%d", i).c_str());
+        physicalType->SetStringProperty(Utf8PrintfString("String%d", i).c_str());
+        physicalType->SetIntProperty(i);
+        ASSERT_TRUE(physicalType->Insert().IsValid());
+        physicalTypeId[i] = physicalType->GetElementId();
+        }
+
+    // flush cache to make sure PhysicalTypes were inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        for (int32_t i=0; i<_countof(physicalTypeId); i++)
+            {
+            TestPhysicalTypePtr physicalType = m_db->Elements().GetForEdit<TestPhysicalType>(physicalTypeId[i]);
+            ASSERT_TRUE(physicalType.IsValid());
+            ASSERT_STREQ(physicalType->GetStringProperty().c_str(), Utf8PrintfString("String%d", i).c_str());
+            ASSERT_EQ(physicalType->GetIntProperty(), i);
+
+            physicalType->SetStringProperty(Utf8PrintfString("Updated%d", i).c_str());
+            physicalType->SetIntProperty(i+100);
+            ASSERT_TRUE(physicalType->Update().IsValid());
+            }
+        }
+
+    // flush cache to make sure PhysicalTypes were updated properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        for (int32_t i=0; i<_countof(physicalTypeId); i++)
+            {
+            TestPhysicalTypeCPtr physicalType = m_db->Elements().Get<TestPhysicalType>(physicalTypeId[i]);
+            ASSERT_TRUE(physicalType.IsValid());
+            ASSERT_STREQ(physicalType->GetStringProperty().c_str(), Utf8PrintfString("Updated%d", i).c_str());
+            ASSERT_EQ(physicalType->GetIntProperty(), i+100);
+            }
+        }
+
+    // create a PhysicalElement and set its PhysicalType
+        {
+        DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "TestCategory");
+        ASSERT_TRUE(categoryId.IsValid());
+
+        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("TestModel"));
+        ASSERT_TRUE(model.IsValid());
+
+        GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*model, categoryId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_FALSE(element->GetPhysicalType().IsValid());
+        element->SetPhysicalType(physicalTypeId[0]);
+        ASSERT_TRUE(element->GetPhysicalTypeId().IsValid());
+        ASSERT_TRUE(element->GetPhysicalType().IsValid());
+        ASSERT_TRUE(element->Insert().IsValid());
+        elementId = element->GetElementId();
+        }
+
+    // flush cache to make sure the PhysicalElement's PhysicalType was inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->GetPhysicalType().IsValid());
+        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[0].GetValue());
+
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1]));
+        ASSERT_TRUE(element->Update().IsValid());
+        }
+
+    // flush cache to make sure the PhysicalElement's PhysicalType was updated properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_TRUE(element->GetPhysicalType().IsValid());
+        ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[1].GetValue());
+
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId()));
+        ASSERT_TRUE(element->Update().IsValid());
+        }
+
+    // flush cache to make sure the PhysicalElement's PhysicalType was cleared properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        GenericPhysicalObjectPtr element = m_db->Elements().GetForEdit<GenericPhysicalObject>(elementId);
+        ASSERT_TRUE(element.IsValid());
+        ASSERT_FALSE(element->GetPhysicalType().IsValid());
+        ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnElementTests, EqualsTests)
+    {
+    SetupSeedProject();
+
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertCategory(*m_db, "testCategory");
+    ASSERT_TRUE(categoryId.IsValid());
+
+    PhysicalModelPtr modelA = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelA"));
+    PhysicalModelPtr modelB = DgnDbTestUtils::InsertPhysicalModel(*m_db, DgnModel::CreateModelCode("modelB"));
+    ASSERT_TRUE(modelA.IsValid());
+    ASSERT_TRUE(modelB.IsValid());
+
+    GenericPhysicalObjectPtr elementA = GenericPhysicalObject::Create(*modelA, categoryId);
+    ASSERT_TRUE(elementA.IsValid());
+    
+    ASSERT_TRUE(elementA->Equals(*elementA)) << " An element should be equivalent to itself";
+    ASSERT_TRUE(elementA->Equals(*elementA->CopyForEdit())) << " An element should be equivalent to a copy of itself";
+    
+    GenericPhysicalObjectPtr elementB = GenericPhysicalObject::Create(*modelB, categoryId);
+    ASSERT_TRUE(elementB.IsValid());
+    ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
+    bset<Utf8String> ignoreProps;
+    ignoreProps.insert("ModelId");
+    ASSERT_TRUE(elementA->Equals(*elementB, ignoreProps));
+
+    elementB->SetUserLabel("label for b");
+    ASSERT_FALSE(elementA->Equals(*elementB, ignoreProps)) << " UserLabels should differ";
     }

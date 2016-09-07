@@ -73,7 +73,7 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new GeometricModel2d(GeometricModel2d::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_GeometricModel2d)), DgnModel::CreateModelCode("2D Model")));
+        RefCountedPtr<DrawingModel> model = new DrawingModel(DrawingModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingModel)), DgnElementId() /* WIP: Which element? */, DgnModel::CreateModelCode("2D Model")));
         ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
 
         modelId = model->GetModelId();
@@ -99,21 +99,8 @@ TEST_F (TextAnnotationTest, BasicCrud2d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        DrawingViewDefinition view(DrawingViewDefinition::CreateParams(*db, "TextAnnotation2dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
-        EXPECT_TRUE(view.Insert().IsValid());
-
-        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-        
-        DrawingViewController viewController(*db, view.GetViewId());
-        viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        viewController.ChangeModelDisplay(modelId, true);
-
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
+        auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
+        EXPECT_TRUE(viewDef->Insert().IsValid());
         }
 
     // Read the element back out, modify, and rewrite.
@@ -265,9 +252,11 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
         DgnCategoryId categoryId = category.GetCategoryId();
         ASSERT_TRUE(categoryId.IsValid());
 
-        DgnModelPtr model = new SpatialModel(SpatialModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SpatialModel)), DgnModel::CreateModelCode("Physical Model")));
-        ASSERT_TRUE(DgnDbStatus::Success == model->Insert());
-
+        SubjectCPtr rootSubject = db->Elements().GetRootSubject();
+        SubjectCPtr modelSubject = Subject::CreateAndInsert(*rootSubject, TEST_NAME); // create a placeholder Subject for the DgnModel to describe
+        ASSERT_TRUE(modelSubject.IsValid());
+        PhysicalModelPtr model = PhysicalModel::CreateAndInsert(*modelSubject, DgnModel::CreateModelCode(TEST_NAME));
+        ASSERT_TRUE(model.IsValid());
         modelId = model->GetModelId();
         ASSERT_TRUE(modelId.IsValid());
 
@@ -291,21 +280,8 @@ TEST_F (TextAnnotationTest, BasicCrud3d)
 
         // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
         //.........................................................................................
-        CameraViewDefinition view(CameraViewDefinition::CreateParams(*db, "TextAnnotation3dTest-BasicCrud",
-                    ViewDefinition::Data(modelId, DgnViewSource::Generated)));
-        EXPECT_TRUE(view.Insert().IsValid());
-
-        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
-        
-        SpatialViewController viewController(*db, view.GetViewId());
-        viewController.SetStandardViewRotation(StandardView::Top);
-        viewController.LookAtVolume(insertedAnnotationElement->CalculateRange3d(), nullptr, &viewMargin);
-        viewController.GetViewFlagsR().SetRenderMode(Render::RenderMode::Wireframe);
-        viewController.ChangeCategoryDisplay(categoryId, true);
-        viewController.ChangeModelDisplay(modelId, true);
-
-        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
-        db->SaveSettings();
+        auto range = insertedAnnotationElement->CalculateRange3d();
+        DgnDbTestUtils::InsertCameraView(*model, "TextAnnotation3dTest-BasicCrud", &range, StandardView::Top, Render::RenderMode::Wireframe);
         }
 
     // Read the element back out, modify, and rewrite.

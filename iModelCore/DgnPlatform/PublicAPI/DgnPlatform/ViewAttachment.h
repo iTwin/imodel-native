@@ -16,7 +16,7 @@
 DGNPLATFORM_TYPEDEFS(ViewAttachment);
 DGNPLATFORM_REF_COUNTED_PTR(ViewAttachment);
 
-#define DGN_CLASSNAME_ViewAttachment "ViewAttachment"
+#define BIS_CLASS_ViewAttachment "ViewAttachment"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -29,7 +29,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, GraphicalElement2d);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, GraphicalElement2d);
 public:
     //! Holds the data which describes a ViewAttachment
     struct Data
@@ -124,7 +124,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus GenerateGeomStream(DgnSubCategoryId subCategory=DgnSubCategoryId());
 
     //! Look up the ID of the base ViewAttachmentElement ECClass within the specified DgnDb
-    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ViewAttachment)); }
+    static DgnClassId QueryClassId(DgnDbR db) { return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment)); }
 };
 
 namespace dgn_ElementHandler
@@ -132,7 +132,7 @@ namespace dgn_ElementHandler
     //! The handler for ViewAttachment elements
     struct ViewAttachmentHandler : Geometric2d
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ViewAttachment, ViewAttachment, ViewAttachmentHandler, Geometric2d, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, ViewAttachment, ViewAttachmentHandler, Geometric2d, DGNPLATFORM_EXPORT);
     };
 };
 

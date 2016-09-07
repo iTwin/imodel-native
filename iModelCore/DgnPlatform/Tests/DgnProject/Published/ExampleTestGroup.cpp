@@ -53,7 +53,7 @@ void ExampleTestGroup::SetUpTestCase()
     // Do that setup now, one time for the whole group. 
     // That way, each individual test can just make a copy of this seed file and start working, knowing that it has the needed setup.
     // This custom setup is what makes our group seed different from the root seed file.
-    ASSERT_TRUE(DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid());
+    ASSERT_TRUE(DgnDbTestUtils::InsertPhysicalModel(*db, DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid());
 
     db->SaveSettings();
     db->SaveChanges();
@@ -117,7 +117,7 @@ TEST_F(ExampleTestGroup, Test2)
 
         ASSERT_TRUE(db->Models().QueryModelId(DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid()) << "Group seed file has special setup";
 
-        SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
+        PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
         ASSERT_TRUE(model2->GetModelId() != defaultModelId);
 
@@ -132,7 +132,7 @@ TEST_F(ExampleTestGroup, Test2)
 
         ASSERT_FALSE(db->Models().QueryModelId(DgnModel::CreateModelCode(EXAMPLE_MODEL_NAME)).IsValid()) << "Root seed file does not have this group's special setup";
 
-        SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
+        PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
         db->SaveChanges();
         }
@@ -143,7 +143,7 @@ TEST_F(ExampleTestGroup, Test2)
         DgnDbTestUtils::SeedDbInfo info = DgnDbTestUtils::GetSeedDb(DgnDbTestUtils::SeedDbId::OneSpatialModel, DgnDbTestUtils::SeedDbOptions(false, true));
         DgnDbPtr db = DgnDbTestUtils::OpenSeedDbCopy(info.fileName, L"Test2");
 
-        SpatialModelPtr model2 = DgnDbTestUtils::InsertSpatialModel(*db, DgnModel::CreateModelCode("Model2"));
+        PhysicalModelPtr model2 = DgnDbTestUtils::InsertPhysicalModel(*db, DgnModel::CreateModelCode("Model2"));
         ASSERT_TRUE(model2.IsValid());
         db->SaveChanges();
         }

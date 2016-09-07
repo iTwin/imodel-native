@@ -15,18 +15,19 @@
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/ElementHandler.h>
 
-#define DGN_CLASSNAME_LinkElement           "LinkElement"
-#define DGN_CLASSNAME_LinkModel             "LinkModel"
-#define DGN_CLASSNAME_UrlLink               "UrlLink"
-#define DGN_CLASSNAME_EmbeddedFileLink      "EmbeddedFileLink"
-#define DGN_RELNAME_ElementHasLinks         "ElementHasLinks"
+#define BIS_CLASS_LinkElement           "LinkElement"
+#define BIS_CLASS_LinkModel             "LinkModel"
+#define BIS_CLASS_UrlLink               "UrlLink"
+#define BIS_CLASS_EmbeddedFileLink      "EmbeddedFileLink"
+#define BIS_CLASS_RepositoryLink        "RepositoryLink"
+#define BIS_REL_ElementHasLinks         "ElementHasLinks"
 
 #define LINK_ECSQL_PREFIX "link"
 #define SOURCE_ECSQL_PREFIX "source"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-namespace dgn_ElementHandler { struct UrlLinkHandler; struct EmbeddedFileLinkHandler; }
+namespace dgn_ElementHandler { struct UrlLinkHandler; struct RepositoryLinkHandler; struct EmbeddedFileLinkHandler; }
 
 //=======================================================================================
 //! A model which contains only links - LinkElement-s and classes derived from it.
@@ -35,7 +36,7 @@ namespace dgn_ElementHandler { struct UrlLinkHandler; struct EmbeddedFileLinkHan
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinkModel : InformationModel
 {
-    DGNMODEL_DECLARE_MEMBERS(DGN_CLASSNAME_LinkModel, InformationModel);
+    DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_LinkModel, InformationModel);
 
 public:
     struct CreateParams : Dgn::InformationModel::CreateParams
@@ -43,8 +44,8 @@ public:
     DEFINE_T_SUPER(Dgn::InformationModel::CreateParams);
 
     protected:
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true)
-            : T_Super(dgndb, classId, code, label, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnClassId classId, DgnElementId modeledElementId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true)
+            : T_Super(dgndb, classId, modeledElementId, code, label, inGuiList)
             {}
 
     public:
@@ -54,11 +55,12 @@ public:
 
         //! Parameters to create a new instance of a LinkModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
+        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
         //! @param[in] code The Code for the DgnModel
         //! @param[in] label Label of the new DgnModel
         //! @param[in] inGuiList Controls the visibility of the new DgnModel in model lists shown to the user
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
-            T_Super(dgndb, LinkModel::QueryClassId(dgndb), code, label, inGuiList)
+        CreateParams(Dgn::DgnDbR dgndb, DgnElementId modeledElementId, Dgn::DgnCode code, Utf8CP label = nullptr, bool inGuiList = true) :
+            T_Super(dgndb, LinkModel::QueryClassId(dgndb), modeledElementId, code, label, inGuiList)
             {}
     };
 
@@ -74,15 +76,15 @@ public:
 
     //! Query the DgnClassId of the dgn.LinkModel ECClass in the specified DgnDb.
     //! @note This is a static method that always returns the DgnClassId of the dgn.LinkModel class - it does @em not return the class of a specific instance.
-    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LinkModel)); }
+    static Dgn::DgnClassId QueryClassId(Dgn::DgnDbCR dgndb) { return Dgn::DgnClassId(dgndb.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LinkModel)); }
 };
 
 //=======================================================================================
 //! LinkElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationElement
+struct EXPORT_VTABLE_ATTRIBUTE LinkElement : InformationContentElement
 {
-    DEFINE_T_SUPER(InformationElement)
+    DEFINE_T_SUPER(InformationContentElement)
 
 protected:
     //! Constructor
@@ -142,7 +144,7 @@ private:
         BeAssert(sourceElementId.IsValid());
 
         Utf8CP ecSqlFmt = "SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX " " \
-            "JOIN " DGN_SCHEMA(DGN_CLASSNAME_Element) " " SOURCE_ECSQL_PREFIX " USING " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " " \
+            "JOIN " BIS_SCHEMA(BIS_CLASS_Element) " " SOURCE_ECSQL_PREFIX " USING " BIS_SCHEMA(BIS_REL_ElementHasLinks) " " \
             "WHERE " SOURCE_ECSQL_PREFIX ".ECInstanceId=?";
 
         Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
@@ -233,7 +235,7 @@ public:
 
         DgnElementIdSet removeLinkIds = QueryBySource(dgndb, sourceElementId);
 
-        Utf8CP ecSqlFmt = "DELETE FROM ONLY " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
+        Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
         Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
@@ -254,7 +256,7 @@ public:
     //! Finds all links that do not have a source specified
     static DgnElementIdSet FindOrphaned(DgnDbCR dgndb)
         {
-        Utf8CP ecSqlFmt = "SELECT link.ECInstanceId FROM ONLY %s.%s link WHERE link.ECInstanceId NOT IN (SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementHasLinks) ")";
+        Utf8CP ecSqlFmt = "SELECT link.ECInstanceId FROM ONLY %s.%s link WHERE link.ECInstanceId NOT IN (SELECT TargetECInstanceId FROM " BIS_SCHEMA(BIS_REL_ElementHasLinks) ")";
         Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
@@ -304,7 +306,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE UrlLink : LinkElement, ILinkElementBase<UrlLink>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_UrlLink, LinkElement)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_UrlLink, LinkElement)
     friend struct dgn_ElementHandler::UrlLinkHandler;
 
 private:
@@ -377,7 +379,19 @@ public:
 
     //! Get the schema name for the UrlLink class
     //! @note This is a static method that always returns the schema name of the dgn.UrlLink class - it does @em not return the schema of a specific instance.
-    static Utf8CP MyECSchemaName() { return DGN_ECSCHEMA_NAME; }
+    static Utf8CP MyECSchemaName() { return BIS_ECSCHEMA_NAME; }
+};
+
+//=======================================================================================
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RepositoryLink : UrlLink
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_RepositoryLink, UrlLink)
+    friend struct dgn_ElementHandler::RepositoryLinkHandler;
+
+protected:
+    explicit RepositoryLink(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -386,7 +400,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLink : LinkElement, ILinkElementBase<EmbeddedFileLink>
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_EmbeddedFileLink, LinkElement)
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, LinkElement)
     friend struct dgn_ElementHandler::EmbeddedFileLinkHandler;
 
 public:
@@ -463,35 +477,37 @@ public:
 
     //! Get the schema name for the UrlLink class
     //! @note This is a static method that always returns the schema name of the dgn.UrlLink class - it does @em not return the schema of a specific instance.
-    static Utf8CP MyECSchemaName() { return DGN_ECSCHEMA_NAME; }
+    static Utf8CP MyECSchemaName() { return BIS_ECSCHEMA_NAME; }
 };
 
 namespace dgn_ModelHandler
 {
-
-//! The ModelHandler for LinkModel
-struct EXPORT_VTABLE_ATTRIBUTE Link : Model
-{
-    MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LinkModel, LinkModel, Link, Model, DGNPLATFORM_EXPORT)
-};
-
+    //! The ModelHandler for LinkModel
+    struct EXPORT_VTABLE_ATTRIBUTE Link : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(BIS_CLASS_LinkModel, LinkModel, Link, Model, DGNPLATFORM_EXPORT)
+    };
 }
 
 namespace dgn_ElementHandler
 {
-//! The handler for UrlLink elements
-struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : Element
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_UrlLink, UrlLink, UrlLinkHandler, Element, DGNPLATFORM_EXPORT)
-};
+    //! The handler for UrlLink elements
+    struct EXPORT_VTABLE_ATTRIBUTE UrlLinkHandler : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_UrlLink, UrlLink, UrlLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+    };
 
-//! The handler for EmbeddedFileLink elements
-struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : Element
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, Element, DGNPLATFORM_EXPORT)
-};
+    //! The handler for EmbeddedFileLink elements
+    struct EXPORT_VTABLE_ATTRIBUTE EmbeddedFileLinkHandler : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_EmbeddedFileLink, EmbeddedFileLink, EmbeddedFileLinkHandler, InformationContent, DGNPLATFORM_EXPORT)
+    };
 
+    //! The handler for RepositoryLink elements
+    struct EXPORT_VTABLE_ATTRIBUTE RepositoryLinkHandler : UrlLinkHandler
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_RepositoryLink, RepositoryLink, RepositoryLinkHandler, UrlLinkHandler, DGNPLATFORM_EXPORT)
+    };
 }
 
 END_BENTLEY_DGN_NAMESPACE
-

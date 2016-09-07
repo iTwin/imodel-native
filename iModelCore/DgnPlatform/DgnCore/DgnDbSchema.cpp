@@ -7,145 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
-
-ECN::ECSchemaPtr s_fakeSchema;
-ECN::ECCustomAttributeClassP s_fakeCustomClass;
-ECN::ECCustomAttributeClassP s_fakeStypeClass;
-static std::map<Utf8String, bmap<Utf8String, bvector<IECInstancePtr>>> s_fakeCAs;
-
-/*---------------------------------------------------------------------------------**//**
-* Create a temporary, in-memory schema that defines a couple of CustomAttributes classes.
-* It's much faster to do it this way than to re-import the entire dgn schema.
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::ECSchemaP getFakeSchema()
-    {
-    if (s_fakeSchema.IsValid())
-        return s_fakeSchema.get();
-
-    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(s_fakeSchema, "CustomPropertyRegistry", 1, 0))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    s_fakeSchema->SetNamespacePrefix("CustomPropertyRegistry");
-
-    auto status = s_fakeSchema->CreateCustomAttributeClass(s_fakeCustomClass, "CustomHandledProperty");
-    if (ECN::ECObjectsStatus::Success != status)
-        {
-        BeAssert(false);
-        s_fakeSchema = nullptr;
-        return nullptr;
-        }
-
-    status = s_fakeSchema->CreateCustomAttributeClass(s_fakeStypeClass, "PropertyStatementType");
-    if (ECN::ECObjectsStatus::Success != status)
-        {
-        BeAssert(false);
-        s_fakeSchema = nullptr;
-        s_fakeStypeClass = nullptr;
-        return nullptr;
-        }
-
-    ECN::PrimitiveECPropertyP stypeProp;
-    status = s_fakeStypeClass->CreatePrimitiveProperty(stypeProp, "StatementTypes");
-    if (ECN::ECObjectsStatus::Success != status)
-        {
-        BeAssert(false);
-        s_fakeSchema = nullptr;
-        s_fakeStypeClass = nullptr;
-        s_fakeStypeClass = nullptr;
-        return nullptr;
-        }
-    stypeProp->SetType(ECN::PrimitiveType::PRIMITIVETYPE_Integer);
-
-    return s_fakeSchema.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* See if the specified (fake) CustomAttribute was registered for the specified property. 
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static ECN::IECInstancePtr getFakeCA(ECN::ECPropertyCR prop, ECN::ECClassCR desiredClass)
-    {
-    if (!s_fakeSchema.IsValid())
-        return nullptr;
-
-    auto iclass = s_fakeCAs.find(prop.GetClass().GetECSqlName());
-    if (iclass == s_fakeCAs.end())
-        return nullptr;
-
-    for (auto const& props: iclass->second)
-        {
-        if (props.first.Equals(prop.GetName()))
-            {
-            for (auto ca: props.second)
-                {
-                if (&ca->GetClass() == &desiredClass)
-                    return ca;
-                }
-            }
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool CustomPropertyRegistry::HasOldDgnSchema(DgnDbR db)
-    {
-    return nullptr == db.Schemas().GetECClass(DGN_ECSCHEMA_NAME, "CustomHandledProperty");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomPropertyRegistry::Register(Utf8CP propName, ECSqlClassParams::StatementType stype)
-    {
-    if (nullptr == getFakeSchema())  // make sure fake schema is created
-        return;
-    BeAssert(nullptr != m_eclass->GetPropertyP(propName, false));
-    auto& cls = s_fakeCAs[m_eclass->GetECSqlName()];
-    auto& prop = cls[propName];
-    prop.push_back(s_fakeCustomClass->GetDefaultStandaloneEnabler()->CreateInstance());
-    if (ECSqlClassParams::StatementType::All != stype)
-        {
-        auto stypePropInstance = s_fakeStypeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        stypePropInstance->SetValue("StatementTypes", ECN::ECValue((int32_t)stype));
-        prop.push_back(stypePropInstance);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void CustomPropertyRegistry::SetClass(DgnDbR db, Utf8CP schemaName, Utf8CP className) 
-    { 
-    SetClass(db.Schemas().GetECClass(schemaName, className));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool AutoHandledPropertiesCollection::HasCustomHandledProperty(ECN::ECPropertyCR prop) const
-    {
-    if (nullptr != m_customHandledProperty)
-        return prop.IsDefined(*m_customHandledProperty);
-
-    return getFakeCA(prop, *s_fakeCustomClass).IsValid();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElement::IsCustomHandledProperty(ECN::ECPropertyCR prop) const
     {
-    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, "CustomHandledProperty");
-    if (nullptr != customHandledProperty)
-        return prop.IsDefined(*customHandledProperty);
+    auto customHandledProperty = GetDgnDb().Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    if (nullptr == customHandledProperty)
+        return false;
 
-    return getFakeCA(prop, *s_fakeCustomClass).IsValid();
+    return prop.IsDefined(*customHandledProperty);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,16 +62,8 @@ AutoHandledPropertiesCollection::AutoHandledPropertiesCollection(ECN::ECClassCR 
         printf("%s\n", eclass.GetName().c_str());
         printf("---------------------------\n");
     #endif
-    m_customHandledProperty = db.Schemas().GetECClass("dgn", "CustomHandledProperty");
-    m_propertyStatementType = db.Schemas().GetECClass("dgn", "PropertyStatementType");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isBuiltInProperty(Utf8StringCR propName)
-    {
-    return propName.Equals("ECInstanceId");
+    m_customHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+    m_autoHandledProperty = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, "AutoHandledProperty");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,46 +84,48 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
                 for (auto caprop : ca->GetClass().GetProperties())
                     {
                     ECN::ECValue v;
-                    ca->GetValue(v, caprop->GetName().c_str());
-                    printf ("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                    if (ECN::ECObjectsStatus::Success == ca->GetValue(v, caprop->GetName().c_str()) && !v.IsNull())
+                        printf("\t\t%s %s\n", caprop->GetName().c_str(), v.ToString().c_str());
+                    else
+                        printf ("\t\t%s (missing)\n", caprop->GetName().c_str());
                     }
                 }
         #endif
         
-        bool isCustom = m_coll.HasCustomHandledProperty(*prop) || isBuiltInProperty(prop->GetName());
+        // Auto-handling is the default. Custom-handling is opt-in. A property must have the CustomHandledProperty CA in order to be custom-handled.
+        ECN::IECInstancePtr ca = prop->GetCustomAttribute(*m_coll.m_customHandledProperty);
+
+        bool isCustom = ca.IsValid();
+
         if (isCustom != m_coll.m_wantCustomHandledProps)
             {
             ++m_i;
             continue;
             }
 
-        m_stype = m_coll.GetStatementType(*prop);
-        if (0 != ((int32_t)m_stype & (int32_t)m_coll.m_stype))
+        if (!m_coll.m_wantCustomHandledProps)
+            {
+            // A property *may* have an AutoHandledProperty CA, if it wants to specify a statement type.
+            ca = prop->GetCustomAttribute(*m_coll.m_autoHandledProperty);
+            }
+
+        int32_t stype = (int32_t)ECSqlClassParams::StatementType::All;
+        if (ca.IsValid())
+            {
+            ECN::ECValue v;
+            if (ECN::ECObjectsStatus::Success == ca->GetValue(v, "StatementTypes") && !v.IsNull())
+                stype = v.GetInteger();
+            }
+
+        m_stype = (ECSqlClassParams::StatementType)(stype);
+
+        if (0 != (stype & (int32_t)m_coll.m_stype))
             {
             return; // yes, this property is for the requested statement type
             }
 
         ++m_i;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      07/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlClassParams::StatementType AutoHandledPropertiesCollection::GetStatementType(ECN::ECPropertyCR prop) const
-    {
-    ECN::IECInstancePtr stype;
-    if (m_propertyStatementType != nullptr)
-        stype = prop.GetCustomAttribute(*m_propertyStatementType);
-    else
-        stype = getFakeCA(prop, *s_fakeStypeClass);
-
-    if (!stype.IsValid())
-        return ECSqlClassParams::StatementType::All;    // default = all statement types
-
-    ECN::ECValue v;
-    stype->GetValue(v, "StatementTypes");
-    return (ECSqlClassParams::StatementType)(v.GetInteger());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -274,7 +139,7 @@ static DgnVersion getCurrentSchemaVerion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void importDgnSchema(DgnDbR db)
+static void importBisCoreSchema(DgnDbR db)
     {
     ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
     ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());
@@ -290,9 +155,9 @@ static void importDgnSchema(DgnDbR db)
     standardSchemaPath.AppendToPath(L"Standard");
     ecSchemaContext->AddSchemaPath(standardSchemaPath);
 
-    SchemaKey dgnschemaKey("dgn", 2, 0);
-    ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
-    BeAssert(dgnschema != NULL);
+    SchemaKey bisCoreSchemaKey("BisCore", 1, 0);
+    ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
+    BeAssert(bisCoreSchema != NULL);
 
     BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache());
     BeAssert(status == SUCCESS);
@@ -308,14 +173,15 @@ static void importDgnSchema(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCode const& modelCode)
+static DbResult insertIntoDgnModel(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnElementId modeledElementId, DgnCodeCR modelCode)
     {
-    Statement stmt(db, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Code_Value,Label,ECClassId,Visibility,Code_AuthorityId,Code_Namespace) VALUES(?,?,'',?,0,?,?)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Visibility) VALUES(?,?,?,?,?,?,'',0)");
     stmt.BindId(1, modelId);
-    stmt.BindText(2, modelCode.GetValueCP(), Statement::MakeCopy::No);
-    stmt.BindId(3, classId);
+    stmt.BindId(2, classId);
+    stmt.BindId(3, modeledElementId);
     stmt.BindId(4, modelCode.GetAuthority());
     stmt.BindText(5, modelCode.GetNamespace().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(6, modelCode.GetValueCP(), Statement::MakeCopy::No);
 
     auto result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -329,8 +195,8 @@ DbResult DgnDb::CreateDictionaryModel()
     {
     DgnModelId modelId = DgnModel::DictionaryId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Dictionary::GetHandler());
-    DgnCode modelCode = DgnModel::CreateModelCode("Dictionary", DGN_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    DgnCode modelCode = DgnModel::CreateModelCode("Dictionary", BIS_ECSCHEMA_NAME);
+    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,14 +206,65 @@ DbResult DgnDb::CreateGroupInformationModel()
     {
     DgnModelId modelId = DgnModel::GroupInformationId();
     DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::GroupInformation::GetHandler());
-    DgnCode modelCode = DgnModel::CreateModelCode("GroupInformation", DGN_ECSCHEMA_NAME);
-    return insertIntoDgnModel(*this, modelId, classId, modelCode);
+    DgnCode modelCode = DgnModel::CreateModelCode("GroupInformation", BIS_ECSCHEMA_NAME);
+    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRepositoryModel()
+    {
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    DgnClassId classId = Domains().GetClassId(dgn_ModelHandler::Repository::GetHandler());
+    DgnCode modelCode = DgnModel::CreateModelCode(BIS_CLASS_RepositoryModel, BIS_ECSCHEMA_NAME);
+    return insertIntoDgnModel(*this, modelId, classId, Elements().GetRootSubjectId(), modelCode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult insertIntoDgnElement(DgnDbR db, DgnElementId elementId, DgnClassId classId, DgnModelId modelId, DgnCodeCR elementCode, Utf8CP label)
+    {
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Element) " (Id,ECClassId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?,?)");
+    stmt.BindId(1, elementId);
+    stmt.BindId(2, classId);
+    stmt.BindId(3, modelId);
+    stmt.BindId(4, elementCode.GetAuthority());
+    stmt.BindText(5, elementCode.GetNamespace().c_str(), Statement::MakeCopy::No);
+    stmt.BindText(6, elementCode.GetValueCP(), Statement::MakeCopy::No);
+    stmt.BindText(7, label, Statement::MakeCopy::No);
+    DbResult result = stmt.Step();
+    BeAssert(BE_SQLITE_DONE == result);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
+    {
+    DgnElementId elementId = Elements().GetRootSubjectId();
+    DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    return insertIntoDgnElement(*this, elementId, classId, modelId, DgnCode::CreateEmpty(), params.m_name.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRepositoryLink(CreateDgnDbParams const& params)
+    {
+    DgnElementId elementId = Elements().GetRepositoryLinkId();
+    DgnClassId classId = Domains().GetClassId(dgn_ElementHandler::RepositoryLinkHandler::GetHandler());
+    DgnModelId modelId = DgnModel::RepositoryModelId();
+    return insertIntoDgnElement(*this, elementId, classId, modelId, DgnCode::CreateEmpty(), params.m_name.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateDgnDbTables()
+DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     {
     CreateTable(DGN_TABLE_Domain,   "[Name] TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY,"
                                     "[Descr] TEXT,"
@@ -370,43 +287,48 @@ DbResult DgnDb::CreateDgnDbTables()
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_SpatialIndex " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
-    importDgnSchema(*this);
+    importBisCoreSchema(*this);
 
     // Every DgnDb has a few built-in authorities for element codes
     CreateAuthorities();
 
-    // Every DgnDb has a DictionaryModel and a default GroupInformationModel
+    // Every DgnDb has a RepositoryModel, a DictionaryModel, and a default GroupInformationModel
+    ExecuteSql("PRAGMA defer_foreign_keys = true;"); // the RepositoryModel and primary Subject have foreign keys to each other
+    CreateRepositoryModel();
+    CreateRootSubject(params);
+    ExecuteSql("PRAGMA defer_foreign_keys = false;");
+    CreateRepositoryLink(params);
     CreateDictionaryModel();
     CreateGroupInformationModel();
 
     // The Generic domain is used when a conversion process doesn't have enough information to pick something better
-    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this, DgnDomain::ImportSchemaOptions::ImportOnly)) // Let an upper layer decide whether or not to create ECClassViews
+    if (DgnDbStatus::Success != GenericDomain::ImportSchema(*this))
         {
         BeAssert(false);
         return BE_SQLITE_NOTFOUND;
         }
 
-    ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d)
+    ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d)
                " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=old.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd AFTER UPDATE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                "BEGIN INSERT OR REPLACE INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_upd1 AFTER UPDATE ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                 " WHEN OLD.Origin_X IS NOT NULL AND NEW.Origin_X IS NULL"
                 " BEGIN DELETE FROM " DGN_VTABLE_SpatialIndex " WHERE ElementId=OLD.ElementId;END");
 
-    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " DGN_TABLE(DGN_CLASSNAME_GeometricElement3d) 
+    ExecuteSql("CREATE TRIGGER dgn_rtree_ins AFTER INSERT ON " BIS_TABLE(BIS_CLASS_GeometricElement3d) 
                " WHEN new.Origin_X IS NOT NULL AND " GEOM_IN_SPATIAL_INDEX_CLAUSE
                "BEGIN INSERT INTO " DGN_VTABLE_SpatialIndex "(ElementId,minx,maxx,miny,maxy,minz,maxz) SELECT new.ElementId,"
                "DGN_bbox_value(bb,0),DGN_bbox_value(bb,3),DGN_bbox_value(bb,1),DGN_bbox_value(bb,4),DGN_bbox_value(bb,2),DGN_bbox_value(bb,5)"
                " FROM (SELECT " AABB_FROM_PLACEMENT " as bb);END");
 
 #ifdef NEEDSWORK_VIEW_SETTINGS_TRIGGER
-    ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
+    ExecuteSql("CREATE TRIGGER delete_viewProps AFTER DELETE ON " BIS_TABLE(BIS_CLASS_View) " BEGIN DELETE FROM " BEDB_TABLE_Property
                " WHERE Namespace=\"" PROPERTY_APPNAME_DgnView "\" AND Id=OLD.Id;END");
 #endif
 

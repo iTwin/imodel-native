@@ -86,7 +86,7 @@ DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the 
 local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class
 called DgnDomains, which is accessed through the method DgnDb::Domains().
 
-The DgnDomain for the base "dgn" schema is is called DgnBaseDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
+The DgnDomain for the base "dgn" schema is called BisCoreDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
 
 */
 
@@ -110,14 +110,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
     //! The current version of the HandlerAPI
     enum {API_VERSION = 1};
-
-    //! Options for ImportSchema
-    //! @see ImportSchema
-    enum class ImportSchemaOptions
-        {
-        ImportOnly = 0,                 //!< No additional processing, only import. For example, don't create ECClassViews. Used when known that ImportSchema will be called multiple times
-        CreateECClassViews = 1 << 0,    //!< Create ECClassViews after importing schema
-        };
 
     struct Handler;
 
@@ -386,17 +378,14 @@ public:
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
-    //! @param[in] options Optional parameter for controlling additional processing
     //! @see ECDbSchemaManager::CreateECClassViewsInDb
-    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName, ImportSchemaOptions options=ImportSchemaOptions::CreateECClassViews) const;
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
 
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaCache The ECSchemaCache containing the schema to import
     DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, ECN::ECSchemaCacheR schemaCache) const;
 };
-
-ENUM_IS_FLAGS(DgnDomain::ImportSchemaOptions);
 
 //=======================================================================================
 //! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific
@@ -464,15 +453,14 @@ public:
 //! @ingroup GROUP_DgnDomain
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct DgnBaseDomain : DgnDomain
+struct BisCoreDomain : DgnDomain
 {
-    DOMAIN_DECLARE_MEMBERS(DgnBaseDomain,DGNPLATFORM_EXPORT)
+    DOMAIN_DECLARE_MEMBERS(BisCoreDomain,DGNPLATFORM_EXPORT)
 
     void _OnDgnDbOpened(DgnDbR db) const override;
-    void AddMissingCustomAttributes(DgnDbR) const;
 
 public:
-    DgnBaseDomain();
+    BisCoreDomain();
 };
 
 END_BENTLEY_DGN_NAMESPACE

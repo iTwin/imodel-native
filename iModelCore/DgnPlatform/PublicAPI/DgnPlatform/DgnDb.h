@@ -53,9 +53,9 @@ public:
     BeFileName      m_seedDb;
     BeSQLite::BeGuid m_guid;
 
-    //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid is created.
+    //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
-    CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
+    CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
 
     //! Set the value to be stored as the ProjectName property in the new DgnDb created using this CreateDgnDbParams/
     //! @note This value is stored as a property in the project. It does *not* refer to a file name.
@@ -144,8 +144,11 @@ protected:
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateDgnDbTables();
+    BeSQLite::DbResult CreateDgnDbTables(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateAuthorities();
+    BeSQLite::DbResult CreateRepositoryModel();
+    BeSQLite::DbResult CreateRootSubject(CreateDgnDbParams const& params);
+    BeSQLite::DbResult CreateRepositoryLink(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateDictionaryModel();
     BeSQLite::DbResult CreateGroupInformationModel();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);

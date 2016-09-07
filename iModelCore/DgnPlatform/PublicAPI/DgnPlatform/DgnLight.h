@@ -12,7 +12,7 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 
-#define DGN_CLASSNAME_LightDefinition "LightDefinition"
+#define BIS_CLASS_LightDefinition "LightDefinition"
 
 DGNPLATFORM_TYPEDEFS(LightDefinition);
 DGNPLATFORM_REF_COUNTED_PTR(LightDefinition);
@@ -24,7 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LightDefinition : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_LightDefinition, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LightDefinition, DefinitionElement);
 public:
     //! Holds the data which describes a light definition
     struct Data
@@ -91,7 +91,7 @@ public:
     void SetValue(Utf8StringCR value) { m_data.m_value = value; } //!< Set the light data as a JSON string
     void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Set the description of this light definition
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_LightDefinition); } //!< Returns the class ID used for light definitions
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LightDefinition); } //!< Returns the class ID used for light definitions
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Return the class ID used for light definitions
 
     //! Insert this light definition into the DgnDb and return the persistent light definition
@@ -101,7 +101,7 @@ public:
     LightDefinitionCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<LightDefinition>(*this, status); }
 
     //! Creates a DgnCode for a light definition.
-    static DgnCode CreateLightDefinitionCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, DGN_CLASSNAME_ViewDefinition); }
+    static DgnCode CreateLightDefinitionCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition); }
 
     //! Looks up the ID of the light definition with the specified code.
     DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnCode const& code, DgnDbR db);
@@ -119,9 +119,9 @@ namespace dgn_ElementHandler
     //! The handler for light definition elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct LightDef : Element
+    struct LightDef : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_LightDefinition, LightDefinition, LightDef, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_LightDefinition, LightDefinition, LightDef, Definition, DGNPLATFORM_EXPORT);
     };
 }
 

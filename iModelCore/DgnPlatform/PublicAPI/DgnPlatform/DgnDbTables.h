@@ -8,83 +8,100 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#define DGN_ECSCHEMA_NAME "dgn"
-#define DGN_TABLE_PREFIX  DGN_ECSCHEMA_NAME "_"
-#define DGN_SCHEMA(name)  DGN_ECSCHEMA_NAME "." name
-#define DGN_TABLE(name)   DGN_TABLE_PREFIX name
+//-----------------------------------------------------------------------------------------
+// Macros associated with the BisCore ECSchema
+//-----------------------------------------------------------------------------------------
+#define BIS_ECSCHEMA_NAME   "BisCore"
+#define BIS_SCHEMA(name)    BIS_ECSCHEMA_NAME "." name
+#define BIS_TABLE(name)     "bis_" name
 
 //-----------------------------------------------------------------------------------------
-// ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
+// ECClass names (combine with BIS_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define DGN_CLASSNAME_AnnotationFrameStyle  "AnnotationFrameStyle"
-#define DGN_CLASSNAME_AnnotationLeaderStyle "AnnotationLeaderStyle"
-#define DGN_CLASSNAME_AnnotationTextStyle   "AnnotationTextStyle"
-#define DGN_CLASSNAME_Authority             "Authority"
-#define DGN_CLASSNAME_CategoryAuthority     "CategoryAuthority"
-#define DGN_CLASSNAME_ComponentAuthority    "ComponentAuthority"
-#define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#define DGN_CLASSNAME_DefinitionElement     "DefinitionElement"
-#define DGN_CLASSNAME_DefinitionModel       "DefinitionModel"
-#define DGN_CLASSNAME_DictionaryModel       "DictionaryModel"
-#define DGN_CLASSNAME_AnnotationElement2d   "AnnotationElement2d"
-#define DGN_CLASSNAME_DrawingGraphic        "DrawingGraphic"
-#define DGN_CLASSNAME_DrawingModel          "DrawingModel"
-#define DGN_CLASSNAME_Element               "Element"
-#define DGN_CLASSNAME_ElementAspect         "ElementAspect"
-#define DGN_CLASSNAME_ElementExternalKey    "ElementExternalKey"
-#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
-#define DGN_CLASSNAME_FunctionalElement     "FunctionalElement"
-#define DGN_CLASSNAME_FunctionalModel       "FunctionalModel"
-#define DGN_CLASSNAME_GeometricElement2d    "GeometricElement2d"
-#define DGN_CLASSNAME_GeometricElement3d    "GeometricElement3d"
-#define DGN_CLASSNAME_GeometricModel        "GeometricModel"
-#define DGN_CLASSNAME_GeometricModel2d      "GeometricModel2d"
-#define DGN_CLASSNAME_GeometricModel3d      "GeometricModel3d"
-#define DGN_CLASSNAME_GeometryPart          "GeometryPart"
-#define DGN_CLASSNAME_GeometryPartAuthority "GeometryPartAuthority"
-#define DGN_CLASSNAME_GraphicalElement2d    "GraphicalElement2d"
-#define DGN_CLASSNAME_GraphicalElement3d    "GraphicalElement3d"
-#define DGN_CLASSNAME_GraphicalModel2d      "GraphicalModel2d"
-#define DGN_CLASSNAME_GroupInformationModel "GroupInformationModel"
-#define DGN_CLASSNAME_LineStyle             "LineStyle"
-#define DGN_CLASSNAME_LocalAuthority        "LocalAuthority"
-#define DGN_CLASSNAME_MaterialAuthority     "MaterialAuthority"
-#define DGN_CLASSNAME_Model                 "Model"
-#define DGN_CLASSNAME_ModelAuthority        "ModelAuthority"
-#define DGN_CLASSNAME_VolumeElement         "VolumeElement"
-#define DGN_CLASSNAME_NamespaceAuthority    "NamespaceAuthority"
-#define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
-#define DGN_CLASSNAME_ResourceAuthority     "ResourceAuthority"
-#define DGN_CLASSNAME_SpatialModel          "SpatialModel"
-#define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
-#define DGN_CLASSNAME_SheetModel            "SheetModel"
-#define DGN_CLASSNAME_SpatialElement        "SpatialElement"
-#define DGN_CLASSNAME_SpatialIndex          "SpatialIndex"
-#define DGN_CLASSNAME_TextAnnotationSeed    "TextAnnotationSeed"
-#define DGN_CLASSNAME_Texture               "Texture"
-#define DGN_CLASSNAME_TrueColor             "TrueColor"
-#define DGN_CLASSNAME_TrueColorAuthority    "TrueColorAuthority"
+#define BIS_CLASS_AnnotationFrameStyle      "AnnotationFrameStyle"
+#define BIS_CLASS_AnnotationLeaderStyle     "AnnotationLeaderStyle"
+#define BIS_CLASS_AnnotationTextStyle       "AnnotationTextStyle"
+#define BIS_CLASS_Authority                 "Authority"
+#define BIS_CLASS_CategoryAuthority         "CategoryAuthority"
+#define BIS_CLASS_ComponentAuthority        "ComponentAuthority"
+#define BIS_CLASS_ComponentModel            "ComponentModel"
+#define BIS_CLASS_DefinitionElement         "DefinitionElement"
+#define BIS_CLASS_DefinitionModel           "DefinitionModel"
+#define BIS_CLASS_DictionaryModel           "DictionaryModel"
+#define BIS_CLASS_Document                  "Document"
+#define BIS_CLASS_AnnotationElement2d       "AnnotationElement2d"
+#define BIS_CLASS_Drawing                   "Drawing"
+#define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
+#define BIS_CLASS_DrawingModel              "DrawingModel"
+#define BIS_CLASS_Element                   "Element"
+#define BIS_CLASS_ElementAspect             "ElementAspect"
+#define BIS_CLASS_ElementExternalKey        "ElementExternalKey"
+#define BIS_CLASS_ElementMultiAspect        "ElementMultiAspect"
+#define BIS_CLASS_ElementUniqueAspect       "ElementUniqueAspect"
+#define BIS_CLASS_GeometricElement2d        "GeometricElement2d"
+#define BIS_CLASS_GeometricElement3d        "GeometricElement3d"
+#define BIS_CLASS_GeometricModel            "GeometricModel"
+#define BIS_CLASS_GeometricModel2d          "GeometricModel2d"
+#define BIS_CLASS_GeometricModel3d          "GeometricModel3d"
+#define BIS_CLASS_GeometryPart              "GeometryPart"
+#define BIS_CLASS_GeometryPartAuthority     "GeometryPartAuthority"
+#define BIS_CLASS_GraphicalElement2d        "GraphicalElement2d"
+#define BIS_CLASS_GraphicalElement3d        "GraphicalElement3d"
+#define BIS_CLASS_GraphicalModel2d          "GraphicalModel2d"
+#define BIS_CLASS_GroupInformationModel     "GroupInformationModel"
+#define BIS_CLASS_InformationCarrierElement "InformationCarrierElement"
+#define BIS_CLASS_InformationContentElement "InformationContentElement"
+#define BIS_CLASS_LineStyle                 "LineStyle"
+#define BIS_CLASS_LocalAuthority            "LocalAuthority"
+#define BIS_CLASS_MaterialAuthority         "MaterialAuthority"
+#define BIS_CLASS_Model                     "Model"
+#define BIS_CLASS_ModelAuthority            "ModelAuthority"
+#define BIS_CLASS_VolumeElement             "VolumeElement"
+#define BIS_CLASS_NamespaceAuthority        "NamespaceAuthority"
+#define BIS_CLASS_PhysicalElement           "PhysicalElement"
+#define BIS_CLASS_PhysicalModel             "PhysicalModel"
+#define BIS_CLASS_PhysicalType              "PhysicalType"
+#define BIS_CLASS_RepositoryModel           "RepositoryModel"
+#define BIS_CLASS_ResourceAuthority         "ResourceAuthority"
+#define BIS_CLASS_SpatialLocationElement    "SpatialLocationElement"
+#define BIS_CLASS_SpatialModel              "SpatialModel"
+#define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
+#define BIS_CLASS_Sheet                     "Sheet"
+#define BIS_CLASS_SheetModel                "SheetModel"
+#define BIS_CLASS_SpatialElement            "SpatialElement"
+#define BIS_CLASS_SpatialIndex              "SpatialIndex"
+#define BIS_CLASS_Subject                   "Subject"
+#define BIS_CLASS_TextAnnotationSeed        "TextAnnotationSeed"
+#define BIS_CLASS_Texture                   "Texture"
+#define BIS_CLASS_TrueColor                 "TrueColor"
+#define BIS_CLASS_TrueColorAuthority        "TrueColorAuthority"
+
+//-----------------------------------------------------------------------------------------
+// ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)
+//-----------------------------------------------------------------------------------------
+#define BIS_REL_ElementDrivesElement        "ElementDrivesElement"
+#define BIS_REL_ElementUsesGeometryParts    "ElementUsesGeometryParts"
+#define BIS_REL_ElementGroupsMembers        "ElementGroupsMembers"
+#define BIS_REL_ElementOwnsChildElements    "ElementOwnsChildElements"
+#define BIS_REL_ElementOwnsUniqueAspect     "ElementOwnsUniqueAspect"
+#define BIS_REL_ElementOwnsMultiAspects     "ElementOwnsMultiAspects"
+#define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
+#define BIS_REL_ModelContainsElements       "ModelContainsElements"
+#define BIS_REL_SolutionOfComponent         "SolutionOfComponent"
+#define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
+#define BIS_REL_ModelDrivesModel            "ModelDrivesModel"
+#define BIS_REL_CategorySelectorRefersToCategories "CategorySelectorRefersToCategories"
+#define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
+#define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain                    DGN_TABLE("Domain")
-#define DGN_TABLE_Font                      DGN_TABLE("Font")
-#define DGN_TABLE_Handler                   DGN_TABLE("Handler")
-#define DGN_TABLE_Txns                      DGN_TABLE("Txns")
-#define DGN_VTABLE_SpatialIndex             DGN_TABLE(DGN_CLASSNAME_SpatialIndex)
-
-//-----------------------------------------------------------------------------------------
-// ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
-//-----------------------------------------------------------------------------------------
-#define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementUsesGeometryParts    "ElementUsesGeometryParts"
-#define DGN_RELNAME_ElementGroupsMembers        "ElementGroupsMembers"
-#define DGN_RELNAME_ElementOwnsChildElements    "ElementOwnsChildElements"
-#define DGN_RELNAME_ModelContainsElements       "ModelContainsElements"
-#define DGN_RELNAME_SolutionOfComponent         "SolutionOfComponent"
-#define DGN_RELNAME_InstantiationOfTemplate     "InstantiationOfTemplate"
-#define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
+#define DGN_TABLE_Domain                    "dgn_Domain"
+#define DGN_TABLE_Font                      "dgn_Font"
+#define DGN_TABLE_Handler                   "dgn_Handler"
+#define DGN_TABLE_Txns                      "dgn_Txns"
+#define DGN_VTABLE_SpatialIndex             "dgn_" BIS_CLASS_SpatialIndex
 
 #include <DgnPlatform/DgnProperties.h>
 #include "UnitDefinition.h"
@@ -287,26 +304,29 @@ public:
     private:
         DgnModelId m_id;
         DgnClassId m_classId;
+        DgnElementId m_modeledElementId;
         DgnCode m_code;
-        Utf8String m_label;
+        Utf8String m_userLabel;
         bool m_inGuiList = true;
 
     public:
         Model() {}
-        Model(DgnCode code, DgnClassId classid, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
+        Model(DgnCode code, DgnClassId classid, DgnElementId modeledElementId, DgnModelId id=DgnModelId()) : m_id(id), m_classId(classid), m_code(code) {}
 
         void SetCode(DgnCode code) {m_code = code;}
-        void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+        void SetUserLabel(Utf8CP userLabel) {m_userLabel.AssignOrClear(userLabel);}
         void SetInGuiList(bool inGuiList) {m_inGuiList = inGuiList;}
         void SetId(DgnModelId id) {m_id = id;}
         void SetClassId(DgnClassId classId) {m_classId = classId;}
+        void SetModeledElementId(DgnElementId modeledElementId) {m_modeledElementId = modeledElementId;}
         void SetModelType(DgnClassId classId) {m_classId = classId;}
 
         DgnCode const& GetCode() const {return m_code;}
-        Utf8CP GetLabel() const {return m_label.c_str();}
+        Utf8CP GetUserLabel() const {return m_userLabel.c_str();}
         bool GetInGuiList() const {return m_inGuiList;}
         DgnModelId GetId() const {return m_id;}
         DgnClassId GetClassId() const {return m_classId;}
+        DgnElementId GetModeledElementId() const {return m_modeledElementId;}
     }; // Model
 
     struct Iterator : BeSQLite::DbTableIterator
@@ -328,9 +348,10 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetCodeNamespace() const;
             DGNPLATFORM_EXPORT DgnAuthorityId GetCodeAuthorityId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetLabel() const;
+            DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT bool GetInGuiList() const;
+            DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
 
             Entry const& operator*() const {return *this;}
         };

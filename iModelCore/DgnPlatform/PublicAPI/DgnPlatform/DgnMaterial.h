@@ -14,7 +14,7 @@
 #include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
-#define DGN_CLASSNAME_MaterialElement "MaterialElement"
+#define BIS_CLASS_MaterialElement "MaterialElement"
 
 // JSon  Material Asset Keywords.
 #define MATERIAL_ASSET_Rendering "RenderMaterial"
@@ -32,7 +32,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnMaterial : DefinitionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DefinitionElement);
 public:
     //! Holds the data which describe a material
     struct Data
@@ -116,7 +116,7 @@ public:
     void SetValue(Utf8StringCR value) { m_data.m_value = value; } //!< Sets the material data as a JSON string
     void SetDescr(Utf8StringCR descr) { m_data.m_descr = descr; } //!< Sets the material description
 
-    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_MaterialElement); } //!< Returns the class ID used for material elements.
+    static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_MaterialElement); } //!< Returns the class ID used for material elements.
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); } //!< Returns the class ID used for material elements.
     static ECN::ECClassCP QueryECClass(DgnDbR db) { return db.Schemas().GetECClass(QueryECClassId(db)); } //!< Looks up the ECClass used for material elements.
 
@@ -216,9 +216,9 @@ namespace dgn_ElementHandler
     //! The handler for material elements.
     //! @bsistruct                                                  Paul.Connelly   09/15
     //=======================================================================================
-    struct Material : Element
+    struct Material : Definition
     {
-        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_MaterialElement, DgnMaterial, Material, Element, DGNPLATFORM_EXPORT);
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DgnMaterial, Material, Definition, DGNPLATFORM_EXPORT);
     };
 }
 
