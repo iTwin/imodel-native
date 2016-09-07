@@ -132,12 +132,12 @@
     </Part>
     
     <Part Name="S3MXRequiredNuget" BentleyBuildMakeFile="S3MXECPlugin.prewire.mke">
-        <RequiredRepository>Microsoft.Azure.KeyVault.Core</RequiredRepository>
-        <RequiredRepository>Microsoft.Data.Edm</RequiredRepository>
-        <RequiredRepository>Microsoft.Data.OData</RequiredRepository>
-        <RequiredRepository>Microsoft.Data.Services.Client</RequiredRepository>
-        <RequiredRepository>System.Spatial</RequiredRepository>
-        <RequiredRepository>WindowsAzure.Storage</RequiredRepository>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Azure.KeyVault.Core</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Edm</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.OData</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Microsoft.Data.Services.Client</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">System.Spatial</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.Storage</NuGetPackage>
     </Part>
     
     <Part Name="S3MXECPlugin" BMakeFile="S3MXECPlugin\S3MXECPlugin.mke" OnlyPlatforms="x86,x64">
