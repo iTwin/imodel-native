@@ -320,13 +320,22 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)
+                {
+                assert(false); // problem initializing a datasource
                 return 0;
+                }
 
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                assert(false); // problem opening a datasource
                 return 0;
+                }
 
             if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                {
+                assert(false); // problem reading a datasource
                 return 0;
+                }
 
             dataSource->close();
 

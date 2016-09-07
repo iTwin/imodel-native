@@ -785,7 +785,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         }
                     else
                         {
-                        streamingSourcePath += path.GetDirectoryName();
+                        streamingSourcePath = path.GetDirectoryName();
                         streamingSourcePath += L"cloud\\";
                         streamingSourcePath += datasetName;
                         }
