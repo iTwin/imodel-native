@@ -1459,7 +1459,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nat
     nativeSql.AppendParenRight(); //function arg list parent
 
     if (exp.HasParentheses())
-        nativeSql.AppendParenLeft();
+        nativeSql.AppendParenRight();
 
     nativeSqlSnippets.push_back(move(nativeSql));
     return ECSqlStatus::Success;
