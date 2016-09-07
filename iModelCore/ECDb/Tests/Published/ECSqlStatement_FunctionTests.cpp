@@ -177,4 +177,77 @@ TEST_F(ECSqlStatementTestFixture, FunctionCallWithDistinct)
     ASSERT_STREQ("1,2,3", getStringScalar(ecdb, "SELECT group_concat(DISTINCT S) from ecsql.P").c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 05/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InVirtualSetFunction)
+    {
+    const int perClassRowCount = 10;
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount);
+
+    bvector<ECInstanceId> allIds;
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA"));
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        allIds.push_back(statement.GetValueId<ECInstanceId>(0));
+        }
+    ASSERT_EQ(perClassRowCount, (int) allIds.size());
+    }
+
+    ECInstanceIdSet idSet;
+    ASSERT_TRUE(0 < perClassRowCount);
+    idSet.insert(allIds[0]);
+    ASSERT_TRUE(4 < perClassRowCount);
+    idSet.insert(allIds[4]);
+    ASSERT_TRUE(6 < perClassRowCount);
+    idSet.insert(allIds[6]);
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE I<>? AND InVirtualSet(?, ECInstanceId)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+
+    statement.Reset();
+    statement.ClearBindings();
+
+    idSet.clear();
+    ASSERT_TRUE(1 < perClassRowCount);
+    idSet.insert(allIds[1]);
+    ASSERT_TRUE(3 < perClassRowCount);
+    idSet.insert(allIds[3]);
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindInt(1, 0));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(2, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0));
+
+    //now same statement but with InVirtualSet in parentheses
+    statement.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE (InVirtualSet(?, ECInstanceId))"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
+    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
+
+    statement.Reset();
+    statement.ClearBindings();
+
+    idSet.clear();
+    ASSERT_TRUE(1 < perClassRowCount);
+    idSet.insert(allIds[1]);
+    ASSERT_TRUE(3 < perClassRowCount);
+    idSet.insert(allIds[3]);
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindVirtualSet(1, idSet));
+
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << "Step with binding a virtual set in parentheses";
+    ASSERT_EQ((int) idSet.size(), statement.GetValueInt(0)) << "Step with binding a virtual set in parentheses";
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

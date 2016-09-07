@@ -145,15 +145,15 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
         //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
         //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
             case ResolveSchema::BySchemaName:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
                 break;
 
             case ResolveSchema::BySchemaAlias:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Alias=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE s.Alias=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
                 break;
 
             default:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 COLLATE NOCASE OR s.Alias=?1 COLLATE NOCASE) AND c.Name=?2 COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s ON c.SchemaId = s.Id WHERE (s.Name=?1 COLLATE NOCASE OR s.Alias=?1 COLLATE NOCASE) AND c.Name=?2 COLLATE NOCASE";
                 break;
         }
 
