@@ -39,9 +39,7 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, ECSchemaCR ecSc
 //---------------------------------------------------------------------------------------
 ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaName)
     {
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
         return ECSchemaId();
 
@@ -58,9 +56,7 @@ ECSchemaId ECDbSchemaPersistenceHelper::GetECSchemaId(ECDbCR db, Utf8CP schemaNa
 //---------------------------------------------------------------------------------------
 bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
     {
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
         return false;
 
@@ -79,9 +75,7 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKey(SchemaKey& key, ECDbCR ecdb,
 //---------------------------------------------------------------------------------------
 bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
     {
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=? COLLATE NOCASE");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
         return false;
 
@@ -102,9 +96,7 @@ bool ECDbSchemaPersistenceHelper::TryGetECSchemaKeyAndId(SchemaKey& key, ECSchem
 bool ECDbSchemaPersistenceHelper::ContainsECSchemaWithAlias(ECDbCR db, Utf8CP alias)
     {
     CachedStatementPtr stmt = nullptr;
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Alias=? COLLATE NOCASE"))
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Alias=?"))
         return false;
 
     stmt->BindText(1, alias, Statement::MakeCopy::No);
@@ -142,18 +134,16 @@ ECClassId ECDbSchemaPersistenceHelper::GetECClassId(ECDbCR db, Utf8CP schemaName
     Utf8CP sql = nullptr;
     switch (resolveSchema)
         {
-        //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-        //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
             case ResolveSchema::BySchemaName:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? AND c.Name=?";
                 break;
 
             case ResolveSchema::BySchemaAlias:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Alias=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Alias=? AND c.Name=?";
                 break;
 
             default:
-                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 COLLATE NOCASE OR s.Alias=?1 COLLATE NOCASE) AND c.Name=?2 COLLATE NOCASE";
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 OR s.Alias=?1) AND c.Name=?2";
                 break;
         }
 
@@ -196,9 +186,7 @@ ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, ECE
 //---------------------------------------------------------------------------------------
 ECEnumerationId ECDbSchemaPersistenceHelper::GetECEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
     {
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? COLLATE NOCASE AND e.Name=? COLLATE NOCASE");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? AND e.Name=?");
     if (stmt == nullptr)
         return ECEnumerationId();
 
@@ -239,10 +227,7 @@ KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, K
 //static
 KindOfQuantityId ECDbSchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP koqName)
     {
-    //Although the ec_Schema column 'Name' used in the WHERE has COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added. This is not necessary
-    //for the KOQ table which was added later
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? COLLATE NOCASE AND koq.Name=?");
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? AND koq.Name=?");
     if (stmt == nullptr)
         return KindOfQuantityId();
 
@@ -282,9 +267,7 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR ecdb, ECPropert
 //---------------------------------------------------------------------------------------
 ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
     {
-    //Although the columns used in the WHERE have COLLATE NOCASE we need to specify it in the WHERE clause again
-    //to satisfy older files which were created before column COLLATE NOCASE was added to the ECDb profile tables.
-    CachedStatementPtr stmt = db.GetCachedStatement("SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? COLLATE NOCASE AND c.Name=? COLLATE NOCASE AND p.Name=? COLLATE NOCASE");
+    CachedStatementPtr stmt = db.GetCachedStatement("SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? AND c.Name=? AND p.Name=?");
     if (stmt == nullptr)
         return ECPropertyId();
 
