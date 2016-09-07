@@ -523,7 +523,7 @@ SheetModelPtr SheetModel::Create(SheetCR sheet, DgnCodeCR code)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GroupInformationModel::_OnInsertElement(DgnElementR element)
     {
-    return element.IsGroupInformationElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
+    return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -372,7 +372,6 @@ protected:
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual SectionDrawingModelCP _ToSectionDrawingModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
-    virtual GroupInformationModelCP _ToGroupInformationModel() const {return nullptr;}
     /** @} */
 
     //! The sublcass should import elements from the source model into this model. 
@@ -511,7 +510,6 @@ public:
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
     SectionDrawingModelCP ToSectionDrawingModel() const {return _ToSectionDrawingModel();} //!< more efficient substitute for dynamic_cast<SectionDrawingModelCP>(model)
     SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
-    GroupInformationModelCP ToGroupInformationModel() const {return _ToGroupInformationModel();} //!< more efficient substitute for dynamic_cast<GroupInformationModelCP>(model)
     GeometricModelP ToGeometricModelP() {return const_cast<GeometricModelP>(_ToGeometricModel());} //!< more efficient substitute for dynamic_cast<GeometricModelP>(model)
     InformationModelP ToInformationModelP() {return const_cast<InformationModelP>(_ToInformationModel());} //!< more efficient substitute for dynamic_cast<InformationModelP>(model)
     DefinitionModelP ToDefinitionModelP() {return const_cast<DefinitionModelP>(_ToDefinitionModel());} //!< more efficient substitute for dynamic_cast<DefinitionModelP>(model)
@@ -521,7 +519,6 @@ public:
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     SectionDrawingModelP ToSectionDrawingModelP() {return const_cast<SectionDrawingModelP>(_ToSectionDrawingModel());} //!< more efficient substitute for dynamic_cast<SectionDrawingModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
-    GroupInformationModelP ToGroupInformationModelP() {return const_cast<GroupInformationModelP>(_ToGroupInformationModel());}//!< more efficient substitute for dynamic_cast<GroupInformationModelP>(model)
 
     bool IsGeometricModel() const { return nullptr != ToGeometricModel(); }
     bool IsSpatialModel() const { return nullptr != ToSpatialModel(); }
@@ -531,7 +528,6 @@ public:
     bool IsInformationModel() const { return nullptr != ToInformationModel(); }
     bool IsDefinitionModel() const { return nullptr != ToDefinitionModel(); }
     bool IsSheetModel() const { return nullptr != ToSheetModel(); }
-    bool IsGroupInformationModel() const { return nullptr != ToGroupInformationModel(); }
     bool IsDictionaryModel() const { return DictionaryId() == GetModelId(); }
     //@}
 
@@ -1052,7 +1048,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GroupInformationModel : InformationModel
 {
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_GroupInformationModel, InformationModel);
 protected:
-    GroupInformationModelCP _ToGroupInformationModel() const override final {return this;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element) override;
 public:
     explicit GroupInformationModel(CreateParams const& params) : T_Super(params) {}

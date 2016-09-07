@@ -1139,7 +1139,6 @@ protected:
     virtual InformationContentElementCP _ToInformationContentElement() const {return nullptr;}
     virtual DefinitionElementCP _ToDefinitionElement() const {return nullptr;}
     virtual DocumentCP _ToDocumentElement() const {return nullptr;}
-    virtual GroupInformationElementCP _ToGroupInformationElement() const {return nullptr;}
     virtual IElementGroupCP _ToIElementGroup() const {return nullptr;}
     virtual DgnGeometryPartCP _ToGeometryPart() const {return nullptr;}
     DGNPLATFORM_EXPORT virtual DgnDbStatus _SetPropertyValue(Utf8CP name, ECN::ECValueCR value);
@@ -1191,7 +1190,6 @@ public:
     AnnotationElement2dCP ToAnnotationElement2d() const {return _ToAnnotationElement2d();} //!< more efficient substitute for dynamic_cast<AnnotationElement2dCP>(el)
     DrawingGraphicCP ToDrawingGraphic() const {return _ToDrawingGraphic();}             //!< more efficient substitute for dynamic_cast<DrawingGraphicCP>(el)
     IElementGroupCP ToIElementGroup() const {return _ToIElementGroup();}                //!< more efficient substitute for dynamic_cast<IElementGroup>(el)
-    GroupInformationElementCP ToGroupInformationElement() const {return _ToGroupInformationElement();} //!< more efficient substitute for dynamic_cast<GroupInformationElementCP>(el)
     
     GeometrySourceP ToGeometrySourceP() {return const_cast<GeometrySourceP>(_ToGeometrySource());} //!< more efficient substitute for dynamic_cast<GeometrySourceP>(el)
     GeometrySource2dP ToGeometrySource2dP() {return const_cast<GeometrySource2dP>(ToGeometrySource2d());} //!< more efficient substitute for dynamic_cast<GeometrySource2dP>(el)
@@ -1201,7 +1199,6 @@ public:
     InformationContentElementP ToInformationContentElementP() {return const_cast<InformationContentElementP>(_ToInformationContentElement());} //!< more efficient substitute for dynamic_cast<InformationContentElementP>(el)
     DefinitionElementP ToDefinitionElementP() {return const_cast<DefinitionElementP>(_ToDefinitionElement());}  //!< more efficient substitute for dynamic_cast<DefinitionElementP>(el)
     DocumentP ToDocumentElementP() {return const_cast<DocumentP>(_ToDocumentElement());}  //!< more efficient substitute for dynamic_cast<DocumentP>(el)
-    GroupInformationElementP ToGroupInformationElementP() {return const_cast<GroupInformationElementP>(_ToGroupInformationElement());} //!< more efficient substitute for dynamic_cast<GroupInformationElementP>(el)
     AnnotationElement2dP ToAnnotationElement2dP() {return const_cast<AnnotationElement2dP>(_ToAnnotationElement2d());} //!< more efficient substitute for dynamic_cast<AnnotationElement2dP>(el)
     DrawingGraphicP ToDrawingGraphicP() {return const_cast<DrawingGraphicP>(_ToDrawingGraphic());} //!< more efficient substitute for dynamic_cast<DrawingGraphicP>(el)
     //! @}
@@ -1212,7 +1209,6 @@ public:
     bool IsInformationContentElement() const {return nullptr != ToInformationContentElement();}   //!< Determine whether this element is an InformationContentElement or not
     bool IsDefinitionElement() const {return nullptr != ToDefinitionElement();}     //!< Determine whether this element is a DefinitionElement or not
     bool IsDocumentElement() const {return nullptr != ToDocumentElement();}         //!< Determine whether this element is a Document element or not
-    bool IsGroupInformationElement() const {return nullptr != ToGroupInformationElement();} //!< Determine whether this element is a GroupInformationElement or not
     bool IsAnnotationElement2d() const {return nullptr != ToAnnotationElement2d();} //!< Determine whether this element is an AnnotationElement2d
     bool IsDrawingGraphic() const {return nullptr != ToDrawingGraphic();}           //!< Determine whether this element is an DrawingGraphic
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}      //!< Determine whether this element is the same type (has the same DgnClassId) as another element.
@@ -2189,12 +2185,26 @@ protected:
 };
 
 //=======================================================================================
+//! An InformationCarrierElement is a proxy for an information carrier in the physical world.  
+//! For example, the arrangement of ink on a paper document or an electronic file is an information carrier.
+//! The content is tracked separately from the carrier.
+//! @see InformationContentElement
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE InformationReferenceElement : InformationContentElement
+{
+    DEFINE_T_SUPER(InformationContentElement);
+protected:
+    explicit InformationReferenceElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A Subject resides in (and only in) a RepositoryModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Subject : DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE Subject : InformationReferenceElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Subject, DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_Subject, InformationReferenceElement);
     friend struct dgn_ElementHandler::Subject;
 
 protected:
@@ -2220,11 +2230,10 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass                                                    Shaun.Sewall    04/16
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationContentElement
+struct EXPORT_VTABLE_ATTRIBUTE GroupInformationElement : InformationReferenceElement
 {
-    DEFINE_T_SUPER(InformationContentElement);
+    DEFINE_T_SUPER(InformationReferenceElement);
 protected:
-    virtual GroupInformationElementCP _ToGroupInformationElement() const override final {return this;}
     explicit GroupInformationElement(CreateParams const& params) : T_Super(params) {}
 };
 
