@@ -185,7 +185,7 @@
         <SubProduct ProductName="Units-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/Units/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UnitsUwpTest"/>
         </Bindings>
     </Part>
 
