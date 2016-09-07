@@ -248,7 +248,7 @@
         <SubProduct ProductName="ECObjects-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/ECObjects/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/ECObjectsUwpTest"/>
         </Bindings>
     </Part>
 
@@ -331,34 +331,10 @@
 <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
 
     <ProductDirectoryList ListName="ECObjects">
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
-        <ProductDirectory Name="VendorNotices"                      Deliver="false" />
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="mergemodules"                       Deliver="false"/>
-        <ProductDirectory Name="libs"                               Deliver="false"/>
-
-        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
-        <ProductDirectory   Name="VendorNotices"                LibType="Static"    Deliver="false" />
-        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="Assemblies"      LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="ecobjectsnativeassemblies"    LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="unitssnativeassemblies"       LibType="Static"    Deliver="false"/>
-        <ProductDirectory   Name="ecschemas"                    LibType="Static"    Deliver="false"/>
-
-        <ProductDirectory Name="loggingnativeassemblies"            Path="Runtime"/>
-        <ProductDirectory Name="LoggingOptionalNativeAssemblies"    Path="Runtime"/>
-        <ProductDirectory Name="Assemblies"            Path="Runtime"/>
-        <ProductDirectory Name="GeomNativeAssemblies"               Path="Runtime"/>
-        <ProductDirectory Name="ecobjectsnativeassemblies"          Path="Runtime"/>
-        <ProductDirectory Name="PublishedApi"                       Path="Include"/>        
-        <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="UnitsNativeAssemblies"              Path="Runtime"/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets"   RelativeTo="Assemblies" Path="Assets"/>
+        <ProductDirectory Name="Assets"   RelativeTo="Assemblies" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="VendorNotices"  Path="Notices"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">
@@ -368,11 +344,11 @@
     </Product>
 
     <ProductDirectoryList ListName="SchemaConverter">
-        <ProductDirectory Name="SchemaConverterExe"     Path="Runtime"/>
+        <ProductDirectory Name="SchemaConverterExe"     Path=""/>
     </ProductDirectoryList>
     
     <ProductDirectoryList ListName="SchemaResourceGenerator">
-        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path="Runtime"/>
+        <ProductDirectory Name="SchemaResourceGeneratorExe"     Path=""/>
     </ProductDirectoryList>
     <Product Name="ECObjectsTools">
         <SubPart    PartName="SchemaConverter" />
