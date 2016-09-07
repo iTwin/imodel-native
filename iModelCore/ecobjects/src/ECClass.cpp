@@ -2469,17 +2469,24 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     
     Utf8String value;  // needed for macros.
     ECObjectsStatus setterStatus;
-    READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
 
     if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() >= 1)
         {
+        READ_REQUIRED_XML_ATTRIBUTE(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic, constraintNode.GetName());
+
         Utf8String multiplicity;
-        if (BEXML_Success == constraintNode.GetAttributeStringValue(multiplicity, MULTIPLICITY_ATTRIBUTE))
-            _SetMultiplicity(multiplicity.c_str());
+        if (BEXML_Success != constraintNode.GetAttributeStringValue(multiplicity, MULTIPLICITY_ATTRIBUTE) || Utf8String::IsNullOrEmpty(multiplicity.c_str()))
+            {
+            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass, %s, must have a %s attribute.", m_relClass->GetName().c_str(), MULTIPLICITY_ATTRIBUTE);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+            
+        _SetMultiplicity(multiplicity.c_str());
         }
     else
         {
+        READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS (constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
         READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
         }
     

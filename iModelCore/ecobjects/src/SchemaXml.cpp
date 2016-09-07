@@ -864,10 +864,10 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
     LOG.debugv("Reading ECSchema %s", SchemaKey::FormatFullSchemaName(schemaName.c_str(), versionMajor, versionWrite, versionMinor).c_str());
 
     Utf8String alias; 
-    // Alias is a required attribute for EC3.1. If it is missing from <=EC3.0 schemas it is set to the schemaName
+    // Alias is a required attribute for EC3.1. If it is missing from <= EC3.0 schemas it is set to the schemaName
     if (ecXmlMajorVersion >= 3 && ecXmlMinorVersion >= 1)
         {
-        if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE))
+        if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, ALIAS_ATTRIBUTE) || Utf8String::IsNullOrEmpty(alias.c_str()))
             {
             BeAssert(s_noAssert);
             LOG.errorv("Invalid ECSchemaXML: %s element must contain an alias attribute", EC_SCHEMA_ELEMENT);
@@ -876,7 +876,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
         }
     else
         {
-        if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE))
+        if (BEXML_Success != schemaNode->GetAttributeStringValue(alias, SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE) || Utf8String::IsNullOrEmpty(alias.c_str()))
             alias = schemaName;
         }
 

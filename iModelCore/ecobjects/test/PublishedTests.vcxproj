@@ -75,6 +75,7 @@
     <ClCompile Include="Published\MacroTests.cpp" />
     <ClCompile Include="Published\MemoryLayoutTests.cpp" />
     <ClCompile Include="Published\NavigationECPropertyTests.cpp" />
+    <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp" />
     <ClCompile Include="Published\SchemaDeserializationTests.cpp" />
     <ClCompile Include="Published\SchemaElementIdTests.cpp" />
     <ClCompile Include="Published\SchemaValidationTests.cpp" />

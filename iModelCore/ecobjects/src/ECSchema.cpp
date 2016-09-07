@@ -404,7 +404,7 @@ ECObjectsStatus ECSchema::SetAlias (Utf8StringCR alias)
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     else if (Utf8String::IsNullOrEmpty(alias.c_str()))
-        return ECObjectsStatus::Success;
+        return ECObjectsStatus::InvalidName;
           
     else if (!ECNameValidation::IsValidName(alias.c_str()))
         return ECObjectsStatus::InvalidName;
