@@ -344,7 +344,7 @@ void RasterModel::_OnFitView(Dgn::FitContextR context)
     if (NULL != pTree)
         {
         ElementAlignedBox3d box;
-        box.InitFrom(pTree->GetRoot().GetCorners(), 4);
+        box.InitFrom(pTree->GetRoot().GetCorners().m_pts, 4);
         context.ExtendFitRange(box, Transform::FromIdentity());
         }    
     }
