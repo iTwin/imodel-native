@@ -913,10 +913,10 @@ ECSqlTestDataset ECSqlUpdateTestDataset::TargetClassTests (int rowCountPerClass)
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************
-    // Missing schema prefix / not existing ECClasses / not existing ECProperties
+    // Missing schema alias / not existing ECClasses / not existing ECProperties
     //*******************************************************
     ecsql = "UPDATE ONLY PSA SET I=123, L=100000";
-    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema prefix.");
+    ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "Class name needs to be prefixed by schema alias.");
 
     ecsql = "UPDATE ONLY ecsql.BlaBla SET I=123";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::Invalid);

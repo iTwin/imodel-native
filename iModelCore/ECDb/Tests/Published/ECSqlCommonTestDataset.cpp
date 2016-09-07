@@ -533,6 +533,9 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
 
         ecsql.Sprintf("%s WHERE GetX(S) >= -11.111", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE InVirtualSet(?, ECInstanceId)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
         }
 
     return dataset;

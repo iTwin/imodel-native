@@ -2567,35 +2567,35 @@ TEST_F(ECSchemaUpdateTests, DowngradeSchemaMinorVersion)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, SetSchemaNamePrefixNull)
+TEST_F(ECSchemaUpdateTests, UnsettingSchemaAlias)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>");
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    //Try modifying nameSpacePrefix=''
+    //Try modifying alias=''
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>", false, "Schema nameSparePrefix can't be set to NULL");
+        "<ECSchema schemaName='TestSchema' alias='' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "</ECSchema>", false, "Schema alias can't be set to empty");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
+    ASSERT_FALSE(asserted) << "Unsetting Schema Alias is not supported.";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
+TEST_F(ECSchemaUpdateTests, InvalidValueForSchemaAlias)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>");
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
@@ -2604,17 +2604,17 @@ TEST_F(ECSchemaUpdateTests, InvalidValueForNameSpacePrefix)
 
     SchemaItem schemaItem1(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema1' nameSpacePrefix='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>");
     bool asserted = false;
     AssertSchemaImport(asserted, GetECDb(), schemaItem1);
     ASSERT_FALSE(asserted);
 
-    //Try Upgrading to already existing namespaceprefix
+    //Try Upgrading to already existing alias
     SchemaItem editedSchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>", false, "can't upgrade Another schema with same namespaceprefix already exists");
+        "<ECSchema schemaName='TestSchema' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "</ECSchema>", false, "can't upgrade another schema with same alias already exists");
     asserted = false;
     AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
     ASSERT_FALSE(asserted);

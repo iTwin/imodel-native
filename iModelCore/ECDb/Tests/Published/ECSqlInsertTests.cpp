@@ -460,7 +460,7 @@ TEST(ECSqlInsertTests, IntoTests)
     ASSERT_STATEMENT_PREPARE("INSERT INTO bsm.InstanceCount (ECSchemaName, ECClassName, Count) VALUES ('Foo', 'Goo', 103)", ECSqlStatus::InvalidECSql);
 
     //*******************************************************
-    // Missing schema prefix / not existing ECClasses / not existing ECProperties
+    // Missing schema alias / not existing ECClasses / not existing ECProperties
     //*******************************************************
     ASSERT_STATEMENT_PREPARE("INSERT INTO PSA (I, L, Dt) VALUES (123, 1000000, DATE '2013-10-10')", ECSqlStatus::InvalidECSql);
 

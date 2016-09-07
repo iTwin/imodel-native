@@ -18,27 +18,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvector<ECN::ECSchemaP> const& schemas)
     {
-    std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new SchemaAliasRule()));
-
     bool valid = true;
     for (ECSchemaCP schema : schemas)
         {
-        for (auto& task : validationTasks)
-            {
-            bool succeeded = task->ValidateSchemas(schemas, *schema);
-            if (!succeeded)
-                valid = false;
-            }
-
         bool succeeded = ValidateSchema(result, *schema);
         if (!succeeded)
             valid = false;
-        }
-
-    for (auto& task : validationTasks)
-        {
-        task->AddErrorToResult(result);
         }
 
     return valid;
@@ -51,7 +36,6 @@ bool ECSchemaValidator::ValidateSchemas(ECSchemaValidationResult& result, bvecto
 bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::ECSchemaCR schema)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new CaseInsensitiveClassNamesRule()));
     validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new ValidRelationshipRule()));
 
     bool valid = true;
@@ -84,7 +68,6 @@ bool ECSchemaValidator::ValidateSchema(ECSchemaValidationResult& result, ECN::EC
 bool ECSchemaValidator::ValidateClass(ECSchemaValidationResult& result, ECN::ECClassCR ecClass)
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
-    validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new CaseInsensitivePropertyNamesRule(ecClass)));
     validationTasks.push_back(std::unique_ptr<ECSchemaValidationRule>(new NoPropertiesOfSameTypeAsClassRule(ecClass)));
 
     bool valid = true;
@@ -178,195 +161,6 @@ void ECSchemaValidationRule::AddErrorToResult(ECSchemaValidationResult& result) 
 Utf8String ECSchemaValidationRule::Error::ToString() const
     {
     return _ToString();
-    }
-
-
-//**********************************************************************
-// CaseInsensitiveClassNamesRule
-//**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-CaseInsensitiveClassNamesRule::CaseInsensitiveClassNamesRule()
-    : ECSchemaValidationRule(Type::CaseInsensitiveClassNames), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType()));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-bool CaseInsensitiveClassNamesRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
-    {
-    bool valid = true;
-
-    auto& invalidClasses = m_error->GetInvalidClassesR();
-
-    auto const& className = ecClass.GetName();
-    auto it = m_classNameSet.find(className.c_str());
-    if (it != m_classNameSet.end()) //found case insensitive duplicate
-        {
-        auto& violatingClassBucket = invalidClasses[className.c_str()];
-        if (violatingClassBucket.empty())
-            {
-            auto firstViolatingClass = schema.GetClassCP(*it);
-            BeAssert(firstViolatingClass != nullptr);
-            violatingClassBucket.insert(firstViolatingClass);
-            }
-
-        violatingClassBucket.insert(&ecClass);
-        valid = false;
-        }
-
-    m_classNameSet.insert(className.c_str());
-    return valid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitiveClassNamesRule::_GetError() const
-    {
-    if (m_error->GetInvalidClasses().empty())
-        return nullptr;
-
-    return std::move(m_error);
-    }
-
-
-
-//**********************************************************************
-// CaseInsensitiveClassNamesRule::Error
-//**********************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-Utf8String CaseInsensitiveClassNamesRule::Error::_ToString() const
-    {
-    if (GetInvalidClasses().empty())
-        return "";
-
-    ECSchemaCP schema = nullptr;
-    Utf8String violatingClassesStr;
-    bool isFirstSet = true;
-    for (auto const& kvPair : GetInvalidClasses())
-        {
-        if (!isFirstSet)
-            violatingClassesStr.append(" - ");
-
-        bool isFirstClass = true;
-        for (auto violatingClass : kvPair.second)
-            {
-            if (!isFirstClass)
-                violatingClassesStr.append(", ");
-            else
-                //capture schema (which is the same for all violating classes) for output reasons
-                schema = &violatingClass->GetSchema();
-
-            violatingClassesStr.append(violatingClass->GetName());
-            isFirstClass = false;
-            }
-
-        isFirstSet = false;
-        }
-
-
-    Utf8String str;
-    str.Sprintf("ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.", schema->GetName().c_str(), violatingClassesStr.c_str());
-    return str;
-    }
-
-
-//**********************************************************************
-// CaseInsensitivePropertyNamesRule
-//**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-CaseInsensitivePropertyNamesRule::CaseInsensitivePropertyNamesRule(ECClassCR ecClass)
-    : ECSchemaValidationRule(Type::CaseInsensitivePropertyNames), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-bool CaseInsensitivePropertyNamesRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
-    {
-    bool valid = true;
-
-    auto& invalidProperties = m_error->GetInvalidPropertiesR();
-
-    auto const& propName = ecProperty.GetName();
-    auto it = m_propertyNameSet.find(propName.c_str());
-    if (it != m_propertyNameSet.end()) //found case insensitive duplicate
-        {
-        auto& violatingPropBucket = invalidProperties[propName.c_str()];
-        if (violatingPropBucket.empty())
-            {
-            auto firstViolatingProp = ecClass.GetPropertyP(*it);
-            BeAssert(firstViolatingProp != nullptr);
-            violatingPropBucket.insert(firstViolatingProp);
-            }
-
-        violatingPropBucket.insert(&ecProperty);
-        valid = false;
-        }
-
-    m_propertyNameSet.insert(propName.c_str());
-    return valid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> CaseInsensitivePropertyNamesRule::_GetError() const
-    {
-    if (m_error->GetInvalidProperties().empty())
-        return nullptr;
-
-    return std::move(m_error);
-    }
-
-
-//**********************************************************************
-// CaseInsensitivePropertyNamesRule::Error
-//**********************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
-//---------------------------------------------------------------------------------------
-Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString() const
-    {
-    if (GetInvalidProperties().empty())
-        return "";
-
-    Utf8String violatingPropsStr;
-
-    bool isFirstSet = true;
-    for (auto const& kvPair : GetInvalidProperties())
-        {
-        if (!isFirstSet)
-            violatingPropsStr.append(" - ");
-
-        bool isFirstProp = true;
-        for (auto violatingProp : kvPair.second)
-            {
-            if (!isFirstProp)
-                violatingPropsStr.append(", ");
-
-            violatingPropsStr.append(violatingProp->GetName());
-            isFirstProp = false;
-            }
-
-        isFirstSet = false;
-        }
-
-    Utf8String str;
-    str.Sprintf("ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.", m_ecClass.GetFullName(), violatingPropsStr.c_str());
-    return str;
     }
 
 //**********************************************************************
@@ -594,70 +388,4 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
     return str;
     }
 
-//**********************************************************************
-// SchemaAliasRule
-//**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-SchemaAliasRule::SchemaAliasRule()
-    : ECSchemaValidationRule(Type::SchemaAlias), m_error(nullptr)
-    {
-    m_error = std::unique_ptr<Error>(new Error(GetType()));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-bool SchemaAliasRule::_ValidateSchemas(bvector<ECSchemaP> const& schemas, ECN::ECSchemaCR schema)
-    {
-    bool valid = true;
-    Utf8StringCR alias = schema.GetAlias().c_str();
-    if (alias.empty() || !ECNameValidation::IsValidName(alias.c_str()))
-        {
-        m_error->AddInvalidAlias(schema);
-        valid = false;
-        }
-
-    return valid;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-std::unique_ptr<ECSchemaValidationRule::Error> SchemaAliasRule::_GetError() const
-    {
-    if (!m_error->HasInconsistencies())
-        return nullptr;
-
-    return std::move(m_error);
-    }
-
-//**********************************************************************
-// SchemaAliasRule::Error
-//**********************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-Utf8String SchemaAliasRule::Error::_ToString() const
-    {
-    if (m_invalidAliases.empty())
-        return "";
-
-    Utf8String error("Found ECSchemas with invalid aliases: ");
-    bool isFirstItem = true;
-    for (ECSchemaCP schema : m_invalidAliases)
-        {
-        if (!isFirstItem)
-            error.append("; ");
-
-        Utf8String descr;
-        descr.Sprintf("'%': Alias '%s' is empty or not a valid EC name", schema->GetFullSchemaName().c_str(), schema->GetAlias().c_str());
-        error.append(descr);
-        isFirstItem = false;
-        }
-
-    return error;
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
