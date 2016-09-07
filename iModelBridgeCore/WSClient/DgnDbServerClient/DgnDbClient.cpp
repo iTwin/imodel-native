@@ -90,6 +90,105 @@ DgnDbClient::DgnDbClient(ClientInfoPtr clientInfo, AuthenticationHandlerPtr auth
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+Json::Value BasicUserCreationJson(Credentials credentials, bool isAdmin = false)
+    {
+    Json::Value repositoryCreation(Json::objectValue);
+    JsonValueR instance = repositoryCreation[ServerSchema::Instance] = Json::objectValue;
+    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+    instance[ServerSchema::ClassName] = ServerSchema::Class::UserDefinition;
+    JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+    properties[ServerSchema::Property::Name] = credentials.GetUsername();
+    properties[ServerSchema::Property::Password] = credentials.GetPassword();;
+    properties[ServerSchema::Property::IsAdmin] = isAdmin;
+    return repositoryCreation;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbClient::CreateBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken)
+    {
+    Utf8String project;
+    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler);  
+    client->SetCredentials(m_credentials);
+
+    Json::Value basicUserCreationJson = BasicUserCreationJson(credentials);
+    return client->SendCreateObjectRequest(basicUserCreationJson, BeFileName(), nullptr, cancellationToken)
+        ->Then<DgnDbServerStatusResult>([=] (const WSCreateObjectResult& result)
+        {
+        if (!result.IsSuccess())
+            return DgnDbServerStatusResult::Error(result.GetError());
+
+        return DgnDbServerStatusResult::Success();
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbClient::RemoveBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken)
+    {
+    Utf8String project;
+    project.Sprintf("%s--%s", ServerSchema::Schema::Project, m_projectId.c_str());
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, project, m_clientInfo, nullptr, m_authenticationHandler); 
+    client->SetCredentials(m_credentials);
+
+    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::UserDefinition);
+    Utf8String filter;
+    filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::Name, credentials.GetUsername());
+    query.SetFilter(filter);
+
+    auto finalResult = std::make_shared<DgnDbServerStatusResult>();
+    //Find the desired user
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)
+        ->Then([=] (const WSObjectsResult& result)
+        {
+        if (!result.IsSuccess())
+            {
+            finalResult->SetError(result.GetError());
+            return;
+            }
+
+        auto instances = result.GetValue().GetInstances();
+
+        if (0 == instances.Size())
+            {
+            finalResult->SetError({DgnDbServerError::Id::UserDoesNotExist});
+            return;
+            }
+
+        if (1 < instances.Size())
+            {
+            finalResult->SetError({DgnDbServerError::Id::InternalServerError});
+            return;
+            }
+
+        for (auto instance : instances)
+            {
+            client->SendDeleteObjectRequest(instance.GetObjectId())
+                ->Then([=] (const WSDeleteObjectResult& deleteResult)
+                {
+                if (!deleteResult.IsSuccess())
+                    {
+                    finalResult->SetError(deleteResult.GetError());
+                    return;
+                    }
+
+                finalResult->SetSuccess();
+                });
+            }
+        })->Then<DgnDbServerStatusResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 DgnDbClientPtr DgnDbClient::Create(ClientInfoPtr clientInfo, AuthenticationHandlerPtr authenticationHandler)

@@ -90,6 +90,18 @@ public:
     //! Needs to be called from the work thread where DgnPlatform is initialized.
     DGNDBSERVERCLIENT_EXPORT static void Initialize();
 
+    //! Create new user. Use just for basic authorisation
+    //! @param[in] credentials of the new user
+    //! @param[in] cancellationToken
+    //! @return Returns a Asynchronous task, which indicates succes or error of the method
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr CreateBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Delete a user. Use just for basic authorisation
+    //! @param[in] credentials of the new user
+    //! @param[in] cancellationToken
+    //! @return Returns a Asynchronous task, which indicates succes or error of the method
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr RemoveBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken = nullptr);
+
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] authenticationHandler Http handler for connect authentication.
