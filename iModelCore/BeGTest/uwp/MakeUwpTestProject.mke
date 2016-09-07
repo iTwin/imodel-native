@@ -122,7 +122,9 @@ DLM_SYMB_DEST       = $(o)
 DLM_MAP_DEST        = $(o)
 DLM_NO_SIGN         = 1
 DLM_NOENTRY         = 0
-LINKER_LIBRARIES    = $[@wildcard $(collectionLibsDir)*$(libext)]
+
+# Manually list vccorlib first to avoid LNK2038.
+LINKER_LIBRARIES = vccorlib.lib $[@wildcard $(collectionLibsDir)*$(libext)]
 
 %include dlmlink.mki
 
@@ -189,7 +191,6 @@ always:
 MSBuildExe = msbuild.exe
 MSBuildArgs = \
     \/verbosity:Normal \
-    \/target:Build \
     $[@addprefix \/property:, $(MSBuildProperties)]
 
 MSBuildProperties = Platform=x86
@@ -204,10 +205,37 @@ MSBuildProperties = Platform=x86
 %endif
     
 always:
-    $(MSBuildExe) $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+    $(MSBuildExe) \/target:Build $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+
+#--------------------------------------------------------------------------------------
+# Clean
+
+# We cannot save pre-built UWP unit tests as LKGs because Microsoft uses
+# obnoxiously long file names, and we end up exceeding MAX_PATH. The current
+# approach is to clean the project so that we can at least post buildable unit
+# test projects that can be built and run later. By "buildable", the only code
+# physically in our unit test shell are the wrappers around the tests, but the
+# tests and libraries themselves remain pre-built by the rest of the build, so
+# this isn't cheating in terms of validating production code.
+
+# Also note that asking msbuild to clean does not actually remove all files...
+
+# Also note that if the user wants to run the tests (knowing they cannot save
+# LKGs), don't clean the project.
+
+#--------------------------------------------------------------------------------------
+%if !defined (RUN_UWP_TESTS)
+always:
+    $(MSBuildExe) \/target:Clean $(MSBuildArgs) $(projectDir)BeTestTest1.sln
+%if defined (NDEBUG)
+    -rmdir \/s \/q $(projectDir)Release
+%else
+    -rmdir \/s \/q $(projectDir)Debug
+%endif
+%endif
 
 #--------------------------------------------------------------------------------------
 # Delivery
 #--------------------------------------------------------------------------------------
-$(BuildContext)Delivery/UwpTest/$(TEST_NAME)/Project : ${projectDir}
+$(BuildContext)Delivery/$(TEST_NAME)UwpTest : ${projectDir}
     $(LinkFirstDepToFirstTargetAsDirectory)
