@@ -6,11 +6,11 @@
 |
 +----------------------------------------------------------------------*/
 #pragma once
-
+/*__PUBLISH_SECTION_START__*/
+#include <DgnPlatform/DgnPlatform.h>
 #include <Bentley/bvector.h>
 #include <Bentley/BeTextFile.h>
 
-/*__PUBLISH_SECTION_START__*/
 DGNPLATFORM_TYPEDEFS(CsvFile)
 DGNPLATFORM_REF_COUNTED_PTR(CsvFile)
 

@@ -49,12 +49,11 @@ struct TileTextureImage : RefCountedBase
     {
     private:
         ImageSource       m_imageSource;
-        bool              m_hasAlpha;
 
         static ImageSource Load(TileDisplayParamsCR params, DgnDbR db);
     public:
-        TileTextureImage(ImageSource&& imageSource, bool hasAlpha = false) : m_imageSource(std::move(imageSource)), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
-        TileTextureImage(ImageSource& imageSource, bool hasAlpha = false) : m_imageSource (imageSource), m_hasAlpha (hasAlpha) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource&& imageSource) : m_imageSource(std::move(imageSource)) { BeAssert(m_imageSource.IsValid()); }
+        TileTextureImage(ImageSource& imageSource) : m_imageSource (imageSource) { BeAssert(m_imageSource.IsValid()); }
         ImageSourceCR GetImageSource() const { return m_imageSource; }
         static void ResolveTexture(TileDisplayParamsR params, DgnDbR db);
     };
@@ -157,8 +156,9 @@ private:
     bvector<DVec3d>         m_normals;
     bvector<DPoint2d>       m_uvParams;
     bvector<DgnElementId>   m_elementIds;   // invalid IDs for clutter geometry
+    bool                    m_validIdsPresent;
 
-    explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params) { }
+    explicit TileMesh(TileDisplayParamsPtr& params) : m_displayParams(params), m_validIdsPresent (false) { }
 
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
 public:
@@ -183,6 +183,7 @@ public:
     DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
     DgnElementId GetElementId(uint32_t index) const { auto pId = GetMember(m_elementIds, index); return nullptr != pId ? *pId : DgnElementId(); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
+    bool ValidIdsPresent() const { return m_validIdsPresent; }
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline (TilePolyline polyline) { m_polylines.push_back(polyline); }
@@ -337,6 +338,7 @@ public:
         : m_range(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent) { }
 
     DRange3dCR GetRange() const { return m_range; }
+    DPoint3d   GetCenter() const { return DPoint3d::FromInterpolate (m_range.low, .5, m_range.high); }
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }

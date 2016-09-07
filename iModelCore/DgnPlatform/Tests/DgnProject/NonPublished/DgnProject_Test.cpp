@@ -808,7 +808,7 @@ TEST_F(ElementUriTests, Test1)
 
     if (true)
         {
-        // Graphite format - ECCass=
+        // Graphite format - ECClass=
         Utf8CP uri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=foo";
         auto eid = db->Elements().QueryElementIdByURI(uri);
         ASSERT_TRUE(eid == el->GetElementId());
@@ -816,12 +816,6 @@ TEST_F(ElementUriTests, Test1)
         Utf8CP baduri = "/DgnElements?ECClass=DgnPlatformTest:TestElement&TestElementProperty=bar";
         auto badeid = db->Elements().QueryElementIdByURI(baduri);
         ASSERT_TRUE(!badeid.IsValid());
-        }
-
-    if (true)
-        {
-        // Graphite format - Source=
-        // *** TBD
         }
 
     if (true)
@@ -850,6 +844,7 @@ TEST_F(ElementUriTests, Test1)
         ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestAuthority&N=TestNS").IsValid());
         BeTest::SetFailOnAssert(true);
         }
+
 
     if (true)
         {
@@ -886,6 +881,26 @@ static void testLegacyUri(DgnDbR db, Utf8CP uriQuery)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                         Ramanujam.Raman             08/2016
+//---------------------------------------------------------------------------------------
+static void testProvenanceUri(DgnDbR db, Utf8CP uri)
+    {
+    // Test URI query in (potentially) old version
+    DgnElementId eid1 = db.Elements().QueryElementIdByURI(uri);
+    ASSERT_TRUE(eid1.IsValid());
+
+    DgnElementCPtr el = db.Elements().GetElement(eid1);;
+    ASSERT_TRUE(el.IsValid());
+
+    // Test URI creation in the latest version
+    Utf8String dgndbUri;
+    ASSERT_EQ(BSISUCCESS, db.Elements().CreateElementUri(dgndbUri, *el, true, false));
+    DgnElementId eid2 = db.Elements().QueryElementIdByURI(dgndbUri.c_str());
+
+    ASSERT_TRUE(eid1 == eid2);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             08/2016
 //---------------------------------------------------------------------------------------
 TEST_F(ElementUriTests, TestLegacyUris)
@@ -898,11 +913,27 @@ TEST_F(ElementUriTests, TestLegacyUris)
     ASSERT_TRUE(db.IsValid());
     testLegacyUri(*db, "ECClass=Bentley%5FRevit%5FSchema%3APlanting&RevitConnectorID=513243");
     testLegacyUri(*db, "ECClass=Bentley%5FRevit%5FSchema%3ARoofs&RevitConnectorID=343500");
+    testProvenanceUri(*db, "/DgnElements?SourceId=Civil%2Edgn%2Ei%2Edgn&ElementId=8512");
+    testProvenanceUri(*db, "/DgnDb?FileName=office%20building%2Ei%2Edgn%3C2%3Ecivil%2Edgn%2Ei%2Edgn&ElementId=8512");
 
     db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\Hydrotreater Expansion.i.idgndb"), openParams);
     ASSERT_TRUE(db.IsValid());
     testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASHELL%5FAND%5FTUBE%5FHEAT%5FEXCHANGER%5FPAR&GUID=A1AC9BB1%2D9AAF%2D4A9D%2D96B6%2DD5C242358405");
     testLegacyUri(*db, "ECClass=OpenPlant%5F3D%3ASTORAGE%5FTANK%5FPAR&GUID=D3F923AD%2D5694%2D4300%2DBE23%2D1953D6D0D02B");
+    testProvenanceUri(*db, "/DgnElements?SourceId=Civil%2Edgn%2Ei%2Edgn&ElementId=5029");
+    testProvenanceUri(*db, "/DgnElements?SourceId=S%5FExhaust%2Edgn%2Ei%2Edgn&ElementId=1971");
+
+    if (true)
+        {
+        db = DgnDb::OpenDgnDb(&openStatus, BeFileName(L"d:\\tmp\\BGRSmall976.dgndb"), openParams);
+        ASSERT_TRUE(db.IsValid());
+
+        auto eid1 = db->Elements().QueryElementIdByURI("/DgnDb?Code=29V%252D9&A=ConstructionPlanning%255FPhysicalHierarchy&N=Equipment");
+        ASSERT_TRUE(eid1.IsValid());
+        
+        auto eid2 = db->Elements().QueryElementIdByURI("/DgnDb?Code=CB1002%252D0%252D6420&A=ConstructionPlanning%255FPhysicalHierarchy&N=Piping%252F03A%252D45405%252D01%252FSPOOL%252003A%252D45405%252D01%252D3");
+        ASSERT_TRUE(eid2.IsValid());
+        }
     }
 #endif
 

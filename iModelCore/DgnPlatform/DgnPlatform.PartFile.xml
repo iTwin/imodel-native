@@ -487,7 +487,7 @@
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="UwpTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
-            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/UwpTest/DgnPlatform/Project" />
+            <Directory ProductDirectoryName="UwpTestProject" SourceName="Delivery/DgnPlatformUwpTest"/>
         </Bindings>
     </Part>
 
@@ -701,8 +701,22 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+    <Part Name="TilePublisherPrewire" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
         <SubPart PartName="DgnPlatformLib" />
+        <Bindings>
+            <Files SubPartDirectory="TilePublisher/include/TilePublisher">Delivery/TilePublisher/TilePublisher.h</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
+        <Bindings>
+            <Directory SourceName="Delivery/TilePublisher/Cesium" ProductDirectoryName="Assets" ProductSubDirectory="scripts/Cesium" />
+        </Bindings>
+    </Part>
+
+    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+        <SubPart PartName="CesiumJs" />
+        <SubPart PartName="TilePublisherPrewire" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     	Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"        	Repository="libsrc-csmap"/>
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
@@ -733,16 +747,4 @@
         <ProductDirectory Name="VendorNotices"  RelativeTo="ApplicationRoot" Path="Notices"/>
     </ProductDirectoryList>
 
-    <Part Name="TileServerExe" BentleyBuildMakeFile="TileServer/exe/TileServer.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartName="TilePublisherLib" />
-        <SubPart PartName="DgnPlatformSqlang" />
-        <Bindings>
-            <Assemblies>Delivery/TileServer$(exeext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Product Name="TileServer" SaveProduct="true">
-        <SubPart PartName="TileServerExe" />
-        <Directories DirectoryListName="TilePublisherDirs" />
-    </Product>
 </BuildContext>

@@ -547,63 +547,70 @@ Utf8String DgnResourceURI::GetFragment() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BentleyStatus makeElementByProvenance(Utf8StringR uriStr, DgnElementCR el)
     {
-#ifdef WIP_ELEMENTURI // *** reinstate file and element provenance tables
-    DgnDbR db = el.GetDgnDb();
+    DgnDbR dgndb = el.GetDgnDb();
 
-    Utf8String oldFileName;
-    DgnProvenances prov = m_file.GetDgnProject().Provenance();
+    /*
+     * Notes:
+     * A fileName and an ElementId is sufficient to unambiguously refer to a V8 Element. 
+     *
+     * Note that in the case of a 1-N mapping between V8 and DgnDb Elements, the URIs 
+     * may become ambiguous references to the DgnDb elements, and may not survive a 
+     * round trip intact. 
+     * 
+     * In the case of N-1 mapping between V8 and DgnDb Elements, the URIs may just not 
+     * capture the right V8 element. 
+     */
+    uint32_t v8FileId;
+    int64_t v8ElementId;
+    if (SUCCESS != DgnV8ElementProvenance::FindFirst(&v8FileId, nullptr, &v8ElementId, el.GetElementId(), dgndb))
+        return ERROR;
 
-    ElementProvenance eprov = prov.QueryProvenance(eid);
-    if (!eprov.IsValid() || SUCCESS != prov.QueryFileName(oldFileName, eprov.GetOriginalFileId()))
+    Utf8String v8UniqueName;
+    if (SUCCESS != DgnV8FileProvenance::Find(nullptr, &v8UniqueName, v8FileId, dgndb))
         return ERROR;
 
     DgnResourceURI::Builder builder;
     builder.AppendEncodedPath(RT_DgnDb);
-    builder.AppendQueryParameter("SourceId", oldFileName);
+    builder.AppendQueryParameter("FileName", v8UniqueName);
     builder.AppendAndOperator();
-    builder.AppendQueryParameter("ElementId", (Utf8CP)Utf8PrintfString("%lld", eprov.GetOriginalElementId()));
+    builder.AppendQueryParameter("ElementId", Utf8PrintfString("%lld", v8ElementId));
 
     uriStr = builder.ToEncodedString();
     return SUCCESS;
-#endif
-    return BSIERROR; // *** TBD
     }
 
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnElementId findElementIdByProvenance(DgnDbR db, DgnResourceURI::QueryParser& queryParser, Utf8CP oldFileName)
+static DgnElementId findElementIdByProvenance(DgnDbR db, DgnResourceURI::QueryParser& queryParser, Utf8CP v8NameOrUniqueName, bool isGraphiteUri)
     {
-    //  Source=oldFileName&ElementId=oldElementId
-
+    /* Format: "FileName=v8FileName&ElementId=v8ElementId" */
     char logical;
-    DgnResourceURI::UriToken elementidKeyword, oldElementId;
-    if (queryParser.ParseQueryParameter(elementidKeyword, oldElementId, logical) != SUCCESS
+    DgnResourceURI::UriToken elementIdKeyword, v8ElementId;
+    if (queryParser.ParseQueryParameter(elementIdKeyword, v8ElementId, logical) != SUCCESS
         || logical != '&'
-        || !elementidKeyword.GetString().EqualsI("ElementId")
-        || oldElementId.GetType() != DgnResourceURI::UriToken::TYPE_UInt64)
+        || !elementIdKeyword.GetString().EqualsI("ElementId")
+        || v8ElementId.GetType() != DgnResourceURI::UriToken::TYPE_UInt64)
         {
         BeDataAssert(false && "Invalid Provenance URI");
         return DgnElementId();
         }
 
     //  This query is one of mine. From here on, I return SUCCESS to indicate that I handled it (even if the provenance can't be found).
-
-#ifdef WIP_ELEMENTURI // *** reinstate file and element provenance tables
-    DgnProvenances prov = project.Provenance();
-
-    //  Look up the file
-    uint64_t oldFileId;
-    if (prov.QueryFileId (oldFileId, oldFileName) != SUCCESS)
+    uint32_t v8FileId;
+    bool findByUniqueName = !isGraphiteUri; // Unfortunately Graphite05 stored references to non-unique names!!!
+    if (SUCCESS != DgnV8FileProvenance::FindFirst(&v8FileId, v8NameOrUniqueName, findByUniqueName, db))
+        {
         return DgnElementId();
+        }
 
-    //  Look up the element
-    ElementProvenance eprov (oldFileId, oldElementId);
-    eid = prov.GetElement (eprov);
-    return eid.IsValid()? SUCCESS: ERROR;
-#endif
-    BeAssert(false && "TBD");
-    return DgnElementId();
+    DgnElementId elementId;
+    if (SUCCESS != DgnV8ElementProvenance::FindFirst(&elementId, v8FileId, (int64_t) v8ElementId.GetUInt64(), db))
+        {
+        return DgnElementId();
+        }
+
+    return elementId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -671,8 +678,11 @@ static DgnElementId queryElementIdByClassAndProperty(DgnDbR db, DgnResourceURI::
         return DgnElementId();
         }
 
-    auto stmt = db.GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(%s=?)", ecClass->GetECSqlName().c_str(), propname.GetString().c_str()).c_str());
-    stmt->BindText(1, propvalue.GetString().c_str(), EC::IECSqlBinder::MakeCopy::No);
+    Utf8PrintfString ecSql("SELECT ECInstanceId FROM %s WHERE(%s=?)", ecClass->GetECSqlName().c_str(), propname.GetString().c_str());
+    Utf8String value = propvalue.GetString();
+
+    auto stmt = db.GetPreparedECSqlStatement(ecSql.c_str());
+    stmt->BindText(1, value.c_str(), EC::IECSqlBinder::MakeCopy::No);
     if (BE_SQLITE_ROW == stmt->Step())
         return stmt->GetValueId<DgnElementId>(0);
 
@@ -715,7 +725,7 @@ static DgnElementId queryElementIdFromDgnDbURI(DgnDbR db, DgnResourceURI& uri, D
     DgnResourceURI::QueryParser queryParser(uri.GetQuery());
     DgnResourceURI::UriToken key, value;
     char logical;
-    if (queryParser.ParseQueryParameter(key, value, logical) != SUCCESS)
+    if (queryParser.ParseQueryParameter(key, value, logical, true) != SUCCESS)
         {
         BeAssert(false && "invalid Db URI");
         return DgnElementId();
@@ -724,8 +734,8 @@ static DgnElementId queryElementIdFromDgnDbURI(DgnDbR db, DgnResourceURI& uri, D
     if (key.GetString().EqualsI("Code")) //  Db/Code=authority/namespace/
         return queryElementIdByCodeComponents(db, value.GetString(), queryParser);
     
-    if (key.GetString().EqualsI("SourceId"))
-        return findElementIdByProvenance(db, queryParser, value.GetString().c_str());
+    if (key.GetString().EqualsI("FileName"))
+        return findElementIdByProvenance(db, queryParser, value.GetString().c_str(), false /*=isGraphiteUri*/);
 
     if (key.GetString().EqualsI("ECClass"))
         return queryElementIdByClassAndProperty(db, queryParser, pathParser, value.GetString(), false);
@@ -762,15 +772,15 @@ static DgnElementId queryElementIdFromGraphiteURI(DgnDbR db, DgnResourceURI& uri
     DgnResourceURI::QueryParser queryParser(uri.GetQuery());
     DgnResourceURI::UriToken key, value;
     char logical;
-    if (queryParser.ParseQueryParameter(key, value, logical) != SUCCESS)
+    if (queryParser.ParseQueryParameter(key, value, logical, true) != SUCCESS)
         {
         BeDataAssert(false && "invalid Graphite URI");
         return DgnElementId();
         }
 
-    if (key.GetString().EqualsI ("SourceId"))
-        return findElementIdByProvenance(db, queryParser, value.GetString().c_str());
-    
+    if (key.GetString().EqualsI("SourceId"))
+        return findElementIdByProvenance(db, queryParser, value.GetString().c_str(), true /*=isGraphiteUri*/);
+
     if (key.GetString().EqualsI ("ECClass"))
         return queryElementIdByClassAndProperty(db, queryParser, pathParser, value.GetString(), true);
 

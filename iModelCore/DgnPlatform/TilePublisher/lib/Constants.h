@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY
 #define GLTF_TRIANGLES 4
 #define GLTF_CULL_FACE 2884
 #define GLTF_DEPTH_TEST 2929
+#define GLTF_SIGNED_SHORT 5122
 #define GLTF_UNSIGNED_SHORT 5123
 #define GLTF_UINT32 5125
 #define GLTF_FLOAT 5126
@@ -152,5 +153,4 @@ static double const s_qvExponentMultiplier  = 48.0,
 
 static const WCharCP s_metadataExtension    = L"json";
 static const WCharCP s_binaryDataExtension  = L"b3dm";
-
 

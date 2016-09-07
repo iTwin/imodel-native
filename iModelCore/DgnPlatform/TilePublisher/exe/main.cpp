@@ -7,8 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ThreeMx/ThreeMxApi.h>
-#include "../lib/TilePublisher.h"   // ###TODO: API dir...
+#include <DgnPlatform/TilePublisher/TilePublisher.h>
 #include "Constants.h"
+
+#if defined(TILE_PUBLISHER_PROFILE)
+#include <conio.h>
+#endif
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
@@ -249,8 +253,9 @@ private:
 
     virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
     virtual TileGeometryCacheP _GetGeometryCache() override { return nullptr != m_generator ? &m_generator->GetGeometryCache() : nullptr; }
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetRelativePath(GetRootName().c_str(), fileExtension); }
 
-    Status WriteWebApp(TransformCR transform, bvector<WString>& viewedTileSetNames);
+    Status WriteWebApp(TransformCR transform);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -272,9 +277,12 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName)
-        : PublisherContext(viewController, outputDir, tilesetName) { }
-
+    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, size_t maxTilesetDepth, size_t maxTilesPerDirectory)
+        : PublisherContext(viewController, outputDir, tilesetName, maxTilesetDepth, maxTilesPerDirectory)
+        {
+        // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
+        m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
+        }
 
     Status Publish();
 
@@ -308,7 +316,7 @@ TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, bvector<WString>& tileSetNames)
+PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform)
     {
     // Set up initial view based on view controller settings
     DVec3d xVec, yVec, zVec;
@@ -336,10 +344,7 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
     Utf8CP viewOptionString = geoLocated ? "" : "globe: false, scene3DOnly:true, skyBox: false, skyAtmosphere: false";
     Utf8CP viewFrameString = geoLocated ? s_geoLocatedViewingFrameJs : s_3dOnlyViewingFrameJs; 
 
-    Utf8String       tileSetHtml;
-
-    for (auto& tileSetName : tileSetNames)
-        tileSetHtml = tileSetHtml + Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), tileSetName.c_str());
+    Utf8String       tileSetHtml = Utf8PrintfString (s_tilesetHtml, m_rootName.c_str(), m_rootName.c_str());
 
     // Produce the html file contents
     Utf8PrintfString html(s_viewerHtml, viewOptionString, tileSetHtml.c_str(), viewFrameString, viewDest.x, viewDest.y, viewDest.z, zVec.x, zVec.y, zVec.z, yVec.x, yVec.y, yVec.z);
@@ -347,12 +352,17 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, b
     BeFileName htmlFileName = m_outputDir;
     htmlFileName.AppendString(m_rootName.c_str()).AppendExtension(L"html");
 
-    std::ofstream htmlFile;
-    htmlFile.open(Utf8String(htmlFileName.c_str()).c_str(), std::ios_base::trunc);
-    htmlFile.write(html.data(), html.size());
-    htmlFile.close();
+    std::FILE* htmlFile = std::fopen(Utf8String(htmlFileName.c_str()).c_str(), "w");
+    std::fwrite(html.data(), 1, html.size(), htmlFile);
+    std::fclose(htmlFile);
 
-    // ###TODO: Symlink Cesium scripts, if not present
+    // Symlink the Cesium dir, if not already present
+    BeFileName cesiumSrcDir(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+    cesiumSrcDir.AppendToPath(L"scripts");
+    cesiumSrcDir.AppendToPath(L"Cesium");
+    BeFileName cesiumDstDir(m_outputDir);
+    cesiumDstDir.AppendToPath(L"Cesium");
+    BeFileName::CloneDirectory(cesiumSrcDir.c_str(), cesiumDstDir.c_str());
 
     return Status::Success;
     }
@@ -422,53 +432,9 @@ PublisherContext::Status TilesetPublisher::Publish()
     TileGenerator generator (m_dbToTile, &progressMeter);
 
     static double       s_toleranceInMeters = 0.01;
-    bvector<WString>    viewedTileSetNames;
-
-    status = ConvertStatus(generator.LoadGeometry(m_viewController, s_toleranceInMeters));
 
     m_generator = &generator;
-    if (Status::Success == status)
-        {
-        static const size_t     s_maxPointsPerTile = 20000;
-        TileNodePtr             rootNode = new TileNode();
-
-        status = ConvertStatus(generator.GenerateTiles (*rootNode, s_toleranceInMeters, s_maxPointsPerTile));
-        if (Status::Success == status)
-            {
-            rootNode->GenerateSubdirectories (m_maxTilesPerDirectory, m_dataDir);
-            if (Status::Success == (status = ConvertStatus (generator.CollectTiles(*rootNode, *this))))
-                viewedTileSetNames.push_back (m_rootName);
-            }
-        }
-    if (status != Status::Success &&
-        status != Status::NoGeometry)      // If no root geometry there still may be viewed models.
-        return status;
-
-    for (auto& modelId : m_viewController.GetViewedModels())
-        {
-        if (modelId == m_viewController.GetBaseModelId())
-            continue;
-
-        DgnModelPtr     viewedModel = m_viewController.GetDgnDb().Models().GetModel (modelId);
-
-
-        if (viewedModel.IsValid())
-            {
-            WString tileSetName;
-            
-            progressMeter._SetModel (viewedModel.get());
-            progressMeter._SetTaskName (TileGenerator::TaskName::CollectingGeometry);       // Needs work -- meter progress in model publisher.
-            progressMeter._IndicateProgress (0, 1);
-            tileSetName.AssignA (viewedModel->GetName().c_str());
-
-            if (Status::Success == PublishViewedModel (tileSetName, *viewedModel, generator, *this))
-                {
-                viewedTileSetNames.push_back (tileSetName);
-                status = Status::Success;       // Override NoGeometry (empty model with reality attachment).
-                }
-            }
-        }
-
+    PublishViewModels (generator, *this, s_toleranceInMeters, progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -476,7 +442,7 @@ PublisherContext::Status TilesetPublisher::Publish()
 
     OutputStatistics(generator.GetStatistics());
 
-    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile), viewedTileSetNames);
+    return WriteWebApp (Transform::FromProduct (m_tileToEcef, m_dbToTile));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,6 +508,11 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain(int ac, wchar_t const** av)
     {
+#if defined(TILE_PUBLISHER_PROFILE)
+    printf("Press a key to start...\n");
+    _getch();
+#endif
+
     PublisherParams createParams;
     if (!createParams.ParseArgs(ac, av))
         {
@@ -563,7 +534,10 @@ int wmain(int ac, wchar_t const** av)
     if (viewController.IsNull())
         return 1;
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName());
+    static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
+    static size_t       s_maxTilesPerDirectory = 0;     // Put all files in same directory
+
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), s_maxTilesetDepth, s_maxTilesPerDirectory);
 
     printf("Publishing:\n"
            "\tInput: View %s from %ls\n"

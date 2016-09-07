@@ -9,6 +9,8 @@
 /*__PUBLISH_SECTION_START__*/
 /** @cond BENTLEY_SDK_Internal */
 
+#include <ECUnits/ECUnitsClassLocater.h>
+
 #if defined (_MSC_VER)
     #pragma managed(push, off)
 #endif // defined (_MSC_VER)
@@ -273,10 +275,9 @@ private:
     uint32_t                    m_componentIndex;
     mutable IS3D_State          m_is3d;
     DgnModelP                   m_model;
+    ECN::ECUnitsClassLocaterPtr      m_unitsClassLocater;
 
-    StandaloneTypeAdapterContext (ECN::ECPropertyCR prop, uint32_t comp,  DgnModelP model)
-        : m_property(&prop), m_componentIndex(comp), m_is3d(IS3D_Uninitialized), m_model(model)
-        {}
+    StandaloneTypeAdapterContext(ECN::ECPropertyCR prop, uint32_t comp, DgnModelP model);
 
     static bool Is3dContext(DgnModelP model, ECN::ECPropertyCR ecprop);
 
