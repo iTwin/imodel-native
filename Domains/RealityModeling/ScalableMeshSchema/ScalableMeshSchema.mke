@@ -60,11 +60,12 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 $(o)IMeshSpatialModel$(oext)        : $(SrcScMeshSchema)IMeshSpatialModel.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
-$(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+#NEEDS_WORK_SM_TEMP_OUT
+#$(o)ScalableMeshHandler$(oext)        : $(SrcScMeshSchema)ScalableMeshHandler.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
-$(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+#$(o)ScalableMeshDomain$(oext)        : $(SrcScMeshSchema)ScalableMeshDomain.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
-$(o)ScalableMeshDisplayCacheManager$(oext)        : $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.cpp       $(meshmodelDepends) ${MultiCompileDepends}
+#$(o)ScalableMeshDisplayCacheManager$(oext)        : $(SrcScMeshSchema)ScalableMeshDisplayCacheManager.cpp       $(meshmodelDepends) ${MultiCompileDepends}
 
 
 #

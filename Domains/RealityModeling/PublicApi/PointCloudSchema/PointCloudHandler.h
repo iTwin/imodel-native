@@ -43,7 +43,7 @@ public:
             //! @param[in] code The Code for the DgnModel
             //! @param[in] fileId File Id of the PointCloud file.
             CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnCode code, Utf8StringCR fileId) :
-                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), code), m_fileId(fileId)
+                T_Super(dgndb, PointCloudModel::QueryClassId(dgndb), Dgn::DgnElementId() /* WIP: Which element? */, code), m_fileId(fileId)
                 {}
         };
         

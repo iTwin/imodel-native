@@ -205,7 +205,7 @@ DgnModelId ModelHandler::CreateModel(DgnDbR db, Utf8CP modelNameIn, Utf8CP scene
 
     Utf8String modelName(db.Models().GetUniqueModelName(modelNameIn));
 
-    ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, ThreeMxModel::CreateModelCode(modelName)));
+    ThreeMxModelPtr model = new ThreeMxModel(DgnModel::CreateParams(db, classId, DgnElementId() /* WIP: Which element? */, ThreeMxModel::CreateModelCode(modelName)));
 
     model->SetSceneFile(sceneFile);
     if (trans)
